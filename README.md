@@ -90,7 +90,7 @@ Please find information how to add your own dataset and configure D2E [here](./d
 
 Open the D2E Portal and go to the Admin Portal. In the Admin portal click on **Setup** and than **Demo Setup**:
 1) Click on **Run** Button in **1. Setup demo database** 
-2) Restart the services by executing `d2e stopdemo` and `d2e startdemo`
+2) Restart the services and apply db patch by executing `d2e stopdemo`, `d2d patchdemodb` and `d2e startdemo`
 3) Click on **Run** Button in **3. Setup demo dataset**
 
 Now you can go to the researcher portal use Data2Evidence with the demo dataset.

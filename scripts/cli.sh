@@ -2,7 +2,16 @@
 
 cmd=${@: -1}
 script_full_path=$(dirname "$0")
-node_modules_path=$script_full_path/../lib/node_modules/@data2evidence/cli/
+if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
+  node_modules_path=$D2ECLI_NODE_MODULES_PATH
+elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
+  node_modules_path=$script_full_path/../lib/node_modules/@data2evidence/cli/
+elif [ -d "$script_full_path/../@data2evidence/cli/" ]; then
+  node_modules_path=$script_full_path/../@data2evidence/cli/
+else
+  echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Existing"
+  exit -1
+fi
 export CADDY__CONFIG=./deploy/caddy-config
 export ENV_TYPE=${ENV_TYPE:-remote}
 
@@ -43,6 +52,9 @@ case $cmd in
                 echo "Aborting";;
         esac
         ;;
+    patchdemodb)
+        docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
+        ;;
     setup)
         docker compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait &&
         sleep 10 &&
@@ -55,7 +67,7 @@ case $cmd in
         $node_modules_path/scripts/gen-dotenv.sh && $node_modules_path/scripts/gen-tls.sh && $node_modules_path/scripts/gen-resource-limits.sh
         ;;
     login)
-        source .env &&
+        source .env
         docker login -u $GH_USERNAME -p $GH_TOKEN ghcr.io
         ;;
     *)
