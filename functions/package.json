@@ -436,7 +436,13 @@
           "dataflowmgmt.analysisflow.add",
           "dataflowmgmt.analysisflow.delete",
           "dataflowmgmt.analysisflow.revision.delete",
-          "codesuggestion.read"
+          "codesuggestion.read",
+          "portal.userArtifact.bookmarks.read",
+          "portal.userArtifact.bookmarks.write",
+          "portal.userArtifact.bookmarks.delete",
+          "portal.userArtifact.conceptSets.read",
+          "portal.userArtifact.conceptSets.write",
+          "portal.userArtifact.conceptSets.delete"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -1233,16 +1239,76 @@
           ]
         },
         {
-          "path": "^/system-portal/user-artifact/(?!group(?:$|/))(.*)$",
+          "path": "^/system-portal/user-artifact/bookmarks/list$",
           "scopes": [
-            "portal.userArtifact.read",
-            "portal.userArtifact.write",
-            "portal.userArtifact.delete"
+            "portal.userArtifact.bookmarks.read"
           ],
           "httpMethods": [
-            "GET",
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.write"
+          ],
+          "httpMethods": [
             "POST",
-            "PUT",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.delete"
+          ],
+          "httpMethods": [
             "DELETE"
           ]
         },

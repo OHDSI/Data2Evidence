@@ -12,9 +12,6 @@ export const createConceptSetBody = z.object({
   shared: z.boolean(),
   userName: z.string(),
 });
-export const createConceptSet = z.object({
-  body: createConceptSetBody,
-});
 
 export const getConceptSetQuery = z.object({ datasetId: z.string() });
 export const getConceptSetParams = z.object({
@@ -23,6 +20,16 @@ export const getConceptSetParams = z.object({
 export const getConceptSet = z.object({
   query: getConceptSetQuery,
   params: getConceptSetParams,
+});
+export const getConceptSets = z.object({
+  query: getConceptSetQuery,
+});
+
+export const createConceptSetQuery = z.object({ datasetId: z.string() });
+
+export const createConceptSet = z.object({
+  body: createConceptSetBody,
+  query: createConceptSetQuery,
 });
 
 export const updateConceptSetBody = z
@@ -42,16 +49,19 @@ export const updateConceptSetBody = z
 export const updateConceptSetParams = z.object({
   conceptSetId: z.string(),
 });
+export const updateConceptSetQuery = z.object({ datasetId: z.string() });
 export const updateConceptSet = z.object({
   body: updateConceptSetBody,
   params: updateConceptSetParams,
+  query: updateConceptSetQuery,
 });
-
 export const removeConceptSetParams = z.object({
   conceptSetId: z.string(),
 });
+export const removeConceptSetQuery = z.object({ datasetId: z.string() });
 export const removeConceptSet = z.object({
   params: removeConceptSetParams,
+  query: removeConceptSetQuery,
 });
 
 export const getIncludedConceptsBody = z.object({

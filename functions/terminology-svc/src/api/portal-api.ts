@@ -8,6 +8,10 @@ import { ConceptSet } from "../types.ts";
 interface CreateConceptSetDto {
   serviceArtifact: any;
 }
+interface UpdateConceptSetDto {
+  id: string;
+  serviceArtifact: any;
+}
 
 export class SystemPortalAPI {
   private readonly token: string;
@@ -71,11 +75,12 @@ export class SystemPortalAPI {
     };
   }
 
-  async getUserConceptSets(userId: string): Promise<any> {
+  async getUserConceptSets(userId: string, datasetId: string): Promise<any> {
     console.info("Portal request to get concept sets");
     const errorMessage = "Error while getting concept sets";
     try {
       const options = await this.createOptions();
+      options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/${userId}/concept_sets/shared/list`;
       const result = await axios.get(url, options);
       return result.data;
@@ -85,11 +90,12 @@ export class SystemPortalAPI {
     }
   }
 
-  async getConceptSetById(id: string): Promise<ConceptSet> {
+  async getConceptSetById(id: string, datasetId: string): Promise<ConceptSet> {
     console.info(`Portal request to get concept set for id ${id}`);
     const errorMessage = `Error while getting concept set for id ${id}`;
     try {
       const options = await this.createOptions();
+      options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets/${id}`;
       const result = await axios.get<ConceptSet[]>(url, options);
       return result.data[0];
@@ -99,11 +105,15 @@ export class SystemPortalAPI {
     }
   }
 
-  async createConceptSet(input: CreateConceptSetDto): Promise<any> {
+  async createConceptSet(
+    input: CreateConceptSetDto,
+    datasetId: string
+  ): Promise<any> {
     console.info("Portal request to create concept set");
     const errorMessage = "Error while creating concept set";
     try {
       const options = await this.createOptions();
+      options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets`;
       const result = await axios.post(url, input, options);
       return result.data;
@@ -113,11 +123,15 @@ export class SystemPortalAPI {
     }
   }
 
-  async updateConceptSet(input: Record<string, any>): Promise<any> {
+  async updateConceptSet(
+    input: UpdateConceptSetDto,
+    datasetId: string
+  ): Promise<any> {
     console.info(`Portal request to update concept set for id: ${input.id}`);
     const errorMessage = `Error while updating concept set for id: ${input.id}`;
     try {
       const options = await this.createOptions();
+      options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets`;
       const result = await axios.put(url, input, options);
       return result.data;
@@ -127,11 +141,12 @@ export class SystemPortalAPI {
     }
   }
 
-  async deleteConceptSet(id: string): Promise<any> {
+  async deleteConceptSet(id: string, datasetId: string): Promise<any> {
     console.info(`Portal request to delete concept set for id: ${id}`);
     const errorMessage = `Error while deleting concept set for id: ${id}`;
     try {
       const options = await this.createOptions();
+      options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets/${id}`;
       const result = await axios.delete(url, options);
       return result.data;

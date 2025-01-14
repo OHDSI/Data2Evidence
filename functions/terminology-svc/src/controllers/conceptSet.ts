@@ -39,8 +39,12 @@ export const getConceptSets = async (
 ) => {
   try {
     const userId = getUserIdFromToken(req.headers["authorization"]!);
+    const { query } = schemas.getConceptSets.parse(req);
     const systemPortalApi = new SystemPortalAPI(req);
-    const conceptSets = await systemPortalApi.getUserConceptSets(userId);
+    const conceptSets = await systemPortalApi.getUserConceptSets(
+      userId,
+      query.datasetId
+    );
     res.send(conceptSets);
   } catch (e) {
     next(e);
@@ -53,7 +57,7 @@ export const createConceptSet = async (
   next: NextFunction
 ) => {
   try {
-    const { body } = schemas.createConceptSet.parse(req);
+    const { body, query } = schemas.createConceptSet.parse(req);
     const userId = getUserIdFromToken(req.headers["authorization"]!);
     const newConceptSet = addOwner(
       {
@@ -65,9 +69,12 @@ export const createConceptSet = async (
     );
 
     const systemPortalApi = new SystemPortalAPI(req);
-    await systemPortalApi.createConceptSet({
-      serviceArtifact: newConceptSet,
-    });
+    await systemPortalApi.createConceptSet(
+      {
+        serviceArtifact: newConceptSet,
+      },
+      query.datasetId
+    );
 
     res.send(newConceptSet.id);
   } catch (e) {
@@ -84,7 +91,8 @@ export const getConceptSet = async (
     const { query, params } = schemas.getConceptSet.parse(req);
     const systemPortalApi = new SystemPortalAPI(req);
     const conceptSet = await systemPortalApi.getConceptSetById(
-      params.conceptSetId
+      params.conceptSetId,
+      query.datasetId
     );
     const conceptIds = conceptSet.concepts.map((c) => c.id);
     const cachedbService = new CachedbService(req);
@@ -119,18 +127,14 @@ export const updateConceptSet = async (
   next: NextFunction
 ) => {
   try {
-    const { body, params } = schemas.updateConceptSet.parse(req);
+    const { body, params, query } = schemas.updateConceptSet.parse(req);
     const userId = getUserIdFromToken(req.headers["authorization"]!);
-    const updatedConceptSet = addOwner(
-      {
-        id: params.conceptSetId,
-        ...body,
-      },
-      false,
-      userId
-    );
+    const updatedConceptSet = addOwner(body, false, userId);
     const systemPortalApi = new SystemPortalAPI(req);
-    await systemPortalApi.updateConceptSet(updatedConceptSet);
+    await systemPortalApi.updateConceptSet(
+      { id: params.conceptSetId, serviceArtifact: updatedConceptSet },
+      query.datasetId
+    );
     res.send(updatedConceptSet.id);
   } catch (e) {
     next(e);
@@ -142,9 +146,12 @@ export const removeConceptSet = async (
   next: NextFunction
 ) => {
   try {
-    const { params } = schemas.removeConceptSet.parse(req);
+    const { params, query } = schemas.removeConceptSet.parse(req);
     const systemPortalApi = new SystemPortalAPI(req);
-    await systemPortalApi.deleteConceptSet(params.conceptSetId);
+    await systemPortalApi.deleteConceptSet(
+      params.conceptSetId,
+      query.datasetId
+    );
     res.send(params.conceptSetId);
   } catch (e) {
     next(e);
@@ -163,7 +170,10 @@ export const getIncludedConcepts = async (
 
     const promises = conceptSetIds.map(async (conceptSetId) => {
       const systemPortalApi = new SystemPortalAPI(req);
-      const conceptSet = await systemPortalApi.getConceptSetById(conceptSetId);
+      const conceptSet = await systemPortalApi.getConceptSetById(
+        conceptSetId,
+        datasetId
+      );
       const conceptIds = conceptSet.concepts.map((c) => c.id);
       const cachedbService = new CachedbService(req);
       const concepts = await cachedbService.getConceptsByIds(
