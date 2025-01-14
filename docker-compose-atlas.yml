@@ -3,7 +3,6 @@ volumes:
     name: atlasdb-postgres-data
 
 services:
-
   broadsea-atlasdb:
     image: ohdsi/broadsea-atlasdb:2.0.0
     container_name: broadsea-atlasdb
@@ -11,12 +10,13 @@ services:
     environment:
       - POSTGRES_PASSWORD=mypass
     networks:
-     alp:
-      priority: 20
-     data:
-      priority: 10
+      alp:
+        priority: 20
+      data:
+        priority: 10
     volumes:
-     - atlasdb-postgres-data:/var/lib/postgresql/data
+      - atlasdb-postgres-data:/var/lib/postgresql/data
+      - ./deploy/broadsea-atlas/cohort_patch.sql:/cohort_patch.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

@@ -57,3 +57,9 @@ Data Model Option | omop5-4 [datamodel-plugin]
 PA Config | OMOP_GDM_PA_CONF_DUCKDB
 Type | e.g. DemoDataset
 Token dataset code | e.g. DemoDataset
+
+### Patch tables
+Run command below to patch cohort_definition table and add cohort table
+```
+docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
+```
