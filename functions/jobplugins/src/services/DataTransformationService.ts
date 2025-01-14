@@ -63,9 +63,8 @@ export class TransformationService {
       this.portalServerApi = new PortalServerAPI(token);
       const res = await this.portalServerApi.getFlowRunResults(filePath);
 
-      // TODO: replace the hardcoded transformed after persisted result been updated
       const transformedRes = res.map((result, index) => ({
-        nodeName: `p${index + 1}`,
+        nodeName: result.nodeName,
         taskRunResult: {
           result,
         },
