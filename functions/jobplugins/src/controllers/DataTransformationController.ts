@@ -22,7 +22,6 @@ export class DataTransformationController {
   private async getCanvasById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      console.log(`getCanvasById id: ${id}`);
       const result = await this.dataTransformationService.getCanvas(id);
       return res.status(200).send(result);
     } catch (error) {
@@ -76,7 +75,6 @@ export class DataTransformationController {
       const token = decode(
         req.headers["authorization"].replace(/bearer /i, "")
       ) as JwtPayload;
-      console.log(`data transoformation controller, token: ${token}`);
       const canvas = await this.dataTransformationService.createCanvas(
         dataflowDto,
         token
@@ -90,13 +88,13 @@ export class DataTransformationController {
 
   private async duplicateCanvas(req: Request, res: Response) {
     try {
-      const { id: flowId, revisionId } = req.params;
+      const { id, revisionId } = req.params;
       const dataflowDto = req.body;
       const token = decode(
         req.headers["authorization"].replace(/bearer /i, "")
       ) as JwtPayload;
       const result = await this.dataTransformationService.duplicateCanvas(
-        flowId,
+        id,
         revisionId,
         dataflowDto,
         token
@@ -128,7 +126,7 @@ export class DataTransformationController {
     this.router.get("/:id/latest", this.getGraph.bind(this));
     this.router.delete("/:id", this.deleteCanvas.bind(this));
     this.router.post(
-      "duplicate/:id/:revisionId",
+      "/duplicate/:id/:revisionId",
       this.duplicateCanvas.bind(this)
     );
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));

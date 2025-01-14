@@ -101,13 +101,11 @@ export class TransformationService {
         dataflowDto.id
       );
       version += lastDataflowRevision.version;
-      console.log(`updating a flow by user: ${token}`);
       await this.canvasRepo.update(
         dataflowDto.id,
         this.addOwner(token, canvas)
       );
     } else {
-      console.log(`creating a flow by user: ${token}`);
       await this.canvasRepo.insert(this.addOwner(token, canvas, true));
     }
 
@@ -164,6 +162,9 @@ export class TransformationService {
     token
   ) {
     const flowEntity = await this.getCanvas(id);
+    if (!flowEntity) {
+      throw new Error("Dataflow does not exist");
+    }
     const revisionEntity = flowEntity.revisions.find(
       (r) => r.id === revisionId
     );
@@ -173,26 +174,27 @@ export class TransformationService {
     }
     const newDataflowEntity = this.addOwner(
       token,
-      this.canvasRepo.create({
+      {
         id: uuidv4(),
         name: dataflowDuplicateDto.name,
         type: "datatransformation-flow",
-      }),
-      true
-    );
-    const newRevisionEntity = this.addOwner(
-      token,
-      this.graphRepo.create({
-        id: uuidv4(),
-        dataflowId: newDataflowEntity.id,
-        flow: revisionEntity.flow,
-        version: 1,
-      }),
+      },
       true
     );
 
-    await this.canvasRepo.insert(newDataflowEntity);
-    await this.graphRepo.insert(newRevisionEntity);
+    const newRevisionEntity = this.addOwner(
+      token,
+      {
+        id: uuidv4(),
+        canvasId: newDataflowEntity.id,
+        flow: revisionEntity.flow,
+        version: 1,
+      },
+      true
+    );
+
+    await this.canvasRepo.save(newDataflowEntity);
+    await this.graphRepo.save(newRevisionEntity);
     this.logger.info(
       `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`
     );
@@ -221,13 +223,13 @@ export class TransformationService {
     throw new Error("Dataflow and/or dataflow revision do not match");
   }
 
-  async getCanvas(id) {
-    return await this.graphRepo
+  async getCanvas(id: string) {
+    const result = await this.graphRepo
       .createQueryBuilder("revision")
-      .leftJoin("revision.canvas", "dataflow")
+      .leftJoin("revision.canvas", "canvas")
       .select([
-        "dataflow.id",
-        "dataflow.name",
+        "canvas.id",
+        "canvas.name",
         "revision.id",
         "revision.flow",
         "revision.comment",
@@ -235,8 +237,25 @@ export class TransformationService {
         "revision.createdBy",
         "revision.version",
       ])
-      .where("dataflow.id = :id", { id })
-      .orderBy("revision.createdDate")
-      .getOne();
+      .where("canvas.id = :id", { id })
+      .orderBy("revision.createdDate", "DESC")
+      .getMany();
+  
+    if (!result.length) {
+      return null;
+    }
+  
+    return {
+      id: result[0].canvas.id,
+      name: result[0].canvas.name,
+      revisions: result.map(rev => ({
+        id: rev.id,
+        createdBy: rev.createdBy,
+        createdDate: rev.createdDate.toISOString(),
+        flow: rev.flow,
+        comment: rev.comment,
+        version: rev.version
+      }))
+    };
   }
 }
