@@ -436,8 +436,8 @@ export type CohortResultType = {
 };
 
 export type DcReplacementConfig = {
-    results_database_schema?: string;
-    vocab_database_schema?: string;
+    results_database_schema: string;
+    vocab_database_schema: string;
     conceptId?: string;
 };
 

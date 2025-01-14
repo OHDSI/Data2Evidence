@@ -8,6 +8,7 @@ import CreateLogger = Logger.CreateLogger;
 import { DataCharacterizationEndpoint } from "../../mri/endpoint/DataCharacterizationEndpoint";
 import * as DC_RESULTS_CONFIG from "../../const/dcResultsSqlConfig";
 import * as DC_RESULTS_DRILLDOWN_CONFIG from "../../const/dcResultsDrilldownSqlConfig";
+import { env } from "../../env";
 
 let logger = CreateLogger("analytics-log");
 const language = "en";
@@ -127,6 +128,17 @@ const mapDcResultKeysToUppercase = (data: unknown[]) => {
     });
 };
 
+// Resolve schema for data characterization depending on USE_CACHEDB flag
+const resolveDcSchemaName = (schemaName: string) => {
+    if (env.USE_CACHEDB === "true") {
+        // If using cachedb for connection, database connection has to point to direct_db_conn to access dc results
+        return `direct_db_conn.${schemaName}`;
+    } else {
+        // Else no change to results schema
+        return schemaName;
+    }
+};
+
 export async function getDataCharacterizationResult(
     req: IMRIRequest,
     res,
@@ -143,7 +155,7 @@ export async function getDataCharacterizationResult(
             await dbConnectionUtil.DBConnectionUtil.getDBConnection({
                 credentials: studyAnalyticsCredential,
                 schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
-                vocabSchemaName: studyAnalyticsCredential.vocabSchema,
+                vocabSchemaName: vocabSchema,
             });
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
@@ -151,7 +163,8 @@ export async function getDataCharacterizationResult(
         );
 
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resultsSchema,
+            results_database_schema: resolveDcSchemaName(resultsSchema),
+            vocab_database_schema: vocabSchema,
         };
         logger.info(
             `Getting Data Characterization Results for schema ${resultsSchema} with sourceKey: ${sourceKey}`
@@ -168,8 +181,7 @@ export async function getDataCharacterizationResult(
             dataCharacterizationEndpoint.executeDcResultsSql(
                 analyticsConnection,
                 sqlFilePath,
-                dcReplacementConfig,
-                vocabSchema
+                dcReplacementConfig
             )
         );
 
@@ -208,7 +220,7 @@ export async function getDataCharacterizationDrilldownResult(
             await dbConnectionUtil.DBConnectionUtil.getDBConnection({
                 credentials: studyAnalyticsCredential,
                 schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
-                vocabSchemaName: studyAnalyticsCredential.vocabSchema,
+                vocabSchemaName: vocabSchema,
             });
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
@@ -216,7 +228,8 @@ export async function getDataCharacterizationDrilldownResult(
         );
 
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resultsSchema,
+            results_database_schema: resolveDcSchemaName(resultsSchema),
+            vocab_database_schema: vocabSchema,
             conceptId: conceptId,
         };
         logger.info(
@@ -234,8 +247,7 @@ export async function getDataCharacterizationDrilldownResult(
             dataCharacterizationEndpoint.executeDcResultsSql(
                 analyticsConnection,
                 sqlFilePath,
-                dcReplacementConfig,
-                vocabSchema
+                dcReplacementConfig
             )
         );
 
