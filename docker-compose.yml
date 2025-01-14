@@ -640,6 +640,7 @@ services:
       IDP__ALP_DATA__CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
       IDP__ALP_DATA__CLIENT_SECRET: ${LOGTO__ALP_DATA__CLIENT_SECRET}
       FHIR_SCHEMA_JSON_PATH: /home/docker/fhir
+      ACHILLES_THREAD_COUNT: ${ACHILLES_THREAD_COUNT:-5}
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
