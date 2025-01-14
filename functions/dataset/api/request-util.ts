@@ -23,7 +23,7 @@ axios.interceptors.response.use(
   },
   error => {
     logger.error(`${error?.config?.method} ${error?.config?.url} ${error}`)
-    return error.response
+    throw error
   }
 )
 
