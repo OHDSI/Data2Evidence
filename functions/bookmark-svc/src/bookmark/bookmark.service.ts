@@ -99,7 +99,7 @@ export async function _loadAllBookmarks(
 ) {
   try {
     const portalAPI = new PortalAPI(token)
-    const bookmarks = await portalAPI.getBookmarks()
+    const bookmarks = await portalAPI.getBookmarks(datasetId)
     const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
 
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
@@ -129,10 +129,17 @@ export async function _loadAllBookmarks(
  *            dbConnection DB connection to be used
  * @returns {object[]} Updated bookmakrs, ordered by bookmark name
  */
-export async function loadSingleBookmark(userName, bookmarkId, paConfigId, token, callback?: CallBackInterface) {
+export async function loadSingleBookmark(
+  userName,
+  bookmarkId,
+  paConfigId,
+  token,
+  datasetId,
+  callback?: CallBackInterface
+) {
   try {
     const portalAPI = new PortalAPI(token)
-    const result = await portalAPI.getBookmarkById(bookmarkId)
+    const result = await portalAPI.getBookmarkById(bookmarkId, datasetId)
     const formattedRows = formatUserArtifactData(paConfigId, result, userName)
     const returnValue = _convertBookmarkIFR({
       bookmarks: formattedRows,
@@ -173,6 +180,7 @@ export async function _insertBookmark(
   cdmConfigVersion,
   shareBookmark,
   token,
+  datasetId,
   callback: CallBackInterface
 ) {
   try {
@@ -186,7 +194,7 @@ export async function _insertBookmark(
       userName
     )
     const portalAPI = new PortalAPI(token)
-    const result = await portalAPI.createBookmark({ serviceArtifact: bookmarkDto })
+    const result = await portalAPI.createBookmark({ serviceArtifact: bookmarkDto }, datasetId)
     callback(null, result)
   } catch (error) {
     console.error(error)
@@ -214,7 +222,7 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
   }
   try {
     const portalAPI = new PortalAPI(token)
-    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId)
+    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId, datasetId)
     const currentBookmark = bookmarkResult[0]
 
     if (!currentBookmark) {
@@ -227,7 +235,7 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
       await analyticsSvcAPI.deleteCohort(datasetId, currentBookmark.cohortDefinitionId)
     }
 
-    const result = await portalAPI.deleteBookmark(bookmarkId)
+    const result = await portalAPI.deleteBookmark(bookmarkId, datasetId)
 
     callback(null, result)
   } catch (error) {
@@ -271,14 +279,17 @@ export async function _renameBookmark(
   try {
     const updateBookmarkDto = {
       id: bookmarkId,
-      bookmark_name: newBookmarkName,
-      pa_config_id: paConfigId,
-      cdm_config_id: cdmConfigId,
-      cdm_config_version: cdmConfigVersion,
-      modified: new Date().toISOString(),
+      serviceArtifact: {
+        id: bookmarkId,
+        bookmark_name: newBookmarkName,
+        pa_config_id: paConfigId,
+        cdm_config_id: cdmConfigId,
+        cdm_config_version: cdmConfigVersion,
+        modified: new Date().toISOString(),
+      },
     }
     const portalAPI = new PortalAPI(token)
-    const result = await portalAPI.updateBookmark(updateBookmarkDto)
+    const result = await portalAPI.updateBookmark(updateBookmarkDto, datasetId)
 
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
     const updatedBookmark = result.artifacts.bookmarks.find(bookmark => bookmark.id === bookmarkId)
@@ -326,11 +337,12 @@ export async function _updateBookmark( //TODO remove user input
   cdmConfigVersion,
   shareBookmark,
   token,
+  datasetId,
   callback: CallBackInterface
 ) {
   try {
     const portalAPI = new PortalAPI(token)
-    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId)
+    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId, datasetId)
     const currentBookmark = bookmarkResult[0]
 
     if (!currentBookmark) {
@@ -339,16 +351,19 @@ export async function _updateBookmark( //TODO remove user input
 
     const updateBookmarkDto = {
       id: bookmarkId,
-      bookmark: bookmark,
-      pa_config_id: paConfigId,
-      cdm_config_id: cdmConfigId,
-      cdm_config_version: cdmConfigVersion,
-      modified: new Date().toISOString(),
-      shared: shareBookmark,
-      version: currentBookmark.version + 1,
+      serviceArtifact: {
+        id: bookmarkId,
+        bookmark: bookmark,
+        pa_config_id: paConfigId,
+        cdm_config_id: cdmConfigId,
+        cdm_config_version: cdmConfigVersion,
+        modified: new Date().toISOString(),
+        shared: shareBookmark,
+        version: currentBookmark.version + 1,
+      },
     }
 
-    const result = await portalAPI.updateBookmark(updateBookmarkDto)
+    const result = await portalAPI.updateBookmark(updateBookmarkDto, datasetId)
     callback(null, result)
   } catch (error) {
     console.error(error)
@@ -446,6 +461,7 @@ export async function queryBookmarks(
           cdmConfigVersion,
           shareBookmark,
           token,
+          datasetId,
           cb
         )
         break
@@ -453,7 +469,17 @@ export async function queryBookmarks(
         _deleteBookmark(bookmarkId, userName, datasetId, token, cb)
         break
       case 'update':
-        _updateBookmark(bookmarkId, bookmark, paConfigId, cdmConfigId, cdmConfigVersion, shareBookmark, token, cb)
+        _updateBookmark(
+          bookmarkId,
+          bookmark,
+          paConfigId,
+          cdmConfigId,
+          cdmConfigVersion,
+          shareBookmark,
+          token,
+          datasetId,
+          cb
+        )
         break
       case 'rename':
         _renameBookmark(
@@ -468,7 +494,7 @@ export async function queryBookmarks(
         )
         break
       case 'loadSingle':
-        loadSingleBookmark(userName, bookmarkId, paConfigId, token, callback)
+        loadSingleBookmark(userName, bookmarkId, paConfigId, token, datasetId, callback)
         break
       case 'loadByIDs':
         loadBookmarks({

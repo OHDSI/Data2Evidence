@@ -31,16 +31,16 @@ export class PortalAPI {
     let options: AxiosRequestConfig = {
       headers: {
         Authorization: this.token,
-      }
+      },
     }
 
     return options
   }
 
-  async getBookmarks(): Promise<any> {
+  async getBookmarks(datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/list`
+      const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${datasetId}`
       const result = await axios.get(url, options)
       return result.data
     } catch (error) {
@@ -50,10 +50,10 @@ export class PortalAPI {
     }
   }
 
-  async getBookmarkById(bookmarkId: string): Promise<any> {
+  async getBookmarkById(bookmarkId: string, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}`
+      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
       const result = await axios.get(url, options)
       return result.data
     } catch (error) {
@@ -63,10 +63,10 @@ export class PortalAPI {
     }
   }
 
-  async createBookmark(input: CreateBookmarkDto): Promise<any> {
+  async createBookmark(input: CreateBookmarkDto, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks`
+      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
       const result = await axios.post(url, input, options)
       return result.data
     } catch (error) {
@@ -76,10 +76,10 @@ export class PortalAPI {
     }
   }
 
-  async updateBookmark(input: any): Promise<any> {
+  async updateBookmark(input: any, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks`
+      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
       const result = await axios.put(url, input, options)
       return result.data
     } catch (error) {
@@ -89,10 +89,10 @@ export class PortalAPI {
     }
   }
 
-  async deleteBookmark(bookmarkId: string): Promise<any> {
+  async deleteBookmark(bookmarkId: string, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}`
+      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
       const result = await axios.delete(url, options)
       return result.data
     } catch (error) {
