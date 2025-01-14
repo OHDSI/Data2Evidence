@@ -192,6 +192,7 @@ services:
               "fhir": "http://alp-minerva-fhir-server-${BASE_PORT:-1}:8103/fhir/R4",
               "fhirTokenUrl": "http://alp-minerva-fhir-server-1:8103/oauth2/token",
               "fhirSvc": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+              "alpdb": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://alp-dicom-server:8042",
               "logto": "http://alp-logto-1:3001"
             }
@@ -368,6 +369,7 @@ services:
         "minio": "",
         "fhir": "http://alp-minerva-fhir-server-${BASE_PORT:-1}:8103/fhir/R4",
         "fhirTokenUrl": "http://alp-minerva-fhir-server-1:8103/oauth2/token",
+        "alpdb": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://alp-dicom-server:8042",
         "logto": "http://alp-logto-1:3001",
         "fhirSvc": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir"

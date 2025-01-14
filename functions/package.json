@@ -68,11 +68,13 @@
         {
           "source": "/gateway/api/db",
           "function": "/alpdb",
+          "imports": "/alpdb/import.json",
           "env": "alpdb"
         },
         {
           "source": "/gateway/api/dataset",
           "function": "/dataset",
+          "imports": "/dataset/import.json",
           "env": "dataset"
         },
         {
@@ -361,6 +363,7 @@
           "gateway.db.dataModels.read",
           "gateway.db.vocabSchemas.read",
           "gateway.db.dataset.versionInfo.read",
+          "gateway.db.schema.exists.read",
           "gateway.db.schema.update",
           "gateway.terminology.concept.getStandardConcepts.read",
           "gateway.terminology.concept.searchByName.read",
@@ -2097,6 +2100,15 @@
           ],
           "httpMethods": [
             "PUT"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "scopes": [
+            "gateway.db.schema.exists.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

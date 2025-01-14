@@ -1,42 +1,36 @@
-//import type { LoggingLevel } from './types.d.ts'
+import { object, z } from "zod";
 
-const _env = Deno.env.toObject();
+let env = {};
+let services = {};
 
-export const env = {
-  GATEWAY_PORT: Number(_env.GATEWAY__PORT!) || 5001,
-  GATEWAY_LOG_LEVEL: _env.GATEWAY__LOG_LEVEL || "info",
-  GATEWAY_WO_PROTOCOL_FQDN: _env.GATEWAY__WO_PROTOCOL__FQDN,
-  GATEWAY_API_ALLOWED_DOMAINS:
-    _env.GATEWAY__API_ALLOWED_DOMAINS ||
-    "http://localhost:9000 http://localhost:8080 https://localhost:5000 https://localhost:4000 https://localhost:5001 https://localhost:8080 https://localhost:4088",
-  GATEWAY_IDP_AUTH_TYPE: _env.GATEWAY__IDP_AUTH_TYPE!,
-  GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP!,
-  SSL_PRIVATE_KEY: _env.TLS__INTERNAL__KEY?.replace(/\\n/g, "\n"),
-  SSL_PUBLIC_CERT: _env.TLS__INTERNAL__CRT?.replace(/\\n/g, "\n"),
-  GATEWAY_CA_CERT: _env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
-  APP_DEPLOY_MODE: _env.APP__DEPLOY_MODE,
-  IDP_ALP_SVC_CLIENT_ID: _env.IDP__ALP_SVC_CLIENT_ID,
-  IDP_ALP_DATA_CLIENT_ID: _env.IDP__ALP_DATA_CLIENT_ID,
-  IDP_RELYING_PARTY: _env.IDP__RELYING_PARTY,
-  LOGTO_CLIENT_ID: _env.LOGTO__CLIENT_ID,
-  LOGTO_CLIENT_SECRET: _env.LOGTO__CLIENT_SECRET,
-  LOGTO_ISSUER: _env.LOGTO__ISSUER,
-  LOGTO_TOKEN_URL: _env.LOGTO__TOKEN_URL!,
-  LOGTO_AUDIENCES: _env.LOGTO__AUDIENCES,
-  LOGTO_RESOURCE_API: _env.LOGTO__RESOURCE_API,
-  LOGTO_SCOPE: _env.LOGTO__SCOPE,
-  LOGTO_SVC_CLIENT_ID: _env.LOGTO__SVC_CLIENT_ID,
-  LOGTO_SVC_CLIENT_SECRET: _env.LOGTO__SVC_CLIENT_SECRET,
-  SQLEDITOR__TECHNICAL_USERNAME: _env.SQLEDITOR__TECHNICAL_USERNAME! || "demo",
-  SQLEDITOR__TECHNICAL_USER_PASSWD:
-    _env.SQLEDITOR__TECHNICAL_USER_PASSWD! || "demo",
-  PLUGINS_JSON: _env.PLUGINS__JSON || "{}",
-  DB_CREDENTIALS_PUBLIC_KEYS: _env.DB_CREDENTIALS__PUBLIC_KEYS,
-  SERVICE_ROUTES: _env.SERVICE_ROUTES || "{}",
-  APP_LOCALE: _env.APP_LOCALE,
-  FHIR_CLIENT_ID: _env.FHIR__CLIENT_ID,
-  FHIR_CLIENT_SECRET: _env.FHIR__CLIENT_SECRET,
-  NODE_ENV: _env.NODE_ENV,
-};
+function initEnv(__env) {
+  const _env = Object.assign({}, Deno.env.toObject(), __env);
+  const Env = z.object({
+    NODE_ENV: z.string().optional(),
+    HANA__READ_ROLE: z.string().optional(),
+    SERVICE_ROUTES: z
+      .string()
+      .transform((str, ctx): z.infer<ReturnType<typeof object>> => {
+        try {
+          return JSON.parse(str);
+        } catch (e) {
+          ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+          return z.never();
+        }
+      }),
+  });
+  const result = Env.safeParse(_env);
+  if (result.success) {
+    env = result.data;
+    services = env["SERVICE_ROUTES"];
+    env["DATABASE_CREDENTIALS"] = _env["DATABASE_CREDENTIALS"];
+    env["PG__TENANT_CONFIGS"] = _env["PG__TENANT_CONFIGS"];
+    env["HANA__TENANT_CONFIGS"] = _env["HANA__TENANT_CONFIGS"];
+    env["VCAP_SERVICES"] = _env["VCAP_SERVICES"];
+  } else {
+    console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
+    throw new Error("ZOD parse failed");
+  }
+}
 
-export const services = JSON.parse(env.SERVICE_ROUTES);
+export { env, initEnv, services };

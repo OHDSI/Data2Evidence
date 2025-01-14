@@ -48,34 +48,6 @@ export async function getCDMVersion(req, res, next) {
     }
 }
 
-export async function checkIfSchemaExists(req, res, next) {
-    let dialect: string = req.params.databaseType;
-    let tenant: string = req.params.tenant;
-    let schema: string = req.params.schemaName;
-
-    try {
-        let dbDao = new DBDAO(dialect, tenant);
-        const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            tenant,
-            req,
-            res
-        );
-        const schemaExists = await dbDao.checkIfSchemaExists(
-            dbConnection,
-            schema
-        );
-        res.status(200).send(schemaExists);
-    } catch (err) {
-        logger.error(`Error checking if schema exists: ${err}`);
-        const httpResponse = {
-            status: 500,
-            message: "Something went wrong when checking if schema exists",
-            data: [],
-        };
-        res.status(500).json(httpResponse);
-    }
-}
-
 export async function getSnapshotSchemaMetadata(req, res, next) {
     const datasetId = req.query.datasetId;
 

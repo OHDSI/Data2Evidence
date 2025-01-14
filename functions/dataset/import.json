@@ -1,0 +1,7 @@
+{
+    "imports": {
+       "axios": "npm:axios@1.7.7",
+        "https": "node:https"
+    }
+  }
+  
