@@ -1,8 +1,5 @@
 # Load Dataflow Plugins
 
-The following plugins are currently available:
-- [D2E-Plugins](https://github.com/data2evidence/d2e-flows)
-
 ## 1-Step Upload
 
 ###  Initialize the default plugins

@@ -1,16 +1,11 @@
 # Analytics Platform Documentation (D2E)
 
-[![DockerCompose AzureTest CD](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml) &nbsp;&nbsp; [![Docker Build & Push](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/wosrkflows/docker-push.yml) &nbsp;&nbsp; [![Docker compose Build & Up](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml)
-
 The following documentation outlines the basic setup of Analytics Platform (D2E) for users who require the software.
 
 # Getting Started 
 ## Pre-requisites
 - Install pre-requisite softwares for running D2E. Refer to the installation guide [here](./1-setup/README.md). 
-- Clone Github repository d2e in your terminal using the command: 
-```bash
-git clone --branch develop https://github.com/data2evidence/d2e.git
-```
+- Clone Github repository d2e in your terminal
 
 - Request docker credentials from [D2E Support](#d2e-support) for authenticating to private docker registry to retrieve resources to run D2E.
 ```bash

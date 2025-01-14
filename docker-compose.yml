@@ -107,7 +107,7 @@ services:
         condition: service_completed_successfully
     hostname: trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ghcr.io/data2evidence/d2e-trex-base:${DOCKER_TREX_TAG_NAME:-develop}
-    pull_policy: always
+    pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
       options:
@@ -593,7 +593,7 @@ services:
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
       DOCKER_REGISTRY_USERNAME: ${GH_USERNAME:-tech-user-pull}
       DOCKER_REGISTRY_PASSWORD: ${GH_TOKEN}
-      DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-alpcr.azurecr.io}
+      DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
 
   alp-dataflow-gen-init:
     command:
