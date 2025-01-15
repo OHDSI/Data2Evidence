@@ -42,19 +42,17 @@ export class DatasetController {
   async getDataset(@Query() queryParams: any): Promise<IDataset> {
     const id = queryParams.datasetId
     if (!id) {
-      console.log("No datasetId provided");
+      console.error(`No datasetId provided ${JSON.stringify(queryParams)}`);
       throw new BadRequestException("datasetId is required");
     }
     return await this.datasetQueryService.getDataset(id);
   }
 
-  @Head()
-  async hasDataset(@Query() searchParams: DatasetSearchDto) {
+  @Get("exist")
+  async hasDataset(@Query() searchParams: any) {
     const dataset = await this.datasetQueryService.hasDataset(searchParams);
-    if (dataset) {
-      return;
-    }
-    throw new HttpException(HTTP_STATUS.NO_CONTENT, "No dataset found");
+    const exist = !!dataset;
+    return { exist }
   }
 
   @Get("list")

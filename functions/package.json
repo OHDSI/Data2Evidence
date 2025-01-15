@@ -935,12 +935,12 @@
           ]
         },
         {
-          "path": "^/system-portal/dataset\\?(.*)",
+          "path": "^/system-portal/dataset/exist$",
           "scopes": [
             "portal.dataset.exist"
           ],
           "httpMethods": [
-            "HEAD"
+            "GET"
           ]
         },
         {

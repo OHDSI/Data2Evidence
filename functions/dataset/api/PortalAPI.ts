@@ -127,9 +127,9 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       options.params = { tokenDatasetCode };
-      const url = `${this.baseURL}/dataset`;
-      const result = await axios.head(url, options);
-      return result.status === 200;
+      const url = `${this.baseURL}/dataset/exist`;
+      const result = await axios.get(url, options);
+      return result.data.exist;
     } catch (error) {
       const errorMessage = `Error while finding dataset with token dataset code ${tokenDatasetCode}`;
       this.logger.error(`${errorMessage}: ${error}`);
