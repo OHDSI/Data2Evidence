@@ -79,7 +79,7 @@ echo >> $env_file
 echo ENV_TYPE=$ENV_TYPE >> $env_file
 echo GH_TOKEN=$ghtoken >> $env_file
 echo GH_USERNAME=$ghuser >> $env_file
-[ -z "${TLS__CADDY_DIRECTIVE-}" ] || echo TLS__CADDY_DIRECTIVE=$TLS__CADDY_DIRECTIVE >> $env_file
+[ -z "${TLS__CADDY_DIRECTIVE-}" ] || echo TLS__CADDY_DIRECTIVE="$TLS__CADDY_DIRECTIVE" >> $env_file
 [ -z "${CADDY__ALP__PUBLIC_FQDN-}" ] || echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $env_file
 
 # finish

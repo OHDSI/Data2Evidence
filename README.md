@@ -87,6 +87,10 @@ Navigate to the folder where d2e repo is downloaded. Run the folllowing:
 - Run the command to get the necessary docker images and run D2E:
 
 ```bash
+d2e start
+```
+or if the demo dataset should be used:
+```bash
 d2e startdemo
 ```
 
