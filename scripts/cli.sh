@@ -14,7 +14,6 @@ else
 fi
 export CADDY__CONFIG=./deploy/caddy-config
 export ENV_TYPE=${ENV_TYPE:-remote}
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
 DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
 export ENV_EXAMPLE=$node_modules_path/env.example

@@ -20,6 +20,9 @@ The following document outlines the Quick Start setup with demo data & pulls all
 npm install -g https://github.com/data2evidence/d2e/releases/download/latest/data2evidence-cli.tgz
 ```
 
+> [!NOTE]
+> The warning `npm warn tarball tarball data for @alp/alp-dbcli@file:cache/drivers/alp-dbcli-v1.0.0.tgz (null) seems to be corrupted. Trying again.` can be ignored
+
 ## Environment Variables and Credentials Setup
 
 - Create directory to store d2e configuration files and go to it. Please note that subsequent commands need to be executed in the directory:
@@ -55,7 +58,7 @@ Export additional shell variables as relevant. See: [here](docs/1-setup/env-type
 - Invoke the following commands to generate random secrets & suitable environment-variables to the `.env` file
 
 ```bash
-GH_USERNAME=$GH_USERNAME GH_TOKEN=$GH_TOKEN d2e init
+d2e init
 ```
 
 - See: [here](./docs/1-setup/env-vars.md) for a description of the environment variables generated
@@ -140,7 +143,7 @@ Please find information on how to add a custom dataset and configure D2E [here](
 - Click the **Demo Setup** - **Configure** button & follow the Demo Setup steps:
 
 1. **Setup demo database** - Click on the **Run** Button
-2. **Please restart all services** - by executing the following commands in the terminal: `d2e stopdemo`, `d2e startdemo` & `d2d patchdemodb`
+2. **Please restart all services** - by executing the following commands in the terminal: `d2e stopdemo`, `d2e startdemo` & `d2e patchdemodb`
 3. **Setup demo dataset** - Click on the **Run** Button
 
 The researcher portal is now populated with a demo dataset.

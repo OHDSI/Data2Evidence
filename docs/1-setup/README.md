@@ -94,14 +94,6 @@ brew install node@18
 
 - alternatively, see: https://nodejs.org/en/download
 
-## yarn
-
-- https://classic.yarnpkg.com/lang/en/docs/install
-
-```bash
-npm install --global yarn
-```
-
 ## openssl
 
 - openssl version 3 is required
@@ -114,19 +106,3 @@ npm install --global yarn
 brew install openssl@3
 ```
 
-## git
-
-- see: https://github.com/git-guides/install-git
-
-### ubuntu
-
-```bash
-sudo apt-get update
-sudo apt-get install git-all
-```
-
-### macos
-
-```bash
-brew install git
-```
