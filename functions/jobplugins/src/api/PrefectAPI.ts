@@ -332,32 +332,55 @@ export class PrefectAPI {
   }
 
   async createInputAuthToken(flowrunId: string) {
+    const retries = 3;
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
     const options = this.createOptions("POST", {
       key: key,
       value: JSON.stringify({ token: this.token }), // 'value' must be a string always. Convert the json object to a string
     });
-
     const errorMessage =
       "Error occurred while passing user token to the flow run";
     const url = `${this.baseURL}/flow_runs/${flowrunId}/input`;
-    const response = await fetch(url, options);
 
-    if (!response.ok) {
-      throw new Error(`${errorMessage}: ${response.statusText}`);
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        if (i < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 500ms before retrying
+        } else {
+          throw new Error(`${errorMessage}: ${error.message}`);
+        }
+      }
     }
   }
 
   async deleteInputAuthToken(flowrunId: string) {
+    const retries = 3;
     const errorMessage =
       'Error occurred while deleting "authtoken" flowrun input';
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
     const options = this.createOptions("DELETE");
     const url = `${this.baseURL}/flow_runs/${flowrunId}/input/${key}`;
 
-    const r = await fetch(url, options);
-    if (!r.ok) {
-      throw new Error(`${errorMessage}: ${r.statusText}`);
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.status == 204;
+      } catch (error) {
+        if (i < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 500ms before retrying
+        } else {
+          throw new Error(`${errorMessage}: ${error.message}`);
+        }
+      }
     }
   }
 

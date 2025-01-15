@@ -47,7 +47,6 @@ export class DatasetAPI {
         Authorization: this.token,
       },
       httpsAgent: this.httpsAgent,
-      timeout: 20000,
     };
 
     return options;

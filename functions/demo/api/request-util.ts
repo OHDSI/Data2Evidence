@@ -7,7 +7,7 @@ dotenv.config();
 
 const logger = console;
 
-axios.defaults.timeout = 10000;
+axios.defaults.timeout = 60000;
 
 if (env.NODE_ENV === "development") {
   const httpsAgent = new https.Agent({
