@@ -41,27 +41,31 @@ export class PaConfigApi {
       //   ca: env.SSL_CA_CERT
       // });
     } else {
-      throw new Error('No url is set for PaConfigApi');
+      throw new Error("No url is set for PaConfigApi");
     }
   }
 
   async getAllConfigs(): Promise<CdmConfig[]> {
     const requestConfig = this.getRequestConfig();
     const body = {
-      action: 'getAll'
+      action: "getAll",
     };
     const url = `${this.url}/enduser`;
     const result = await post<CdmConfig[]>(url, body, requestConfig);
     return result.data;
   }
 
-  async getPaConfig(id: string, type: PaConfigType): Promise<PaConfig> {
+  async getPaConfig(
+    id: string,
+    type: PaConfigType,
+    datasetId: string
+  ): Promise<PaConfig> {
     const requestConfig = this.getRequestConfig();
     const body = {
       action: CONFIG_TYPE_ACTIONS[type],
-      configId: id
+      configId: id,
     };
-    const url = `${this.url}/enduser`;
+    const url = `${this.url}/enduser?datasetId=${datasetId}`;
     const result = await post<PaConfig>(url, body, requestConfig);
     return result.data;
   }
@@ -69,8 +73,8 @@ export class PaConfigApi {
   private getRequestConfig(): AxiosRequestConfig {
     return {
       headers: {
-        Authorization: this.jwt
-      }
+        Authorization: this.jwt,
+      },
     };
   }
 }

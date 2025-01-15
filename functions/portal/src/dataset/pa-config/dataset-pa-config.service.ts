@@ -13,7 +13,10 @@ export class DatasetPaConfigService {
   async getDatasetBackendPaConfig(datasetId: string) {
     const dataset = await this.getDataset(datasetId)
     try {
-      return this.paConfigService.getBackendConfig(dataset.paConfigId)
+      return this.paConfigService.getBackendConfig(
+        dataset.paConfigId,
+        datasetId
+      );
     } catch (e) {
       if (e instanceof NotFoundException) {
         throw new NotFoundException(`Dataset with id ${datasetId} does not have backend PA config`)
@@ -25,7 +28,7 @@ export class DatasetPaConfigService {
   async getMyDatasetPaConfig(datasetId: string) {
     const dataset = await this.getDataset(datasetId)
     try {
-      return this.paConfigService.getMyConfig(dataset.paConfigId)
+      return this.paConfigService.getMyConfig(dataset.paConfigId, datasetId);
     } catch (e) {
       if (e instanceof NotFoundException) {
         throw new NotFoundException(`Dataset with id ${datasetId} does not have user's PA config`)
