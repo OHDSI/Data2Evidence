@@ -29,7 +29,7 @@ export class DataModelFlowService {
 
   public async getDataModels() {
     const plugins = await this.pgclient.query(
-      `SELECT payload::JSON FROM trex.plugins WHERE "name" = 'd2e-plugins';`
+      `SELECT payload::JSON FROM trex.plugins WHERE "name" = 'd2e-flows';`
     );
 
     let datamodels: DataModel[] = [];
