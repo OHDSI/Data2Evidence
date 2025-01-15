@@ -385,18 +385,20 @@ export async function loadBookmarks({
   userName,
   bookmarkIds,
   paConfigId,
+  datasetId,
   token,
   callback,
 }: {
   userName: string
   bookmarkIds: string[]
   paConfigId: string
+  datasetId: string
   token: string
   callback: CallBackInterface
 }) {
   const list = await Promise.all(
     bookmarkIds.map(bookmarkid =>
-      loadSingleBookmark(userName, bookmarkid, paConfigId, token, null).then(result => result.bookmarks[0])
+      loadSingleBookmark(userName, bookmarkid, paConfigId, token, datasetId).then(result => result.bookmarks[0])
     )
   )
     .then(data => {
@@ -501,6 +503,7 @@ export async function queryBookmarks(
           userName,
           bookmarkIds,
           paConfigId,
+          datasetId,
           token,
           callback,
         })

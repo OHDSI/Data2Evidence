@@ -154,7 +154,7 @@ export class BookmarkRouter {
           const user = getUser(req)
           const language = user.lang
           const userName = req.userName
-          const datasetId = req.params.datasetId
+          const datasetId = req.query.datasetId
 
           req.body.cmd = 'loadByIDs'
           req.body.bmkIds = (req.query.ids as string).split(',')

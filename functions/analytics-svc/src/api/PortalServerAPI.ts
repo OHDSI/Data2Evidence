@@ -61,8 +61,7 @@ export default class PortalServerAPI {
 
     async getStudy(token: string, datasetId: string) {
         const options = await this.getRequestConfig(token);
-        options.params = { datasetId };
-        const result = await axios.get(`${this.baseUrl}/dataset`, options);
+        const result = await axios.get(`${this.baseUrl}/dataset?datasetId=${datasetId}`, options);
         return result.data;
     }
 
@@ -72,10 +71,10 @@ export default class PortalServerAPI {
         return result.data;
     }
 
-    async getBookmarkById(token: string, bookmarkId: string): Promise<any> {
+    async getBookmarkById(token: string, bookmarkId: string, datasetId: string): Promise<any> {
         try {
             const options = await this.getRequestConfig(token);
-            const url = `${this.baseUrl}/user-artifact/bookmarks/${bookmarkId}`;
+            const url = `${this.baseUrl}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`;
             const result = await axios.get(url, options);
             return result.data;
         } catch (error) {
