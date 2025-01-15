@@ -34,8 +34,7 @@ cd d2e
 
 ### GitHub Personal Access Token
 
-> [!NOTE] 
-> The GitHub Personal Access Token is required to pull docker images and npm packages from GitHub. We recommend to create a dedicated GitHub access token with read:packages rights only.
+The GitHub Personal Access Token is required to pull docker images and npm packages from GitHub. We recommend to create a dedicated GitHub access token with read:packages rights only.
 
 - See: [here](./docs/1-setup/README.md) how create the values for GitHub Username (`GH_USERNAME`) & GitHub Personal Access token (`GH_TOKEN`)
 

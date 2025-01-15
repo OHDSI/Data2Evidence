@@ -19,6 +19,8 @@ DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
 export ENVFILE=.env
+export CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost:41100}
+export TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
 
 case $cmd in
     start)
