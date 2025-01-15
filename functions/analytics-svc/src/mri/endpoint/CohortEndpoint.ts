@@ -18,7 +18,7 @@ export class CohortEndpoint {
     ) {}
 
     private parseDateToString(date: Date): string {
-        return date.toISOString().slice(0, 19).replace("T", " ");
+        return date.toISOString().slice(0, 10).replace("T", " ");
     }
 
     private getInsertSyntaxQuery(): string {
@@ -45,10 +45,6 @@ export class CohortEndpoint {
                     break;
                 case "DATE":
                     selectQueryString += `WHERE TO_DATE(COHORT_INITIATION_DATE) = TO_DATE(%s)`;
-                    queryValues.push(queryParams[key]);
-                    break;
-                case "OWNER":
-                    selectQueryString += `WHERE UPPER(OWNER) = UPPER(%s)`;
                     queryValues.push(queryParams[key]);
                     break;
                 case "SYNTAX":
@@ -86,9 +82,7 @@ export class CohortEndpoint {
         COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
         TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
         COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
-        COHORT_MODIFICATION_DATE AS "COHORT_MODIFICATION_DATE",
         TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
-        OWNER AS "OWNER"
         FROM $$SCHEMA$$.COHORT_DEFINITION
         `;
 
@@ -117,8 +111,6 @@ export class CohortEndpoint {
                     name: cohortObj.COHORT_DEFINITION_NAME,
                     description: cohortObj.COHORT_DEFINITION_DESCRIPTION,
                     creationTimestamp: cohortObj.COHORT_INITIATION_DATE,
-                    modificationTimestamp: cohortObj.COHORT_MODIFICATION_DATE,
-                    owner: cohortObj.OWNER,
                     syntax: cohortObj.COHORT_DEFINITION_SYNTAX,
                 });
             }
@@ -157,15 +149,18 @@ export class CohortEndpoint {
     ) {
         let queryString = `
         INSERT INTO $$SCHEMA$$.COHORT_DEFINITION (
+            COHORT_DEFINITION_ID,
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
             COHORT_INITIATION_DATE,
-            OWNER,
             DEFINITION_TYPE_CONCEPT_ID,
             COHORT_DEFINITION_SYNTAX,
             SUBJECT_CONCEPT_ID
             )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)`;
+        VALUES (
+            (SELECT COALESCE(MAX(COHORT_DEFINITION_ID),0)+1 FROM $$SCHEMA$$.COHORT_DEFINITION),
+            %s, %s, %s, %s, %s, %s
+            )`;
 
         try {
             const query = QueryObject.format(
@@ -173,7 +168,6 @@ export class CohortEndpoint {
                 cohortDefinition.name,
                 cohortDefinition.description,
                 this.parseDateToString(cohortDefinition.creationTimestamp),
-                cohortDefinition.owner,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId
@@ -197,12 +191,11 @@ export class CohortEndpoint {
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
             COHORT_INITIATION_DATE,
-            OWNER,
             DEFINITION_TYPE_CONCEPT_ID,
             COHORT_DEFINITION_SYNTAX,
             SUBJECT_CONCEPT_ID
             )
-        = (%s, %s, %s, %s, %s, %s, %s)
+        = (%s, %s, %s, %s, %s, %s)
         WHERE COHORT_DEFINITION_ID = %s`;
 
         try {
@@ -211,7 +204,6 @@ export class CohortEndpoint {
                 cohortDefinition.name,
                 cohortDefinition.description,
                 this.parseDateToString(cohortDefinition.creationTimestamp),
-                cohortDefinition.owner,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId,
@@ -350,8 +342,8 @@ export class CohortEndpoint {
         let selectQueryString = `SELECT COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID" FROM $$SCHEMA$$.COHORT_DEFINITION 
         WHERE COHORT_DEFINITION_NAME=%s AND 
         TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s AND 
-        TO_TIMESTAMP(TO_VARCHAR(COHORT_INITIATION_DATE, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')=TO_TIMESTAMP(%s, 'YYYY-MM-DD HH24:MI:SS') AND
-        OWNER=%s
+        TO_DATE(COHORT_INITIATION_DATE)=TO_DATE(%s) AND 
+        TO_NVARCHAR(COHORT_DEFINITION_SYNTAX)=%s
         `;
 
         try {
@@ -360,7 +352,7 @@ export class CohortEndpoint {
                 cohortDefinition.name,
                 cohortDefinition.description,
                 this.parseDateToString(cohortDefinition.creationTimestamp),
-                cohortDefinition.owner
+                cohortDefinition.syntax
             );
             let selectQueryResult = await selectQuery.executeQuery(
                 this.connection

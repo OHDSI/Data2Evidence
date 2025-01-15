@@ -224,7 +224,6 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             const now = +new Date();
             await dataflowRequest(req, "POST", `cohort/flow-run`, {
                 options: {
-                    owner: req.body.owner,
                     token,
                     datasetId,
                     cohortJson: {
@@ -309,7 +308,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             bookmark.cohortDefinitionId = cohortDefinitionId;
 
             // Update bookmark with new cohort definition id
-            await portalServerAPI.updateBookmark(token, bookmark);
+            await portalServerAPI.updateBookmark(token, bookmark, datasetId);
         }
 
         res.status(200).send(`Cohort successfully materialized`);
@@ -378,11 +377,9 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
         const cohortDefiniton = <CohortDefinitionTableType>{
             name: req.body.name,
             description: req.body.description,
-            owner: req.body.owner,
             creationTimestamp: new Date(),
-            modificationTimestamp: null,
-            definitionTypeConceptId: req.body.definitionTypeConceptId,
-            subjectConceptId: req.body.subjectConceptId,
+            definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
+            subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,
         };
 
@@ -403,8 +400,8 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
 
 export async function renameCohortDefinition(req: IMRIRequest, res: Response) {
     try {
-        const cohortDefinitionId = req.body.cohortDefinitionId
-        const name = req.body.name
+        const cohortDefinitionId = req.body.cohortDefinitionId;
+        const name = req.body.name;
 
         const analyticsConnection = await getCohortAnalyticsConnection(req);
 
@@ -413,7 +410,10 @@ export async function renameCohortDefinition(req: IMRIRequest, res: Response) {
             analyticsConnection.schemaName
         );
 
-        await cohortEndpoint.renameCohortDefinitionToDb(cohortDefinitionId, name);
+        await cohortEndpoint.renameCohortDefinitionToDb(
+            cohortDefinitionId,
+            name
+        );
 
         res.status(204).send();
     } catch (err) {
@@ -462,10 +462,8 @@ async function getCohortFromMriQuery(
             name: cohortName,
             description: req.body.description,
             creationTimestamp: new Date(),
-            modificationTimestamp: null,
-            owner: req.body.owner,
-            definitionTypeConceptId: req.body.definitionTypeConceptId,
-            subjectConceptId: req.body.subjectConceptId,
+            definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
+            subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,
         };
 

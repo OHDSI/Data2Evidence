@@ -414,8 +414,6 @@ export type CohortDefinitionTableType = {
     name: string;
     description: string;
     creationTimestamp: Date;
-    modificationTimestamp: Date;
-    owner: string;
     definitionTypeConceptId?: string;
     subjectConceptId?: number;
     syntax?: string;

@@ -16,7 +16,7 @@ export default class PortalServerAPI {
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = { };
+        let options: AxiosRequestConfig = {};
         if (token) {
             options = {
                 headers: {
@@ -37,7 +37,7 @@ export default class PortalServerAPI {
         const options: AxiosRequestConfig = {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
-            }
+            },
         };
 
         const data = Object.keys(params)
@@ -61,7 +61,10 @@ export default class PortalServerAPI {
 
     async getStudy(token: string, datasetId: string) {
         const options = await this.getRequestConfig(token);
-        const result = await axios.get(`${this.baseUrl}/dataset?datasetId=${datasetId}`, options);
+        const result = await axios.get(
+            `${this.baseUrl}/dataset?datasetId=${datasetId}`,
+            options
+        );
         return result.data;
     }
 
@@ -71,7 +74,11 @@ export default class PortalServerAPI {
         return result.data;
     }
 
-    async getBookmarkById(token: string, bookmarkId: string, datasetId: string): Promise<any> {
+    async getBookmarkById(
+        token: string,
+        bookmarkId: string,
+        datasetId: string
+    ): Promise<any> {
         try {
             const options = await this.getRequestConfig(token);
             const url = `${this.baseUrl}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`;
@@ -84,11 +91,20 @@ export default class PortalServerAPI {
         }
     }
 
-    async updateBookmark(token: string, input: any): Promise<any> {
+    async updateBookmark(
+        token: string,
+        bookmark: any,
+        datasetId: string
+    ): Promise<any> {
         try {
             const options = await this.getRequestConfig(token);
-            const url = `${this.baseUrl}/user-artifact/bookmarks`;
-            const result = await axios.put(url, input, options);
+
+            const updateBookmarkDto = {
+                id: bookmark.id,
+                serviceArtifact: bookmark,
+            };
+            const url = `${this.baseUrl}/user-artifact/bookmarks?datasetId=${datasetId}`;
+            const result = await axios.put(url, updateBookmarkDto, options);
             return result.data;
         } catch (error) {
             console.error(error);

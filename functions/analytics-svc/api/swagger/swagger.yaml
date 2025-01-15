@@ -575,7 +575,6 @@ paths:
               - datasetId
               - mriquery
               - description
-              - owner
             properties:
               datasetId:
                 type: string
@@ -586,9 +585,6 @@ paths:
               description:
                 type: string
                 description: Cohort Description
-              owner:
-                type: string
-                description: Cohort Owner
               definitionTypeConceptId:
                 type: string
                 description: Cohort Definition Type Concept Id
@@ -692,7 +688,6 @@ paths:
               - datasetId
               - name
               - description
-              - owner
             properties:
               datasetId:
                 type: string
@@ -703,9 +698,6 @@ paths:
               description:
                 type: string
                 description: Cohort Description
-              owner:
-                type: string
-                description: Cohort Owner
               definitionTypeConceptId:
                 type: string
                 description: Cohort Definition Type Concept Id
@@ -1185,7 +1177,7 @@ definitions:
   CohortResponse:
     type: object
     description: Cohort belonging to the study
-    required: [id, patientIds, name, description, creationTimestamp, modificationTimestamp, owner]
+    required: [id, patientIds, name, description, creationTimestamp]
     properties:
       id:
         type: string
@@ -1204,12 +1196,6 @@ definitions:
       creationTimestamp:
         type: string
         description: Indicates when the cohort was created
-      modificationTimestamp:
-        type: string
-        description: Indicates when the cohort was modified
-      owner:
-        type: string
-        description: Indicates owner of cohort
   CohortListResponse:
     type: array
     description: Array of cohorts

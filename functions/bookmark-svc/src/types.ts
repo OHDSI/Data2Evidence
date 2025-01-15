@@ -132,8 +132,6 @@ export interface IcohortDefinition {
   name: string
   description: string
   creationTimestamp: string
-  modificationTimestamp: string
-  owner: string
   syntax: string
 }
 
