@@ -7,15 +7,15 @@ set -o errexit
 SCRIPTS_DIR=$(dirname $0)
 GIT_BASE_DIR="$(git rev-parse --show-toplevel)"
 ENVEG_FILE=$GIT_BASE_DIR/env.example
-README_FILE=$GIT_BASE_DIR/docs/1-setup/environment-variables.md
-VARS_YML=$SCRIPTS_DIR/env-vars.yml 
+README_FILE=$GIT_BASE_DIR/docs/1-setup/env-vars.md
+VARS_YML=$SCRIPTS_DIR/env-vars.yml
 USER_YML=env.user.yml
 
-# clear 
+# clear
 [ -e $README_FILE ] && rm $README_FILE
 
 echo  . parse env.example file
-cat $ENVEG_FILE | awk -F= '/=/ {print $1}' | sort -u  
+cat $ENVEG_FILE | awk -F= '/=/ {print $1}' | sort -u
 # generate env.example file
 # [ -e $ENVEG_FILE ] && rm $ENVEG_FILE
 # code $ENVEG_FILE

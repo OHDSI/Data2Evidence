@@ -6,6 +6,8 @@ set -o errexit
 # constants
 ghuser=${GH_USERNAME}
 ghtoken=${GH_TOKEN}
+CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN}
+TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE}
 
 if [ -z "${ENVFILE:-}" ]; then
     env_file=.env.${ENV_TYPE:-local}
@@ -13,15 +15,16 @@ else
     env_file=$ENVFILE
 fi
 
+echo env_file=$env_file
+
 example_file=${ENV_EXAMPLE:-env.example}
 tmp_file=.env.tmp
 
 default_password_length=30
 x509_subject="/C=SG/O=ALP Dev"
 
-# vars
-echo '' > $tmp_file 
-echo '' > $env_file
+# action
+echo '' > $tmp_file
 
 # passwords
 echo set-passwords ...
@@ -33,7 +36,7 @@ function set-password {
     echo ${password_name}=${password_value} >> $tmp_file
 }
 
-password_keys=($(cat $example_file | grep password$ | awk -F= '{print $1}')) # echo ${password_keys[@]}; 
+password_keys=($(cat $example_file | grep password$ | awk -F= '{print $1}')) # echo ${password_keys[@]};
 password_name=${password_keys[1]}
 for password_name in ${password_keys[@]}; do
     length=$default_password_length
@@ -49,7 +52,7 @@ function set-openssl {
     echo INFO set DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY DB_CREDENTIALS__INTERNAL__PUBLIC_KEY ...
     export PRIVATE_KEY=$(openssl genpkey  -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -quiet)
     export PUBLIC_KEY=$(echo "${PRIVATE_KEY}" | openssl rsa -pubout)
-    
+
     echo DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY=\'"${PRIVATE_KEY}"\' >> $tmp_file
     echo DB_CREDENTIALS__INTERNAL__PUBLIC_KEY=\'"${PUBLIC_KEY}"\' >> $tmp_file
 }
@@ -71,11 +74,13 @@ bash -c "set -a; source $tmp_file; cat $example_file | envsubst > $env_file"
 if [ ${ENV_TYPE:-local} = local ]; then
     echo DOCKER_TAG_NAME=local >> $env_file
 fi
-echo GH_USERNAME=$ghuser >> $env_file
-echo GH_TOKEN=$ghtoken >> $env_file
-
 echo >> $env_file
 
+echo ENV_TYPE=$ENV_TYPE >> $env_file
+echo GH_TOKEN=$ghtoken >> $env_file
+echo GH_USERNAME=$ghuser >> $env_file
+[ -z "${TLS__CADDY_DIRECTIVE-}" ] || echo TLS__CADDY_DIRECTIVE=$TLS__CADDY_DIRECTIVE >> $env_file
+[ -z "${CADDY__ALP__PUBLIC_FQDN-}" ] || echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $env_file
 
 # finish
 wc -l $env_file

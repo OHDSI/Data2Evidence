@@ -8,7 +8,7 @@ services:
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
       LOCAL_DEBUG: "true"
-      DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS}
+      DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       PLUGINS_SEED: '["d2e-flows", "d2e-ui"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
@@ -84,7 +84,7 @@ services:
     ports:
       - 41190:5432
       - 5432:5432
-  
+
   broadsea-atlasdb:
     ports:
       - "15432:5432"

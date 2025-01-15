@@ -33,3 +33,4 @@ alp-data-node-override
 liquibase
 
 **/liveness
+data2evidence-cli-*.tgz

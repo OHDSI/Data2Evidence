@@ -14,6 +14,8 @@ else
 fi
 export CADDY__CONFIG=./deploy/caddy-config
 export ENV_TYPE=${ENV_TYPE:-remote}
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
 export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
@@ -21,22 +23,22 @@ export ENVFILE=.env
 
 case $cmd in
     start)
-        docker compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait
         ;;
     startdemo)
-        docker compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env up --wait
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env up --wait
         ;;
     stop)
-        docker compose --file $node_modules_path/docker-compose.yml --env-file .env stop
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env stop
         ;;
     stopdemo)
-        docker compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env stop
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env stop
         ;;
     clean)
         read -p "This action will delete all docker containers and volumnes. Continue (y/n)?" choice
-        case "$choice" in 
+        case "$choice" in
             y|Y)
-                docker compose --file $node_modules_path/docker-compose.yml --env-file .env down --volumes --remove-orphans
+                docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env down --volumes --remove-orphans
                 ;;
             *)
                 echo "Aborting";;
@@ -44,9 +46,9 @@ case $cmd in
         ;;
     cleandemo)
         read -p "This action will delete all docker containers and volumnes. Continue (y/n)?" choice
-        case "$choice" in 
+        case "$choice" in
             y|Y)
-                docker compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env down --volumes --remove-orphans
+                docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env down --volumes --remove-orphans
                 ;;
             *)
                 echo "Aborting";;
@@ -56,9 +58,8 @@ case $cmd in
         docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
         ;;
     setup)
-        docker compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait &&
-        sleep 10 &&
-        docker compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-logto-post-init
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait && sleep 10 &&
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-logto-post-init
         ;;
     init)
         sed '3d' $node_modules_path/README.md > README.md &&
@@ -91,6 +92,6 @@ case $cmd in
         echo "  cleandemo   Removes d2e docker containers and volumnes incl. demo database"
         ;;
 esac
-    
 
-#docker compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait
+
+#docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait

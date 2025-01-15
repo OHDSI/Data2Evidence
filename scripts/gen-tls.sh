@@ -24,6 +24,7 @@ else
     DOTENV_FILE=$ENVFILE
 fi
 
+echo DOTENV_FILE=$DOTENV_FILE
 touch ${DOTENV_FILE}
 
 mkdir -p $CACHE_DIR
@@ -39,6 +40,7 @@ if [ ${TLS_REGENERATE} = true ]; then
 	docker volume inspect $VOLUME_NAME > /dev/null && docker run --rm -v $VOLUME_NAME:/volume -w /volume busybox rm -rf /volume/caddy/certificates/$TLS_CA_NAME/wildcard_.$DOMAIN_NAME
 fi
 
+docker rm -f $CONTAINER_NAME 2> /dev/null || true # remove if exists from previous fail
 docker run -d -v $VOLUME_NAME:/data -v $caddyconfig:/srv/caddy-config --name $CONTAINER_NAME caddy:2.8-alpine caddy run --config /srv/caddy-config/Caddyfile --adapter caddyfile
 
 # Allow time for caddy to generate certs
@@ -56,7 +58,6 @@ TLS__INTERNAL__CRT_FILE=tls__internal.crt
 TLS__INTERNAL__CRT_PATH=$CACHE_DIR/$TLS__INTERNAL__CRT_FILE
 TLS__INTERNAL__KEY_FILE=tls__internal.key
 TLS__INTERNAL__KEY_PATH=$CACHE_DIR/$TLS__INTERNAL__KEY_FILE
-
 
 docker cp $CONTAINER_NAME:/$CONTAINER_CA_DIR/root.crt $TLS__INTERNAL__CA_CRT_PATH
 echo TLS__INTERNAL__CA_CRT=\'"$(cat $TLS__INTERNAL__CA_CRT_PATH)"\' >> $DOTENV_FILE

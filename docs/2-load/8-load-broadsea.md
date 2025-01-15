@@ -1,9 +1,9 @@
-
 # Broadsea-atlasdb
-- Initially, the D2E system does not contain any data
-- This docker container is part of the OHDSI Broadsea set of Docker containers. 
 
-# Configure Patient Database Credentials 
+- Initially, the D2E system does not contain any data
+- This docker container is part of the OHDSI Broadsea set of Docker containers.
+
+# Configure Patient Database Credentials
 
 ## Add database connection details & credentials
 
@@ -16,36 +16,41 @@
 - Add the values from the table below.
 - Click **Save**
 
-
-name | value | note
---- | --- | ---
-Host | broadsea-atlasdb | PostgreSQL container name /or/ external database FQDN
-Database code | broadsea_atlasdb | display name
-Database name | postgres | actual name
-Vocab schemas | demo_cdm | select from dropdown. `*`
-Extra | {"max": 50, "schema": "demo_cdm", "queryTimeout": 60000, "statementTimeout": 60000, "idleTimeoutMillis": 300000, "connectionTimeoutMillis": 60000, "idleInTransactionSessionTimeout": 300000}
-Admin username | postgres | `*`
-Read username | postgres | `*`
-Admin password | mypass | `*`
-Read password | mypass | `*`
+| name           | value                                                                                                                                                                                         | note                                                  |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Host           | broadsea-atlasdb                                                                                                                                                                              | PostgreSQL container name /or/ external database FQDN |
+| Database code  | broadsea_atlasdb                                                                                                                                                                              | display name                                          |
+| Database name  | postgres                                                                                                                                                                                      | actual name                                           |
+| Vocab schemas  | demo_cdm                                                                                                                                                                                      | select from dropdown. `*`                             |
+| Extra          | {"max": 50, "schema": "demo_cdm", "queryTimeout": 60000, "statementTimeout": 60000, "idleTimeoutMillis": 300000, "connectionTimeoutMillis": 60000, "idleInTransactionSessionTimeout": 300000} |
+| Admin username | postgres                                                                                                                                                                                      | `*`                                                   |
+| Read username  | postgres                                                                                                                                                                                      | `*`                                                   |
+| Admin password | mypass                                                                                                                                                                                        | `*`                                                   |
+| Read password  | mypass                                                                                                                                                                                        | `*`                                                   |
 
 notes:
-- `*` - schema/usernames are the values expected for sample data load steps - do not change 
+
+- `*` - schema/usernames are the values expected for sample data load steps - do not change
 
 ## Restart Containers
 
 Run the following command to restart the system for the new connection details be provisioned to the data services
+
 ```bash
-yarn start:minerva --force-recreate
+d2e start
 ```
 
-# Create a dataset 
-- open https://localhost:41100/portal
-- Login as primary admin as
+# Create a dataset
+
+- Input the D2E Portal URL into a Chrome Web Browser:
+
+  - [https://localhost:41100/portal](https://localhost:41100/portal) - local workstation
+  - `https://<FQDN>/portal` - remote server
+- Login as primary admin
 - Select **Admin** mode
 - Navigate to **Datasets**
 - Select **Add dataset**
-- Provide the following values in the table below: 
+- Provide the following values in the table below:
 
 name | value | note
 --- | --- | ---
@@ -60,6 +65,6 @@ Token dataset code | e.g. DemoDataset
 
 ### Patch tables
 Run command below to patch cohort_definition table and add cohort table
-```
+```bash
 docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
 ```

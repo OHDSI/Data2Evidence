@@ -20,7 +20,7 @@ of the [Postgres wire protocol (PDF)](https://beta.pgcon.org/2014/schedule/attac
 
 2. Protocol B database param Format: `PROTOCOL|DIALECT|CONNECTION_TYPE|DATABASE_CODE|SCHEMA_NAME|VOCAB_SCHEMA_NAME`
 
-   **_NOTE:_**
+   > [!NOTE]
 
    - **Protocol B database access is only allowed for system admins**
    - **For access to postgresql and hana dialects, SCHEMA_NAME and VOCAB_SCHEMA_NAME values are optional**

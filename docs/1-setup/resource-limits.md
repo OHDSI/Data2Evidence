@@ -45,7 +45,7 @@ This will automatically generate these 3 environment variables into the `.env.lo
 2. D2E_MEMORY_LIMIT
 3. D2E_SWAP_LIMIT
 
-### NOTE:
+> [!NOTE]
 
 For `D2E_CPU_LIMIT` and `D2E_MEMORY_LIMIT`, 70% of the system's available resource will be used as the limit by default.
 

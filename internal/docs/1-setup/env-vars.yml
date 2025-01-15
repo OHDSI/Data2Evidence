@@ -1,0 +1,594 @@
+DOCKER_REGISTRY_USERNAME:
+  comment: |
+    used by alp-dataflow-gen-worker to pull images
+    open: https://github.com/settings > Go to your personal profile
+    command: gh api user -q .login
+  type: password
+  generatedBy: user
+DOCKER_REGISTRY_PASSWORD:
+  comment: |
+    Github PAT token
+    generate: https://github.com/settings/tokens/new?description=d2e%20GH_TOKEN%20(read:packages)&scopes=read:packages
+    see: docs/1-setup/README.md
+  type: string
+  generatedBy: user
+ALP_RELEASE:
+  comment: Release Name
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+ALP__SYSTEM_ID:
+  comment: System ID
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+ALP__SYSTEM_NAME:
+  comment: System Name
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+APP__TENANT_NAME:
+  comment: Tenant Name
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+AZURE__IDP__AUTHORITY_URL:
+  comment: Authority URL for Azure Entra IDP
+  envNames:
+    remote: xxx
+  type: string
+AZURE__IDP__CLIENT_ID:
+  comment: App Client ID for Azure Entra IDP
+  envNames:
+    remote: xxx
+  type: string
+AZURE__IDP__CLIENT_SECRET:
+  comment: App Client Secret for Azure Entra IDP
+  envNames:
+    remote: xxx
+  type: password
+CADDY_INSTANCE_SPECIFIC_DIRECTIVES:
+  comment: null
+  envNames:
+    alp-stg-de-1: xxx
+  type: string
+CADDY__ALP__ALIAS_PUBLIC_FQDN:
+  comment: Public FQDN Alias
+  envNames:
+    alp-stg-de-1: xxx
+  type: string
+CADDY__ALP__PUBLIC_FQDN:
+  comment: Public FQDN
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+CADDY__BLOCK_LOGTO_ADMIN_CONSOLE:
+  comment: allow logto console
+  envNames:
+    "*": xxx
+  type: string
+CADDY__LOGTO_IDP__PUBLIC_FQDN:
+  comment: LogTo Public FQDN
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+  type: string
+D2E_CPU_LIMIT:
+  comment: Dynamically Calculated Limit
+  envNames:
+    alp-stg-de-1: "xxx"
+  type: string
+D2E_MEMORY_LIMIT:
+  comment: Dynamically Calculated Limit
+  envNames:
+    alp-stg-de-1: xxx
+  type: string
+DATABASE_CREDENTIALS:
+  comment: database connection configuration (credentials, tags, schema ...)
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: object
+DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY:
+  comment: to encrypt dbcredentials entered in admin>setup>databases>configure (no passphrase)
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: rsaPrivateKey
+DB_CREDENTIALS__INTERNAL__PRIVATE_KEY:
+  comment: for descrypting dbcreds secrets
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE:
+  comment: to encrypt dbcredentials entered in admin>setup>databases>configure
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: passphrase
+DB_CREDENTIALS__INTERNAL__PUBLIC_KEY:
+  comment: to encrypt dbcredentials entered in admin>setup>databases>configure
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: x509publicKey
+DICOM__HEALTH_CHECK_PASSWORD:
+  comment: deprecated
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+DOCKER_TAG_NAME:
+  comment: defaults to develop tag
+  generatedBy: user
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+DOCKER__RESTART_POLICY:
+  comment: auto restart on issue. logging debug simpler if off
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+ENV_TYPE:
+  comment: local|remote - refers to .env.${ENV_TYPE}
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+FHIR__CLIENT_SECRET:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+GH_TOKEN:
+  comment: GitHub token passed to trex
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+GIT_TOKEN__PLUGINS_REPO_READ:
+  comment: Git token to read private plugins repo
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__CRT:
+  comment: HANA public certificate
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__HOSTNAME:
+  comment: HANA hostname
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__TENANT_ADMIN_PASSWORD:
+  comment: tenant admin password on HANA
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__TENANT_ADMIN_PASSWORD_SALT:
+  comment: admin password salt on HANA
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__TENANT_READ_PASSWORD:
+  comment: read password on HANA
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+HANA__TENANT_READ_PASSWORD_SALT:
+  comment: read password salt on HANA
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+LOGTO_API_M2M_CLIENT_ID:
+  comment: generated
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+LOGTO_API_M2M_CLIENT_SECRET:
+  comment: generated
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+LOGTO__ALP_APP__CLIENT_ID:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+LOGTO__ALP_APP__CLIENT_SECRET:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: password
+LOGTO__ALP_DATA__CLIENT_ID:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+LOGTO__ALP_DATA__CLIENT_SECRET:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: password
+LOGTO__ALP_SVC__CLIENT_ID:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+LOGTO__ALP_SVC__CLIENT_SECRET:
+  comment: generated with logto APIs post init
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: password
+LOGTO__CLIENTID_PASSWORD__BASIC_AUTH:
+  comment: generated from `LOGTO_API_M2M_CLIENT_ID` & `LOGTO_API_M2M_CLIENT_SECRET`
+  generatedBy:
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: base64 encoded
+MEILI_MASTER_KEY:
+  comment: meilisearch master key
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+MINIO__SECRET_KEY:
+  comment: meilisearch secret_key
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+NOT_EQ_CHECK_FILTERCARDS:
+  comment: null
+  envNames:
+    alp-stg-de-1: xxx
+  type: string
+PG_ADMIN_PASSWORD:
+  comment: admin permissions
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+PG_SUPER_PASSWORD:
+  comment: all permissions
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+PG_WRITE_PASSWORD:
+  comment: write permissions only
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+PLUGINS_SEED_UPDATE:
+  comment: boolean
+  envNames:
+    alp-dev-sg-2: xxx
+  type: string
+POSTGRES_ANALYTICS_DB_CODE:
+  comment: null
+  envNames:
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+POSTGRES_ANALYTICS_DB_NAME:
+  comment: null
+  envNames:
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+  type: string
+POSTGRES_TENANT_ADMIN_PASSWORD:
+  comment: set in admin>setup>databases>configure
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+POSTGRES_TENANT_ADMIN_PASSWORD_PLAIN:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+POSTGRES_TENANT_ADMIN_PASSWORD_SALT:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+POSTGRES_TENANT_READ_PASSWORD:
+  comment: set in admin>setup>databases>configure
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: password
+POSTGRES_TENANT_READ_PASSWORD_PLAIN:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+POSTGRES_TENANT_READ_PASSWORD_SALT:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+REDIS_PASSWORD:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+SQL_RETURN_ON:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+STRATEGUS__KEYRING_PASSWORD:
+  comment: null
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-dev-sg-3: xxx
+    alp-stg-de-1: xxx
+    alp-stg-sg-1: xxx
+    alp-stg-sg-2: xxx
+    local: xxx
+    remote: xxx
+  type: string
+TLS__CADDY_DIRECTIVE:
+  comment: |
+    blank(default) - indicates publicly trusted certificate from Let's Encrypt
+    'tls internal' - generate with caddy internal certificate authority
+  envNames:
+    alp-stg-de-1: "xxx"
+    alp-stg-sg-1: "xxx"
+    local: xxx
+    remote: xxx
+  type: string
+  generatedBy: user
+USE_CACHEDB:
+  comment: boolean
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-stg-de-1: xxx
+  type: string
+USE_DUCKDB:
+  comment: boolean
+  envNames:
+    alp-dev-sg-2: xxx
+  type: string
+USE_DUCKDB_FTS:
+  comment: boolean
+  envNames:
+    alp-dev-sg-2: xxx
+    alp-stg-de-1: xxx
+  type: string
