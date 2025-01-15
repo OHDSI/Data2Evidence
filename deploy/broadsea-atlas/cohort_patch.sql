@@ -34,10 +34,3 @@ CREATE TABLE
     cohort_start_date timestamp NOT NULL,
     cohort_end_date timestamp NULL
   );
-
--- Update cdm_version value in cdm_source
-UPDATE cdm_source
-SET
-  cdm_version = 'v5.3'
-WHERE
-  cdm_version = 'v5.3.1';

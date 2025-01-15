@@ -11,6 +11,7 @@ import {
   DataCharacterizationFlowRunDto,
   DataCharacterizationOptions,
 } from "../types.ts";
+import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 
 export class DataCharacterizationService {
   public async getDataCharacterizationResults(
@@ -140,7 +141,7 @@ export class DataCharacterizationService {
         schemaName,
         databaseCode,
         datasetId,
-        cdmVersionNumber,
+        cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName,
         comment,
         resultsSchema: dataCharacterizationResultsSchema,

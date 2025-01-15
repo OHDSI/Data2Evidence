@@ -13,6 +13,7 @@ import {
   IDomainContinuityResult,
 } from "../types.ts";
 import { DataQualityOverviewParser } from "../utils/DataQualityOverviewParser.ts";
+import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 
 export class DqdService {
   private dataQualityOverviewParser = new DataQualityOverviewParser();
@@ -135,7 +136,7 @@ export class DqdService {
         schemaName,
         databaseCode,
         datasetId,
-        cdmVersionNumber,
+        cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName: vocabSchema || vocabSchemaName,
         comment,
         cohortDefinitionId,
