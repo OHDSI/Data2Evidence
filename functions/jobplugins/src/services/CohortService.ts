@@ -19,12 +19,21 @@ export class CohortService {
     );
 
     await prefectApi.createInputAuthToken(flowRunId);
-    await new Promise((resolve) => {
-      setTimeout(async () => {
-        await prefectApi.deleteInputAuthToken(flowRunId);
-        resolve(`Deleted the input of ${flowRunId}`);
-      }, 5000);
-    });
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await prefectApi.deleteInputAuthToken(flowRunId))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
 
     return { flowRunId };
   }
