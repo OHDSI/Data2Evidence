@@ -72,7 +72,7 @@ export class PortalServerAPI {
     }
   }
 
-  async getFlowRunResults(filePaths) {
+  async getFlowRunResults(filePaths, datasetId: string) {
     try {
       let url = `${this.baseURL}/prefect/results`;
       const params = new URLSearchParams();
@@ -81,6 +81,7 @@ export class PortalServerAPI {
       } else {
         filePaths.forEach((path) => params.append("filePaths[]", path));
       }
+      params.append("datasetId", datasetId);
       url += `?${params.toString()}`;
       console.info(url);
       const options = this.createOptions("GET");

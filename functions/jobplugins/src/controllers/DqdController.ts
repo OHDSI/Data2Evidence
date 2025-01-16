@@ -20,6 +20,7 @@ export class DqdController {
     this.router.get(
       "/flow-run/:flowRunId/results",
       param("flowRunId").isUUID(),
+      validateDataQualityDatasetId(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -33,6 +34,7 @@ export class DqdController {
     this.router.get(
       "/flow-run/:flowRunId/overview",
       param("flowRunId").isUUID(),
+      validateDataQualityDatasetId(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -150,10 +152,12 @@ export class DqdController {
   private async getDataQualityResults(req: Request, res: Response) {
     try {
       const flowRunId = req.params.flowRunId;
+      const datasetId = req.query.datasetId;
       const token = req.headers.authorization!;
       const dqdResult = await this.dqdService.getDataQualityResult(
         flowRunId,
-        token
+        token,
+        datasetId
       );
 
       if (dqdResult) {
@@ -170,10 +174,12 @@ export class DqdController {
   private async getDataQualityOverview(req: Request, res: Response) {
     try {
       const flowRunId = req.params.flowRunId;
+      const datasetId = req.query.datasetId;
       const token = req.headers.authorization!;
       const overview = await this.dqdService.getDataQualityOverview(
         flowRunId,
-        token
+        token,
+        datasetId
       );
 
       if (overview) {
