@@ -24,7 +24,7 @@ on:
         default: true
 
 env:
-  DOCKER_TAG_NAME: ${{ github.event.inputs.docker_tag_name }}
+  DOCKER_TAG_NAME: ${{ github.event.inputs.docker_tag_name || 'develop' }}
   ENV_NAME: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
   ENV_TYPE: remote
 
