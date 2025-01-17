@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - develop
+      - "release/*"
   workflow_dispatch:
 
 env:
@@ -19,46 +20,52 @@ jobs:
       SERVICE_ROUTES: '{"portalServer": "dummy", "usermgmt": "dummy", "idIssuerUrl": "dummy"}'
       DUCKDB_EXTENSIONS_FOLDER: "/home/runner/work/d2e/d2e/services/cachedb/duckdb_extensions"
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Create folder to store duckdb extensions for offline plugins
-      run: |
-        mkdir $DUCKDB_EXTENSIONS_FOLDER
+      - name: Create folder to store duckdb extensions for offline plugins
+        run: |
+          mkdir $DUCKDB_EXTENSIONS_FOLDER
 
-    - uses: dorny/paths-filter@v3.0.2
-      id: check_file_changed
-      with:
-        filters: |
-          cachedb_changed:
-            - 'services/cachedb/**'
-            
-    - name: Setup python if files have changed
-      uses: actions/setup-python@v2
-      if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.cachedb_changed == 'True'
-      with:
-        python-version: 3.11.1
-        cache: 'pip'
-  
-    - name: Install pip packages if files have changed
-      if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.cachedb_changed == 'True'
-      working-directory: ./services/cachedb
-      run: |
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - uses: dorny/paths-filter@v3.0.2
+        id: check_file_changed
+        with:
+          filters: |
+            cachedb_changed:
+              - 'services/cachedb/**'
 
-    # Create folder to store duckdb extensions for offline plugins
-    - name: Install duckdb extensions for offline use if files have changed
-      env: 
-        DUCKDB_VERSION: 1.1.1 # version must match duckdb in requirements.txt
-      if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.cachedb_changed == 'True'
-      working-directory: ./services/cachedb/duckdb_extensions
-      run: |
-        wget https://extensions.duckdb.org/v$DUCKDB_VERSION/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz && 
-        wget https://extensions.duckdb.org/v$DUCKDB_VERSION/linux_amd64_gcc4/fts.duckdb_extension.gz && 
-        gzip -d postgres_scanner.duckdb_extension.gz && 
-        gzip -d fts.duckdb_extension.gz
+      - name: Determine condition to run
+        env:
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.cachedb_changed == 'True' }}
+        run: |
+          echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
-    - name: Run unit tests if files have changed
-      if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.cachedb_changed == 'True'
-      working-directory: ./services/cachedb/src
-      run: PYTHON_ENV=TEST python3 -m pytest -v --disable-pytest-warnings
+      - name: Setup python if files have changed
+        uses: actions/setup-python@v2
+        if: env.WF_RUN == 'true'
+        with:
+          python-version: 3.11.1
+          cache: "pip"
+
+      - name: Install pip packages if files have changed
+        if: env.WF_RUN == 'true'
+        working-directory: ./services/cachedb
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # Create folder to store duckdb extensions for offline plugins
+      - name: Install duckdb extensions for offline use if files have changed
+        env:
+          DUCKDB_VERSION: 1.1.1 # version must match duckdb in requirements.txt
+        if: env.WF_RUN == 'true'
+        working-directory: ./services/cachedb/duckdb_extensions
+        run: |
+          wget https://extensions.duckdb.org/v$DUCKDB_VERSION/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz && 
+          wget https://extensions.duckdb.org/v$DUCKDB_VERSION/linux_amd64_gcc4/fts.duckdb_extension.gz && 
+          gzip -d postgres_scanner.duckdb_extension.gz && 
+          gzip -d fts.duckdb_extension.gz
+
+      - name: Run unit tests if files have changed
+        if: env.WF_RUN == 'true'
+        working-directory: ./services/cachedb/src
+        run: PYTHON_ENV=TEST python3 -m pytest -v --disable-pytest-warnings

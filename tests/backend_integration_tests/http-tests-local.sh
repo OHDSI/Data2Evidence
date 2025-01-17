@@ -35,12 +35,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' 's/duckdb-data-1:/http-test-volume-2:/' "docker-compose.yml"
     sed -i '' 's/minio-data-1:/http-test-volume-4:/' "docker-compose.yml"
     sed -i '' 's/pg-minerva-data-1:/http-test-volume-5:/' "docker-compose.yml"
-    sed -i '' 's/dicom-sqlite-storage:/http-test-volume-6:/' "docker-compose.yml"
     sed -i '' 's/r-libs:/http-test-volume-7:/' "docker-compose.yml"
     sed -i '' '1,/trex:/s/  trex:/  http-test-volume-trex:/' "docker-compose.yml" # for trex volume, does not replace service name
     sed -i '' 's/- trex:/- http-test-volume-trex:/' "docker-compose.yml"
     sed -i '' 's/fhir-schema-file-1:/http-test-volume-fhir:/' "docker-compose.yml"
-    sed -i '' 's/dind-certs:/http-test-volume-dind:/' "docker-compose.yml"
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # caddy's volume is not unique, so handled differently
@@ -50,12 +48,10 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sed -i 's/duckdb-data-1:/http-test-volume-2:/' "docker-compose.yml"
     sed -i 's/minio-data-1:/http-test-volume-4:/' "docker-compose.yml"
     sed -i 's/pg-minerva-data-1:/http-test-volume-5:/' "docker-compose.yml"
-    sed -i 's/dicom-sqlite-storage:/http-test-volume-6:/' "docker-compose.yml"
     sed -i 's/r-libs:/http-test-volume-7:/' "docker-compose.yml"
     sed -i '0,/trex:/s/  trex:/  http-test-volume-trex:/' docker-compose.yml
     sed -i 's/- trex:/- http-test-volume-trex:/' "docker-compose.yml"
     sed -i 's/fhir-schema-file-1:/http-test-volume-fhir:/' "docker-compose.yml"
-    sed -i 's/dind-certs:/http-test-volume-dind:/' "docker-compose.yml"
 else
     echo "Unsupported OS: $OSTYPE"
     exit 1

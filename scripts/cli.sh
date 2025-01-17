@@ -2,6 +2,9 @@
 
 cmd=${@: -1}
 script_full_path=$(dirname "$0")
+dockertag=${DOCKER_TAG:-0.5.0-beta}
+export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~0.5.0}
+
 if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
   node_modules_path=$D2ECLI_NODE_MODULES_PATH
 elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
@@ -16,6 +19,8 @@ export CADDY__CONFIG=./deploy/caddy-config
 export ENV_TYPE=${ENV_TYPE:-remote}
 DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
+export DOCKER_TAG_NAME=$dockertag
+export DOCKER_TREX_TAG_NAME=$dockertag
 export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
 export ENVFILE=.env
@@ -59,7 +64,10 @@ case $cmd in
         docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
         ;;
     setup)
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait && sleep 10 &&
+        docker pull ghcr.io/data2evidence/d2e-flow/base:$dockertag &&
+        docker pull ghcr.io/data2evidence/d2e-flow/nlp:$dockertag &&
+        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait &&
+        sleep 10 &&
         docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-logto-post-init
         ;;
     init)
@@ -69,7 +77,6 @@ case $cmd in
         $node_modules_path/scripts/gen-dotenv.sh && $node_modules_path/scripts/gen-tls.sh && $node_modules_path/scripts/gen-resource-limits.sh
         ;;
     login)
-        source .env
         docker login -u $GH_USERNAME -p $GH_TOKEN ghcr.io
         ;;
     *)

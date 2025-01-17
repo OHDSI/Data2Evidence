@@ -12,7 +12,6 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   ENV_NAME: local
   ENV_TYPE: local
-  REGISTRY_URL: "alpcr.azurecr.io"
   D2E_RESOURCE_LIMIT: 1 # Use all the resources for GHA
 
 # Run only one job per branch
@@ -22,7 +21,7 @@ concurrency:
 jobs:
   check_file_changes:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
@@ -48,7 +47,6 @@ jobs:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ubuntu-latest
-      #group: dockerup # Custom runner 4 cpus & 14gb ram
     timeout-minutes: 60
     env:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
@@ -94,13 +92,6 @@ jobs:
           echo "isHttpTestRun: ${isHttpTestRun}"
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
-
-      - name: Login to ACR for pulling alp-caddy
-        uses: docker/login-action@v3.1.0
-        with:
-          registry: alpcr.azurecr.io
-          username: ${{ env.REGISTRY_USERNAME }}
-          password: ${{ env.REGISTRY_PASSWORD }}
 
       - name: Install 1Password CLI
         uses: 1password/install-cli-action@v1

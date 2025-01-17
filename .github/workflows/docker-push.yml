@@ -24,6 +24,10 @@ on:
         description: Enter BranchName / ReleaseTagName
         required: true
         type: string
+      DOCKER_IMAGE_TAG_NAME:
+        description: Enter Tag name for docker image
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push-prune
@@ -45,7 +49,9 @@ jobs:
           DOCKER_BUILD_PUSH_BOOL_STR=true
           if [ $GIT_BRANCH_NAME == "develop" ]; then
             DOCKER_IMG_TAG_NAME=develop
-          elif [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true ] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ]; then
+          elif [ $GITHUB_EVENT_NAME = "workflow_dispatch" ]; then
+            DOCKER_IMG_TAG_NAME=$DOCKER_IMAGE_TAG_NAME
+          elif [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true ]; then
             DOCKER_IMG_TAG_NAME=$GIT_BRANCH_NAME
             if [[ $GIT_BRANCH_NAME = */* ]]; then
               DOCKER_IMG_TAG_NAME=$(printf "%s" "$GIT_BRANCH_NAME" | awk -F '/' '{print $2}')

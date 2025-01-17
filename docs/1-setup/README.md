@@ -106,3 +106,15 @@ brew install node@18
 brew install openssl@3
 ```
 
+## gettext
+
+- you might need to do this if you encounter any issues with envsubst later
+
+### macos
+
+- https://www.gnu.org/software/gettext/
+
+```bash
+brew install gettext
+brew link --force gettext 
+```

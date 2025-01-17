@@ -9,11 +9,9 @@ volumes:
   cdw-config-cachedb-data-1:
   minio-data-1:
   pg-minerva-data-1:
-  dicom-sqlite-storage:
   r-libs:
   trex:
   fhir-schema-file-1:
-  dind-certs:
 
 x-envs:
   db-svc: &x-dbsvc

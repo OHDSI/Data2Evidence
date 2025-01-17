@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - develop
+      - "release/*"
   workflow_dispatch:
 
 env:
@@ -24,8 +25,7 @@ concurrency:
 jobs:
   docker-compose-up:
     runs-on: ubuntu-latest # Custom runner 4 cpus & 14gb ram
-
-    if: (github.ref_name == 'develop' || contains('rc-', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/rc/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     steps:
       # - name: Free Disk Space (Ubuntu)
       #   uses: jlumbroso/free-disk-space@main
@@ -88,28 +88,7 @@ jobs:
           REGISTRY_USERNAME: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/username"
           REGISTRY_PASSWORD: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/password"
 
-      # - name: 1password ratelimit end
-      #   env:
-      #     OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-      #   run: |
-      #     ./internal/scripts/get-op-ratelimit.sh
-
-      # - name: Upload stats.yml artifact
-      #   uses: actions/upload-artifact@v4
-      #   if: always()
-      #   with:
-      #     name: stats
-      #     retention-days: 30
-      #     path: |
-      #       ${{ github.job }}*.yml
-
-      #- name: Login to ACR
-      #  uses: docker/login-action@v3.1.0
-      #  with:
-      #    registry: alpcr.azurecr.io
-      #    username: ${{ env.REGISTRY_USERNAME }}
-      #    password: ${{ env.REGISTRY_PASSWORD }}
-      - name: 'Login to GitHub Container Registry'
+      - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io

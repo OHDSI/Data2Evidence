@@ -13,7 +13,7 @@
 
 ### `CADDY__ALP__PUBLIC_FQDN` - Fully Qualified Domain Name (FQDN) for TLS communication over https
 
-- `localhost:41000` (**default**) - access portal at https://localhost:41000
+- `localhost:41100` (**default**) - access portal at https://localhost:41000
 - `<FQDN>` - resolvable FQDN
 
 > [!TIP]
@@ -31,7 +31,7 @@
 ### Local Workstation - `ENV_TYPE=local` **Default**
 
 ```bash
-CADDY__ALP__PUBLIC_FQDN=localhost:41000
+CADDY__ALP__PUBLIC_FQDN=localhost:41100
 TLS__CADDY_DIRECTIVE='tls internal'
 ```
 

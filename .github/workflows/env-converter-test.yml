@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - develop
+      - "release/*"
   workflow_dispatch:
 
 env:
@@ -25,15 +26,21 @@ jobs:
             env_converter_changed:
               - 'services/envConverter/**'
 
+      - name: Determine condition to run
+        env:
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.env_converter_changed == 'True' }}
+        run: |
+          echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+
       - name: Setup node if files have changed
         uses: actions/setup-node@v4
-        if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.env_converter_changed == 'True'
+        if: env.WF_RUN == 'true'
         with:
           node-version: "18.20.4"
 
       # Run the step only with "env_converter_changed" equals "True"
       - name: Run unit tests if files have changed
-        if: env.BRANCH_NAME == 'develop' || steps.check_file_changed.outputs.env_converter_changed == 'True'
+        if: env.WF_RUN == 'true'
         run: |
           rm -rf package.json
           cd services/envConverter

@@ -91,12 +91,8 @@ jobs:
             DOCKER_TAG_NAME=$(printf "%s" "$DOCKER_TAG_NAME" | awk -F '/' '{print $2}')
           fi 
           [ "${{ github.event.inputs.docker-tag-develop }}" = true ] && DOCKER_TAG_NAME=develop
-          UI_DOCKER_TAG_NAME=$DOCKER_TAG_NAME
-          [ "${{ github.event.inputs.ui-docker-tag-develop }}" = true ] && UI_DOCKER_TAG_NAME=develop
-          [ "${{ github.event.inputs.ui-docker-tag-textbox }}" != '' ] && UI_DOCKER_TAG_NAME=${{ github.event.inputs.ui-docker-tag-textbox }}
 
           echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-          echo UI_DOCKER_TAG_NAME=$UI_DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
           echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -125,13 +121,6 @@ jobs:
           path: |
             ${{ github.job }}*.yml
 
-      - name: Login to ACR
-        uses: docker/login-action@v3.1.0
-        with:
-          registry: alpcr.azurecr.io
-          username: ${{ env.REGISTRY_USERNAME }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-
       - name: Pull docker images
         uses: nick-fields/retry@v3
         with:
@@ -143,6 +132,7 @@ jobs:
             # customize dc.yml
             yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
             yarn remote:minerva pull
+            docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME} # To handle if not present
 
       - name: docker compose up
         env:

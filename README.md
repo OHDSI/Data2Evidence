@@ -1,6 +1,6 @@
 # Data2Evidence Quick Start
 
-[![DockerCompose AzureTest CD](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml) &nbsp;&nbsp; [![Docker Build & Push](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml) &nbsp;&nbsp; [![Docker compose Build & Up](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml)
+[![DockerCompose AzureTest CD](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml) &nbsp;&nbsp; [![Docker Build & Push](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml) &nbsp;&nbsp; [![Docker compose Build & Up](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml) &nbsp;&nbsp; [![NPM plugin build](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml) &nbsp;&nbsp; [![d2e cli build](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml)
 
 The following document outlines the Quick Start setup with demo data & pulls all images from the GitHub container registry.
 
@@ -25,7 +25,7 @@ npm install -g https://github.com/data2evidence/d2e/releases/download/latest/dat
 
 ## Environment Variables and Credentials Setup
 
-- Create directory to store d2e configuration files and go to it. Please note that subsequent commands need to be executed in the directory:
+- Create a directory to store d2e configuration files and go to it. Please note that subsequent commands need to be executed in the directory:
 
 ```bash
 mkdir d2e
@@ -82,7 +82,7 @@ d2e setup
 
 ### Start D2E
 
-Navigate to the folder where d2e repo is downloaded. Run the folllowing:
+Navigate to the folder where d2e repo is downloaded. Run the following:
 
 - Run the command to get the necessary docker images and run D2E:
 
@@ -139,6 +139,7 @@ Please find information on how to add a custom dataset and configure D2E [here](
 
 > [!NOTE]
 > You need to start Data2Evidence with `d2e startdemo` in order to use the demo dataset
+
 
 - Open the D2E Portal and click **Switch to the Admin Portal**.
 

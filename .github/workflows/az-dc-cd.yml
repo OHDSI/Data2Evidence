@@ -107,13 +107,6 @@ jobs:
           path: |
             ${{ github.job }}*.yml
 
-      - name: Login to ACR
-        uses: docker/login-action@v3.1.0
-        with:
-          registry: alpcr.azurecr.io
-          username: ${{ env.REGISTRY_USERNAME }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-
       - shell: bash
         if: github.event_name == 'push'
         id: enable_delay_for_docker_build_to_complete
@@ -131,6 +124,7 @@ jobs:
             # customize dc.yml
             yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
             yarn remote:minerva pull
+            docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME} # To handle if not present
 
       - name: docker compose up
         run: |

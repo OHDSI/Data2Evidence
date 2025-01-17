@@ -2,6 +2,30 @@ name: build plugin
 
 on:
   workflow_dispatch:
+    inputs:
+      GIT_REPO_FULL_NAME:
+        description: Select RepoName
+        required: false
+        type: choice
+        options:
+          - data2evidence/d2e
+      GIT_BRANCH_NAME:
+        default: develop
+        description: Enter BranchName / ReleaseTagName
+        required: true
+        type: string
+      tag:
+        description: Enter tag for release
+        required: true
+        type: string
+      prerelease:
+        type: boolean
+        default: true
+        required: true
+      overwrite:
+        type: boolean
+        default: true
+        required: true
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   push:
@@ -9,7 +33,8 @@ on:
       - develop
 
 env:
-  GIT_CI_BRANCH_NAME: ${{ github.ref_name }}
+  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
+  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
 
 jobs:
   build:
@@ -19,6 +44,9 @@ jobs:
         working-directory: ./functions
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -26,7 +54,13 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
       - name: Update version
-        run: jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+            RELEASE_VERSION=${{ github.event.inputs.tag }}
+            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          fi
       - name: cp pkg
         run: cp package.json package.org.json
       - name: mkdir
@@ -44,14 +78,15 @@ jobs:
         run: npm run build
       - name: Publish
         working-directory: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+        env:
+          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then 
+          if [[ $SHOULD_PUBLISH == true ]]; then 
             npm publish
           else 
             npm publish --dry-run
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/delete-package-versions@v5
         if: github.ref_name == 'develop'
         with:
@@ -60,20 +95,37 @@ jobs:
           min-versions-to-keep: 3
           delete-only-pre-release-versions: "true"
       - name: Pack
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
         working-directory: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
         run: |
-          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
-            NPM_FILENAME=$(npm pack)
-            echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
+          NPM_FILENAME=$(npm pack)
+          echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
+      - name: Prepare
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ $GIT_BRANCH_NAME == 'develop' ]]; then
+            echo "PRELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=latest
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=d2e-functions-${TAG}
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "PRELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=${{ github.event.inputs.tag }}
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=d2e-functions-${TAG}
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           fi
       - name: Push
         uses: svenstaro/upload-release-action@v2
-        if: ${{ env.GIT_CI_BRANCH_NAME == 'develop' }}
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: /usr/src/plugin/node_modules/@data2evidence/d2e-functions/${{ env.NPM_FILENAME }}
-          tag: latest
-          target_commit: develop
-          prerelease: true
-          overwrite: true
-          asset_name: d2e-functions.tgz
+          tag: ${{ env.TAG }}
+          target_commit: ${{ github.ref_name }}
+          prerelease: ${{ env.PRELEASE }}
+          overwrite: ${{ env.OVERWRITE }}
+          asset_name: ${{ env.ASSET_NAME }}.tgz
