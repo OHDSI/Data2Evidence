@@ -63,6 +63,7 @@
         "npm:pako@1.0.11",
         "npm:passport-azure-ad@^4.3.2",
         "npm:pg-query-stream@^4.2.4",
+        "npm:pg-cursor@^2.12.1",
         "npm:pg@^8.4.2",
         "npm:ts-jest@29.1.2",
         "npm:tslint@^6.1.3",

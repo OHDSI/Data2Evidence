@@ -212,7 +212,8 @@ services:
             "USE_EXTENSION_FOR_COHORT_CREATION": "false",
             "isTestEnv": "${isTestEnv}",
             "local": "${local}",
-            "TESTSCHEMA": "${TESTSCHEMA}"
+            "TESTSCHEMA": "${TESTSCHEMA}",
+            "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
           },
           "mri-pg-config": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",

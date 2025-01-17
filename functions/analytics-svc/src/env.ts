@@ -70,6 +70,7 @@ function initEnv(__env) {
         DB_SVC__LOG_LEVEL: z.string().optional(),
         INTEGRATION_TEST__HANA__TENANT_CONFIGS: z.string().optional(),
         PG__READ_ROLE: z.string().optional(),
+        ANALYTICS_PATIENT_LIST_BATCH_SIZE: z.string(),
        // PG__TENANT_CONFIGS: z.string().optional(),
         HANA__READ_ROLE: z.string().optional(),
         //HANA__TENANT_CONFIGS: z.string().optional(),

@@ -8,7 +8,8 @@ import {
 import type { Pool } from "pg";
 import { DBError } from "./DBError";
 import { CreateLogger } from "./Logger";
-import QueryStream from "pg-query-stream";
+import { Stream } from "node:stream";
+import Cursor from "npm:pg-cursor@^2.12.1";
 import { translateHanaToPostgres, translateHanaToDuckdb } from "./helpers/hanaTranslation";
 import { EnvVarUtils } from "./EnvVarUtils";
 const logger = CreateLogger("Postgres Connection");
@@ -169,25 +170,39 @@ export class PostgresConnection implements ConnectionInterface {
       sql = this.getSqlStatementWithSchemaName(schemaName, sql);
       sql = this.parseSql(sql, parameters);
 
-      this.conn.connect((err, client, release) => {
+      this.conn.connect(async (err, client, release) => {
         if (err) {
           logger.error(`Execute error: ${JSON.stringify(err)}
             =>sql: ${sql}
             =>parameters: ${JSON.stringify(parameters)}`);
           callback(new DBError(logger.error(err), err.message), null);
         }
-        const query = new QueryStream(sql, flattenParameter(parameters));
+        const query = new Cursor(sql, flattenParameter(parameters));
         const stream = client.query(query);
 
-        stream.on("end", async () => {
-          release(true); // true will destroy the client, removing the temp table at the same time
+        const readableStream = new Stream.Readable({
+          objectMode: true,
+          async read(size) {
+            const rows = await stream.read(EnvVarUtils.getEnvs().ANALYTICS_PATIENT_LIST_BATCH_SIZE);
+            if (rows.length == 0) {
+              this.push(null);
+            } else {
+              rows.forEach((row: any) => {
+                this.push(row);
+              });
+            }
+          },
         });
 
-        stream.on("error", (err: any) => {
+        readableStream.on("error", (err: any) => {
           logger.error(err);
         });
 
-        callback(null, stream);
+        readableStream.on("end", function () {
+          console.log("Stream ended..");
+        });
+
+        callback(null, readableStream);
       });
     } catch (err) {
       logger.error(`Execute error: ${JSON.stringify(err)}
