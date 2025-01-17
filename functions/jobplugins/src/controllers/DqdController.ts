@@ -152,12 +152,10 @@ export class DqdController {
   private async getDataQualityResults(req: Request, res: Response) {
     try {
       const flowRunId = req.params.flowRunId;
-      const datasetId = req.query.datasetId;
       const token = req.headers.authorization!;
       const dqdResult = await this.dqdService.getDataQualityResult(
         flowRunId,
-        token,
-        datasetId
+        token
       );
 
       if (dqdResult) {
@@ -174,12 +172,10 @@ export class DqdController {
   private async getDataQualityOverview(req: Request, res: Response) {
     try {
       const flowRunId = req.params.flowRunId;
-      const datasetId = req.query.datasetId;
       const token = req.headers.authorization!;
       const overview = await this.dqdService.getDataQualityOverview(
         flowRunId,
-        token,
-        datasetId
+        token
       );
 
       if (overview) {

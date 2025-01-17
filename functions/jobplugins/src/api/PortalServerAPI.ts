@@ -1,4 +1,5 @@
 import { env, services } from "../env.ts";
+import { OpenIDAPI } from "./OpenIDAPI.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -72,7 +73,7 @@ export class PortalServerAPI {
     }
   }
 
-  async getFlowRunResults(filePaths, datasetId: string) {
+  async getFlowRunResults(filePaths) {
     try {
       let url = `${this.baseURL}/prefect/results`;
       const params = new URLSearchParams();
@@ -81,10 +82,20 @@ export class PortalServerAPI {
       } else {
         filePaths.forEach((path) => params.append("filePaths[]", path));
       }
-      params.append("datasetId", datasetId);
       url += `?${params.toString()}`;
       console.info(url);
-      const options = this.createOptions("GET");
+
+      // Get client credentials token
+      const openIdApi = new OpenIDAPI();
+      const clientCredentialsToken =
+        await openIdApi.getClientCredentialsToken();
+
+      // Get options with client credentials token instead of user token
+      const options = this.createOptions(
+        "GET",
+        `Bearer ${clientCredentialsToken}`
+      );
+
       const result = await fetch(url, options);
       if (!result.ok) {
         throw new Error(
@@ -101,11 +112,11 @@ export class PortalServerAPI {
     }
   }
 
-  private createOptions(method: string): RequestInit {
+  private createOptions(method: string, token = this.token): RequestInit {
     return {
       method,
       headers: {
-        Authorization: this.token,
+        Authorization: token,
         "Content-Type": "application/json",
       },
     };

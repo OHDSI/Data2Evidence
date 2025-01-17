@@ -18,29 +18,17 @@ import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 export class DqdService {
   private dataQualityOverviewParser = new DataQualityOverviewParser();
 
-  public async getDataQualityResult(
-    flowRunId: string,
-    token: string,
-    datasetId: string
-  ) {
+  public async getDataQualityResult(flowRunId: string, token: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const dqdResult = await this.getDqdResults(
-      portalServerApi,
-      [flowRunId],
-      datasetId
-    );
+    const dqdResult = await this.getDqdResults(portalServerApi, [flowRunId]);
     if (this.isDataQualityResult(dqdResult[0])) {
       return dqdResult[0].CheckResults;
     }
     return null;
   }
 
-  public async getDataQualityOverview(
-    flowRunId: string,
-    token: string,
-    datasetId: string
-  ) {
-    const result = await this.getDataQualityResult(flowRunId, token, datasetId);
+  public async getDataQualityOverview(flowRunId: string, token: string) {
+    const result = await this.getDataQualityResult(flowRunId, token);
     if (!result) {
       return null;
     }
@@ -291,11 +279,7 @@ export class DqdService {
     if (!flowRunIds.length) {
       return [];
     }
-    const dqdResults = await this.getDqdResults(
-      portalServerApi,
-      flowRunIds,
-      datasetId
-    );
+    const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
     const domainIndexes: { [key: string]: number } = {};
 
     return dqdResults
@@ -334,11 +318,7 @@ export class DqdService {
       PrefectTagNames.DQD
     );
     const flowRunIds = flowRuns.map((run) => run.id);
-    const dqdResults = await this.getDqdResults(
-      portalServerApi,
-      flowRunIds,
-      datasetId
-    );
+    const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
 
     return dqdResults!
       .filter((r) => {
@@ -349,17 +329,13 @@ export class DqdService {
 
   private async getDqdResults(
     portalServerApi: PortalServerAPI,
-    flowRunIds: string[],
-    datasetId: string
+    flowRunIds: string[]
   ) {
     let dqdResults;
     // file path '<flowrun_id>_dqd.json' pattern is same as followed in dqd_plugin
     const filePaths = flowRunIds.map((id) => `results/${id}_dqd.json`);
     try {
-      dqdResults = await portalServerApi.getFlowRunResults(
-        filePaths,
-        datasetId
-      );
+      dqdResults = await portalServerApi.getFlowRunResults(filePaths);
       return dqdResults;
     } catch (error) {
       throw error;

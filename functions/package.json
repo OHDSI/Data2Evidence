@@ -440,7 +440,6 @@
           "dataflowmgmt.analysisflow.add",
           "dataflowmgmt.analysisflow.delete",
           "dataflowmgmt.analysisflow.revision.delete",
-          "dataflowmgmt.dataflow.flowRun.results.read",
           "codesuggestion.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
@@ -464,7 +463,8 @@
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "portal.dataset.read",
-          "gateway.fhir.create"
+          "gateway.fhir.create",
+          "dataflowmgmt.dataflow.flowRun.results.read"
         ]
       },
       "scopes": [
