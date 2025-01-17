@@ -50,7 +50,7 @@ jobs:
           if [ $GIT_BRANCH_NAME == "develop" ]; then
             DOCKER_IMG_TAG_NAME=develop
           elif [ $GITHUB_EVENT_NAME = "workflow_dispatch" ]; then
-            DOCKER_IMG_TAG_NAME=$DOCKER_IMAGE_TAG_NAME
+            DOCKER_IMG_TAG_NAME=${{ github.event.inputs.DOCKER_IMAGE_TAG_NAME }}
           elif [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true ]; then
             DOCKER_IMG_TAG_NAME=$GIT_BRANCH_NAME
             if [[ $GIT_BRANCH_NAME = */* ]]; then
