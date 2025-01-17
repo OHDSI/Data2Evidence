@@ -18,6 +18,10 @@ on:
         description: Enter tag for release
         required: true
         type: string
+      release:
+        description: Enter name for github release
+        required: true
+        type: string
       prerelease:
         type: boolean
         default: true
@@ -91,6 +95,7 @@ jobs:
             echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             ASSET_NAME=data2evidence-cli-${TAG}
             echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           else
             echo "PRELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
@@ -98,6 +103,8 @@ jobs:
             echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             ASSET_NAME=data2evidence-cli-${TAG}
             echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            GITHUB_RELEASE=${{ github.event.inputs.release }}
+            echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           fi
       - name: Push
         uses: svenstaro/upload-release-action@v2
@@ -105,7 +112,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ env.NPM_FILENAME }}
-          tag: ${{ env.TAG }}
+          tag: ${{ env.GITHUB_RELEASE }}
           target_commit: ${{ github.ref_name }}
           prerelease: ${{ env.PRELEASE }}
           overwrite: ${{ env.OVERWRITE }}
