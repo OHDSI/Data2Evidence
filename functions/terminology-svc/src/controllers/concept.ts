@@ -239,10 +239,19 @@ export const getConceptHierarchy = async (
             target: conceptId,
           });
           conceptIds.add(concept_ancestor.ancestor_concept_id);
-          nodeLevels.push({
-            conceptId: concept_ancestor.ancestor_concept_id,
-            level: maxDepth - depth + 1,
-          });
+
+          // Only push into nodeLevels if it does not contain an object with the same conceptId as the incoming object's conceptId
+          if (
+            !nodeLevels.find(
+              (e) => e.conceptId === concept_ancestor.ancestor_concept_id
+            )
+          ) {
+            nodeLevels.push({
+              conceptId: concept_ancestor.ancestor_concept_id,
+              level: maxDepth - depth + 1,
+            });
+          }
+
           await getAllAncestors(
             concept_ancestor.ancestor_concept_id,
             depth - 1,
