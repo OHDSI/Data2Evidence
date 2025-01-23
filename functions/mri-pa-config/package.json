@@ -12,7 +12,6 @@
     "node": ">=18.20.4"
   },
   "dependencies": {
-    "@alp/alp-metadata": "1.0.2",
     "@alp/alp-config-utils": "1.0.20",
     "@alp/alp-base-utils": "1.1.9",
     "@sap/xsenv": "^3.3.2",

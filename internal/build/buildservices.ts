@@ -130,7 +130,6 @@ function buildMRI() {
     if (doBuildTsc) {
         build({cwd:'alp-libs/nodejs/alp-base-utils'}, {lib: true, tslint: false, name:'alp-base-utils'})
         build({cwd:'alp-libs/nodejs/alp-config-utils'}, {lib: true, tslint: false, name:'alp-config-utils'})
-        build({cwd:'alp-libs/nodejs/alp-metadata'}, {lib: true, eslint: true, tslint: false, name:'alp-metadata'})
 
         // build({cwd:'services/alp-db-svc'}, {eslint: false, tslint:false, name:'alp-db-svc'});
         // build({cwd:'../services/alp-approuter'}, {eslint: false, tslint:false, name:'alp-approuter'});

@@ -25,7 +25,6 @@
     "dependencies": {
         "@alp/alp-base-utils": "1.1.9",
         "@alp/alp-config-utils": "1.0.20",
-        "@alp/alp-metadata": "1.0.2",
         "@alp/swagger-node-runner": "0.7.4-1",
         "@godaddy/terminus": "^4.4.1",
         "@sap/xsenv": "^3.3.2",

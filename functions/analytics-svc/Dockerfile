@@ -7,7 +7,6 @@ WORKDIR /usr/src
 COPY ./alp-libs/nodejs/package.json .
 COPY ./alp-libs/nodejs/alp-base-utils/package.json ./libs/alp-base-utils/package.json
 COPY ./alp-libs/nodejs/alp-config-utils/package.json ./libs/alp-config-utils/package.json
-COPY ./alp-libs/nodejs/alp-metadata/package.json ./libs/alp-metadata/package.json
 COPY ./alp-libs/nodejs/alp-swagger-node-runner/package.json ./libs/alp-swagger-node-runner/package.json
 COPY ./services/analytics-svc/package.json alp-data-node/app/package.json
 RUN yarn install --network-timeout 1000000
@@ -17,7 +16,6 @@ COPY ./services/analytics-svc alp-data-node/app
 
 RUN yarn workspace @alp/alp-base-utils run compile
 RUN yarn workspace @alp/alp-config-utils run compile
-RUN yarn workspace @alp/alp-metadata run compile
 
 
 FROM libs-install-from-${libs_install_type_arg} AS final-build

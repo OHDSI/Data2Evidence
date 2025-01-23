@@ -50,7 +50,6 @@ services:
     ports:
       - 41120:41120
     environment:
-      PORTAL__API_URL: https://trex:33000/portalsvc/graphql
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
 
   alp-dataflow-gen-worker:
