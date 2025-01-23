@@ -10,25 +10,31 @@ export const getProperties = (): any => {
 	  const isProd = false;
 	  const k8sPathPrefix = "/var/alp-pg-management";
 	  properties = {
-		postgres_connection_config: isProd
-		? JSON.parse(readFileSync(`${k8sPathPrefix}/POSTGRES_CONNECTION_CONFIG`, "utf-8"))
-		: JSON.parse(_env.POSTGRES_CONNECTION_CONFIG!),
-		postgres_superuser: isProd
-		? readFileSync(`${k8sPathPrefix}/POSTGRES_SUPERUSER`, "utf-8")
-		: _env.POSTGRES_SUPERUSER,
-		postgres_superuser_password: isProd
-		? readFileSync(`${k8sPathPrefix}/POSTGRES_SUPERUSER_PASSWORD`, "utf-8")
-		: _env.POSTGRES_SUPERUSER_PASSWORD,
-		postgres_manage_config: isProd
-		? JSON.parse(readFileSync(`${k8sPathPrefix}/POSTGRES_MANAGE_CONFIG`, "utf-8"))
-		: JSON.parse(_env.POSTGRES_MANAGE_CONFIG!),
-		postgres_manage_users: isProd
-		? JSON.parse(readFileSync(`${k8sPathPrefix}/POSTGRES_MANAGE_USERS`, "utf-8"))
-		: JSON.parse(_env.POSTGRES_MANAGE_USERS!),
+		postgres_connection_config: fetchSecretsAsPerEnvironment("POSTGRES_CONNECTION_CONFIG", true),
+		postgres_superuser: fetchSecretsAsPerEnvironment("POSTGRES_SUPERUSER"),
+		postgres_superuser_password: fetchSecretsAsPerEnvironment("POSTGRES_SUPERUSER_PASSWORD"),
+		postgres_manage_config: fetchSecretsAsPerEnvironment("POSTGRES_MANAGE_CONFIG", true),
+		postgres_manage_users: fetchSecretsAsPerEnvironment("POSTGRES_MANAGE_USERS", true),
+		app_client_id: fetchSecretsAsPerEnvironment("CLIENT_ID"),
+		app_client_secret: fetchSecretsAsPerEnvironment("CLIENT_SECRET"),
+		tenant_id: fetchSecretsAsPerEnvironment("TENANT_ID"),
 	  };
 	}
 	return properties
 } 
+
+const fetchSecretsAsPerEnvironment = (env_variable: string, isJson?: boolean): string => {
+	const isProd = _env.NODE_ENV === "production";
+	const k8sPathPrefix = "/var/alp-pg-management";
+	let env_value = (isProd
+						? readFileSync(`${k8sPathPrefix}/${env_variable}`, "utf-8")
+						: (_env[env_variable] ? _env[env_variable]! : ""))
+	if(isJson) {
+		env_value = JSON.parse(env_value)
+	}
+	return env_value
+}
+
 export const getLogger = (): any => {
 	//return console;
 	let logger

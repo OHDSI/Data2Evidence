@@ -1,7 +1,11 @@
-ARG IMAGE=node:18.20.1-alpine
-FROM $IMAGE as builder
+FROM debian:bookworm-slim as base
 
-RUN apk add --update yarn
+RUN apt-get update && apt-get install -y sudo bash curl
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+RUN sudo apt-get install -y nodejs
+RUN npm i -g yarn
+
+FROM base as builder
 
 WORKDIR /home/builder
 
@@ -9,15 +13,13 @@ COPY --chown=docker:alp --chmod=711 ./app app/
 
 RUN cd app && yarn install --network-timeout 1000000 && yarn postinstall
 
+FROM base as final
 
-FROM $IMAGE as final
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-RUN apk update && apk add busybox=1.36.1-r19
-RUN apk add --update --upgrade bash yarn zlib
-
-RUN rm -rf /usr/local/lib/node_modules/npm
-
-RUN addgroup -S alp -g 3000 && adduser --uid 3000 -S docker -G alp
+RUN groupadd alp \
+	&& useradd docker \
+	&& adduser docker alp
 
 USER docker
 

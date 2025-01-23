@@ -77,8 +77,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./services/alp-pg-management/app:/home/docker/app
-    environment:
-      LOCAL_DEBUG: "true"
 
   alp-minerva-postgres:
     ports:

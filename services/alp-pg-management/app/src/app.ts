@@ -193,9 +193,7 @@ export class App {
 
         //Reattempt, due to the old databases created by SRE. Manager User is the owner instead of alp_owner
         const pg_manage_user = {
-          user: pg_owneruser_config.host.includes("azure")
-            ? `${pgUsers.manager}@${pg_owneruser_config.host.split(".")[0]}`
-            : pgUsers.manager, //cater to azure pg db
+          user: pgUsers.manager,
           password: pgUsers.managerPassword,
         };
         const pg_manageruser_config: any = {
@@ -246,9 +244,7 @@ export class App {
       const pgUsers: pgUsers = this.getPGUsers(databaseName);
       const pg_config = config.getProperties()["postgres_connection_config"];
       const pg_manage_user = {
-        user: pg_config.host.includes("azure")
-          ? `${pgUsers.manager}@${pg_config.host.split(".")[0]}`
-          : pgUsers.manager, //cater to azure pg db
+        user: pgUsers.manager,
         password: pgUsers.managerPassword,
       };
       //Switch to super user connection only for database creation

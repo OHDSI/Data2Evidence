@@ -428,6 +428,7 @@ services:
       <<:
         - *x-tls
       NODE_ENV: development
+      ALP_DB_LOGLEVEL: ${ALP_DB_LOGLEVEL:-info}
       POSTGRES_CONNECTION_CONFIG: |-
         {
          "connectionTimeoutMillis": 60000,

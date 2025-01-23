@@ -1,9 +1,11 @@
+import { execSync } from "node:child_process"
 import * as config from "../utils/config.js"
-import pg from "pg"
+import { Client } from "pg"
 
 export default class PGDBRouter {
 
 	private logger = config.getLogger()
+	private properties = config.getProperties();
 
 	verifyIfDatabaseExists = async(client: any, databaseNameLowercase: string) => {
 		const result = await client.query(`select exists(
@@ -28,10 +30,35 @@ export default class PGDBRouter {
 		}
 	}
 
+
+	acquireToken = () => {
+		try {
+			if (!this.properties.app_client_id || !this.properties.app_client_secret || !this.properties.tenant_id) {
+				throw new Error("Necessary environment variables for acquiring JWT unavailable..")
+			}
+
+			const stdout = execSync(
+				`az login --service-principal -u "${this.properties.app_client_id}" -p "${this.properties.app_client_secret}" --tenant "${this.properties.tenant_id}"`
+			);
+			const token = execSync(
+				`az account get-access-token --resource-type oss-rdbms --output tsv --query accessToken`
+			);
+			return token;
+		} catch (err: any) {
+			this.logger.error("Error: " + err.toString());
+			throw err;
+		}
+	  };
+
 	openConnection = async (config: any) => {
-		const client = new pg.Client(config)
-		await client.connect()
-		this.logger.debug("Client Connected.")
-		return client
+		if (!config.hasOwnProperty("password") || !config["password"]) {
+			this.logger.info(`Password unavailable. Attempting to acquire JWT.`)
+			const token = this.acquireToken();
+			config["password"] = `${token}`;
+		  }
+		  const client = new Client(config);
+		  await client.connect();
+		  this.logger.debug("Client Connected.");
+		  return client;
 	}
 }

@@ -58,7 +58,7 @@ export default class PGUserDAO {
     databaseName: string,
     ownerUser: string
   ) => {
-    await client.query(`ALTER DATABASE ${databaseName} OWNER TO ${ownerUser}`);
+    await client.query(`ALTER DATABASE ${databaseName} OWNER TO "${ownerUser}"`);
     this.logger.info(
       `User ${ownerUser} successfully made Owner of ${databaseName} database`
     );
