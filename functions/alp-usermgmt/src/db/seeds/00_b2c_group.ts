@@ -67,6 +67,12 @@ const getSeeds = (): { [key: string]: any }[] => {
         tenant_id: TENANT_ID
       },
       {
+        id: '5e07ea6e-becc-40ba-8f39-1bfe74d3c9d9',
+        role: ROLES.STUDY_WRITE_DQD_RESEARCHER,
+        study_id: STUDY_ID,
+        tenant_id: TENANT_ID
+      },
+      {
         id: '6c783453-2195-473d-9088-4322e88f65b8',
         role: ROLES.STUDY_MANAGER,
         study_id: STUDY_ID,

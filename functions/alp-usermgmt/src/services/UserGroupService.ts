@@ -39,7 +39,8 @@ export class UserGroupService {
         TENANT_ADMIN: alpInfo.alp_role_tenant_admin,
         TENANT_VIEWER: alpInfo.alp_role_tenant_viewer,
         STUDY_MANAGER: alpInfo.alp_role_study_mgr,
-        STUDY_RESEARCHER: alpInfo.alp_role_study_researcher
+        STUDY_RESEARCHER: alpInfo.alp_role_study_researcher,
+        STUDY_WRITE_DQD_RESEARCHER: alpInfo.alp_role_study_write_dqd_researcher
       },
       ...alpInfo
     }
@@ -195,7 +196,8 @@ export class UserGroupService {
       alp_role_tenant_viewer: fn(ROLES.TENANT_VIEWER, 'tenantId'),
       alp_role_study_admin: fn(ROLES.STUDY_ADMIN, 'studyId'),
       alp_role_study_mgr: fn(ROLES.STUDY_MANAGER, 'studyId'),
-      alp_role_study_researcher: fn(ROLES.STUDY_RESEARCHER, 'studyId')
+      alp_role_study_researcher: fn(ROLES.STUDY_RESEARCHER, 'studyId'),
+      alp_role_study_write_dqd_researcher: fn(ROLES.STUDY_WRITE_DQD_RESEARCHER, 'studyId')
     }
 
     return roleMap

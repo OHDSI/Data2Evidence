@@ -465,6 +465,10 @@
           "portal.dataset.read",
           "gateway.fhir.create",
           "dataflowmgmt.dataflow.flowRun.results.read"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
