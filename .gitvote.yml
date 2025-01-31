@@ -1,0 +1,23 @@
+automation:
+  enabled: true
+  rules:
+    - patterns:
+        - "*"
+      profile: default
+
+profiles:
+  default:
+    duration: 1d
+    pass_threshold: 60
+    allowed_voters:
+      teams: []
+      users:
+        - csafreen
+        - p-hoffmann
+        - SantanM
+        - satish-a0
+        - suwarnoong 
+    periodic_status_check: null
+    close_on_passing: false
+    close_on_passing_min_wait: null
+    
