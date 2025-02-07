@@ -4,10 +4,11 @@ set -o nounset
 set -o errexit
 
 # constants
-ghuser=${GH_USERNAME}
-ghtoken=${GH_TOKEN}
-CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN}
-TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE}
+
+CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost:41100}
+TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
+DOCKER_TREX_TAG_NAME=${DOCKER_TAG_NAME:-develop}
+DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
 
 if [ -z "${ENVFILE:-}" ]; then
     env_file=.env.${ENV_TYPE:-local}
@@ -77,10 +78,12 @@ fi
 echo >> $env_file
 
 echo ENV_TYPE=$ENV_TYPE >> $env_file
-echo GH_TOKEN=$ghtoken >> $env_file
-echo GH_USERNAME=$ghuser >> $env_file
 [ -z "${TLS__CADDY_DIRECTIVE-}" ] || echo TLS__CADDY_DIRECTIVE="$TLS__CADDY_DIRECTIVE" >> $env_file
 [ -z "${CADDY__ALP__PUBLIC_FQDN-}" ] || echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $env_file
+echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $env_file
+echo DOCKER_TREX_TAG_NAME=$DOCKER_TREX_TAG_NAME >> $env_file
+echo HTTP_PORT=80 >> $env_file
+echo HTTPS_PORT=443 >> $env_file
 
 # finish
 wc -l $env_file

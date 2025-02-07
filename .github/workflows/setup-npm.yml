@@ -81,22 +81,12 @@ jobs:
       #    min-versions-to-keep: 3
       #    delete-only-pre-release-versions: "true"
       - name: Pack
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
         run: |
           NPM_FILENAME=$(npm pack)
           echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
       - name: Prepare
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
         run: |
-          if [[ $GIT_BRANCH_NAME == 'develop' ]]; then
-            echo "PRELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            TAG=latest
-            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            ASSET_NAME=data2evidence-cli-${TAG}
-            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-          else
+          if [[ github.event_name == 'workflow_dispatch' ]]; then
             echo "PRELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             TAG=${{ github.event.inputs.tag }}
@@ -105,6 +95,14 @@ jobs:
             echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             GITHUB_RELEASE=${{ github.event.inputs.release }}
             echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "PRELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=latest
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=data2evidence-cli
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           fi
       - name: Push
         uses: svenstaro/upload-release-action@v2
