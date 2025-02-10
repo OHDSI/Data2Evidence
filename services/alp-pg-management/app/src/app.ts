@@ -173,6 +173,50 @@ export class App {
     }
   }
 
+  async createStorageTables(databaseName: string) {
+    let client;
+    try {
+      const pg_owneruser_config =
+        config.getProperties()["postgres_connection_config"];
+
+      let client = await this.dbDao.openConnection({
+        ...pg_owneruser_config,
+        database: databaseName,
+      });
+      try {
+        await this.dbDao.createTable(client, databaseName, "storage", "migrations", {
+          columns: {
+            id: "serial PRIMARY KEY",
+            name: "varchar(100) NOT NULL",
+            hash: "varchar(40) NOT NULL",
+            executed_at: "timestamp DEFAULT current_timestamp"
+          }
+        });
+        await this.dbDao.createTable(client, databaseName, "storage", "buckets", {
+          columns: {
+            name: "text NOT NULL",
+            bucket_id: "text"
+          }
+        });
+        await this.dbDao.createTable(client, databaseName, "storage", "objects", {
+          columns: {
+            name: "text NOT NULL"
+          }
+        });
+        await this.dbDao.closeConnection(client);
+        return true;
+      } catch (e: any) {
+        this.logger.error(e.message);
+        await this.dbDao.closeConnection(client);
+        return false;
+      }
+    } catch (e: any) {
+      this.logger.error(e.message)
+      await this.dbDao.closeConnection(client);
+      return false;
+    }
+  }
+
   async createSchema(databaseName: string, schemaName: string) {
     let client;
     try {
@@ -322,6 +366,9 @@ export class App {
             await this.createSchema(databaseName, this.getSchemaName(schema));
           }
         }
+        // TODO: Add check if storageTables exists
+        // Creat required table for supabase storage
+        await this.createStorageTables(databaseName);
       }
     }
     this.logger.info("Postgres Automation tasks completed.");

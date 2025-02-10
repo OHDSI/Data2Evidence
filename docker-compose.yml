@@ -12,6 +12,7 @@ volumes:
   r-libs:
   trex:
   fhir-schema-file-1:
+  supabase-storage-data:
 
 x-envs:
   db-svc: &x-dbsvc
@@ -456,7 +457,8 @@ services:
             "+files_manager": {},
             "+perseus": {},
             "+white_rabbit": {},
-            "+trex": {}
+            "+trex": {},
+            "+storage": {}
            }
           }
          }
@@ -934,3 +936,84 @@ services:
         priority: 20
     entrypoint: ["sh", "-c", "./init.sh"]
     profiles: [perseus]
+
+  supabase-storage:
+    container_name: &c19 alp-supabase-storage-${BASE_PORT:-1}
+    ports:
+      - "9000:9000"
+    depends_on:
+      alp-minerva-postgres:
+        condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://alp-supabase-storage-1:9000/status"
+        ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    image: supabase/storage-api:v1.14.5
+    logging:
+      options:
+        tag: *c19
+    networks:
+      alp:
+        priority: 20
+      data:
+        priority: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    volumes:
+      - supabase-storage-data:/var/lib/storage
+    environment:
+      <<:
+        - *x-tls
+      PROJECT_REF: ${PROJECT_REF:-default}
+      PORT: 9000
+      POSTGREST_URL: ${POSTGREST_URL:-http://supabase-rest:3000}
+      REGION: ${REGION:-us-east-1}
+      GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET:-storage}
+      TENANT_ID: ${TENANT_ID:-tenant-id}
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      PGRST_JWT_SECRET: ${JWT_SECRET:-rg8zfniIeHnL7wRtNIKiMmrDQRCK776qgpYbi30j}
+      ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFscF9wZ193cml0ZV91c2VyIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.sCirNiZURyYHzs9Dx9u2BuiY6o615l4ZhMCkw-p9AG8}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU}
+      MIGRATIONS_SCHEMA: storage
+      MIGRATIONS_TABLE: migrations
+
+  supabase-rest:
+    container_name: supabase-rest
+    ports:
+      - "3000:3000"
+    image: postgrest/postgrest:v12.2.0
+    restart: unless-stopped
+    depends_on:
+      alp-minerva-postgres:
+        condition: service_healthy
+    networks:
+      alp:
+        priority: 20
+      data:
+        priority: 10
+    environment:
+      PGRST_DB_URI: postgres://postgres:${PG_SUPER_PASSWORD}@alp-minerva-postgres-1:5432/${PG_DB_NAME}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTYsImFsZyI6IkhTMjU2In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.irKBgArW0Qu0X9SqWSzsdoz_WoR3s1X72j71g2yutws
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTYsImFsZyI6IkhTMjU2In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.irKBgArW0Qu0X9SqWSzsdoz_WoR3s1X72j71g2yutws
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    command:
+      [
+        "postgrest"
+      ]
+
