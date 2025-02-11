@@ -57,6 +57,34 @@ async function update(
   }
 }
 
+async function upsert(
+  path: string,
+  headers: object,
+  data: object,
+  hasResponseBody = true
+) {
+  try {
+    console.log(`Request create/update ${path}`);
+    console.log(JSON.stringify(data));
+    const resp = await logto.put(path, headers, data);
+    console.log(`Responded with ${resp.status}`);
+
+    if (resp.ok) {
+      if (hasResponseBody) {
+        let json = await resp.json();
+        console.log(JSON.stringify(json));
+        return json;
+      }
+    } else {
+      console.error("Request failed");
+      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      return -1;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function fetchExisting(path: string, headers: object, showLog = true) {
   try {
     showLog && console.log(`Request existing ${path}`);
@@ -341,6 +369,21 @@ async function main() {
     "*********************************************************************************\n"
   );
 
+  if (process.env.LOGTO__CUSTOM_JWT) {
+    // Create custom JWT
+    console.log(
+      "*********************************** CONFIGS **********************************************"
+    );
+
+    const payload = JSON.parse(process.env.LOGTO__CUSTOM_JWT);
+    console.log("payload", payload);
+    await upsert("configs/jwt-customizer/access-token", headers, payload);
+
+    console.log(
+      "*********************************************************************************\n"
+    );
+  }
+
   console.log(
     "*********************************** SUMMARY **********************************\n"
   );
@@ -428,7 +471,6 @@ async function main() {
       createdUserRoles.length == userRoles.map((x) => x.roleIds).flat().length
     }`
   );
-
 }
 
 async function getDBClient() {

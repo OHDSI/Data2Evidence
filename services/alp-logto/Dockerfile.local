@@ -27,6 +27,7 @@ ENV APPLICATIONINSIGHTS_CONNECTION_STRING=${applicationinsights_connection_strin
 
 ## Copy modified files as needed
 COPY ./to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
+COPY ./to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
 
 RUN pnpm -r build
 
@@ -46,6 +47,17 @@ RUN rm -rf .scripts .parcel-cache pnpm-*.yaml packages/cloud
 FROM node:20-alpine as app
 WORKDIR /etc/logto
 COPY --from=builder /etc/logto .
+
+COPY ./connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
+
+WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
+
+RUN yarn
+RUN yarn build
+
+WORKDIR /etc/logto/
+
+RUN npx @logto/cli connector link
 
 EXPOSE 3001
 ENTRYPOINT ["npm", "run"]
