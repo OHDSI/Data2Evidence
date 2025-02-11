@@ -672,6 +672,33 @@ paths:
             $ref: "#/definitions/Error"
   /cohort-definition:
     x-swagger-router-controller: cohort
+    get:
+      description: Get a cohort definition via cohort definition id
+      operationId: getCohortDefinition
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - name: cohortDefinitionId
+          in: query
+          description: Id of cohort definition
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
     post:
       description: Saves cohort definition to db
       operationId: createCohortDefinition

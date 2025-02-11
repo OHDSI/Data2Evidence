@@ -32,7 +32,8 @@ services:
           "code-suggestion": false,
           "portal": false,
           "files-manager": false,
-          "demo": false
+          "demo": false,
+          "d2e-webapi": false
         }
 
   alp-caddy:

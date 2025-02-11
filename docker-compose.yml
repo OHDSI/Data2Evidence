@@ -61,6 +61,7 @@ x-envs:
        "bookmark": "https://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000/analytics-svc/api/services/bookmark",
        "cdw": "https://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000",
        "paConfig": "https://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000/pa-config-svc",
+       "d2e-webapi": "https://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000/webapi",
        "queryGen": "https://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000",
        "jobplugins": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "portalServer": "http://trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
@@ -350,7 +351,8 @@ services:
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
-          }
+          },
+          "d2e-webapi": {}
         }
       SERVICE_ROUTES: |-
         {

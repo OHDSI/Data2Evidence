@@ -220,6 +220,12 @@
           "function": "/demo",
           "env": "demo",
           "imports": "/demo/import.json"
+        },
+        {
+          "source": "/d2e-webapi",
+          "function": "/d2e-webapi",
+          "env": "d2e-webapi",
+          "imports": "/d2e-webapi/deno.json"
         }
       ],
       "roles": {
@@ -384,7 +390,8 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
-          "demo.setup"
+          "demo.setup",
+          "d2e.webapi"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -2187,6 +2194,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi(.*)",
+          "scopes": [
+            "d2e.webapi"
           ]
         }
       ]

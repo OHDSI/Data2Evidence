@@ -21,7 +21,7 @@ export const DATA_QUALITY_DOMAINS = [
 export enum PrefectDeploymentName {
   DQD = "dqd_plugin",
   DATA_CHARACTERIZATION = "data_characterization_plugin",
-  COHORT = "cohort_generator",
+  COHORT = "cohort_generator_plugin",
   DB_SVC = "alp-db-svc",
   DATASET_ATTRIBUTE = "update-dataset-attributes",
   FETCH_VERSION_INFO = "fetch-version-info",
@@ -36,7 +36,7 @@ export enum PrefectDeploymentName {
 export enum PrefectFlowName {
   DQD = "dqd_plugin",
   DATA_CHARACTERIZATION = "data_characterization_plugin",
-  COHORT = "execute-cohort-generator-flow",
+  COHORT = "cohort_generator_plugin",
   DB_SVC = "execute-alp-db-svc-flow",
   DATASET_ATTRIBUTE = "update-dataset-attributes-flow",
   FETCH_VERSION_INFO = "fetch-version-info-flow",

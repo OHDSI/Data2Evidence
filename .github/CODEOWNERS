@@ -10,6 +10,7 @@ functions/bookmark-svc		    @data2evidence/analyze
 functions/cdw-svc		          @data2evidence/analyze
 functions/code-suggestion	    @data2evidence/data
 functions/concept-mapping	    @data2evidence/integrate
+functions/d2e-webapi    	    @data2evidence/analyze
 functions/dataset		          @data2evidence/integrate
 functions/files-manager		    @data2evidence/integrate
 functions/jobplugins		      @data2evidence/integrate

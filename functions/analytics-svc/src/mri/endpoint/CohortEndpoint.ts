@@ -17,10 +17,6 @@ export class CohortEndpoint {
         public schemaName: string
     ) {}
 
-    private parseDateToString(date: Date): string {
-        return date.toISOString().slice(0, 10).replace("T", " ");
-    }
-
     private getInsertSyntaxQuery(): string {
         return `JOIN
         (SELECT DISTINCT * FROM 
@@ -143,6 +139,35 @@ export class CohortEndpoint {
         }
     }
 
+    // Get cohort definition via cohort definition id
+    public async getCohortDefinition(cohortDefinitionId: string) {
+        const queryString = `
+        SELECT
+            COHORT_DEFINITION_ID,
+            COHORT_DEFINITION_NAME,
+            COHORT_DEFINITION_DESCRIPTION,
+            DEFINITION_TYPE_CONCEPT_ID,
+            COHORT_DEFINITION_SYNTAX,
+            SUBJECT_CONCEPT_ID,
+            COHORT_INITIATION_DATE
+        FROM
+            $$SCHEMA$$.COHORT_DEFINITION
+        WHERE
+            COHORT_DEFINITION_ID = %s;
+        `;
+
+        try {
+            const query = QueryObject.format(queryString, cohortDefinitionId);
+            const result = await query.executeQuery(this.connection);
+            return result;
+        } catch (err) {
+            logger.error(
+                `Failed to get cohort definition with id: ${cohortDefinitionId}`
+            );
+            throw err;
+        }
+    }
+
     // Save cohort definition to db
     public async saveCohortDefinitionToDb(
         cohortDefinition: CohortDefinitionTableType
@@ -167,7 +192,7 @@ export class CohortEndpoint {
                 queryString,
                 cohortDefinition.name,
                 cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
+                cohortDefinition.creationTimestamp,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId
@@ -203,7 +228,7 @@ export class CohortEndpoint {
                 queryString,
                 cohortDefinition.name,
                 cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
+                cohortDefinition.creationTimestamp,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId,
@@ -341,18 +366,26 @@ export class CohortEndpoint {
     ): Promise<number> {
         let selectQueryString = `SELECT COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID" FROM $$SCHEMA$$.COHORT_DEFINITION 
         WHERE COHORT_DEFINITION_NAME=%s AND 
-        TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s AND 
         TO_DATE(COHORT_INITIATION_DATE)=TO_DATE(%s) AND 
         TO_NVARCHAR(COHORT_DEFINITION_SYNTAX)=%s
         `;
+        const sqlParams = [
+            cohortDefinition.name,
+            cohortDefinition.creationTimestamp,
+            cohortDefinition.syntax,
+        ];
+
+        // Add description clause only if description is not null
+        if (cohortDefinition.description !== null) {
+            selectQueryString +=
+                " AND TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s";
+            sqlParams.push(cohortDefinition.description);
+        }
 
         try {
             const selectQuery = QueryObject.format(
                 selectQueryString,
-                cohortDefinition.name,
-                cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
-                cohortDefinition.syntax
+                ...sqlParams
             );
             let selectQueryResult = await selectQuery.executeQuery(
                 this.connection
