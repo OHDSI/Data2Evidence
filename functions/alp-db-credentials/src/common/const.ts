@@ -5,6 +5,13 @@ export enum DB_DIALECT {
 
 export const DB_DIALECTS = Object.values(DB_DIALECT).map(v => v as string)
 
+export enum AuthenticationMode {
+  PASSWORD = 'Password',
+  JWT = 'JWT'
+}
+
+export const AUTHENTICATION_MODES = Object.values(AuthenticationMode).map(v => v as string)
+
 export enum USER_SCOPE {
   ADMIN = 'Admin',
   READ = 'Read'

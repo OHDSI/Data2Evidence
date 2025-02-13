@@ -22,12 +22,16 @@ export class DbService {
     const isClientCredentials = grantType === 'client_credentials'
     const query = this.dbRepo
       .createQueryBuilder('db')
-      .leftJoinAndSelect('db.credentials', 'dbCredential')
+      .leftJoinAndSelect(
+        'db.credentials',
+        'dbCredential',
+        'db.id = dbCredential.dbId AND dbCredential.serviceScope = :serviceScope',
+        {
+          serviceScope: SERVICE_SCOPE.INTERNAL
+        }
+      )
       .leftJoinAndSelect('db.vocabSchemas', 'dbVocabSchema')
       .leftJoinAndSelect('db.extra', 'dbExtra')
-      .where('dbCredential.serviceScope = :serviceScope', {
-        serviceScope: SERVICE_SCOPE.INTERNAL
-      })
     const result = await query.select(this.getDbColumns(isClientCredentials)).getMany()
     return result.map(r => {
       const { extra, vocabSchemas, ...entity } = r
@@ -190,6 +194,7 @@ export class DbService {
       'db.port',
       'db.name',
       'db.dialect',
+      'db.authenticationMode',
       'dbCredential.username',
       'dbCredential.userScope',
       'dbCredential.serviceScope',

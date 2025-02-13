@@ -10,7 +10,8 @@ import {
   ValidateNested,
   IsUUID,
   MaxLength,
-  IsObject
+  IsObject,
+  ValidateIf
 } from 'class-validator'
 import type {
   DbDialect,
@@ -20,7 +21,7 @@ import type {
   IDbExtraDto,
   IDbUpdateDto
 } from '../../types'
-import { SERVICE_SCOPES, DB_DIALECTS, SERVICE_SCOPE, USER_SCOPES } from '../../common/const'
+import { SERVICE_SCOPES, DB_DIALECTS, SERVICE_SCOPE, USER_SCOPES, AuthenticationMode } from '../../common/const'
 import { IsExistingDb, IsValidSchema, IsValidSchemaUpdate } from '../../common/validator'
 
 export class DbExtraDto implements IDbExtraDto {
@@ -54,6 +55,11 @@ export class DbDto implements IDbDto {
   @Type(() => DbExtraDto)
   extra: DbExtraDto
 
+  @IsOptional()
+  @IsString()
+  authenticationMode: AuthenticationMode
+
+  @ValidateIf(o => o.authenticationMode === AuthenticationMode.PASSWORD)
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
@@ -102,6 +108,11 @@ export class DbCredentialUpdateDto implements IDbCredentialUpdateDto {
   @IsExistingDb()
   id: string
 
+  @IsNotEmpty()
+  @IsString()
+  authenticationMode: AuthenticationMode
+
+  @ValidateIf(o => o.authenticationMode === AuthenticationMode.PASSWORD)
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

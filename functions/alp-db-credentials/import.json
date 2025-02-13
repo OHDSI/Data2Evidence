@@ -37,6 +37,7 @@
   "./src/common/data-source/migrations/1704846290461-update-db-extra": "./src/common/data-source/migrations/1704846290461-update-db-extra.ts",
   "./src/common/data-source/migrations/1700709870313-create-db-credential": "./src/common/data-source/migrations/1700709870313-create-db-credential.ts",
   "./src/common/data-source/migrations/1706832297709-add-vocab-schema": "./src/common/data-source/migrations/1706832297709-add-vocab-schema.ts",
+  "./src/common/data-source/migrations/1739258149345-add-authentication-mode": "./src/common/data-source/migrations/1739258149345-add-authentication-mode.ts",
   "./src/common/data-source/migration-data-source": "./src/common/data-source/migration-data-source.ts",
   "./src/common/data-source/data-source": "./src/common/data-source/data-source.ts",
   "./src/common/hook": "./src/common/hook/index.ts",

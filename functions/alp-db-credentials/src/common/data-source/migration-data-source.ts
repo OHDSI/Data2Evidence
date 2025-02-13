@@ -12,6 +12,7 @@ import { AddUserScopeToDbCredential1703139369074 } from './migrations/1703139369
 import { UpdateDbExtra1704846290461 } from './migrations/1704846290461-update-db-extra'
 import { AddCodeToDb1706063894993 } from './migrations/1706063894993-add-code-to-db'
 import { AddVocabSchema1706832297709 } from './migrations/1706832297709-add-vocab-schema'
+import { AddAuthenticationMode1739258149345 } from './migrations/1739258149345-add-authentication-mode'
 
 const migrationDataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -31,7 +32,8 @@ const migrationDataSourceOptions: DataSourceOptions = {
     AddUserScopeToDbCredential1703139369074,
     UpdateDbExtra1704846290461,
     AddCodeToDb1706063894993,
-    AddVocabSchema1706832297709
+    AddVocabSchema1706832297709,
+    AddAuthenticationMode1739258149345
   ]
 }
 

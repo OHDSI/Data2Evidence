@@ -70,7 +70,7 @@ export const validateDbDto = async (req: Request, res: Response, next: NextFunct
       return acc
     }, [])
     logger.error(`Error while validating DB command request: ${JSON.stringify(errorMsgs)}`)
-    return res.status(400).send('Invalid request object')
+    return res.status(400).send({ message: errorMsgs })
   }
   next()
 }
