@@ -59,13 +59,15 @@ export class DbService {
     if (grantType !== 'client_credentials') {
       db.credentials.forEach(c => {
         c.password = maskedValue
-        delete c.salt
+        if(c !== undefined) delete c.salt
       })
     }
 
+    const extra = db.extra.find(ext => (ext !== undefined && ext.serviceScope === serviceScope))?.value
+
     return {
       ...db,
-      extra: db.extra && db.extra.find(ext => ext.serviceScope === serviceScope).value
+      extra
     }
   }
 
@@ -108,7 +110,7 @@ export class DbService {
       .leftJoinAndSelect('db.vocabSchemas', 'vocabSchema')
       .leftJoinAndSelect('db.extra', 'dbExtra')
       .where('db.id = :id', { id })
-      .getOne()
+      .getOne() as { vocabSchemas, extra, name, host, port }
 
     const {
       vocabSchemas: existingVocabSchemaEntities,
@@ -155,7 +157,7 @@ export class DbService {
       .createQueryBuilder('db')
       .leftJoinAndSelect('db.credentials', 'dbCredential')
       .where('db.id = :id', { id })
-      .getOne()
+      .getOne() as { credentials }
 
     const { credentials: existingCredEntities } = existingDb
     if (credentials) {

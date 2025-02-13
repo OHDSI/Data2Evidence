@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+    "allowJs": true,
+    "noImplicitAny": false
+  },
+  "importMap": "./import.json",
+  "tasks": {
+    "test": "deno test --allow-read --allow-env --allow-net --node-modules-dir"
+  }
+}

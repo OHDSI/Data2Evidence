@@ -15,7 +15,7 @@ export class DbCredential extends Audit {
   password: string
 
   @Column()
-  salt: string
+  salt?: string
 
   @Column({ name: 'user_scope', default: 'Default' })
   userScope: string // Admin, Read

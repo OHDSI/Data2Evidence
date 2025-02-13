@@ -1,4 +1,7 @@
 {"imports":{
+  "@std/assert": "jsr:@std/assert",
+  "@std/testing/bdd": "jsr:@std/testing/bdd",
+  "@std/expect": "jsr:@std/expect",
   "@deno/shim-deno": "npm:@deno/shim-deno@0.19.2",
   "class-transformer": "npm:class-transformer@^0.5.1",
   "class-validator": "npm:class-validator@^0.14.0",

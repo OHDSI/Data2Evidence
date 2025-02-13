@@ -1,4 +1,4 @@
-import { DB_DIALECTS, SERVICE_SCOPE } from './common/const'
+import { DB_DIALECTS, SERVICE_SCOPE, SERVICE_SCOPES, USER_SCOPES } from './common/const'
 
 export type ReqContext = {
   userId: string
@@ -36,8 +36,8 @@ export interface IDbExtraDto {
 }
 
 export type DbDialect = (typeof DB_DIALECTS)[number]
-export type UserScope = (typeof USER_SCOPE)[number]
-export type ServiceScope = (typeof SERVICE_SCOPE)[number]
+export type UserScope = (typeof USER_SCOPES)[number]
+export type ServiceScope = (typeof SERVICE_SCOPES)[number]
 
 export interface IDbCredentialDto {
   username: string

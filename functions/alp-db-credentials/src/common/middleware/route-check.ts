@@ -50,21 +50,22 @@ export const validateDbDto = async (req: Request, res: Response, next: NextFunct
     whitelist: true
   })
   if (errors.length > 0) {
-    const errorMsgs = errors.reduce((acc, err) => {
+    const errorMsgs = errors.reduce((acc: string[], err) => {
       const { constraints, children } = err
       if (constraints) {
-        acc.push(...Object.values(constraints))
+        acc = acc.concat(Object.values(constraints))
       } else if (children) {
         children
           .flatMap(c => c.children)
           .filter(c => c !== undefined)
           .map(c => c.constraints)
-          .forEach(c => acc.push(...Object.values(c)))
+          .filter(c => c !== undefined)
+          .forEach(c => acc.concat(Object.values(c)))
 
         children
           .map(c => c.constraints)
           .filter(c => c !== undefined)
-          .forEach(c => acc.push(...Object.values(c)))
+          .forEach(c => acc.concat(Object.values(c)))
       }
       return acc
     }, [])
