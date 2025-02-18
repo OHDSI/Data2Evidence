@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
+version=develop #default version
 
 cmd=${@: -1}
 script_full_path=$(dirname "$0")
-#export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~0.5.0}
 
 if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
   node_modules_path=$D2ECLI_NODE_MODULES_PATH
@@ -14,6 +14,7 @@ else
   echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Existing"
   exit -1
 fi
+
 export CADDY__CONFIG=${CADDY__CONFIG:-./.deploy/caddy-config}
 export ENV_TYPE=${ENV_TYPE:-remote}
 DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
@@ -22,15 +23,18 @@ export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
 export ENVFILE=.env
 
-while getopts d:eft: flag
+
+while getopts d:efc:v: flag
 do
     case "${flag}" in
         d) function_path=${OPTARG};;
         e) demo=--profile="demodb";;
         f) fhir=--profile="fhir";;
-        t) trex="--file ${OPTARG}";;
+        c) compose="--file ${OPTARG}";;
+        v) version=${OPTARG}
     esac
 done
+
 
 if [ -n "$function_path" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file .env.local"
@@ -41,7 +45,19 @@ else
     dev="--env-file .env"
 fi
 
-dockerbasecmd="docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dev $trex"
+
+if [[ $version = "develop" ]]; then
+  export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
+  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
+  DOCKER_LOG_LEVEL=INFO
+else
+  export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
+  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
+fi
+
+dockerbasecmd="docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dev $compose"
 
 case $cmd in
     start)
@@ -105,9 +121,10 @@ case $cmd in
         echo "  clean       Removes d2e docker containers and volumnes"
         echo ""
         echo "Options:"
-        echo "  e           Include demo database"
-        echo "  f           Include FHIR Server"
-        echo "  d [PATH]    Development mode. [PATH] is the path to functions"
-        echo "  t [PATH]    Trex development mode. [PATH] is path to the trex docker compose file"
+        echo " -e           Include demo database"
+        echo " -f           Include FHIR Server"
+        echo " -d [PATH]    Development mode. [PATH] is the path to functions"
+        echo " -c [PATH]    [PATH] is path to an additional docker compose file"
+        echo " -v [VERSION] Version of the d2e services to use"
         ;;
 esac
