@@ -118,7 +118,7 @@ services:
       data:
         priority: 10
     volumes:
-      - trex:/usr/src/plugin/node_modules
+      - trex:/usr/src/data
     healthcheck:
       interval: 60s
       retries: 30
