@@ -22,12 +22,6 @@
           "env": "mri-pg-config"
         },
         {
-          "function": "/alp-fhir-init",
-          "imports": "/alp-fhir-init/import.json",
-          "env": "alp-fhir-init",
-          "waitfor": "http://alp-minerva-fhir-server-1:8103/healthcheck"
-        },
-        {
           "function": "/alp-db-credentials/src/init",
           "imports": "/alp-db-credentials/import.json",
           "env": "alp-db-credentials"
@@ -196,12 +190,6 @@
         {
           "source": "/callback",
           "service": "logto"
-        },
-        {
-          "source": "/gateway/api/fhir",
-          "function": "/alp-fhir-svc",
-          "env": "alp-fhir-svc",
-          "imports": "/alp-fhir-svc/import.json"
         },
         {
           "source": "/concept-mapping",
@@ -380,7 +368,6 @@
           "dataflowmgmt.analysisflow.add",
           "dataflowmgmt.analysisflow.delete",
           "dataflowmgmt.analysisflow.revision.delete",
-          "gateway.fhir.create",
           "prefect.read",
           "prefect.delete",
           "prefect.post",
@@ -470,7 +457,6 @@
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "portal.dataset.read",
-          "gateway.fhir.create",
           "dataflowmgmt.dataflow.flowRun.results.read"
         ]
       },
@@ -2128,15 +2114,6 @@
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/gateway/api/fhir",
-          "scopes": [
-            "gateway.fhir.create"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {

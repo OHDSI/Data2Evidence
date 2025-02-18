@@ -4,6 +4,7 @@ node_modules
 npm-debug.log
 *.tmp*
 pyqeenv
+.deploy
 pyomopqlenv
 *.pyc
 target

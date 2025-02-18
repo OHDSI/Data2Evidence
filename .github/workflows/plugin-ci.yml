@@ -43,9 +43,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: ./functions
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - PKGPATH: ./functions/
+            DESTPATH: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+          - PKGPATH: ./fhir_functions/
+            DESTPATH: /usr/src/plugin/node_modules/@data2evidence/fhir
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +64,8 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
-      - name: Update version
+      - name: Prepare
+        working-directory: ${{ matrix.PKGPATH }}
         run: |
           if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
             RELEASE_VERSION=${{ github.event.inputs.tag }}
@@ -65,20 +73,19 @@ jobs:
           else
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
           fi
-      - name: cp pkg
-        run: cp package.json package.org.json
-      - name: mkdir
-        run: sudo mkdir -p /usr/src/plugin/node_modules/@data2evidence/d2e-functions
-      - name: chown
-        run: sudo chown runner:docker /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+          cp package.json package.org.json
+          sudo mkdir -p ${{ matrix.DESTPATH }}
+          sudo chown runner:docker ${{ matrix.DESTPATH }}
       - name: npminstall
-        run: npm install
+        working-directory: ${{ matrix.PKGPATH }}
+        run: |
+          npm install
+          cp -a . ${{ matrix.DESTPATH }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PH_TOKEN }}
-      - name: cp src
-        run: cp -a . /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+ 
       - name: npm build
-        working-directory: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+        working-directory: ${{ matrix.DESTPATH }}
         run: npm run build
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -87,7 +94,7 @@ jobs:
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
           scope: "@data2evidence"
       - name: Publish
-        working-directory: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+        working-directory: ${{ matrix.DESTPATH }}
         env:
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

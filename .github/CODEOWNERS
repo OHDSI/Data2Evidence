@@ -1,8 +1,8 @@
-*                             @data2evidence/devops
+*                             @data2evidence/pmc
+.github/workflows            @data2evidence/devops
 functions/_shared		          @data2evidence/analyze
 functions/alp-db-credentials	@data2evidence/integrate
-functions/alp-fhir-init		    @data2evidence/data
-functions/alp-fhir-svc		    @data2evidence/data
+fhir_functions/		            @data2evidence/data
 functions/alp-usermgmt		    @data2evidence/integrate
 functions/alpdb			          @data2evidence/integrate
 functions/analytics-svc		    @data2evidence/analyze

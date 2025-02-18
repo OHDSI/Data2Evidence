@@ -5,6 +5,7 @@ services:
       - 9229:9229
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
+      - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
       LOCAL_DEBUG: "true"
