@@ -15,6 +15,7 @@ export interface IDbDto {
   authenticationMode: AuthenticationMode
   credentials: IDbCredentialDto[]
   vocabSchemas: string[]
+  publications: IDbPublicationDto[]
 }
 
 export interface IDbUpdateDto {
@@ -24,6 +25,7 @@ export interface IDbUpdateDto {
   port: number
   vocabSchemas?: string[]
   extra?: IDbExtraDto
+  publications: IDbPublicationDto[]
 }
 
 export interface IDbCredentialUpdateDto {
@@ -47,4 +49,9 @@ export interface IDbCredentialDto {
   salt: string
   userScope: UserScope
   serviceScope: ServiceScope
+}
+
+export interface IDbPublicationDto {
+  publication: string
+  slot: string
 }

@@ -1,10 +1,17 @@
 import { Service } from 'typedi'
 import { v4 as uuidv4 } from 'uuid'
 import { createLogger } from '../logger'
-import { DbRepository, DbExtraRepository, DbCredentialRepository, DbVocabSchemaRepository } from './repository'
+import {
+  DbRepository,
+  DbExtraRepository,
+  DbCredentialRepository,
+  DbPublicationRepository,
+  DbVocabSchemaRepository
+} from './repository'
 import { DbDialect, IDbCredentialDto, IDbCredentialUpdateDto, IDbDto, IDbExtraDto, IDbUpdateDto } from '../types'
 import { getReqContext } from '../common/hook'
 import { SERVICE_SCOPE } from '../common/const'
+import { IDbPublicationDto } from '../types'
 
 @Service()
 export class DbService {
@@ -14,7 +21,8 @@ export class DbService {
     private readonly dbRepo: DbRepository,
     private readonly dbExtraRepo: DbExtraRepository,
     private readonly credentialRepo: DbCredentialRepository,
-    private readonly vocabSchemaRepo: DbVocabSchemaRepository
+    private readonly vocabSchemaRepo: DbVocabSchemaRepository,
+    private readonly publicationRepo: DbPublicationRepository
   ) {}
 
   async list() {
@@ -32,13 +40,15 @@ export class DbService {
       )
       .leftJoinAndSelect('db.vocabSchemas', 'dbVocabSchema')
       .leftJoinAndSelect('db.extra', 'dbExtra')
+      .leftJoinAndSelect('db.publications', 'dbPublication')
     const result = await query.select(this.getDbColumns(isClientCredentials)).getMany()
     return result.map(r => {
-      const { extra, vocabSchemas, ...entity } = r
+      const { extra, vocabSchemas, publications, ...entity } = r
       return {
         ...entity,
         extra,
-        vocabSchemas: vocabSchemas.map(vocabSchema => vocabSchema.name)
+        vocabSchemas: vocabSchemas.map(vocabSchema => vocabSchema.name),
+        publications
       }
     })
   }
@@ -63,11 +73,11 @@ export class DbService {
     if (grantType !== 'client_credentials') {
       db.credentials.forEach(c => {
         c.password = maskedValue
-        if(c !== undefined) delete c.salt
+        if (c !== undefined) delete c.salt
       })
     }
 
-    const extra = db.extra.find(ext => (ext !== undefined && ext.serviceScope === serviceScope))?.value
+    const extra = db.extra.find(ext => ext !== undefined && ext.serviceScope === serviceScope)?.value
 
     return {
       ...db,
@@ -91,7 +101,7 @@ export class DbService {
 
   async create(dbDto: IDbDto) {
     const dbId = uuidv4()
-    const { credentials, extra, vocabSchemas, ...newDbDto } = dbDto
+    const { credentials, extra, vocabSchemas, publications, ...newDbDto } = dbDto
 
     const credEntities = this.mapCredentialsToEntity(credentials, dbId)
     const entity = this.dbRepo.create({
@@ -99,7 +109,8 @@ export class DbService {
       id: dbId,
       extra: this.mapExtraToEntity(extra, dbId),
       credentials: credEntities,
-      vocabSchemas: this.mapVocabSchemasToEntity(vocabSchemas, dbId)
+      vocabSchemas: this.mapVocabSchemasToEntity(vocabSchemas, dbId),
+      publications: this.mapPublicationsToEntity(publications, dbId)
     })
     await this.dbRepo.save(this.addOwner(entity))
     this.logger.debug(`Created db: ${JSON.stringify(entity)}`)
@@ -107,21 +118,23 @@ export class DbService {
   }
 
   async update(dbDto: IDbUpdateDto) {
-    const { id, name, port, host, vocabSchemas, extra } = dbDto
+    const { id, name, port, host, vocabSchemas, extra, publications } = dbDto
 
-    const existingDb = await this.dbRepo
+    const existingDb = (await this.dbRepo
       .createQueryBuilder('db')
       .leftJoinAndSelect('db.vocabSchemas', 'vocabSchema')
       .leftJoinAndSelect('db.extra', 'dbExtra')
+      .leftJoinAndSelect('db.publications', 'dbPublication')
       .where('db.id = :id', { id })
-      .getOne() as { vocabSchemas, extra, name, host, port }
+      .getOne()) as { vocabSchemas; extra; name; host; port; publications }
 
     const {
       vocabSchemas: existingVocabSchemaEntities,
       extra: existingExtraEntities,
       name: existingName,
       host: existingHost,
-      port: existingPort
+      port: existingPort,
+      publications: existingPublicationEntities
     } = existingDb
 
     if (name !== existingName || host !== existingHost || port !== existingPort) {
@@ -152,16 +165,28 @@ export class DbService {
       await this.dbExtraRepo.delete({ dbId: id })
     }
 
+    if (publications) {
+      const pubEntities = this.mapPublicationsToEntity(publications, dbDto.id)
+      await this.publicationRepo.upsert(pubEntities, ['publication', 'dbId'])
+      existingPublicationEntities
+        .filter(o => pubEntities.find(n => o.publication === n.publication) === undefined)
+        .forEach(async existingPublication => {
+          await this.publicationRepo.delete({ publication: existingPublication.publication, dbId: id })
+        })
+    } else {
+      await this.publicationRepo.delete({ dbId: id })
+    }
+
     this.logger.debug(`Updated db: ${JSON.stringify(dbDto)}`)
     return id
   }
   async updateCredentials(dbDto: IDbCredentialUpdateDto) {
     const { id, credentials } = dbDto
-    const existingDb = await this.dbRepo
+    const existingDb = (await this.dbRepo
       .createQueryBuilder('db')
       .leftJoinAndSelect('db.credentials', 'dbCredential')
       .where('db.id = :id', { id })
-      .getOne() as { credentials }
+      .getOne()) as { credentials }
 
     const { credentials: existingCredEntities } = existingDb
     if (credentials) {
@@ -200,7 +225,9 @@ export class DbService {
       'dbCredential.serviceScope',
       'dbVocabSchema.name',
       'dbExtra.value',
-      'dbExtra.serviceScope'
+      'dbExtra.serviceScope',
+      'dbPublication.publication',
+      'dbPublication.slot'
     ]
     if (hasSecret) {
       return [...baseColumns, 'dbCredential.password', 'dbCredential.salt']
@@ -245,6 +272,16 @@ export class DbService {
         name: vocabSchema
       })
       return this.vocabSchemaRepo.create(entity)
+    })
+  }
+
+  private mapPublicationsToEntity(publications: IDbPublicationDto[], dbId: string) {
+    return publications?.map(pub => {
+      const pubEntity = this.publicationRepo.create({
+        ...pub,
+        dbId: dbId
+      })
+      return this.addOwner(pubEntity)
     })
   }
 }

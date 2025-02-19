@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm'
 import { DbCredential } from './db-credential.entity'
 import { DbExtra } from './db-extra.entity'
 import { DbVocabSchema } from './db-vocab-schema.entity'
+import { DbPublication } from './db-publication.entity'
 import { Audit } from '../../common/entity'
 import { AuthenticationMode } from '../../common/const'
 
@@ -36,4 +37,7 @@ export class Database extends Audit {
 
   @OneToMany(() => DbVocabSchema, dbVocabSchema => dbVocabSchema.db, { nullable: true, cascade: ['insert'] })
   vocabSchemas: DbVocabSchema[]
+
+  @OneToMany(() => DbPublication, dbPublication => dbPublication.db, { nullable: true, cascade: ['insert'] })
+  publications: DbPublication[]
 }

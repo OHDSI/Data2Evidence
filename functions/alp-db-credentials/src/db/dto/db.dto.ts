@@ -19,7 +19,8 @@ import type {
   IDbCredentialUpdateDto,
   IDbDto,
   IDbExtraDto,
-  IDbUpdateDto
+  IDbUpdateDto,
+  IDbPublicationDto
 } from '../../types'
 import { SERVICE_SCOPES, DB_DIALECTS, SERVICE_SCOPE, USER_SCOPES, AuthenticationMode } from '../../common/const'
 import { IsExistingDb, IsValidSchema, IsValidSchemaUpdate } from '../../common/validator'
@@ -72,6 +73,12 @@ export class DbDto implements IDbDto {
   @ArrayMinSize(1)
   @IsValidSchema({ each: true })
   vocabSchemas: string[]
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DbPublicationDto)
+  publications: DbPublicationDto[]
 }
 
 export class DbUpdateDto implements IDbUpdateDto {
@@ -101,6 +108,12 @@ export class DbUpdateDto implements IDbUpdateDto {
   @ValidateNested()
   @Type(() => DbExtraDto)
   extra: DbExtraDto
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DbPublicationDto)
+  publications: DbPublicationDto[]
 }
 
 export class DbCredentialUpdateDto implements IDbCredentialUpdateDto {
@@ -141,4 +154,14 @@ export class DbCredentialDto implements IDbCredentialDto {
   @IsNotEmpty()
   @IsIn(SERVICE_SCOPES)
   serviceScope: string
+}
+
+export class DbPublicationDto implements IDbPublicationDto {
+  @IsNotEmpty()
+  @IsString()
+  publication: string
+
+  @IsNotEmpty()
+  @IsString()
+  slot: string
 }
