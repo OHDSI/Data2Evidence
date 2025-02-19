@@ -49,9 +49,9 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./functions/
-            DESTPATH: /usr/src/plugin/node_modules/@data2evidence/d2e-functions
+            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
-            DESTPATH: /usr/src/plugin/node_modules/@data2evidence/fhir
+            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
 
     steps:
       - uses: actions/checkout@v4
