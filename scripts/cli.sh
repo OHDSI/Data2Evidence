@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
+version=develop #default version
 
 cmd=${@: -1}
 script_full_path=$(dirname "$0")
-dockertag=${DOCKER_TAG:-0.5.0-beta}
-export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~0.5.0}
 
 if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
   node_modules_path=$D2ECLI_NODE_MODULES_PATH
@@ -15,46 +14,84 @@ else
   echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Existing"
   exit -1
 fi
-export CADDY__CONFIG=./deploy/caddy-config
+
+export CADDY__CONFIG=${CADDY__CONFIG:-./.deploy/caddy-config}
 export ENV_TYPE=${ENV_TYPE:-remote}
 DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
-export DOCKER_TAG_NAME=$dockertag
-export DOCKER_TREX_TAG_NAME=$dockertag
 export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
 export ENVFILE=.env
-export CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost:41100}
-export TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
+
+
+while getopts d:efc:v: flag
+do
+    case "${flag}" in
+        d) function_path=${OPTARG};;
+        e) demo=--profile="demodb";;
+        f) fhir=--profile="fhir";;
+        c) compose="--file ${OPTARG}";;
+        v) version=${OPTARG}
+    esac
+done
+
+
+if [ -n "$function_path" ]; then
+    dev="--file $node_modules_path/docker-compose-local.yml --env-file .env.local"
+    export D2E_FUNCTIONS=$function_path
+    export PROJECT_NAME=${PROJECT_NAME:-alp}
+    export PORT=${PORT:-41100}
+else
+    dev="--env-file .env"
+fi
+
+
+if [[ $version = "develop" ]]; then
+  export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
+  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
+  DOCKER_LOG_LEVEL=INFO
+else
+  export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
+  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
+fi
+
+dockerbasecmd="docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dev $compose"
 
 case $cmd in
     start)
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait
-        ;;
-    startdemo)
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env up --wait
+        cmd="$dockerbasecmd up --wait"
+        echo $cmd
+        $cmd
         ;;
     stop)
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env stop
+        cmd="$dockerbasecmd stop"
+        echo $cmd
+        $cmd
         ;;
-    stopdemo)
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env stop
+    build)
+        cmd="$dockerbasecmd build"
+        echo $cmd
+        $cmd
+        ;;
+    status)
+        cmd="$dockerbasecmd ps"
+        echo $cmd
+        $cmd
+        ;;
+    logs)
+        cmd="$dockerbasecmd logs -f -t"
+        echo $cmd
+        $cmd
         ;;
     clean)
         read -p "This action will delete all docker containers and volumnes. Continue (y/n)?" choice
         case "$choice" in
             y|Y)
-                docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env down --volumes --remove-orphans
-                ;;
-            *)
-                echo "Aborting";;
-        esac
-        ;;
-    cleandemo)
-        read -p "This action will delete all docker containers and volumnes. Continue (y/n)?" choice
-        case "$choice" in
-            y|Y)
-                docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --file $node_modules_path/docker-compose-atlas.yml --env-file .env down --volumes --remove-orphans
+                cmd="$dockerbasecmd down --volumes --remove-orphans"
+                echo $cmd
+                $cmd
                 ;;
             *)
                 echo "Aborting";;
@@ -63,21 +100,10 @@ case $cmd in
     patchdemodb)
         docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
         ;;
-    setup)
-        docker pull ghcr.io/data2evidence/d2e-flow/base:$dockertag &&
-        docker pull ghcr.io/data2evidence/d2e-flow/nlp:$dockertag &&
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-minerva-postgres alp-logto --wait &&
-        sleep 10 &&
-        docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up alp-logto-post-init
-        ;;
     init)
-        sed '3d' $node_modules_path/README.md > README.md &&
-        cp -a $node_modules_path/docs . &&
-        cp -a $node_modules_path/deploy . &&
-        $node_modules_path/scripts/gen-dotenv.sh && $node_modules_path/scripts/gen-tls.sh && $node_modules_path/scripts/gen-resource-limits.sh
-        ;;
-    login)
-        docker login -u $GH_USERNAME -p $GH_TOKEN ghcr.io
+        cp -a $node_modules_path/deploy .deploy &&
+        $node_modules_path/scripts/gen-dotenv.sh && $node_modules_path/scripts/gen-tls.sh && $node_modules_path/scripts/gen-resource-limits.sh &&
+        docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}
         ;;
     *)
         if [ -z ${cmd:-} ]; then
@@ -86,20 +112,19 @@ case $cmd in
             echo "d2e: $cmd is not a d2e command."
         fi
         echo ""
-        echo "Usage: d2e COMMAND"
+        echo "Usage: d2e [OPTIONS] COMMAND"
         echo ""
         echo "Commands:"
         echo "  init        Initializes D2E directory and generates .env file"
-        echo "  login       Login into github. It's required to login to pull the docker images."
-        echo "  setup       Initializes d2e IDP DB. Requires d2e init to be run."
         echo "  start       Starts d2e services. Requires d2e init and d2e setup to be run."
         echo "  stop        Stops d2e services"
         echo "  clean       Removes d2e docker containers and volumnes"
-        echo "  startdemo   Starts d2e services incl. demo database"
-        echo "  stopdemo    Stops d2e services incl. demo database"
-        echo "  cleandemo   Removes d2e docker containers and volumnes incl. demo database"
+        echo ""
+        echo "Options:"
+        echo " -e           Include demo database"
+        echo " -f           Include FHIR Server"
+        echo " -d [PATH]    Development mode. [PATH] is the path to functions"
+        echo " -c [PATH]    [PATH] is path to an additional docker compose file"
+        echo " -v [VERSION] Version of the d2e services to use"
         ;;
 esac
-
-
-#docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml --env-file .env up --wait

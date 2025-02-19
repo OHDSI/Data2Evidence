@@ -13,6 +13,7 @@
   - IDP__RELYING_PARTY: `azure`
   - LOGTO_ROLES_AZ_GROUPS_MAPPING - Update `Object ID from Groups` from target Azure
   - LOGTO__SCOPE: `openid offline_access profile email role.systemadmin role.useradmin role.tenantviewer role.dashboardviewer`
+  - Uncomment `LOGTO__CUSTOM_JWT`
   - Restart services
 
 # Microsoft Azure AD connector

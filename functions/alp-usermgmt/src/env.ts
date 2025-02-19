@@ -34,7 +34,7 @@ export const env = {
   SSL_CA_CERT: Deno.env.get("TLS__INTERNAL__CA_CRT")?.replace(/\\n/g, '\n'),
   SERVICE_ROUTES: Deno.env.get("SERVICE_ROUTES") || '{}',
   NODE_ENV: _env.NODE_ENV,
-  PG_SSL: _env.PG_SSL,
+  PG_SSL: _env.PG__SSL,
   APP__TENANT_ID: _env.APP__TENANT_ID,
   IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
   IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME

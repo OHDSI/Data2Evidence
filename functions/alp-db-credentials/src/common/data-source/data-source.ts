@@ -7,19 +7,20 @@ import { Database } from '../../db/entity/db.entity'
 import { DbCredential } from '../../db/entity/db-credential.entity'
 import { DbExtra } from '../../db/entity/db-extra.entity'
 import { DbVocabSchema } from '../../db/entity/db-vocab-schema.entity'
+import { DbPublication } from '../../db/entity/db-publication.entity'
 
 const logger = createLogger('DataSource')
 
 export const getSsl = (): boolean | TlsOptions => {
+  let ssl: any = JSON.parse(env.PG_SSL.toLowerCase())
+
   if (env.PG_CA_ROOT_CERT) {
-    return {
+    ssl = {
       rejectUnauthorized: true,
       ca: env.PG_CA_ROOT_CERT
     }
-  } else if (env.NODE_ENV === 'production') {
-    logger.warn('PG_CA_ROOT_CERT is undefined')
   }
-  return false
+  return ssl
 }
 
 export const getLogLevels = (): LogLevel[] => {
@@ -40,7 +41,7 @@ export const dataSourceOptions: DataSourceOptions = {
   ssl: getSsl(),
   poolSize: env.PG_MAX_POOL,
   logging: getLogLevels(),
-  entities: [Audit, Database, DbCredential, DbExtra, DbVocabSchema]
+  entities: [Audit, Database, DbCredential, DbExtra, DbVocabSchema, DbPublication]
 }
 
 const dataSource = new DataSource(dataSourceOptions)

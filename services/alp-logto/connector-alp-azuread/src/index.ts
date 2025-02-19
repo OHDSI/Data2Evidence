@@ -104,6 +104,7 @@ const getAccessToken = async (
   });
 
   const authResult = await clientApplication.acquireTokenByCode(codeRequest);
+  const idToken = authResult.idToken
 
   await assignLogtoRolesByAzureGroups(
     authResult.idToken,
@@ -123,7 +124,7 @@ const getAccessToken = async (
     new ConnectorError(ConnectorErrorCodes.SocialAuthCodeInvalid)
   );
 
-  return { accessToken };
+  return { accessToken, idToken };
 };
 
 const assignLogtoRolesByAzureGroups = async (
@@ -404,7 +405,7 @@ const getUserInfo =
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, azureADConfigGuard);
 
-    const { accessToken } = await getAccessToken(config, code, redirectUri);
+    const { accessToken, idToken } = await getAccessToken(config, code, redirectUri);
 
     // throw new Error("asdfasdfasdfasdfsd")
 
@@ -428,6 +429,12 @@ const getUserInfo =
       }
 
       const { id, mail, displayName } = result.data;
+
+      // @ts-ignore
+      globalThis.tokenMap = globalThis.tokenMap || {}
+      const mapId = mail
+      // @ts-ignore
+      globalThis.tokenMap[mapId] = idToken
 
       return {
         id,

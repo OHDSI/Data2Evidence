@@ -221,7 +221,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 req,
                 datasetId
             );
-            const now = +new Date();
+            const now = new Date().toISOString().split("T")[0];
             await dataflowRequest(req, "POST", `cohort/flow-run`, {
                 options: {
                     token,
@@ -365,6 +365,26 @@ export async function generateCohortDefinition(
     }
 }
 
+export async function getCohortDefinition(req: IMRIRequest, res: Response) {
+    try {
+        const analyticsConnection = await getCohortAnalyticsConnection(req);
+
+        const cohortEndpoint = new CohortEndpoint(
+            analyticsConnection,
+            analyticsConnection.schemaName
+        );
+
+        const result = await cohortEndpoint.getCohortDefinition(
+            req.query.cohortDefinitionId
+        );
+
+        res.status(200).send(result);
+    } catch (err) {
+        logger.error(err);
+        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
 export async function createCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
@@ -377,7 +397,7 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
         const cohortDefiniton = <CohortDefinitionTableType>{
             name: req.body.name,
             description: req.body.description,
-            creationTimestamp: new Date(),
+            creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,
@@ -461,7 +481,7 @@ async function getCohortFromMriQuery(
             patientIds,
             name: cohortName,
             description: req.body.description,
-            creationTimestamp: new Date(),
+            creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,

@@ -42,6 +42,8 @@ jobs:
               - "functions/query-gen-svc/**"
               - "services/mri-db/**"
               - ".github/workflows/http-tests.yml"
+              - "package.json"
+              - "docker-compose.yml"
 
   run-http-tests:
     needs: [check_file_changes]
@@ -126,7 +128,7 @@ jobs:
       - name: Build system services
         run: |
           grep _LIMIT .env.${ENV_TYPE}
-          yarn build:minerva
+          yarn build:dev
 
       - name: Manipulate configuration
         run: |
@@ -160,7 +162,7 @@ jobs:
 
       - name: Start system services
         run: |
-          yarn start:minerva
+          yarn start:ci
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
@@ -359,22 +361,14 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-postgres-1 -t
-      - name: print logs for alp-minerva-redis-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-redis-1 -t
       - name: print logs for alp-minerva-s3
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-s3 -t
-      - name: print logs for broadsea-atlasdb
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs broadsea-atlasdb -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: |
-          docker logs trex -t
+          docker logs alp-trex -t
       - name: print logs for alp-dataflow-gen-init-1
         if: ${{ always() || cancelled() || failure() }}
         run: |

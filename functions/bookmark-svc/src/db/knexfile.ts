@@ -1,6 +1,14 @@
 import { Knex } from 'knex'
 import { env } from '../env'
 
+let ssl = JSON.parse(env.PG__SSL.toLowerCase())
+if (env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: env.PG__CA_ROOT_CERT,
+  }
+}
+
 const config: Knex.Config = {
   client: 'pg',
   connection: {
@@ -9,13 +17,7 @@ const config: Knex.Config = {
     database: env.PG__DB_NAME,
     user: env.PG_USER,
     password: env.PG_PASSWORD,
-    ssl:
-      env.NODE_ENV === 'development'
-        ? Boolean(env.PG_SSL)
-        : {
-            rejectUnauthorized: true,
-            ca: env.PG_CA_ROOT_CERT,
-          },
+    ssl,
   },
   searchPath: [env.PG_SCHEMA],
   pool: {

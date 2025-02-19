@@ -4,7 +4,8 @@ services:
     ports:
       - 9229:9229
     volumes:
-      - ./functions:/usr/src/plugins/d2ef
+      - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
+      - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
       LOCAL_DEBUG: "true"
@@ -32,14 +33,14 @@ services:
           "code-suggestion": false,
           "portal": false,
           "files-manager": false,
-          "demo": false
+          "demo": false,
+          "d2e-webapi": false
         }
 
   alp-caddy:
     command: caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile --watch
     image: caddy:2.8-alpine
     ports:
-      - 41100:41100
       - 41000:41000
       - 41130:41130
     environment:
@@ -68,7 +69,7 @@ services:
   alp-logto:
     build:
       context: ./services/alp-logto
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.local
 
   alp-minerva-pg-mgmt-init:
     build:
@@ -82,7 +83,7 @@ services:
       - 41190:5432
       - 5432:5432
 
-  broadsea-atlasdb:
+  demodb:
     ports:
       - "15432:5432"
 
@@ -134,3 +135,32 @@ services:
     ports:
       - 5005:5005
       - 8000:8000
+ 
+  fhir-server:
+    build:
+      context: ./services/alp-fhir
+      dockerfile: Dockerfile
+  
+  fhir-fe-server:
+    container_name: &c28 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+    image: ghcr.io/data2evidence/fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+    build:
+      context: ./services/alp-fhir/
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
+    ports:
+      - 41130:3000
+    logging:
+      options:
+        tag: *c28
+    depends_on:
+      fhir-server:
+        condition: service_started
+      # alp-fhir-server-post-init:
+      #   condition: service_completed_successfully
+    networks:
+      alp:
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    profiles: [fhir]
+

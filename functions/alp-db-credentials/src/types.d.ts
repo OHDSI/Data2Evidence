@@ -1,4 +1,4 @@
-import { DB_DIALECTS, SERVICE_SCOPE } from './common/const'
+import { AuthenticationMode, DB_DIALECTS, SERVICE_SCOPE, SERVICE_SCOPES, USER_SCOPES } from './common/const'
 
 export type ReqContext = {
   userId: string
@@ -12,8 +12,10 @@ export interface IDbDto {
   name: string
   dialect: DbDialect
   extra: IDbExtraDto
+  authenticationMode: AuthenticationMode
   credentials: IDbCredentialDto[]
   vocabSchemas: string[]
+  publications: IDbPublicationDto[]
 }
 
 export interface IDbUpdateDto {
@@ -23,10 +25,12 @@ export interface IDbUpdateDto {
   port: number
   vocabSchemas?: string[]
   extra?: IDbExtraDto
+  publications: IDbPublicationDto[]
 }
 
 export interface IDbCredentialUpdateDto {
   id: string
+  authenticationMode: AuthenticationMode
   credentials: IDbCredentialDto[]
 }
 
@@ -36,8 +40,8 @@ export interface IDbExtraDto {
 }
 
 export type DbDialect = (typeof DB_DIALECTS)[number]
-export type UserScope = (typeof USER_SCOPE)[number]
-export type ServiceScope = (typeof SERVICE_SCOPE)[number]
+export type UserScope = (typeof USER_SCOPES)[number]
+export type ServiceScope = (typeof SERVICE_SCOPES)[number]
 
 export interface IDbCredentialDto {
   username: string
@@ -45,4 +49,9 @@ export interface IDbCredentialDto {
   salt: string
   userScope: UserScope
   serviceScope: ServiceScope
+}
+
+export interface IDbPublicationDto {
+  publication: string
+  slot: string
 }

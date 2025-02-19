@@ -58,6 +58,16 @@ const migrationDataSourceOptions: DataSourceOptions = {
   password: _env.PG_MANAGE_PASSWORD,
   database: _env.PG_DATABASE,
   schema: _env.PG_SCHEMA,
+  ssl: (() => {
+    let ssl: any = JSON.parse(_env.PG__SSL.toLowerCase());
+    if (_env.PG__CA_ROOT_CERT) {
+      ssl = {
+        rejectUnauthorized: true,
+        ca: _env.PG__CA_ROOT_CERT,
+      };
+    }
+    return ssl;
+    })(),
   poolSize: parseInt(_env.PG__MAX_POOL) || 10,
   entities: [
     Config,

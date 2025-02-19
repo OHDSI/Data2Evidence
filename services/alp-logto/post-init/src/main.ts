@@ -57,6 +57,34 @@ async function update(
   }
 }
 
+async function upsert(
+  path: string,
+  headers: object,
+  data: object,
+  hasResponseBody = true
+) {
+  try {
+    console.log(`Request create/update ${path}`);
+    console.log(JSON.stringify(data));
+    const resp = await logto.put(path, headers, data);
+    console.log(`Responded with ${resp.status}`);
+
+    if (resp.ok) {
+      if (hasResponseBody) {
+        let json = await resp.json();
+        console.log(JSON.stringify(json));
+        return json;
+      }
+    } else {
+      console.error("Request failed");
+      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      return -1;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function fetchExisting(path: string, headers: object, showLog = true) {
   try {
     showLog && console.log(`Request existing ${path}`);
@@ -86,7 +114,7 @@ async function queryPostgres(
 }
 
 async function main() {
-  let apps: Array<{ name: string, id: string }> =
+  let apps: Array<{ name: string; id: string }> =
     JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
 
   let resource: { name: string } = JSON.parse(process.env.LOGTO__RESOURCE) || {
@@ -341,6 +369,21 @@ async function main() {
     "*********************************************************************************\n"
   );
 
+  if (process.env.LOGTO__CUSTOM_JWT) {
+    // Create custom JWT
+    console.log(
+      "*********************************** CONFIGS **********************************************"
+    );
+
+    const payload = JSON.parse(process.env.LOGTO__CUSTOM_JWT);
+    console.log("payload", payload);
+    await upsert("configs/jwt-customizer/access-token", headers, payload);
+
+    console.log(
+      "*********************************************************************************\n"
+    );
+  }
+
   console.log(
     "*********************************** SUMMARY **********************************\n"
   );
@@ -428,7 +471,6 @@ async function main() {
       createdUserRoles.length == userRoles.map((x) => x.roleIds).flat().length
     }`
   );
-
 }
 
 async function getDBClient() {
@@ -438,6 +480,16 @@ async function getDBClient() {
     host: process.env.PG__HOST,
     port: parseInt(process.env.PG__PORT),
     database: process.env.PG__DB_NAME,
+    ssl: (() => {
+      let ssl: any = JSON.parse(process.env.PG__SSL.toLowerCase());
+      if (process.env.PG__CA_ROOT_CERT) {
+        return {
+          rejectUnauthorized: true,
+          ca: process.env.PG__CA_ROOT_CERT,
+        };
+      }
+      return ssl;
+    })(),
   });
   await client.connect();
   return client;
@@ -548,11 +600,17 @@ async function seeding_apps() {
     "****************************SEEDING LOGTO APPS*****************************************************\n"
   );
   const client = await getDBClient();
-  let envApps: Array<{ name: string, id: string, secret: string, tenant_id: string, type: string, description: string,  oidcClientMetadata?: string}> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
+  let envApps: Array<{
+    name: string;
+    id: string;
+    secret: string;
+    tenant_id: string;
+    type: string;
+    description: string;
+    oidcClientMetadata?: string;
+  }> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
   for (const envapp of envApps) {
-    console.log(
-      `Seeding app ${envapp.name} | id ${envapp.id}`
-    );
+    console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
       `INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
@@ -565,7 +623,8 @@ async function seeding_apps() {
         envapp.secret,
         envapp.description,
         envapp.type,
-        envapp.oidcClientMetadata ?? '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
+        envapp.oidcClientMetadata ??
+          '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
       ]
     );
   }
@@ -573,13 +632,13 @@ async function seeding_apps() {
 }
 
 (async () => {
-try {
+  try {
     await seeding_alp_admin();
     await seeding_apps();
     await main();
-    process.exit(0)
+    process.exit(0);
   } catch (e) {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   }
 })();

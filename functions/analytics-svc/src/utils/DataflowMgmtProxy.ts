@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { Logger, EnvVarUtils } from "@alp/alp-base-utils";
 import * as https from "https";
 import * as http from "http";
@@ -81,7 +82,9 @@ export const dataflowRequest = (
                 log.error(JSON.stringify(err));
                 reject(err);
             });
-        post_req.write(data);
+        if (payload) {
+            post_req.write(data);
+        }
         post_req.end();
     });
 };

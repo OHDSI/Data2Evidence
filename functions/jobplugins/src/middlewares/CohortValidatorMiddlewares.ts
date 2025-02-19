@@ -20,9 +20,12 @@ const validateCohortJson = () => [
   body("options.cohortJson.tags")
     .isArray()
     .withMessage("CohortJson tags must be an array of strings"),
-  body("options.cohortJson.expressionType")
+  body("options.cohortJson.expression")
     .isObject()
-    .withMessage("CohortJson expressionType must be an object"),
+    .withMessage("CohortJson expression must be an object"),
+  body("options.cohortJson.expressionType")
+    .isString()
+    .withMessage("CohortJson expressionType must be a string"),
 ];
 
 // Validation rules for CohortGeneratorFlowRunOptions
@@ -33,9 +36,9 @@ export const validateCohortGeneratorFlowRunDto = () => [
   body("options.schemaName")
     .isString()
     .withMessage("schemaName must be a string"),
-  body("options.stringvocabSchemaName")
+  body("options.vocabSchemaName")
     .isString()
-    .withMessage("stringvocabSchemaName must be a string"),
+    .withMessage("vocabSchemaName must be a string"),
   ...validateCohortJson(), // Include the validation for the nested cohortJson object
   body("options.datasetId")
     .isString()
@@ -43,6 +46,7 @@ export const validateCohortGeneratorFlowRunDto = () => [
   body("options.description")
     .isString()
     .withMessage("description must be a string"),
-  body("options.owner").isString().withMessage("owner must be a string"),
-  body("options.token").isString().withMessage("token must be a string"),
+  body("options.cohortDefinitionId")
+    .isNumeric()
+    .withMessage("cohortDefinitionId must be a number"),
 ];

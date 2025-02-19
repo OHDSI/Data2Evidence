@@ -6,14 +6,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install node and yarn for env converter
 RUN mkdir -p /usr/local/node
-ENV NVM_DIR /usr/local/node
-ENV NODE_VERSION 18.20.4
+ENV NVM_DIR=/usr/local/node
+ENV NODE_VERSION=18.20.4
 
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 RUN . $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use $NODE_VERSION
-ENV NODE_HOME $NVM_DIR/versions/node/v$NODE_VERSION
-ENV NODE_PATH $NODE_HOME/lib/node_modules
-ENV PATH $NODE_HOME/bin:$PATH
+ENV NODE_HOME=$NVM_DIR/versions/node/v$NODE_VERSION
+ENV NODE_PATH=$NODE_HOME/lib/node_modules
+ENV PATH=$NODE_HOME/bin:$PATH
 
 RUN npm install --global yarn
 
@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=~/.cache/yarn yarn install
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
-ENV duckdb_version 1.1.1
+ENV duckdb_version=1.1.1
 WORKDIR /home/docker/duckdb_extensions
 RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
   && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
