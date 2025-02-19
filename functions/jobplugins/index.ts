@@ -30,12 +30,21 @@ app.use("/dataflow-mgmt/prefect", new PrefectController().router);
 app.use("/dataflow-mgmt/analysisflow", new AnalysisController().router);
 app.use("/jobplugins/cachedb", new CachedbController().router);
 
+let ssl = JSON.parse(env.PG__SSL.toLowerCase());
+if (env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: env.PG__CA_ROOT_CERT,
+  };
+}
+
 const opt = {
   user: env.PG_USER,
   password: env.PG_PASSWORD,
   host: env.PG__HOST,
   port: parseInt(env.PG__PORT),
   database: env.PG__DB_NAME,
+  ssl
 };
 const pgclient = new pg.Client(opt);
 await pgclient.connect();

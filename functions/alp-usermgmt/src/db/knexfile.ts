@@ -6,7 +6,7 @@ import * as path from "path";
 
 const logger = createLogger('KnexConfig')
 
-let ssl: any = Boolean(Deno.env.get("PG_SSL"))
+let ssl: any = JSON.parse(env.PG_SSL.toLowerCase())
 if (env.PG_CA_ROOT_CERT) {
   ssl = {
     rejectUnauthorized: true,
@@ -14,7 +14,7 @@ if (env.PG_CA_ROOT_CERT) {
   }
 }
 
-if (!env.PG_CA_ROOT_CERT && Deno.env.get("NODE_ENV") === 'production') {
+if (!env.PG_CA_ROOT_CERT && env.NODE_ENV === 'production') {
   logger.warn('PG_CA_ROOT_CERT is undefined')
 }
 

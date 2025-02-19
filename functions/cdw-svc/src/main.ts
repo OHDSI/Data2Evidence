@@ -39,6 +39,14 @@ export const main = () => {
   //Determine if this application is being run for Development / testing / Production
   let isTestEnvironment = false;
 
+  let ssl: any = JSON.parse(env.PG__SSL.toLowerCase())
+  if (env.PG__CA_ROOT_CERT) {
+    ssl = {
+      rejectUnauthorized: true,
+      ca: env.PG__CA_ROOT_CERT
+    }
+  }
+
   const configCredentials = {
     database: env.PG__DB_NAME,
     schema: env.PG_SCHEMA,
@@ -47,6 +55,7 @@ export const main = () => {
     port: env.PG__PORT,
     user: env.PG_USER,
     password: env.PG_PASSWORD,
+    ssl,
     max: env.PG__MAX_POOL,
     min: env.PG__MIN_POOL,
     idleTimeoutMillis: env.PG__IDLE_TIMEOUT_IN_MS,

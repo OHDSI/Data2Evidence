@@ -29,6 +29,8 @@ const Env = z
     PG_PASSWORD: z.string(),
     PG_SCHEMA: z.string(),
     PG__DIALECT: z.string(),
+    PG__SSL: z.string(),
+    PG__CA_ROOT_CERT: z.string().optional(),
     PG__PORT: z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
@@ -69,14 +71,14 @@ const Env = z
     }
   );
 
-let _env = Deno.env.toObject() 
-_env.PG_SCHEMA = _env.PG_SCHEMA || 'cdw_config';
+let _env = Deno.env.toObject();
+_env.PG_SCHEMA = _env.PG_SCHEMA || "cdw_config";
 
 const result = Env.safeParse(_env);
 
 if (result.success === false) {
   console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
-  throw new Error(`Service Failed to Start!! ${JSON.stringify(result)}`)
+  throw new Error(`Service Failed to Start!! ${JSON.stringify(result)}`);
 }
 
 const env = _env as z.infer<typeof Env>;

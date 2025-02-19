@@ -17,6 +17,16 @@ export class DataModelFlowService {
     host: this.env.PG__HOST,
     port: parseInt(this.env.PG__PORT),
     database: this.env.PG__DB_NAME,
+    ssl: (() => {
+      let ssl = JSON.parse(this.env.PG__SSL.toLowerCase());
+      if (this.env.PG__CA_ROOT_CERT) {
+        ssl = {
+          rejectUnauthorized: true,
+          ca: this.env.PG__CA_ROOT_CERT,
+        };
+      }
+      return ssl;
+    })(),
   };
   private pgclient;
 

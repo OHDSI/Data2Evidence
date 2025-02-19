@@ -13,7 +13,7 @@ const Env = z.object({
   PG_SCHEMA: z.string(),
   PG__DIALECT: z.string(),
   NODE_ENV: z.string().optional(),
-  PG_CA_ROOT_CERT: z.string().optional(),
+  PG__CA_ROOT_CERT: z.string().optional(),
   PG_ADMIN_USER: z.string().optional(),
   PG_ADMIN_PASSWORD: z.string().optional(),
 
@@ -40,7 +40,7 @@ const Env = z.object({
     .transform(val => val === '1' || /true/i.test(val))
     .optional(),
 
-  PG_SSL: z
+  PG__SSL: z
     .string()
     .transform(val => val === '1' || /true/i.test(val))
     .optional(),

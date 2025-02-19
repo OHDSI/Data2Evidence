@@ -114,7 +114,7 @@ async function queryPostgres(
 }
 
 async function main() {
-  let apps: Array<{ name: string, id: string }> =
+  let apps: Array<{ name: string; id: string }> =
     JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
 
   let resource: { name: string } = JSON.parse(process.env.LOGTO__RESOURCE) || {
@@ -480,6 +480,16 @@ async function getDBClient() {
     host: process.env.PG__HOST,
     port: parseInt(process.env.PG__PORT),
     database: process.env.PG__DB_NAME,
+    ssl: (() => {
+      let ssl: any = JSON.parse(process.env.PG__SSL.toLowerCase());
+      if (process.env.PG__CA_ROOT_CERT) {
+        return {
+          rejectUnauthorized: true,
+          ca: process.env.PG__CA_ROOT_CERT,
+        };
+      }
+      return ssl;
+    })(),
   });
   await client.connect();
   return client;
@@ -590,11 +600,17 @@ async function seeding_apps() {
     "****************************SEEDING LOGTO APPS*****************************************************\n"
   );
   const client = await getDBClient();
-  let envApps: Array<{ name: string, id: string, secret: string, tenant_id: string, type: string, description: string,  oidcClientMetadata?: string}> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
+  let envApps: Array<{
+    name: string;
+    id: string;
+    secret: string;
+    tenant_id: string;
+    type: string;
+    description: string;
+    oidcClientMetadata?: string;
+  }> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
   for (const envapp of envApps) {
-    console.log(
-      `Seeding app ${envapp.name} | id ${envapp.id}`
-    );
+    console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
       `INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
@@ -607,7 +623,8 @@ async function seeding_apps() {
         envapp.secret,
         envapp.description,
         envapp.type,
-        envapp.oidcClientMetadata ?? '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
+        envapp.oidcClientMetadata ??
+          '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
       ]
     );
   }
@@ -615,13 +632,13 @@ async function seeding_apps() {
 }
 
 (async () => {
-try {
+  try {
     await seeding_alp_admin();
     await seeding_apps();
     await main();
-    process.exit(0)
+    process.exit(0);
   } catch (e) {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   }
 })();

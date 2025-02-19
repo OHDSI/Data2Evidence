@@ -538,7 +538,7 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies)/(?!schema)(.*)",
+          "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
           "scopes": [
             "PA.svc"
           ]

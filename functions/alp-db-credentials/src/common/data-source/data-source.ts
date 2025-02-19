@@ -11,15 +11,15 @@ import { DbVocabSchema } from '../../db/entity/db-vocab-schema.entity'
 const logger = createLogger('DataSource')
 
 export const getSsl = (): boolean | TlsOptions => {
+  let ssl: any = JSON.parse(env.PG_SSL.toLowerCase())
+
   if (env.PG_CA_ROOT_CERT) {
-    return {
+    ssl = {
       rejectUnauthorized: true,
       ca: env.PG_CA_ROOT_CERT
     }
-  } else if (env.NODE_ENV === 'production') {
-    logger.warn('PG_CA_ROOT_CERT is undefined')
   }
-  return false
+  return ssl
 }
 
 export const getLogLevels = (): LogLevel[] => {
