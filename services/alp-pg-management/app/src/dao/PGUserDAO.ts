@@ -1,4 +1,4 @@
-import * as config from "../utils/config.js";
+import * as config from "../utils/config";
 
 export default class PGUserDAO {
   private logger = config.getLogger();
@@ -225,6 +225,16 @@ export default class PGUserDAO {
       this.logger.error(e.message);
     }
   };
+
+  grantRoleToUser = async (client: any, role: string, user: string) => {
+    try {
+      await client.query(`GRANT "${role}" TO "${user}"`);
+      this.logger.info(`Granted role ${role} to ${user}`);
+    } catch (e: any) {
+      this.logger.error(`Granted role ${role} to ${user}`);
+      this.logger.error(e.message);
+    }
+  }
 
   grantCreatePrivilegesForDatabase = async (
     client: any,

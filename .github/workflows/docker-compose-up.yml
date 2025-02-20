@@ -49,6 +49,7 @@ jobs:
         run: |
           # generate dotenv
           npm run init
+          echo "TREX_PULL_POLICY=always" >> .env
 
 
       - name: Docker compose build

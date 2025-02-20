@@ -479,6 +479,7 @@ services:
           "writerPassword": "${PG_WRITE_PASSWORD}"
          }
         }
+      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
       POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
       PORT: 41110
@@ -625,7 +626,6 @@ services:
     networks:
       alp:
         priority: 20
-    platform: linux/amd64
     environment:
       <<:
         - *x-minio

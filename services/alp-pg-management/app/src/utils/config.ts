@@ -15,6 +15,7 @@ export const getProperties = (): any => {
 		postgres_superuser_password: fetchSecretsAsPerEnvironment("POSTGRES_SUPERUSER_PASSWORD"),
 		postgres_manage_config: fetchSecretsAsPerEnvironment("POSTGRES_MANAGE_CONFIG", true),
 		postgres_manage_users: fetchSecretsAsPerEnvironment("POSTGRES_MANAGE_USERS", true),
+		postgres_manage_grant_roles_users: fetchSecretsAsPerEnvironment("POSTGRES_MANAGE_ROLES_USERS", true),
 		app_client_id: fetchSecretsAsPerEnvironment("CLIENT_ID"),
 		app_client_secret: fetchSecretsAsPerEnvironment("CLIENT_SECRET"),
 		tenant_id: fetchSecretsAsPerEnvironment("TENANT_ID"),

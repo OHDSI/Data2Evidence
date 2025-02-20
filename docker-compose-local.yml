@@ -72,6 +72,8 @@ services:
       dockerfile: Dockerfile.local
 
   alp-minerva-pg-mgmt-init:
+    ports:
+      - 9211:9211
     build:
       context: services/alp-pg-management
       dockerfile: Dockerfile

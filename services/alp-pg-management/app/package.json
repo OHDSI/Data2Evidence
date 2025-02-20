@@ -5,7 +5,7 @@
   "main": "target/app.js",
   "scripts": {
     "start": "node target/app.js",
-    "dev": "tsnd --respawn --transpile-only src/app.ts",
+    "dev": "tsnd --respawn --inspect=0.0.0.0:9211 src/app.ts",
     "postinstall": "tsc",
     "buildstart": "tsc && node target/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"

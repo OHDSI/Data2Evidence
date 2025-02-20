@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process"
-import * as config from "../utils/config.js"
+import * as config from "../utils/config"
 import { Client } from "pg"
 
 export default class PGDBRouter {
