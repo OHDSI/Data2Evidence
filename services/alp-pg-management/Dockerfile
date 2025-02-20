@@ -13,6 +13,8 @@ COPY --chown=docker:alp --chmod=711 ./app app/
 
 RUN cd app && yarn install --network-timeout 1000000 && yarn postinstall
 
+WORKDIR /home/builder/app
+
 FROM base AS final
 
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -29,6 +31,7 @@ COPY --from=builder --chown=docker:alp --chmod=711 /home/builder/app/target/ tar
 COPY --chown=docker:alp --chmod=711 ./app/package.json .
 
 RUN yarn install --network-timeout 1000000 --prod --ignore-scripts
+
 RUN yarn cache clean
 
 #ARG

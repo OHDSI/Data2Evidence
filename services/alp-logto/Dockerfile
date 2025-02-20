@@ -8,7 +8,7 @@ COPY experience.zip .
 RUN unzip experience.zip
 
 ###### [STAGE] Seal ######
-FROM ghcr.io/logto-io/logto:1.18
+FROM ghcr.io/data2evidence/logto-with-logto-schema:develop
 
 WORKDIR /etc/logto
 RUN apk update && apk add openssl>3

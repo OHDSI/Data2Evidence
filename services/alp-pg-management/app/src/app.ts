@@ -1,10 +1,7 @@
 import crypto from "crypto";
-import PGUserDAO from "./dao/PGUserDAO.js";
-import PGDBDAO from "./dao/PGDBDAO.js";
-import * as config from "./utils/config.js";
-//import { Client } from "pg";
-
-//require("dotenv");
+import PGUserDAO from "./dao/PGUserDAO";
+import PGDBDAO from "./dao/PGDBDAO";
+import * as config from "./utils/config";
 
 type pgUsers = {
   reader: string;
@@ -13,6 +10,8 @@ type pgUsers = {
   writerPassword: string;
   manager: string;
   managerPassword: string;
+  logtoManager: string;
+  logtoManagerPassword: string;
 };
 
 export class App {
@@ -44,7 +43,7 @@ export class App {
     if (!user) {
       throw new Error("Invalid User configured!");
     }
-    return user.split("@")[0]; //To handle Azure postgres scenario
+    return user;
   }
 
   getSchemaName(schema: string): string {
@@ -74,6 +73,41 @@ export class App {
     return name.toLowerCase();
   }
 
+  async grantRolesToUsers() {
+    let client;
+    const postgres_roles_users = config.getProperties()["postgres_manage_grant_roles_users"]
+
+    if (postgres_roles_users && Object.keys(postgres_roles_users).length > 0){
+      try {
+        const pg_superuser = {
+          user: config.getProperties()["postgres_superuser"],
+          password: config.getProperties()["postgres_superuser_password"],
+        };
+  
+        //Switch to super user connection
+        const pg_superuser_config = Object.assign(
+          JSON.parse(
+            JSON.stringify(config.getProperties()["postgres_connection_config"])
+          ),
+          pg_superuser
+        );
+        const client = await this.dbDao.openConnection(pg_superuser_config);
+
+        //Grant role to user
+        for (const role in postgres_roles_users) {
+          for (const user of postgres_roles_users[role]) {
+            await this.userDao.grantRoleToUser(client, role, user)
+          }
+        }
+        await this.dbDao.closeConnection(client);
+      } catch (e: any) {
+        this.logger.error(e.message);
+        await this.dbDao.closeConnection(client);
+        throw e;
+      }
+    }
+  }
+
   async createUsers(databaseName: string) {
     let client;
     try {
@@ -82,7 +116,7 @@ export class App {
         password: config.getProperties()["postgres_superuser_password"],
       };
 
-      //Switch to super user connection only for database creation
+      //Switch to super user connection
       const pg_superuser_config = Object.assign(
         JSON.parse(
           JSON.stringify(config.getProperties()["postgres_connection_config"])
@@ -122,6 +156,11 @@ export class App {
         pgUsers.manager,
         pgUsers.managerPassword,
         "Manager"
+      );
+      await this.userDao.createUserWithCreateRolePrivilege(
+        client,
+        pgUsers.logtoManager,
+        pgUsers.logtoManagerPassword
       );
 
       await this.dbDao.closeConnection(client);
@@ -213,7 +252,14 @@ export class App {
       await this.userDao.grantManagePrivilegesForSchema(
         client,
         schemaName,
-        pgUsers.manager
+        pgUsers.manager,
+        false
+      );
+      await this.userDao.grantManagePrivilegesForSchema(
+        client,
+        schemaName,
+        pgUsers.logtoManager,
+        true
       );
       await this.userDao.grantUsageSchemaPrivileges(
         client,
@@ -310,6 +356,10 @@ export class App {
         await this.grantCreatePrivilegesForDatabase(
           databaseName,
           this.getPGUsers(databaseName).manager
+        );
+        await this.grantCreatePrivilegesForDatabase(
+          databaseName,
+          this.getPGUsers(databaseName).logtoManager
         );
         const schemas = databases[database]["schemas"];
         for (let schema of Object.keys(schemas)) {

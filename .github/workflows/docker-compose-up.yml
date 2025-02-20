@@ -49,6 +49,7 @@ jobs:
         run: |
           # generate dotenv
           npm run init
+          echo "TREX_PULL_POLICY=always" >> .env
 
 
       - name: Docker compose build
@@ -86,6 +87,11 @@ jobs:
         if: success() || failure()
         run: |
           yarn ci:logs:minerva
+
+      - name: print logs for alp-logto-seed
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs alp-logto-seed -t
 
       - name: Clean Docker compose
         if: always()
