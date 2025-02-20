@@ -69,7 +69,7 @@ services:
   alp-logto:
     build:
       context: ./services/alp-logto
-      dockerfile: Dockerfile.local
+      dockerfile: Dockerfile
 
   alp-minerva-pg-mgmt-init:
     ports:

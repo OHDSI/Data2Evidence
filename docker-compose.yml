@@ -455,6 +455,7 @@ services:
             "+cdw_config": {},
             "+dataflow": {},
             "+db_credentials_mgr": {},
+            "+logto": {},
             "+portal": {},
             "+public": {},
             "+qe_config": {},
@@ -476,7 +477,9 @@ services:
           "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}"
+          "writerPassword": "${PG_WRITE_PASSWORD}",
+          "logtoManager": "${PG_LOGTO_MANAGER:-logto_postgres}",
+          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
@@ -675,11 +678,11 @@ services:
         priority: 20
     environment:
       ENV_TYPE: ${ENV_TYPE:-local}
-      PG__DB_NAME: logto
+      PG__DB_NAME: alp
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PG__PASSWORD: ${PG_SUPER_PASSWORD}
+      PG__PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
       PG__PORT: ${PG_PORT:-5432}
-      PG__USER: ${PG_SUPER_USER:-postgres}
+      PG__USER: ${PG__LOGTO_MANAGE_USER:-logto_postgres}
       PG__SSL: ${PG__SSL:-false}
       # LOGTO__CUSTOM_JWT: '{"script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  return { ...extra };\n}", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
       LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__ALP_SVC__CLIENT_ID}", "secret": "${LOGTO__ALP_SVC__CLIENT_SECRET}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__ALP_DATA__CLIENT_ID}", "secret": "${LOGTO__ALP_DATA__CLIENT_SECRET}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__ALP_APP__CLIENT_ID}", "secret": "${LOGTO__ALP_APP__CLIENT_SECRET}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/portal/login-callback","https://localhost:4000/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/portal","https://localhost:4000/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
@@ -697,6 +700,8 @@ services:
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
+      alp-logto-seed:
+        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 30
@@ -708,6 +713,7 @@ services:
         - logto.status
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    platform: linux/amd64
     image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -723,14 +729,14 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration deploy 1.18.0 && npm start
+      - npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3002 # Enable if need to access admin console
-      DB_URL: postgres://postgres:${PG_SUPER_PASSWORD}@${PROJECT_NAME:-d2e}-minerva-postgres-1:${PG_PORT:-5432}/logto
+      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       ENDPOINT: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
@@ -739,6 +745,29 @@ services:
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
       PORT: 3001
       TRUST_PROXY_HEADER: true
+      DATABASE_CONNECTION_TIMEOUT: 30000
+
+  alp-logto-seed: 
+    container_name: &c37 alp-logto-seed
+    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    platform: linux/amd64
+    entrypoint: 
+      - sh
+      - -c
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.22.0 && npx @logto/cli db alteration deploy 1.23.1
+    depends_on:
+      alp-minerva-postgres:
+        condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
+    networks:
+      alp:
+        priority: 20
+    environment:
+      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+    logging:
+      options:
+        tag: *c37
 
   alp-minerva-postgres:
     container_name: &c17 ${PROJECT_NAME:-d2e}-minerva-postgres-1

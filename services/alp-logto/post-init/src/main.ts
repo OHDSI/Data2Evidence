@@ -524,7 +524,7 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
+    "INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
     VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) \
     DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata",
     [
@@ -544,7 +544,7 @@ async function seeding_alp_admin() {
   console.log(`Inserting ${alpAdminRole.name} role to roles table`);
   await queryPostgres(
     client,
-    "INSERT INTO public.roles(tenant_id, id, name, description, type) \
+    "INSERT INTO roles(tenant_id, id, name, description, type) \
     VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) \
     DO NOTHING;",
     [
@@ -564,7 +564,7 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO public.applications_roles(tenant_id, id, application_id, role_id) \
+    "INSERT INTO applications_roles(tenant_id, id, application_id, role_id) \
     VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
     DO NOTHING;",
     [
@@ -581,7 +581,7 @@ async function seeding_alp_admin() {
   console.log(`Adding scope "management-api-all" to role ${alpAdminRole.name}`);
   await queryPostgres(
     client,
-    "INSERT INTO public.roles_scopes(tenant_id, id, role_id, scope_id) \
+    "INSERT INTO roles_scopes(tenant_id, id, role_id, scope_id) \
     VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
     DO NOTHING;",
     [
@@ -613,7 +613,7 @@ async function seeding_apps() {
     console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
-      `INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
+      `INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) 
       DO UPDATE SET secret = EXCLUDED.secret`,
       [

@@ -10,6 +10,8 @@ type pgUsers = {
   writerPassword: string;
   manager: string;
   managerPassword: string;
+  logtoManager: string;
+  logtoManagerPassword: string;
 };
 
 export class App {
@@ -155,6 +157,11 @@ export class App {
         pgUsers.managerPassword,
         "Manager"
       );
+      await this.userDao.createUserWithCreateRolePrivilege(
+        client,
+        pgUsers.logtoManager,
+        pgUsers.logtoManagerPassword
+      );
 
       await this.dbDao.closeConnection(client);
     } catch (e: any) {
@@ -245,7 +252,14 @@ export class App {
       await this.userDao.grantManagePrivilegesForSchema(
         client,
         schemaName,
-        pgUsers.manager
+        pgUsers.manager,
+        false
+      );
+      await this.userDao.grantManagePrivilegesForSchema(
+        client,
+        schemaName,
+        pgUsers.logtoManager,
+        true
       );
       await this.userDao.grantUsageSchemaPrivileges(
         client,
@@ -342,6 +356,10 @@ export class App {
         await this.grantCreatePrivilegesForDatabase(
           databaseName,
           this.getPGUsers(databaseName).manager
+        );
+        await this.grantCreatePrivilegesForDatabase(
+          databaseName,
+          this.getPGUsers(databaseName).logtoManager
         );
         const schemas = databases[database]["schemas"];
         for (let schema of Object.keys(schemas)) {

@@ -12,10 +12,10 @@ RUN npm add --location=global pnpm@^9.0.0
 RUN apk add --no-cache python3 make g++ rsync py3-setuptools git
 
 ## Git clone
-RUN git clone --branch v1.18.0 https://github.com/logto-io/logto.git /etc/logto
+# TODO: clone d2e logto instead of public repo
+RUN git clone --branch v1.23.1 https://github.com/logto-io/logto.git /etc/logto
 
 ### Install dependencies and build ###
-RUN node .scripts/update-parcelrc.js
 RUN pnpm i
 
 ### Set if dev features enabled ###
@@ -47,6 +47,7 @@ RUN rm -rf .scripts .parcel-cache pnpm-*.yaml packages/cloud
 FROM node:20-alpine as app
 WORKDIR /etc/logto
 COPY --from=builder /etc/logto .
+RUN mkdir -p /etc/logto/packages/cli/alteration-scripts && chmod g+w /etc/logto/packages/cli/alteration-scripts
 
 COPY ./connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
 
@@ -58,7 +59,6 @@ RUN yarn build
 WORKDIR /etc/logto/
 
 RUN npx @logto/cli connector link
-
 EXPOSE 3001
 ENTRYPOINT ["npm", "run"]
 CMD ["start"]

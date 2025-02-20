@@ -20,6 +20,24 @@ export default class PGUserDAO {
     }
   };
 
+  createUserWithCreateRolePrivilege = async (
+    client: any,
+    username: string,
+    password: string
+  ) => {
+    const ifUserExists = await this.verifyIfUserExists(client, username);
+    if (!ifUserExists) {
+      await client.query(
+        `CREATE ROLE ${username} NOSUPERUSER CREATEROLE LOGIN ENCRYPTED PASSWORD '${password}'`
+      );
+      this.logger.info(
+        `User ${username} with CREATEROLE Privilege successfully created.`
+      );
+    } else {
+      this.logger.info(`User ${username} already exists!`);
+    }
+  };
+
   createUserWithCreateDBPrivilege = async (
     client: any,
     username: string,
@@ -58,7 +76,9 @@ export default class PGUserDAO {
     databaseName: string,
     ownerUser: string
   ) => {
-    await client.query(`ALTER DATABASE ${databaseName} OWNER TO "${ownerUser}"`);
+    await client.query(
+      `ALTER DATABASE ${databaseName} OWNER TO "${ownerUser}"`
+    );
     this.logger.info(
       `User ${ownerUser} successfully made Owner of ${databaseName} database`
     );
@@ -128,12 +148,15 @@ export default class PGUserDAO {
   grantManagePrivilegesForSchema = async (
     client: any,
     schemaName: string,
-    user: string
+    user: string,
+    withGrantOption: boolean
   ) => {
     try {
       //Access to schema and create objects within schema
       await client.query(
-        `GRANT CREATE, USAGE ON SCHEMA ${schemaName} to ${user}`
+        `GRANT CREATE, USAGE ON SCHEMA ${schemaName} to ${user} ${
+          withGrantOption ? "with grant option" : ""
+        }`
       );
 
       //Create/Write Access to current Objects
