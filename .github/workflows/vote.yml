@@ -1,0 +1,14 @@
+name: 'Voting'
+on:
+  pull_request_target:
+
+jobs:
+  democracy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evaluate vote
+        uses: myyk/git-democracy@v2
+        with:
+          configPath: .github/
