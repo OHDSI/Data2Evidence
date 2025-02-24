@@ -251,15 +251,21 @@ export class DBDAO {
                 ) {
                     delete credentials.user;
                     delete credentials.password;
-                    if (request.headers["x-idp-authorization"]) {
-                        credentials["token"] = JSON.stringify(
-                            decode(
-                                request.headers["x-idp-authorization"].replace(
-                                    /bearer /i,
-                                    ""
-                                )
+                    if (request.headers["authorization"]) {
+                        const thirdPartyToken = decode(
+                            request.headers["authorization"].replace(
+                                /bearer /i,
+                                ""
                             )
-                        );
+                        )["thirdPartyToken"];
+
+                        if (!decode(thirdPartyToken)) {
+                            throw new Error(
+                                "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                            );
+                        }
+
+                        credentials["token"] = thirdPartyToken;
                     } else {
                         throw new Error(
                             "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
