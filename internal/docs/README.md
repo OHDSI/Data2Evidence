@@ -65,12 +65,6 @@ GH_USERNAME=$GH_USERNAME GH_TOKEN=$GH_TOKEN yarn gen:dotenv
 [ $ENV_TYPE = remote ] && echo TLS__CADDY_DIRECTIVE=\'tls internal\' | tee -a .env.${ENV_TYPE}
 ```
 
-#### Initalize Logto Apps
-
-```bash
-yarn init:logto
-```
-
 ## Build - if ENV_TYPE=local
 
 - Standard build

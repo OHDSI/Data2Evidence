@@ -24,7 +24,6 @@
     "remote:minerva": "PROJECT_NAME=alp ENV_TYPE=remote yarn base:minerva --env-file .env.remote --profile perseus",
     "local:minerva": "PROJECT_NAME=alp PORT=41100 ENV_TYPE=local yarn base:minerva --file docker-compose-local.yml ${ADDITIONAL_DC_FILES} --env-file .env.local",
     "build:minerva": "yarn local:minerva build --build-arg GIT_COMMIT_ARG=$(git rev-parse HEAD)",
-    "init:logto": "ENV_TYPE=${ENV_TYPE:-local} && yarn $ENV_TYPE:minerva up alp-minerva-postgres alp-logto --wait && sleep 10 && yarn $ENV_TYPE:minerva up alp-logto-post-init",
     "start:minerva": "yarn local:minerva up --renew-anon-volumes --wait",
     "stop:minerva": "yarn local:minerva stop",
     "clean:minerva": "yarn local:minerva down --volumes --remove-orphans",

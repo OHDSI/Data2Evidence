@@ -89,7 +89,6 @@ docker network create alp
 echo "USE_DUCKDB=false" >>.env.local
 echo "USE_CACHEDB=false" >>.env.local
 echo "NODE_ENV=production" >>.env.local
-yarn init:logto
 export LOGTO__ALP_APP__CLIENT_ID=$(cat .env.local | grep LOGTO__ALP_APP__CLIENT_ID | cut -d'=' -f2 | head -n 1)
 echo "LOGTO__ALP_APP__CLIENT_ID=$LOGTO__ALP_APP__CLIENT_ID" >>$GITHUB_ENV # Make available to subsequent github actions steps
 

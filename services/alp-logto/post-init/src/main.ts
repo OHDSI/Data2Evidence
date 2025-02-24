@@ -510,6 +510,7 @@ async function seeding_alp_admin() {
 
   const client = await getDBClient();
 
+  const pg_schema = process.env.PG__SCHEMA
   let LOGTO__ADMIN_ROLE__ID = "jrmtgmb34iznwqdu5dhl1";
   let LOGTO__ADMIN_APP__ID = alpAdminApp.id;
   let LOGTO__ADMIN_APP_ROLE__ID = "34vzakbak1tp830d0s30o";
@@ -524,9 +525,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
+    `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
     VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) \
-    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata",
+    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP__ID,
@@ -544,9 +545,9 @@ async function seeding_alp_admin() {
   console.log(`Inserting ${alpAdminRole.name} role to roles table`);
   await queryPostgres(
     client,
-    "INSERT INTO roles(tenant_id, id, name, description, type) \
-    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles(tenant_id, id, name, description, type) 
+    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE__ID,
@@ -564,9 +565,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO applications_roles(tenant_id, id, application_id, role_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.applications_roles(tenant_id, id, application_id, role_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP_ROLE__ID,
@@ -581,9 +582,9 @@ async function seeding_alp_admin() {
   console.log(`Adding scope "management-api-all" to role ${alpAdminRole.name}`);
   await queryPostgres(
     client,
-    "INSERT INTO roles_scopes(tenant_id, id, role_id, scope_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles_scopes(tenant_id, id, role_id, scope_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE_SCOPE__ID,
@@ -600,6 +601,7 @@ async function seeding_apps() {
     "****************************SEEDING LOGTO APPS*****************************************************\n"
   );
   const client = await getDBClient();
+  const pg_schema = process.env.PG__SCHEMA
   let envApps: Array<{
     name: string;
     id: string;
@@ -613,7 +615,7 @@ async function seeding_apps() {
     console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
-      `INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
+      `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) 
       DO UPDATE SET secret = EXCLUDED.secret`,
       [

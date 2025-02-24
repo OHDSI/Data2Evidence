@@ -41,6 +41,8 @@ jobs:
               - "functions/mri-pg-config/**"
               - "functions/query-gen-svc/**"
               - "services/mri-db/**"
+              - "services/alp-logto/**"
+              - "services/alp-pg-management/**"
               - ".github/workflows/http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
@@ -157,8 +159,6 @@ jobs:
           echo "LOGTO__ALP_SVC__CLIENT_SECRET='IoJRGVHm05P8B0XRmqLozdK2U7TN1p'" >> .env.local
           echo "LOGTO__ALP_DATA__CLIENT_ID='zUkAG2MRaNmnMTWHBzlVb'" >> .env.local
           echo "LOGTO__ALP_DATA__CLIENT_SECRET='vgkToG2nuxzRDU7yMhAHiz5m1VZgLk'" >> .env.local
-
-          yarn init:logto
 
       - name: Start system services
         run: |
