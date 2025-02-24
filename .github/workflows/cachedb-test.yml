@@ -50,6 +50,7 @@ jobs:
         if: env.WF_RUN == 'true'
         working-directory: ./services/cachedb
         run: |
+          sed -i '/sqlalchemy-hana/d' requirements*.txt
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
