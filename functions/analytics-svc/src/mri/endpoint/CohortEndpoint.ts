@@ -78,7 +78,7 @@ export class CohortEndpoint {
         COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
         TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
         COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
-        TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
+        TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX"
         FROM $$SCHEMA$$.COHORT_DEFINITION
         `;
 
@@ -96,20 +96,47 @@ export class CohortEndpoint {
                 this.connection
             );
 
-            // For each cohort definition, query cohort table for list of patient ids
-            for (const cohortObj of selectQueryResult.data as any[]) {
+            const processingCohort = async (cohortObj) => {
+            //For each cohort definition, query cohort table for list of patient ids
                 let patientIds = await this.queryPatientIds(
                     cohortObj.COHORT_DEFINITION_ID
                 );
-                cohortArray.push(<CohortType>{
+                return <CohortType>{
                     id: cohortObj.COHORT_DEFINITION_ID,
                     patientIds,
                     name: cohortObj.COHORT_DEFINITION_NAME,
                     description: cohortObj.COHORT_DEFINITION_DESCRIPTION,
                     creationTimestamp: cohortObj.COHORT_INITIATION_DATE,
                     syntax: cohortObj.COHORT_DEFINITION_SYNTAX,
-                });
-            }
+                };
+            };
+
+            const processInBatch = async (
+                items: any[],
+                limit: number,
+                fn: (item: any) => Promise<any>
+            ) => {
+                let results = [];
+                for (let start = 0; start < items.length; start += limit) {
+                    const end =
+                        start + limit > items.length
+                            ? items.length
+                            : start + limit;
+                    const slicedResults = await Promise.all(
+                        items
+                            .slice(start, end)
+                            .map(async (item) => await processingCohort(item))
+                    );
+                    results = [...results, ...slicedResults];
+                }
+                return results;
+            };
+
+            cohortArray = await processInBatch(
+                selectQueryResult.data,
+                10,
+                postProcessingCohort
+            );
 
             return cohortArray;
         } catch (err) {

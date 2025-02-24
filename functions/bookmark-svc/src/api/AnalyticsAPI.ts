@@ -88,7 +88,7 @@ export class AnalyticsSvcAPI {
         Authorization: this.token,
       },
       httpsAgent: this.httpsAgent,
-      timeout: 20000,
+      timeout: 60000,
     }
 
     return options

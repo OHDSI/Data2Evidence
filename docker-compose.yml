@@ -568,6 +568,7 @@ services:
       - -c
       - "apt-get update && apt-get install -y curl && pip install prefect[docker]==3.0.3 && python3 ../../create_workpool_json.py && prefect work-pool create 'docker-pool' --type docker --base-job-template ./custom-docker-workpool.json --overwrite; prefect worker start --pool 'docker-pool' --type  docker --name prefect-docker-worker"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
+    platform: linux/amd64
     depends_on:
       alp-minio-post-init:
         condition: service_completed_successfully
