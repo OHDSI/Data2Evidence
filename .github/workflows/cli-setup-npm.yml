@@ -58,7 +58,7 @@ jobs:
           scope: "@data2evidence"
       - name: Update version
         run: |
-          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+          if [[ github.event_name == 'workflow_dispatch' ]]; then
             RELEASE_VERSION=${{ github.event.inputs.tag }}
             jq --arg v $RELEASE_VERSION '.version=$v | .name=d2e | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           else
@@ -68,7 +68,7 @@ jobs:
         run: npm install
       - name: Publish
         run: |
-          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
+          if [[ github.ref_name == 'develop' ]]; then
             npm publish
           else
             npm publish --dry-run
@@ -77,10 +77,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish production
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
-            npm publish
-          fi
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
       - uses: actions/delete-package-versions@v5
