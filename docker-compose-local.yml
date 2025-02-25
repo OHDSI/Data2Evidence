@@ -6,6 +6,7 @@ services:
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
+
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
       LOCAL_DEBUG: "true"
@@ -43,6 +44,8 @@ services:
     ports:
       - 41000:41000
       - 41130:41130
+    volumes:
+      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config 
     environment:
       CADDY__FHIR_SERVER__PUBLIC_FQDN: ${CADDY__FHIR_SERVER__PUBLIC_FQDN:-localhost}
       CADDY__CORS_LOCAL_UI: "import cors"

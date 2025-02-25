@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+set -o nounset
+set -o errexit
+
 version=develop #default version
 
 cmd=${@: -1}
@@ -21,29 +24,40 @@ DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
 export ENV_EXAMPLE=$node_modules_path/env.example
 export GIT_BASE_DIR=.
-export ENVFILE=.env
 
+env=.env
+context=""
+fhir=""
+demo=""
+dicom=""
+compose=""
+args=""
 
-while getopts d:efc:v: flag
+while getopts efd:t:c:v:a:n:p:i flag
 do
     case "${flag}" in
         d) function_path=${OPTARG};;
         e) demo=--profile="demodb";;
         f) fhir=--profile="fhir";;
+        i) dicom=--profile="dicom";;
         c) compose="--file ${OPTARG}";;
-        v) version=${OPTARG}
+        t) context="--context ${OPTARG}";;
+        v) version=${OPTARG};;
+        a) args=${OPTARG};;
+        n) env=${OPTARG};;
+        p) export PORT=${OPTARG};;
     esac
 done
 
 
-if [ -n "$function_path" ]; then
-    dev="--file $node_modules_path/docker-compose-local.yml --env-file .env.local"
+if [ -n "${function_path:-}" ]; then
+    dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
     export D2E_FUNCTIONS=$function_path
     export PROJECT_NAME=${PROJECT_NAME:-alp}
-    export PORT=${PORT:-41100}
 else
-    dev="--env-file .env"
+    dev="--env-file $env"
 fi
+export ENVFILE=$env
 
 
 if [[ $version = "develop" ]]; then
@@ -57,7 +71,7 @@ else
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
 fi
 
-dockerbasecmd="docker --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dev $compose"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $dev $compose $args"
 
 case $cmd in
     start)
@@ -97,12 +111,20 @@ case $cmd in
                 echo "Aborting";;
         esac
         ;;
+    cleanci)
+        cmd="$dockerbasecmd down --volumes --remove-orphans"
+        echo $cmd
+        $cmd
+        ;;
     patchdemodb)
-        docker exec -u postgres broadsea-atlasdb psql -f /cohort_patch.sql
+        database_host=${PROJECT_NAME:-d2e}-demodb
+        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm;"
+        docker exec $database_host psql -h localhost -U postgres -c "CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
-        cp -a $node_modules_path/deploy .deploy &&
-        $node_modules_path/scripts/gen-dotenv.sh && $node_modules_path/scripts/gen-tls.sh && $node_modules_path/scripts/gen-resource-limits.sh &&
+        $node_modules_path/scripts/dotenv.sh
+        ;;
+    pull)
         docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}
         ;;
     *)
@@ -125,6 +147,7 @@ case $cmd in
         echo " -f           Include FHIR Server"
         echo " -d [PATH]    Development mode. [PATH] is the path to functions"
         echo " -c [PATH]    [PATH] is path to an additional docker compose file"
+        echo " -t [CONTEXT] Use docker context"
         echo " -v [VERSION] Version of the d2e services to use"
         ;;
 esac

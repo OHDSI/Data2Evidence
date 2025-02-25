@@ -13,6 +13,7 @@ volumes:
   trex:
   fhir-schema-file-1:
   demodb-data:
+  dicom-sqlite-storage:
 
 x-envs:
   db-svc: &x-dbsvc
@@ -137,7 +138,7 @@ services:
         - *x-fhir
         - *x-minio
         - *x-pg
-      REP_PG: postgres://postgres:mypass@broadsea-atlasdb:5432/postgres
+      REP_PG: postgres://postgres:mypass@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -350,7 +351,7 @@ services:
           "demo": {
             "DEMO__DB_CODE": "demo_database",
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"broadsea-atlasdb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"credentials\": [] }",
+            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"credentials\": [] }",
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
@@ -478,7 +479,7 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}",
-          "logtoManager": "${PG_LOGTO_MANAGER:-logto_postgres}",
+          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
           "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
          }
         }
@@ -489,7 +490,6 @@ services:
       sqlOnly: false
 
   alp-caddy:
-    command: caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
     hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: caddy:2.8-alpine
@@ -500,12 +500,96 @@ services:
       alp:
         priority: 20
     platform: linux/amd64
+    command: > 
+      sh -c "
+        mkdir -p /srv/caddy-config &&
+        cat <<EOT > /srv/caddy-config/Caddyfile
+        {
+          debug
+          pki {
+            ca local {
+              name \"ALP Local CA\"
+              root_cn \"ALP Local CA - 2024 ECC Root\"
+              intermediate_cn \"ALP Local CA - ECC Intermediate\"
+            }
+            ca alp-internal {
+              name \"ALP Internal CA\"
+              root_cn \"ALP Internal CA - 2024 ECC Root\"
+              intermediate_cn \"ALP Internal CA - ECC Intermediate\"
+            }
+          }
+        }
+
+        https://*.alp.local:55555 {
+          tls {
+            issuer internal {
+              ca alp-internal
+              lifetime 360d
+              sign_with_root
+            }
+          }
+          respond alp-internal
+        }
+
+        (publicurlredirect) {
+          $CADDY__ALP__ALIAS_PUBLIC_FQDN {
+            $TLS__CADDY_DIRECTIVE
+            redir https://$CADDY__ALP__PUBLIC_FQDN{uri} permanent
+          }
+        }
+
+        (portal) {
+          log {
+            format console {
+              level_format color
+            }
+          }
+
+          # Logto api server
+          @logto {
+            path /index.*
+            path /assets/* # logto assets are moved to this path
+            path /api/*
+            path /oidc/*
+            path /sign-in
+            path /consent
+            path /callback/* # For azure connector
+          }
+
+          handle @logto {
+            reverse_proxy http://$PROJECT_NAME-logto-1:3001 {
+              header_up Host {upstream_hostport}
+              transport http {
+                read_buffer 8192
+              }
+            }
+          }
+
+          ## call gateway if there are no matched files
+          handle {
+            reverse_proxy https://$PROJECT_NAME-trex:33000 {
+              transport http {
+                tls
+                tls_insecure_skip_verify
+                read_buffer 8192
+              }
+            }
+          }
+        }
+
+        https://$CADDY__ALP__PUBLIC_FQDN {
+          $TLS__CADDY_DIRECTIVE
+          redir / /portal
+          import portal
+        }
+      EOT
+        caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile
+      "
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data
-      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config
     environment:
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}:443
       TLS__CADDY_DIRECTIVE: ${TLS__CADDY_DIRECTIVE:-tls internal}
@@ -605,8 +689,6 @@ services:
       PREFECT_API_ENABLE_HTTP2: False
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
-      DOCKER_REGISTRY_USERNAME: ${GH_USERNAME:-tech-user-pull}
-      DOCKER_REGISTRY_PASSWORD: ${GH_TOKEN}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
 
   alp-dataflow-gen-init:
@@ -683,7 +765,7 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
       PG__PORT: ${PG_PORT:-5432}
-      PG__USER: ${PG__LOGTO_MANAGE_USER:-logto_postgres}
+      PG__USER: ${PG__LOGTO_MANAGER_USER:-logto_postgres}
       PG__SSL: ${PG__SSL:-false}
       PG__SCHEMA: logto
       # LOGTO__CUSTOM_JWT: '{"script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  return { ...extra };\n}", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
@@ -750,7 +832,7 @@ services:
       DATABASE_CONNECTION_TIMEOUT: 30000
 
   alp-logto-seed: 
-    container_name: &c37 alp-logto-seed
+    container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
     image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     entrypoint: 
@@ -971,7 +1053,6 @@ services:
         priority: 10
     volumes:
       - demodb-data:/var/lib/postgresql/data
-      - ./deploy/broadsea-atlas/cohort_patch.sql:/cohort_patch.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -1040,3 +1121,46 @@ services:
         FHIR_SCHEMA_FILE_NAME: fhir.schema.json
       profiles: [fhir]
   
+  dicom-server:
+    # uses 8042 port on the container
+    image: orthancteam/orthanc:24.6.1
+    container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
+    depends_on:
+      alp-minio-post-init:
+        condition: service_completed_successfully
+    logging:
+      options:
+        tag: *c27
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    networks:
+      alp:
+      data:
+    hostname: ${PROJECT_NAME:-d2e}-dicom-server.${TLS__INTERNAL__DOMAIN:-alp.local}
+    environment:
+      VERBOSE_ENABLED: true
+      VERBOSE_STARTUP: true
+      ORTHANC__NAME: D2E Dicom Service
+      ORTHANC__AWS_S3_STORAGE__BUCKET_NAME: dicom-images
+      ORTHANC__AWS_S3_STORAGE__ENDPOINT: http://${MINIO__ENDPOINT:-alp-minerva-s3}:${MINIO__PORT:-9000}
+      ORTHANC__AWS_S3_STORAGE__ACCESS_KEY: ${MINIO__ACCESS_KEY:-root}
+      ORTHANC__AWS_S3_STORAGE__SECRET_KEY: ${MINIO__SECRET_KEY}
+      ORTHANC__AWS_S3_STORAGE__VIRTUAL_ADDRESSING: false
+      ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
+      ORTHANC__AUTHENTICATION_ENABLED: false
+      ORTHANC__REGISTERED_USERS: |
+                {
+                    "healthcheck": ${DICOM__HEALTH_CHECK_PASSWORD}
+                }
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/probes/test-aliveness.py --user=healthcheck --pwd=${DICOM__HEALTH_CHECK_PASSWORD}",
+        ]
+      start_period: 10s
+      interval: 20s
+      retries: 20
+      timeout: 60s
+    volumes:
+      - dicom-sqlite-storage:/var/lib/orthanc/db
+    profiles: [dicom]

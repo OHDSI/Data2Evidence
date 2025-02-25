@@ -1,4 +1,4 @@
-name: Docker Build (called)
+name: d2e/services Docker Build (called)
 
 on:
   workflow_call:
@@ -48,15 +48,7 @@ jobs:
     name: ${{ inputs.AZ_REG_REPOSITORY }}
     runs-on: ubuntu-latest
     env:
-      AZ_REG_FQDN: ${{ vars.AZ_REGISTRY_NAME }}.azurecr.io
-      AZ_REG_NAME: ${{ vars.AZ_REGISTRY_NAME }}
-      AZ_REG_PASSWORD: ${{ secrets.AZ_REGISTRY_PASSWORD }}
-      AZ_REG_PRUNE_DAYS: ${{ vars.AZ_REG_PRUNE_DAYS || '20' }}
-      AZ_REG_PRUNE_ENABLE_DELETE: ${{ vars.AZ_REG_PRUNE_ENABLE_DELETE || 'false' }}
-      AZ_REG_PRUNE_FORCE_ANALYZE: ${{ vars.AZ_REG_PRUNE_FORCE_ANALYZE || 'false' }}
-      AZ_REG_PRUNE_KEEP_REGEX: ${{ vars.AZ_REG_PRUNE_KEEP_REGEX }}
       AZ_REG_REPOSITORY: ${{ inputs.AZ_REG_REPOSITORY }}
-      AZ_REG_USERNAME: ${{ vars.AZ_REGISTRY_USERNAME }}
       DOCKER_BUILD_ARG1: ${{ inputs.DOCKER_BUILD_ARG1 }}
       DOCKER_BUILD_CONTEXT_PATH: ${{ inputs.DOCKER_BUILD_CONTEXT_PATH }}
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
@@ -91,9 +83,8 @@ jobs:
         with:
           ref: ${{ env.GIT_BRANCH_NAME }}
           repository: ${{ env.GIT_REPO_FULL_NAME }}
-          token: ${{ secrets.CI_PAT }}
-
-      - name: "Login to GitHub Container Registry"
+          
+      - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io

@@ -1,4 +1,4 @@
-name: Run analytics integration tests
+name: d2e-functions/pa integration tests
 
 on:
   pull_request:

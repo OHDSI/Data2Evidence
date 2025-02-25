@@ -1,4 +1,4 @@
-name: Cachedb tests
+name: d2e/services cachedb tests
 
 on:
   pull_request:

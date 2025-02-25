@@ -1,4 +1,4 @@
-name: Run HTTP tests
+name: d2e-functions/pa Run HTTP tests
 
 on:
   pull_request:
@@ -130,7 +130,7 @@ jobs:
       - name: Build system services
         run: |
           grep _LIMIT .env.${ENV_TYPE}
-          yarn build:dev
+          yarn build:minerva
 
       - name: Manipulate configuration
         run: |

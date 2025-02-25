@@ -1,22 +1,43 @@
-*                             @data2evidence/pmc
-.github/workflows            @data2evidence/devops
-functions/_shared		          @data2evidence/analyze
-functions/alp-db-credentials	@data2evidence/integrate
-fhir_functions/		            @data2evidence/data
-functions/alp-usermgmt		    @data2evidence/integrate
-functions/alpdb			          @data2evidence/integrate
-functions/analytics-svc		    @data2evidence/analyze
-functions/bookmark-svc		    @data2evidence/analyze
-functions/cdw-svc		          @data2evidence/analyze
-functions/code-suggestion	    @data2evidence/data
-functions/concept-mapping	    @data2evidence/integrate
-functions/d2e-webapi    	    @data2evidence/analyze
-functions/dataset		          @data2evidence/integrate
-functions/files-manager		    @data2evidence/integrate
-functions/jobplugins		      @data2evidence/integrate
-functions/mri-pa-config		    @data2evidence/analyze
-functions/mri-pg-config		    @data2evidence/analyze
-functions/portal		          @data2evidence/integrate
-functions/prefect		          @data2evidence/integrate
-functions/query-gen-svc		    @data2evidence/analyze
-functions/terminology-svc	    @data2evidence/analyze
+*                                                   @csafreen @SantanM @satish-a0 @suwarnoong @p-hoffmann
+.github/workflows                                   @brandantck @brian-cornally @mwaiyee @SantanM @satish-a0 @p-hoffmann
+fhir_functions/                                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+functions/_shared                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/alp-db-credentials                        @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/alp-usermgmt                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/alpdb                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/analytics-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/bookmark-svc                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/cdw-svc                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/code-suggestion                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+functions/concept-mapping                           @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/d2e-webapi                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/dataset                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/demo                                      @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/files-manager                             @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/jobplugins                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/mri-pa-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/mri-pg-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/portal                                    @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/prefect                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+flows/*                                             @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+flows/flows/strategus_plugin                        @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann     
+scripts                                             @brandantck @brian-cornally @mwaiyee @SantanM @satish-a0 @p-hoffmann
+services/alp-dataflow-gen                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+services/alp-fhir                                   @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+services/alp-logto                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+services/alp-db-management                          @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+services/cachedb                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/*                                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/portal/src/plugins/Starboard                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/portal/src/plugins/mri                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/portal/src/plugins/Researcher/KaplanMeier   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann

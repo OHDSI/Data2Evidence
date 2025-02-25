@@ -1,4 +1,4 @@
-name: Docker Build
+name: d2e/services Docker Build
 run-name: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}
 
 on:
@@ -115,7 +115,7 @@ jobs:
             directory: ./services/cachedb
             context: .
             fileName: Dockerfile
-    uses: ./.github/workflows/docker-push-called.yml
+    uses: ./.github/workflows/services-docker-push-called.yml
     with:
       AZ_REG_REPOSITORY: ${{ matrix.name }}
       DOCKER_BUILD_CONTEXT_PATH: ${{ matrix.context }}

@@ -1,4 +1,4 @@
-name: setup ci
+name: d2e/cli build and publish
 
 on:
   workflow_dispatch:
@@ -43,6 +43,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    environment: ${{github.event_name == 'workflow_dispatch' && 'npm' || 'github'}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +51,7 @@ jobs:
           repository: ${{ env.GIT_REPO_FULL_NAME }}
       - name: Use Node.js
         uses: actions/setup-node@v4
+        if: github.event_name != 'workflow_dispatch'
         with:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
@@ -58,28 +60,36 @@ jobs:
         run: |
           if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
             RELEASE_VERSION=${{ github.event.inputs.tag }}
-            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+            jq --arg v $RELEASE_VERSION '.version=$v | .name=d2e | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           else
-            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           fi
       - name: npm build
         run: npm install
-      # - name: Publish
-      #   run: |
-      #     if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
-      #       npm publish
-      #     else
-      #       npm publish --dry-run
-      #     fi
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #- uses: actions/delete-package-versions@v5
-      #  if: github.ref_name == 'develop'
-      #  with:
-      #    package-name: "cli"
-      #    package-type: "npm"
-      #    min-versions-to-keep: 3
-      #    delete-only-pre-release-versions: "true"
+      - name: Publish
+        run: |
+          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
+            npm publish
+          else
+            npm publish --dry-run
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish production
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ $GIT_CI_BRANCH_NAME == 'develop' ]]; then
+            npm publish
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
+      - uses: actions/delete-package-versions@v5
+        if: github.ref_name == 'develop' 
+        with:
+          package-name: "cli"
+          package-type: "npm"
+          min-versions-to-keep: 3
+          delete-only-pre-release-versions: "true"
       - name: Pack
         run: |
           NPM_FILENAME=$(npm pack)

@@ -88,48 +88,6 @@ custom_docker_workpool_dict = {
                 "title": "Image Pull Policy",
                 "description": "The image pull policy to use when pulling images.",
             },
-            "registry_credentials": {
-                "allOf": [{"$ref": "#/definitions/DockerRegistryCredentials"}],
-                "title": "Registry Credentials",
-                "description": "Credentials for logging into a Docker registry to pull images from.",
-            },
-        },
-        "definitions": {
-            "DockerRegistryCredentials": {
-                "type": "object",
-                "title": "DockerRegistryCredentials",
-                "required": ["username", "password", "registry_url"],
-                "properties": {
-                    "reauth": {
-                        "type": "boolean",
-                        "title": "Reauth",
-                        "default": True,
-                        "description": "Whether or not to reauthenticate on each interaction.",
-                    },
-                    "password": {
-                        "type": "string",
-                        "title": "Password",
-                        "format": "password",
-                        "writeOnly": True,
-                        "description": "The password to log into the registry with.",
-                    },
-                    "username": {
-                        "type": "string",
-                        "title": "Username",
-                        "description": "The username to log into the registry with.",
-                    },
-                    "registry_url": {
-                        "type": "string",
-                        "title": "Registry Url",
-                        "example": "index.docker.io",
-                        "description": 'The URL to the registry. Generally, "http" or "https" can be omitted.',
-                    },
-                },
-                "description": "Store credentials for interacting with a Docker Registry.",
-                "secret_fields": ["password"],
-                "block_type_slug": "docker-registry-credentials",
-                "block_schema_references": {},
-            }
         },
         "description": "Configuration class used by the Docker worker.\n\nAn instance of this class is passed to the Docker worker's `run` method\nfor each flow run. It contains all the information necessary to execute the\nflow run as a Docker container.\n\nAttributes:\n    name: The name to give to created Docker containers.\n    command: The command executed in created Docker containers to kick off\n        flow run execution.\n    env: The environment variables to set in created Docker containers.\n    labels: The labels to set on created Docker containers.\n    image: The image reference of a container image to use for created jobs.\n        If not set, the latest Prefect image will be used.\n    image_pull_policy: The image pull policy to use when pulling images.\n    networks: Docker networks that created containers should be connected to.\n    network_mode: The network mode for the created containers (e.g. host, bridge).\n        If 'networks' is set, this cannot be set.\n    auto_remove: If set, containers will be deleted on completion.\n    volumes: Docker volumes that should be mounted in created containers.\n    stream_output: If set, the output from created containers will be streamed\n        to local standard output.\n    mem_limit: Memory limit of created containers. Accepts a value\n        with a unit identifier (e.g. 100000b, 1000k, 128m, 1g.) If a value is\n        given without a unit, bytes are assumed.\n    memswap_limit: Total memory (memory + swap), -1 to disable swap. Should only be\n        set if `mem_limit` is also set. If `mem_limit` is set, this defaults to\n        allowing the container to use as much swap as memory. For example, if\n        `mem_limit` is 300m and `memswap_limit` is not set, containers can use\n        600m in total of memory and swap.\n    privileged: Give extended privileges to created containers.",
     },
@@ -148,31 +106,10 @@ custom_docker_workpool_dict = {
         "memswap_limit": "{{ memswap_limit }}",
         "stream_output": "{{ stream_output }}",
         "image_pull_policy": "{{ image_pull_policy }}",
-        "registry_credentials": "{{ registry_credentials }}",
     },
 }
 
-
 if __name__ == "__main__":
-    # Create DockerRegistryCredentials block
-    docker_registry_credentials = DockerRegistryCredentials(
-        username=os.environ["DOCKER_REGISTRY_USERNAME"],
-        password=os.environ["DOCKER_REGISTRY_PASSWORD"],
-        registry_url=os.environ["DOCKER_REGISTRY_URL"],
-    )
-
-    docker_registry_credentials.save(
-        name="docker-registry-credentials", overwrite=True)
-
-    # Get DockerRegistryCredentials block id
-    credentials_block = DockerRegistryCredentials.load(
-        "docker-registry-credentials")
-    block_id = credentials_block._block_document_id
-
-    # Set id in workpool json
-    custom_docker_workpool_dict["variables"]["properties"]["registry_credentials"]["default"] = {
-        "$ref": {"block_document_id": str(block_id)}}
-
     # Serializing json
     custom_docker_workpool_json = json.dumps(
         custom_docker_workpool_dict, indent=4)

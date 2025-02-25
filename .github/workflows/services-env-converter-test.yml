@@ -1,4 +1,4 @@
-name: envConverter unit tests
+name: d2e/services envConverter tests
 
 on:
   pull_request:

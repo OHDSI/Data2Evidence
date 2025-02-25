@@ -1,4 +1,4 @@
-name: DC Deploy AzureDev
+name: d2e DC Deploy AzureDev
 run-name: ${{ github.event.inputs.env }} ${{ github.event.inputs.repo_full_name }}
 
 on:
@@ -52,7 +52,6 @@ jobs:
           clean: false
           ref: ${{ env.DOCKER_TAG_NAME }}
           repository: ${{ github.event.inputs.repo_full_name }}
-          token: ${{ secrets.CI_PAT }}
 
       - name: Force cleanup containers
         if: github.event.inputs.force-cleanup-containers

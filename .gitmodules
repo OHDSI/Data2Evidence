@@ -1,0 +1,6 @@
+[submodule "ui"]
+	path = ui
+	url = https://github.com/data2evidence/d2e-ui.git
+[submodule "flows"]
+	path = flows
+	url = https://github.com/data2evidence/d2e-flows.git

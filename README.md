@@ -1,17 +1,81 @@
 # Data2Evidence
+ [![NPM Version](https://img.shields.io/npm/v/d2e?label=release&logo=npm&color=blue)](https://www.npmjs.com/package/d2e) [![Discord](https://img.shields.io/discord/1189126876577403001?label=discord&logo=discord&logoColor=white)](https://discord.gg/5XtHky2BZe) [![Static Badge](https://img.shields.io/badge/docs-d2e.sg-blue?logo=googledocs&logoColor=white)](https://docs.d2e.sg)
 
-[![DockerCompose AzureTest CD](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml) &nbsp;&nbsp; [![Docker Build & Push](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml) &nbsp;&nbsp; [![Docker compose Build & Up](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml) &nbsp;&nbsp; [![NPM plugin build](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml) &nbsp;&nbsp; [![d2e cli build](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml)
+<!--- [![GitHub Release](https://img.shields.io/github/v/release/data2evidence/d2e?label=notes&logo=github)](https://github.com/data2evidence/d2e/releases) --->
 
-### Installing and configuring Data2Evidence
 
-You can download D2E by running:
+### Why the Data2Evidence platform?
+
+- **Interactive Dataset Exploration:**  
+Discover datasets with interactive views of aggregates, demographics, and disease trends.
+
+- **Visual Cohort Creation:**  
+Easily create and manage cohorts using a visual interface without any coding.
+
+- **Integrated OHDSI Solutions:**  
+OHDSI solutions like **Achilles** for descriptive analytics, the **Data Quality Dashboard** for data quality analysis, and the cohort builder of **ATLAS** are integrated in the platform.
+
+- **Efficient Data Management:**  
+Organize, store, and secure your research datasets with robust governance and streamlined access.
+
+- **End-to-End Platform:**  
+Get started with our all-in-one platform that simplifies installation, integration, and ongoing management of your research data.
+
+#### Data2Evidence Cohort Functionality
+[![Data2Evidence](https://github.com/data2evidence/d2e/blob/p-hoffmann/testci/internal/pa.png?raw=true)](https://www.youtube.com/watch?v=PxkCutzJgkI)
+You can find a video of Data2Evidence Cohort Functionality [here](https://www.youtube.com/watch?v=PxkCutzJgkI)
+
+### Data2Evidence Quick Start
+
+Data2Evidence requires **Docker** and **npm** to be installed. You can find more information [here](https://docs.d2e.sg)
+
+Install the Data2Evidence CLI by running:
 ```bash
-npm install -g https://github.com/data2evidence/d2e/releases/download/latest/data2evidence-cli.tgz
+npm i -g d2e
 ```
 
-Please find [here](https://docs.d2e.sg) a document outlines the Quick Start setup with demo data & pulls all images from the GitHub container registry.
+Create folder for Data2Evidence:
+```bash
+mkdir d2e
+cd d2e
+```
 
+Generate `.env` file for Data2Evidence with random generated secretes and certificats:
+```bash
+d2e init
+```
+
+Start the Data2Evidence services by running:
+```bash
+d2e start
+```
+
+Create and load demo dataset by running:
+```bash
+d2e setupdemo
+```
+
+You should now be able to seee the d2e portal when opening **[https://localhost:3000](https://localhost:3000)**. You can login with the **username** `admin` and the **password** `Updatepassword12345`.
+
+For additional setup details and configuration options, please visit the **[D2E documentation](https://docs.d2e.sg)**.
+
+### Issues & Bug Reports
+Encounter an issue or have a feature request? Please help us improve by reporting them through the [GitHub Issues](https://github.com/data2evidence/d2e/issues) page.
+
+### CICD
+
+#### Build / Tests
+| d2e services  | d2e  functions/flows | d2e ui  |
+|---|---|---|
+| [![d2e cli build](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/setup-npm.yml) |  [![NPM plugin build](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/plugin-ci.yml) | [![d2e-ui build plugin](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml)  |  
+| [![Docker Build & Push](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-push.yml)   | [![d2e-functions/pa Run HTTP tests](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml)  | [![d2e-ui/pa (vue)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml)   |  
+| [![Docker compose Build & Up](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/docker-compose-up.yml)|  [![d2e-functions/dbcredentials ALP DB Credentials unit tests](https://github.com/data2evidence/d2e/actions/workflows/functions-alp-db-credentials-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-alp-db-credentials-test.yml) | [![d2e-ui/portal unit tests (Frontend)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
+|[![d2e/services Cachedb tests](https://github.com/data2evidence/d2e/actions/workflows/services-cachedb-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-cachedb-test.yml)|  [![d2e-flows Docker Build](https://github.com/data2evidence/d2e/actions/workflows/flows-docker-build-push.yaml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/flows-docker-build-push.yaml)  | [![d2e-ui/portal unit tests (Components Library)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-components.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-components.yml) | 
+|[![d2e/services envConverter unit tests](https://github.com/data2evidence/d2e/actions/workflows/services-env-converter-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-env-converter-test.yml)| [![d2e-flows build plugin](https://github.com/data2evidence/d2e/actions/workflows/flows-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/flows-plugin-ci.yml) | [![d2e-ui/pyqe unit tests](https://github.com/data2evidence/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-pyqe-test.yml) |  
+#### Test Systems
+[![DockerCompose AzureTest CD](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-cd.yml)   [![DC Deploy AzureDev](https://github.com/data2evidence/d2e/actions/workflows/az-dc-deploy.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/az-dc-deploy.yml)
 
 ### Get in contact
 
 Please [click here](https://discord.gg/5XtHky2BZe) to join us in Discord.
+

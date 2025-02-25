@@ -1,4 +1,4 @@
-name: Docker Compose Up
+name: d2e/services Docker Compose Up
 
 on:
   pull_request:
@@ -55,7 +55,7 @@ jobs:
       - name: Docker compose build
         run: |
           # Build DataNode services
-          npm run build:dev
+          npm run build:minerva
 
       - name: Docker compose up Local Mode
         uses: nick-fields/retry@v3

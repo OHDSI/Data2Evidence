@@ -1,4 +1,4 @@
-name: DC Deploy AzureTest CD
+name: d2e DC Deploy AzureTest CD
 run-name: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
 
 on:
