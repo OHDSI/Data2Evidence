@@ -135,7 +135,7 @@ export class CohortEndpoint {
             cohortArray = await processInBatch(
                 selectQueryResult.data,
                 10,
-                postProcessingCohort
+                processingCohort
             );
 
             return cohortArray;

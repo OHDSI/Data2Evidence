@@ -189,10 +189,9 @@ export class App {
         this.logger.info(
           `${databaseName} Database Already exists! Skipping the rest of the operations such as create users`
         );
-        return false;
+      } else {
+        await this.dbDao.createDatabase(client, databaseName);
       }
-
-      await this.dbDao.createDatabase(client, databaseName);
 
       const pg_owneruserWithoutAtSuffix = this.getUserName(
         pg_owneruser_config.user
