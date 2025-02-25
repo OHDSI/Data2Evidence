@@ -58,7 +58,7 @@ jobs:
           scope: "@data2evidence"
       - name: Update version
         run: |
-          if [[ github.event_name == 'workflow_dispatch' ]]; then
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
             RELEASE_VERSION=${{ github.event.inputs.tag }}
             jq --arg v $RELEASE_VERSION '.version=$v | .name=d2e | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           else
@@ -68,7 +68,7 @@ jobs:
         run: npm install
       - name: Publish
         run: |
-          if [[ github.ref_name == 'develop' ]]; then
+          if [[ ${{ github.ref_name }} == 'develop' ]]; then
             npm publish
           else
             npm publish --dry-run
@@ -93,7 +93,7 @@ jobs:
           echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
       - name: Prepare
         run: |
-          if [[ github.event_name == 'workflow_dispatch' ]]; then
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
             echo "PRELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             TAG=${{ github.event.inputs.tag }}
