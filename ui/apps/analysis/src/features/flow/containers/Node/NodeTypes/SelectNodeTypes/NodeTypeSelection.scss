@@ -1,0 +1,29 @@
+.node-type-selection {
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--color-primary-extra-lightest);
+  border-radius: 4px;
+  background-color: var(--color-neutral-lightest);
+  padding: 10px;
+  height: 170px;
+  transition: transform 0.1s ease 0s;
+
+  &__title {
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+
+  &__tag {
+    margin: 0.2em 0 0.2em 0;
+  }
+
+  &__desc {
+    font-size: 0.9em;
+    color: var(--color-neutral);
+  }
+
+  &:hover {
+    transform: scale(1.03);
+    border-color: var(--color-primary-lighter);
+  }
+}

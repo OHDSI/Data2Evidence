@@ -1,0 +1,37 @@
+.dataset-resources-dialog {
+  &__content {
+    min-height: 250px;
+    padding: 1.5em;
+    overflow: auto;
+  }
+
+  &__content-header {
+    padding-bottom: 1em;
+    display: flex;
+    justify-content: flex-end;
+
+    button {
+      width: 120px;
+    }
+  }
+
+  &__content-table {
+    .MuiTable-root {
+      border: 1px solid #dad7d7;
+    }
+    .MuiTableRow-root {
+      border: 1px solid #dad7d7;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

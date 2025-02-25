@@ -1,0 +1,26 @@
+.cohort-filter-form {
+  margin-top: 0.5em;
+  .select {
+    color: var(--color-primary);
+  }
+  .input-label {
+    color: var(--color-primary);
+  }
+
+  .icon {
+    margin-right: 15px;
+  }
+
+  .MuiSelect-icon {
+    margin-right: 10px;
+  }
+
+  .form-error {
+    color: var(--color-feedback-alarm);
+    margin-top: -10px;
+  }
+}
+
+.alert {
+  margin: 0.5em;
+}

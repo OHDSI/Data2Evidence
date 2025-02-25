@@ -1,0 +1,101 @@
+@import './mri-variables';
+div.app-checkbox {
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-left: 8px;
+  position: relative;
+  text-align: left;
+  text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 0px;
+  user-select: none;
+  visibility: visible;
+  white-space: normal;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-user-drag: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  div.app-checkbox-container {
+    border: 2px solid $Checkbox;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    line-height: 14px;
+    text-align: center;
+    text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 0px;
+    user-select: none;
+    visibility: visible;
+    white-space: normal;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-user-drag: none;
+    input {
+      background-color: rgba(0, 0, 0, 0);
+      border-image-outset: 0px;
+      border-image-repeat: stretch;
+      border-image-slice: 100%;
+      border-image-source: none;
+      border-image-width: 1;
+      color: rgb(0, 0, 0);
+      cursor: auto;
+      font-family: Arial;
+      font-size: 8px;
+      font-stretch: normal;
+      font-style: normal;
+      font-variant-caps: normal;
+      font-variant-ligatures: normal;
+      font-variant-numeric: normal;
+      font-weight: normal;
+      height: 0px;
+      left: 0px;
+      letter-spacing: normal;
+      line-height: normal;
+      text-align: start;
+      text-indent: 0px;
+      text-rendering: auto;
+      text-shadow: none;
+      text-transform: none;
+      user-select: text;
+      visibility: hidden;
+      white-space: normal;
+      width: 0px;
+      word-spacing: 0px;
+      writing-mode: horizontal-tb;
+      -webkit-appearance: none;
+      -webkit-rtl-ordering: logical;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      -webkit-user-drag: none;
+      -webkit-border-image: none;
+      border-image: none;
+    }
+  }
+  div.app-checkbox-container:focus {
+    outline: 1px dotted $UiFocus;
+  }
+  .app-checkbox-checked:before {
+    content: '\e05b';
+    font-family: 'app-icons';
+    color: $Checkbox;
+    font-size: 20px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app-checkbox-disabled {
+    pointer-events: none;
+    background-color: #e0e0e0;
+    border-color: #d3d3d3 !important;
+    color: #666666;
+    opacity: 0.6;
+  }
+  .app-label {
+    display: inline-block;
+    line-height: normal;
+    text-shadow: none;
+  }
+}

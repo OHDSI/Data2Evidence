@@ -1,0 +1,65 @@
+.public-information__container {
+  height: calc(100% - 4rem);
+  margin: 2rem;
+
+  .alp-card__header {
+    justify-content: center;
+  }
+
+  .tab__content {
+    width: 100%;
+
+    &__container {
+      margin: 24px auto;
+      max-width: 1080px;
+      padding: 0 32px;
+    }
+
+    &__title {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      font-size: 24px;
+      font-weight: 500;
+    }
+  }
+}
+
+.metadata_tags__container {
+  min-width: 100%;
+
+  .tags__content {
+    width: 50%;
+
+    .tag__list {
+      display: flex;
+      margin-top: 0;
+      border: 1px solid #c1c3d2;
+      list-style: none;
+      padding: 13px;
+
+      .MuiChip-root {
+        color: white;
+        background-color: var(--color-primary);
+        border-radius: 0.5em;
+        font-weight: bold;
+        margin: 3px;
+      }
+    }
+  }
+
+  .metadata__content {
+    width: 50%;
+    .study-metadata {
+      .MuiTable-root {
+        border: 1px solid #dad7d7;
+      }
+      .MuiTableHead-root .MuiTableCell-root {
+        background-color: #ebf1f8;
+      }
+      .MuiTableRow-root {
+        border: 1px solid #dad7d7;
+      }
+    }
+  }
+}

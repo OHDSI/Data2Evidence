@@ -1,0 +1,78 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<Table 
+		inset="true"
+		width="100%" 
+		includeItemInSelection="true"
+		mode="Delete"
+        delete="handleDelete"
+        growingScrollToLoad="true"
+        growing="true"
+		items="{
+			path : '/'
+		}"
+		icon= "sap-icon://sys-cancel-2"
+		class="fileSelect">
+		<ColumnListItem>
+			<cells>
+				<ObjectIdentifier
+					title="{Name}" />
+			</cells>
+			<cells>
+				<Text text="{Path}"/>
+			</cells>
+			<cells>
+				<Text text="{Size}"/>
+			</cells>
+			<cells>
+				<Text text="{ path: 'LastUpdated',
+                        formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.formatDate', 
+                        formatOptions: {
+					       style: 'long'
+				        } }" 
+						/>
+			</cells>
+			<cells>
+				<Text text="{ path: 'LastImported', formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.formatDate', 
+                        formatOptions: {
+					       style: 'long'
+				        } }" 
+						/>
+			</cells>
+		</ColumnListItem>
+		<columns>
+			<Column>
+				<header>
+					<Text text="{i18n>FILE_NAME}" />
+				</header>
+			</Column>
+				<Column>
+				<header>
+					<Text text="{i18n>PATH}" />
+				</header>
+			</Column>
+			<Column
+				minScreenWidth="Tablet"
+				demandPopin="true" 
+				hAlign= "Right">
+				<header>
+					<Text text="{i18n>FILES_SIZE}" />
+				</header>
+			</Column>
+			<Column
+				minScreenWidth="Tablet"
+				demandPopin="true"
+				hAlign="Left">
+				<header>
+					<Text text="{i18n>LAST_UPDATED}" />
+				</header>
+			</Column>
+			<Column hAlign="Left">
+				<header>
+					<Text text="{i18n>LAST_IMPORTED}" />
+				</header>
+			</Column>
+		</columns>
+	</Table>
+</core:FragmentDefinition>

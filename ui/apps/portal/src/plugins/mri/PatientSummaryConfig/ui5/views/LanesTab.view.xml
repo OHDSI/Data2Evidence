@@ -1,0 +1,210 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.LanesTab" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:core="sap.ui.core" xmlns:commons="sap.ui.commons" xmlns:f="sap.ui.layout.form" xmlns:configUI="hc.hph.patient.config.ui.lib">
+    <NavContainer id="lanesTabNavCont">
+        <ScrollContainer id="lanesTabPage1" height="100%" horizontal="false" vertical="true">
+            <f:Form width="100%">
+                <f:layout>
+                    <f:ResponsiveGridLayout columnsL="1" />
+                </f:layout>
+                <f:FormContainer title="{i18n>HPH_PAT_CFG_LANES_TITLE}">
+                    <f:FormElement>
+                        <List id="lanesList" showNoData="false" items="{path: 'analyticsModel>config/lanes', sorter: {path: 'analyticsModel>order'}}" itemPress="onLanesItemPress" updateFinished="onLaneListUpdateFinished">
+                            <CustomListItem type="Active" class="lanesListItem">
+                                <Toolbar height="4rem">
+                                    <Text text="{path : 'analyticsModel>order', formatter: '.orderFormatter'}" textAlign="Center" />
+                                    <Button icon="sap-icon://slim-arrow-up" tooltip="{i18n>HPH_PAT_CFG_LANE_UP_TOOLTIP}" type="Transparent" press="onMoveLaneUp" />
+                                    <Button icon="sap-icon://slim-arrow-down" tooltip="{i18n>HPH_PAT_CFG_LANE_DOWN_TOOLTIP}" type="Transparent" press="onMoveLaneDown" />
+                                    <core:Icon color="{path : 'analyticsModel>color', formatter: '.colorKeyToCodeFormatter'}" size="2rem" src="sap-icon://color-fill" />
+                                    <Text class="sapFfhPVConfigLaneName" text="{analyticsModel>title/0/value}" width="12%" />
+                                    <Text text="{path: 'analyticsModel>', formatter: '.laneDetailsFormatter'}" />
+                                    <ToolbarSpacer />
+                                    <Button icon="sap-icon://delete" tooltip="{i18n>HPH_PAT_CFG_REMOVE_LANE_TOOLTIP}" press="onDeleteLane" />
+                                    <Switch state="{analyticsModel>visible}" tooltip="{i18n>HPH_PAT_CFG_LANE_VISIBLE_TOOLTIP}" />
+                                    <ToolbarSpacer width="5%" />
+                                    <core:Icon src="sap-icon://slim-arrow-right" />
+                                    <ToolbarSpacer width="1%" />
+                                </Toolbar>
+                            </CustomListItem>
+                        </List>
+                    </f:FormElement>
+                    <f:FormElement>
+                        <List itemPress="onAddLanePressed">
+                            <CustomListItem type="Active">
+                                <Toolbar height="4rem">
+                                    <ToolbarSpacer />
+                                    <core:Icon src="sap-icon://add" />
+                                    <Label text="{i18n>HPH_PAT_CFG_BTN_ADD_LANE}" />
+                                    <ToolbarSpacer />
+                                    <ToolbarSpacer />
+                                    <ToolbarSpacer />
+                                    <ToolbarSpacer />
+                                    <core:Icon src="sap-icon://slim-arrow-right" />
+                                    <ToolbarSpacer width="1%" />
+                                </Toolbar>
+                            </CustomListItem>
+                        </List>
+                    </f:FormElement>
+                </f:FormContainer>
+            </f:Form>
+        </ScrollContainer>
+        <ScrollContainer id="lanesTabPage2" height="100%" horizontal="false" vertical="true">
+            <Button text="{i18n>HPH_PAT_CFG_LANES_BACK_TO_OVERVIEW}" type="Up" press="onBackSelect" />
+            <f:Form editable="true">
+                <f:layout>
+                    <f:ResponsiveGridLayout columnsL="1" />
+                </f:layout>
+                <f:FormContainer title="{i18n>HPH_PAT_CFG_LANES_NAME_LOCALISATION}" formElements="{analyticsModel>title}">
+                    <f:FormElement label="{path: 'analyticsModel>lang', formatter: '.langFormatter'}">
+                        <Input placeholder="{i18n>HPH_PAT_CFG_TRANSLATION_PHOLD}" value="{analyticsModel>value}" />
+                    </f:FormElement>
+                </f:FormContainer>
+                <f:FormContainer title="{i18n>HPH_PAT_CFG_LANE_SETTINGS}">
+                    <f:FormElement>
+                        <f:label>
+                            <Label text="{i18n>HPH_PAT_CFG_LANE_COLOR}" labelFor="colorsSelect" />
+                        </f:label>
+                        <Select id="colorsSelect" selectedKey="{analyticsModel>color}" items="{constantsModel>/colorPalette}">
+                            <core:Item key="{constantsModel>key}" text="{path: 'constantsModel>name', formatter: '.colorNameToTranslationFormatter'}" />
+                            <layoutData>
+                                <l:GridData span="L9 M9 S11" />
+                            </layoutData>
+                        </Select>
+                        <core:Icon color="{path: 'analyticsModel>color', formatter: '.colorKeyToCodeFormatter'}" size="2.5rem" src="sap-icon://color-fill">
+                            <core:layoutData>
+                                <l:GridData span="L1 M1 S1" />
+                            </core:layoutData>
+                        </core:Icon>
+                    </f:FormElement>
+                    <f:FormElement label="{i18n>HPH_PAT_CFG_INTERACTION_VANISH}">
+                        <Switch state="{analyticsModel>tilesHidden}" tooltip="{i18n>HPH_PAT_CFG_INTERACTION_VANISH_TOOLTIP}" />
+                    </f:FormElement>
+                </f:FormContainer>
+                <f:FormContainer id="interactionsList" title="{i18n>HPH_PAT_CFG_INTERACTIONS_TITLE}" formElements="{analyticsModel>interactions}">
+                    <f:FormElement>
+                        <Panel expandable="true">
+                            <headerToolbar>
+                                <Toolbar>
+                                    <Switch state="{analyticsModel>visible}" tooltip="{i18n>HPH_PAT_CFG_LANE_VISIBLE_TOOLTIP}" />
+                                    <commons:TextView enabled="{analyticsModel>visible}" text="{parts: ['analyticsModel>modelName', 'analyticsModel>attributes', 'analyticsModel>isGrouped', 'dynamicBindingsModel>/attrVisibilityUpdateFlag'], formatter: '.interTextFormatter'}" />
+                                    <ToolbarSpacer />
+                                </Toolbar>
+                            </headerToolbar>
+                            <VBox visible="{= !!${analyticsModel>isGrouped}}">
+                                <f:Form editable="true">
+                                    <f:layout>
+                                        <configUI:PlottableAttributesFormLayout class="sapFfhPVConfigBorderless" />
+                                    </f:layout>
+
+                                    <f:FormContainer>
+                                        <f:FormElement>
+                                            <Text text="{i18n>HPH_PAT_CFG_GROUPED_INTERACTION_TYPE}" />
+                                        </f:FormElement>
+                                        <f:FormElement>
+                                            <Label text="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_CHART_LANES}" class="sapUiMediumMarginTop sapUiTinyMarginBottom" />
+                                        </f:FormElement>
+                                        <f:FormElement>
+                                            <RadioButtonGroup
+                                                class="sapUiTinyMarginBottom"
+                                                select="onSelectAttributesPlottable"
+                                                selectedIndex="{= !!${analyticsModel>plotGeneratedAttr} ? 0 : 1}">
+                                                <buttons>
+                                                    <RadioButton id="plotAllButton" text="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_PLOT_ALL}" />
+                                                    <RadioButton id="plotSelectedButton" text="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_PLOT_SELECTED}" />
+                                                </buttons>
+                                            </RadioButtonGroup>
+                                        </f:FormElement>
+                                        <configUI:PlottableAttributesFormElement disabled="{= !!${analyticsModel>plotGeneratedAttr}}">
+                                            <configUI:fields>
+                                                <HBox class="sapUiLargeMarginBegin sapUiNoMarginEnd">
+                                                    <configUI:EnterAwareInput value="{analyticsModel>plottableAttrInputValue}" enabled="{= !${analyticsModel>plotGeneratedAttr}}" placeholder="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_INPUT_PLACEHOLDER}" enter="addAllowedPlottableAttr" valueLiveUpdate="true">
+                                                        <configUI:layoutData>
+                                                            <FlexItemData growFactor="1" />
+                                                        </configUI:layoutData>
+                                                    </configUI:EnterAwareInput>
+                                                    <Button enabled="{= !!${analyticsModel>plottableAttrInputValue}}" icon="sap-icon://add" press="addAllowedPlottableAttr" tooltip="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_ADD_BUTTON_TOOLTIP}" />
+                                                </HBox>
+                                            </configUI:fields>
+                                        </configUI:PlottableAttributesFormElement>
+                                        <configUI:PlottableAttributesFormElement disabled="{= !!${analyticsModel>plotGeneratedAttr}}">
+                                            <configUI:fields>
+                                                <FlexBox class="sapUiLargeMarginBegin sapUiNoMarginEnd" >
+                                                    <Table enableBusyIndicator="true" growing="true"
+                                                        items="{ path: 'analyticsModel>allowedPlottableAttr'}"
+                                                        selectionChange="onAllowedPlottableAttrSelectionChange"
+                                                        mode="MultiSelect"
+                                                        noDataText="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_LIST_NO_DATA}"
+                                                        rememberSelections="false">
+                                                        <headerToolbar>
+                                                            <Toolbar>
+                                                                <ToolbarSpacer />
+                                                                <Button type="Transparent" icon="sap-icon://delete" press="onDeleteAllowedPlottableAttr" tooltip="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_DELETE_BUTTON_TOOLTIP}"
+                                                                    enabled="{= !!${analyticsModel>allowedPlottableAttrDeleteButtonEnabled}}" />
+                                                            </Toolbar>
+                                                        </headerToolbar>
+                                                        <columns>
+                                                            <Column>
+                                                                <Text text="{i18n>HPH_PAT_CFG_GROUPED_ATTRIBUTES_PLOTTABLE}" />
+                                                            </Column>
+                                                        </columns>
+                                                        <items>
+                                                            <ColumnListItem vAlign="Middle" selected="{analyticsModel>selected}" >
+                                                                <cells>
+                                                                    <Text text="{analyticsModel>name}" />
+                                                                </cells>
+                                                            </ColumnListItem>
+                                                        </items>
+                                                    </Table>
+                                                </FlexBox>
+                                            </configUI:fields>
+                                        </configUI:PlottableAttributesFormElement>
+                                    </f:FormContainer>
+                                </f:Form>
+                            </VBox>
+                            <Table class="sapUiSizeCompact attributeTable" items="{path: 'analyticsModel>attributes', sorter: {path: 'analyticsModel>order'}, factory: '.createAttributeRow'}" visible="{= !${analyticsModel>isGrouped}}" updateFinished="onAttributeTableUpdateFinished">
+                                <columns>
+                                    <Column width="5rem">
+                                        <Text text="{i18n>HPH_PAT_CFG_ATTRIBUTE_ORDER_COL}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_ATTRIBUTE_ORDER_TOOLTIP}" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="{i18n>HPH_PAT_CFG_ATTRIBUTE_NAME_COL}" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="{i18n>HPH_PAT_CFG_ATTRIBUTE_REMARKS_COL}" />
+                                    </Column>
+                                    <Column hAlign="Center">
+                                        <VBox>
+                                            <Text text="{i18n>HPH_PAT_CFG_ATTRIBUTE_VISIBLE_COL}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_ATTRIBUTE_VISIBLE_IN_FILTER_TOOLTIP}" />
+                                            <Switch state="false" change="onAllVisiblePressed" />
+                                        </VBox>
+                                    </Column>
+                                    <Column hAlign="Center">
+                                        <VBox>
+                                            <Text text="{i18n>HPH_PAT_CFG_ATTRIBUTE_PLOTTABLE_COL}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_ATTRIBUTE_PLOTTABLE_COL_TOOLTIP}" />
+                                            <Switch state="false" change="onAllPlottablePressed" />
+                                        </VBox>
+                                    </Column>
+                                    <Column hAlign="Center">
+                                        <VBox>
+                                            <Text text="{i18n>HPH_PAT_CFG_FIRST_TILE_ATTR}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_FIRST_TILE_ATTR_TOOLTIP}" />
+                                            <Button text="{i18n>HPH_PAT_CFG_BTN_RESET}" press="onResetFirstAttrPressed" />
+                                        </VBox>
+                                    </Column>
+                                    <Column hAlign="Center">
+                                        <VBox>
+                                            <Text text="{i18n>HPH_PAT_CFG_SECOND_TILE_ATTR}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_SECOND_TILE_ATTR_TOOLTIP}" />
+                                            <Button text="{i18n>HPH_PAT_CFG_BTN_RESET}" press="onResetSecondAttrPressed" />
+                                        </VBox>
+                                    </Column>
+                                    <Column hAlign="Center" width="30%">
+                                        <VBox>
+                                            <Text text="{i18n>HPH_PAT_CFG_FORMATTER_COL}" textAlign="Center" tooltip="{i18n>HPH_PAT_CFG_FORMATTER_TOOLTIP}" />
+                                        </VBox>
+                                    </Column>
+                                </columns>
+                            </Table>
+                        </Panel>
+                    </f:FormElement>
+                </f:FormContainer>
+            </f:Form>
+        </ScrollContainer>
+    </NavContainer>
+</mvc:View>

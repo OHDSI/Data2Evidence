@@ -1,0 +1,39 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:l="sap.ui.layout"
+	xmlns:f="sap.ui.layout.form"
+	xmlns:core="sap.ui.core">
+ <SelectDialog
+		id = "idDialog"
+		title="{i18n>SEARCH_PATIENTS}"
+		search="onSearch"
+		confirm="handleClose"
+		close="handleClose"
+		enableBusyIndicator="true"
+		items="{
+			path: '/patients'}">
+		<!-- <StandardListItem
+			title="{GivenName} {FamilyName} ({NationalityValue})"
+			description="{City},{State} {CountryValue}"
+			iconDensityAware="false"
+			iconInset="false"
+			type="Active" />
+			
+		 -->	
+			<CustomListItem>
+			<HBox>
+			<!-- 	<core:Icon size="2rem" src="sap-icon://attachment-photo" class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom" />
+			 -->	
+			 <VBox  class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom" >
+			<Text text="{parts:[{path: 'FamilyName'}, {path: 'GivenName'}], formatter: '.nameFormatter'}"/>
+			<Text text="{i18n>GENDER}: {path: 'GenderValue', formatter: '.emptyFormatter'}, {i18n>NATIONALITY}: {path: 'NationalityValue', formatter: '.emptyFormatter'}"/>
+			 <Text text="{i18n>DOB}: {path: 'BirthDate', formatter: '.dateFormatter'}" />
+			 <!-- <VBox  class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom" > -->
+				
+				</VBox>
+			</HBox>
+		</CustomListItem>
+			
+	</SelectDialog>
+ 
+</core:FragmentDefinition>

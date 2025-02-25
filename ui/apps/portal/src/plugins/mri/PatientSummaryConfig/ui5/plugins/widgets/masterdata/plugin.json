@@ -1,0 +1,22 @@
+{
+    "plugin_name": "PS_PLUGINS_WIDGETS_MAST_NAME",
+    "plugin_description": "PS_PLUGINS_WIDGETS_MAST_DESC",
+    "languages": ["en", "de", "fr"],
+    "language_textbundle": "i18n/text.properties",
+    "extensions": [{
+        "extension_header": {
+            "extension_point_id": "hc.hph.patient.app.widget",
+            "extension_point_version": "1.0",
+            "extension_id": "hc.hph.patient.plugins.widgets.masterdata",
+            "extension_name": "PS_PLUGINS_WIDGETS_MAST_EXTN_NAME",
+            "extension_alias": "PS_PLUGINS_WIDGETS_MAST_EXTN_ALIAS",
+            "extension_description": "PS_PLUGINS_WIDGETS_MAST_EXTN_DESC"
+        },
+        "extension_contribution": {
+            "key": "masterdata",
+            "namespace": "hc.hph.patient.plugins.widgets.masterdata.ui",
+            "path": "/hc/hph/patient/plugins/widgets/masterdata/ui",
+            "urlParams": []
+        }
+    }]
+}

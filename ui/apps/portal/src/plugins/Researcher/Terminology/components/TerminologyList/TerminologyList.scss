@@ -1,0 +1,40 @@
+.terminology__list {
+  &-title {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 25px;
+    display: block;
+  }
+
+  &-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+
+    .checkbox-container {
+      flex: 1;
+    }
+  }
+
+  &-search {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .MuiTableHead-root .MuiTableCell-root {
+    background-color: #edf2f7;
+  }
+  .MuiTableCell-root {
+    border-bottom: none;
+  }
+  .table-button-container {
+    display: flex;
+    justify-content: center;
+  }
+  .status_cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

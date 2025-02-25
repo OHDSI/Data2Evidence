@@ -1,0 +1,30 @@
+<mvc:View 
+	controllerName="hc.hph.patient.plugins.tabs.masterdata.ui.view.Masterdata" 
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:l="sap.ui.layout"
+    xmlns:form="sap.ui.layout.form">
+
+	<VBox class="sapUiSmallMargin">
+		<form:Form class="sapPSMasterForm" formContainers="{/}">
+			<form:layout>
+				<form:ResponsiveGridLayout
+					labelSpanM="4"
+					labelSpanL="2"
+					emptySpanL="0"
+					emptySpanM="0"
+					columnsL="3"
+					columnsM="3"/>
+			</form:layout>
+			<form:formContainers>
+				<form:FormContainer title="{title}" formElements="{path:'entries', templateShareable:false}">
+					<form:FormElement>
+						<!-- <Label text="{label}" visible="{=!!${label}}"/> -->
+						<Text text="{text}"/>
+					</form:FormElement>
+				</form:FormContainer>
+			</form:formContainers>
+		</form:Form>
+	</VBox>
+</mvc:View>

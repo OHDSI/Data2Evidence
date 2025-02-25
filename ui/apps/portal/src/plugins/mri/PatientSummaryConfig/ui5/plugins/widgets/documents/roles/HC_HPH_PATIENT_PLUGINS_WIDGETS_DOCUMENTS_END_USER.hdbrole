@@ -1,0 +1,4 @@
+role hc.hph.patient.plugins.widgets.documents.roles::HC_HPH_PATIENT_PLUGINS_WIDGETS_DOCUMENTS_END_USER
+{
+    application privilege: hc.hph.patient.plugins.widgets.documents::EndUser;
+}

@@ -1,0 +1,15 @@
+@import './mri-variables';
+@import './mixins';
+
+.mri-focusable {
+  @include mriFocusable;
+}
+
+.mri-link-text {
+  cursor: pointer;
+  color: $LinkText;
+}
+
+.mri-link-text:hover {
+  text-decoration-line: underline;
+}

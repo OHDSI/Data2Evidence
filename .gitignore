@@ -19,6 +19,7 @@ run_ssh.sh
 .DS_Store
 *eszip
 
+
 pkg/*.tgz
 target
 dist
@@ -35,3 +36,33 @@ liquibase
 
 **/liveness
 data2evidence-cli-*.tgz
+
+
+flows/.DS_Store
+flows/venv
+flows/**/__pycache__
+flows/.env
+flows/**/*private*
+flows/**/.env*
+
+ui/resources/*
+!ui/resources/img
+!ui/resources/authenticate.js
+!ui/resources/msal-browser.min.js
+!ui/.vscode/settings.json
+ui/node_modules
+ui/npm-debug.log
+ui/*.tmp*
+ui/target
+ui/package-lock.json
+ui/pnpm-lock.yaml
+ui/yarn-error.log
+ui/run_ssh.sh
+ui/.DS_Store
+ui/dist
+ui/**/*-dbg*.js
+ui/**/*-preload*.js
+ui/**/library-parameters.json
+ui/**/*private*
+ui/.nx
+ui/pyqetest

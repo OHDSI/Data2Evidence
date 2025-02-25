@@ -1,0 +1,8 @@
+{
+    "privileges": [
+        {
+            "name": "EndUser",
+            "description": "Privilege to use the Patient Summary Masterdata Tab Extension"
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "D4L ALP Portal",
+  "short_name": "D4L ALP Portal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f8",
+  "theme_color": "#000e7e"
+}

@@ -1,0 +1,35 @@
+.csv-reader {
+  > label {
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  &__wrapper {
+    background-color: #efefef;
+    padding: 19px;
+    text-align: center;
+    border-radius: 4px;
+  }
+
+  &__file {
+    position: absolute;
+    z-index: -1;
+    overflow: hidden;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+
+    + label {
+      font-size: 14px;
+      max-width: 80%;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-block;
+      overflow: hidden;
+    }
+  }
+}

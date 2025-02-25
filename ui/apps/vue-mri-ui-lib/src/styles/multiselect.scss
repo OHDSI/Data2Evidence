@@ -1,0 +1,173 @@
+@import './mri-variables';
+@import './mri-bootstrap-variables';
+@import './mixins';
+
+.app-tag-input,
+.app-single-select {
+  .unicode-icon {
+    button {
+      width: 30px;
+      height: 30px;
+      padding-left: 9px;
+      padding-top: 3px;
+    }
+    span {
+      font-size: 15px;
+    }
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  .arrow {
+    position: absolute;
+    padding-top: 0.15rem;
+    right: 0;
+    .icon {
+      width: 1.5rem;
+      font-size: x-small;
+    }
+  }
+
+  .multiselect__tags {
+    padding: 0 2rem 0 0;
+    font-size: $font-size-sm;
+    min-height: $input-height;
+    border: none;
+    border-bottom: 1px solid $MriDropDownBorderLight;
+    border-radius: 0;
+    color: $MriBrand;
+    cursor: text;
+  }
+
+  .multiselect__spinner {
+    height: 20px;
+    width: 20px;
+  }
+
+  .multiselect__clear + .multiselect__tags {
+    padding-bottom: 20px;
+  }
+  .multiselect--active {
+    // drop shadow if opened from above
+    &.multiselect--above {
+      .multiselect__content-wrapper {
+        box-shadow: 0 -0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    // drop shadow if opened from below
+    .multiselect__content-wrapper {
+      box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.15);
+    }
+
+    .icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  .multiselect__content {
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+
+  .multiselect__tag {
+    @include mriTagFocus;
+    color: $MriValidSyntaxText;
+    background-color: $MriTokenPendingBG;
+    border: 1px solid;
+    border-radius: 0.125rem;
+    border-color: $MriDarkerBorder;
+    margin-right: 4px;
+    font-weight: bold;
+    white-space: initial;
+    cursor: pointer;
+  }
+
+  .multiselect__clear {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    padding: 5px 10px;
+    font-size: 10px;
+    cursor: pointer;
+  }
+
+  .multiselect__tag.MriPaTagElementValidNoData {
+    border-color: $MriSelectTokenValidTextLight;
+    color: $MriSelectTokenValidTextLight;
+    background-color: $MriSelectTokenNoDataBGLight;
+  }
+
+  .multiselect__tag.MriPaTagElementValidWithData {
+    border-color: $MriTokenValidBorder;
+    color: $MriValidSyntaxText;
+    background-color: $MriTokenValidBG;
+  }
+
+  .multiselect__tag.MriPaValidToken,
+  .multiselect__tag.MriPaTagElementValid {
+    border-color: $MriTokenValidSyntaxBorder;
+    color: $MriSelectTokenValidTextDark;
+    background-color: $MriSelectTokenValidBGLight;
+  }
+
+  .multiselect__tag.MriPaFailToken,
+  .multiselect__tag.MriPaTagElementInvalid {
+    border-color: $MriTokenInvalidBorder;
+    color: $MriValidSyntaxText;
+    background-color: $MriTokenInvalidBG;
+  }
+
+  .multiselect__tag-icon:focus,
+  .multiselect__tag-icon:hover {
+    opacity: 0.7;
+    background: none;
+  }
+
+  .multiselect__tag-icon:after {
+    color: $MriValidSyntaxText;
+  }
+
+  .MriPaTagElementValidNoData,
+  .MriPaTagElementValid {
+    .multiselect__tag-icon::after {
+      color: $MriSelectTokenValidTextDark;
+    }
+  }
+
+  .multiselect__option--highlight {
+    background: $UiHighlight;
+    color: $UiDarkText;
+    font-size: $font-size-sm;
+    border-radius: 2px;
+  }
+
+  .multiselect__option--highlight:after {
+    background: $UiHighlight;
+    color: $UiDarkText;
+    font-size: $font-size-sm;
+    text-align: start;
+  }
+
+  .multiselect__select {
+    height: 28px;
+  }
+
+  .multiselect__single {
+    margin-bottom: 5px;
+  }
+  .multiselect__option--tablecell {
+    font-weight: bold;
+    display: table-cell;
+    width: 80px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .multiselect__placeholder {
+    color: $MriBrand;
+  }
+}

@@ -1,0 +1,11 @@
+<mvc:View controllerName="sap.hc.hph.patient.plugins.widgets.diagnoses.ui.view.Diagnoses" class="sapUiSizeCompact" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:html="http://www.w3.org/1999/xhtml">
+    <ObjectHeader class="sapPSWidget" busy="false" title="{i18n>PS_PLUGINS_WIDGETS_DIAG_TITLE}" visible="{=!${_proxy_>/minimized}}">
+        <layoutData>
+            <FlexItemData growFactor="1"/>
+        </layoutData>
+        <ObjectAttribute title="{/entries/0/title}" text="{/entries/0/dateFormatted}"/>
+        <ObjectAttribute title="{/entries/1/title}" text="{/entries/1/dateFormatted}"/>
+        <ObjectAttribute title="{/entries/2/title}" text="{/entries/2/dateFormatted}"/>
+        <ObjectAttribute visible="{=${/totalEntries}>3}" text="{parts: ['i18n>PS_PLUGINS_WIDGETS_DIAG_MORE','/totalEntries'], formatter:'.formatMoreText'}" active="true" press="handleMorePress"/>
+    </ObjectHeader>
+</mvc:View>

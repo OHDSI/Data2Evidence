@@ -1,0 +1,15 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout">
+    <Dialog id="resetFiltersDialog" title="{i18n>MRI_PA_RESET_FILTERS_TITLE}" icon="sap-icon://question-mark" type="Message" class="sapMMessageBoxQuestion">
+        <content>
+            <l:VerticalLayout class="sapUiContentPadding sapUiContentPaddingExtraBottom" width="100%">
+                <l:content>
+                    <Text text="{i18n>MRI_PA_TXT_RESET_FILTERS}" />
+                </l:content>
+            </l:VerticalLayout>
+        </content>
+        <buttons>
+            <Button text="{i18n>MRI_PA_RESET_FILTERS_OK}" press=".onResetFiltersOk" />
+            <Button text="{i18n>MRI_PA_BUTTON_CANCEL}" press=".onResetFiltersCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

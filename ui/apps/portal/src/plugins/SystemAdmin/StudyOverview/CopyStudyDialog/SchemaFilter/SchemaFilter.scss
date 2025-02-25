@@ -1,0 +1,40 @@
+.schema-filter-form {
+  margin-top: 0.5em;
+  border-radius: 8px;
+  border-color: #979797;
+  .title {
+    border-bottom: 1px solid black;
+  }
+
+  .select {
+    color: var(--color-primary);
+  }
+  .table-accordion {
+    padding: 0;
+    .item {
+      border-bottom: 1px solid #979797;
+    }
+  }
+
+  .column-accordion {
+    border-bottom: 1px solid #979797;
+    .column-checkbox-container {
+      padding-left: 22px;
+      .alp-checkbox__container {
+        margin-top: 4px;
+      }
+    }
+  }
+
+  .alp-checkbox__container {
+    margin: 0;
+  }
+  .form-error {
+    color: var(--color-feedback-alarm);
+    margin-top: -10px;
+  }
+}
+
+.alert {
+  margin: 0.5em;
+}

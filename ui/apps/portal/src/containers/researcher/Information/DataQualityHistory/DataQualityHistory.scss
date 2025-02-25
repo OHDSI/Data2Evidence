@@ -1,0 +1,31 @@
+.history__container {
+  margin: 1em;
+  width: 100%;
+  display: grid;
+}
+
+.history__table {
+  margin: 0.5em 0;
+  padding-right: 3em;
+  overflow-x: scroll;
+  width:100%;
+}
+
+.domain-continuity__container {
+  margin: 0 1em;
+  width: 100%;
+  display: grid;
+}
+
+.domain-continuity__table {
+  margin: 0.5em 0;
+  padding-right: 3em;
+  overflow-x: scroll;
+  width:100%;
+}
+
+.error__description {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}

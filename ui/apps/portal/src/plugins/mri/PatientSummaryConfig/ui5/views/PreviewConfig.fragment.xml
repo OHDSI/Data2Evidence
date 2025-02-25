@@ -1,0 +1,9 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog class="sapUiContentPadding" contentWidth="600px" title="{i18n>HPH_PAT_CFG_CONFIG_PREVIEW_DIALOG_TITLE}" initialFocus="configtext">
+        <TextArea id="configtext" editable="false" rows="20" value="{previewModel>/file}" width="100%" wrapping="Off" />
+        <buttons>
+            <Button text="{i18n>HPH_PAT_CFG_CONFIG_PREVIEW_DIALOG_COPY}" press="onConfigPreviewDialogCopy" tooltip="{i18n>HPH_PAT_CFG_CONFIG_PREVIEW_DIALOG_COPY_TOOLTIP}" />
+            <Button text="{i18n>HPH_PAT_CFG_CONFIG_PREVIEW_DIALOG_CLOSE}" press="onConfigPreviewDialogClose" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

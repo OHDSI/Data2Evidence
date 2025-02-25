@@ -1,0 +1,16 @@
+@import '../../../../../theme/variables.scss';
+
+.flow-list-drawer {
+  &__header {
+    display: flex;
+    align-items: center;
+    margin: 0.75em 1.5em;
+    margin-bottom: 0;
+    padding-bottom: 0.75em;
+    border-bottom: 1px solid $border-color;
+  }
+
+  &__content {
+    padding: 0;
+  }
+}

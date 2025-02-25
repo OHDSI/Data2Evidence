@@ -1,0 +1,397 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyqe.ql package &#8212; pyQE  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyqe.shared package" href="pyqe.shared.html" />
+    <link rel="prev" title="pyqe.azure package" href="pyqe.azure.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyqe.shared.html" title="pyqe.shared package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pyqe.azure.html" title="pyqe.azure package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pyQE  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >pyqe</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyqe.html" accesskey="U">pyqe package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pyqe.ql package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pyqe.ql">
+<span id="pyqe-ql-package"></span><h1>pyqe.ql package<a class="headerlink" href="#module-pyqe.ql" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<p><cite>pyqe.ql</cite> submodule of <cite>pyqe</cite> contains all query language class definitions</p>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pyqe.ql.attribute">
+<span id="pyqe-ql-attribute-module"></span><h2>pyqe.ql.attribute module<a class="headerlink" href="#module-pyqe.ql.attribute" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.attribute.Attribute">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.attribute.</code><code class="sig-name descname">Attribute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">constraints</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pyqe.ql.attribute.Constraint" title="pyqe.ql.attribute.Constraint">Constraint</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.attribute.Attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Attribute of a filter card</p>
+<dl>
+<dt>Args:</dt><dd><p>config_path: String value of config path defined in CDM</p>
+<p>constraints: list of <code class="xref py py-class docutils literal notranslate"><span class="pre">Constraint</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="pyqe.ql.attribute.Constraint">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.attribute.</code><code class="sig-name descname">Constraint</code><a class="headerlink" href="#pyqe.ql.attribute.Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Constraint given to the filter card</p>
+<dl class="py method">
+<dt id="pyqe.ql.attribute.Constraint.add">
+<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expression</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.attribute.Expression" title="pyqe.ql.attribute.Expression">Expression</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.attribute.Constraint.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <code class="xref py py-class docutils literal notranslate"><span class="pre">Expression</span></code> to constraint</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>expression: expression which is defined in the constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pyqe.ql.attribute.DateConstraint">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.attribute.</code><code class="sig-name descname">DateConstraint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">date</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">date_period</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.date_period.DatePeriod" title="pyqe.ql.date_period.DatePeriod">pyqe.ql.date_period.DatePeriod</a></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.attribute.DateConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqe.ql.attribute.Constraint" title="pyqe.ql.attribute.Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqe.ql.attribute.Constraint</span></code></a></p>
+<p>Constraint which is specifically for date values</p>
+<dl>
+<dt>Args:</dt><dd><p>date: optional date value</p>
+<p>date_period: optional DatePeriod which specifies a period of 2 dates</p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: An error occurred if neither or both of date and date period parameters are provided</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="pyqe.ql.attribute.DateConstraint.add">
+<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expression</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.attribute.Expression" title="pyqe.ql.attribute.Expression">Expression</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.attribute.DateConstraint.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <code class="xref py py-class docutils literal notranslate"><span class="pre">Expression</span></code> to constraint</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>expression: expression which is defined in the constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pyqe.ql.attribute.Expression">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.attribute.</code><code class="sig-name descname">Expression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operator</span><span class="p">:</span> <span class="n"><a class="reference internal" href="pyqe.types.html#pyqe.types.enum_types.ComparisonOperator" title="pyqe.types.enum_types.ComparisonOperator">pyqe.types.enum_types.ComparisonOperator</a></span></em>, <em class="sig-param"><span class="n">value</span><span class="p">:</span> <span class="n">object</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.attribute.Expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Expression which can be added to <code class="xref py py-class docutils literal notranslate"><span class="pre">Constraint</span></code></p>
+<dl>
+<dt>Args:</dt><dd><p>operator: ComparisonOperator for provided value</p>
+<p>value: given value for the expression</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.config">
+<span id="pyqe-ql-config-module"></span><h2>pyqe.ql.config module<a class="headerlink" href="#module-pyqe.ql.config" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.config.Config">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.config.</code><code class="sig-name descname">Config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">path_type</span><span class="p">:</span> <span class="n"><a class="reference internal" href="pyqe.types.html#pyqe.types.enum_types.ConfigPath" title="pyqe.types.enum_types.ConfigPath">pyqe.types.enum_types.ConfigPath</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.config.Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="pyqe.ql.config.Config.find_interaction">
+<code class="sig-name descname">find_interaction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#pyqe.ql.config.Config.find_interaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.criteria_group">
+<span id="pyqe-ql-criteria-group-module"></span><h2>pyqe.ql.criteria_group module<a class="headerlink" href="#module-pyqe.ql.criteria_group" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.criteria_group.CriteriaGroup">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.criteria_group.</code><code class="sig-name descname">CriteriaGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">criteria_match</span><span class="p">:</span> <span class="n"><a class="reference internal" href="pyqe.types.html#pyqe.types.enum_types.MatchCriteria" title="pyqe.types.enum_types.MatchCriteria">pyqe.types.enum_types.MatchCriteria</a></span></em>, <em class="sig-param"><span class="n">filters</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pyqe.ql.filter_card.FilterCard" title="pyqe.ql.filter_card.FilterCard">pyqe.ql.filter_card.FilterCard</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.criteria_group.CriteriaGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A group of criteria to determine if any or all of provided criteria should be matched</p>
+<dl>
+<dt>Args:</dt><dd><p>criteria_match: MatchCriteria value to determine if any or all of provided filter cards should be matched</p>
+<p>filters: list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FilterCard</span></code></p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: An error occurred if provided criteria_match is None</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="pyqe.ql.criteria_group.CriteriaGroup.add_exclusive_group">
+<code class="sig-name descname">add_exclusive_group</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">criteria_group</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.criteria_group.CriteriaGroup" title="pyqe.ql.criteria_group.CriteriaGroup">CriteriaGroup</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.criteria_group.CriteriaGroup.add_exclusive_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add exclusive CriteriaGroup which has to be matched.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>criteria_group: CriteriaGroup variable which is exclusive</p>
+</dd>
+</dl>
+<p>An example of its usage will be:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># criteria which requires either of female or male gender</span>
+<span class="n">exclusive_group</span> <span class="o">=</span> <span class="n">CriteriaGroup</span><span class="p">(</span><span class="n">MatchCriteria</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="p">[</span><span class="n">female_gender</span><span class="p">,</span> <span class="n">male_gender</span><span class="p">])</span>
+<span class="c1"># criteria which requires both diabetes &amp; heart conditions</span>
+<span class="n">criteria_group</span> <span class="o">=</span> <span class="n">CriteriaGroup</span><span class="p">(</span><span class="n">MatchCriteria</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="p">[</span><span class="n">diabetes_condition</span><span class="p">,</span> <span class="n">heart_condition</span><span class="p">])</span>
+<span class="c1"># criteria which requires both diabetes &amp; heart conditions and either of female or male gender</span>
+<span class="n">criteria_group</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">exclusive_group</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.date_period">
+<span id="pyqe-ql-date-period-module"></span><h2>pyqe.ql.date_period module<a class="headerlink" href="#module-pyqe.ql.date_period" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.date_period.CurrentDatePeriod">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.date_period.</code><code class="sig-name descname">CurrentDatePeriod</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">number_of_days</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">date_period_type</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.date_period.DatePeriod.Type" title="pyqe.ql.date_period.DatePeriod.Type">pyqe.ql.date_period.DatePeriod.Type</a></span></em>, <em class="sig-param"><span class="n">is_inclusive</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.date_period.CurrentDatePeriod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqe.ql.date_period.DatePeriod" title="pyqe.ql.date_period.DatePeriod"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqe.ql.date_period.DatePeriod</span></code></a></p>
+<p>Data structure representing a period of 2 dates with one based on today date</p>
+<dl>
+<dt>Args:</dt><dd><p>number_of_days: number of days from today date</p>
+<p>date_period_type: value to determine if today date is before or after the number_of_days in the period</p>
+<p>is_inclusive: optional boolean value to determine if today date is inclusive in the period</p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: An error occurred if any of the provided parameters is invalid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="pyqe.ql.date_period.DatePeriod">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.date_period.</code><code class="sig-name descname">DatePeriod</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">date</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">number_of_days</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">date_period_type</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.date_period.DatePeriod.Type" title="pyqe.ql.date_period.DatePeriod.Type">DatePeriod.Type</a></span></em>, <em class="sig-param"><span class="n">is_inclusive</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Data structure representing a period of 2 dates</p>
+<dl>
+<dt>Args:</dt><dd><p>date: value to determine the start date or end date of period based on provided date_period_type &amp; is_inclusive parameters</p>
+<p>number_of_days: number of days from the date</p>
+<p>date_period_type: value to determine if date is before or after the number_of_days in the period</p>
+<p>is_inclusive: optional boolean value to determine if date parameter is inclusive in the period.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: An error occurred if any of the provided parameters is invalid</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="pyqe.ql.date_period.DatePeriod.Type">
+<em class="property">class </em><code class="sig-name descname">Type</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod.Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt id="pyqe.ql.date_period.DatePeriod.Type.AFTER">
+<code class="sig-name descname">AFTER</code><em class="property"> = 'AFTER'</em><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod.Type.AFTER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pyqe.ql.date_period.DatePeriod.Type.BEFORE">
+<code class="sig-name descname">BEFORE</code><em class="property"> = 'BEFORE'</em><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod.Type.BEFORE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.date_period.DatePeriod.end_date">
+<em class="property">property </em><code class="sig-name descname">end_date</code><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod.end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.date_period.DatePeriod.start_date">
+<em class="property">property </em><code class="sig-name descname">start_date</code><a class="headerlink" href="#pyqe.ql.date_period.DatePeriod.start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.filter_card">
+<span id="pyqe-ql-filter-card-module"></span><h2>pyqe.ql.filter_card module<a class="headerlink" href="#module-pyqe.ql.filter_card" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.filter_card.FilterCard">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.filter_card.</code><code class="sig-name descname">FilterCard</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">config_path: str</em>, <em class="sig-param">card_type: pyqe.types.enum_types.CardType = &lt;CardType.INCLUDED: 'INCLUDED'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.filter_card.FilterCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="pyqe.ql.filter_card.FilterCard.add_attribute">
+<code class="sig-name descname">add_attribute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attribute</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.attribute.Attribute" title="pyqe.ql.attribute.Attribute">pyqe.ql.attribute.Attribute</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.filter_card.FilterCard.add_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add attribute in filter</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.filter_card.FilterCard.add_concept_set">
+<code class="sig-name descname">add_concept_set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">concept_set</span><span class="p">:</span> <span class="n"><a class="reference internal" href="pyqe.api.html#pyqe.api.concept_query.ConceptSet" title="pyqe.api.concept_query.ConceptSet">pyqe.api.concept_query.ConceptSet</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.filter_card.FilterCard.add_concept_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add concept set in filter</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.filter_card.FilterCard.add_patient_id">
+<code class="sig-name descname">add_patient_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">constraints</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pyqe.ql.attribute.Constraint" title="pyqe.ql.attribute.Constraint">pyqe.ql.attribute.Constraint</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.filter_card.FilterCard.add_patient_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.interaction">
+<span id="pyqe-ql-interaction-module"></span><h2>pyqe.ql.interaction module<a class="headerlink" href="#module-pyqe.ql.interaction" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.interaction.Interaction">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.interaction.</code><code class="sig-name descname">Interaction</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">config_path: str</em>, <em class="sig-param">card_type: pyqe.types.enum_types.CardType = &lt;CardType.INCLUDED: 'INCLUDED'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.interaction.Interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pyqe.ql.filter_card.FilterCard" title="pyqe.ql.filter_card.FilterCard"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyqe.ql.filter_card.FilterCard</span></code></a></p>
+<dl class="py method">
+<dt id="pyqe.ql.interaction.Interaction.add_attribute">
+<code class="sig-name descname">add_attribute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attribute</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pyqe.ql.attribute.Attribute" title="pyqe.ql.attribute.Attribute">pyqe.ql.attribute.Attribute</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.interaction.Interaction.add_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add attribute in filter</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.interaction.Interaction.add_concept_set">
+<code class="sig-name descname">add_concept_set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">concept_set</span><span class="p">:</span> <span class="n"><a class="reference internal" href="pyqe.api.html#pyqe.api.concept_query.ConceptSet" title="pyqe.api.concept_query.ConceptSet">pyqe.api.concept_query.ConceptSet</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.interaction.Interaction.add_concept_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add concept set in filter</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyqe.ql.interaction.Interaction.add_patient_id">
+<code class="sig-name descname">add_patient_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">constraints</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pyqe.ql.attribute.Constraint" title="pyqe.ql.attribute.Constraint">pyqe.ql.attribute.Constraint</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.interaction.Interaction.add_patient_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pyqe.ql.interaction.Interactions">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.interaction.</code><code class="sig-name descname">Interactions</code><a class="headerlink" href="#pyqe.ql.interaction.Interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="pyqe.ql.interaction.Interactions.generate_interaction_type_class">
+<em class="property">static </em><code class="sig-name descname">generate_interaction_type_class</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">frontend_config</span><span class="p">:</span> <span class="n">object</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.interaction.Interactions.generate_interaction_type_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pyqe.ql.person">
+<span id="pyqe-ql-person-module"></span><h2>pyqe.ql.person module<a class="headerlink" href="#module-pyqe.ql.person" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pyqe.ql.person.Person">
+<em class="property">class </em><code class="sig-prename descclassname">pyqe.ql.person.</code><code class="sig-name descname">Person</code><a class="headerlink" href="#pyqe.ql.person.Person" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="pyqe.ql.person.Person.generate_patient_class">
+<code class="sig-name descname">generate_patient_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyqe.ql.person.Person.generate_patient_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pyqe.ql package</a><ul>
+<li><a class="reference internal" href="#about">About</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.attribute">pyqe.ql.attribute module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.config">pyqe.ql.config module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.criteria_group">pyqe.ql.criteria_group module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.date_period">pyqe.ql.date_period module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.filter_card">pyqe.ql.filter_card module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.interaction">pyqe.ql.interaction module</a></li>
+<li><a class="reference internal" href="#module-pyqe.ql.person">pyqe.ql.person module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pyqe.azure.html"
+                        title="previous chapter">pyqe.azure package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pyqe.shared.html"
+                        title="next chapter">pyqe.shared package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pyqe.ql.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyqe.shared.html" title="pyqe.shared package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pyqe.azure.html" title="pyqe.azure package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pyQE  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >pyqe</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyqe.html" >pyqe package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pyqe.ql package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, D4L data4life.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+    </div>
+  </body>
+</html>

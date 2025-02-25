@@ -1,0 +1,26 @@
+.alp-text {
+  &__container {
+    display: flex;
+    align-items: center;
+  }
+
+  &--wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &--double-wrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+  }
+
+  &__copy-button-container {
+    .MuiButton-root {
+      min-width: 44px;
+    }
+  }
+}

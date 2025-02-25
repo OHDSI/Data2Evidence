@@ -1,0 +1,36 @@
+<core:FragmentDefinition
+	xmlns:core="sap.ui.core"
+	xmlns:l="sap.ui.layout"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m">
+	<Popover
+		placement="Bottom"
+		showHeader="false">
+		<content>
+			<SearchField 
+    			search="handleSearch"
+    			liveChange="liveTermSearch"/>
+	        <List
+	            id = "searchTermsListID"
+	            headerText="{i18n>search.search_history}"
+				items="{/terms}"
+				mode="SingleSelectMaster" 
+				selectionChange="handleSearch"
+				noDataText="{i18n>search.no_data}"
+				growing="true"
+		        growingThreshold="3"
+		        growingScrollToLoad="true"
+            >
+				<items>
+					<ObjectListItem
+						title="{searchTerm}"
+					 />
+				</items>
+			</List>
+			<List
+	            id = "filterCardListID"
+	            headerText="{i18n>search.filter_cards}"
+				noDataText="{i18n>search.no_data}"/>
+		</content>
+	</Popover>
+</core:FragmentDefinition>

@@ -1,0 +1,11 @@
+.flow-panel {
+  width: 100%;
+  height: 100%;
+
+  &__custom-controls {
+    display: flex;
+    justify-content: center;
+    background-color: white;
+    border: 1px solid #eee;
+  }
+}

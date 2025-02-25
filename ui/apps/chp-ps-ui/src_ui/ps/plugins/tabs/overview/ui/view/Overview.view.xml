@@ -1,0 +1,15 @@
+<mvc:View controllerName="hc.hph.patient.plugins.tabs.overview.ui.view.Overview" class="sapUiSizeCompact sapPatientSummary" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:patient="sap.hc.hph.patient.app.ui.lib" xmlns:overview="sap.hc.hph.patient.plugins.tabs.overview.ui.lib" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1">
+    <patient:OverviewToolbar class="sapTlOverviewToolbar" content="{path:'/lanes', templateShareable:true}">
+        <patient:OverviewButton color="{color}" icon="sap-icon://accept" pressed="{initiallyFiltered}" text="{title} ({totalCount})" press=".filterOverviewInteractions" enabled="{=!!${totalCount}}"/>
+    </patient:OverviewToolbar>
+    <Panel id="overviewPanelUndated" class="sapUiResponsiveMargin sapTlOverviewPanelUndated" expandable="true" expanded="false" headerText="{parts: ['i18n>HPH_PAT_CONTENT_DATELESS_SECTION_HEADER_OVERVIEW', '/lanes'], formatter: '.formatUndatedTextAndCount'}" width="auto">
+        <List id="overviewListUndated" noDataText="{i18n>HPH_PAT_CONTENT_OVERVIEW_NO_DATA_TEXT}" items="{path: '/overviewInteractions/undated', sorter: [{path: 'start', descending: true}], templateShareable:true}">
+            <overview:OverviewListItem color="{color}" end="{end}" groupName="{groupName}" name="{name}" start="{start}" annotations="{path: 'annotations', factory: '.createOverviewAnnotations'}" attributes="{attributes}"/>
+        </List>
+    </Panel>
+    <Panel id="overviewPanelDated" class="sapUiResponsiveMargin sapTlOverviewPanelDated" expandable="false" expanded="true" headerText="{parts: ['i18n>HPH_PAT_CONTENT_DATELESS_SECTION_HEADER_TIMELINE', '/lanes'], formatter: '.formatDatedTextAndCount'}" width="auto">
+        <List id="overviewListDated" noDataText="{i18n>HPH_PAT_CONTENT_OVERVIEW_NO_DATA_TEXT}" items="{path: '/overviewInteractions/dated', sorter: [{path: 'start', descending: true}], templateShareable:true}" growing="true" growingScrollToLoad="true" growingThreshold="50">
+            <overview:OverviewListItem color="{color}" end="{end}" groupName="{groupName}" name="{name}" start="{start}" annotations="{path: 'annotations', factory: '.createOverviewAnnotations'}" attributes="{attributes}"/>
+        </List>
+    </Panel>
+</mvc:View>

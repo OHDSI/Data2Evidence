@@ -1,0 +1,2810 @@
+.sapTlTimelineChart .sapTlTimelineLaneDescription {
+  font-size: 0.875rem;
+  padding: 0.325rem .75rem 0 0;
+}
+.sapTlTimelineChart .sapTlTimelineLaneDescriptionContext {
+  padding-left: 0.5625rem;
+  color: #888888;
+}
+.sapTlTimelineChart .sapTlTimelineLaneDescriptionCount {
+  font-size: 1.625rem;
+  margin-top: .25rem;
+  margin-right: 1rem;
+  margin-left: 1.375rem;
+}
+.sapTlTimelineChart .sapTlTimelineLaneDescriptionTitle {
+  padding: 0.25rem .75rem 0 1.375rem;
+}
+.sapTlTimelineChart canvas {
+  height: 100%;
+  z-index: 2;
+}
+.sapTlTimelineChart svg {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+.sapTlTimelineChart svg .sapTlTimelineChartLine path {
+  stroke: #cccccc;
+  stroke-width: 1.5px;
+  fill: none;
+}
+.sapTlTimelineChart svg .sapTlTimelineChartDots .focus > circle {
+  transform: scale(1.7);
+  fill: #f0f0f0;
+}
+.sapTlTimelineChart svg .sapTlTimelineChartDots .focusInit circle {
+  fill: #ffffff;
+  transform: scale(1);
+}
+.sapTlTimelineChart svg .sapTlTimelineChartDots circle {
+  stroke-width: 1.5px;
+  cursor: pointer;
+  -webkit-transition: all .2s;
+  transition: all .2s;
+  stroke: #cccccc;
+  fill: #ffffff;
+}
+.sapTlTimelineChart svg .sapTlTimelineChartDots circle:hover {
+  fill: #cccccc;
+}
+.sapTlTimelineChartLabel {
+  margin-left: .625rem;
+  cursor: pointer;
+  overflow: hidden;
+  position: absolute;
+  color: #999999;
+  font-size: .75rem;
+  z-index: 2;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: /* first layer at 1px */ -1px -1px 2px #ffffff, 0px -1px 2px #ffffff, 1px -1px 2px #ffffff, -1px 0px 2px #ffffff, 1px 0px 2px #ffffff, -1px 1px 2px #ffffff, 0px 1px 2px #ffffff, 1px 1px 2px #ffffff, /* second 2pxer at 2px */ 2px -1px 2px #ffffff, 2px 0px 2px #ffffff, 2px 1px 2px #ffffff, -2px 1px 2px #ffffff, -2px 0px 2px #ffffff, -2px -1px 2px #ffffff;
+}
+.sapTlTimelineChartLabel.focus {
+  font-weight: bold;
+}
+.sap-desktop .sapMDialog.sapTlConfigDialog {
+  min-width: 46rem;
+}
+.sapMCLI.sapTlConfigDialogListItem {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.sapTlConfigDialogListItem .sapMSLITitle {
+  padding-top: 0.375rem;
+  padding-bottom: 0;
+}
+.sapTlConfigDialogListItem .sapTlConfigDialogListItemDefault {
+  padding-bottom: 0.375rem;
+  font-size: 0.675rem;
+}
+.sapTlConfigDialogListItem .sapMSLIDescription {
+  padding-bottom: 0.375rem;
+}
+.sapTlConfigDialogToolbarSpacer {
+  width: 3rem;
+}
+.sapPSQuickViewTab .subviewSwitchArea {
+  align-items: baseline;
+  margin-bottom: 13px;
+}
+.sapPSQuickViewTab .subviewSwitchArea .sapMFlexItem {
+  flex-basis: auto;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+.sapPSQuickViewTab .subviewSwitchArea .sapMFlexItem.subviewSwitchSpacer {
+  flex-shrink: 1;
+  flex-grow: 1;
+}
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch {
+  height: 35px;
+  display: flex;
+  align-items: center;
+  border-radius: 25px;
+  background-color: #F3F4F5;
+  padding: 3px;
+  margin-left: 15px;
+}
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch:focus {
+  outline: none;
+}
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn,
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn.sapMSegBBtnFocusable:focus,
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn.sapMSegBBtnFocusable:focus + .sapMSegBBtn {
+  height: 29px;
+  width: 115px;
+  color: #333333;
+  background: none;
+  border: 1px solid #F3F4F5;
+  font-size: 14px;
+  line-height: 31px;
+  border-radius: 25px;
+}
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn.sapMSegBBtnSel,
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn.sapMSegBBtnFocusable:focus.sapMSegBBtnSel,
+.sapPSQuickViewTab .subviewSwitchArea .subviewSwitch .sapMSegBBtn.sapMSegBBtnFocusable:focus + .sapMSegBBtn.sapMSegBBtnSel {
+  border: 1px solid #228FFF;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 4px 0 #E9E9E9;
+  color: #228FFF;
+}
+.sapPSQuickViewTab .departmentSelectionArea {
+  margin-bottom: 1rem;
+}
+.sapPSQuickViewTab .departmentSelectionArea .sapMFlexItem {
+  width: 50%;
+}
+.sapPSQuickViewTab .departmentSelectionArea .sapMFlexItem .sapMComboBox {
+  margin-left: 3rem;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+@font-face {
+  font-family: '72 Condensed';
+  font-style: normal;
+  font-weight: 400;
+  src: local('72'), url('../fonts/72-Condensed.woff2') format('woff2'), url('../fonts/72-Condensed.woff') format('woff');
+}
+@font-face {
+  font-family: '72 Condensed';
+  font-style: normal;
+  font-weight: 700;
+  src: local('72'), url('../fonts/72-CondensedBold.woff2') format('woff2'), url('../fonts/72-CondensedBold.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: normal;
+  font-weight: 100;
+  src: local('72'), url('../fonts/72-Light.woff2') format('woff2'), url('../fonts/72-Light.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: normal;
+  font-weight: 400;
+  src: local('72'), url('../fonts/72-Regular.woff2') format('woff2'), url('../fonts/72-Regular.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: italic;
+  font-weight: 400;
+  src: local('72'), url('../fonts/72-Italic.woff2') format('woff2'), url('../fonts/72-Italic.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: normal;
+  font-weight: 700;
+  src: local('72-Bold'), url('../fonts/72-Bold.woff2') format('woff2'), url('../fonts/72-Bold.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: italic;
+  font-weight: 700;
+  src: local('72-Bold'), url('../fonts/72-BoldItalic.woff2') format('woff2'), url('../fonts/72-BoldItalic.woff') format('woff');
+}
+@font-face {
+  font-family: '72';
+  font-style: normal;
+  font-weight: 900;
+  src: local('72-Bold'), url('../fonts/72-Black.woff2') format('woff2'), url('../fonts/72-Black.woff') format('woff');
+}
+.sapPSTable,
+.sapPSGroupedSubRows {
+  display: -ms-grid;
+  display: grid;
+}
+.sapPSHeight100 {
+  height: 100%;
+}
+.sapPSWidth100 {
+  width: 100%;
+}
+.sapPSChildrenFlexBasis0 > .sapMFlexItem {
+  flex-basis: 0;
+}
+.sapPSScrollContainerDisabled > .sapMScrollContScroll {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sapPSScrollContainerDisabled > .sapMScrollContScroll .sapMITB {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.sapPSScrollContainerDisabled > .sapMScrollContScroll .sapMITB > .sapMITBContainerContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.sapPSScrollContainerDisabled > .sapMScrollContScroll .sapMITB > .sapMITBContainerContent > .sapMITBContent {
+  height: 100%;
+}
+.sapMITH > .sapMITBHead {
+  margin: 0 2rem 0 2rem;
+}
+.sapPSChronoTable {
+  display: flex;
+  flex-direction: column;
+}
+.sapPSTableHeader {
+  display: -ms-grid;
+  display: grid;
+  overflow-y: scroll;
+  height: 44px;
+  z-index: 3;
+  transition: box-shadow 0.3s ease-in-out;
+}
+.sapPSTableHeader::-webkit-scrollbar {
+  display: none;
+}
+.sapPSTableHeader.sapPSTableScrolled {
+  box-shadow: 0 3px 4px 0 #ECEDF2;
+}
+.sapPSChronoBinsUndatedLink {
+  margin-top: 3px;
+  margin-bottom: 0.5rem;
+}
+.sapPSChronoBinsUndatedLabel {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+.sapPSTableBody {
+  display: block;
+  overflow-y: scroll;
+  flex: 1;
+}
+.sapPSTableBody::-webkit-scrollbar {
+  background: none;
+}
+.sapPSColumn {
+  padding: 4px;
+  font-family: "72 Condensed";
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 100;
+  color: #333333;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+.sapPSGroupedRow {
+  height: 100%;
+  min-height: 44px;
+  -ms-grid-column: 1;
+  grid-column: 1 / 1000;
+  -ms-grid-column-span: 1000;
+  position: relative;
+}
+.sapPSGroupedRow.sapPSRowActive:hover {
+  cursor: pointer;
+}
+.sapPSGroupedSubRows {
+  -ms-grid-column: 1;
+  grid-column: 1 / 1000;
+  -ms-grid-column-span: 1000;
+  overflow: hidden;
+  -webkit-transition: height 0.3s;
+  -moz-transition: height 0.3s;
+  -ms-transition: height 0.3s;
+  -o-transition: height 0.3s;
+  transition: height 0.3s;
+}
+.sapPSGroupedCell {
+  color: #808080;
+}
+.sapPSChronoCell,
+.sapPSGroupedTableUnfolded.sapPSGroupedCell,
+.sapPSGroupedTableLevel2 > .sapPSGroupedCell {
+  color: #333333;
+}
+.sapPSGroupedTableLevel2 > .sapPSGroupedCell {
+  font-size: 0.875rem;
+}
+.sapPSGroupedCell,
+.sapPSChronoCell {
+  padding: 4px;
+  font-family: "72";
+  font-size: 16px;
+  line-height: 18px;
+  max-height: 34px;
+  z-index: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  pointer-events: none;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+.sapPSGroupedCell.sapPSCellActive,
+.sapPSChronoCell.sapPSCellActive {
+  pointer-events: auto;
+}
+.sapPSGroupedCell.sapPSCellActive:hover,
+.sapPSChronoCell.sapPSCellActive:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+.sapPSGroupedCell.sapPSRowDisabled {
+  opacity: 0.5;
+}
+.sapPSTableRightAligned {
+  text-align: right;
+}
+.sapPSGroupedCell.sapPSGroupedFoldingIcon {
+  font-family: "SAP-icons";
+  font-size: 10px;
+  color: #2A9CF1;
+  -webkit-transition: -webkit-transform 0.3s;
+  -moz-transition: -moz-transform 0.3s;
+  -ms-transition: -ms-transform 0.3s;
+  -o-transition: -o-transform 0.3s;
+  transition: transform 0.3s;
+}
+.sapPSGroupedCell.sapPSGroupedFoldingIcon.sapPSCellActive:hover {
+  text-decoration: unset;
+}
+.sapPSGroupedCell.sapPSGroupedFoldingIcon.sapPSGroupedFoldingDisabled {
+  color: #333333;
+}
+.sapPSGroupedCell.sapPSGroupedFoldingIcon.sapPSGroupedTableUnfolded {
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+.sapPSChronoCell.sapPSChronoRowDate {
+  font-size: 14px;
+  text-align: center;
+  color: #a9a7ad;
+}
+.sapPSChronoCell.sapPSChronoRowDate.sapPSChronoRowDateSeparator {
+  color: #333333;
+}
+.sapPSChronoRow {
+  height: 100%;
+  min-height: 44px;
+  position: relative;
+}
+.sapPSChronoRow.sapPSRowActive:hover {
+  cursor: pointer;
+}
+.sapPSChronoRow.sapPSChronoTableEven,
+.sapPSChronoCell.sapPSChronoRowDate.sapPSChronoTableEven {
+  background-color: #ffffff;
+}
+.sapPSChronoRow.sapPSChronoTableOdd,
+.sapPSChronoCell.sapPSChronoRowDate.sapPSChronoTableOdd {
+  background: #fafbfb;
+}
+.sapPSTableShowDates > .sapPSChronoTableLeft {
+  border-right: 1px solid #a9a7ad;
+}
+.sapPSTableShowNoDates > .sapPSChronoTableLeft {
+  border-right: 1px solid #ffffff;
+}
+.sapPSTableShowNoDates > .sapPSChronoTableRight {
+  border-left: 1px solid #ffffff;
+}
+.sapPSChronoTerminatorTopLeft {
+  border-right: 1px solid #a9a7ad;
+  min-height: 3px;
+}
+.sapPSChronoTerminatorBottomLeft {
+  min-height: 3px;
+}
+.sapPSChronoTerminatorCircle {
+  text-align: center;
+  align-items: center;
+  left: -0.5px;
+  color: #a9a7ad;
+  padding: 0;
+}
+.sapPSUndatedLabel {
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+  font-family: "72";
+  font-size: 16px;
+  font-weight: 900;
+}
+.sapTlTimelineLane {
+  display: flex;
+  position: relative;
+}
+.sapTlTimelineLanes {
+  margin-bottom: 1px;
+}
+.sapTlTimelineLaneFramed {
+  box-sizing: border-box;
+  height: 77px;
+}
+.sapTlTimelineLaneFramed.sapTlTimelineLaneMinimized {
+  height: 30px;
+}
+.sapTlTimelineLaneHeader {
+  display: flex;
+  flex-shrink: 0;
+  width: 250px;
+}
+.sapTlTimelineLaneFramed .sapTlTimelineLaneHeader {
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+  border-left: 1px solid #e5e5e5;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  height: 78px;
+}
+.sapTlTimelineLaneFramed.sapTlTimelineLaneMinimized .sapTlTimelineLaneHeader {
+  height: 31px;
+}
+.sapTlTimelineLaneBody {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+}
+.sapTlTimelineLaneFramed .sapTlTimelineLaneBody {
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+  border-right: 1px solid #e5e5e5;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  height: 78px;
+}
+.sapTlTimelineLaneFramed.sapTlTimelineLaneMinimized .sapTlTimelineLaneBody {
+  height: 31px;
+}
+.sapTlTimelineLaneDescription {
+  flex-grow: 1;
+  padding: .75rem .75rem 0 .75rem;
+  overflow: hidden;
+}
+.sapTlTimelineLaneDescriptionContext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sapTlTimelineLaneDescriptionCount {
+  color: #cccccc;
+  font-size: 2.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sapTlTimelineLaneDescriptionTitle {
+  font-size: 0.875rem;
+  margin-top: -0.3125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sapTlTimelineLaneHeaderContent {
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.sapTlTimelineLaneChartSelectionButtons {
+  padding-right: 15px !important;
+}
+.sapTlTimelineLaneHeaderExtraContentSeparator {
+  flex-shrink: 0;
+  background-color: #dddddd;
+  width: 1px;
+  margin-left: .125rem;
+  margin-top: .3125rem;
+  margin-bottom: .3125rem;
+}
+.sapTlTimelineLaneHeaderExtraContent {
+  flex-shrink: 0;
+  width: 50px;
+  height: 100%;
+  overflow: hidden;
+}
+.sapTlTimelineLaneHeaderExtraContent .sapMBtn:hover > .sapMBtnInner {
+  color: #ffffff;
+}
+.sapTlTimelineLaneHeaderExtraContent .sapTlTimelineLaneHeaderUndatedCount {
+  padding-top: 0;
+}
+.sapTlTimelineLaneHeaderExtraContent .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-width: 2px;
+  border-style: solid;
+  border-radius: .625rem;
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: normal;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  padding: .0625rem .3125rem .0625rem .3125rem;
+  transition: background-color 0.4s, color 0.4s;
+}
+.sapTlTimelineLaneHeaderExtraContent .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner .sapMBtnContent {
+  line-height: .875rem;
+}
+.sapUiSizeCozy .sapTlTimelineLaneHeaderContent .sapMBtn {
+  height: 2.375rem;
+  padding: 0;
+}
+.sapUiSizeCozy .sapTlTimelineLaneHeaderContent .sapMBtn .sapMBtnInner {
+  border: none;
+}
+.sapTlChartOverlay {
+  fill: none;
+  width: 100%;
+  height: 100%;
+}
+.sapTlTimelineLaneMinimized .sapTlTimelineLaneDescription {
+  display: flex;
+  align-items: center;
+  padding: .75rem .75rem .75rem .75rem;
+}
+.sapTlTimelineLaneMinimized .sapTlTimelineLaneDescriptionCount {
+  display: none;
+}
+.sapTlTimelineLaneMinimized .sapTlTimelineLaneDescriptionTitle {
+  margin-top: 0;
+}
+.sapTlTimelineMiniTileArea {
+  height: 100%;
+  width: 100%;
+}
+.sapTlTimelineMiniTileArea canvas {
+  height: 100%;
+  z-index: 2;
+}
+.sapTlTimelineMiniTileArea svg {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+.sapTlTimelineMiniTileArea svg .focus > circle {
+  transform: scale(1.7);
+}
+.sapTlTimelineMiniTileArea svg .focusInit circle {
+  fill: #ffffff;
+  transform: scale(1);
+}
+.sapTlTimelineMiniTileArea svg circle {
+  stroke-width: 1.5px;
+  cursor: pointer;
+  -webkit-transition: all .2s;
+  transition: all .2s;
+  fill: #ffffff;
+}
+.sapTlTimelineMiniTileArea svg circle:hover {
+  fill-opacity: 1;
+}
+.sapTlTimelineChartDotHook {
+  visibility: hidden;
+}
+.sapTlTimelineSubLanes .sapTlTimelineLaneHeader {
+  border-left-width: 0.1875rem;
+  border-left-style: solid;
+}
+.sapTlTimelineLaneDescriptionLightOrange .sapTlTimelineLaneDescriptionTitle {
+  color:  #ff7d00 ;
+}
+.sapTlTimelineLaneDescriptionLightGreen .sapTlTimelineLaneDescriptionTitle {
+  color:  #a8c939 ;
+}
+.sapTlTimelineLaneDescriptionLightGold .sapTlTimelineLaneDescriptionTitle {
+  color:  #f0ab00 ;
+}
+.sapTlTimelineLaneDescriptionLightPurple .sapTlTimelineLaneDescriptionTitle {
+  color:  #960981 ;
+}
+.sapTlTimelineLaneDescriptionLightPink .sapTlTimelineLaneDescriptionTitle {
+  color:  #eb7396 ;
+}
+.sapTlTimelineLaneDescriptionMediumOrange .sapTlTimelineLaneDescriptionTitle {
+  color:  #e35500 ;
+}
+.sapTlTimelineLaneDescriptionMediumGreen .sapTlTimelineLaneDescriptionTitle {
+  color:  #4fb81c ;
+}
+.sapTlTimelineLaneDescriptionMediumGold .sapTlTimelineLaneDescriptionTitle {
+  color:  #d29600 ;
+}
+.sapTlTimelineLaneDescriptionMediumPurple .sapTlTimelineLaneDescriptionTitle {
+  color:  #760a85 ;
+}
+.sapTlTimelineLaneDescriptionMediumPink .sapTlTimelineLaneDescriptionTitle {
+  color:  #c87396 ;
+}
+.sapTlTimelineLaneDescriptionDarkOrange .sapTlTimelineLaneDescriptionTitle {
+  color:  #b82402 ;
+}
+.sapTlTimelineLaneDescriptionDarkGreen .sapTlTimelineLaneDescriptionTitle {
+  color:  #21652b ;
+}
+.sapTlTimelineLaneDescriptionDarkGold .sapTlTimelineLaneDescriptionTitle {
+  color:  #aa7500 ;
+}
+.sapTlTimelineLaneDescriptionDarkPurple .sapTlTimelineLaneDescriptionTitle {
+  color:  #45157e ;
+}
+.sapTlTimelineLaneDescriptionDarkPink .sapTlTimelineLaneDescriptionTitle {
+  color:  #a07396 ;
+}
+.sapTlTimelineMiniTileAreaLightOrange circle {
+  stroke:  #ff7d00 ;
+}
+.sapTlTimelineMiniTileAreaLightGreen circle {
+  stroke:  #a8c939 ;
+}
+.sapTlTimelineMiniTileAreaLightGold circle {
+  stroke:  #f0ab00 ;
+}
+.sapTlTimelineMiniTileAreaLightPurple circle {
+  stroke:  #960981 ;
+}
+.sapTlTimelineMiniTileAreaLightPink circle {
+  stroke:  #eb7396 ;
+}
+.sapTlTimelineMiniTileAreaMediumOrange circle {
+  stroke:  #e35500 ;
+}
+.sapTlTimelineMiniTileAreaMediumGreen circle {
+  stroke:  #4fb81c ;
+}
+.sapTlTimelineMiniTileAreaMediumGold circle {
+  stroke:  #d29600 ;
+}
+.sapTlTimelineMiniTileAreaMediumPurple circle {
+  stroke:  #760a85 ;
+}
+.sapTlTimelineMiniTileAreaMediumPink circle {
+  stroke:  #c87396 ;
+}
+.sapTlTimelineMiniTileAreaDarkOrange circle {
+  stroke:  #b82402 ;
+}
+.sapTlTimelineMiniTileAreaDarkGreen circle {
+  stroke:  #21652b ;
+}
+.sapTlTimelineMiniTileAreaDarkGold circle {
+  stroke:  #aa7500 ;
+}
+.sapTlTimelineMiniTileAreaDarkPurple circle {
+  stroke:  #45157e ;
+}
+.sapTlTimelineMiniTileAreaDarkPink circle {
+  stroke:  #a07396 ;
+}
+.sapTlTimelineMiniTileAreaLightOrange circle:hover {
+  fill:  #ff7d00 ;
+}
+.sapTlTimelineMiniTileAreaLightGreen circle:hover {
+  fill:  #a8c939 ;
+}
+.sapTlTimelineMiniTileAreaLightGold circle:hover {
+  fill:  #f0ab00 ;
+}
+.sapTlTimelineMiniTileAreaLightPurple circle:hover {
+  fill:  #960981 ;
+}
+.sapTlTimelineMiniTileAreaLightPink circle:hover {
+  fill:  #eb7396 ;
+}
+.sapTlTimelineMiniTileAreaMediumOrange circle:hover {
+  fill:  #e35500 ;
+}
+.sapTlTimelineMiniTileAreaMediumGreen circle:hover {
+  fill:  #4fb81c ;
+}
+.sapTlTimelineMiniTileAreaMediumGold circle:hover {
+  fill:  #d29600 ;
+}
+.sapTlTimelineMiniTileAreaMediumPurple circle:hover {
+  fill:  #760a85 ;
+}
+.sapTlTimelineMiniTileAreaMediumPink circle:hover {
+  fill:  #c87396 ;
+}
+.sapTlTimelineMiniTileAreaDarkOrange circle:hover {
+  fill:  #b82402 ;
+}
+.sapTlTimelineMiniTileAreaDarkGreen circle:hover {
+  fill:  #21652b ;
+}
+.sapTlTimelineMiniTileAreaDarkGold circle:hover {
+  fill:  #aa7500 ;
+}
+.sapTlTimelineMiniTileAreaDarkPurple circle:hover {
+  fill:  #45157e ;
+}
+.sapTlTimelineMiniTileAreaDarkPink circle:hover {
+  fill:  #a07396 ;
+}
+.sapTlTimelineMiniTileAreaLightOrange .focus circle:hover {
+  fill:  #ff7d00 ;
+}
+.sapTlTimelineMiniTileAreaLightGreen .focus circle:hover {
+  fill:  #a8c939 ;
+}
+.sapTlTimelineMiniTileAreaLightGold .focus circle:hover {
+  fill:  #f0ab00 ;
+}
+.sapTlTimelineMiniTileAreaLightPurple .focus circle:hover {
+  fill:  #960981 ;
+}
+.sapTlTimelineMiniTileAreaLightPink .focus circle:hover {
+  fill:  #eb7396 ;
+}
+.sapTlTimelineMiniTileAreaMediumOrange .focus circle:hover {
+  fill:  #e35500 ;
+}
+.sapTlTimelineMiniTileAreaMediumGreen .focus circle:hover {
+  fill:  #4fb81c ;
+}
+.sapTlTimelineMiniTileAreaMediumGold .focus circle:hover {
+  fill:  #d29600 ;
+}
+.sapTlTimelineMiniTileAreaMediumPurple .focus circle:hover {
+  fill:  #760a85 ;
+}
+.sapTlTimelineMiniTileAreaMediumPink .focus circle:hover {
+  fill:  #c87396 ;
+}
+.sapTlTimelineMiniTileAreaDarkOrange .focus circle:hover {
+  fill:  #b82402 ;
+}
+.sapTlTimelineMiniTileAreaDarkGreen .focus circle:hover {
+  fill:  #21652b ;
+}
+.sapTlTimelineMiniTileAreaDarkGold .focus circle:hover {
+  fill:  #aa7500 ;
+}
+.sapTlTimelineMiniTileAreaDarkPurple .focus circle:hover {
+  fill:  #45157e ;
+}
+.sapTlTimelineMiniTileAreaDarkPink .focus circle:hover {
+  fill:  #a07396 ;
+}
+.sapTlTimelineSubLanesLightOrange .sapTlTimelineLaneHeader {
+  border-left-color:  #ff7d00 ;
+}
+.sapTlTimelineSubLanesLightGreen .sapTlTimelineLaneHeader {
+  border-left-color:  #a8c939 ;
+}
+.sapTlTimelineSubLanesLightGold .sapTlTimelineLaneHeader {
+  border-left-color:  #f0ab00 ;
+}
+.sapTlTimelineSubLanesLightPurple .sapTlTimelineLaneHeader {
+  border-left-color:  #960981 ;
+}
+.sapTlTimelineSubLanesLightPink .sapTlTimelineLaneHeader {
+  border-left-color:  #eb7396 ;
+}
+.sapTlTimelineSubLanesMediumOrange .sapTlTimelineLaneHeader {
+  border-left-color:  #e35500 ;
+}
+.sapTlTimelineSubLanesMediumGreen .sapTlTimelineLaneHeader {
+  border-left-color:  #4fb81c ;
+}
+.sapTlTimelineSubLanesMediumGold .sapTlTimelineLaneHeader {
+  border-left-color:  #d29600 ;
+}
+.sapTlTimelineSubLanesMediumPurple .sapTlTimelineLaneHeader {
+  border-left-color:  #760a85 ;
+}
+.sapTlTimelineSubLanesMediumPink .sapTlTimelineLaneHeader {
+  border-left-color:  #c87396 ;
+}
+.sapTlTimelineSubLanesDarkOrange .sapTlTimelineLaneHeader {
+  border-left-color:  #b82402 ;
+}
+.sapTlTimelineSubLanesDarkGreen .sapTlTimelineLaneHeader {
+  border-left-color:  #21652b ;
+}
+.sapTlTimelineSubLanesDarkGold .sapTlTimelineLaneHeader {
+  border-left-color:  #aa7500 ;
+}
+.sapTlTimelineSubLanesDarkPurple .sapTlTimelineLaneHeader {
+  border-left-color:  #45157e ;
+}
+.sapTlTimelineSubLanesDarkPink .sapTlTimelineLaneHeader {
+  border-left-color:  #a07396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #ff7d00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #a8c939 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #f0ab00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #960981 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #eb7396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #e35500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #4fb81c ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #d29600 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #760a85 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #c87396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #b82402 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #21652b ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #aa7500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #45157e ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  border-color:  #a07396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #ff7d00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #a8c939 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #f0ab00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #960981 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #eb7396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #e35500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #4fb81c ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #d29600 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #760a85 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #c87396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #b82402 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #21652b ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #aa7500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #45157e ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner.sapMBtnActive {
+  border-color:  #a07396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #ff7d00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #a8c939 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #f0ab00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #960981 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #eb7396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #e35500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #4fb81c ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #d29600 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #760a85 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #c87396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkOrange .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #b82402 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGreen .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #21652b ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGold .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #aa7500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPurple .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #45157e ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPink .sapTlTimelineLaneHeaderUndatedCount > .sapMBtnInner {
+  color:  #a07396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightOrange .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #ff7d00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGreen .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #a8c939 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightGold .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #f0ab00 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPurple .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #960981 ;
+}
+.sapTlTimelineLaneHeaderExtraContentLightPink .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #eb7396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumOrange .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #e35500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGreen .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #4fb81c ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumGold .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #d29600 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPurple .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #760a85 ;
+}
+.sapTlTimelineLaneHeaderExtraContentMediumPink .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #c87396 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkOrange .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #b82402 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGreen .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #21652b ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkGold .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #aa7500 ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPurple .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #45157e ;
+}
+.sapTlTimelineLaneHeaderExtraContentDarkPink .sapTlTimelineLaneHeaderUndatedCount:hover > .sapMBtnInner {
+  background-color:  #a07396 ;
+}
+.sapTlTimelineLaneMinimizedLightOrange .focus circle {
+  fill: #ffd8b3;
+}
+.sapTlTimelineLaneMinimizedLightGreen .focus circle {
+  fill: #e5efc4;
+}
+.sapTlTimelineLaneMinimizedLightGold .focus circle {
+  fill: #fbe6b3;
+}
+.sapTlTimelineLaneMinimizedLightPurple .focus circle {
+  fill: #e0b5d9;
+}
+.sapTlTimelineLaneMinimizedLightPink .focus circle {
+  fill: #f9d5e0;
+}
+.sapTlTimelineLaneMinimizedMediumOrange .focus circle {
+  fill: #f7ccb3;
+}
+.sapTlTimelineLaneMinimizedMediumGreen .focus circle {
+  fill: #caeabb;
+}
+.sapTlTimelineLaneMinimizedMediumGold .focus circle {
+  fill: #f2e0b3;
+}
+.sapTlTimelineLaneMinimizedMediumPurple .focus circle {
+  fill: #d6b6da;
+}
+.sapTlTimelineLaneMinimizedMediumPink .focus circle {
+  fill: #efd5e0;
+}
+.sapTlTimelineLaneMinimizedDarkOrange .focus circle {
+  fill: #eabdb3;
+}
+.sapTlTimelineLaneMinimizedDarkGreen .focus circle {
+  fill: #bcd1bf;
+}
+.sapTlTimelineLaneMinimizedDarkGold .focus circle {
+  fill: #e6d6b3;
+}
+.sapTlTimelineLaneMinimizedDarkPurple .focus circle {
+  fill: #c7b9d8;
+}
+.sapTlTimelineLaneMinimizedDarkPink .focus circle {
+  fill: #e3d5e0;
+}
+.sapPSMasterForm.sapUiForm .sapUiFormTitle {
+  height: 20px;
+  font-family: "72 Condensed";
+  font-size: 18px;
+  color: #666666;
+  text-transform: uppercase;
+}
+.sapPSMasterForm.sapUiForm .sapMText {
+  font-family: "72";
+  font-size: 14px;
+  color: #333333;
+}
+.sapMOH.sapMOHC.sapPSMasterWidgetMinimized {
+  padding: 0.3rem 2rem 0.2rem 2rem;
+}
+.sapMOH.sapMOHC.sapPSMasterWidgetMinimized .sapMOHTitle h1 > .sapMText,
+.sapMOH.sapMOHC.sapPSMasterWidgetMinimized .sapMOHTitle.sap-phone h1 > .sapMText {
+  font-size: 18px;
+  padding: 0;
+  margin: 0;
+}
+.sapTlTimelineBracket {
+  position: absolute;
+  top: -8px;
+  left: 242px;
+  width: calc(100% -  234px);
+  height: calc(100% +  16px);
+  z-index: 4;
+  pointer-events: none;
+}
+.sapTlTimelineBracket .sapTlTimelineBracketPath {
+  stroke: #009de0;
+  stroke-width: 3px;
+  fill: none;
+}
+.sapTlTimelineBracket .sapTlTimelineMapBrushInverseBegin,
+.sapTlTimelineBracket .sapTlTimelineMapBrushInverseEnd {
+  fill: #cccccc;
+  opacity: 0.7;
+}
+.sapTlTimelineLaneArea {
+  position: relative;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: move;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+}
+.sapTlTimelineLaneArea:active {
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
+  cursor: grabbing;
+}
+.sapTlTimelineLaneAreaRight {
+  overflow: hidden;
+  position: absolute;
+  left: 250px;
+  right: 0;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+.sapTlTimelineLaneAreaRight::before {
+  box-shadow: #999999 0 0 9px 2px;
+  content: " ";
+  height: 100%;
+  position: absolute;
+  top: 0;
+}
+.sapTlTimelineLaneAreaRight::after {
+  box-shadow: #999999 0 0 9px 2px;
+  content: " ";
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.sapTlTimelineLaneArea:focus {
+  outline: none;
+}
+.sapTlTimelineLaneArea:focus .sapTlTimelineLaneAreaRight {
+  outline: 1px dotted #005483;
+}
+.sapTlTimelineLaneAreaPointsInTime {
+  overflow: hidden;
+  position: absolute;
+  left: 250px;
+  right: 0;
+  height: 100%;
+  z-index: 1;
+}
+.sapTlTimelineMap {
+  overflow: hidden;
+}
+.sapTlTimelineMapPatternLine {
+  stroke: #999999;
+  stroke-width: 1px;
+}
+.sapTlTimelineMapBrush .extent {
+  visibility: hidden !important;
+  fill: none;
+  cursor: move !important;
+  cursor: -webkit-grab !important;
+  cursor: -moz-grab !important;
+  cursor: grab !important;
+}
+.sapTlTimelineMapBrush .extent:active {
+  cursor: -webkit-grabbing !important;
+  cursor: -moz-grabbing !important;
+  cursor: grabbing !important;
+}
+.sapTlTimelineMapHandle {
+  fill: #ffffff;
+  stroke: #009de0;
+}
+.sapTlTimelineMapHandle rect {
+  opacity: 1;
+  stroke-width: 1px;
+}
+.sapTlTimelineMapHandle line {
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+.sapTlTimelineMinimapPlaceholder svg {
+  width: 100%;
+}
+.sapTlTimelineMinimapLaneLightOrange rect {
+  fill:  #ff7d00 ;
+}
+.sapTlTimelineMinimapLaneLightGreen rect {
+  fill:  #a8c939 ;
+}
+.sapTlTimelineMinimapLaneLightGold rect {
+  fill:  #f0ab00 ;
+}
+.sapTlTimelineMinimapLaneLightPurple rect {
+  fill:  #960981 ;
+}
+.sapTlTimelineMinimapLaneLightPink rect {
+  fill:  #eb7396 ;
+}
+.sapTlTimelineMinimapLaneMediumOrange rect {
+  fill:  #e35500 ;
+}
+.sapTlTimelineMinimapLaneMediumGreen rect {
+  fill:  #4fb81c ;
+}
+.sapTlTimelineMinimapLaneMediumGold rect {
+  fill:  #d29600 ;
+}
+.sapTlTimelineMinimapLaneMediumPurple rect {
+  fill:  #760a85 ;
+}
+.sapTlTimelineMinimapLaneMediumPink rect {
+  fill:  #c87396 ;
+}
+.sapTlTimelineMinimapLaneDarkOrange rect {
+  fill:  #b82402 ;
+}
+.sapTlTimelineMinimapLaneDarkGreen rect {
+  fill:  #21652b ;
+}
+.sapTlTimelineMinimapLaneDarkGold rect {
+  fill:  #aa7500 ;
+}
+.sapTlTimelineMinimapLaneDarkPurple rect {
+  fill:  #45157e ;
+}
+.sapTlTimelineMinimapLaneDarkPink rect {
+  fill:  #a07396 ;
+}
+.sapTlTimelineMapDOBLine,
+.sapTlTimelineMapDODLine {
+  stroke: #000000;
+}
+.sapTlTimelineMapDOBArea,
+.sapTlTimelineMapDODArea {
+  fill: rgba(119, 119, 119, 0.6);
+}
+.sapTlTimelineMapToday {
+  stroke: #4cc5be;
+}
+.sapTlTimelineMinimap {
+  position: absolute;
+  left: 250px;
+  width: calc(100% -  250px);
+  bottom: 0;
+}
+.sapTlOverviewButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding-top: 0.25rem;
+  padding-bottom: 0.125rem;
+  padding-left: 0.125rem;
+  padding-right: 0.125rem;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.sapTlOverviewButton:focus {
+  outline: 1px dotted #005483;
+}
+.sapTlOverviewButton:hover {
+  background-color: rgba(222, 222, 222, 0.5);
+}
+.sapTlOverviewButton:disabled {
+  background: none;
+  cursor: default;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.sapTlOverviewButton:disabled .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color: #cccccc;
+  color: #cccccc;
+}
+.sapTlOverviewButton .sapMToggleBtnPressed {
+  background: none;
+}
+.sapTlOverviewButton .sapMBtnIcon {
+  background-color: #cccccc;
+  border-radius: 3px;
+  color: #cccccc;
+  line-height: 1.875rem;
+  margin: 0.25rem;
+  width: 1.875rem;
+  text-shadow: none;
+}
+.sapTlOverviewButton .sapMToggleBtnPressed .sapMBtnIcon {
+  color: #ffffff;
+}
+.sapTlOverviewButton > .sapMBtnInner,
+.sapTlOverviewButton > .sapMBtnInner.sapMToggleBtnPressed {
+  display: flex;
+  background: none;
+  border: none;
+  color: #666666;
+  padding-right: 0.25rem;
+  position: relative;
+}
+.sapTlOverviewButton > .sapMBtnInner:hover,
+.sapTlOverviewButton > .sapMBtnInner.sapMToggleBtnPressed:hover {
+  background: none;
+}
+.sapTlOverviewButton > .sapMBtnInner .sapMBtnContent,
+.sapTlOverviewButton > .sapMBtnInner.sapMToggleBtnPressed .sapMBtnContent {
+  padding-left: .2rem;
+  display: inline;
+}
+.sapTlOverviewButton > .sapMBtnInner .sapMBtnContentRight,
+.sapTlOverviewButton > .sapMBtnInner.sapMToggleBtnPressed .sapMBtnContentRight {
+  padding-left: 1.875rem;
+}
+.sapUiSizeCompact .sapTlOverviewButton .sapMBtnIcon {
+  line-height: 1.5rem;
+  margin: 0 0.25rem;
+  width: 1.5rem;
+}
+.sapTlOverviewButtonLightOrange .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #ff7d00 ;
+}
+.sapTlOverviewButtonLightGreen .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #a8c939 ;
+}
+.sapTlOverviewButtonLightGold .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #f0ab00 ;
+}
+.sapTlOverviewButtonLightPurple .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #960981 ;
+}
+.sapTlOverviewButtonLightPink .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #eb7396 ;
+}
+.sapTlOverviewButtonMediumOrange .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #e35500 ;
+}
+.sapTlOverviewButtonMediumGreen .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #4fb81c ;
+}
+.sapTlOverviewButtonMediumGold .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #d29600 ;
+}
+.sapTlOverviewButtonMediumPurple .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #760a85 ;
+}
+.sapTlOverviewButtonMediumPink .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #c87396 ;
+}
+.sapTlOverviewButtonDarkOrange .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #b82402 ;
+}
+.sapTlOverviewButtonDarkGreen .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #21652b ;
+}
+.sapTlOverviewButtonDarkGold .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #aa7500 ;
+}
+.sapTlOverviewButtonDarkPurple .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #45157e ;
+}
+.sapTlOverviewButtonDarkPink .sapMToggleBtnPressed .sapMBtnIcon {
+  background-color:  #a07396 ;
+}
+.sapTlOverviewButtonLightOrange .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #ff7d00 ;
+}
+.sapTlOverviewButtonLightGreen .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #a8c939 ;
+}
+.sapTlOverviewButtonLightGold .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #f0ab00 ;
+}
+.sapTlOverviewButtonLightPurple .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #960981 ;
+}
+.sapTlOverviewButtonLightPink .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #eb7396 ;
+}
+.sapTlOverviewButtonMediumOrange .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #e35500 ;
+}
+.sapTlOverviewButtonMediumGreen .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #4fb81c ;
+}
+.sapTlOverviewButtonMediumGold .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #d29600 ;
+}
+.sapTlOverviewButtonMediumPurple .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #760a85 ;
+}
+.sapTlOverviewButtonMediumPink .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #c87396 ;
+}
+.sapTlOverviewButtonDarkOrange .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #b82402 ;
+}
+.sapTlOverviewButtonDarkGreen .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #21652b ;
+}
+.sapTlOverviewButtonDarkGold .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #aa7500 ;
+}
+.sapTlOverviewButtonDarkPurple .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #45157e ;
+}
+.sapTlOverviewButtonDarkPink .sapMToggleBtnPressed .sapMBtnIcon:hover {
+  background-color:  #a07396 ;
+}
+.sapTlOverviewListItem {
+  border: none;
+  padding: 0;
+}
+.sapTlOverviewListItem:first-child {
+  margin-top: 1rem;
+}
+.sapTlOverviewListItem:last-child {
+  margin-bottom: 2rem;
+}
+.sapTlOverviewListItem .sapMLIBContent {
+  display: flex;
+  min-height: 95px;
+  width: 100%;
+}
+html[data-sap-ui-browser^="sf"] .sapTlOverviewListItem .sapMLIBContent {
+  display: -webkit-flex;
+}
+.sapTlOverviewListItemTime {
+  align-self: center;
+  color: #666666;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: bold;
+  padding-right: 20px;
+  text-align: right;
+  width: 180px;
+}
+html[data-sap-ui-browser^="sf"] .sapTlOverviewListItemTime {
+  -webkit-align-self: center;
+  -webkit-flex-shrink: 0;
+}
+.sapUiMedia-Std-Phone .sapTlOverviewListItemTime {
+  width: 90px;
+}
+.sapTlOverviewListItemTimeVisualBackground {
+  background-color: #cccccc;
+  flex-shrink: 0;
+  position: relative;
+  width: 2px;
+}
+html[data-sap-ui-browser^="sf"] .sapTlOverviewListItemTimeVisualBackground {
+  -webkit-flex-shrink: 0;
+}
+html[data-sap-ui-browser^="ie"] .sapTlOverviewListItemTimeVisualBackground {
+  min-height: 95px;
+}
+.sapTlOverviewListItemTimeVisual {
+  left: -1px;
+  position: absolute;
+  width: 4px;
+}
+.sapTlOverviewListItemTimeVisualBackgroundDateless {
+  flex-shrink: 0;
+  position: relative;
+  width: 2px;
+}
+.sapTlOverviewListItemTimeVisualPoint {
+  height: 8px;
+  top: calc(46%);
+}
+.sapTlOverviewListItemTimeVisualDuration {
+  height: calc(80%);
+  top: 10px;
+}
+.sapTlOverviewListItemContent {
+  align-items: center;
+  border-bottom: solid 1px #cccccc;
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+}
+html[data-sap-ui-browser^="sf"] .sapTlOverviewListItemContent {
+  -webkit-align-items: center;
+  -webkit-flex-grow: 1;
+  -webkit-flex-wrap: wrap;
+}
+.sapTlOverviewListItem:last-child .sapTlOverviewListItemContent {
+  border: none;
+}
+.sapTlOverviewListItemTitle {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-width: 200px;
+  padding-right: 10px;
+  width: 25%;
+}
+html[data-sap-ui-browser^="sf"] .sapTlOverviewListItemTitle {
+  -webkit-flex-shrink: 0;
+}
+.sapTlOverviewListItemName {
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sapTlOverviewListItemGroupName {
+  color: #666666;
+  font-size: 0.875rem;
+}
+.sapTlOverviewListItemDetails {
+  display: flex;
+  flex-grow: 1;
+  font-size: 0.875rem;
+  width: 70%;
+}
+.sapTlOverviewListItemDetailsTable {
+  width: 100%;
+}
+.sapTlOverviewListItemDetailsKey {
+  color: #666666;
+  width: 30%;
+}
+.sapTlOverviewListItemDetailsKey:after {
+  content: ":";
+}
+.sapTlOverviewListItemDetailsValue {
+  width: 70%;
+  word-break: break-word;
+}
+.sapTlOverviewListItemActions > * {
+  margin-right: 0.375rem;
+}
+.sapTlOverviewListItemLightOrange .sapTlOverviewListItemName {
+  color:  #ff7d00 ;
+}
+.sapTlOverviewListItemLightGreen .sapTlOverviewListItemName {
+  color:  #a8c939 ;
+}
+.sapTlOverviewListItemLightGold .sapTlOverviewListItemName {
+  color:  #f0ab00 ;
+}
+.sapTlOverviewListItemLightPurple .sapTlOverviewListItemName {
+  color:  #960981 ;
+}
+.sapTlOverviewListItemLightPink .sapTlOverviewListItemName {
+  color:  #eb7396 ;
+}
+.sapTlOverviewListItemMediumOrange .sapTlOverviewListItemName {
+  color:  #e35500 ;
+}
+.sapTlOverviewListItemMediumGreen .sapTlOverviewListItemName {
+  color:  #4fb81c ;
+}
+.sapTlOverviewListItemMediumGold .sapTlOverviewListItemName {
+  color:  #d29600 ;
+}
+.sapTlOverviewListItemMediumPurple .sapTlOverviewListItemName {
+  color:  #760a85 ;
+}
+.sapTlOverviewListItemMediumPink .sapTlOverviewListItemName {
+  color:  #c87396 ;
+}
+.sapTlOverviewListItemDarkOrange .sapTlOverviewListItemName {
+  color:  #b82402 ;
+}
+.sapTlOverviewListItemDarkGreen .sapTlOverviewListItemName {
+  color:  #21652b ;
+}
+.sapTlOverviewListItemDarkGold .sapTlOverviewListItemName {
+  color:  #aa7500 ;
+}
+.sapTlOverviewListItemDarkPurple .sapTlOverviewListItemName {
+  color:  #45157e ;
+}
+.sapTlOverviewListItemDarkPink .sapTlOverviewListItemName {
+  color:  #a07396 ;
+}
+.sapTlOverviewListItemLightOrange .sapTlOverviewListItemTimeVisual {
+  background-color:  #ff7d00 ;
+}
+.sapTlOverviewListItemLightGreen .sapTlOverviewListItemTimeVisual {
+  background-color:  #a8c939 ;
+}
+.sapTlOverviewListItemLightGold .sapTlOverviewListItemTimeVisual {
+  background-color:  #f0ab00 ;
+}
+.sapTlOverviewListItemLightPurple .sapTlOverviewListItemTimeVisual {
+  background-color:  #960981 ;
+}
+.sapTlOverviewListItemLightPink .sapTlOverviewListItemTimeVisual {
+  background-color:  #eb7396 ;
+}
+.sapTlOverviewListItemMediumOrange .sapTlOverviewListItemTimeVisual {
+  background-color:  #e35500 ;
+}
+.sapTlOverviewListItemMediumGreen .sapTlOverviewListItemTimeVisual {
+  background-color:  #4fb81c ;
+}
+.sapTlOverviewListItemMediumGold .sapTlOverviewListItemTimeVisual {
+  background-color:  #d29600 ;
+}
+.sapTlOverviewListItemMediumPurple .sapTlOverviewListItemTimeVisual {
+  background-color:  #760a85 ;
+}
+.sapTlOverviewListItemMediumPink .sapTlOverviewListItemTimeVisual {
+  background-color:  #c87396 ;
+}
+.sapTlOverviewListItemDarkOrange .sapTlOverviewListItemTimeVisual {
+  background-color:  #b82402 ;
+}
+.sapTlOverviewListItemDarkGreen .sapTlOverviewListItemTimeVisual {
+  background-color:  #21652b ;
+}
+.sapTlOverviewListItemDarkGold .sapTlOverviewListItemTimeVisual {
+  background-color:  #aa7500 ;
+}
+.sapTlOverviewListItemDarkPurple .sapTlOverviewListItemTimeVisual {
+  background-color:  #45157e ;
+}
+.sapTlOverviewListItemDarkPink .sapTlOverviewListItemTimeVisual {
+  background-color:  #a07396 ;
+}
+/* =============================================================== */
+/* CSS for control sap.m/OverflowToolbarAssociativePopover.control */
+/* =============================================================== */
+.sapMOTAPopover:focus {
+  outline: none;
+}
+.sapMOTAPopover.sapMOTAPButtonsWithIcons .sapMOTAPButtonNoIcon > .sapMBtnInner > span.sapMBtnContent {
+  margin-left: 1.625rem;
+}
+.sapMOTAPopover.sapMPopover .sapMPopoverCont .sapMPopoverScroll {
+  padding: 1rem;
+  /* All elements inside must have display block */
+  /* Button, ToggleButton, OverflowToolbarButton */
+}
+.sapMOTAPopover.sapMPopover .sapMPopoverCont .sapMPopoverScroll > * {
+  display: block;
+}
+.sapMOTAPopover.sapMPopover .sapMPopoverCont .sapMPopoverScroll > button.sapMBtn {
+  width: 100% !important;
+  max-width: 100% !important;
+  /* Button alignment */
+}
+.sapMOTAPopover.sapMPopover .sapMPopoverCont .sapMPopoverScroll > button.sapMBtn > .sapMBtnInner {
+  text-align: start;
+}
+/* Compact mode overrides */
+.sapUiSizeCompact .sapMOTAPopover.sapMPopover .sapMPopoverCont .sapMPopoverScroll {
+  padding: 0.25rem;
+}
+/* Phone mode overrides */
+.sap-phone .sapMOTAPopover {
+  overflow: hidden !important;
+}
+.sapPSScrollContainer {
+  background-color: #ffffff;
+}
+.sap-tablet .sapPatientSummary .sapMITBHead {
+  margin: 1rem 2rem 0 2rem;
+}
+.sapPSFreetext {
+  font-style: italic;
+}
+.sapPSMinimizer {
+  height: 0px;
+  top: -25px;
+  padding-right: 2rem;
+  position: relative;
+}
+.sapPSMinimizeIcon {
+  font-family: "SAP-icons";
+  font-size: 10px;
+}
+.sapPatientSummary {
+  /**
+     * Override default font family for standard controls
+     **/
+  /**
+     * Override border for the content area
+     **/
+  /**
+     * Override header styles
+     **/
+  /**
+     * Override styles for tab bar
+     **/
+}
+.sapPatientSummary,
+.sapPatientSummary .sapMBtnInner,
+.sapPatientSummary .sapMTitle,
+.sapPatientSummary .sapMText,
+.sapPatientSummary .sapMLabel,
+.sapPatientSummary .sapMPanelHdr,
+.sapPatientSummary .sapMInputBaseInner,
+.sapPatientSummary .sapMOH .sapMOHAttr .sapMObjectAttributeTitle,
+.sapPatientSummary .sapMOH .sapMOHAttr .sapMObjectAttributeText,
+.sapPatientSummary .sapMOH .sapMOHAttr .sapMObjectAttributeColon {
+  font-family: '72', Arial, Helvetica, sans-serif;
+}
+.sapPatientSummary .sapMITBContent {
+  border-bottom: none;
+}
+.sapPatientSummary .sapMOHC.sapMOHBgSolid {
+  background-color: #ffffff;
+}
+.sapPatientSummary .sapMITH {
+  background-color: #ffffff;
+  border-bottom: none;
+  box-shadow: none;
+}
+.sapPatientSummary .sapMITBHead {
+  padding: 0;
+}
+.sapPatientSummary .sapMITBTextOnly .sapMITBText {
+  font-size: 1.1rem;
+  overflow: unset;
+}
+.sapPatientSummary .sapMITBTab {
+  height: 0.75rem;
+}
+.sapPatientSummary .sapMITBContainerContent {
+  border: none;
+  box-shadow: none;
+  -webkit-box-shadow: none;
+}
+.sapPSRisksForm.sapUiForm .sapUiFormTitle {
+  height: 20px;
+  font-family: "72 Condensed";
+  font-size: 18px;
+  color: #666666;
+  text-transform: uppercase;
+}
+.sapPSRisksForm.sapUiForm .sapMText {
+  font-family: "72";
+  font-size: 14px;
+  line-height: 25px;
+  color: #333333;
+}
+.sapPSRisksForm.sapUiForm .sapMList {
+  padding-bottom: 2rem;
+}
+.sapPSRisksForm.sapUiForm .sapMListHdr {
+  font-family: "72";
+  font-size: 16px;
+  border: none;
+  padding: 0;
+}
+.sapPSRisksForm.sapUiForm .sapMListUl {
+  border-left: solid 4px;
+  font-family: "72";
+}
+.sapPSRisksForm.sapUiForm .sapMListUl .sapMSLITitle {
+  font-size: 14px;
+}
+.sapPSRisksForm.sapUiForm .sapMListUl .sapMSLIDescription {
+  font-size: 12px;
+}
+.sapPSRisksForm.sapUiForm .sapMListUl .sapMSLIInfo {
+  font-size: 12px;
+  padding-right: 2rem;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightOrange .sapUiFormTitle {
+  color:  #ff7d00 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightGreen .sapUiFormTitle {
+  color:  #a8c939 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightGold .sapUiFormTitle {
+  color:  #f0ab00 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightPurple .sapUiFormTitle {
+  color:  #960981 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightPink .sapUiFormTitle {
+  color:  #eb7396 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumOrange .sapUiFormTitle {
+  color:  #e35500 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumGreen .sapUiFormTitle {
+  color:  #4fb81c ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumGold .sapUiFormTitle {
+  color:  #d29600 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumPurple .sapUiFormTitle {
+  color:  #760a85 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumPink .sapUiFormTitle {
+  color:  #c87396 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkOrange .sapUiFormTitle {
+  color:  #b82402 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkGreen .sapUiFormTitle {
+  color:  #21652b ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkGold .sapUiFormTitle {
+  color:  #aa7500 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkPurple .sapUiFormTitle {
+  color:  #45157e ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkPink .sapUiFormTitle {
+  color:  #a07396 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightOrange .sapMListUl {
+  border-color:  #ff7d00 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightGreen .sapMListUl {
+  border-color:  #a8c939 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightGold .sapMListUl {
+  border-color:  #f0ab00 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightPurple .sapMListUl {
+  border-color:  #960981 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassLightPink .sapMListUl {
+  border-color:  #eb7396 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumOrange .sapMListUl {
+  border-color:  #e35500 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumGreen .sapMListUl {
+  border-color:  #4fb81c ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumGold .sapMListUl {
+  border-color:  #d29600 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumPurple .sapMListUl {
+  border-color:  #760a85 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassMediumPink .sapMListUl {
+  border-color:  #c87396 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkOrange .sapMListUl {
+  border-color:  #b82402 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkGreen .sapMListUl {
+  border-color:  #21652b ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkGold .sapMListUl {
+  border-color:  #aa7500 ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkPurple .sapMListUl {
+  border-color:  #45157e ;
+}
+.sapPSRisksForm.sapUiForm .sapPSRiskClassDarkPink .sapMListUl {
+  border-color:  #a07396 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassLightOrange > .sapMObjectAttributeTitle {
+  color:  #ff7d00 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassLightGreen > .sapMObjectAttributeTitle {
+  color:  #a8c939 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassLightGold > .sapMObjectAttributeTitle {
+  color:  #f0ab00 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassLightPurple > .sapMObjectAttributeTitle {
+  color:  #960981 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassLightPink > .sapMObjectAttributeTitle {
+  color:  #eb7396 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassMediumOrange > .sapMObjectAttributeTitle {
+  color:  #e35500 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassMediumGreen > .sapMObjectAttributeTitle {
+  color:  #4fb81c ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassMediumGold > .sapMObjectAttributeTitle {
+  color:  #d29600 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassMediumPurple > .sapMObjectAttributeTitle {
+  color:  #760a85 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassMediumPink > .sapMObjectAttributeTitle {
+  color:  #c87396 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassDarkOrange > .sapMObjectAttributeTitle {
+  color:  #b82402 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassDarkGreen > .sapMObjectAttributeTitle {
+  color:  #21652b ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassDarkGold > .sapMObjectAttributeTitle {
+  color:  #aa7500 ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassDarkPurple > .sapMObjectAttributeTitle {
+  color:  #45157e ;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow > .sapMOHAttr > .sapMObjectAttributeDiv.sapPSRiskClassDarkPink > .sapMObjectAttributeTitle {
+  color:  #a07396 ;
+}
+.sapTlTileUmbrella {
+  width: 100%;
+  height: 76px;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+.sapTlTile {
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 76px;
+  overflow: hidden;
+  position: absolute;
+  transition: background-color 0.4s;
+  z-index: 3;
+}
+.sapTlTile:focus {
+  outline: none;
+}
+.sapTlTile:hover .sapTlTileTitle,
+.sapTlTile:focus .sapTlTileTitle,
+.sapTlTile:hover .sapTlTileDetails,
+.sapTlTile:focus .sapTlTileDetails,
+.sapTlTile:hover .sapTlTileSimpleDetails,
+.sapTlTile:focus .sapTlTileSimpleDetails,
+.sapTlTile:hover .sapTlTileTime,
+.sapTlTile:focus .sapTlTileTime {
+  color: #ffffff;
+}
+.sapTlTile:hover .sapTlTileDot,
+.sapTlTile:focus .sapTlTileDot,
+.sapTlTile:hover .sapTlTileBadge,
+.sapTlTile:focus .sapTlTileBadge {
+  transition: background-color 0.4s, color 0.4s;
+  background-color: #ffffff;
+}
+.sapTlTileAnchor {
+  height: 76px;
+  position: absolute;
+  left: 0;
+  width: 0;
+  top: 0;
+  pointer-events: none;
+}
+.sapTlTile.sapTlTileStacked {
+  background: repeating-linear-gradient(to left, #ffffff, #ffffff 2px, #cccccc 2px, #cccccc 3px), #ffffff;
+  background-position: right;
+  background-repeat: no-repeat;
+  background-size: 6px 100%;
+}
+.sapTlTile.sapTlTileUndated {
+  background-color: #f2f2f2;
+  z-index: 2;
+}
+.sapTlTile.sapTlTileUndated.sapTlTileStacked {
+  background: repeating-linear-gradient(to left, #f2f2f2, #f2f2f2 2px, #cccccc 2px, #cccccc 3px), #f2f2f2;
+  background-position: right;
+  background-repeat: no-repeat;
+  background-size: 6px 100%;
+}
+.sapTlTilePaddedArea {
+  padding: 0 .75rem;
+  width: calc(100% - 1.5rem);
+}
+.sapTlTileDots {
+  font-size: 0;
+  height: 7px;
+  overflow: hidden;
+  white-space: nowrap;
+  z-index: 4;
+}
+.sapTlTileDot {
+  position: absolute;
+  display: inline-block;
+  height: 4px;
+  max-width: 100%;
+  transition: background-color 0.4s;
+}
+.sapTlTileTitle {
+  align-items: center;
+  display: flex;
+}
+.sapTlTileBadge {
+  border-radius: .625rem;
+  color: #ffffff;
+  display: inline-block;
+  font-size: .625rem;
+  height: .75rem;
+  margin-right: .3125rem;
+  min-width: .75rem;
+  padding: .1875rem .1875rem .1875rem .1875rem;
+  text-align: center;
+}
+.sapTlTileTitleText {
+  font-size: .875rem;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .4s;
+  white-space: nowrap;
+  width: calc(76%);
+}
+.sapTlTileDetails {
+  color: #999999;
+  font-size: .75rem;
+  height: 30px;
+  margin-bottom: 7px;
+  transition: color .4s;
+}
+.sapTlTileSimpleDetails {
+  color: #999999;
+  font-size: .75rem;
+  height: 30px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  top: 25px;
+  transition: color .4s;
+}
+.sapTlTileTime {
+  color: #666666;
+  font-size: .625rem;
+  font-weight: bold;
+  transition: color .4s;
+}
+.sapTlPopoverTileFeature {
+  color: #009de0;
+}
+.sapTlTileShortened .sapTlTileTitle {
+  position: relative;
+  left: -0.3125rem;
+}
+.sapTlTileShortened .sapTlTileTitle:before {
+  content: "\A";
+  border-style: solid;
+  border-width: .3125rem .3125rem .3125rem 0;
+  position: relative;
+  left: -0.1875rem;
+}
+.sapTlTile.sapTlTileShortened:hover .sapTlTileTitle:before,
+.sapTlTile.sapTlTileShortened:focus .sapTlTileTitle:before {
+  transition: border-color 0.4s;
+  border-color: transparent #ffffff transparent transparent;
+}
+.sapTlTileDetailsColumnLeft {
+  float: left;
+  margin-right: 0.75rem;
+  max-width: 40%;
+}
+.sapTlTileDetailsColumn {
+  display: inline;
+}
+.sapTlTileDetailsCell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sapTlTilesLightOrange .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #ff7d00  transparent transparent;
+}
+.sapTlTilesLightGreen .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #a8c939  transparent transparent;
+}
+.sapTlTilesLightGold .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #f0ab00  transparent transparent;
+}
+.sapTlTilesLightPurple .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #960981  transparent transparent;
+}
+.sapTlTilesLightPink .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #eb7396  transparent transparent;
+}
+.sapTlTilesMediumOrange .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #e35500  transparent transparent;
+}
+.sapTlTilesMediumGreen .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #4fb81c  transparent transparent;
+}
+.sapTlTilesMediumGold .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #d29600  transparent transparent;
+}
+.sapTlTilesMediumPurple .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #760a85  transparent transparent;
+}
+.sapTlTilesMediumPink .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #c87396  transparent transparent;
+}
+.sapTlTilesDarkOrange .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #b82402  transparent transparent;
+}
+.sapTlTilesDarkGreen .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #21652b  transparent transparent;
+}
+.sapTlTilesDarkGold .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #aa7500  transparent transparent;
+}
+.sapTlTilesDarkPurple .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #45157e  transparent transparent;
+}
+.sapTlTilesDarkPink .sapTlTileShortened .sapTlTileTitle:before {
+  border-color: transparent  #a07396  transparent transparent;
+}
+.sapTlTilesLightOrange .sapTlTileTitle {
+  color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTileTitle {
+  color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTileTitle {
+  color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTileTitle {
+  color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTileTitle {
+  color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTileTitle {
+  color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTileTitle {
+  color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTileTitle {
+  color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTileTitle {
+  color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTileTitle {
+  color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTileTitle {
+  color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTileTitle {
+  color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTileTitle {
+  color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTileTitle {
+  color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTileTitle {
+  color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTile:hover .sapTlTileBadge {
+  color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTile:hover .sapTlTileBadge {
+  color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTile:hover .sapTlTileBadge {
+  color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTile:hover .sapTlTileBadge {
+  color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTile:hover .sapTlTileBadge {
+  color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTile:hover .sapTlTileBadge {
+  color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTile:hover .sapTlTileBadge {
+  color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTile:hover .sapTlTileBadge {
+  color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTile:hover .sapTlTileBadge {
+  color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTile:hover .sapTlTileBadge {
+  color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTile:hover .sapTlTileBadge {
+  color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTile:hover .sapTlTileBadge {
+  color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTile:hover .sapTlTileBadge {
+  color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTile:hover .sapTlTileBadge {
+  color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTile:hover .sapTlTileBadge {
+  color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTile:focus .sapTlTileBadge {
+  color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTile:focus .sapTlTileBadge {
+  color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTile:focus .sapTlTileBadge {
+  color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTile:focus .sapTlTileBadge {
+  color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTile:focus .sapTlTileBadge {
+  color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTile:focus .sapTlTileBadge {
+  color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTile:focus .sapTlTileBadge {
+  color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTile:focus .sapTlTileBadge {
+  color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTile:focus .sapTlTileBadge {
+  color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTile:focus .sapTlTileBadge {
+  color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTile:focus .sapTlTileBadge {
+  color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTile:focus .sapTlTileBadge {
+  color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTile:focus .sapTlTileBadge {
+  color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTile:focus .sapTlTileBadge {
+  color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTile:focus .sapTlTileBadge {
+  color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTile:hover {
+  background-color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTile:hover {
+  background-color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTile:hover {
+  background-color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTile:hover {
+  background-color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTile:hover {
+  background-color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTile:hover {
+  background-color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTile:hover {
+  background-color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTile:hover {
+  background-color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTile:hover {
+  background-color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTile:hover {
+  background-color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTile:hover {
+  background-color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTile:hover {
+  background-color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTile:hover {
+  background-color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTile:hover {
+  background-color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTile:hover {
+  background-color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTile:focus {
+  background-color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTile:focus {
+  background-color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTile:focus {
+  background-color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTile:focus {
+  background-color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTile:focus {
+  background-color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTile:focus {
+  background-color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTile:focus {
+  background-color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTile:focus {
+  background-color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTile:focus {
+  background-color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTile:focus {
+  background-color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTile:focus {
+  background-color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTile:focus {
+  background-color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTile:focus {
+  background-color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTile:focus {
+  background-color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTile:focus {
+  background-color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTileDot {
+  background-color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTileDot {
+  background-color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTileDot {
+  background-color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTileDot {
+  background-color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTileDot {
+  background-color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTileDot {
+  background-color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTileDot {
+  background-color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTileDot {
+  background-color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTileDot {
+  background-color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTileDot {
+  background-color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTileDot {
+  background-color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTileDot {
+  background-color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTileDot {
+  background-color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTileDot {
+  background-color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTileDot {
+  background-color:  #a07396 ;
+}
+.sapTlTilesLightOrange .sapTlTileBadge {
+  background-color:  #ff7d00 ;
+}
+.sapTlTilesLightGreen .sapTlTileBadge {
+  background-color:  #a8c939 ;
+}
+.sapTlTilesLightGold .sapTlTileBadge {
+  background-color:  #f0ab00 ;
+}
+.sapTlTilesLightPurple .sapTlTileBadge {
+  background-color:  #960981 ;
+}
+.sapTlTilesLightPink .sapTlTileBadge {
+  background-color:  #eb7396 ;
+}
+.sapTlTilesMediumOrange .sapTlTileBadge {
+  background-color:  #e35500 ;
+}
+.sapTlTilesMediumGreen .sapTlTileBadge {
+  background-color:  #4fb81c ;
+}
+.sapTlTilesMediumGold .sapTlTileBadge {
+  background-color:  #d29600 ;
+}
+.sapTlTilesMediumPurple .sapTlTileBadge {
+  background-color:  #760a85 ;
+}
+.sapTlTilesMediumPink .sapTlTileBadge {
+  background-color:  #c87396 ;
+}
+.sapTlTilesDarkOrange .sapTlTileBadge {
+  background-color:  #b82402 ;
+}
+.sapTlTilesDarkGreen .sapTlTileBadge {
+  background-color:  #21652b ;
+}
+.sapTlTilesDarkGold .sapTlTileBadge {
+  background-color:  #aa7500 ;
+}
+.sapTlTilesDarkPurple .sapTlTileBadge {
+  background-color:  #45157e ;
+}
+.sapTlTilesDarkPink .sapTlTileBadge {
+  background-color:  #a07396 ;
+}
+.sapTlPopover {
+  border: 1px solid;
+}
+.sapTlPopoverHeader {
+  border-bottom: 1px solid #cccccc;
+  padding: 16px 12px 8px 45px;
+}
+.sapTlPopoverBadge {
+  border-radius: 15px;
+  color: #ffffff;
+  font-size: 13px;
+  height: 20px;
+  left: 12px;
+  padding: 6px 3px 0;
+  position: absolute;
+  text-align: center;
+  top: 12px;
+  width: 20px;
+}
+.sapTlPopoverTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sapTlPopoverTime {
+  color: #666666;
+  font-size: 0.75rem;
+  margin-top: 5px;
+}
+.sapTlPopoverContent {
+  max-height: 400px;
+  overflow: auto;
+}
+.sapTlPopoverContent:focus {
+  outline: none;
+}
+.sapTlPopoverTile {
+  border-bottom: 1px solid #cccccc;
+  padding: 0 0.75rem 0.75rem 0.75rem;
+}
+.sapTlPopoverTileTitle {
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+.sapTlPopoverTileTime {
+  color: #666666;
+  font-size: 0.75rem;
+  margin-top: 3px;
+}
+.sapTlPopoverTileDetailsKey {
+  color: #808080;
+  font-size: 0.75rem;
+  margin: 0 0 0.25rem 0;
+}
+.sapTlPopoverTileDetailsKey:after {
+  content: ":";
+}
+.sapTlPopoverTileDetailsValue {
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem 0;
+}
+.sapTlPopoverTileActions > * {
+  margin-right: 0.375rem;
+}
+.sapTlPopoverLightOrange .sapTlPopoverTitle {
+  color:  #ff7d00 ;
+}
+.sapTlPopoverLightGreen .sapTlPopoverTitle {
+  color:  #a8c939 ;
+}
+.sapTlPopoverLightGold .sapTlPopoverTitle {
+  color:  #f0ab00 ;
+}
+.sapTlPopoverLightPurple .sapTlPopoverTitle {
+  color:  #960981 ;
+}
+.sapTlPopoverLightPink .sapTlPopoverTitle {
+  color:  #eb7396 ;
+}
+.sapTlPopoverMediumOrange .sapTlPopoverTitle {
+  color:  #e35500 ;
+}
+.sapTlPopoverMediumGreen .sapTlPopoverTitle {
+  color:  #4fb81c ;
+}
+.sapTlPopoverMediumGold .sapTlPopoverTitle {
+  color:  #d29600 ;
+}
+.sapTlPopoverMediumPurple .sapTlPopoverTitle {
+  color:  #760a85 ;
+}
+.sapTlPopoverMediumPink .sapTlPopoverTitle {
+  color:  #c87396 ;
+}
+.sapTlPopoverDarkOrange .sapTlPopoverTitle {
+  color:  #b82402 ;
+}
+.sapTlPopoverDarkGreen .sapTlPopoverTitle {
+  color:  #21652b ;
+}
+.sapTlPopoverDarkGold .sapTlPopoverTitle {
+  color:  #aa7500 ;
+}
+.sapTlPopoverDarkPurple .sapTlPopoverTitle {
+  color:  #45157e ;
+}
+.sapTlPopoverDarkPink .sapTlPopoverTitle {
+  color:  #a07396 ;
+}
+.sapTlPopoverLightOrange .sapTlPopoverTileTitle {
+  color:  #ff7d00 ;
+}
+.sapTlPopoverLightGreen .sapTlPopoverTileTitle {
+  color:  #a8c939 ;
+}
+.sapTlPopoverLightGold .sapTlPopoverTileTitle {
+  color:  #f0ab00 ;
+}
+.sapTlPopoverLightPurple .sapTlPopoverTileTitle {
+  color:  #960981 ;
+}
+.sapTlPopoverLightPink .sapTlPopoverTileTitle {
+  color:  #eb7396 ;
+}
+.sapTlPopoverMediumOrange .sapTlPopoverTileTitle {
+  color:  #e35500 ;
+}
+.sapTlPopoverMediumGreen .sapTlPopoverTileTitle {
+  color:  #4fb81c ;
+}
+.sapTlPopoverMediumGold .sapTlPopoverTileTitle {
+  color:  #d29600 ;
+}
+.sapTlPopoverMediumPurple .sapTlPopoverTileTitle {
+  color:  #760a85 ;
+}
+.sapTlPopoverMediumPink .sapTlPopoverTileTitle {
+  color:  #c87396 ;
+}
+.sapTlPopoverDarkOrange .sapTlPopoverTileTitle {
+  color:  #b82402 ;
+}
+.sapTlPopoverDarkGreen .sapTlPopoverTileTitle {
+  color:  #21652b ;
+}
+.sapTlPopoverDarkGold .sapTlPopoverTileTitle {
+  color:  #aa7500 ;
+}
+.sapTlPopoverDarkPurple .sapTlPopoverTileTitle {
+  color:  #45157e ;
+}
+.sapTlPopoverDarkPink .sapTlPopoverTileTitle {
+  color:  #a07396 ;
+}
+.sapTlPopoverLightOrange {
+  border-color:  #ff7d00 ;
+}
+.sapTlPopoverLightGreen {
+  border-color:  #a8c939 ;
+}
+.sapTlPopoverLightGold {
+  border-color:  #f0ab00 ;
+}
+.sapTlPopoverLightPurple {
+  border-color:  #960981 ;
+}
+.sapTlPopoverLightPink {
+  border-color:  #eb7396 ;
+}
+.sapTlPopoverMediumOrange {
+  border-color:  #e35500 ;
+}
+.sapTlPopoverMediumGreen {
+  border-color:  #4fb81c ;
+}
+.sapTlPopoverMediumGold {
+  border-color:  #d29600 ;
+}
+.sapTlPopoverMediumPurple {
+  border-color:  #760a85 ;
+}
+.sapTlPopoverMediumPink {
+  border-color:  #c87396 ;
+}
+.sapTlPopoverDarkOrange {
+  border-color:  #b82402 ;
+}
+.sapTlPopoverDarkGreen {
+  border-color:  #21652b ;
+}
+.sapTlPopoverDarkGold {
+  border-color:  #aa7500 ;
+}
+.sapTlPopoverDarkPurple {
+  border-color:  #45157e ;
+}
+.sapTlPopoverDarkPink {
+  border-color:  #a07396 ;
+}
+.sapTlPopoverLightOrange .sapTlPopoverBadge {
+  background-color:  #ff7d00 ;
+}
+.sapTlPopoverLightGreen .sapTlPopoverBadge {
+  background-color:  #a8c939 ;
+}
+.sapTlPopoverLightGold .sapTlPopoverBadge {
+  background-color:  #f0ab00 ;
+}
+.sapTlPopoverLightPurple .sapTlPopoverBadge {
+  background-color:  #960981 ;
+}
+.sapTlPopoverLightPink .sapTlPopoverBadge {
+  background-color:  #eb7396 ;
+}
+.sapTlPopoverMediumOrange .sapTlPopoverBadge {
+  background-color:  #e35500 ;
+}
+.sapTlPopoverMediumGreen .sapTlPopoverBadge {
+  background-color:  #4fb81c ;
+}
+.sapTlPopoverMediumGold .sapTlPopoverBadge {
+  background-color:  #d29600 ;
+}
+.sapTlPopoverMediumPurple .sapTlPopoverBadge {
+  background-color:  #760a85 ;
+}
+.sapTlPopoverMediumPink .sapTlPopoverBadge {
+  background-color:  #c87396 ;
+}
+.sapTlPopoverDarkOrange .sapTlPopoverBadge {
+  background-color:  #b82402 ;
+}
+.sapTlPopoverDarkGreen .sapTlPopoverBadge {
+  background-color:  #21652b ;
+}
+.sapTlPopoverDarkGold .sapTlPopoverBadge {
+  background-color:  #aa7500 ;
+}
+.sapTlPopoverDarkPurple .sapTlPopoverBadge {
+  background-color:  #45157e ;
+}
+.sapTlPopoverDarkPink .sapTlPopoverBadge {
+  background-color:  #a07396 ;
+}
+.sapTlTimeline {
+  position: relative;
+}
+.sapTlTimelineBar {
+  background-color: #e5e5e5;
+  border: none;
+  box-sizing: border-box;
+  height: 3rem;
+  width: 100%;
+}
+.sapTlTimelineLaneArea {
+  cursor: move !important;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+}
+.sapTlTimelineEmptyBar {
+  cursor: auto;
+}
+.sapTlTimelineRuler {
+  display: block;
+  height: 3rem;
+  width: 100%;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sapTlTimelineRuler line {
+  stroke: #808080;
+}
+.sapTlTimelineRuler text {
+  fill: #808080;
+  font-size: .75rem;
+  text-anchor: middle;
+}
+.sapTlTimelineRuler .domain {
+  display: none;
+}
+.sapTlTimelineRulerHeader text {
+  cursor: default;
+}
+.sapTlTimelineRulerUpperAxis {
+  transform: translate(0, 1.125rem);
+}
+.sapTlTimelineRulerUpperAxis text {
+  font-weight: bold;
+}
+.sapTlTimelineRulerLowerAxis {
+  transform: translate(0, 3rem);
+}
+.sapTlTimelineDOB {
+  background-color: rgba(119, 119, 119, 0.6);
+  height: 100%;
+  position: absolute;
+  top: calc(3rem + 1px);
+}
+.sapTlTimelineDOB .sapTlTimelineDOBLine {
+  background-color: #000000;
+  background-clip: content-box;
+  width: 1px;
+  right: -0.5rem;
+  padding: 0 0.5rem;
+  height: 100%;
+  position: absolute;
+}
+.sapTlTimelineDOD {
+  background-color: rgba(119, 119, 119, 0.6);
+  right: 0;
+  height: 100%;
+  position: absolute;
+  top: calc(3rem + 1px);
+}
+.sapTlTimelineDOD .sapTlTimelineDODLine {
+  background-color: #000000;
+  background-clip: content-box;
+  width: 1px;
+  left: -0.5rem;
+  padding: 0 0.5rem;
+  height: 100%;
+  position: absolute;
+}
+.sapTlTimelineToday {
+  background-color: #4cc5be;
+  background-clip: content-box;
+  padding: 0 0.5rem;
+  width: 1px;
+  height: 100%;
+  position: absolute;
+}
+.sapMTB.sapTlOverviewToolbar {
+  border: none;
+}
+.sapTlAttributeSelectionPopover .sapMList .sapMLIBShowSeparator {
+  color: #999999;
+}
+.sapPSTimelineToolBar > .sapUiFixFlexFlexible {
+  position: unset;
+}
+.sapPSTimelineToolBar > .sapUiFixFlexFlexible > .sapUiFixFlexFlexibleContainer {
+  position: static;
+}
+.sapPSTimelineToolBar > .sapUiFixFlexFixed {
+  overflow: unset;
+}
+.sapTlZoomLabel {
+  line-height: 2rem;
+  margin-right: 0.5rem;
+}
+.sapTlZoomButton {
+  width: 33%;
+}
+.sapPSHeader.sapMFlexBox > .sapMFlexItem {
+  min-width: 0;
+  overflow: hidden;
+}
+.sapPSWidget.sapMOH .sapMOHTitle .sapMText {
+  font-family: "72 Condensed";
+  font-size: 14px;
+  font-weight: 100;
+  color: #333333;
+  text-transform: uppercase;
+}
+.sapPSWidget.sapMOH .sapMOHBottomRow {
+  margin-top: 0.3rem;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow {
+  margin-top: 0.2rem;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv.sapMObjectAttributeActive {
+  cursor: pointer;
+  pointer-events: auto;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv.sapMObjectAttributeActive:hover > .sapMObjectAttributeTitle {
+  text-decoration-line: underline;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv.sapMObjectAttributeActive:hover > .sapMObjectAttributeText {
+  text-decoration-line: underline;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv.sapMObjectAttributeActive:focus {
+  outline: 1px dotted #005483;
+  outline-offset: -1px;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv.sapMObjectAttributeActive:focus .sapMObjectAttributeText {
+  outline: unset;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv .sapMObjectAttributeTitle {
+  font-family: "72";
+  font-size: 14px;
+  font-weight: 100;
+  color: #333333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sapPSWidget.sapMOH .sapMOHAttrRow .sapMOHAttr .sapMObjectAttributeDiv .sapMObjectAttributeText {
+  font-family: "72";
+  font-size: 14px;
+  font-weight: 100;
+  color: #888888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/**
+ * Mixin function to write one rule for each color.
+ * @param before   Selector string before the color name
+ * @param after    Selector string after the color name
+ * @param property Property that will be assigned the color value
+ */

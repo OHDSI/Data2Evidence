@@ -1,0 +1,26 @@
+.delete-account-dialog {
+  .delete-account-dialog__content {
+    margin: 0 25px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+
+  .select {
+    display: flex;
+  }
+}

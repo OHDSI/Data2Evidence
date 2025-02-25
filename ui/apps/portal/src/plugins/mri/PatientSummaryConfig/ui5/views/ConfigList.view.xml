@@ -1,0 +1,74 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.ConfigList" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:f="sap.ui.layout.form">
+    <List id="psConfigList" includeItemInSelection="true" mode="SingleSelectMaster" noDataText="{i18n>HPH_PAT_CFG_NO_CONFIGS_FOUND_TEXT}" items="{analyticsModel>configs}" itemPress="onChoosePSConfig" updateFinished="onListUpdateFinished">
+        <CustomListItem selected="{analyticsModel>frontEndProperties/isSelected}" type="Active">
+            <FlexBox
+                alignItems="Start"
+                justifyContent="SpaceBetween">
+                <Text class="sapFfhPVConfigLargeText" text="{analyticsModel>meta/configName}" />
+                <FlexBox
+                    alignItems="Start"
+                    justifyContent="End">
+                    <Button
+                        visible="{= ${analyticsModel>frontEndProperties/isValid} === true}"
+                        icon="sap-icon://message-success"
+                        type="Transparent"
+                        class="sapFfhPVConfigValidityTrue"
+                        enabled="false"
+                        tooltip="{i18n>HPH_PAT_CFG_CONFIG_VALIDITY_TRUE_TOOLTIP}"/>
+                    <Button
+                        visible="{= ${analyticsModel>frontEndProperties/isValid} === false}"
+                        icon="sap-icon://message-warning"
+                        type="Transparent"
+                        class="sapFfhPVConfigValidityFalse"
+                        tooltip="{i18n>HPH_PAT_CFG_CONFIG_VALIDITY_FALSE_TOOLTIP}"
+                        press=".onShowValidationErrors"/>
+                    <Button
+                        visible="{= ${analyticsModel>frontEndProperties/isValid} === null}"
+                        icon="sap-icon://question-mark"
+                        type="Transparent"
+                        class="sapFfhPVConfigValidityUnknown"
+                        enabled="{= ${analyticsModel>frontEndProperties/errors/length} > 0}"
+                        tooltip="{= ${analyticsModel>frontEndProperties/errors/length} > 0 ?
+                                    ${i18n>HPH_PAT_CFG_CONFIG_VALIDITY_UNKNOWN_WITH_PREV_ERROR_TOOLTIP} :
+                                    ${i18n>HPH_PAT_CFG_CONFIG_VALIDITY_UNKNOWN_TOOLTIP}}"
+                        press=".onShowValidationErrors"/>
+                </FlexBox>
+            </FlexBox>
+            <f:SimpleForm class="sapFfhPVConfigForm" layout="GridLayout">
+                <Label text="{i18n>HPH_PAT_CFG_CONFIG_OVERVIEW_CREATOR}" />
+                <Text text="{analyticsModel>meta/creator}" />
+                <Label text="{i18n>HPH_PAT_CFG_CONFIG_OVERVIEW_STATUS}" />
+                <Text text="{parts: ['analyticsModel>frontEndProperties/isSaved', 'analyticsModel>frontEndProperties/isModified'], formatter:'.stateFormatter'}" />
+            </f:SimpleForm>
+            <OverflowToolbar class="sapFfhPVConfigButtonToolbar">
+                <Button icon="sap-icon://sys-enter" text="{i18n>HPH_PAT_CFG_BUTTON_SAVE}" tooltip="{i18n>HPH_PAT_CFG_SAVE_CONFIG_TOOLTIP}" press=".onActivateConfig" type="Transparent" />
+                <Button icon="sap-icon://approvals" text="{i18n>HPH_PAT_CFG_BUTTON_VALIDATE}" tooltip="{i18n>HPH_PAT_CFG_VALIDATE_CONFIG_TOOLTIP}" press=".onValidateConfiguration" type="Transparent" />
+                <Button icon="sap-icon://delete" text="{i18n>HPH_PAT_CFG_BUTTON_DELETE}" tooltip="{i18n>HPH_PAT_CFG_DELETE_CONFIG_TOOLTIP}" press=".onDeleteConfig" type="Transparent" />
+                <Button icon="sap-icon://duplicate" text="{i18n>HPH_PAT_CFG_BUTTON_DUPLICATE}" tooltip="{i18n>HPH_PAT_CFG_DUPLICATE_CONFIG_TOOLTIP}" press=".onDuplicateConfiguration" type="Transparent" >
+                    <!-- FUTURE: this is a workaround for a bug (1580170208) in SAPUI5 1.28.5 -->
+                    <layoutData>
+                        <OverflowToolbarLayoutData stayInOverflow="true" />
+                    </layoutData>
+                </Button>
+                <Button icon="sap-icon://inspection" text="{i18n>HPH_PAT_CFG_BUTTON_PREVIEW}" tooltip="{i18n>HPH_PAT_CFG_CONFIG_PREVIEW_CONFIG_TOOLTIP}" press=".onPreviewConfigPressed">
+                    <!-- FUTURE: this is a workaround for a bug (1580170208) in SAPUI5 1.28.5 -->
+                    <layoutData>
+                        <OverflowToolbarLayoutData stayInOverflow="true" />
+                    </layoutData>
+                </Button>
+                <Button icon="sap-icon://cause" text="{i18n>HPH_PAT_CFG_BUTTON_IMPORT}"
+                    tooltip="{i18n>HPH_PAT_CFG_BUTTON_IMPORT_TOOLTIP}" press=".onImportConfigurationPressed">
+                    <layoutData>
+                        <OverflowToolbarLayoutData stayInOverflow="true" />
+                    </layoutData>
+                </Button>
+                <Button icon="sap-icon://download" text="{i18n>HPH_PAT_CFG_BUTTON_EXPORT}"
+                    tooltip="{i18n>HPH_PAT_CFG_BUTTON_EXPORT_TOOLTIP}" press=".onExportConfigurationPressed">
+                    <layoutData>
+                        <OverflowToolbarLayoutData stayInOverflow="true" />
+                    </layoutData>
+                </Button>
+            </OverflowToolbar>
+        </CustomListItem>
+    </List>
+</mvc:View>

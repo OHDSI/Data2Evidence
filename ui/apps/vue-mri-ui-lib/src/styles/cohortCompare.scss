@@ -1,0 +1,142 @@
+.compareContainer {
+  .modal-wrapper {
+    .modal-container {
+      width: calc(1200 * 1.1px) !important;
+      .modal-header {
+        text-align: center;
+        padding: 0;
+        height: 40px;
+        background-color: $TabBarHeaderBG;
+        color: $MriHeaderTextDark;
+        font-weight: bold;
+      }
+      .modal-body {
+        padding: 0;
+        overflow-y: hidden;
+        max-height: 100vh;
+        .chartToolbarContainer {
+          background-color: $MRICardHeaderBG;
+          text-align: center;
+          justify-content: center;
+          display: flex;
+          height: 40px;
+          .chartButton {
+            margin-top: 3px;
+          }
+          .separator {
+            width: 10px;
+          }
+          .icon {
+            margin-right: 0;
+          }
+        }
+        .axisContainer {
+          height: 600px;
+          grid-column: 1;
+          .upperAxisContainer {
+            position: relative;
+            height: 60%;
+            margin-left: 40px;
+            .kmInfo {
+              .kmInteractionList-wrapper {
+                .modal-container {
+                  width: 50px !important;
+                  margin: 0;
+                  .modal-header {
+                    background-color: $UiExtraLightBG;
+                    box-shadow: none;
+                    color: $UiDarkText;
+                    text-align: center;
+                    padding: 0;
+                    height: 40px;
+                    font-weight: 100;
+                  }
+                  .modal-body {
+                    padding: 0px;
+                  }
+                }
+              }
+            }
+            .sort-label {
+              position: absolute;
+              top: 77px;
+              left: 75px;
+              direction: inherit;
+              text-align: left;
+              color: $MriHeaderTextDark;
+              font-size: 12px;
+            }
+          }
+          .lowerAxisContainer {
+            position: relative;
+            height: 40%;
+            margin-left: 40px;
+          }
+        }
+        .chartContainer {
+          width: 20%;
+        }
+      }
+    }
+    .message-box-error {
+      width: 450px !important;
+      margin: 0px !important;
+      .modal-header {
+        text-align: center;
+        padding: 0;
+        background-color: $UiLightestBG;
+        color: $MriErrorColor;
+        font-weight: normal;
+        line-height: 3rem;
+      }
+    }
+  }
+}
+
+.cohortCompareContainer {
+  display: grid;
+  grid-template-columns: 20% auto;
+}
+
+.kmInteractionList-wrapper .kmControlComponent .kmButton {
+  .modal-container {
+    width: 100px !important;
+  }
+}
+
+.chartSize {
+  height: map-get($mriScreen, min-height);
+  grid-column: 2;
+  .mainChartToolbar {
+    text-align: right;
+    padding-top: 0.5rem;
+    padding-right: 1rem;
+    .toolbarButton {
+      color: $MriHeaderTextDark;
+      outline: none;
+      background: none;
+      border: none;
+      height: 30px;
+      width: 33px;
+    }
+    .toolbarButton:hover {
+      background-color: $MriButtonHoverDark;
+      color: $MriLightestText;
+      height: 30px;
+      width: 33px;
+      border-radius: 3.1px;
+    }
+    .toolbarButton .icon {
+      font-size: 17px;
+      font-weight: normal;
+      cursor: pointer;
+      text-align: center;
+      display: inline-block;
+      vertical-align: baseline;
+    }
+  }
+
+  .sapMPageBgSolid {
+    background-color: $UiLightestBG;
+  }
+}

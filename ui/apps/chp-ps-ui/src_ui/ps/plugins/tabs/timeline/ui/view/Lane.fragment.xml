@@ -1,0 +1,41 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:patient="sap.hc.hph.patient.app.ui.lib" xmlns:timeline="sap.hc.hph.patient.app.ui.lib.timeline">
+    <timeline:Lane color="{color}" title="{title}" value="{= ${tiles} ? ${tiles/dated/length} + ${tiles/undated/length} : '0'}" subLanes="{path: 'subLanes', factory: '.createLane'}" visible="{visible}"
+        minimized="{= ${minimized} || ${tilesHidden} }" titleTooltip="{title}" >
+        <timeline:headerContent>
+            <FlexBox height="100%" justifyContent="SpaceBetween" alignItems="{= ${minimized} || ${tilesHidden} ? 'Center' : 'End' }" direction="{= ${minimized} || ${tilesHidden} ? 'RowReverse' : 'Column' }">
+                <Button
+                    icon="{= ${minimized} || ${tilesHidden} ? 'sap-icon://navigation-down-arrow' : 'sap-icon://navigation-up-arrow' }"
+                    type="Transparent"
+                    press="onToggleMinimized"
+                    enabled="{= !${tilesHidden} }"
+                    visible="{parts: ['plottableAttributes', 'tilesHidden'], formatter:'.isNotEmptyAndNotHidden'}"
+                    tooltip="{= ${minimized} || ${tilesHidden} ? ${i18n>HPH_PAT_CONTENT_UNFOLD_LANE_TOOLTIP} : ${i18n>HPH_PAT_CONTENT_COLLAPSE_LANE_TOOLTIP} }"
+                />
+                <Button
+                    icon="sap-icon://sys-add"
+                    type="Transparent"
+                    press="onOpenAddChartDialog"
+                    visible="{path: 'plottableAttributes', formatter:'.isNotEmpty'}"
+                    enabled="{parts: ['subLanes/length', 'plottableAttributes/length'], formatter: '.hasNotPlottedAttributes'}"
+                    tooltip="{parts: ['subLanes/length', 'plottableAttributes/length'], formatter: '.addChartTooltipFormatter'}"
+                />
+            </FlexBox>
+        </timeline:headerContent>
+        <timeline:headerExtraContent>
+            <FlexBox height="100%" alignItems="Start" justifyContent="Center">
+                <Button
+                    class="sapTlTimelineLaneHeaderUndatedCount"
+                    text="{= ${tiles/undated/length} ? ${tiles/undated/length} : ''}"
+                    type="Transparent"
+                    press=".handleUndatedBadgeClick"
+                    visible="{= ${tiles/undated/length} > 0}"
+                    tooltip="{parts: ['i18n>HPH_PAT_CONTENT_DATELESS_SECTION_ENTRY_TOOLTIP', 'tiles/undated/length', 'title'], formatter: '.formatText'}"
+                />
+            </FlexBox>
+        </timeline:headerExtraContent>
+        <timeline:TileArea visible="{= !(${minimized} || ${tilesHidden}) }" tiles="{path: 'clusters', templateShareable: true}" color="{color}" press=".onTilePress" scaleChange=".onTileAreaScaleChange">
+            <patient:Tile start="{start}" end="{end}" name="{name}" key="{tileIndices/0}" attributes="{attributes}" badgeCount="{badgeCount}" simpleDetails="{simpleDetails}" indicators="{indicators}"/>
+        </timeline:TileArea>
+        <timeline:MiniTileArea visible="{= ${minimized} || ${tilesHidden} }" data="{tiles/dated}" dateColumn="start" keyColumn="key" color="{color}" press=".onTilePress"/>
+    </timeline:Lane>
+</core:FragmentDefinition>

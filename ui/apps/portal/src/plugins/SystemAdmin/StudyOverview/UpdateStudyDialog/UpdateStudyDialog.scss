@@ -1,0 +1,103 @@
+.update-study-dialog {
+  .update-study-dialog__content {
+    min-height: 200px;
+    padding: 0 25px;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
+    .u-padding-vertical--small {
+      padding-right: 20px;
+    }
+  }
+
+  .update-study-dialog__edit-input {
+    display: flex;
+    width: 100%;
+
+    d4l-input {
+      flex: 1;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+
+  .select {
+    display: flex;
+  }
+
+  .input__title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-top: 20px;
+    margin-bottom: 5px;
+  }
+
+  .input__title.tags__title {
+    margin-top: 2em;
+  }
+
+  .add-input__btn {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-top: 8px;
+    margin-left: 10px;
+    cursor: pointer;
+    &:hover {
+      color: var(--color-primary-light);
+    }
+  }
+  .visibility__radiogroup {
+    margin-top: 2em;
+    color: var(--color-primary);
+    .MuiFormLabel-root {
+      color: var(--color-primary);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    .MuiIconButton-label {
+      color: var(--color-primary);
+    }
+  }
+  .MuiAutocomplete-tag {
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: 0.5em;
+  }
+
+  .MuiChip-deleteIcon {
+    color: var(--color-primary);
+    &:hover {
+      color: var(--color-primary-lighter);
+    }
+  }
+
+  .MuiAutocomplete-endAdornment {
+    .MuiIconButton-root:hover {
+      background-color: var(--color-primary-lightest);
+    }
+  }
+
+  .MuiIconButton-label {
+    color: var(--color-primary);
+  }
+}
+
+.MuiAutocomplete-listbox {
+  .MuiAutocomplete-option {
+    color: var(--color-primary);
+    &.Mui-focused,
+    &[aria-selected="true"] {
+      background-color: #ebf2fa;
+    }
+  }
+}

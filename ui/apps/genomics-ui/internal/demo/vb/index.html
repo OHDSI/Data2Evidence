@@ -1,0 +1,19 @@
+<!DOCTYPE html >
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF8">
+    <title>SAP HANA Variant Browser</title>
+	<script id='sap-ui-bootstrap' type='text/javascript' src='https://sapui5.hana.ondemand.com/resources/sap-ui-core.js' data-sap-ui-xx-bindingsyntax='complex' data-sap-ui-theme='sap_bluecrystal' data-sap-ui-libs='sap.m,sap.ui.layout,sap.ui.commons,hc.hph.core.ui,hc.hph.genomics.ui.lib' data-sap-ui-resourceroots='{"sap.hc.hph": "/sap/hc/hph"}'></script>
+	<script type='application/javascript' charset='UTF-8' src='/sap/ui5/1/resources/sap/ui/thirdparty/d3.js'></script>
+	<script>
+var app = new sap.m.App({ pages: [sap.ui.xmlview('variantBrowser', 'hc.hph.genomics.internal.demo.vb.VariantBrowser')] });
+app.addStyleClass('sapUiSizeCompact').placeAt('content');
+</script>
+</head>
+
+<body class="sapUiBody" id="content">
+</body>
+
+</html>

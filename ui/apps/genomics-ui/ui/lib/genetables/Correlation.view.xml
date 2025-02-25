@@ -1,0 +1,74 @@
+<mvc:View
+	xmlns:core="sap.ui.core"
+	controllerName="hc.hph.genomics.ui.lib.genetables.Correlation"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+	xmlns:corr="hc.hph.genomics.ui.lib.genetables"
+	xmlns="sap.m"
+	xmlns:commons="sap.ui.commons"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	height="100%">
+	<html:style>
+		.sapChpGenCorrelation > .sapMPageEnableScrolling {
+			display: flex;
+			flex-direction: column;
+		}
+		
+		.sapChpGenCorrelation .sapMTB {
+			flex-shrink: 0;
+			flex-grow: 0;
+		}
+		
+		.sapChpGenCorrelation .sapMScrollCont {
+			height: 100% !important;
+		}
+	</html:style>
+	<Page showHeader="false" showNavButton="false" enableScrolling="true" backgroundDesign="Solid" class="sapChpGenCorrelation sapUiSizeCompact">
+		<Toolbar height="auto">
+			<VBox>
+				<HBox alignItems="Center">
+					<HBox>
+						<layoutData>
+							<FlexItemData growFactor="1"/>
+						</layoutData>
+						<Label text="{i18n.vb>geneCorrelation.AdjustedPValue}" tooltip="{i18n.vb>geneCorrelation.BHAdjustedPValue}"/>
+						<core:Icon src="sap-icon://message-information" tooltip="{i18n.vb>geneCorrelation.BHAdjustedPValue}" class="sapUiTinyMarginBegin"/>
+					</HBox>
+					<Input value="{/pValue}" type="Number" width="8em" change="handlePValueChange" class="sapUiTinyMarginBegin"/>
+				</HBox>
+				<HBox alignItems="Center">
+					<Label text="{i18n.vb>geneCorrelation.Threshold}">
+						<layoutData>
+							<FlexItemData growFactor="1"/>
+						</layoutData>
+					</Label>
+					<Input value="{/threshold}" type="Number" width="8em" change="handleThresholdChange" class="sapUiTinyMarginBegin"/>
+				</HBox>
+			</VBox>
+			<Slider min="{/min}" max="{/max}" value="{/threshold}" step="0.1" liveChange="handleThresholdChange"/>
+			<SegmentedButton id="visSwitch" selectedKey="{/selected}" class="sapUiSmallMargin">
+				<items>
+					<SegmentedButtonItem text="{i18n.vb>geneCorrelation.Matrix}" key="Matrix"/>
+					<SegmentedButtonItem text="{i18n.vb>geneCorrelation.Chord}" key="Circle"/>
+				</items>
+			</SegmentedButton>
+			<VBox>
+				<HBox>
+					<core:Icon src="sap-icon://color-fill" color="#427CAC" class="sapUiTinyMarginEnd"/>
+					<Text text="{i18n.vb>geneCorrelation.CoOccurrence}" wrapping="false"/>
+				</HBox>
+				<HBox>
+					<core:Icon src="sap-icon://color-fill" color="#BB0000" class="sapUiTinyMarginEnd"/>
+					<Text text="{i18n.vb>geneCorrelation.MutualExclusivity}" wrapping="false"/>
+				</HBox>
+			</VBox>
+		</Toolbar>
+
+		<ScrollContainer id="correlationLayout" horizontal="false" vertical="true">
+			<Label text="{i18n.vb>geneCorrelation.NoFilterCard}" visible="{= !${/filterCardSet}}" textAlign="Center" width="100%" class="sapUiMediumMarginTop sapUiMediumMarginBottom"/>
+			<Label text="{parts:['i18n.vb>error.XSJS','/error/message'],formatter:'jQuery.sap.formatMessage'}" visible="{= !!${/error}}" textAlign="Center" width="100%" class="sapUiMediumMarginTop sapUiMediumMarginBottom"/>
+			<corr:Matrix id="correlationVizMat" correlations="{/correlations}" min="{/threshold}" visible="{= (${/selected} === 'Matrix') &amp;&amp; (${/filterCardSet})}"/>
+			<corr:Circle id="correlationVizCcl" correlations="{/correlations}" min="{/threshold}" visible="{= (${/selected} === 'Circle') &amp;&amp; (${/filterCardSet})}"/>
+		</ScrollContainer>
+	</Page>
+</mvc:View>

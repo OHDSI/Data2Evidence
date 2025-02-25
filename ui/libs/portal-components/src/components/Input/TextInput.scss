@@ -1,0 +1,11 @@
+.alp-text-input {
+  &--no-label {
+    &.input.sc-d4l-input {
+      margin-top: 0;
+    }
+  }
+
+  .sc-d4l-input.input__element {
+    padding: 4px 0 6px;
+  }
+}

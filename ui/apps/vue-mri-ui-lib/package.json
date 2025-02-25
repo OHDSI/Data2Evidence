@@ -1,0 +1,121 @@
+{
+  "name": "vue-mri",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "__VUE_PROD_DEVTOOLS__=true vue-cli-service serve --port 8081",
+    "upgrade": "vue-cli-service upgrade",
+    "build": "vue-cli-service build",
+    "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "test:unit": "vue-cli-service test:unit",
+    "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""
+  },
+  "dependencies": {
+    "@d4l/web-components-library": "3.15.1",
+    "@vue/compat": "3.2.47",
+    "axios": ">=0.21.2",
+    "bootstrap-vue": "2.23.1",
+    "canvg": "^3.0.7",
+    "d3": "3.5.17",
+    "file-saver": "1.3.3",
+    "fuse.js": "^6.6.2",
+    "jquery": "^3.5.1",
+    "jsonwebtoken": "^9.0.0",
+    "jspdf": "2.3.1",
+    "jszip": "3.10.1",
+    "lodash": "^4.17.21",
+    "normalizr": "3.2.4",
+    "pako": "1.0.11",
+    "plotly.js": "^2.14.0",
+    "process": "^0.11.10",
+    "splitpanes": "^2.4.1",
+    "stream-browserify": "^3.0.0",
+    "underscore": "^1.12.1",
+    "vue": "3.2.47",
+    "vue-bootstrap-datetimepicker": "5.0.0",
+    "vue-multiselect": "2.1.0",
+    "vue-slider-component": "2.5.8",
+    "vuedraggable": "2.24.3",
+    "vuex": "4.1.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/jspdf": "^1.1.31",
+    "@types/node": "^14",
+    "@types/pako": "^1.0.0",
+    "@types/plotly.js": "^2.12.18",
+    "@types/underscore": "^1.10.0",
+    "@vue/babel-preset-app": "5.0.8",
+    "@vue/cli-plugin-babel": "5.0.8",
+    "@vue/cli-plugin-typescript": "5.0.8",
+    "@vue/cli-plugin-unit-jest": "5.0.8",
+    "@vue/cli-service": "5.0.8",
+    "@vue/test-utils": "2",
+    "@vue/vue3-jest": "27",
+    "babel-core": "7.0.0-bridge.0",
+    "fflate": "0.7.4",
+    "jest": "27.1.0",
+    "jest-environment-jsdom": "27.1.0",
+    "jest-junit": "^5.1.0",
+    "process": "^0.11.10",
+    "sass": "^1.32.8",
+    "sass-loader": "^13.0.0",
+    "stream-browserify": "^3.0.0",
+    "streamsaver": "2.0.6",
+    "ts-jest": "27",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "4.4.4",
+    "vue-server-renderer": "2.6.14"
+  },
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8",
+    "not op_mob >= 1"
+  ],
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "vue",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.vue$": "@vue/vue3-jest",
+      ".+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$": "jest-transform-stub",
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "snapshotSerializers": [
+      "jest-serializer-vue"
+    ],
+    "testURL": "http://localhost/",
+    "testMatch": [
+      "**/__tests__/*.ts"
+    ],
+    "setupFiles": [
+      "./jest.setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "src/**/*.vue",
+      "!src/**/*.d.ts"
+    ],
+    "coverageReporters": [
+      "cobertura",
+      "html",
+      "text"
+    ],
+    "testEnvironment": "jsdom"
+  }
+}

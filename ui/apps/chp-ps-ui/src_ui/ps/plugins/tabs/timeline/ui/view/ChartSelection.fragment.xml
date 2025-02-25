@@ -1,0 +1,24 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Popover placement="Right" showHeader="false" contentWidth="150px" horizontalScrolling="false" modal="false">
+        <Text
+            class="sapUiSmallMargin"
+            text="{i18n>HPH_PAT_CONTENT_CHOOSE_VISUALIZATION}"
+            textAlign="Center"
+            wrapping="true"/>
+        <SegmentedButton
+            class="sapUiTinyMarginBegin sapUiTinyMarginBottom sapTlTimelineLaneChartSelectionButtons"
+            selectedKey="{mode}"
+            width="100%">
+            <items>
+                <SegmentedButtonItem
+                    icon="sap-icon://horizontal-grip"
+                    key="Dot"
+                    tooltip="{i18n>HPH_PAT_CONTENT_DOT_CHART_TOOLTIP}"/>
+                <SegmentedButtonItem
+                    icon="sap-icon://line-charts"
+                    key="Line"
+                    tooltip="{i18n>HPH_PAT_CONTENT_LINE_CHART_TOOLTIP}"/>
+            </items>
+        </SegmentedButton>
+    </Popover>
+</core:FragmentDefinition>

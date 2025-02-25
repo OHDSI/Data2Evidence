@@ -1,0 +1,167 @@
+{
+    "plugin_name": "PS_PLUGINS_TABS_MAST_NAME",
+    "plugin_description": "PS_PLUGINS_TABS_MAST_DESC",
+    "languages": ["en", "de", "fr"],
+    "language_textbundle": "i18n/text.properties",
+    "extensions": [{
+        "extension_header": {
+            "extension_point_id": "sap.hc.hph.patient.app.tab",
+            "extension_point_version": "1.1",
+            "extension_id": "sap.hc.hph.patient.plugins.tabs.masterdata",
+            "extension_name": "PS_PLUGINS_TABS_MAST_EXTN_NAME",
+            "extension_alias": "PS_PLUGINS_TABS_MAST_EXTN_ALIAS",
+            "extension_description": "PS_PLUGINS_TABS_MAST_EXTN_DESC"
+        },
+        "extension_contribution": {
+            "annotations": [
+                "ps_mast_city",
+                "ps_mast_street",
+                "ps_mast_region",
+                "ps_mast_state",
+                "ps_mast_zip",
+                "ps_mast_country",
+                "ps_mast_phone",
+                "ps_mast_language",
+                "ps_mast_nationality",
+                "ps_mast_confession",
+                "ps_mast_plb",
+                "ps_mast_poc_firstname",
+                "ps_mast_poc_lastname",
+                "ps_mast_poc_street",
+                "ps_mast_poc_zip",
+                "ps_mast_poc_city",
+                "ps_mast_poc_phone",
+                "ps_mast_poc_degree",
+                "ps_mast_phys_title",
+                "ps_mast_phys_firstname",
+                "ps_mast_phys_lastname",
+                "ps_mast_phys_street",
+                "ps_mast_phys_zip",
+                "ps_mast_phys_city",
+                "ps_mast_phys_phone",
+                "ps_mast_trustee",
+                "ps_mast_gender",
+                "ps_mast_social_security_number",
+                "ps_mast_additional_insurances"
+            ],
+            "key": "masterdata",
+            "namespace": "sap.hc.hph.patient.plugins.tabs.masterdata.ui",
+            "path": "/sap/hc/hph/patient/plugins/tabs/masterdata/ui",
+            "settings": {
+                "layout": [
+                    {
+                        "title": "Adresse",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_street}}"
+                            },
+                            {
+                                "pattern": "{{ps_mast_zip}} {{ps_mast_city}}"
+                            },
+                            {
+                                "pattern": "Tel.: {{ps_mast_phone}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Kontaktperson",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_poc_firstname}} {{ps_mast_poc_lastname}}"
+                            },
+                            {
+                                "pattern": "Tel.: {{ps_mast_poc_phone}}"
+                            },
+                            {
+                                "pattern": "Verwandtschaftsgrad: {{ps_mast_poc_degree}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Hausarzt",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_phys_title}} {{ps_mast_phys_firstname}} {{ps_mast_phys_lastname}}"
+                            },
+                            {
+                                "pattern": "{{ps_mast_phys_street}}"
+                            },
+                            {
+                                "pattern": "{{ps_mast_phys_zip}} {{ps_mast_phys_city}}"
+                            },
+                            {
+                                "pattern": "Tel.: {{ps_mast_phys_phone}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Geschlecht",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_gender}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Sprache",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_language}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Nationalität",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_nationality}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Konfession",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_confession}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Sachwalterschaft",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_trustee}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Pförtnersperre",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_plb}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Sozialversicherungsnummer",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_social_security_number}}"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Zusatzversicherungen",
+                        "entries": [
+                            {
+                                "pattern": "{{ps_mast_additional_insurances}}"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "stretchContent": true,
+            "urlParams": []
+        }
+    }]
+}

@@ -1,0 +1,122 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.InspectorTabsTab" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" xmlns:core="sap.ui.core" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1">
+    <f:Form editable="true">
+        <f:layout>
+            <f:ResponsiveGridLayout labelSpanL="2" labelSpanM="3" columnsL="1" />
+        </f:layout>
+        <f:FormContainer title="{i18n>HPH_PAT_CFG_EXTENSION_TABS}" formElements="{analyticsModel>config/inspectorOptions/tabExtensions}" visible="{= ${analyticsModel>config/inspectorOptions/tabExtensions/length} > 0}">
+            <f:FormElement>
+                <f:label>
+                    <Label text="{analyticsModel>alias}" tooltip="{analyticsModel>name}" />
+                </f:label>
+                <FlexBox tooltip="{= ${analyticsModel>enabled} ? '' : ${i18n>HPH_PAT_CFG_EXTENSION_TABS_DISABLED_SWITCH_OFF_TOOLTIP}}" width="0">
+                    <Switch enabled="{analyticsModel>enabled}" state="{analyticsModel>visible}" />
+                </FlexBox>
+            </f:FormElement>
+        </f:FormContainer>
+        <f:FormContainer title="{i18n>HPH_PAT_CFG_EXTENSION_WIDGETS}" formElements="{analyticsModel>config/inspectorOptions/widgetExtensions}" visible="{= ${analyticsModel>config/inspectorOptions/widgetExtensions/length} > 0}">
+            <f:FormElement>
+                <f:label>
+                    <Label text="{analyticsModel>alias}" tooltip="{analyticsModel>name}" />
+                </f:label>
+                <FlexBox tooltip="{= ${analyticsModel>enabled} ? '' : ${i18n>HPH_PAT_CFG_EXTENSION_WIDGETS_DISABLED_SWITCH_OFF_TOOLTIP}}" width="0">
+                    <Switch enabled="{analyticsModel>enabled}" state="{analyticsModel>visible}" />
+                </FlexBox>
+            </f:FormElement>
+        </f:FormContainer>
+        <f:FormContainer title="{i18n>HPH_PAT_CFG_TL_QUICK_ZOOM_OPTIONS}">
+            <f:FormElement>
+                <l:Grid vSpacing="0" >
+                    <l:content>
+                        <Label text="{i18n>HPH_PAT_CFG_TL_SELECT_INITIAL_QUICK_ZOOM}">
+                            <layoutData>
+                                <l:GridData span="L1 M1 S4" />
+                            </layoutData>
+                        </Label>
+                        <Label text="{i18n>HPH_PAT_CFG_TL_SELECT_QUICK_ZOOM_OPTIONS}">
+                            <layoutData>
+                                <l:GridData span="L11 M11 S8" />
+                            </layoutData>
+                        </Label>
+
+                        <!-- Left Zoom -->
+                        <RadioButton
+                            select="setInitialZoom"
+                            selected="{= ${analyticsModel>config/inspectorOptions/timeline/zoom/initialZoom} === 'leftZoom' }"
+                            id="leftZoom"
+                            app:key="leftZoom">
+                            <layoutData>
+                                <l:GridData span="L1 M1 S4" linebreak="true" />
+                            </layoutData>
+                        </RadioButton>
+                        <Select
+                            width="200px"
+                            items="{zoomModel>/timeBasedZoomOptions}"
+                            selectedKey="{analyticsModel>config/inspectorOptions/timeline/zoom/leftZoom}">
+                            <core:Item
+                                key="{zoomModel>key}"
+                                text="{path: 'zoomModel>name', formatter: '.formatZoomText'}"
+                                enabled="{= ${analyticsModel>config/inspectorOptions/timeline/zoom/middleZoom} !== ${zoomModel>key} }"
+                            />
+                            <layoutData>
+                                <l:GridData span="L11 M11 S8" />
+                            </layoutData>
+                        </Select>
+
+                        <!-- Middle Zoom -->
+                        <RadioButton
+                            select="setInitialZoom"
+                            selected="{= ${analyticsModel>config/inspectorOptions/timeline/zoom/initialZoom} === 'middleZoom' }"
+                            id="middleZoom"
+                            app:key="middleZoom">
+                            <layoutData>
+                                <l:GridData span="L1 M1 S4"  linebreak="true"/>
+                            </layoutData>
+                        </RadioButton>
+                        <Select
+                            width="200px"
+                            items="{zoomModel>/timeBasedZoomOptions}"
+                            selectedKey="{analyticsModel>config/inspectorOptions/timeline/zoom/middleZoom}">
+                            <core:Item
+                                key="{zoomModel>key}"
+                                text="{path: 'zoomModel>name', formatter: '.formatZoomText'}"
+                                enabled="{= ${analyticsModel>config/inspectorOptions/timeline/zoom/leftZoom} !== ${zoomModel>key} }"
+                                />
+                            <layoutData>
+                                <l:GridData span="L11 M11 S8" />
+                            </layoutData>
+                        </Select>
+
+                        <!-- Right Zoom -->
+                        <RadioButton
+                            select="setInitialZoom"
+                            selected="{= ${analyticsModel>config/inspectorOptions/timeline/zoom/initialZoom} === 'rightZoom' }"
+                            id="rightZoom"
+                            app:key="rightZoom">
+                            <layoutData>
+                                <l:GridData span="L1 M1 S4"  linebreak="true"/>
+                            </layoutData>
+                        </RadioButton>
+                        <Select
+                            width="200px"
+                            items="{zoomModel>/dataBasedZoomOptions}"
+                            selectedKey="{analyticsModel>config/inspectorOptions/timeline/zoom/rightZoom}">
+                            <core:Item
+                                key="{zoomModel>key}"
+                                text="{path: 'zoomModel>name', formatter: '.formatZoomText'}"
+                                tooltip="{path: 'zoomModel>key', formatter: '.formatDatabasedTooltip'}"
+                            />
+                            <layoutData>
+                                <l:GridData span="L4 M6 S8" />
+                            </layoutData>
+                        </Select>
+                        <Label class="sapUiTinyMarginTop" text="{path: 'analyticsModel>config/inspectorOptions/timeline/zoom/rightZoom', formatter: '.formatDatabasedTooltip'}">
+                            <layoutData>
+                                <l:GridData span="L7 M12 S12" />
+                            </layoutData>
+                        </Label>
+                    </l:content>
+                </l:Grid>
+            </f:FormElement>
+        </f:FormContainer>
+    </f:Form>
+</mvc:View>

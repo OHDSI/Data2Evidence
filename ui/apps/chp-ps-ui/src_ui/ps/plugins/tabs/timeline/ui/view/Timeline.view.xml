@@ -1,0 +1,30 @@
+<mvc:View controllerName="hc.hph.patient.plugins.tabs.timeline.ui.view.Timeline" class="sapUiSizeCompact sapPatientSummary" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:patient="sap.hc.hph.patient.app.ui.lib" xmlns:timeline="sap.hc.hph.patient.app.ui.lib.timeline" xmlns:l="sap.ui.layout">
+	<l:FixFlex class="fixFlexHorizontal sapPSTimelineToolBar" fixFirst="false" vertical="false">
+		<l:flexContent>
+            <patient:OverviewToolbar width="100%" class="sapTlOverviewToolbar sapUiSmallMarginBottom" content="{path:'/lanes', templateShareable:true}">
+                <patient:OverviewButton color="{color}" icon="sap-icon://accept" pressed="{visible}" text="{title} ({tileCount})"/>
+            </patient:OverviewToolbar>
+		</l:flexContent>
+		<l:fixContent>
+            <HBox>
+                <Label class="sapTlZoomLabel sapUiSmallMarginBegin" text="{i18n>HPH_PAT_CONTENT_TIMELINE_ZOOM}"/>
+                <SegmentedButton id="timelineQuickZoomButtons" select=".quickZoomPressed" selectedKey="{/inspectorOptions/timeline/zoom/initialZoom}">
+                    <items>
+                        <SegmentedButtonItem width="auto" text="{path: '/inspectorOptions/timeline/zoom/leftZoom', formatter: '.formatTimeZoomKey'}" key="leftZoom" />
+                        <SegmentedButtonItem width="auto" text="{path: '/inspectorOptions/timeline/zoom/middleZoom', formatter: '.formatTimeZoomKey'}" key="middleZoom" />
+                        <SegmentedButtonItem width="auto" tooltip="{path: '/inspectorOptions/timeline/zoom/rightZoom', formatter: '.formatDatabasedTooltip'}"
+                            text="{path: '/inspectorOptions/timeline/zoom/rightZoom', formatter: '.formatDatabasedZoomKey'}" key="rightZoom" />
+                    </items>
+                </SegmentedButton>
+            </HBox>
+		</l:fixContent>
+    </l:FixFlex>
+    <timeline:Timeline id="timeline" dateOfBirth="{/masterdata/dob}" dateOfDeath="{/masterdata/dod}" dateRangeMax="{/timeline/max}" dateRangeMin="{/timeline/min}" timelineZoomControlUpdate=".onTimelineZoomControlUpdate" zoomLowerEdge="{/timeline/zoomLowerEdge}" zoomUpperEdge="{/timeline/zoomUpperEdge}" lanes="{path: '/lanes', factory: '.createLane'}" showDatelessInteractions="{/timeline/showDatelessInteractions}"
+        todayText="{i18n>HPH_PAT_CONTENT_TODAY_LABEL}" todayTooltip="{i18n>HPH_PAT_CONTENT_TODAY_TOOLTIP}" dateOfBirthText="{i18n>HPH_PAT_CONTENT_DOB_LABEL}" dateOfBirthTooltip="{i18n>HPH_PAT_CONTENT_DOB_TOOLTIP}"  dateOfDeathText="{i18n>HPH_PAT_CONTENT_DOD_LABEL}" dateOfDeathTooltip="{i18n>HPH_PAT_CONTENT_DOD_TOOLTIP}" datelessInteractionsTooltip="{i18n>HPH_PAT_CONTENT_DATELESS_SECTION_HEADER_TOOLTIP}">
+        <timeline:minimap>
+            <timeline:Minimap lanes="{path: '/lanes'}" dateOfBirth="{/masterdata/dob}" dateOfDeath="{/masterdata/dod}">
+                <timeline:MinimapLane visible="{visible}" data="{tiles/dated}" startColumn="start" endColumn="end" color="{color}"/>
+            </timeline:Minimap>
+        </timeline:minimap>
+    </timeline:Timeline>
+</mvc:View>

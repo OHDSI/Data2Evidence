@@ -1,0 +1,12 @@
+.chart__container {
+  display: grid;
+  gap: 24px;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.info__section {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}

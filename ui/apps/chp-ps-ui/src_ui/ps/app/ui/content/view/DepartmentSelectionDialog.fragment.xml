@@ -1,0 +1,5 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <SelectDialog noDataText="{i18n>HPH_PAT_CONTENT_DEPARTMENT_SELECTION_DIALOG_NO_DATA}" items="{/}" growingThreshold="50" title="{i18n>HPH_PAT_CONTENT_DEPARTMENT_SELECTION_DIALOG_TITLE}" confirm=".onDepartmentSelected" search=".onDepartmentSearched" liveChange=".onDepartmentSearched">
+            <StandardListItem title="{DISPLAY_NAME}" description="{DESCRIPTION}" iconDensityAware="false" iconInset="false" type="Active" visible="{LIST_WHEN_EMPTY}" />
+    </SelectDialog>
+</core:FragmentDefinition>

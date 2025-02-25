@@ -1,0 +1,13 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:ffh="sap.hc.hph.core.ui">
+    <ffh:ConfigDialog title="{i18n>MRI_PA_CONFIG_SELECTION_DIALOG_TITLE}" beforeClose="onDialogClose">
+        <List includeItemInSelection="true" mode="SingleSelectLeft" items="{/configs}">
+            <StandardListItem description="{meta/configName}" selected="{selected}" title="{meta/assignmentName}" />
+        </List>
+        <ffh:footer>
+            <CheckBox selected="{/default}" text="{i18n>MRI_PA_CONFIG_SELECTION_AS_DEFAULT}" />
+            <ToolbarSpacer />
+            <Button text="{i18n>MRI_PA_BUTTON_OK}" press="onConfigSelected" />
+            <Button text="{i18n>MRI_PA_BUTTON_CANCEL}" press="onClosePressed" />
+        </ffh:footer>
+    </ffh:ConfigDialog>
+</core:FragmentDefinition>

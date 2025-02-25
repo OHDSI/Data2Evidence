@@ -1,0 +1,107 @@
+@import './mri-variables';
+@import './mri-bootstrap-variables';
+@import './mixins';
+
+div.app-range,
+div.app-variant-range {
+  height: auto !important;
+  font-size: $font-size-sm !important;
+  min-height: $input-height !important;
+  border-radius: 0px !important;
+  width: 100%;
+  width: 100%;
+  background-color: $UiLightestBG;
+
+  &.form-control {
+    border-color: $MriDropDownBorderLight;
+  }
+
+  input {
+    border: 0px;
+    outline: none;
+    display: inline;
+  }
+
+  @include mriHoverable;
+
+  .MriPaToken {
+    @include mriTagFocus;
+    text-align: left;
+    white-space: normal;
+    display: inline-block;
+    overflow: hidden;
+    padding-left: 4px;
+    margin-bottom: -2px;
+    margin-right: 4px;
+    margin-top: 2px;
+    border-radius: 0.125rem;
+    border: 1px $MriTokenValidSyntaxBorder solid;
+    font-size: 0.76563rem;
+    font-weight: bold;
+    .tokenText {
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .tokenIcon {
+      padding: 0.1rem 0.25rem;
+      font-size: 9px;
+      cursor: pointer;
+    }
+    .tokenIcon:hover {
+      opacity: 0.7;
+    }
+  }
+
+  .MriPaFailToken,
+  .MriPaFilterCard .sapMToken.MriPaFailToken:hover {
+    color: $MriLightestText;
+    background-color: $MriTokenInvalidBG;
+    border-color: $MriTokenInvalidBorder;
+    cursor: default;
+  }
+  .MriPaValidToken,
+  .MriPaFilterCard .sapMToken.MriPaValidToken:hover {
+    border-color: $MriTokenValidSyntaxBorder;
+    color: $MriSelectTokenValidTextDark;
+    background-color: $MriSelectTokenValidBGLight;
+    cursor: default;
+  }
+  .MriPaUnknownToken,
+  .MriPaFilterCard .sapMToken.MriPaUnknownToken:hover {
+    color: $MriLightestText;
+    background-color: $MriTokenPendingBG;
+    border-color: $MriTokenPendingBorder;
+    cursor: default;
+  }
+  .MriPaValidToken .sapMTokenIcon[style],
+  .MriPaFailToken .sapMTokenIcon[style],
+  .MriPaUnknownToken .sapMTokenIcon[style] {
+    cursor: pointer !important;
+  }
+  .MriPaFailToken .sapMTokenIcon:hover,
+  .MriPaValidToken .sapMTokenIcon:hover,
+  .MriPaUnknownToken .sapMTokenIcon:hover {
+    opacity: 0.7;
+  }
+  .MriPaValidToken span.sapMTokenIcon {
+    color: $MriValidSyntaxText;
+    cursor: pointer;
+  }
+  .MriPaFailToken span.sapMTokenIcon,
+  .MriPaUnknownToken span.sapMTokenIcon {
+    color: $MriLightestText;
+    cursor: pointer;
+  }
+  .MriPaFailToken .sapMTokenText:after {
+    content: ' !';
+  }
+  .MriPaUnknownToken .sapMTokenText:after {
+    content: ' ?';
+  }
+  .sapTagSelected,
+  .sapMTokenSelected {
+    -webkit-box-shadow: inset 0px 0px 0px 2px #001a60;
+    -moz-box-shadow: inset 0px 0px 0px 2px #001a60;
+    box-shadow: inset 0px 0px 0px 2px #001a60;
+  }
+}

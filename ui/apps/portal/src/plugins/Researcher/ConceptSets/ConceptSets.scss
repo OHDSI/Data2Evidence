@@ -1,0 +1,51 @@
+.concept-sets {
+  padding: 32px;
+  background-color: #F2F0F1;
+  height: 100%;
+
+  &__content {
+    height: inherit;
+    border-radius: 18px;
+    padding: 10px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__break {
+    opacity: 0.5;
+    border-top: solid 1px #acaba8;
+    margin: 0 -10px 0 -10px;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
+    margin-top: 5px;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  &__search {
+    display: flex;
+  }
+
+  &__table {
+    margin-top: 10px;
+    .MuiTable-root {
+      border: 1px solid #dad7d7;
+    }
+    .MuiTableRow-root {
+      border: 1px solid #dad7d7;
+    }
+
+    .MuiTableCell-root {
+      line-height: normal;
+      padding: 6px;
+    }
+  }
+}

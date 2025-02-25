@@ -1,0 +1,16 @@
+<mvc:View
+    controllerName="sap.hc.mri.pa.ui.views.VuePatientListChart"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns="sap.m"
+    xmlns:commons="sap.ui.commons"
+    xmlns:appdata="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+    height="100%">
+    <Page
+        id="mriPLCohorts"
+        showHeader="false"
+        showNavButton="false"
+        enableScrolling="false"
+        backgroundDesign="Solid">
+    </Page>
+</mvc:View>

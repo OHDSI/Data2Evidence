@@ -1,0 +1,27 @@
+{
+	"_version": "1.0.0",
+	"sap.app": {
+		"id": "approuter",
+		"type": "application"
+	},
+	"sap.ui": {
+		"_version": "1.0.0",
+		"supportedThemes": [
+			"sap_belize"
+		]
+	},
+	"sap.ui5": {
+		"_version": "1.0.0",
+		"dependencies": {
+			"libs": {
+				"sap.ui.core": {},
+				"sap.m": {},
+				"sap.ui.unified": {},
+                "sap.ui.commons": {},
+                "sap.ui.layout": {},
+                "sap.ui.table": {},
+                "sap.ui.ux3": {}
+			}
+		}
+	}
+}

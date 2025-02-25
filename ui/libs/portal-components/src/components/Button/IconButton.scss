@@ -1,0 +1,15 @@
+.alp-icon-button {
+  &:disabled {
+    svg > * {
+      fill: #ACABA8;
+    }
+  }
+
+  &--icon-only {
+    min-width: auto !important;
+
+    > .MuiButton-startIcon {
+      margin: 0;
+    }
+  }
+}

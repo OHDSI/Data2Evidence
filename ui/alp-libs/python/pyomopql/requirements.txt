@@ -1,0 +1,3 @@
+hdbcli==2.12.20
+python-dotenv==0.20.0
+pandas~=1.3

@@ -1,0 +1,35 @@
+<mvc:View controllerName="hc.hph.patient.app.ui.content.view.Content" class="sapUiSizeCompact sapPatientSummary" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:tab="hc.hph.patient.app.ui.lib.tab" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" height="100%">
+    <FlexBox visible="{=${state>/error}!==''}" height="100%" alignItems="Center" justifyContent="Center">
+        <items>
+            <core:Icon class="sapUiTinyMargin" src="sap-icon://error"/>
+            <Text width="100%" wrapping="true" text="{state>/error}"/>
+        </items>
+    </FlexBox>
+    <tab:ScrollContainer id="scrollContainer" class="sapPSScrollContainer" visible="{=${state>/error}===''}" busy="{state>/busy}" height="100%" vertical="true" stretchContent="{parts: ['state>/tab','tabExt>/'], formatter: '.formatterStretchContent'}">
+        <FlexBox class="sapPSHeader" alignItems="Start" justifyContent="Start" items="{widgetExt>/}">
+            <tab:WidgetExtension
+                extensionConfig="{widgetExt>config}"
+                patientData="{patient>/}"
+                config="{config>/}"
+                userState="{widgetExt>userState}"
+                urlParams="{widgetExt>urlParams}"
+                minimized="{state>/minimizedHeader}"/>
+        </FlexBox>
+        <HBox justifyContent="End" class="sapPSMinimizer">
+            <Link text="{=${state>/minimizedHeader}?${i18n>HPH_PAT_HEADER_MAXIMIZE_BUTTON}:${i18n>HPH_PAT_HEADER_MINIMIZE_BUTTON}}" class="sapUiTinyMarginEnd" press="toggleMinimized"/>
+            <Link text="{path: 'state>/minimizedHeader', formatter: '.formatterMinimizedIcon'}" class="sapPSMinimizeIcon" press="toggleMinimized"/>
+        </HBox>
+        <IconTabBar id="patientIconTabBar" class="sapUiResponsiveContentPadding" items="{tabExt>/}" selectedKey="{state>/tab}" stretchContentHeight="false" applyContentPadding="false" expandable="false">
+            <items>
+                <tab:TabExtension
+                    key="{tabExt>config/key}"
+                    extensionConfig="{tabExt>config}"
+                    patientData="{patient>/}"
+                    config="{config>/}"
+                    meta="{meta>/}"
+                    userState="{tabExt>userState}"
+                    urlParams="{tabExt>urlParams}"/>
+            </items>
+        </IconTabBar>
+    </tab:ScrollContainer>
+</mvc:View>

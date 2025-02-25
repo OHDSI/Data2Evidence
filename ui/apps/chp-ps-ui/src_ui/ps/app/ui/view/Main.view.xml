@@ -1,0 +1,15 @@
+<mvc:View controllerName="hc.hph.patient.app.ui.view.Main" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc">
+    <Page id="idAppPatientSummary" class="sapUiFioriObjectPage" showNavButton="true" title="{i18n>HPH_PAT_APP_TITLE}" navButtonPress=".handleNavButtonPress">
+        <headerContent>
+            <Button icon="{= ${/appWidthLimited} ? 'sap-icon://full-screen' : 'sap-icon://exit-full-screen'}" tooltip="{= ${/appWidthLimited} ? ${i18n>HPH_PAT_SAVE_ENTER_FULLSCREEN} : ${i18n>HPH_PAT_EXIT_FULLSCREEN}}" press=".onFullScreenPress" />
+        </headerContent>
+        <core:ComponentContainer id="contentContainer" name="sap.hc.hph.patient.app.ui.content" settings="{/settings}" height="100%"/>
+        <footer>
+            <OverflowToolbar>
+                <Button enabled="{/dataLoaded}" text="{i18n>HPH_PAT_RESET_SETTINGS}" press="handleResetSettings" tooltip="{i18n>HPH_PAT_RESET_SETTINGS_TOOLTIP}" />
+                <ToolbarSpacer />
+                <Button enabled="{/dataLoaded}" icon="sap-icon://add-favorite" text="{i18n>HPH_PAT_SAVE_AS_TILE}" press="handleSaveAsTilePressed" tooltip="{i18n>HPH_PAT_SAVE_AS_TILE_TOOLTIP}"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

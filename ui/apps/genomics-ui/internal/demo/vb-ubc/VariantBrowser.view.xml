@@ -1,0 +1,65 @@
+<mvc:View
+	controllerName="hc.hph.genomics.internal.demo.vb-ubc.VariantBrowser"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:lib="hc.hph.genomics.ui.lib"
+	xmlns:int="hc.hph.genomics.internal.ui.lib"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	xmlns="sap.m"
+	xmlns:commons="sap.ui.commons"
+	height="100%">
+	<Page
+		title="Variants"
+		showHeader="true"
+		showNavButton="false"
+		enableScrolling="false"
+		backgroundDesign="Solid">
+		<headerContent>
+			<Button icon="sap-icon://search" visible="true" press="handleSearchPopover"></Button>
+			<Button icon="sap-icon://save" visible="true" press="handleSave"></Button>
+		</headerContent>
+		<content>
+			<lib:VariantBrowser preRequestPlugin="vb.TrackGroups.getSessionGroups" validationPlugin="internal.validate" validationParameters="{pruneOdd:true}" parameters="{reference:'HA412'}" overviewArcBinSize="0.5" error="handleError">
+
+<!--
+				<lib:overviewTracks>
+					<int:vb.overview.QuantityTrack name="SNP density" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'snpden_Density'}" fillColor="#d62728" />
+					<int:vb.overview.QuantityTrack name="Pi" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'windowed_pi_Pi'}" color="#1f77b4" />
+					<int:vb.overview.QuantityTrack name="Tajima D" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'Tajima_D_Tajima_1M'}" color="#ff7f0e" />
+					<int:vb.overview.QuantityTrack name="LD" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'LD'}" minValue="0.5" color="#2ca02c" />
+				</lib:overviewTracks>
+
+				<lib:overviewCenter>
+					<int:vb.overview.LDCenter name="LD Values" initPlugin="internal.vb.OverviewLDCenter.init" parameters="{quantity:'inter_chr_LD',count:25}" />
+				</lib:overviewCenter>
+-->
+
+				<lib:overviewTracks>
+					<int:vb.overview.MinMaxQuantityTrack name="RSB" height="20" initPlugin="internal.vb.QuantityTrack.getMinMaxOverview" parameters="{quantity:'rsb_Oil_nonOil'}" minColor="#d62728" maxColor="#d62728" />
+					<int:vb.overview.QuantityTrack name="FST" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'weir_fst_Oil'}" color="#ff7f0e" />
+					<int:vb.overview.QuantityTrack name="pi oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'windowed_pi_Oil'}" color="#1f77b4" />
+					<int:vb.overview.QuantityTrack name="pi non-oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'windowed_pi_nonOil'}" color="#aec7e8" />
+					<int:vb.overview.QuantityTrack name="rho oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'rho_Oil_100k'}" minValue="0" color="#2ca02c" />
+					<int:vb.overview.QuantityTrack name="rho non-oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'rho_nonOil_100k'}" minValue="0" color="#98df8a" />
+				</lib:overviewTracks>
+
+<!--
+				<lib:overviewTracks>
+					<int:vb.overview.MinMaxQuantityTrack name="RSB" height="20" initPlugin="internal.vb.QuantityTrack.getMinMaxOverview" parameters="{quantity:'rsb_HA_RHA'}" minColor="#d62728" maxColor="#d62728" />
+					<int:vb.overview.QuantityTrack name="FST" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'weir_fst_HA'}" color="#ff7f0e" />
+					<int:vb.overview.QuantityTrack name="pi HA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'windowed_pi_HA'}" color="#1f77b4" />
+					<int:vb.overview.QuantityTrack name="pi RHA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'windowed_pi_RHA'}" color="#aec7e8" />
+					<int:vb.overview.QuantityTrack name="rho HA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'rho_HA_100k'}" minValue="0" maxValue="0.3" color="#2ca02c" />
+					<int:vb.overview.QuantityTrack name="rho RHA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'rho_RHA_100k'}" minValue="0" maxValue="0.3" color="#98df8a" />
+				</lib:overviewTracks>
+-->
+
+<!--
+					<int:vb.overview.QuantityTrack name="LD oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'LD_Oil'}" minValue="0.5" color="#2ca02c" />
+					<int:vb.overview.QuantityTrack name="LD non-oil" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'LD_nonOil'}" minValue="0.5" color="#98df8a" />
+					<int:vb.overview.QuantityTrack name="LD HA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'LD_HA'}" minValue="0.5" color="#2ca02c" />
+					<int:vb.overview.QuantityTrack name="LD RHA" height="10" initPlugin="internal.vb.QuantityTrack.getOverview" parameters="{quantity:'LD_RHA'}" minValue="0.5" color="#98df8a" />
+-->
+			</lib:VariantBrowser>
+		</content>
+	</Page>
+</mvc:View>

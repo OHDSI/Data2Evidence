@@ -1,0 +1,32 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	xmlns:l="sap.ui.layout"
+	xmlns:f="sap.ui.layout.form">
+	<Popover
+		title="{/gene1}&#x2009;&#x2013;&#x2009;{/gene2}"
+		class="sapUiContentPadding"
+		placement="Auto">
+		
+		<l:VerticalLayout>
+			<Label text="{i18n.vb>geneCorrelation.Relationship}"/>
+			<Text text="{i18n.vb>geneCorrelation.CoOccurrence}" visible="{= ${/trend} === 'co-occurrence' }"/>
+			<Text text="{i18n.vb>geneCorrelation.MutualExclusivity}" visible="{= ${/trend} === 'mutual exclusivity' }"/>
+			
+			<Label text="{i18n.vb>geneCorrelation.BHAdjustedPValue}" class="sapUiTinyMarginTop"/>
+			<Text text="{= (Math.round(${/BHadjustedPValue} * 100000000) / 100000000) === 0 ? '&lt; 0.00000001' : (Math.round(${/BHadjustedPValue} * 100000000) / 100000000)}"/>
+			
+			<Label text="{i18n.vb>geneCorrelation.BfAdjustedPValue}" class="sapUiTinyMarginTop"/>
+			<Text text="{= (Math.round(${/BonfAdjustedPValue} * 100000000) / 100000000) === 0 ? '&lt; 0.00000001' : (Math.round(${/BonfAdjustedPValue} * 100000000) / 100000000)}"/>
+			
+			<Label text="{i18n.vb>geneCorrelation.PValue}" class="sapUiTinyMarginTop"/>
+			<Text text="{= (Math.round(${/origPValue} * 100000000) / 100000000) === 0 ? '&lt; 0.00000001' : (Math.round(${/origPValue} * 100000000) / 100000000)}"/>
+
+			<Label text="{i18n.vb>geneCorrelation.LogPValue}" class="sapUiTinyMarginTop"/>
+			<Text text="{= (Math.round(${/value} * 1000) / 1000) === 99 ? '&gt; 99' : (Math.round(${/value} * 1000) / 1000)}"/>
+
+			<Label text="{i18n.vb>geneCorrelation.LogOddsRatio}" class="sapUiTinyMarginTop"/>
+			<Text text="{= Math.round(${/logOddsRatio} * 1000) / 1000}"/>
+		</l:VerticalLayout>
+	</Popover>
+</core:FragmentDefinition>

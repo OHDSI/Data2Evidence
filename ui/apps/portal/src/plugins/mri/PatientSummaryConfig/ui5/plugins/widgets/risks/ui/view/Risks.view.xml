@@ -1,0 +1,11 @@
+<mvc:View controllerName="hc.hph.patient.plugins.widgets.risks.ui.view.Risks" class="sapUiSizeCompact" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:risks="hc.hph.patient.plugins.widgets.risks.ui.lib" xmlns:html="http://www.w3.org/1999/xhtml">
+    <ObjectHeader class="sapPSWidget" busy="false" title="{i18n>PS_PLUGINS_WIDGETS_RISK_TITLE}" visible="{=!${_proxy_>/minimized}}">
+        <layoutData>
+            <FlexItemData growFactor="1"/>
+        </layoutData>
+        <risks:ColoredObjectAttribute title="{/entries/0/title}" text="{/entries/0/text}" color="{/entries/0/color}" tooltip="{/entries/0/title}: {/entries/0/text} ({/entries/0/dateFormatted})"/>
+        <risks:ColoredObjectAttribute title="{/entries/1/title}" text="{/entries/1/text}" color="{/entries/1/color}" tooltip="{/entries/1/title}: {/entries/1/text} ({/entries/1/dateFormatted})"/>
+        <risks:ColoredObjectAttribute title="{/entries/2/title}" text="{/entries/2/text}" color="{/entries/2/color}" tooltip="{/entries/2/title}: {/entries/2/text} ({/entries/2/dateFormatted})"/>
+        <ObjectAttribute visible="{=${/totalEntries}>3}" text="{parts: ['i18n>PS_PLUGINS_WIDGETS_RISK_MORE','/totalEntries'], formatter:'.formatMoreText'}" active="true" press="handleMorePress"/>
+    </ObjectHeader>
+</mvc:View>

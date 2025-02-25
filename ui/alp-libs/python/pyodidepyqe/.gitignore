@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Unit test / coverage reports
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+.vscode/settings.json
+setup.cfg
+.DS_Store
+
+# Packaging
+pyqe.egg-info/
+build/
+dist/
+.mypy_cache/

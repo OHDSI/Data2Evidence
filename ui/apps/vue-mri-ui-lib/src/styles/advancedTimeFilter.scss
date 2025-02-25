@@ -1,0 +1,40 @@
+@import './mri-variables';
+@import './mixins';
+.advancedtime-filter {
+  .card-header {
+    color: $MriHeaderTextDark;
+    min-height: 33px;
+    background-color: $MRICardHeaderBG;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 8px;
+    padding-right: 10px;
+    font-size: 0.875rem;
+    font-weight: bold;
+    border-bottom: 1px solid $MriCardHeaderBorder;
+
+    .app-icon {
+      color: $MriHeaderTextDark;
+    }
+  }
+  .card-body {
+    padding: 12px 20px 12px 20px !important;
+    .app-single-select + label {
+      margin: 5px 15px;
+    }
+  }
+
+  .invalidFormat .sapMInputBaseInner:not(.sapMInputBaseReadonlyInner):not(.sapMInputBaseStateInner):focus,
+  .invalidFormat
+    .sapMInputBaseInner:not(.sapMInputBaseReadonlyInner):not(.sapMInputBaseStateInner):not(.sapMInputBaseDisabledInner):hover {
+    border-color: $MriTokenInvalidBG;
+  }
+
+  .input-days {
+    @include mriHoverable;
+    margin-bottom: 10px;
+    margin-top: 5px;
+    border-radius: 0px;
+    border-color: $MriDropDownBorderLight;
+  }
+}

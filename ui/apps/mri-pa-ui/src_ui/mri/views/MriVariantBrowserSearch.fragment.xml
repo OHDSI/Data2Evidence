@@ -1,0 +1,45 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+    <Popover class="sapUiContentPadding sapUiSizeCompact" placement="Bottom" showHeader="false">
+        <content>
+            <SearchField 
+                search="handleSearch"
+                liveChange="liveTermSearch"/>
+             <List
+	            id = "searchTermsListID"
+	            headerText="{i18n.vb>search.search_history}"
+				items="{/terms}"
+				mode="SingleSelectMaster" 
+				selectionChange="handleSearch"
+				noDataText="{i18n.vb>search.no_data}"
+				growing="true"
+		        growingThreshold="5"
+		        growingScrollToLoad="true">
+				<items>
+					<StandardListItem
+						title="{searchTerm}"
+					 />
+				</items>
+			</List>
+			<List
+	            id = "filterCardListID"
+	            headerText="{i18n.vb>search.filter_cards}"
+				items="{/selectedLocations}"
+				mode="SingleSelectMaster" 
+				selectionChange="handleSearch"
+				noDataText="{i18n.vb>search.no_data}"
+				growing="true"
+		        growingThreshold="5"
+		        growingScrollToLoad="true">
+				<items>
+					<StandardListItem
+						title="{text}"
+					 />
+				</items>
+			</List>
+        </content>
+    </Popover>
+</core:FragmentDefinition>
+
+ <!--.VBSearchList{font-size:1rem !important;} -->

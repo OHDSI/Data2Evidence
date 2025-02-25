@@ -1,0 +1,31 @@
+@import './mri-variables';
+.popover-container {
+  background-color: $UiLightestBG;
+  border-radius: 2px;
+  box-shadow: 0 0 30px 2px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  border: 1px solid fade_in($UiMediumBorder, 0.6);
+
+  header {
+    color: $UiLightText;
+    border-bottom: 1px solid $UiMediumBorder;
+    background-color: $TableHeaderRowBG;
+    box-sizing: border-box;
+    width: 100%;
+
+    div {
+      padding: 4px;
+      text-align: center;
+      font-size: 0.865rem;
+
+      span {
+        line-height: 32px;
+      }
+    }
+  }
+
+  .popover-body {
+    padding: 16px;
+    font-size: 14px;
+    color: $UiLightText;
+  }
+}

@@ -1,0 +1,17 @@
+.detail__card {
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  border-top-width: 0.1px;
+  border-left-width: 0;
+  border-right-width: 0;
+  border-bottom-width: 0;
+  border-color: grey;
+  border-style: solid;
+}
+
+.detail__card > div {
+  gap: 6px;
+  width: 160px;
+  justify-content: flex-end;
+}

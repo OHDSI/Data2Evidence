@@ -1,0 +1,6 @@
+<mvc:View class="sapUiSizeCompact" width="25rem" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:html="http://www.w3.org/1999/xhtml">
+    <ObjectHeader id="patientHeaderMinimized" title="{/title/0/text}" class="sapPSMasterWidgetMinimized" visible="{_proxy_>/minimized}" condensed="true"/>
+    <ObjectHeader id="patientHeader" title="{/title/0/text}" attributes="{/details}" visible="{=!${_proxy_>/minimized}}">
+        <ObjectAttribute text="{text}"/>
+    </ObjectHeader>
+</mvc:View>

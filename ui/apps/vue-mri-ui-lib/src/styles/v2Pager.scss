@@ -1,0 +1,31 @@
+.v2-pager-container {
+  color: $UiLightText;
+  text-align: center;
+  button {
+    margin: 0 0.3rem;
+    background-color: transparent;
+    border-style: none;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  button:focus {
+    outline: none !important;
+  }
+  button.pager-disabled {
+    color: $MriExtraLightText;
+  }
+  button.pager-nav {
+    padding: 0 8px;
+  }
+  button.pager-nav:not(.pager-disabled):hover {
+    color: $MriLightestText;
+    background-color: $MriButtonHover;
+  }
+  button.current-page-button {
+    border-bottom: 1px solid;
+  }
+  button.page-button:hover {
+    color: $MriLightestText;
+    background-color: $MriButtonHover;
+  }
+}

@@ -1,0 +1,121 @@
+@import './mri-variables';
+@import './mixins';
+
+.chartToolbar-main-container,
+.filters-toolbar {
+  align-items: center;
+  display: flex;
+  border-bottom: 1px solid $UiMediumBorder;
+  height: 40px;
+  width: 100%;
+  .spacer {
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 4px;
+  }
+  .actionButton {
+    @include mriActionButtonHoverable;
+    color: $MriHeaderTextDark;
+    outline: none;
+    background: none;
+    border: none;
+    padding-left: 8px;
+    padding-right: 8px;
+    height: 30px;
+    width: 33px;
+    cursor: pointer;
+  }
+  .actionButton.actionButtonDisabled {
+    color: $MriDisabledText;
+    background: none;
+    cursor: default;
+  }
+  .actionButton.actionButtonDisabled .icon {
+    cursor: default;
+  }
+  .actionButton.actionButtonDisabled:hover {
+    outline: none;
+    background: none;
+    color: $MriDisabledText;
+    cursor: default;
+  }
+  .actionButton {
+    .icon .app-icon {
+      font-size: 16px;
+      margin-top: 1px;
+      font-weight: normal;
+      text-align: center;
+      display: inline-block;
+      vertical-align: baseline;
+    }
+  }
+  .separator {
+    padding-right: 10px;
+  }
+  .chartSeparator {
+    width: 25px;
+  }
+
+  .nav .separator {
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+
+  .disclaimerMessage {
+    .icon {
+      margin-right: 12px;
+      font-style: normal;
+    }
+    text-align: left;
+    font-style: italic;
+    color: $UiLightText;
+    padding-top: 10px;
+    border-top: 2px solid $UiMediumBorder;
+    font-size: 12px;
+    vertical-align: middle;
+    line-height: 18px;
+    display: flex;
+  }
+}
+.chartToolbar-main-container {
+  min-width: map-get($mriScreen, min-chart-width);
+  justify-content: space-between;
+  top: 0px;
+  
+  .vertical-spacer {
+    width: 2px;
+    height: 28px;
+    margin: 0 20px;
+    border-radius: 1px;
+    background-color: $MriBrand;
+  }
+
+  .toolbarButton {
+    @include mriActionButtonHoverable;
+    color: $MriHeaderTextDark;
+    outline: none;
+    background: none;
+    border: none;
+    height: 30px;
+    width: 33px;
+  }
+  .toolbarButton .icon {
+    font-size: 17px;
+    font-weight: normal;
+    cursor: pointer;
+    text-align: center;
+    display: inline-block;
+    vertical-align: baseline;
+  }
+
+  .toolbarButton.toolbarButtonDisabled {
+    color: $MriDisabledText;
+    background: none;
+    cursor: default;
+    opacity: 0.6;
+  }
+  .toolbarButton.toolbarButtonDisabled .icon {
+    cursor: default;
+  }
+}

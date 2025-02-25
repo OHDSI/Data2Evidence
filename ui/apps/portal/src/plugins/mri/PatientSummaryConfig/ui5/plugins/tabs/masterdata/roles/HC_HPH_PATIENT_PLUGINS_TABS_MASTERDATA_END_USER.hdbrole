@@ -1,0 +1,4 @@
+role hc.hph.patient.plugins.tabs.masterdata.roles::HC_HPH_PATIENT_PLUGINS_TABS_MASTERDATA_END_USER
+{
+    application privilege: hc.hph.patient.plugins.tabs.masterdata::EndUser;
+}

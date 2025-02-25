@@ -1,0 +1,481 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.Attribute" 
+    width="100%" 
+    height="100%" 
+    xmlns="sap.m" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:l="sap.ui.layout" 
+    xmlns:html="http://www.w3.org/1999/xhtml" 
+    xmlns:m="hc.hph.cdw.config.ui.lib" 
+    xmlns:c="sap.ui.commons" 
+    xmlns:core="sap.ui.core">
+    <l:VerticalLayout>
+        <l:content>
+            <FlexBox alignItems="Center" 
+                justifyContent="Center">
+                <Label class="sapMxConfigPropLabel sapMxConfigSectionTitle" 
+                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DETAILS}" 
+                    text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DETAILS}"></Label>
+            </FlexBox>
+
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NAME}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NAME}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>name/validity/message}" 
+                tooltip="{configEditorModel>name/validity/message}" 
+                status="{configEditorModel>name/validity/status}"></m:ValidityVisualElement>
+            <Input class="sapTriggerSave sapMxConfigProp" 
+                value="{configEditorModel>name/value}" 
+                id="attrName" 
+                enabled="{editableModel>/editable}" 
+                tooltip="{configEditorModel>name/value}" 
+                valueLiveUpdate="true"></Input>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <FlexBox alignItems="Start" 
+                justifyContent="SpaceBetween">
+                <items>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_LANG_TITLE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_LANG_TITLE}"></Label>
+                </items>
+            </FlexBox>
+
+            <m:ValidityVisualElement text="{configEditorModel>langName/validity/message}" 
+                tooltip="{configEditorModel>langName/validity/message}" 
+                status="{configEditorModel>langName/validity/status}"></m:ValidityVisualElement>
+            <List items="{configEditorModel>langName/value}">
+                <CustomListItem visible="{configEditorModel>visible}">
+                    <CheckBox selected="{configEditorModel>enabled}" 
+                        enabled="{editableModel>/editable}" 
+                        width="12%"></CheckBox>
+                    <Label text="{parts:['configEditorModel>lang', 'configGeneralModel>/supportedLanguages'], formatter: '.languageFormatter'}" 
+                        width="18%" 
+                        class="sapMxConfigLangLabel"></Label>
+                    <Input value="{configEditorModel>value}" 
+                        enabled="{editableModel>/editable}" 
+                        width="70%"></Input>
+                </CustomListItem>
+            </List>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ATTRIBUTE_ID}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ATTRIBUTE_ID}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>frontEndID/validity/message}" 
+                tooltip="{configEditorModel>frontEndID/validity/message}" 
+                status="{configEditorModel>frontEndID/validity/status}"></m:ValidityVisualElement>
+            <Input class="sapTriggerSave sapMxConfigProp" 
+                value="{configEditorModel>idName}" 
+                id="attrIDName" 
+                enabled="{editableModel>/editable}" 
+                tooltip="{configEditorModel>idName}" 
+                liveChange="onIdChangeCheck" 
+                change="onIdChange" 
+                valueLiveUpdate="true"></Input>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DOMAIN_FILTER_TITLE}" />
+            <Input value="{configEditorModel>domainFilter/value}" />
+            <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_STANDARD_CONCEPT_CODE_FILTER_TITLE}" />
+            <Input value="{configEditorModel>standardConceptCodeFilter/value}" />
+            <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_CONCEPT_IDENTIFIER_TYPE_TITLE}" />
+            <Input value="{configEditorModel>conceptIdentifierType/value}" />
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_COHORT_DEFINITION_KEY_TITLE}" />
+            <Input value="{configEditorModel>cohortDefinitionKey/value}" />
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+            <FlexBox direction="RowReverse" 
+                alignItems="Start">
+                <items>
+                    <SegmentedButton id="AttributeExpressionType" 
+                        select="onAttributeExpressionTypeSelected">
+                        <items>
+                            <SegmentedButtonItem id="AttributeExpressionTypeEAV" 
+                                key="EAV" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_EAV_ATTRIBUTE}" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_EAV_ATTRIBUTE}" />
+                            <SegmentedButtonItem key="RELATIONAL" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_RELATIONAL_ATTRIBUTE}" />
+                            <SegmentedButtonItem key="ADVANCE" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADVANCE_ATTRIBUTE}" />
+                        </items>
+                    </SegmentedButton>
+                </items>
+            </FlexBox>
+
+            <m:ValidityVisualElement text="{configEditorModel>queryValidity/validity/message}" 
+                tooltip="{configEditorModel>queryValidity/validity/message}" 
+                status="{configEditorModel>queryValidity/validity/status}"></m:ValidityVisualElement>
+
+            <l:VerticalLayout id="AttributeCustomTable">
+                <l:content>
+                    <FlexBox alignItems="Start" 
+                        justifyContent="SpaceBetween">
+                        <items>
+                            <Label class="sapMxConfigPropLabel" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FROM_TITLE}" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FROM_TITLE}"></Label>
+                            <Button class="sapTriggerSave" 
+                                icon="sap-icon://add"
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_TABLE}" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_TABLE}" 
+                                enabled="{editableModel>/editable}" 
+                                press="_addCustomTblElem"></Button>
+                        </items>
+                    </FlexBox>
+
+                    <m:ValidityVisualElement text="{configEditorModel>from/validity/message}" 
+                        tooltip="{configEditorModel>from/validity/message}" 
+                        status="{configEditorModel>from/validity/status}"></m:ValidityVisualElement>
+                    <c:RowRepeater design="BareShell" 
+                        id="rrFromTable">
+                        <c:noData>
+                            <Label></Label>
+                        </c:noData>
+                    </c:RowRepeater>
+                </l:content>
+            </l:VerticalLayout>
+
+            <!-- ADVANCE -->
+            <l:VerticalLayout id="AttributeAdvanceFilter">
+                <l:content>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE}"></Label>
+                    <RadioButton class="sapTriggerSave sapMxConfigProp" 
+                        selected="{configEditorModel>isNormalAttribute}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE_NORMAL}" 
+                        enabled="{editableModel>/editable}"></RadioButton>
+                    <l:VerticalLayout>
+                        <l:content>
+                            <Label class="sapMxConfigPropLabel" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DATA_SOURCE}" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DATA_SOURCE}"></Label>
+                            <m:ValidityVisualElement text="{configEditorModel>expression/validity/message}" 
+                                tooltip="{configEditorModel>expression/validity/message}" 
+                                status="{configEditorModel>expression/validity/status}"></m:ValidityVisualElement>
+                            <Input class="sapTriggerSave sapMxConfigProp" 
+                                value="{configEditorModel>expression/value}" 
+                                id="AttributeDataSource" 
+                                enabled="{= ${configEditorModel>isNormalAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                                tooltip="{configEditorModel>expression/value}" 
+                                change="onAdvancedExpressionChange" 
+                                valueLiveUpdate="true"></Input>
+
+                        </l:content>
+                    </l:VerticalLayout>
+
+                    <RadioButton class="sapTriggerSave sapMxConfigProp" 
+                        selected="{=!${configEditorModel>isNormalAttribute}}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE_AGGREGATION}" 
+                        enabled="{editableModel>/editable}"></RadioButton>
+                    <l:VerticalLayout>
+                        <l:content>
+                            <Label class="sapMxConfigPropLabel" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_MEASURE_EXPRESSION}" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_MEASURE_EXPRESSION}"></Label>
+                            <m:ValidityVisualElement text="{configEditorModel>measureExpression/validity/message}" 
+                                tooltip="{configEditorModel>measureExpression/validity/message}" 
+                                status="{configEditorModel>measureExpression/validity/status}"></m:ValidityVisualElement>
+                            <Input class="sapTriggerSave sapMxConfigProp" 
+                                value="{configEditorModel>measureExpression/value}" 
+                                id="AttributeAggregationFilter" 
+                                enabled="{= !${configEditorModel>isNormalAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                                tooltip="{configEditorModel>measureExpression/value}" 
+                                change="onAdvancedExpressionChange" 
+                                valueLiveUpdate="true"></Input>
+                        </l:content>
+                    </l:VerticalLayout>
+
+                    <l:VerticalLayout>
+                        <l:content>
+                            <Label class="sapMxConfigPropLabel" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FILTER_EXPRESSION}" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FILTER_EXPRESSION}"></Label>
+                            <m:ValidityVisualElement text="{configEditorModel>defaultFilter/validity/message}" 
+                                tooltip="{configEditorModel>defaultFilter/validity/message}" 
+                                status="{configEditorModel>defaultFilter/validity/status}"></m:ValidityVisualElement>
+                            <Input class="sapTriggerSave sapMxConfigProp" 
+                                value="{configEditorModel>defaultFilter/value}" 
+                                id="AttributeDefaultFilter" 
+                                enabled="{editableModel>/editable}" 
+                                tooltip="{configEditorModel>defaultFilter/value}" 
+                                change="onAdvancedExpressionChange" 
+                                valueLiveUpdate="true"/>
+
+                            <FlexBox alignItems="Center" 
+                                justifyContent="Center">
+                                <Button icon="sap-icon://activity-2"
+                                    press="onTestNormalAttribute" 
+                                    class="sapTriggerSave sapMButtonIconFix" 
+                                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_ATTR_EXPR_BUTTON_TLTIP}" 
+                                    enabled="{= ${configEditorModel>isNormalAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                                    text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_ATTR_EXPR_BUTTON}"></Button>
+                            </FlexBox>
+
+                        </l:content>
+                    </l:VerticalLayout>
+                </l:content>
+            </l:VerticalLayout>
+
+            <!-- RELATIONAL -->
+            <l:VerticalLayout id="AttributeRelationalSection">
+                <l:content>
+                    <Label id="AttributeDataSourceBasicLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}"/>
+                    <ComboBox class="sapTriggerSave sapMxConfigProp" 
+                        id="AttributeDataSourceBasic" 
+                        selectedKey="{configEditorModel>relationExpressionKey/value}" 
+                        change="onBasicDataSourceChange"/>
+
+                    <Label id="AttributeDataSourceBasicExtraFilterLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}"/>
+                    <m:ValidityVisualElement id="AttributeDataSourceBasicExtraFilterValidity" 
+                        text="{configEditorModel>defaultFilter/validity/message}" 
+                        tooltip="{configEditorModel>defaultFilter/validity/message}" 
+                        status="{configEditorModel>defaultFilter/validity/status}" 
+                        visible="{= ${configEditorModel>relationExpressionKey/value} !== '' }"/>
+                    <Input id="AttributeDataSourceBasicExtraFilter" 
+                        value="{configEditorModel>relationExpressionFilter/value}" 
+                        width="100%" 
+                        change="onBasicDataSourceChange" 
+                        valueLiveUpdate="true"/>
+                </l:content>
+            </l:VerticalLayout>
+
+            <!-- RELATIONAL PATIENT -->
+            <l:VerticalLayout id="AttributeRelationalPatientSection">
+                <l:content>
+                    <Label id="AttributeDataSourceBasicPatientLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}"/>
+                    <ComboBox class="sapTriggerSave sapMxConfigProp" 
+                        id="AttributeDataSourceBasicPatient" 
+                        selectedKey="{configEditorModel>relationExpressionPatientKey/value}" 
+                        change="onBasicDataSourcePatientChange"/>
+
+                    <Label id="AttributeDataSourceBasicPatientExtraFilterLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}"/>
+                    <m:ValidityVisualElement id="AttributeDataSourceBasicPatientExtraFilterValidity" 
+                        text="{configEditorModel>defaultFilter/validity/message}" 
+                        tooltip="{configEditorModel>defaultFilter/validity/message}" 
+                        status="{configEditorModel>defaultFilter/validity/status}" 
+                        visible="{= ${configEditorModel>relationExpressionPatientKey/value} !== '' }"/>
+                    <Input id="AttributeDataSourceBasicPatientExtraFilter" 
+                        value="{configEditorModel>relationExpressionPatientFilter/value}" 
+                        width="100%" 
+                        change="onBasicDataSourcePatientChange" 
+                        valueLiveUpdate="true"/>
+                </l:content>
+            </l:VerticalLayout>
+
+            <!-- EAV -->
+            <l:VerticalLayout id="AttributeEAVSection">
+                <l:content>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_CHOOSE_ATTRIBUTE_PLACEHOLDER_LABEL}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_CHOOSE_ATTRIBUTE_PLACEHOLDER_LABEL}"/>
+
+                    <ComboBox id="attributePlaceholder" 
+                        selectedKey="{configEditorModel>defaultPlaceholder/value}" 
+                        enabled="{editableModel>/editable}" 
+                        class="sapTriggerSave sapMxConfigProp" 
+                        width="100%" 
+                        change="onAttributePlaceholderChange">
+                        <core:Item key="{placeholder}" 
+                            text="{placeholder}" />
+                    </ComboBox>
+
+                    <Label id="AttributeDefaultFilterBasicLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_SOURCE}"/>
+                    <ComboBox class="sapTriggerSave sapMxConfigProp" 
+                        id="AttributeDefaultFilterBasic" 
+                        enabled="{editableModel>/editable}" 
+                        selectedKey="{configEditorModel>eavExpressionKey/value}" 
+                        change="onBasicDefaultFilterChange"/>
+
+                    <Label id="AttributeDefaultFilterBasicExtraFilterLabel" 
+                        class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADDITIONAL_FILTER}"/>
+                    <m:ValidityVisualElement id="AttributeDefaultFilterBasicExtraFilterValidity" 
+                        text="{configEditorModel>defaultFilter/validity/message}" 
+                        tooltip="{configEditorModel>defaultFilter/validity/message}" 
+                        status="{configEditorModel>defaultFilter/validity/status}" 
+                        visible="{= ${configEditorModel>eavExpressionKey/value} !== '' }"/>
+                    <Input id="AttributeDefaultFilterBasicExtraFilter" 
+                        value="{configEditorModel>eavExpressionFilter/value}" 
+                        width="100%" 
+                        change="onBasicDefaultFilterChange" 
+                        enabled="{editableModel>/editable}" 
+                        valueLiveUpdate="true"/>
+                </l:content>
+            </l:VerticalLayout>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DATA_TYPE}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DATA_TYPE}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>type/validity/message}" 
+                tooltip="{configEditorModel>type/validity/message}" 
+                status="{configEditorModel>type/validity/status}"></m:ValidityVisualElement>
+            <Select id="AttributeType" 
+                selectedKey="{configEditorModel>type/value}" 
+                enabled="{editableModel>/editable}" 
+                class="sapTriggerSave sapMxConfigProp" 
+                width="100%"></Select>
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ANNOTATIONS}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ANNOTATIONS}"></Label>
+            <MultiInput id="annotationsInput" 
+                enabled="{editableModel>/editable}" 
+                enableMultiLineMode="false" 
+                tokens="{configEditorModel>annotations}" 
+                showValueHelp="false">
+                <tokens>
+                    <Token key="{configEditorModel>value}" 
+                        text="{configEditorModel>value}" 
+                        delete="onDeleteToken" />
+                </tokens>
+            </MultiInput>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <FlexBox id="catalogAttributeMatrixLayout" 
+                alignItems="Start" 
+                justifyContent="SpaceBetween">
+                <items>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_CATALOG_ATTRIBUTE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_CATALOG_ATTRIBUTE}"></Label>
+                    <Switch class="sapTriggerSave" 
+                        state="{configEditorModel>isCatalogAttribute}" 
+                        enabled="{editableModel>/editable}" 
+                        change="onCatalogAttributeSwitched"></Switch>
+                </items>
+            </FlexBox>
+
+            <m:ValidityVisualElement text="{configEditorModel>catalogQueryValidity/validity/message}" 
+                tooltip="{configEditorModel>catalogQueryValidity/validity/message}" 
+                status="{configEditorModel>catalogQueryValidity/validity/status}"></m:ValidityVisualElement>
+
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_EXPRESSION}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_EXPRESSION}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>referenceExpression/validity/message}" 
+                tooltip="{referenceExpression>defaultFilter/validity/message}" 
+                status="{configEditorModel>referenceExpression/validity/status}"></m:ValidityVisualElement>
+            <Input class="sapTriggerSave sapMxConfigProp" 
+                value="{configEditorModel>referenceExpression/value}" 
+                id="AttributeReferenceExpression" 
+                enabled="{= ${configEditorModel>isCatalogAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                tooltip="{configEditorModel>referenceExpression/value}" 
+                valueLiveUpdate="true"></Input>
+            <Label class="sapMxConfigPropLabel" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_FILTER}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_FILTER}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>referenceFilter/validity/message}" 
+                tooltip="{configEditorModel>referenceFilter/validity/message}" 
+                status="{configEditorModel>referenceFilter/validity/status}"></m:ValidityVisualElement>
+            <Input class="sapTriggerSave sapMxConfigProp" 
+                value="{configEditorModel>referenceFilter/value}" 
+                id="AttributeReferenceFilter" 
+                enabled="{configEditorModel>isCatalogAttribute}" 
+                tooltip="{configEditorModel>referenceFilter/value}" 
+                valueLiveUpdate="true"></Input>
+            <Button icon="sap-icon://activity-2" 
+                enabled="{= ${configEditorModel>isCatalogAttribute} &amp;&amp; ${editableModel>/editable} &amp;&amp; (${configEditorModel>referenceExpression/value}!=='') &amp;&amp; (${configEditorModel>referenceFilter/value}!=='')}" 
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_ATTR_EXPR_BUTTON_TLTIP}" 
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_CAT_ATTR_EXPR_BUTTON}" 
+                press="onTestCatalogAttribute" 
+                class="sapTriggerSave sapMButtonIconFix"></Button>
+
+            <html:hr class="sapMXVerticalSeparator"></html:hr>
+
+            <l:VerticalLayout id="otsSection">
+                <l:content>
+
+                    <FlexBox id="otsAttributeMatrixLayout" 
+                        alignItems="Start" 
+                        justifyContent="SpaceBetween">
+                        <items>
+                            <Label class="sapMxConfigPropLabel" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_OTS_ATTRIBUTE}" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REFERENCE_OTS_ATTRIBUTE}"></Label>
+                            <Switch class="sapTriggerSave" 
+                                state="{configEditorModel>isOTSAttribute}" 
+                                enabled="{editableModel>/editable}" 
+                                change="onOTSAttributeSwitched"></Switch>
+                        </items>
+                    </FlexBox>
+
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_LANGUAGE}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_LANGUAGE}"></Label>
+                    <m:ValidityVisualElement text="{configEditorModel>otsLanguage/validity/message}" 
+                        tooltip="{configEditorModel>otsLanguage/validity/message}" 
+                        status="{configEditorModel>otsLanguage/validity/status}"></m:ValidityVisualElement>
+                    <Input class="sapTriggerSave sapMxConfigProp" 
+                        value="{configEditorModel>otsLanguage/value}" 
+                        id="AttributeOTSLanguage" 
+                        enabled="{= ${configEditorModel>isOTSAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                        tooltip="{configEditorModel>otsLanguage/value}" 
+                        valueLiveUpdate="true"></Input>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_SUBJECT}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_SUBJECT}"></Label>
+                    <m:ValidityVisualElement text="{configEditorModel>otsSubject/validity/message}" 
+                        tooltip="{configEditorModel>otsSubject/validity/message}" 
+                        status="{configEditorModel>otsSubject/validity/status}"></m:ValidityVisualElement>
+                    <Input class="sapTriggerSave sapMxConfigProp" 
+                        value="{configEditorModel>otsSubject/value}" 
+                        id="AttributeOTSSubject" 
+                        enabled="{= ${configEditorModel>isOTSAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                        tooltip="{configEditorModel>otsSubject/value}" 
+                        valueLiveUpdate="true"></Input>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_HIERARCHY_DETAIL}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_HIERARCHY_DETAIL}"></Label>
+                    <m:ValidityVisualElement text="{configEditorModel>otsHierarchyLevel/validity/message}" 
+                        tooltip="{configEditorModel>otsHierarchyLevel/validity/message}" 
+                        status="{configEditorModel>otsHierarchyLevel/validity/status}"></m:ValidityVisualElement>
+                    <Input class="sapTriggerSave sapMxConfigProp sapUiLargeMarginBottom" 
+                        value="{configEditorModel>otsHierarchyLevel/value}" 
+                        id="AttributeOTSHierarchyLevel" 
+                        enabled="{= ${configEditorModel>isOTSAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                        tooltip="{configEditorModel>otsHierarchyLevel/value}" 
+                        valueLiveUpdate="true"></Input>
+                    <Label class="sapMxConfigPropLabel" 
+                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_TERM_CONTEXT}" 
+                        text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OTS_TERM_CONTEXT}"></Label>
+                    <m:ValidityVisualElement text="{configEditorModel>otsTermContext/validity/message}" 
+                        tooltip="{configEditorModel>otsTermContext/validity/message}" 
+                        status="{configEditorModel>otsTermContext/validity/status}"></m:ValidityVisualElement>
+                    <Input class="sapTriggerSave sapMxConfigProp sapUiLargeMarginBottom" 
+                        value="{configEditorModel>otsTermContext/value}" 
+                        id="AttributeOTSTermContext" 
+                        enabled="{= ${configEditorModel>isOTSAttribute} &amp;&amp; ${editableModel>/editable}}" 
+                        tooltip="{configEditorModel>otsTermContext/value}" 
+                        valueLiveUpdate="true"></Input>
+                </l:content>
+            </l:VerticalLayout>
+        </l:content>
+    </l:VerticalLayout>
+
+</mvc:View>

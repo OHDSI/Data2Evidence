@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<simple-type xmlns="http://www.sap.com/sap.ui.library.xsd">
+    <name>ChartMode</name>
+    <derived/>
+    <documentation>Defines the mode of the Chart.</documentation>
+    <enumeration>
+        <value name="Dot">
+            <documentation>Data points are represented by single dots.</documentation>
+        </value>
+        <value name="Line">
+            <documentation>Data points are represented by a line graph.</documentation>
+        </value>
+    </enumeration>
+</simple-type>

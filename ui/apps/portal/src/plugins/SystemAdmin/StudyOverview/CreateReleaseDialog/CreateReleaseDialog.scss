@@ -1,0 +1,29 @@
+.create-release-dialog {
+  .create-release-dialog__content {
+    min-height: 200px;
+    margin: 0 5px 0 25px;
+    overflow: auto;
+    .u-padding-vertical--normal {
+      padding-right: 20px;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+
+  .snapshotdate__filtergroup {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+}

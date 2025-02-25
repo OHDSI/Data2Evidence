@@ -1,0 +1,28 @@
+<mvc:View
+    controllerName="hc.hph.genomics.ui.lib.vb.browserConfig.controller.VariantConfig"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+	xmlns="sap.m">
+	 <Toolbar class='vbCategoryDialogNoBorder'>
+        <Label text="{i18n.vb>common.VBConfigTableLabel}" />
+        <Select id="tableSelect" items="{ path: 'variantModel>/tables/items' }" change="onTypeChange">
+            <layoutData>
+                <ToolbarLayoutData shrinkable="true" />
+            </layoutData>
+			<core:Item key="{variantModel>key}" text="{variantModel>value}" />
+		</Select>
+		 <Label text="{i18n.vb>common.VBConfigAttributeLabel}"/>
+        <Select id="attributeSelect" items="{ path: 'variantModel>/attributes/items' }" change="onAttributeChange">
+            <layoutData>
+                <ToolbarLayoutData shrinkable="true" />
+            </layoutData>
+			<core:Item key="{variantModel>key}" text="{variantModel>value}" />
+		</Select>
+		<ToolbarSpacer/>
+		<Button text="{i18n.vb>common.VBConfigCategoryButton}" type="Emphasized" press="onAddVariantCategory">
+		    <layoutData>
+                <ToolbarLayoutData shrinkable="true" />
+            </layoutData>
+		</Button>
+    </Toolbar>
+</mvc:View>

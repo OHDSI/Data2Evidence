@@ -1,0 +1,4 @@
+role sap.hc.hph.patient.plugins.tabs.overview.roles::HC_HPH_PATIENT_PLUGINS_TABS_OVERVIEW_END_USER
+{
+    application privilege: sap.hc.hph.patient.plugins.tabs.overview::EndUser;
+}

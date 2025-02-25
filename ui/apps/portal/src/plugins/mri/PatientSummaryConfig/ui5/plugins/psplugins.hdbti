@@ -1,0 +1,25 @@
+import =
+[
+    {
+        cdstable = "hc.hph.core.model::PluginFramework.Plugin";
+        file = "hc.hph.patient.plugins:psplugins.csv";
+        header = false;
+        delimField = ",";
+        keys = [
+            "PLUGIN_ID" : "hc.hph.patient.plugins.interactions.doclink",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.diagnoses",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.documents",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.lab",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.surgeries",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.timeline",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.overview",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.risks",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.tabs.masterdata",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.widgets.diagnoses",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.widgets.documents",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.widgets.lab",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.widgets.risks",
+            "PLUGIN_ID" : "hc.hph.patient.plugins.widgets.masterdata"
+        ];
+    }
+];

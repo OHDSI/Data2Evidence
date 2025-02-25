@@ -1,0 +1,74 @@
+{
+    "plugin_name": "PS_PLUGINS_TABS_SURG_NAME",
+    "plugin_description": "PS_PLUGINS_TABS_SURG_DESC",
+    "languages": ["en", "de", "fr"],
+    "language_textbundle": "i18n/text.properties",
+    "extensions": [{
+        "extension_header": {
+            "extension_point_id": "sap.hc.hph.patient.app.tab",
+            "extension_point_version": "1.0",
+            "extension_id": "sap.hc.hph.patient.plugins.tabs.surgeries",
+            "extension_name": "PS_PLUGINS_TABS_SURG_EXTN_NAME",
+            "extension_alias": "PS_PLUGINS_TABS_SURG_EXTN_ALIAS",
+            "extension_description": "PS_PLUGINS_TABS_SURG_EXTN_DESC"
+        },
+        "extension_contribution": {
+            "annotations": [
+                "ps_surg_freetext",
+                "ps_surg_oe",
+                "ps_surg_fb_oe",
+                "ps_surg_institution",
+                "ps_surg_institution_short"
+            ],
+            "key": "surgeries",
+            "namespace": "sap.hc.hph.patient.plugins.tabs.surgeries.ui",
+            "path": "/sap/hc/hph/patient/plugins/tabs/surgeries/ui",
+            "stretchContent": true,
+            "urlParams": [],
+            "settings": {
+                "departments": [
+                    {"CODE": "F001", "DISPLAY_NAME": "Allgemeinmedizin", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Dokumente aus Allgemeinmedizinischen Organisationen "},
+                    {"CODE": "F002", "DISPLAY_NAME": "Anästhesiologie und Intensivmedizin", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Anästhesiologie und Intensivmedizin"},
+                    {"CODE": "F005", "DISPLAY_NAME": "Augenheilkunde", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Augenheilkunde"},
+                    {"CODE": "F006", "DISPLAY_NAME": "Blutgruppenserologie und Transfusionsmedizin", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Blutgruppenserologie und Transfusionsmedizin"},
+                    {"CODE": "F007", "DISPLAY_NAME": "Chirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Chirurgie (inklusive Gefäß- und Transplantationschirugie)"},
+                    {"CODE": "F010", "DISPLAY_NAME": "Gynäkologie und Geburtshilfe", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Frauenheilkunde (Gynäkologie), Geburtshilfe, inklusive Hebammentätigkeit, Wochenbettbetreuung, Schwangerenvorsorge"},
+                    {"CODE": "F014", "DISPLAY_NAME": "HNO", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Hals-, Nasen- und Ohrenkrankheiten"},
+                    {"CODE": "F015", "DISPLAY_NAME": "Dermatologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Haut- und Geschlechtskrankheiten"},
+                    {"CODE": "F016", "DISPLAY_NAME": "Mikrobiologie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Dokumente aus dem Bereich mikrobiologisch-serologische Labordiagnostik"},
+                    {"CODE": "F019", "DISPLAY_NAME": "Innere Medizin", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Innere Medizin"},
+                    {"CODE": "F023", "DISPLAY_NAME": "Interdisziplinärer Bereich", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Interdisziplinärer Bereich  (Eingeschränkter Geltungsbereich, nur wenn in einem CDA-Leitfaden vorgesehen)"},
+                    {"CODE": "F025", "DISPLAY_NAME": "Kinder- und Jugendpsychiatrie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Kinder- und Jugendpsychiatrie"},
+                    {"CODE": "F026", "DISPLAY_NAME": "Kinder- und Jugendchirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Kinder-Chirurgie"},
+                    {"CODE": "F027", "DISPLAY_NAME": "Kinder- und Jugendheilkunde", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Kinderheilkunde"},
+                    {"CODE": "F028", "DISPLAY_NAME": "Labordiagnostik", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Dokumente aus dem Bereich medizinisch-chemische Labordiagnostik"},
+                    {"CODE": "F029", "DISPLAY_NAME": "Mund-, Kiefer- und Gesichtschirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Mund-, Kiefer- und Gesichtschirurgie"},
+                    {"CODE": "F031", "DISPLAY_NAME": "Neurochirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Neurochirurgie"},
+                    {"CODE": "F032", "DISPLAY_NAME": "Neurologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Neurologie, Inkl. Stroke Unit sowie Neurologie Phase B, C"},
+                    {"CODE": "F033", "DISPLAY_NAME": "Nuklearmedizin", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Nuklearmedizin"},
+                    {"CODE": "F035", "DISPLAY_NAME": "Orthopädie und orthopädische Chirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Orthopädie und orthopädische Chirurgie"},
+                    {"CODE": "F036", "DISPLAY_NAME": "Palliativmedizin", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Dokumente der palliativ-medizinischen Versorgung"},
+                    {"CODE": "F037", "DISPLAY_NAME": "Pathologie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Pathologie"},
+                    {"CODE": "F040", "DISPLAY_NAME": "Physikalische Medizin und Rehabilitation", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Physikalische Medizin"},
+                    {"CODE": "F041", "DISPLAY_NAME": "Plastische Chirurgie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Plastische Chirurgie"},
+                    {"CODE": "F042", "DISPLAY_NAME": "Psychiatrie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Psychiatrie"},
+                    {"CODE": "F043", "DISPLAY_NAME": "Pulmologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Pulmologie (Lungenheilkunde)"},
+                    {"CODE": "F044", "DISPLAY_NAME": "Radiologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Radiologie"},
+                    {"CODE": "F048", "DISPLAY_NAME": "Remobilisation/Nachsorge", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Remobilisation/Nachsorge"},
+                    {"CODE": "F052", "DISPLAY_NAME": "Unfallchirurgie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Unfallchirurgie"},
+                    {"CODE": "F053", "DISPLAY_NAME": "Urologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Urologie"},
+                    {"CODE": "F055", "DISPLAY_NAME": "Zahn-, Mund- und Kieferheilkunde", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Zahn-, Mund- und Kieferheilkunde"},
+                    {"CODE": "F056", "DISPLAY_NAME": "Akutgeriatrie/Remobilisation", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Dokumente aus dem Bereich der Akutgeriatrie und Remobilisation"},
+                    {"CODE": "F057", "DISPLAY_NAME": "Gesundheits- und Krankenpflege", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Gesundheits- und Krankenpflegerische Dokumente (nicht zu verwenden für Dokumente aus dem Krankenhausbereich)"},
+                    {"CODE": "F058", "DISPLAY_NAME": "Herzchirurgie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Herzchirurgie"},
+                    {"CODE": "F059", "DISPLAY_NAME": "Klinische Psychologie", "LIST_WHEN_EMPTY": true, "DESCRIPTION": "Klinische Psychologie"},
+                    {"CODE": "F060", "DISPLAY_NAME": "Kur- und Prävention", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Kur- und Prävention"},
+                    {"CODE": "F061", "DISPLAY_NAME": "Psychosomatik", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Psychosomatik"},
+                    {"CODE": "F062", "DISPLAY_NAME": "Radioonkologie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Dokumente aus Strahlentherapie und Radioonkologie"},
+                    {"CODE": "F063", "DISPLAY_NAME": "Rechtliche Dokumente", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Rechtliche Dokumente wie Patientenverfügungen"},
+                    {"CODE": "F064", "DISPLAY_NAME": "Thoraxchirurgie", "LIST_WHEN_EMPTY": false, "DESCRIPTION": "Thoraxchirurgie"}
+                ]
+            }
+        }
+    }]
+}

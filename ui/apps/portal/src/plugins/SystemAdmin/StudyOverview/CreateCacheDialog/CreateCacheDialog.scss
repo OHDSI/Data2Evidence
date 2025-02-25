@@ -1,0 +1,18 @@
+.create-cache-dialog {
+  &__content {
+    min-height: 250px;
+    padding: 0 25px;
+    overflow: auto;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+.oidc-session-lost {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+
+  &__title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-bottom: 1em;
+  }
+
+  &__description {
+    color: var(--color-neutral);
+  }
+
+  &__actions {
+    margin-top: 1em;
+    min-width: 150px;
+  }
+}

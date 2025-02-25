@@ -1,0 +1,24 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.AllTabs" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc">
+    <IconTabBar id="tabBar" class="sapUiResponsiveContentPadding" busy="{uiModel>/tabsBusy}" expandable="false" stretchContentHeight="true" select="onTabSelect">
+        <items>
+            <IconTabFilter id="detailsTab" enabled="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" icon="sap-icon://hint" key="detailsTab" text="{i18n>HPH_PAT_CFG_DETAILS_TITLE}" tooltip="{i18n>HPH_PAT_CFG_DETAILS_TITLE}">
+                <ScrollContainer height="100%" horizontal="false" vertical="true">
+                    <mvc:XMLView viewName="hc.hph.patient.config.ui.views.DetailsTab" />
+                </ScrollContainer>
+            </IconTabFilter>
+            <IconTabFilter id="inspectorOptionsTab" enabled="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" icon="sap-icon://wounds-doc" key="inspectorOptTab" text="{i18n>HPH_PAT_CFG_INSPECTOR_OPT_TITLE}" tooltip="{i18n>HPH_PAT_CFG_INSPECTOR_OPT_TITLE}">
+                <ScrollContainer height="100%" horizontal="false" vertical="true">
+                    <mvc:XMLView viewName="hc.hph.patient.config.ui.views.MasterdataTab" />
+                </ScrollContainer>
+            </IconTabFilter>
+            <IconTabFilter id="inspectorTabsTab" enabled="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" icon="sap-icon://fallback" key="inspectorTabsTab" text="{i18n>HPH_PAT_CFG_PAT_INSPECTOR_TABS}" tooltip="{i18n>HPH_PAT_CFG_PAT_INSPECTOR_TABS}">
+                <ScrollContainer height="100%" horizontal="false" vertical="true">
+                    <mvc:XMLView viewName="hc.hph.patient.config.ui.views.InspectorTabsTab" />
+                </ScrollContainer>
+            </IconTabFilter>
+            <IconTabFilter id="lanesTab" enabled="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" icon="sap-icon://accelerated" key="lanesTab" text="{i18n>HPH_PAT_CFG_LANES_TAB_TITLE}" tooltip="{i18n>HPH_PAT_CFG_LANES_TAB_TITLE}">
+                <mvc:XMLView id="lanesTabView" height="100%" viewName="hc.hph.patient.config.ui.views.LanesTab" />
+            </IconTabFilter>
+        </items>
+    </IconTabBar>
+</mvc:View>

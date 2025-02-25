@@ -1,0 +1,7 @@
+{
+    "exposed": true,
+    "authorization": [
+        "sap.hc.mri::ClinicalEnduser",
+        "sap.hc.mri::AdminUser"
+    ]
+}

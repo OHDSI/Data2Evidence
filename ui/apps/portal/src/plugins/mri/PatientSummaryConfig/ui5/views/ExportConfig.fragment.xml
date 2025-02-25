@@ -1,0 +1,16 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog title="{i18n>HPH_PAT_CFG_CONFIG_EXPORT_CONFIG_POPOVER_TITLE}"
+            icon="sap-icon://question-mark"
+            class="sapMMessageBoxQuestion"
+            type="Message">
+        <VBox>
+            <Text text="{i18n>HPH_PAT_CFG_EXPORT_UNSAFED_CHANGES_DESCRIPTION}"/>
+            <Text text="{i18n>HPH_PAT_CFG_EXPORT_UNSAFED_CHANGES_DETAILS}"
+                class="sapUiTinyMarginTop" />
+        </VBox>
+        <buttons>
+            <Button text="{i18n>HPH_PAT_CFG_BUTTON_SAVE_AND_EXPORT}" press="onExportConfigurationWithSave" />
+            <Button text="{i18n>HPH_PAT_CFG_BUTTON_CANCEL}" press="onExportConfigurationCanceled" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

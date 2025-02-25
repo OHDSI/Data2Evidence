@@ -1,0 +1,109 @@
+@import './mri-variables';
+@import './mixins';
+
+.app-date {
+  width: 100%;
+
+  .date-container {
+    @include mriHoverable;
+    border-radius: 5px;
+    border-color: $MriDropDownBorderLight;
+  }
+
+  .app-date-icon {
+    cursor: pointer;
+  }
+
+  .form-control {
+    min-height: $input-height;
+    input {
+      width: 100%;
+      border: 0px;
+      outline: none;
+      display: inline-block;
+      font-size: inherit;
+      padding-left: 0px;
+    }
+  }
+
+  .invalidDate {
+    border: 1.5px solid $MriErrorColor;
+  }
+  .errortext {
+    position: absolute;
+    right: 0;
+    background: $DateErrorTextBG;
+    padding-right: 5px;
+    padding-left: 5px;
+    font-size: 0.765625rem;
+  }
+  .form-control:focus {
+    box-shadow: none;
+  }
+
+  .modal-mask {
+    .modal-container {
+      position: absolute;
+    }
+    .bootstrap-datetimepicker-widget {
+      width: 19em;
+      margin: 5px 15px;
+      table {
+        td,
+        th {
+          border-radius: 0;
+        }
+        td.today {
+          border: 0.125rem solid $SelectedDateBorder;
+        }
+        td.today:before {
+          display: none;
+        }
+        td.day:hover,
+        td.hour:hover,
+        td.minute:hover,
+        td.second:hover {
+          background-color: $DateHover;
+        }
+        td span,
+        td i {
+          border-radius: 0rem;
+        }
+        td span:hover,
+        td i:hover {
+          background-color: $DateHover;
+        }
+      }
+      .timepicker {
+        padding: 5px;
+        border-left: 1px solid $UiLightBorder;
+      }
+    }
+    .bootstrap-datetimepicker-widget.timepicker-sbs {
+      width: 39em;
+    }
+    // icons are inside italics tag, in our case 'normal' font-style is needed
+    i {
+      font-style: normal;
+      color: $UiLightText;
+    }
+
+    // UI5 Icons are used in place of Bootstrap icons
+    .fa-chevron-left:after {
+      font-family: 'app-icons';
+      content: '\e067';
+    }
+    .fa-chevron-right:after {
+      font-family: 'app-icons';
+      content: '\e066';
+    }
+    .fa-chevron-up:after {
+      font-family: 'app-icons';
+      content: '\e1e1';
+    }
+    .fa-chevron-down:after {
+      font-family: 'app-icons';
+      content: '\e1e2';
+    }
+  }
+}

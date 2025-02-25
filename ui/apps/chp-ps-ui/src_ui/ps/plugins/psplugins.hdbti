@@ -1,0 +1,25 @@
+import =
+[
+    {
+        cdstable = "sap.hc.hph.core.model::PluginFramework.Plugin";
+        file = "sap.hc.hph.patient.plugins:psplugins.csv";
+        header = false;
+        delimField = ",";
+        keys = [
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.interactions.doclink",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.diagnoses",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.documents",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.lab",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.surgeries",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.timeline",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.overview",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.risks",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.tabs.masterdata",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.widgets.diagnoses",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.widgets.documents",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.widgets.lab",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.widgets.risks",
+            "PLUGIN_ID" : "sap.hc.hph.patient.plugins.widgets.masterdata"
+        ];
+    }
+];

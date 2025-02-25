@@ -1,0 +1,43 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.FilterCardsList"
+	width="100%" height="100%" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:c="sap.ui.commons" xmlns:m="hc.hph.cdw.config.ui.lib">
+
+<m:SmartAccordion width="100%" id="accordion2">
+		<m:sections>
+			<c:AccordionSection id="accordion2Sec1">
+				<c:content>
+					<m:DragDropContainer id="dd1" width="100%" class="sapMeAccordionGrouping">						
+					</m:DragDropContainer>
+				</c:content>
+			</c:AccordionSection>
+			<c:AccordionSection id="accordion2Sec2">
+				<c:content>
+					<l:VerticalLayout id="btn1" width="100%">
+						<Button width="100%" class="sapMeAccordionActionBtn" id="button1" icon="sap-icon://add"
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_FILTER_CARD}"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_FILTER_CARD}"
+						press="onOneFilterCardAdded">							
+						</Button>
+					</l:VerticalLayout>
+				</c:content>
+				<c:content>
+					<m:DragDropContainerReceiver id="dd2" width="100%" class="sapMeAccordionGrouping">						
+					</m:DragDropContainerReceiver>
+				</c:content>				
+			</c:AccordionSection>
+			<c:AccordionSection id="accordion2Sec3">
+				<c:content>
+					<m:DragDropContainer id="dd3" width="100%" class="sapMeAccordionGrouping">						
+					</m:DragDropContainer>
+				</c:content>
+			</c:AccordionSection>
+			<c:AccordionSection id="accordion2Sec4">
+				<c:content>
+					<m:DragDropContainerTemplate id="dd4" width="20%" class="sapMeAccordionGrouping">						
+					</m:DragDropContainerTemplate>
+					<m:DragDropContainerTemplate id="dd5" width="80%" class="sapMeAccordionGrouping">						
+					</m:DragDropContainerTemplate>
+				</c:content>
+			</c:AccordionSection>
+		</m:sections>	
+</m:SmartAccordion>
+</mvc:View>

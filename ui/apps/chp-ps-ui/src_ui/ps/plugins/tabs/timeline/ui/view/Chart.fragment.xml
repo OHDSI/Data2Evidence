@@ -1,0 +1,11 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:timeline="sap.hc.hph.patient.app.ui.lib.timeline">
+    <timeline:Chart color="{color}" title="{title}" mode="{mode}" formatter="\{s{valueColumn}\}" dateColumn="_startDate" valueColumn="y{valueColumn}" interactionName="{interactionName}" keyColumn="_id" noDataText="{parts:['title'], formatter: '.formatNoDataText'}"
+        subLanes="{path: 'subLanes', factory: '.createLane'}" datapointClick=".handleDatapointClick" titleTooltip="{title}" valueTooltip="{i18n>HPH_PAT_CONTENT_CHART_VALUE_TOOLTIP}">
+        <timeline:headerContent>
+            <FlexBox height="100%" justifyContent="SpaceBetween" alignItems="{= ${minimized} ? 'Center' : 'End' }" direction="{= ${minimized} ? 'Row' : 'Column' }">
+                <Button icon="sap-icon://sys-minus" type="Transparent" press="onRemoveLane" tooltip="{i18n>HPH_PAT_CONTENT_REMOVE_CHART_TOOLTIP}" />
+                <Button icon="sap-icon://business-objects-experience" type="Transparent" press="onOpenChartVisualizationDialog" tooltip="{i18n>HPH_PAT_CONTENT_CHOOSE_VISUALIZATION_TOOLTIP}" />
+            </FlexBox>
+        </timeline:headerContent>
+    </timeline:Chart>
+</core:FragmentDefinition>

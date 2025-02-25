@@ -1,0 +1,19 @@
+<mvc:View
+    controllerName="hc.hph.genomics.ui.lib.vb.site.PatientSummary"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:mvc="sap.ui.core.mvc">
+    <Dialog
+        showHeader="false">
+        <content>
+            <core:ComponentContainer
+                name="hc.hph.patient.app.ui.content"
+                settings="{/settings}" />
+        </content>
+        <buttons>
+            <Button
+                text="{i18n.vb>siteTrack.Close}"
+                press="handleClose" />
+        </buttons>
+    </Dialog>
+</mvc:View>

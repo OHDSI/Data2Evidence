@@ -1,0 +1,7 @@
+{
+    "exposed": true,
+    "authorization": [
+        "hc.hph.patient::EndUser",
+        "hc.hph.patient::AdminUser"
+    ]
+}

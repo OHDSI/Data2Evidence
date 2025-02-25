@@ -1,0 +1,38 @@
+@import './mri-variables';
+div.app-tab-button {
+  .app-list {
+    padding-left: 0px;
+  }
+  .app-list :not(:first-child) {
+    margin-left: -3px;
+  }
+  .app-listItem {
+    cursor: pointer;
+    font-size: 0.875rem;
+    height: 2.375rem;
+    line-height: 2.375rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    text-align: center;
+    text-shadow: none;
+    color: $SegmentedButtonText;
+    border-bottom: 1px solid #dedede;
+    background-color: $UiLightestBG;
+    list-style: none;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+
+  .app-listItem.app-listItemSelected {
+    border: none;
+    border-bottom: 5px solid $MriButtonHover;
+  }
+
+  .app-listItem.disabled {
+    color: $UiLightText;
+  }
+}
+
+li:focus {
+  outline: 0;
+}

@@ -1,0 +1,30 @@
+@import '../../../../../theme/variables.scss';
+
+.node-drawer {
+  display: flex;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    margin: 0.75em 1.5em;
+    margin-bottom: 0;
+    padding-bottom: 0.75em;
+    border-bottom: 1px solid $border-color;
+  }
+
+  &__footer {
+    padding: 1.5em;
+    padding-top: 0;
+  }
+
+  &__content {
+    flex: 1;
+    padding: 1.5em;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__submit {
+    min-width: 150px;
+  }
+}

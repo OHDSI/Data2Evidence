@@ -1,0 +1,43 @@
+.sapUiCPH-correlationCircle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.sapUiCPH-correlationCircle > svg {
+    width: 100%;
+    height: 100%;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > path.section {
+    fill: #777;
+    stroke: none;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > path.section.hover {
+    opacity: 0.2;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > text {
+    fill: #555;
+    text-anchor: middle;
+    font-size: 0.8rem;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > text.hover {
+    opacity: 0.2;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > g.chords > path {
+    stroke: none;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > g.chords > path.hover {
+    opacity: 0.2;
+}
+
+.sapUiCPH-correlationCircle > svg > g > g > g.chords > path.filtered {
+    visibility: hidden;
+}

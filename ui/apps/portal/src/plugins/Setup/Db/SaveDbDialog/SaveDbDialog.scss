@@ -1,0 +1,21 @@
+.save-db-dialog {
+  &__content {
+    min-height: 200px;
+    padding: 10px 25px 0px;
+    overflow: auto;
+    scrollbar-color: #C7C7C7 transparent;
+  }
+
+  &__footer {
+    border-top: 1px solid #dad7d7;
+    padding: 1.5em;
+
+    &-actions {
+      justify-content: center;
+
+      button {
+        width: 200px;
+      }
+    }
+  }
+}

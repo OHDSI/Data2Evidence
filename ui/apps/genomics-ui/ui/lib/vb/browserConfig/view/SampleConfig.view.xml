@@ -1,0 +1,17 @@
+<mvc:View
+    controllerName="hc.hph.genomics.ui.lib.vb.browserConfig.controller.SampleConfig"
+    xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m">
+	<Toolbar class='vbCategoryDialogNoBorder'>
+	    <Label text="{i18n.vb>common.VBConfigTableLabel}"/>
+	    <MultiInput id="sampleMultiInput" tokenChange="onSampleTokenChange" valueHelpRequest="onValueHelpRequest">
+	        <tokens/>
+	    </MultiInput>
+	    <ToolbarSpacer width="2em"/>
+        <Button text="{i18n.vb>common.VBConfigCategoryButton}" type="Emphasized" press="onAddSampleCategory">
+        	<layoutData>
+                <ToolbarLayoutData shrinkable="false" />
+            </layoutData>
+        </Button>
+	</Toolbar>
+</mvc:View>

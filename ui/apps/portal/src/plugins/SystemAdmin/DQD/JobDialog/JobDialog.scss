@@ -1,0 +1,13 @@
+.job-dialog {
+  &__content {
+    padding: 1.5em;
+    overflow: auto;
+  }
+
+  &__button-groups {
+    padding: 1.5em;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+}

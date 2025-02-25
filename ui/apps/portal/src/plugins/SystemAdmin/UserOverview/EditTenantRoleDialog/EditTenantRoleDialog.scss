@@ -1,0 +1,25 @@
+.edit-tenant-role-dialog {
+  .edit-tenant-role-dialog__content {
+    color: var(--color-primary);
+    min-height: 200px;
+    margin: 20px 5px 16px 25px;
+    overflow: auto;
+  }
+
+  .roles__title {
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

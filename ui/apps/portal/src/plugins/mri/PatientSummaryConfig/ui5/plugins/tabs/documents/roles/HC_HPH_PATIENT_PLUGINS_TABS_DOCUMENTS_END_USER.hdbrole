@@ -1,0 +1,4 @@
+role hc.hph.patient.plugins.tabs.documents.roles::HC_HPH_PATIENT_PLUGINS_TABS_DOCUMENTS_END_USER
+{
+    application privilege: hc.hph.patient.plugins.tabs.documents::EndUser;
+}

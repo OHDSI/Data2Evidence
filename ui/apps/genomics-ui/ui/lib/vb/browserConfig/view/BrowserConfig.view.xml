@@ -1,0 +1,31 @@
+<mvc:View
+	controllerName="hc.hph.genomics.ui.lib.vb.browserConfig.controller.BrowserConfig"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	xmlns="sap.m">
+    <Dialog title="{i18n.vb>common.ConfigurationDialogTitle}" class="sapUiGen-ConfigCategoryDialog">
+        <content>
+            <IconTabBar select="onIconTabSelect" selectedKey="{configModel>/selectedKey}" class="sapUiResponsiveContentPadding vbCategoryDialogITBContent">
+        		<items>
+        			<IconTabFilter id="sampleConfigTab" key="{configModel>/sampleConfigKey}" text="{i18n.vb>common.Samples}">
+                        <content/>
+        			</IconTabFilter>
+        			<IconTabFilter id="variantConfigTab" key="{configModel>/variantConfigKey}" text="{i18n.vb>common.Variants}" >
+        			    <content/>
+        			</IconTabFilter>
+        		</items>
+        	</IconTabBar>
+            <Toolbar class='vbCategoryDialogNoBorder'>
+                <Button text="{configModel>/saveButtonText}" press="onSaveConfiguration" />
+                <ToolbarSpacer width="1em"/>
+                <Button text="{configModel>/loadButtonText}" visible="{configModel>/loadVisiblity}" press="onLoadConfiguration" />
+            </Toolbar>
+        </content>
+        <buttons>
+          <Button text="{i18n.vb>common.Apply}" press="onApplyChanges" />
+          <Button text="{i18n.vb>common.SaveAll}" tooltip ="{i18n.vb>common.SaveAllTooltip}" press="onSaveAllConfiguration" />
+          <Button text="{i18n.vb>common.LoadAll}" tooltip ="{i18n.vb>common.LoadAllTooltip}" visible="{configModel>/loadAllVisiblity}" press="onLoadAllConfiguration" />
+          <Button text="{i18n.vb>common.Cancel}" press="onClose" />
+        </buttons>
+    </Dialog>
+</mvc:View>

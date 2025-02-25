@@ -1,0 +1,158 @@
+@import './mri-variables';
+@import './mixins';
+
+button.appButton {
+  @include mriFocusable;
+  align-items: flex-start;
+  background-color: rgba(0, 0, 0, 0);
+  border-bottom-color: rgb(0, 0, 0);
+  border-bottom-style: none;
+  border-bottom-width: 0px;
+  border-image-outset: 0px;
+  border-image-repeat: stretch;
+  border-image-slice: 100%;
+  border-image-source: none;
+  border-image-width: 1;
+  border-left-color: rgb(0, 0, 0);
+  border-left-style: none;
+  border-left-width: 0px;
+  border-right-color: rgb(0, 0, 0);
+  border-right-style: none;
+  border-right-width: 0px;
+  border-top-color: rgb(0, 0, 0);
+  border-top-style: none;
+  border-top-width: 0px;
+  box-sizing: border-box;
+  cursor: pointer;
+  // height: 3rem;
+  letter-spacing: normal;
+  line-height: normal;
+  margin-bottom: 0px;
+  margin-left: 8px;
+  margin-right: 4px;
+  margin-top: 0px;
+  padding-bottom: 3px;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 3px;
+  position: relative;
+  text-align: center;
+  text-indent: 0px;
+  text-rendering: auto;
+  text-shadow: none;
+  text-transform: none;
+  user-select: none;
+  vertical-align: top;
+  visibility: visible;
+  white-space: nowrap;
+  word-spacing: 0px;
+  writing-mode: horizontal-tb;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-user-drag: none;
+  -webkit-border-image: none;
+  div.buttonInner {
+    border: 1px solid $MriButtonBorder;
+    box-sizing: border-box;
+    cursor: pointer;
+
+    font-size: 14px;
+    font-stretch: normal;
+    font-style: normal;
+    font-variant-caps: normal;
+    font-variant-ligatures: normal;
+    font-variant-numeric: normal;
+    font-weight: normal;
+    height: 1.625rem;
+    letter-spacing: normal;
+    line-height: normal;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 0px;
+    min-width: 2rem;
+    padding-bottom: 0px;
+    padding-left: 7px;
+    padding-right: 7px;
+    padding-top: 0px;
+    position: relative;
+    text-align: center;
+    text-indent: 0px;
+    text-rendering: auto;
+    text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 0px;
+    text-transform: none;
+    user-select: none;
+    vertical-align: top;
+    visibility: visible;
+    white-space: nowrap;
+    word-spacing: 0px;
+    writing-mode: horizontal-tb;
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-user-drag: none;
+    span.buttonContent {
+      cursor: pointer;
+
+      font-size: 14px;
+      font-stretch: normal;
+      font-style: normal;
+      font-variant-caps: normal;
+      font-variant-ligatures: normal;
+      font-variant-numeric: normal;
+      font-weight: normal;
+      height: 24px;
+      letter-spacing: normal;
+      line-height: 24px;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      text-align: center;
+      text-indent: 0px;
+      text-overflow: ellipsis;
+      text-rendering: auto;
+      text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 0px;
+      text-transform: none;
+      user-select: none;
+      vertical-align: top;
+      visibility: visible;
+      white-space: nowrap;
+      word-spacing: 0px;
+      writing-mode: horizontal-tb;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      -webkit-user-drag: none;
+    }
+  }
+}
+
+button.appButton {
+  div.buttonInner:hover {
+    background-color: rgba(234, 234, 234, 0.1);
+  }
+  div.buttonInner:active {
+    background-color: $MriBrandHover;
+  }
+}
+
+button.appButton.disabled {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  opacity: 0.5;
+  cursor: default !important;
+  div.buttonInner {
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+    cursor: default !important;
+  }
+  div.buttonInner:active {
+    background-color: transparent !important;
+  }
+  div.buttonInner:hover {
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+  span.buttonContent {
+    cursor: default !important;
+  }
+}
+
+button.sapIconButton {
+  font-family: app-icons;
+  cursor: pointer;
+}

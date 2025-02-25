@@ -1,0 +1,95 @@
+.sapUiCPH-correlationMatrix {
+    position: relative;
+    width: 100%;
+}
+
+.sapUiCPH-correlationMatrix > .row {
+    display: table;
+    position: relative;
+    left: 50%;
+	margin-left: unset;
+	margin-right: unset;
+    transform: translateX(-50%);
+	width: max-content;
+}
+
+.sapUiCPH-correlationMatrix > .row > * {
+    position: relative;
+    box-sizing: unset;
+    padding: 0.1rem;
+    border: 0.2rem solid white;
+    display: inline-block;
+    height: 1.25rem;
+    line-height: 1.25rem;
+    text-align: center;
+    vertical-align: middle;
+    cursor: default;
+    z-index: 0;
+}
+
+.sapUiCPH-correlationMatrix.hover > .row > * {
+    opacity: 0.2;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label {
+    z-index: 1;
+	text-align: right;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover {
+    opacity: 1.0;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover::before {
+    position: absolute;
+    content: '';
+    padding: 0.1rem;
+    width: 1.65rem;
+    height: 1.65rem;
+    left: -0.2rem;
+    top: -0.2rem;
+    margin-top: 0;
+    margin-left: 0;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover::after {
+    position: absolute;
+    content: '';
+    padding: 0.1rem;
+    width: 1.85rem;
+    height: 1.85rem;
+    bottom: -0.2rem;
+    right: -0.2rem;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover.top::before {
+    border-top: red solid 0.2rem;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover.left::before {
+    border-left: red solid 0.2rem;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover.bottom::after {
+    border-bottom: red solid 0.2rem;
+}
+
+.sapUiCPH-correlationMatrix > .row > .label.hover.right::after {
+    border-right: red solid 0.2rem;
+}
+
+.sapUiCPH-correlationMatrix > .row > .value {
+    font-size: 0.8rem;
+    width: 1.25rem;
+    overflow: hidden;
+}
+
+.sapUiCPH-correlationMatrix > .row > .value.filtered {
+    opacity: 0.2;
+}
+
+.sapUiCPH-correlationMatrix > .row > .value.hover:not(:empty) {
+    opacity: 1.0;
+}

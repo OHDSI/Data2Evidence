@@ -1,0 +1,15 @@
+.researcher__container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  &--home {
+    padding-top: 0;
+    overflow-y: initial;
+  }
+
+  main {
+    flex: auto;
+  }
+}

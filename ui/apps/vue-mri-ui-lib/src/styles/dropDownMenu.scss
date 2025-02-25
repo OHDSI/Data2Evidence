@@ -1,0 +1,48 @@
+@import './mri-variables';
+.dropdownmenu-container {
+  position: relative;
+  z-index: 10;
+  .closed {
+    display: none;
+  }
+  .menuSeperator {
+    position: relative;
+    height: 3px;
+    color: $UiDarkestText;
+    font-size: 14px;
+  }
+  .menuSeperator > hr {
+    left: 8px;
+    right: 8px;
+    border-color: $MriDropDownBorderLight;
+    display: inline-block;
+    margin: 0;
+    position: absolute;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    border-width: 0;
+    border-top: 1px solid $MriDropDownBorderLight;
+    height: 1px;
+  }
+  .menuWrapper {
+    font-size: 14px;
+    font-size: 0.875rem;
+    padding: 0;
+    min-width: 80px;
+    min-width: 5rem;
+    background-color: $UiLightestBG;
+    border: 1px solid $MriDropDownBorderLight;
+    color: $UiDarkestText;
+    cursor: default;
+    outline: none;
+    overflow: hidden;
+    box-shadow: 0 0.0625rem 0.1875rem transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  }
+  .menuWrapper ul {
+    color: $UiDarkestText;
+    padding: 0;
+    margin: 0;
+    display: block;
+    cursor: default;
+  }
+}

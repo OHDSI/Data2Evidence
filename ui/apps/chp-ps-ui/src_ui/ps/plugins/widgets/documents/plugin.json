@@ -1,0 +1,26 @@
+{
+    "plugin_name": "PS_PLUGINS_WIDGETS_DOC_NAME",
+    "plugin_description": "PS_PLUGINS_WIDGETS_DOC_DESC",
+    "languages": ["en", "de", "fr"],
+    "language_textbundle": "i18n/text.properties",
+    "extensions": [{
+        "extension_header": {
+            "extension_point_id": "sap.hc.hph.patient.app.widget",
+            "extension_point_version": "1.0",
+            "extension_id": "sap.hc.hph.patient.plugins.widgets.documents",
+            "extension_name": "PS_PLUGINS_WIDGETS_DOC_EXTN_NAME",
+            "extension_alias": "PS_PLUGINS_WIDGETS_DOC_EXTN_ALIAS",
+            "extension_description": "PS_PLUGINS_WIDGETS_DOC_EXTN_DESC"
+        },
+        "extension_contribution": {
+            "annotations": [
+                "ps_doc_title",
+                "ps_doc_url"
+            ],
+            "key": "documents",
+            "namespace": "sap.hc.hph.patient.plugins.widgets.documents.ui",
+            "path": "/sap/hc/hph/patient/plugins/widgets/documents/ui",
+            "urlParams": []
+        }
+    }]
+}

@@ -1,0 +1,104 @@
+.sapUiTheme-sap_belize .sapTlTimelineLaneHeaderUndatedCount.sapMBtn {
+  height: 2rem;
+}
+.sapUiTheme-sap_belize .sapTlOverviewPanelDated.sapMPanel > .sapMPanelHdr {
+  border-bottom: none;
+  padding-left: 3rem;
+}
+.sapUiTheme-sap_belize .sapTlOverviewPanelUndated {
+  border-bottom: solid 1px #dddddd;
+}
+.sapUiTheme-sap_belize .sapTlOverviewPanelDated {
+  border-bottom: none;
+}
+.sapUiTheme-sap_belize .sapTlOverviewPanelUndated .sapMPanelContent,
+.sapUiTheme-sap_belize .sapTlOverviewPanelDated .sapMPanelContent,
+.sapUiTheme-sap_belize .sapTlOverviewPanelUndated .sapMPanelWrappingDiv,
+.sapUiTheme-sap_belize .sapTlOverviewPanelDated .sapMPanelWrappingDiv {
+  border-bottom: none;
+}
+.sapUiTheme-sap_belize .sapTlOverviewPanelUndated .sapMListNoData,
+.sapUiTheme-sap_belize .sapTlOverviewPanelDated .sapMListNoData {
+  border-bottom: none;
+}
+.sapUiTheme-sap_belize .sapTlAttributeSelectionListItem .sapMSLITitleOnly {
+  font-size: 0.875rem;
+}
+.sapUiTheme-sap_bluecrystal .sapTlTimelineLaneHeaderUndatedCount.sapMBtn {
+  height: 2rem;
+}
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelDated.sapMPanel > .sapMPanelHdr {
+  border-bottom: none;
+  padding-left: 3rem;
+}
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelUndated {
+  border-bottom: solid 1px #dddddd;
+}
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelDated {
+  border-bottom: none;
+}
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelUndated .sapMPanelContent,
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelDated .sapMPanelContent,
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelUndated .sapMPanelWrappingDiv,
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelDated .sapMPanelWrappingDiv {
+  border-bottom: none;
+}
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelUndated .sapMListNoData,
+.sapUiTheme-sap_bluecrystal .sapTlOverviewPanelDated .sapMListNoData {
+  border-bottom: none;
+}
+.sapUiTheme-sap_bluecrystal .sapTlAttributeSelectionListItem .sapMSLITitleOnly {
+  font-size: 0.875rem;
+}
+.sapUiTheme-sap_hcb .sapTlTimelineLaneHeaderUndatedCount.sapMBtn {
+  height: 2rem;
+}
+.sapUiTheme-sap_hcb .sapTlOverviewPanelDated.sapMPanel > .sapMPanelHdr {
+  border-bottom: none;
+  padding-left: 3rem;
+}
+.sapUiTheme-sap_hcb .sapTlOverviewPanelUndated {
+  border-bottom: solid 1px #dddddd;
+}
+.sapUiTheme-sap_hcb .sapTlOverviewPanelDated {
+  border-bottom: none;
+}
+.sapUiTheme-sap_hcb .sapTlOverviewPanelUndated .sapMPanelContent,
+.sapUiTheme-sap_hcb .sapTlOverviewPanelDated .sapMPanelContent,
+.sapUiTheme-sap_hcb .sapTlOverviewPanelUndated .sapMPanelWrappingDiv,
+.sapUiTheme-sap_hcb .sapTlOverviewPanelDated .sapMPanelWrappingDiv {
+  border-bottom: none;
+}
+.sapUiTheme-sap_hcb .sapTlOverviewPanelUndated .sapMListNoData,
+.sapUiTheme-sap_hcb .sapTlOverviewPanelDated .sapMListNoData {
+  border-bottom: none;
+}
+.sapUiTheme-sap_hcb .sapTlAttributeSelectionListItem .sapMSLITitleOnly {
+  font-size: 0.875rem;
+}
+.sapTlTimelineLaneHeaderUndatedCount.sapMBtn {
+  height: 2rem;
+}
+.sapTlOverviewPanelDated.sapMPanel > .sapMPanelHdr {
+  border-bottom: none;
+  padding-left: 3rem;
+}
+.sapTlOverviewPanelUndated {
+  border-bottom: solid 1px #dddddd;
+}
+.sapTlOverviewPanelDated {
+  border-bottom: none;
+}
+.sapTlOverviewPanelUndated .sapMPanelContent,
+.sapTlOverviewPanelDated .sapMPanelContent,
+.sapTlOverviewPanelUndated .sapMPanelWrappingDiv,
+.sapTlOverviewPanelDated .sapMPanelWrappingDiv {
+  border-bottom: none;
+}
+.sapTlOverviewPanelUndated .sapMListNoData,
+.sapTlOverviewPanelDated .sapMListNoData {
+  border-bottom: none;
+}
+.sapTlAttributeSelectionListItem .sapMSLITitleOnly {
+  font-size: 0.875rem;
+}

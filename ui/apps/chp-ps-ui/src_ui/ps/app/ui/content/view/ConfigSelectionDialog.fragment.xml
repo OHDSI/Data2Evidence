@@ -1,0 +1,20 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:ffh="sap.hc.hph.core.ui">
+    <ffh:ConfigDialog title="{i18n>HPH_PAT_CONTENT_CONFIG_SELECTION_DIALOG_TITLE}" beforeClose=".onDialogClose" class="sapTlConfigDialog">
+        <List includeItemInSelection="true" mode="SingleSelectLeft" items="{/configs}">
+            <CustomListItem selected="{selected}" class="sapTlConfigDialogListItem">
+                <VBox>
+                    <Text text="{meta/assignmentName}" class="sapMSLITitle"/>
+                    <Text text="{meta/configName}" class="sapMSLIDescription"/>
+                    <Text text="{i18n>HPH_PAT_CONTENT_SAVED_AS_DEFAULT}" visible="{meta/default}" class="sapMSLIDescription sapTlConfigDialogListItemDefault"/>
+                </VBox>
+            </CustomListItem>
+        </List>
+        <ffh:footer>
+            <Button text="{i18n>HPH_PAT_CONTENT_BUTTON_CLEAR}" press=".onConfigDefaultClear" enabled="{parts: ['/configs'], formatter: '.hasDefaultSelected'}"/>
+            <ToolbarSpacer class="sapTlConfigDialogToolbarSpacer"/>
+            <Button text="{i18n>HPH_PAT_CONTENT_BUTTON_OK}" press=".onConfigSelected" enabled="{=!!${/configs}.length}"/>
+            <Button text="{i18n>HPH_PAT_CONTENT_BUTTON_OK_AND_SAVE}" press=".onConfigSelectedAndSaved" enabled="{=!!${/configs}.length}"/>
+            <Button text="{i18n>HPH_PAT_CONTENT_BUTTON_CANCEL}" press=".onClosePressed" />
+        </ffh:footer>
+    </ffh:ConfigDialog>
+</core:FragmentDefinition>

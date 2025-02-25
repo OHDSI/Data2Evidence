@@ -1,0 +1,9 @@
+.sapPSWidget .sapMOHTitle h1 .sapMText {
+  font-size: 1rem;
+}
+.sapPSWidget .sapMObjectAttributeColon {
+  opacity: 0;
+}
+.sapPSWidget.sapMOH .sapMOHAttr .sapMObjectAttributeTitle {
+  font-weight: bold;
+}

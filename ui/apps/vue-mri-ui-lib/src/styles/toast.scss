@@ -1,0 +1,22 @@
+@import './mri-variables';
+.app-mri-toast {
+  border-radius: 5px;
+  width: 210px;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  margin-left: -105px;
+  background-color: $MriContrast;
+  padding: 16px 16px 16px 16px;
+  box-shadow: 0 0.625rem 1.875rem 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  opacity: 0.9;
+  z-index: 1000;
+  .app-mri-toast-body {
+    display: block;
+    text-align: center;
+    width: 100%;
+    color: $MriLightestText;
+    font-size: 14px;
+    opacity: 1;
+  }
+}

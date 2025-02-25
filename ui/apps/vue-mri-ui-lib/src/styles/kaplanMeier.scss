@@ -1,0 +1,490 @@
+@import './mri-variables';
+$km-slider-height: 40px;
+
+.km-container {
+  background-color: $UiLightestBG;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  display: flex;
+
+  .kmPopover {
+    font-size: 0.865rem;
+    color: $UiMediumText;
+    background-color: $UiLightestBG;
+    padding: 10px;
+    .kmPopoverContentDimensions {
+      border-bottom: $UiDarkestBorder 1px solid;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+    .kmPopoverContentDimensionValue {
+      line-height: normal;
+    }
+    .kmPopoverContentDimensionAxis {
+      padding-right: 5px;
+    }
+    .kmPopoverContentMeasures {
+      white-space: normal;
+      div {
+        line-height: 1.2rem;
+      }
+      .kmPopoverContentMeasuresContainer {
+        display: flex;
+        .kmPopoverContentMeasureName {
+          flex-grow: 1;
+          display: inline-block;
+          box-sizing: border-box;
+          white-space: pre-line;
+          word-wrap: break-word;
+        }
+        .kmPopoverContentMeasureValue {
+          display: inline-block;
+          box-sizing: border-box;
+          white-space: pre-line;
+          word-wrap: break-word;
+          cursor: text;
+        }
+      }
+    }
+  }
+  .km-chart-containter {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .km-chart {
+    width: 100%;
+    height: calc(100% - #{$km-slider-height});
+  }
+  .km-info {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    overflow-x: auto;
+    width: 20%;
+    text-align: left;
+    .km-help {
+      float: right;
+      margin-top: 12px;
+      margin-right: 20px;
+      outline: none;
+      background: none;
+      border: none;
+      visibility: hidden;
+      .icon {
+        color: $MriExtraLightText;
+      }
+    }
+    .km-help:hover .icon {
+      color: $UiLightText;
+    }
+    .km-help.visible {
+      visibility: visible;
+    }
+    .interactionListHeader {
+      font-size: 14px;
+    }
+  }
+  .km-label {
+    color: $MriHeaderTextDark;
+    font-size: 13px;
+    font-weight: normal;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: text;
+    margin-top: 16px;
+  }
+  .checkboxflex {
+    margin-top: 16px;
+    min-height: 24px;
+  }
+  .checkboxflex > input {
+    border-width: thin;
+  }
+  .checkbox-container {
+    left: 0.5rem;
+    top: 0.5rem;
+    height: 0.75rem;
+    width: 0.75rem;
+    line-height: 0.75rem;
+    font-size: 0.625rem;
+    border-radius: 0;
+    background-color: #ffffff;
+    position: absolute;
+    padding: 0;
+    text-align: center;
+    border: solid 0.125rem #c0c0c0;
+  }
+  .checkbox-container:hover {
+    border-color: #007cc0;
+  }
+  .checkbox-container > input {
+    left: 0;
+    -webkit-appearance: none;
+  }
+  .checkboxflex > input:hover {
+    border-color: $UiLightBorder;
+  }
+  .km-logRankPValue {
+    text-align: center;
+    border: 1px solid $UiLighterBorder;
+    border-radius: 2px;
+    display: inline-block;
+    font-size: 12px;
+    width: 100%;
+    height: 33px;
+    line-height: 2.5;
+    color: $MriHeaderTextDark;
+  }
+  .km-slider-row {
+    padding-left: 20px;
+    padding-right: 5px;
+    height: $km-slider-height;
+  }
+  .km-slider {
+    width: calc(100% - 130px);
+    float: left;
+  }
+  .km-unitMenu {
+    .axisMenuButton {
+      width: 85px;
+    }
+    margin-top: -2px;
+    margin-right: 120px;
+    float: right;
+  }
+  .km-interval {
+    height: 5%;
+  }
+  .km-slider .km-range-slider-tooltip {
+    width: 48px;
+    visibility: hidden;
+  }
+  .km-slider .km-range-slider-tooltip.visible {
+    visibility: visible;
+  }
+  .km-slider .km-range-slider-tooltip > input {
+    width: 50px;
+    text-align: center;
+    height: 1.5rem;
+    outline: none;
+    font-size: 12px;
+    position: relative;
+  }
+  .km-chart > svg > .curve path {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke-width: 2px;
+  }
+  .MriPaKaplan .placeholder {
+    bottom: 50%;
+    left: 45%;
+    position: absolute;
+    text-align: center;
+  }
+  .MriPaKMPopup {
+    background-color: #ffffff;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    padding: 10px;
+  }
+  .MriPaKMPopup .MriPaKMDivider {
+    border-width: 1px 0 0 0;
+    border-color: #999999;
+  }
+  .MriPaKaplan {
+    height: 100%;
+    width: 100%;
+  }
+  .km-chart > svg > .UiSli {
+    padding-left: 5%;
+    padding-right: 5%;
+    width: 90%;
+  }
+  .km-chart > svg > .error-curve path {
+    fill: none;
+    opacity: 0.4;
+    shape-rendering: crispEdges;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .km-chart > svg > .tick line {
+    stroke: #ffffff;
+  }
+  .km-chart > svg > .axis text {
+    fill: #333333;
+
+    font-size: 12px;
+  }
+  .km-chart > svg > .label-area text {
+    font-family: sans-serif;
+    font-size: 12px;
+  }
+  .km-chart > svg > .censored-label text {
+    font-family: sans-serif;
+    font-size: 12px;
+  }
+  .km-chart > svg > .grid > g.tick {
+    opacity: 0.7;
+    stroke: #dddddd;
+  }
+  .km-chart > svg > .grid path {
+    stroke-width: 0;
+  }
+  .km-chart > svg > {
+    overflow: visible;
+  }
+
+  .km-chart > svg > .axis > path.domain {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: $UiDarkestBorder;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .MriPaKaplanLogRankPValue {
+    border-style: solid;
+    border-radius: 5px;
+    border-color: #dddddd;
+    border-width: thin;
+    font-weight: bold;
+    font-size: 12pt;
+    width: 95%;
+    height: 25px;
+    line-height: 25px;
+  }
+  .MriPaKMInfoBtnTextOverFlow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    width: 100%;
+    background-color: $UiExtraLightBG;
+    border: 1px solid $UiLighterBorder;
+    color: $MriHeaderTextDark;
+    border-radius: 2px;
+    font-size: 11px;
+    // overflow: hidden;
+    vertical-align: top;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0 7px 1px;
+    height: 28px;
+  }
+  .MriPaKMInfoChkbox {
+    white-space: pre-wrap;
+  }
+  .MriPaKMInfoHBox {
+    align-items: center;
+    min-height: 1.5rem;
+  }
+  .MriPaKMInfo {
+    overflow-y: auto;
+    overflow-x: visible;
+    width: 25%;
+  }
+  .km-slider .vue-slider-component .vue-slider-tooltip-wrap.vue-slider-tooltip-top {
+    top: -4px;
+  }
+  .km-slider .vue-slider-component.vue-slider-horizontal .vue-slider-dot {
+    top: -9px !important;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgb(153, 153, 153);
+    height: 16px !important;
+    width: 16px !important;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+  }
+  .km-chart-containter .vue-slider-component.vue-slider-horizontal .vue-slider-process {
+    background-color: #427cac;
+  }
+  .km-slider .vue-slider-component.vue-slider-horizontal .vue-slider-dot {
+    left: -2px;
+  }
+  .km-slider .vue-slider {
+    height: 3px !important;
+    background-color: #dddddd;
+  }
+  .line-seperator {
+    line-height: 20px;
+    margin-top: 20px;
+  }
+  .km-logrank-help-popover {
+    color: $MriBrand;
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 6px;
+    margin-top: 3px;
+    display: inline-block;
+  }
+  .km-logrank-help-popover-header {
+    line-height: 40px;
+    font-size: 14px;
+    color: $UiLightText;
+  }
+  .km-logrank-help-popover-content {
+    padding: 1rem;
+    font-size: 14px;
+    color: $UiLightText;
+  }
+  .km-logrank-help-popover-content-container {
+    vertical-align: middle;
+  }
+  .km-logrank-help-popover-content-data {
+    text-align: left;
+  }
+  .km-label-bold {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  div.app-checkbox {
+    margin-left: 0px;
+  }
+}
+
+.axisContainer {
+  .kaplanAxis-label {
+    bottom: 145px;
+    position: absolute;
+    left: 35px;
+    font-size: 13px;
+    color: $MriHeaderTextDark;
+  }
+  .kmInfo {
+    width: 133px;
+    margin-left: 32px;
+    .km-label {
+      font-size: 13px;
+      color: $MriHeaderTextDark;
+    }
+    .flexItem {
+      margin-top: 10px;
+      div.app-checkbox {
+        margin-left: -6px;
+      }
+      div.app-checkbox .app-label {
+        color: $MriHeaderTextDark;
+      }
+    }
+  }
+
+  .kmControlComponent.axis-menu-button-wrapper {
+    display: inline-block;
+    white-space: nowrap;
+    position: static;
+    width: 95%;
+    .modal-mask .modal-header {
+      padding: 0.5rem;
+    }
+    .buttonWrapper {
+      width: 100%;
+      .kmMenuButton,
+      .kmInteractionButton {
+        position: relative;
+        width: 133px;
+        background-color: $UiExtraLightBG;
+        border: 1px solid $UiLighterBorder;
+        color: $MriHeaderTextDark;
+        border-radius: 2px;
+        font-size: 11px;
+        overflow: hidden;
+        vertical-align: top;
+        text-align: left;
+        cursor: pointer;
+        white-space: nowrap;
+        padding: 0 7px 1px;
+        height: 34px;
+        display: grid;
+        display: -ms-grid;
+        grid-row: 2;
+        grid-column: 1;
+        -ms-grid-columns: 120px 120px;
+        grid-template-columns: 120px 120 px;
+        .kmMenuText {
+          font-size: 11px;
+          width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          vertical-align: middle;
+          line-height: 1.27;
+          display: inline-block;
+          height: auto;
+          white-space: nowrap;
+          color: $MriHeaderTextDark;
+        }
+        .kmMenuSubtext {
+          width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          vertical-align: middle;
+          line-height: 1.27;
+          display: inline-block;
+          height: auto;
+          white-space: nowrap;
+          color: $MriHeaderTextDark;
+          font-weight: bold;
+          grid-row: 2;
+          grid-column: 1;
+          -ms-grid-row: 2;
+          -ms-grid-column: 1;
+        }
+      }
+    }
+  }
+}
+
+.kmInteractionList-wrapper {
+  .censoringInteractionList {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  .censoringInteractionListitem {
+    height: 2rem;
+    border-bottom: 1px solid $UiExtraLightBorder;
+    background-color: $UiLightestBG;
+    padding: 0 1rem 0 1rem;
+    box-sizing: border-box;
+    align-items: center;
+    display: flex;
+  }
+  .censoringInteractionListText {
+    font-size: 0.875rem;
+    color: $UiDarkText;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .modal-container {
+    .modal-body {
+      padding: 0px;
+    }
+  }
+}
+
+.kmStatisticButton {
+  position: inherit;
+  width: 100%;
+  .buttonWrapper {
+    width: 100%;
+    margin-left: 0;
+  }
+}

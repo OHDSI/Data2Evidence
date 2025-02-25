@@ -1,0 +1,17 @@
+.terminology_detail {
+  &__container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+
+  &__related-concepts{
+    display:flex
+  }
+  
+}

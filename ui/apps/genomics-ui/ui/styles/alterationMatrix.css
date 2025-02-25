@@ -1,0 +1,198 @@
+.sapUiIcon.sapUiIconMirrorInRTL.top_space{
+	margin:7px 5px 0px 0px !important;
+	font-size: .92rem!important;
+}
+.genomicBtnMenu{
+    width:120px!important;
+}
+.sapMriPaAttributeMenuButton.genomicBtnMenu .sapMBtnDefault.sapMBtnHoverable.sapMBtnInner.sapMFocusable{
+    background-color:#e5e5e5!important;
+    border:none!important;
+}
+
+.genomicBtnMenu .sapMBtnCustomIcon.sapMBtnIcon.sapUiIcon{
+     margin-left:95px!important;
+}
+.sapMriPaAttributeMenuButton.top_btn{
+    font-size: 0.9rem;
+    color: #333!important;
+    margin: 5px 0px 0px 5px;
+}
+.sapMSlt.sapMSltDefault.sapMSltHoverable.sapMSltWithArrow.top_select{
+	width:120px!important;
+}
+.top_container{
+	   padding: 62px 5px 10px 15px!important;
+}
+.top_container .top_label{
+	   color:#333!important;
+	   font-size:0.75rem!important;
+	   margin-left:17px!important;
+	   margin-bottom:4px!important;
+}
+.sapMriPaAttributeMenuButton.genomicBtnMenu .sapMBtnContent {
+                margin-top: 1px;
+                width: 90%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                vertical-align: middle;
+                /* line-height: 18px; */
+                display: inline-block;
+                height: 18px;
+                color: #666666;
+}
+
+.classIconTabBarForGenomics .sapMITBHead{
+	margin-top: 0rem!important;
+}
+.classIconTabBarForGenomics .sapMITBTextOnly>.sapMITBVertical {
+	/*height: 1.9375rem!important;*/
+}
+.matrixTableContainer {
+	height: 100%!important;
+}
+.alterationTable .sapUiTableColHdrCnt {
+	height: 88px !important;
+}
+.alterationTable .sapUiTableColHdrCnt .sapUiTableColHdrScr .sapUiTableCol .sapUiTableColHdr:not(:first-of-type) .sapUiTableCol {
+	border-top: none !important;
+}
+.alterationTable .sapHcHphAnaAlterationMatrix,
+.alterationTable .sapUiTableCtrl .sapUiTableCtrlRowScroll .sapUiTableCtrlScroll tbody td .sapUiTableCell,
+.alterationTable .sapUiSizeCompact .sapUiTableTr>td .sapUiTableCell {
+	padding-top: 3px!important;
+	padding-bottom: 3px!important;
+}
+.alterationTable .sapUiTableFtr .sapMTB{
+	border-bottom:none!important;
+}
+.matrixTableContainer .sapUiTableColHdr:not(:first-of-type) .sapUiTableCol {
+	border-top: none!important;
+}
+.matrixTableContainer .sapUiSizeCompact .sapUiTableCol,
+.matrixTableContainer .sapUiSizeCompact .sapUiTableColRowHdr,
+.matrixTableContainer .sapUiSizeCompact .sapUiTableColHdrCnt {
+	background-color: transparent!important;
+}
+.sapUiTableColHdr:not(:first-of-type) .sapUiTableCol .maxHeight {
+	height: 100%;
+}
+.maxWidth {
+	height: 100%;
+}
+.alterationTable .sapMPage .sapMITBContainerContent {
+	height: calc(100% - 70px);
+}
+.alterationTable .sapMPage .sapMITB {
+	height: 100%;
+	position: relative;
+}
+.alterationTable .sapMPage .sapMITBContent {
+	height: 100%;
+}
+.alterationTable .black * {
+	color: black !important;
+}
+.alterationTable .darkGreen * {
+	color: #557b00 !important;
+}
+.alterationTable .green * {
+	color: #008000 !important;
+}
+.alterationTable .darkBlue * {
+	color: #000078 !important;
+}
+.alterationTable .lightPink * {
+	color: #ff9999 !important;
+}
+.alterationTable .blue * {
+	color: rgb(0, 0, 255) !important;
+}
+.alterationTable .blueBorder * {
+	color: rgb(102, 153, 204) !important;
+}
+.alterationTable .red * {
+	color: rgb(255, 0, 0) !important;
+}
+.alterationTable .redBorder * {
+	color: rgb(255, 153, 153) !important;
+}
+.alterationTable .blackUp * {
+	color: black !important;
+}
+.alterationTable .blackDown * {
+	color: black !important;
+}
+.alterationTable .small .sapMBtnIcon {
+	font-size: 10px !important;
+}
+.alterationTable .mauve * {
+	color: #b553a9 !important;
+}
+.alterationTable .mauve * {
+	color: #b553a9 !important;
+}
+.alterationTable .sapUiTableFtr {
+	border: none !important;
+}
+.alterationTable .sapMBtn .sapMBtnInner {
+	background: white !important;
+	border: none !important;
+}
+.alterationTable .rgb0_176_235 * {
+	color: rgb(0, 176, 235)!important;
+}
+.alterationTable .rgb0_150_136 * {
+	color: rgb(0, 150, 136)!important;
+}
+.alterationTable .rgb243_66_53 * {
+	color: rgb(243, 66, 53)!important;
+}
+.alterationTable .rgb96_125_139 * {
+	color: rgb(96, 125, 139) !important;
+}
+.alterationTable .rgb255_235_58 * {
+	color: rgb(255, 235, 58) !important;
+}
+.alterationTable .rgb32_149_243 * {
+	color: rgb(32, 149, 243) !important;
+}
+.alterationTable .rgb233_29_98 * {
+	color: rgb(233, 29, 98) !important;
+}
+.alterationTable .rgb62_80_181 * {
+	color: rgb(62, 80, 181) !important;
+}
+.alterationTable .rgb156_38_175 * {
+	color: rgb(156, 38, 175)!important;
+}
+.alterationTable .rgb205_220_56 * {
+	color: rgb(205, 220, 56)!important;
+}
+.alterationTable .rgb138_195_73 * {
+	color: rgb(138, 195, 73)!important;
+}
+.alterationTable .rgb75_175_79 * {
+	color: rgb(75, 175, 79)!important;
+}
+.alterationTable .rgb0_150_136 * {
+	color: rgb(0, 150, 136)!important;
+}
+.alterationTable .rgb0_188_212 * {
+	color: rgb(0, 188, 212)!important;
+}
+.alterationTable .rgb255_193_6 * {
+	color: rgb(255, 193, 6)!important;
+}
+.alterationTable .rgb255_152_0 * {
+	color: rgb(255, 152, 0)!important;
+}
+.alterationTable .rgb255_87_33 * {
+	color: rgb(255, 87, 33)!important;
+}
+.alterationTable .rgb121_84_71 * {
+	color: rgb(121, 84, 71)!important;
+}
+.alterationTable .rgb157_157_157 * {
+	color: rgb(157, 157, 157)!important;
+}

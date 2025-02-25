@@ -1,0 +1,22 @@
+.add-study-dialog {
+  .add-study-dialog__content {
+    min-height: 200px;
+    padding: 0 25px;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
+    .u-padding-vertical--small {
+      padding-right: 20px;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

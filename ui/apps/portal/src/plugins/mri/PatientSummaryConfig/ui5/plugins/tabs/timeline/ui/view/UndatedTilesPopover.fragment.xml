@@ -1,0 +1,8 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:patient="hc.hph.patient.app.ui.lib">
+    <Popover placement="Right" showHeader="false" contentWidth="300px" horizontalScrolling="false">
+        <patient:TilePopoverContent color="{color}" count="{tiles/undated/length}" title="{= ${tiles/undated/length} > 1 ? ${title} : ${tiles/undated/0/name}}" time="" content="{tiles/undated}">
+            <patient:Tile end="{end}" name="{name}" start="{start}" key="{key}" annotations="{path: 'annotations', factory: '.createTimelineAnnotations'}"
+                attributes="{attributes}"/>
+        </patient:TilePopoverContent>
+    </Popover>
+</core:FragmentDefinition>

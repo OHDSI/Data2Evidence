@@ -1,0 +1,468 @@
+<mvc:View controllerName="hc.hph.config.global.ui.views.GlobalSettings"
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:l="sap.ui.layout"
+    xmlns:lib="hc.hph.config.global.ui.lib"
+    xmlns:html="http://www.w3.org/1999/xhtml" displayBlock="true">
+    <Page showNavButton="true" title="{i18n>HPH_CFG_GLOBAL_TITLE_CONFIG_SETTINGS}" navButtonPress="handleNavButtonPress" id="globalSetting">
+        <content>
+            <SplitContainer mode="StretchCompressMode">
+                <masterPages>
+                    <List id="masterTabList" mode="SingleSelectMaster" itemPress="switchView">
+                        <items>
+                            <DisplayListItem selected="true" type="Active" class="sapGlobalMasterListItem" label="{i18n>HPH_CFG_GLOBAL_MAPPING_SETTINGS_SECTION_TAB}" />
+                            <DisplayListItem type="Active" class="sapGlobalMasterListItem" label="{i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB}" />
+                            <DisplayListItem type="Active" class="sapGlobalMasterListItem" label="{i18n>HPH_CFG_GLOBAL_LANG_SETTINGS_SECTION_TAB}" />
+                            <DisplayListItem id="developerTab" type="Active" class="sapGlobalMasterListItem" label="{i18n>HPH_CFG_GLOBAL_DEV_SETTINGS_SECTION_TAB}" />
+                            <DisplayListItem type="Active" class="sapGlobalMasterListItem" label="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_SETTINGS_SECTION_TAB}" />
+                        </items>
+                    </List>
+                </masterPages>
+                <detailPages>
+                    <Page showHeader="false" id="globalSettingDetailPage">
+                        <Panel width="auto" class="sapGlobalPanel" id="languageSetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_LANG_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class=" tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_LANG_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_LANG_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                    <f:content>
+                                        <Label class="sapMxConfigProp" text="" tooltip="" />
+                                        <Button class="sapGlobalSettingAddLanguage" icon="sap-icon://add" press="addLanguage" type="Transparent" width="140px" text="{i18n>HPH_CFG_GLOBAL_BUTTON_ADD_LANGUAGE_TEXT}" tooltip="{i18n>HPH_CFG_GLOBAL_BUTTON_ADD_LANGUAGE_TOOLTIP}" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_LANGUAGE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_LANGUAGE_TOOLTIP}" />
+                                        <List class="sapGlobalSettingLanguageList" id="languageList"></List>
+                                    </f:content>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="mappingSetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_MAPPING_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class=" tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_MAPPING_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <FlexBox direction="Column" alignItems="Center" class="sapGlobalSettingFlexbox">
+                                    <items>
+                                        <!-- INTERACTION -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@INTERACTION/message' },{path: 'validationState>/tableMapping/@INTERACTION.PATIENT_ID/message' },{path: 'validationState>/tableMapping/@INTERACTION.INTERACTION_ID/message' },      {path: 'validationState>/tableMapping/@INTERACTION.CONDITION_ID/message' },{path: 'validationState>/tableMapping/@INTERACTION.PARENT_INTERACT_ID/message' },{path: 'validationState>/tableMapping/@INTERACTION.START/message' },{path: 'validationState>/tableMapping/@INTERACTION.END/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_INTEGRATION_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_INTEGRATION_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@INTERACTION}" liveChange="changePlaceholder" width="70%" />
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" items="{ path:'tableColumns>/@INTERACTION', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.PATIENT_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.PATIENT_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.INTERACTION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.INTERACTION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.CONDITION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.CONDITION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.PARENT_INTERACT_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.PARENT_INTERACT_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_START_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_START_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.START}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.START/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_END_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_END_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.END}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.END/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TYPE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TYPE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@INTERACTION', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@INTERACTION', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@INTERACTION.INTERACTION_TYPE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@INTERACTION.INTERACTION_TYPE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- OBS -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@OBS/message' },{path:'validationState>/tableMapping/@OBS.PATIENT_ID/message'},{path: 'validationState>/tableMapping/@OBS.OBSERVATION_ID/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_OBS_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_OBS_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@OBS}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@OBS', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@OBS' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@OBS.PATIENT_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@OBS.PATIENT_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBSERVATION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBSERVATION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@OBS', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@OBS' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@OBS.OBSERVATION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@OBS.OBSERVATION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBS_TYPE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBS_TYPE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@OBS', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@OBS' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@OBS.OBS_TYPE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@OBS.OBS_TYPE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CHAR_VAL_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CHAR_VAL_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@OBS', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@OBS' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@OBS.OBS_CHAR_VAL}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@OBS.OBS_CHAR_VAL/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- CODE -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@CODE/message' },{path: 'validationState>/tableMapping/@CODE.INTERACTION_ID/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_CODE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_CODE_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@CODE}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@CODE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@CODE', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@CODE.INTERACTION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@CODE.INTERACTION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@CODE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@CODE', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@CODE.ATTRIBUTE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@CODE.ATTRIBUTE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@CODE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@CODE', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@CODE.VALUE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@CODE.VALUE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- MEASURE -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@MEASURE/message' },{path: 'validationState>/tableMapping/@MEASURE.INTERACTION_ID/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_MEASSURE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_MEASSURE_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@MEASURE}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@MEASURE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@MEASURE', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@MEASURE.INTERACTION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@MEASURE.INTERACTION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@MEASURE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@MEASURE', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@MEASURE.ATTRIBUTE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@MEASURE.ATTRIBUTE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@MEASURE', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@MEASURE', factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@MEASURE.VALUE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@MEASURE.VALUE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- REF -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@REF/message' },{path: 'validationState>/tableMapping/@REF.VOCABULARY_ID/message' },{path: 'validationState>/tableMapping/@REF.CODE/message' },                                                {path: 'validationState>/tableMapping/@REF.TEXT/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_REF_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_REF_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@REF}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@REF', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@REF' , factory: '.columnFactory' }" selectedKey="{globalSettingsModel>/tableMapping/@REF.VOCABULARY_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@REF.VOCABULARY_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_CODE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_CODE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@REF', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@REF', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@REF.CODE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@REF.CODE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_TEXT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_TEXT_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@REF', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@REF', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@REF.TEXT}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@REF.TEXT/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- TEXT -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@TEXT/message' },{path: 'validationState>/tableMapping/@TEXT.INTERACTION_ID/message' },{path: 'validationState>/tableMapping/@TEXT.INTERACTION_TEXT_ID/message' },                                                {path: 'validationState>/tableMapping/@TEXT.VALUE/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_TEXT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_TEXT_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@TEXT}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@TEXT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@TEXT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@TEXT.INTERACTION_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@TEXT.INTERACTION_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TEXT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TEXT_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@TEXT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@TEXT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@TEXT.INTERACTION_TEXT_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@TEXT.INTERACTION_TEXT_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_TEXT_VALUE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_TEXT_VALUE_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@TEXT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@TEXT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@TEXT.VALUE}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@TEXTREF.VALUE/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <!-- PATIENT -->
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <lib:MessageStrip text="{ parts: [{path: 'validationState>/tableMapping/@PATIENT/message' },{path: 'validationState>/tableMapping/@PATIENT.PATIENT_ID/message' },{path: 'validationState>/tableMapping/@PATIENT.DOD/message' },                                                 {path: 'validationState>/tableMapping/@PATIENT.DOB/message' }] }" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_PATIENT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_PATIENT_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/tableMapping/@PATIENT}" liveChange="changePlaceholder" width="70%"/>
+                                                    </Toolbar>
+                                                    <f:content>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@PATIENT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@PATIENT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@PATIENT.PATIENT_ID}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@PATIENT.PATIENT_ID/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOD_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOD_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@PATIENT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@PATIENT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@PATIENT.DOD}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@PATIENT.DOD/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOB_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOB_TOOLTIP}" />
+                                                        <Select enabled="{ path:'tableColumns>/@PATIENT', formatter: '.listEnabler' }" class="sapMxConfigProp" items="{ path:'tableColumns>/@PATIENT', factory: '.columnFactory'  }" selectedKey="{globalSettingsModel>/tableMapping/@PATIENT.DOB}" width="70%">
+                                                            <customData>
+                                                                <core:CustomData key="class" value="{validationState>/tableMapping/@PATIENT.DOB/class}" writeToDom="true" />
+                                                            </customData>
+                                                        </Select>
+                                                    </f:content>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                        <l:VerticalLayout width="100%">
+                                            <l:content>
+                                                <!-- GUARDED PATIENT -->
+                                                <lib:MessageStrip text="{validationState>/guardedTableMapping/@PATIENT/message}" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup sapGlobalSettingFormSolo">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MAPPING_GUARDED_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MAPPING_GUARDED_PATIENT_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/guardedTableMapping/@PATIENT}" width="70%"/>
+                                                    </Toolbar>
+                                                </f:SimpleForm>
+                                                <!-- OTS CODE TABLE -->
+                                                <lib:MessageStrip text="{validationState>/otsTableMap/@CODE/message}" />
+                                                <f:SimpleForm editable="true" class="sapGlobalSettingFormGroup sapGlobalSettingFormSolo">
+                                                    <Toolbar design="Solid">
+                                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_OTS_CODE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_OTS_CODE_TOOLTIP}" />
+                                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/otsTableMap/@CODE}" width="70%"/>
+                                                    </Toolbar>
+                                                </f:SimpleForm>
+                                            </l:content>
+                                        </l:VerticalLayout>
+                                    </items>
+                                </FlexBox>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="querySetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class="tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_QUERY_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_QUERY_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                    <f:content>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_FUZINESS_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_FUZINESS_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/fuzziness}" width="70%" change=".isNumber"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_RESULT_SIZE_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_RESULT_SIZE_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/maxResultSize}" width="70%" change=".isNumber" />
+                                    </f:content>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="otherSetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class="tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                    <f:content>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_DATE_FORMAT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_DATE_FORMAT_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/dateFormat}" width="70%" change=".isValidDateFormat"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_TIME_FORMAT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_TIME_FORMAT_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/timeFormat}" width="70%" change=".isValidTimeFormat"/>
+                                    </f:content>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="developerSetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_DEV_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class=" tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_DEV_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_DEV_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                    <f:content>
+                                        <lib:MessageStrip text="{ parts: [{path: 'validationState>/settings/csvDelimiter/message' }] }" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_FREETEMPTEXT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_FREETEMPTEXT_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/freetextTempTable}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_BOOKMARK_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_BOOKMARK_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/bookmarks_table}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_HHPSCHEMA_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_HHPSCHEMA_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/hhpSchemaName}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_REFSCHEMA_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_REFSCHEMA_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/refSchemaName}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_BOOKMARKSCHEMA_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_BOOKMARKSCHEMA_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/bookmarks_schema}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_MEDEXSCHEMA_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_MEDEXSCHEMA_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/settings/medexSchemaName}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="CSV Delimiter"/>
+                                          <Select class="sapMxConfigProp" selectedKey="{globalSettingsModel>/settings/csvDelimiter}" width="20%">
+                                            <core:Item key=";" text=";" />
+                                            <core:Item key="," text="," />
+                                        </Select>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_ERRORDETAILSRETURN_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_ERRORDETAILSRETURN_TOOLTIP}" />
+                                        <Switch state="{globalSettingsModel>/settings/errorDetailsReturnOn}"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_ERRORSTACKTRACERETURN_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_ERRORSTACKTRACERETURN_TOOLTIP}" />
+                                        <Switch state="{globalSettingsModel>/settings/errorStackTraceReturnOn}"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_SQLRETURN_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_SQLRETURN_TOOLTIP}" />
+                                        <Switch state="{globalSettingsModel>/settings/sqlReturnOn}"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_GENOMICS_ENABLED_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_GENOMICS_ENABLED_TOOLTIP}" />
+                                        <Switch state="{globalSettingsModel>/settings/genomicsEnabled}"/>
+                                        <Label class="sapMxConfigProp" text="Enable Filter Summary" tooltip="Enable Filter Summary" />
+                                        <Switch state="{globalSettingsModel>/settings/filterSummaryVisible}"/>
+                                        <Label class="sapMxConfigProp" text="Gene Summary X-Axis" tooltip="Enable X-Axis in Gene Summary" />
+                                        <Switch state="{globalSettingsModel>/settings/geneSummaryXAxis}"/>
+                                        <Label class="sapMxConfigProp" text="Gene Alteration X-Axis" tooltip="Enable X-Axis in Gene Alteration" />
+                                        <Switch state="{globalSettingsModel>/settings/geneAlterationXAxis}"/>
+                                        <Label class="sapMxConfigProp" text="Gene Alteration Category" tooltip="Enable Category in Gene Summary" />
+                                        <Switch state="{globalSettingsModel>/settings/geneAlterationCategory}"/>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_VB_ENABLED_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_VB_ENABLED_TOOLTIP}" />
+                                        <Switch state="{globalSettingsModel>/settings/vbEnabled}"/>
+                                        <Label class="sapMxConfigProp" text="Free Text Enabled" tooltip="Enable Free Text" />
+                                        <Switch state="{globalSettingsModel>/settings/enableFreeText}"/>
+                                        <Label class="sapMxConfigProp" text="Normalize Patient List CSV Export"/>
+                                        <Switch state="{globalSettingsModel>/settings/normalizeCsvData}"/>
+                                        <Label class="sapMxConfigProp" text="Enforce CDW Validation" tooltip="CDW Query Validation Mandatory for Activation" />
+                                        <Switch state="{globalSettingsModel>/settings/cdwValidationEnabled}"/>
+                                    </f:content>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="mappingColumn" visible="{parts:['i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class=" tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_SETTINGS_SECTION_TAB}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                    <f:content>
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/columnMap/PATIENT_ID}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/columnMap/INTERACTION_ID}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/columnMap/PARENT_INTERACT_ID}" width="70%" />
+                                        <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_TOOLTIP}" />
+                                        <Input class="sapMxConfigProp" value="{globalSettingsModel>/columnMap/CONDITION_ID}" width="70%" />
+                                    </f:content>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                        <Panel width="auto" class="sapGlobalPanel" id="CDWSetting" visible="{parts:['i18n>HPH_CFG_GLOBAL_CDWCONFIG_SETTINGS_SECTION_TAB', 'displayModel>/selectedView'], formatter: '.viewFormatter'}">
+                            <headerToolbar>
+                                <Toolbar class=" tableMappingTitle">
+                                    <Label text="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_SETTINGS_SECTION_TAB}" tooltip="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_SETTINGS_SECTION}" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <content>
+                                <f:SimpleForm editable="true" class="sapGlobalSettingForm">
+                                        <Label text="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_NAMESPACE_CONFIG_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_NAMESPACE_CONFIG_TOOLTIP}" />
+                                        <Input id="CDWConfigNamespace" class="sapMxConfigProp">
+                                        </Input>
+                                        <Label text="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_SCHEMA_CONFIG_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_CDWCONFIG_SCHEMA_CONFIG_TOOLTIP}" />
+                                        <Input id="CDWConfigSchema" class="sapMxConfigProp">
+                                        </Input>
+                                </f:SimpleForm>
+                            </content>
+                        </Panel>
+                    </Page>
+                </detailPages>
+            </SplitContainer>
+        </content>
+        <footer>
+            <Bar class="sapMeToolbarFooter">
+                <contentRight>
+                    <Button press="saveConfig" type="Transparent" text="{i18n>HPH_CFG_GLOBAL_BUTTON_SAVE_TEXT}" tooltip="{i18n>HPH_CFG_GLOBAL_BUTTON_SAVE_TOOLTIP}" />
+                </contentRight>
+            </Bar>
+        </footer>
+    </Page>
+</mvc:View>

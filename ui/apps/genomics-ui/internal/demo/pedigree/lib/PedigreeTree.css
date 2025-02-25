@@ -1,0 +1,131 @@
+/* Common definitons */
+
+.sapHcHphInternalPedigree {
+	width: 100%;
+	height: 100%;
+}
+
+.sapHcHphInternalPedigree text {
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.sapHcHphInternalPedigree .link {
+	fill: none;
+	stroke: #000;
+	stroke-width: 2px;
+	shape-rendering: crispEdges;
+}
+
+/* Menu definitions */
+
+.sapHcHphInternalPedigree div.popup {
+	display: none;
+	position: absolute;
+	max-width: 200px;
+	text-overflow: ellipsis;
+	padding: 4px;
+	border-left: 4px solid #f0ab00;
+	background: rgba( 255, 255, 255, 0.9 );
+	z-index: 50;
+}
+
+.sapHcHphInternalPedigree div.popup ul.menu {
+	display: inline-block;
+	vertical-align: top;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	cursor: default;
+}
+
+.sapHcHphInternalPedigree div.popup ul.menu li a {
+	display: block;
+	padding: 4px;
+	height: 16px;
+	font-size: 12px;
+	text-decoration: none;
+	color: black;
+}
+
+.sapHcHphInternalPedigree div.popup ul.menu li:hover a {
+	background: #009de0;
+	color: white;
+}
+
+.sapHcHphInternalPedigree div.tooltip {
+	display: none;
+	position: absolute;
+	opacity: 0.0;
+	max-width: 200px;
+	text-overflow: ellipsis;
+	padding: 4px;
+	border-radius: 4px;
+	background: rgba( 0, 0, 0, 0.7 );
+	color: white;
+	z-index: 99;
+}
+
+.sapHcHphInternalPedigree div.tooltip:before {
+	display: block;
+	position: absolute;
+	border-color: transparent transparent rgba( 0, 0, 0, 0.7 ) transparent;
+	border-style: solid;
+	border-width: 8px;
+	height: 0;
+	width: 0;
+	top: -16px;
+	left: 50%;
+	margin-left: -8px;
+	z-index: 99;
+	content: '';
+}
+
+/* PedigreeTree definitions */
+
+.sapHcHphInternalPedigree g.individual text.label {
+	font-weight: bold;
+	text-anchor: middle;
+}
+
+.sapHcHphInternalPedigree g.individual text.info {
+	text-anchor: middle;
+}
+
+.sapHcHphInternalPedigree g.individual g.node {
+	pointer-events: all;
+}
+
+.sapHcHphInternalPedigree g.individual g.node .frame {
+	stroke: black;
+	stroke-width: 2px;
+	fill: none;
+}
+
+.sapHcHphInternalPedigree g.individual g.node .unaffected {
+	stroke: none;
+	fill: #9cf;
+}
+
+.sapHcHphInternalPedigree g.individual g.node .unknown {
+	stroke: none;
+	fill: white;
+}
+
+.sapHcHphInternalPedigree g.individual g.node .affected {
+	stroke: none;
+	fill: #c22;
+}
+
+.sapHcHphInternalPedigree g.individual.selected g.node .frame {
+	stroke-width: 4px;
+}
+
+.sapHcHphInternalPedigree g.individual line.deceased {
+	stroke: black;
+	stroke-width: 4px;
+	pointer-events: none;
+}
+
+.sapHcHphInternalPedigree g.individual.ignore {
+	opacity: 0.5;
+}

@@ -1,0 +1,4 @@
+role sap.hc.hph.patient.plugins.widgets.lab.roles::HC_HPH_PATIENT_PLUGINS_WIDGETS_LAB_END_USER
+{
+    application privilege: sap.hc.hph.patient.plugins.widgets.lab::EndUser;
+}

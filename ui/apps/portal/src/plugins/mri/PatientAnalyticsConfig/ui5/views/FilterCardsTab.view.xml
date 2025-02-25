@@ -1,0 +1,29 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.FilterCardsTab" 
+	xmlns="sap.m" 
+	xmlns:mvc="sap.ui.core.mvc">
+	<List id="filterCardsListId" showNoData="false" mode="SingleSelectMaster" items="{path: 'analyticsModel>config/filtercards',
+							sorter: {
+								path: 'analyticsModel>order'
+								}
+							}">
+		<headerToolbar>
+			<Toolbar active="true">
+				<Text text="{i18n>MRI_PA_CFG_FILTER_CARDS_TITLE}" />
+				<ToolbarSpacer />
+				<Button icon="sap-icon://arrow-top" press="onMoveCardUp" />
+				<Button icon="sap-icon://arrow-bottom" press="onMoveCardDown" />
+			</Toolbar>
+		</headerToolbar>
+		<CustomListItem>
+			<Panel id="filterCArdsPanelId" expandable="true" expanded="false">
+				<headerToolbar>
+					<Toolbar active="true" press="onHeaderToolbarPress">
+						<Text text="{parts:['analyticsModel>modelName', 'analyticsModel>attributes'], formatter: '.formatter.interactionTextHeader'}"/>
+						<ToolbarSpacer />
+						<Switch state="{analyticsModel>visible}" tooltip="{i18n>MRI_PA_CFG_FILTER_CARD_VISIBLE_TOOLTIP}" visible="{parts:['analyticsModel>modelName'], formatter: '.formatter.hideInitialControls'}" />
+					</Toolbar>
+				</headerToolbar>
+			</Panel>
+		</CustomListItem>
+	</List>
+</mvc:View>

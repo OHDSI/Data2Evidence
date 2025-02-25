@@ -1,0 +1,11 @@
+<core:FragmentDefinition
+	xmlns:core="sap.ui.core"
+	xmlns="sap.m">
+	<Popover
+		placement="Bottom"
+		showHeader="false">
+		<content>
+			<SearchField search="handleSearch"/>
+		</content>
+	</Popover>
+</core:FragmentDefinition>

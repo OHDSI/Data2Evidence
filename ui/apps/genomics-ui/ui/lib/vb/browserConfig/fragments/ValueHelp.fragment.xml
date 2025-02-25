@@ -1,0 +1,20 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core" >
+<SelectDialog
+    title="{i18n.vb>common.CategorizeSamples}"
+    multiSelect="true"
+    liveChange="onSampleCategorySearch"
+    search="onSampleCategorySearch"
+    confirm="onValueHelpClose"
+    close="onValueHelpClose"
+    items="{valueHelpModel>/selectList/items}" >
+    <StandardListItem 
+        title="{valueHelpModel>value}" 
+        selected="{valueHelpModel>selected}">
+        <customData>
+            <core:CustomData key="categoryType" value="{valueHelpModel>key}"/>
+        </customData>
+    </StandardListItem>
+  </SelectDialog>
+</core:FragmentDefinition>

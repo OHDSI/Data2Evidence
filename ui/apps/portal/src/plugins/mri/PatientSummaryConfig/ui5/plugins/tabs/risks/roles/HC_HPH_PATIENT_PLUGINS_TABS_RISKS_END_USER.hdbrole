@@ -1,0 +1,4 @@
+role hc.hph.patient.plugins.tabs.risks.roles::HC_HPH_PATIENT_PLUGINS_TABS_RISKS_END_USER
+{
+    application privilege: hc.hph.patient.plugins.tabs.risks::EndUser;
+}

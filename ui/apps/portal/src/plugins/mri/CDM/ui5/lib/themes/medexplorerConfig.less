@@ -1,0 +1,775 @@
+/* ============================== General Styles ==================================================================== */
+
+/* Only make the background of OUR tab white */
+.sapMxConfigUi {
+    background: #ffffff;
+    border-left: 20px #ffffff solid;
+    border-right: 20px #ffffff solid;
+    margin-left: -20px;
+}
+
+.configOverviewClass {
+    overflow: auto;
+}
+
+/* ------------------------------ Toolbar --------------------------------------------------------------------------- */
+
+.sapMeToolbar {
+    background-color: #e5e5e5;
+    border-bottom: 2px solid #cccccc;
+    border-top: 3px solid #008fd3;
+    height: 36px;
+    padding: 2px 0;
+}
+
+.sapMeToolbar .sapMLabel.sapMLabelTBHeader {
+    color: #666666;
+    font-weight: bold;
+}
+
+.sapMeToolbar .sapMBarChild.sapUiBtn.sapUiBtnLite {
+    background: none;
+    border: none;
+    color: #666666;
+    font-size: 0.875rem;
+    font-weight: normal;
+    margin: 1px;
+}
+
+.sapMeToolbar .sapMBarChild.sapUiBtn:hover,
+.sapMeToolbar .sapMBarChild.sapUiBtn:hover > .sapUiIcon.sapUiBtnIco {
+    background-color: #008FD3;
+    color: #ffffff;
+}
+
+/* ------------------------------ Super Lite Buttons ---------------------------------------------------------------- */
+
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite,
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite > .sapUiIcon.sapUiBtnIco {
+    color: #cccccc;
+    font-size: 0.75rem;
+    font-weight: normal;
+    margin: 1px;
+    transition: color 0.2s linear;
+}
+
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite:focus {
+    color: #cccccc;
+}
+
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite:hover,
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite:hover > .sapUiIcon.sapUiBtnIco {
+    background-color: transparent;
+    color: #008FD3;
+}
+
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite.sapUiBtnDsbl,
+.sapUiBtnLite.sapMxBtnLite.sapMxBtnSuperLite.sapUiBtnDsbl > .sapUiIcon.sapUiBtnIco {
+    color: #cccccc;
+}
+
+
+/* ------------------------------ Big Lite Buttons ------------------------------------------------------------------ */
+
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton {
+    color: #666666;
+    font-size: 1rem;
+    height: auto;
+    padding: 15px;
+}
+
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:hover,
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:hover > .sapUiIcon.sapUiBtnIco {
+    color: #666666;
+}
+
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:focus,
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:focus > .sapUiIcon.sapUiBtnIco {
+    color: #666666;
+}
+
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:active,
+.sapUiBtnS.sapUiBtnLite.sapMeAdminUiLiteButton:active > .sapUiIcon.sapUiBtnIco {
+    background-color: #008fd3;
+    color: #ffffff;
+}
+
+
+/* ------------------------------ Empty List Placeholder ------------------------------------------------------------ */
+
+.sapMxConfigUi .sapMListNoData {
+    color: #999999;
+    white-space: normal;
+}
+
+.sapMxConfigUi .sapMListNoData span {
+    display: block;
+    width: 100%;
+}
+
+
+/* ============================== Config Overview =================================================================== */
+
+/* ------------------------------ Config List ----------------------------------------------------------------------- */
+
+.sapMCLI.sapMLIB.sapMxConfigCardItem {
+    background-color: #ffffff;
+    border-bottom: none;
+    border-top: groove 1px #efefef;
+    cursor: default;
+    padding: 15px;
+}
+
+/* When the list item is active, use dark grey as frontcolor instead of white */
+.sapMxConfigCardItem.sapMLIBActive .sapMLabel {
+    color: #666666;
+}
+
+.sapMList.sapMListBGSolid .sapMLIB.sapMCLI.sapMxConfigCardItem.sapMxConfigOverviewListItem:hover {
+    background-color: #ffffff;
+}
+
+.sapMeConfigOverviewNameLabel {
+    font-size: 1rem;
+    text-decoration: underline;
+}
+
+.sapMxConfigOverviewTextItem {
+    padding: 5px 5px 0 0;
+}
+
+.sapMxConfigCardItem:hover .sapMxBtnLite,
+.sapMxConfigCardItem:hover .sapMxBtnLite > .sapUiIcon.sapUiBtnIco {
+    color: #666666;
+}
+
+
+/* ------------------------------ Config Version List --------------------------------------------------------------- */
+
+.sapMxConfigVersionPanel .sapMPanelWrappingDivTb {
+    background-color: #008FD3;
+    border: none;
+}
+
+.sapMxConfigVersionPanel .sapMPanelExpandableIcon {
+    height: 2rem;
+    line-height: 2rem;
+    width: 2rem;
+}
+
+.sapMxConfigCardItem .sapMPanelHdrExpandable.sapMTB-Transparent-CTX.sapMTB {
+    font-size: 0.875rem;
+    margin: 0;
+    padding-left: 2rem;
+}
+
+.sapMxConfigVersionPanel .sapMxConfigCardHeader {
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: normal;
+    height: 3rem;
+    line-height: 3rem;
+    margin: 0;
+    overflow: hidden;
+    padding-right: 0.25rem;
+    text-overflow: ellipsis;
+    text-shadow: black 0.1em 0.1em 0.2em;
+    white-space: nowrap;
+}
+
+.sapMxConfigVersionPanel .sapMPanelContent {
+    background-color: #efefef;
+    border: none;
+    padding: 0;
+}
+
+.sapMxConfigVersionPanel .sapMxConfigVersionItem {
+    background-color: #efefef;
+    border-bottom: none;
+    border-top: 1px groove #efefef;
+    font-size: 0.75rem;
+    padding-left: 10px;
+}
+
+/* When the list item is active, use dark grey as frontcolor instead of white */
+.sapMxConfigVersionItem.sapMLIBActive .sapMLabel {
+    color: #666666;
+}
+
+/* Show Status in blue, if active */
+.sapMxConfigVersionItem .sapMxConfigOverviewTextItem.sapMxConfigOverviewTextItemStatus {
+    color: #008FD3;
+}
+
+/* Default frontcolor for buttons in ConfigVersionListItems.*/
+.sapMxConfigVersionItem:not(:hover) .sapUiBtnLite ,
+.sapMxConfigVersionItem:not(:hover) .sapUiBtnLite > .sapUiIcon.sapUiBtnIco {
+    color: #cccccc;
+}
+
+/* Hide Busy Indicator for multi-config deletion */
+.sapMSplitContainerDetail .sapMPage .sapUiLocalBusyIndicator .sapUiLocalBusyIndicatorAnimation {
+    display: none;
+}
+
+/* ------------------------------ Add Configuration Popover --------------------------------------------------------- */
+
+.sapMeMobilePopover {
+    padding: 10px;
+}
+
+.sapMeMobilePopover .sapMIBar.sapMPopoverHeader {
+    background-color: #ffffff;
+    box-shadow: none;
+}
+
+.sapMeMobilePopover .sapMPopoverHeader .sapMLabel {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.sapMeMobilePopover .sapMeMobilePopoverSubHdr {
+    color: #999999;
+    margin-bottom: 15px;
+}
+
+.sapMeMobilePopover .sapMIBar.sapMPopoverFooter {
+    background-color: #ffffff;
+}
+
+.sapMeMobilePopover .sapMPopoverArrUp:after {
+    border-bottom-color: #ffffff;
+}
+
+.sapMeMobilePopover .sapMBtn .sapMBtnInner {
+    text-shadow: none;
+}
+
+.sapMeMobilePopover .sapMBtnInner.sapMBtnAccept {
+    background-color: #008fd3;
+    border-color: #008fd3;
+    color: #ffffff;
+}
+
+.sapMeMobilePopover .sapMBtn:hover > .sapMBtnInner.sapMBtnHoverable.sapMBtnAccept,
+.sapMeMobilePopover .sapMBtn > .sapMBtnInner.sapMBtnAccept.sapMBtnActive  {
+    background-color: #0076cb;
+    border-color: #0076cb;
+    text-shadow: none;
+}
+
+.sapMeMobilePopover .sapMBtnInner.sapMBtnReject {
+    background-color: #e5e5e5;
+    border-color: #cccccc;
+    color: #666666;
+}
+
+.sapMeMobilePopover .sapMBtn:hover > .sapMBtnInner.sapMBtnReject.sapMBtnHoverable,
+.sapMeMobilePopover .sapMBtn > .sapMBtnInner.sapMBtnReject.sapMBtnActive {
+    background-color: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
+    text-shadow: none;
+}
+
+/* Change Outline Color to improve visibility */
+.sapMeMobilePopover .sapMBtn:focus > .sapMBtnInner.sapMFocusable.sapMBtnReject {
+    outline-color: #005483;
+}
+
+
+/* ============================== Config Editor ===================================================================== */
+
+/* ------------------------------ Accordions for Filter Card and Attributes ----------------------------------------- */
+
+.sapUiAcd.sapMxAccordion {
+    background-color: #ffffff;
+    border: none;
+    padding: 0;
+}
+
+/* fixes for the jquery ui sortable bug related to position~: relative containers */
+.sapUiAcd.sapMxAccordion,
+.sapUiAcd.sapMxAccordion .sapUiAcdSection,
+.sapUiAcd.sapMxAccordion .sapUiAcdSectionCont {
+    position: inherit !important;
+}
+
+.sapMxAccordion .sapUiAcdSectionCont {
+    border: none;
+    overflow: hidden;
+    padding: 0;
+}
+
+.sapMxAccordion .sapUiAcdSectionHdr {
+   background-color: rgb(0,124,192);
+    border: none;
+    color: #ffffff;
+}
+
+.sapMxConfFCItem {
+    border: 1px solid #bfbfbf;
+    cursor: pointer;
+    margin-top: -1px; /* Negative margin to hide doubled borders */
+    padding: 5px 10px;
+}
+
+/* Filter Card Item selected */
+.sapMxConfFCItem.sapUiToggleBtnPressed {
+    background-color: rgb(229,242,249);
+}
+
+.sapMxConfFCItem.sapMxFCInvalid {
+    border-left: 5px solid #e52929;
+}
+
+.sapMxConfFCItem.sapMxFCWarning {
+    border-left: 5px solid #f4b800;
+}
+
+.sapMxConfFCItem .sapMxConfigCardTitle, .sapMxConfigPropLabel.sapMxConfigSectionTitle {
+    font-size: 0.875rem;
+    font-weight: bold;
+    padding: 0 0 5px 0;
+}
+
+.sapMxConfFCItem:hover .sapMxBtnLite,
+.sapMxConfFCItem:hover .sapMxBtnLite > .sapUiIcon.sapUiBtnIco {
+    color: #666666;
+}
+
+
+/* ------------------------------ Edit Area ------------------------------------------------------------------------- */
+
+/* Reduce margin for empty no-data label */
+.sapMxConfigUi .sapUiRrNoData {
+    margin: 0;
+}
+
+.sapMxConfigFCProperties,
+.attributeLayout .sapUiVlt {
+    width: 100%;
+}
+
+.sapMxConfigFCProperties > .sapUiVltCell,
+.sapMxConfigUi .attributeLayout .sapUiVltCell {
+    padding: 0 10px;
+}
+
+.sapMxConfigPropLabel {
+    margin-top: 10px;
+}
+
+/* Max width for TextAreas and Comboboxes */
+.sapMxConfigUi .sapUiTf.sapMxConfigProp,
+.sapMxConfigUi .sapUiTfCombo.sapMxConfigProp {
+    width: 100%;
+}
+
+/* styles for the validity elements */
+.sapMeValidityElem {
+    margin: 5px 0;
+    padding: 5px 8px 3px 8px;
+}
+
+.sapMeValidityElem .sapUiIcon{
+    padding-right: 5px;
+}
+
+.sapMeValidityElem.sapMeValid {
+    display: none;
+}
+
+.sapMeValidityElem.sapMeWarning {
+    background-color: #f4b800;
+}
+
+.sapMeValidityElem.sapMeWarning .sapUiIcon,
+.sapMeValidityElem.sapMeWarning .sapMText {
+    color: #000000;
+}
+
+.sapMeValidityElem.sapMeInvalid {
+    background-color: #e52929;
+}
+
+.sapMeValidityElem.sapMeInvalid .sapUiIcon,
+.sapMeValidityElem.sapMeInvalid .sapMText {
+    color: #ffffff;
+}
+
+.sapUiSizeCompact .sapMButtonIconFix span.sapMBtnIcon {
+    margin-left: 0.4375rem !important;
+}
+
+.sapMePageHeader>.sapMPageHeader::before {
+    border-top:0px;
+}
+
+button.sapMeAccordionBtn.sapMBtn>div {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+button.sapMeAccordionBtn.sapMBtn {
+    padding-top: 0px;
+    padding-bottom: 60px;
+}
+
+.sapMeAccordionBtn.sapMBtn>div, .sapMeAccordionToggleBtn.sapMBtn>div.sapMBtnHoverable.sapMToggleBtnPressed:active,
+button.sapMeAccordionBtn.sapMBtn:not(.sapMBtnDisabled)>div.sapMBtnInner.sapMBtnActive {
+    color: #666666;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.sapMeAccordionToggleBtn>div.sapMToggleBtnPressed, .sapMeAccordionBtn>div.sapMBtnHoverable.sapMToggleBtnPressed:hover {
+     background-color: rgb(229,242,249);
+}
+
+button.sapMeAccordionBtn.sapMBtn:not(.sapMBtnDisabled)>div.sapMBtnInner.sapMBtnActive {
+    background-color: white;
+}
+
+.sapMeAccordionBtn>div {
+    background-color: white;
+    background-image: none;
+}
+
+.sapMeAccordionBtn>div>span {
+    display: inline;
+}
+
+.sapMeAccordionBtn>div>span.sapMBtnContent {
+    display: inline;
+}
+
+.sapMeAccordionBtn>div>span.sapMBtnContent {
+    margin-left: 0px;
+    padding-left: 0px;
+    float: left;
+}
+
+.sapMeAccordionBtn>div>span.sapMBtnIcon {
+    padding-left: 5px;
+    position: initial;
+    float: left;
+}
+
+div.sapMeAccordionGrouping {
+    border-top:1px solid rgb(229,229,229);
+    margin-top:-2px;
+}
+
+
+.sapMeToolbarFooter {
+    background-color: rgb(54,62,67);
+    height: 36px;
+    padding: 2px 0;
+}
+
+.sapMeToolbarFooter .sapMLabel.sapMLabelTBHeader {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.sapMeToolbarFooter .sapMBarChild.sapUiBtn.sapUiBtnLite {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: normal;
+    margin: 1px;
+}
+
+.sapMeToolbarFooter .sapMBarChild.sapUiBtn:hover,
+.sapMeToolbarFooter .sapMBarChild.sapUiBtn:hover > .sapUiIcon.sapUiBtnIco {
+    background-color: #008FD3;
+    color: #ffffff;
+}
+
+.sapMeToolbarFooter .sapMBarChild.sapUiBtn > .sapUiIcon.sapUiBtnIco {
+    color: #ffffff;
+}
+
+.tableMappingForm, .tableMappingForm>div {
+    background-color: transparent;
+}
+
+.tableMappingTitle {
+    border-bottom: none;
+    display: none;
+}
+
+.sapMBtn:hover>.tableMappingTitle>div {
+    background-color: rgb(229,242,249);
+    background-image: none;
+}
+
+.sapMeAccordionToggleBtn {
+    display: none;
+}
+
+.sapMxConfFCItem.sapMxFCValid.btnPressedCls, .sapMxConfFCItem.sapMxFCInvalid.btnPressedCls, .sapMxConfFCItem.sapMxFCWarning.btnPressedCls  {
+    background-color: rgb(229,245,252);
+}
+
+.sapMSegB.sapMXSmartFilterButton {
+    float: right;
+}
+
+.sapMLabel.sapMXSmartFilterLabel{
+    float: left;
+    margin-top:0.5rem;
+}
+
+.sapMxConfigListItem .sapMxConfigLangValue {
+    margin-left: 0.5rem;
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn {
+    background-color: #f7f7f7;
+    border: 1px solid #bfbfbf;
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:hover {
+    background-color: rgb(234,234,234);
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:focus:hover:active {
+    background-color: rgb(0,124,192);
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:focus:hover:active > div{
+    background-color: rgb(0,124,192);
+    color: white;
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:focus, .sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:focus > div{
+    outline: none;
+}
+
+.sapMBtn.sapMBtnBase.sapMeAccordionActionBtn:focus:hover:active > div > span{
+    color: white;
+}
+
+.sapMeAccordionActionBtn > div {
+    display: inline-block;
+    border: none;
+}
+
+hr.sapMXVerticalSeparator {
+    margin-top:1rem;
+    margin-bottom:1rem;
+}
+
+.sap-desktop tr.sapMLIB.sapMeBorderlessRow:focus {
+    outline: none;
+}
+
+tr.sapMeBorderlessRow.sapMListTblRow > td {
+    padding-left:0px;
+    border-bottom:none;
+    border-top:none;
+}
+
+.sapMListShowSeparatorsAll .sapMLIBShowSeparator.sapMeBorderlessRow:last-child>td {
+    border-bottom:none;
+}
+
+.sapFfhCDMonfig.sapMSplitContainer > .sapMSplitContainerMaster {
+    width: 400px;
+}
+
+span.sapFfhCDMonfigLargeText {
+    font-size: large;
+    padding: 0.625rem;
+}
+
+.sapFfhCDMonfig .sapUiGrid > tbody > tr {
+    background: none;
+}
+
+.sapMxConfigVersionList {
+    margin-left:5%;
+    margin-right:5%;
+    margin-top:1rem;
+    width: 90%;
+}
+
+.sapCDMConfigButtonToolbar {
+    margin-top:0.5rem;
+
+    .sapMBtnInner {
+        max-width: 7.5rem;
+    }
+}
+
+.sapCDMConfigVersionButtonToolbar {
+    margin-top:0.5rem;
+    margin-left: 1.5rem;
+    border-bottom: none;
+}
+
+.sapCDMConfigVersionTitle {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.sapCheckBoxBorderBottom {
+    border-bottom: #CDCDCD 1px solid;
+}
+
+.sapForceHide {
+    display:none;
+}
+
+div.sapMLIBContent div.sapMFlexBox div.sapMFlexBox.sapMFlexItem{
+    flex:1;
+}
+
+div.sapMLIBContent div.sapMFlexBox div.sapMFlexBox.sapMFlexItem.sapMFlexItemH{
+    flex:0;
+}
+
+.sapMxConfigLangLabel {
+    margin-top: 0.5rem;
+}
+
+.sapMxConfigSelectorList div.sapMListNoDataText {
+    white-space: normal;
+}
+
+.sapMxConfigSelectorList li.sapMListNoData {
+    height: 3rem;
+}
+
+/* Placeholders */
+
+.sapGlobalPanel {
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.sapGlobalSettingForm,
+.sapGlobalSettingForm>div,
+.sapGlobalSettingForm>div>div,
+.sapGlobalSettingForm>div>div.sapUiFormResLayout>div {
+    background-color: transparent;
+}
+
+li.sapGlobalSettingLanguageForm.sapMLIB {
+    background-color: transparent;
+    border-bottom: 0px;
+}
+
+.sapGlobalSettingLanguageList .sapMListNoData {
+    background-color: transparent;
+}
+
+.sapGlobalSettingAddLanguage {
+    float: right;
+    margin-right: 30%;
+}
+
+.sapUiSizeCompact .sapGlobalMasterListItem {
+    height: 4rem;
+}
+
+.sapGlobalSettingFormSolo .sapUiRFL[role="form"] {
+    background-color: transparent;
+}
+
+.sapGlobalSettingFormGroup .sapUiRFL {
+    padding-top: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-bottom: 0px;
+}
+
+.sapGlobalSettingFormGroup .sapUiRFL[role="form"] {
+    padding-bottom: 20px;
+}
+
+.sapGlobalSettingFlexbox .sapMFlexItem {
+    width: 50%;
+    margin-bottom: 20px;
+}
+
+.sapGlobalSettingPlaceholderAttributeList {
+    background-color: white;
+}
+
+/* Toolbar */
+
+.sapGlobalSettingFormGroup .sapMIBar {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 50px;
+    height: 41px;
+    padding-right: 50px;
+}
+
+
+/* styles for the validity elements */
+.sapMeValidityElem {
+    margin: 5px 0;
+    padding: 5px 8px 3px 8px;
+}
+
+.sapMeValidityElem .sapUiIcon {
+    padding-right: 5px;
+}
+
+.sapMeValidityElem.sapMeValid {
+    display: none;
+}
+
+.sapMeValidityElem.sapMeWarning {
+    background-color: #f4b800;
+}
+
+.sapMeValidityElem.sapMeWarning .sapUiIcon,
+.sapMeValidityElem.sapMeWarning .sapMText {
+    color: #000000;
+}
+
+.sapMeValidityElem.sapMeInvalid {
+    background-color: #e52929;
+}
+
+.sapMeValidityElem.sapMeInvalid .sapUiIcon,
+.sapMeValidityElem.sapMeInvalid .sapMText {
+    color: #ffffff;
+}
+
+/* Config Navigator section */
+
+div.sapConfigNavSection > div.sapUiVSplitterFirstPane {
+    border-right-width: 1px;
+    border-right-style: solid;
+    border-right-color:#dddddd;
+}
+
+div.sapConfigNavSection .sapConfigNavButton {
+    border-bottom-width: 0px;
+    padding: 0;
+}
+
+div.sapConfigNavSection .sapConfigNavButton .sapUiIcon {
+    font-size: 1.4rem;
+    margin-right: 0;
+    width: 100%;
+}
+
+div.sapConfigNavSection li[data-status="invalid"] {
+    border-left: 5px solid #e52929;
+}
+
+/* Config settings page */
+.sapConfigSettings .sapTransparentPanel > .sapMPanelBG {
+    
+    background-color:rgba(54, 25, 25, .00004);     
+    
+}

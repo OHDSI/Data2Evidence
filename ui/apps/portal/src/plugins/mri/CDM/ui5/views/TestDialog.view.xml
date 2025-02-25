@@ -1,0 +1,46 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.TestDialog"
+	height="100%" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout">
+
+	<l:VerticalLayout class="sapUiSmallMargin" width="400px" id="matrixLayout">
+		<Table backgroundDesign="Transparent" >
+		    <columns>
+		    <Column width="50%">
+			</Column>
+			<Column width="50%">
+			</Column>
+			</columns>
+			<items>
+			    <ColumnListItem class="sapMeBorderlessRow">
+				    <cells>
+				        <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_ERRORS}" class="sapUiSmallMarginBottom" id="sqlResultAreaLabel"/>
+						<Text text="{parts: ['testModel>/testSqlCheck', 'testModel>/testErrorDetails'], formatter: '.formatErrorMessage'}" id="sqlResultArea"/>
+    				</cells>
+			    </ColumnListItem>
+			    <ColumnListItem class="sapMeBorderlessRow">
+				    <cells>
+				        <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_MIN}" class="sapUiSmallMarginBottom" id="minFieldLabel" visible="false"/>
+    					<Text text="{testModel>/testMinValue}" id="minField" visible="false"/>
+    				</cells>
+			    </ColumnListItem>
+			    <ColumnListItem class="sapMeBorderlessRow">
+				    <cells>
+				        <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_MAX}" class="sapUiSmallMarginBottom" id="maxFieldLabel" visible="false"/>
+			<Text text="{testModel>/testMaxValue}" id="maxField" visible="false"/>
+    				</cells>
+			    </ColumnListItem>
+			    <ColumnListItem class="sapMeBorderlessRow">
+				    <cells>
+				       	<Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_COUNT}" class="sapUiSmallMarginBottom" id="countFieldLabel" visible="false"/>
+			            <Text text="{testModel>/testCountValue}" id="countField" visible="false"/>
+    				</cells>
+			    </ColumnListItem>
+			</items>
+		</Table>
+
+		<Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_TEST_SAMPLES}" class="sapUiSmallMarginBottom" id="testSamplesContainerLabel" visible="false"/>
+		<ScrollContainer height= "200px" width="100%" vertical="true" id="testSamplesContainer" visible="false">
+			<SelectList id="samplesBox" width="100%"/>
+		</ScrollContainer>
+
+	</l:VerticalLayout>
+</mvc:View>

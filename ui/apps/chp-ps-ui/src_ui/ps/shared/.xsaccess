@@ -1,0 +1,7 @@
+{
+    "exposed": true,
+    "authorization": [
+        "sap.hc.hph.patient::EndUser",
+        "sap.hc.hph.patient::AdminUser"
+    ]
+}

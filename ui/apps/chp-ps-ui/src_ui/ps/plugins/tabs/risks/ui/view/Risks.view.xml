@@ -1,0 +1,34 @@
+<mvc:View
+	controllerName="sap.hc.hph.patient.plugins.tabs.risks.ui.view.Risks"
+    xmlns:risks="sap.hc.hph.patient.plugins.tabs.risks.ui.lib"
+	xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:form="sap.ui.layout.form">
+
+	<VBox class="sapUiSmallMargin">
+        <form:Form class="sapPSRisksForm" formContainers="{/classes}">
+            <form:layout>
+                <risks:ColoredGridLayout
+                    labelSpanM="4"
+                    labelSpanL="2"
+                    emptySpanL="0"
+                    emptySpanM="0"
+                    columnsL="3"
+                    columnsM="3"/>
+            </form:layout>
+            <form:formContainers>
+                <risks:ColoredFormContainer color="{color}" title="{title}" formElements="{path:'groups', templateShareable:false}">
+                    <form:FormElement>
+                        <List showSeparators="None" headerText="{=${entries}.length>0?${title}:${i18n>PS_PLUGINS_TABS_RISK_NO_ENTRIES}}" items="{path:'entries', templateShareable:false}" showNoData="false">
+                            <StandardListItem
+                                title="{title}"
+                                tooltip="{=${title}+': '+${text1}+(${text2}?' - '+${text2}:'')+' ('+${startText}+')'}"
+                                description="{=${text1}+(${text2}?' - '+${text2}:'')}"
+                                info="{start}" />
+                        </List>
+                    </form:FormElement>
+                </risks:ColoredFormContainer>
+            </form:formContainers>
+        </form:Form>
+    </VBox>
+</mvc:View>

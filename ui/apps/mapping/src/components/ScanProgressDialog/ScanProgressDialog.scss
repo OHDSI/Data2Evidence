@@ -1,0 +1,35 @@
+@import "../../theme/variables";
+
+.scan-progress-dialog {
+  .MuiDialogTitle-root {
+    color: $primary-color;
+    font-weight: bold;
+  }
+
+  .scan-progress-dialog__content {
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+
+  .scan-progress-dialog__status {
+    color: $secondary-color;
+    font-style: italic;
+  }
+
+  .scan-progress-dialog__log {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    padding: 1em;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+  }
+
+  .scan-progress-dialog__actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 1em;
+  }
+}

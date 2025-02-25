@@ -1,0 +1,17 @@
+@font-face {
+	font-family: "sap-hc-hph-genomics-icons";
+	src: url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.eot");
+	src: url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.eot?#iefix") format("embedded-opentype"),
+		 url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.woff") format("woff"),
+		 url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.ttf") format("truetype"),
+		 url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.svg#sap-hc-hph-genomics-icons") format("svg");
+	font-weight: normal;
+	font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+	@font-face {
+		font-family: "sap-hc-hph-genomics-icons";
+		src: url("/hc/hph/genomics/ui/icons/sap-hc-hph-genomics-icons.svg#sap-hc-hph-genomics-icons") format("svg");
+	}
+}

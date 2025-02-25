@@ -1,0 +1,184 @@
+<html>
+
+<head></head>
+
+<body>
+
+<script>
+function generateIndividualKey(individual) {
+    return individual.length + '*' + individual;
+}
+function generateRelationshipKey(father, mother) {
+    return father.length + '*' + father + '+' + mother.length + '*' + mother;
+}
+function generateIndividualNode(nodes, individual) {
+    var key = generateIndividualKey(individual);
+    if (!nodes.hasOwnProperty(key)) {
+        nodes[key] = {
+            type: 'individual',
+            id: individual,
+            parents: null,
+            relationships: []
+        };
+    }
+    return key;
+}
+function generateRelationshipNode(nodes, father, mother) {
+    var key = generateRelationshipKey(father, mother);
+    if (!nodes.hasOwnProperty(key)) {
+        var fatherKey = generateIndividualNode(nodes, father);
+        var motherKey = generateIndividualNode(nodes, mother);
+        nodes[key] = {
+            type: 'relationship',
+            father: fatherKey,
+            mother: motherKey,
+            children: []
+        };
+        nodes[fatherKey].relationships.push(key);
+        nodes[motherKey].relationships.push(key);
+    }
+    return key;
+}
+function findLongestPath(nodes, longestPath, path, individualKey) {
+    path.push(individualKey);
+    var relationships = nodes[individualKey].relationships;
+    if (relationships.length > 0) {
+        for (var relationshipIndex = 0; relationshipIndex < relationships.length; ++relationshipIndex) {
+            var children = nodes[relationships[relationshipIndex]].children;
+            for (var childIndex = 0; childIndex < children.length; ++childIndex) {
+                longestPath = findLongestPath(nodes, longestPath, path.slice(), children[childIndex]);
+            }
+        }
+        return longestPath;
+    } else if (path.length > longestPath.length) {
+        return path.slice();
+    } else {
+        return longestPath;
+    }
+}
+var family = {
+    'Kurt': {
+        'name': 'Kurt',
+        'sex': 'male'
+    },
+    'Ilse': {
+        'name': 'Ilse',
+        'sex': 'female'
+    },
+    'Ute': {
+        'name': 'Ute',
+        'sex': 'female'
+    },
+    'Gerd': {
+        'name': 'Gerd',
+        'sex': 'male',
+        'mother': 'Ilse',
+        'father': 'Kurt'
+    },
+    'Hilde': {
+        'name': 'Hilde',
+        'sex': 'female',
+        'mother': 'Ute'
+    },
+    'Hanna': {
+        'name': 'Hanna',
+        'sex': 'female',
+        'mother': 'Hilde',
+        'father': 'Gerd'
+    },
+    'Gregor': {
+        'name': 'Gregor',
+        'sex': 'male',
+        'mother': 'Hilde',
+        'father': 'Gerd'
+    },
+    'Sabine': {
+        'name': 'Sabine',
+        'sex': 'female',
+        'mother': 'Hilde',
+        'father': 'Gerd'
+    },
+    'Michael': {
+        'name': 'Michael',
+        'sex': 'male'
+    },
+    'Lena': {
+        'name': 'Lena',
+        'sex': 'female',
+        'mother': 'Hanna',
+        'father': 'Gerd'
+    }
+};
+// gather relationships and initialize topological sorting counts
+var nodes = {};
+var remaining = {};
+var remainingCount = 0;
+var noParents = [];
+for (var individual in family) {
+    if (family.hasOwnProperty(individual)) {
+        var individualKey = generateIndividualNode(nodes, individual);
+        if (family[individual].hasOwnProperty('father') && family[individual].hasOwnProperty('mother')) {
+            var father = family[individual].father;
+            var mother = family[individual].mother;
+            var fatherKey = generateIndividualNode(nodes, father);
+            var motherKey = generateIndividualNode(nodes, mother);
+            var relationshipKey = generateRelationshipNode(nodes, father, mother);
+            nodes[individualKey].parents = relationshipKey;
+            nodes[relationshipKey].children.push(individualKey);
+            if (family.hasOwnProperty(father)) {
+                if (remaining.hasOwnProperty(father)) {
+                    ++remaining[father];
+                } else {
+                    remaining[father] = 1;
+                }
+            }
+            if (family.hasOwnProperty(mother)) {
+                if (remaining.hasOwnProperty(mother)) {
+                    ++remaining[mother];
+                } else {
+                    remaining[mother] = 1;
+                }
+            }
+        } else {
+            noParents.push(individualKey);
+        }
+        if (!remaining.hasOwnProperty(individual)) {
+            remaining[individual] = 0;
+        }
+        ++remainingCount;
+    }
+}
+// find longest path
+var longestPath = [];
+for (var individualIndex = 0; individualIndex < noParents.length; ++individualIndex) {
+    longestPath = findLongestPath(nodes, longestPath, [], noParents[individualIndex]);
+}
+// topological sorting
+var topologicalSorting = [];
+while (remainingCount > 0) {
+    // identify the nodes without children
+    for (individual in remaining) {
+        if (remaining.hasOwnProperty(individual) && remaining[individual] == 0) {
+            remaining[individual] = -1;
+        }
+    }
+    // remove nodes without children and update counts of others
+    for (individual in remaining) {
+        if (remaining.hasOwnProperty(individual) && remaining[individual] < 0) {
+            topologicalSorting.push(individual);
+            --remaining[family[individual].father];
+            --remaining[family[individual].mother];
+            delete remaining[individual];
+            --remainingCount;
+        }
+    }
+}
+console.log(noParents);
+console.log(longestPath);
+console.log(topologicalSorting);
+console.log(nodes);
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.DetailsTab" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
+    <!-- FUTURE: Use sap.m.MessageStrip with 1.30 -->
+    <Text class="sapFfhPVConfigWarning" text="{i18n>HPH_PAT_CFG_WARNING_NEWER_VERSION}" textAlign="Center" visible="{parts:['analyticsModel>meta/dependentConfig/configVersion', 'versionsModel>/versions','dynamicBindingsModel>/selectedPatientConfig'], formatter: '.formatter.WarningVisFormatter'}" width="100%" />
+    <f:SimpleForm editable="true" labelSpanM="3" layout="ResponsiveGridLayout">
+        <core:Title text="{i18n>HPH_PAT_CFG_DETAILS_TITLE}" />
+        <Label text="{i18n>HPH_PAT_CFG_CONFIG_NAME}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <Input placeholder="{i18n>HPH_PAT_CFG_TITLE_ENTER_CONFIG_NAME}" value="{analyticsModel>meta/configName}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <Label text="{i18n>HPH_PAT_CFG_DETAILS_VERSION}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <ComboBox id="dataModelVersionCombo" selectedKey="{analyticsModel>meta/dependentConfig/configVersion}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" items="{path: 'versionsModel>/versions'}" selectionChange="onDataModelVersionChanged">
+            <core:Item key="{versionsModel>version}" text="{parts:['versionsModel>version', 'versionsModel>status', 'i18n>HPH_PAT_CFG_TITLE_ACTIVE_VERSION'], formatter: '.formatter.versionTextFormatter'}" />
+        </ComboBox>
+        <CheckBox id="disableInactiveCheckBox" text="{i18n>HPH_PAT_CFG_CONFIG_ACTIVE_FILTER}" selected="{/hideInactive}" select="onFilterInactive" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}"/>
+        <Label text="{i18n>HPH_PAT_CFG_CONFIG_OVERVIEW_CREATOR}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <Input editable="false" value="{analyticsModel>meta/creator}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <Label text="{i18n>HPH_PAT_CFG_DETAILS_NOTES}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" />
+        <TextArea rows="8" value="{analyticsModel>config/configInformations/note}" visible="{path:'dynamicBindingsModel>/selectedPatientConfig', formatter:'.checkPatientConfig'}" width="100%" />
+    </f:SimpleForm>
+</mvc:View>

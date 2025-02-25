@@ -1,0 +1,209 @@
+<mvc:View controllerName="sap.hc.hph.patient.plugins.tabs.diagnoses.ui.view.Diagnoses" class="sapUiSizeCompact sapPatientSummary sapPSQuickViewTab" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:table="sap.hc.hph.patient.app.ui.lib.table" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:l="sap.ui.layout" height="100%">
+    <l:FixFlex class="fixFlexVertical sapPSHeight100">
+        <l:fixContent>
+        <HBox justifyContent="End" class="subviewSwitchArea">
+            <html:div class="subviewSwitchSpacer"/>
+            <Label text="Ansicht:" labelFor="diagnosesViewSwitch"/>
+            <SegmentedButton id="diagnosesViewSwitch" class="subviewSwitch" select=".onSubviewSelected" selectedKey="{/currentPage}">
+                <items>
+                    <SegmentedButtonItem key="diagnosesChronoPage" id="diagnosesTabChronoButtonItem" text="Chronologisch"/>
+                    <SegmentedButtonItem key="diagnosesGroupedPage" id="diagnosesTabGroupedButtonItem" text="Gruppiert"/>
+                </items>
+            </SegmentedButton>
+        </HBox>
+        <HBox justifyContent="SpaceBetween" class="departmentSelectionArea">
+            <Select id="leftDepartmentDropdown" items="{/leftDepartments}" change=".onLeftDepartmentSelectionChanged">
+                <core:Item key="{key}" text="{text}" tooltip="{text}" enabled="{= ${count} > 0 || ${entryType} === 'meta'}"/>
+            </Select>
+            <Select id="rightDepartmentDropdown" items="{/rightDepartments}" change=".onRightDepartmentSelectionChanged" enabled="{= ${/currentPage} === 'diagnosesChronoPage'}">
+                <core:Item key="{key}" text="{=${/currentPage}==='diagnosesChronoPage' ? ${text} : '- Andere Fachbereiche -'}" tooltip="{=${/currentPage}==='diagnosesChronoPage' ? ${text} : '- Andere Fachbereiche -'}" enabled="{= ${count} > 0 || ${entryType} === 'meta'}"/>
+            </Select>
+        </HBox>
+        </l:fixContent>
+        <l:flexContent>
+        <NavContainer id="diagnosesTabNavCont" height="100%">
+            <pages>
+
+                <!-- Chronological Table -->
+                <table:Table id="diagnosesChronoPage" class="sapPSHeight100 sapPSWidth100" middleGapWidthHalf="4rem">
+                    <table:leftColumns>
+                        <table:Column width="3rem"/>
+                        <table:Column text="TITEL" width="4fr"/>
+                        <table:Column text="FACHBEREICH" width="3fr"/>
+                        <table:Column text="HAUS" width="6rem"/>
+                        <table:Column text="ICD" width="4.25rem" class="sapPSTableRightAligned"/>
+                    </table:leftColumns>
+
+                    <table:rightColumns>
+                        <table:Column text="TITEL" width="4fr"/>
+                        <table:Column text="FACHBEREICH" width="3fr"/>
+                        <table:Column text="HAUS" width="6rem"/>
+                        <table:Column text="ICD" width="4.25rem" class="sapPSTableRightAligned"/>
+                        <table:Column width="3rem"/>
+                    </table:rightColumns>
+
+                    <HBox justifyContent="SpaceAround">
+                        <Link class="sapPSChronoBinsUndatedLink" text="{/chrono/totalUndated} Einträge ohne Datum" active="true" press=".onUndatedLinkPressed" visible="{= ${/chrono/totalUndated} !== 0 }"/>
+                    </HBox>
+                    <table:ChronoRows id="diagnosesChronoTable" leftRows="{/chrono/dated}" rightRows="{/chrono/dated}" dateFormat="{/settings/dateFormat}">
+                        <table:leftRows>
+                            <table:ChronoRow date="{date}">
+                                <table:ChronoCell/>
+                                <table:ChronoCell text="{entryName}" class="sapPSFreetext" tooltip="{entryName}"/>
+                                <table:ChronoCell text="{path: 'departments', formatter: '.formatDepartments'}" tooltip="{path: 'departments', formatter: '.formatDepartments'}"/>
+                                <table:ChronoCell text="{institution_short}" tooltip="{institution}"/>
+                                <table:ChronoCell text="{icd}" class="sapPSTableRightAligned" tooltip="{icd}"/>
+                            </table:ChronoRow>
+                        </table:leftRows>
+
+                        <table:rightRows>
+                            <table:ChronoRow date="{date}">
+                                <table:ChronoCell text="{entryName}" class="sapPSFreetext" tooltip="{entryName}"/>
+                                <table:ChronoCell text="{path: 'departments', formatter: '.formatDepartments'}" tooltip="{path: 'departments', formatter: '.formatDepartments'}"/>
+                                <table:ChronoCell text="{institution_short}" tooltip="{institution}"/>
+                                <table:ChronoCell text="{icd}" class="sapPSTableRightAligned" tooltip="{icd}"/>
+                            </table:ChronoRow>
+                        </table:rightRows>
+                    </table:ChronoRows>
+                    <HBox justifyContent="SpaceAround">
+                        <Text class="sapPSChronoBinsUndatedLabel" text="{/chrono/totalUndated} EINTRÄGE OHNE DATUM" textAlign="Center" width="100%" visible="{= ${/chrono/totalUndated} !== 0 }"/>
+                    </HBox>
+                    <table:ChronoRows id="diagnosesChronoTableUndated" leftRows="{/chrono/undated}" rightRows="{/chrono/undated}" showDates="false">
+                        <table:leftRows>
+                            <table:ChronoRow date="{date}">
+                                <table:ChronoCell/>
+                                <table:ChronoCell text="{entryName}" class="sapPSFreetext" tooltip="{entryName}"/>
+                                <table:ChronoCell text="{path: 'departments', formatter: '.formatDepartments'}" tooltip="{path: 'departments', formatter: '.formatDepartments'}"/>
+                                <table:ChronoCell text="{institution_short}" tooltip="{institution}"/>
+                                <table:ChronoCell text="{icd}" class="sapPSTableRightAligned" tooltip="{icd}"/>
+                            </table:ChronoRow>
+                        </table:leftRows>
+
+                        <table:rightRows>
+                            <table:ChronoRow date="{date}">
+                                <table:ChronoCell text="{entryName}" class="sapPSFreetext" tooltip="{entryName}"/>
+                                <table:ChronoCell text="{path: 'departments', formatter: '.formatDepartments'}" tooltip="{path: 'departments', formatter: '.formatDepartments'}"/>
+                                <table:ChronoCell text="{institution_short}" tooltip="{institution}"/>
+                                <table:ChronoCell text="{icd}" class="sapPSTableRightAligned" tooltip="{icd}"/>
+                            </table:ChronoRow>
+                        </table:rightRows>
+                    </table:ChronoRows>
+                </table:Table>
+
+                <!-- Grouped Table -->
+                <table:Table id="diagnosesGroupedPage" class="sapPSHeight100 sapPSWidth100" middleGapWidthHalf="1rem">
+                    <table:leftColumns>
+                        <table:Column width="3rem"/>
+                        <table:Column text="TITEL" width="20px" span="3"/>
+                        <table:Column width="20px"/>
+                        <table:Column width="1fr"/>
+                        <table:Column text="HAUS" width="6rem"/>
+                        <table:Column text="ICD" width="5rem" class="sapPSTableRightAligned"/>
+                        <table:Column width="3rem" span="2"/>
+                        <table:Column width="3rem"/>
+                        <table:Column width="1rem"/>
+                        <table:Column width="1rem"/>
+                        <table:Column width="1rem"/>
+                    </table:leftColumns>
+
+                    <table:rightColumns>
+                        <table:Column width="3rem"/>
+                        <table:Column text="TITEL" width="20px" span="3"/>
+                        <table:Column width="20px"/>
+                        <table:Column width="1fr"/>
+                        <table:Column text="HAUS" width="6rem"/>
+                        <table:Column text="ICD" width="5rem" class="sapPSTableRightAligned"/>
+                        <table:Column width="3rem" span="2"/>
+                        <table:Column width="3rem"/>
+                        <table:Column width="1rem"/>
+                        <table:Column width="1rem"/>
+                        <table:Column width="1rem"/>
+                    </table:rightColumns>
+
+                    <table:leftContent>
+                        <table:GroupedRows id="diagnosesGroupedTableLeft" rows="{/grouped}">
+                            <!-- Fachbereiche -->
+                            <table:GroupedRow subRows="{path:'entries', templateShareable:false}" enabled="{=!!${entries}.length}" unfolded="true">
+                                <table:GroupedCell/>
+                                <table:GroupedCell text="{=${key}+' ('+${entries}.length+')'}" span="4" tooltip="{=${key}+' ('+${entries}.length+')'}" />
+                                <table:GroupedCell text="{parts: ['start','end'], formatter: '.formatDatePair'}" class="sapPSTableRightAligned" span="2"/>
+                                <table:GroupedCell/>
+                                <table:GroupedCell text="{=${entries}.length?'':''}" class="sapPSGroupedFoldingIcon sapPSGroupedFoldingDisabled"/>
+
+                                <table:subRows>
+                                    <!-- ICD Gruppen -->
+                                    <table:GroupedRow subRows="{path:'entries', templateShareable:false}" unfolded="{unfoldedLeft}" active="true" press=".toggleUnfoldedLeft">
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell text="{groupName}" span="2" tooltip="{=${groupName}+' ('+${entries}.length+')'}"/>
+                                        <table:GroupedCell text="{=${icdGroup}+' ('+${entries}.length+')'}" class="sapPSTableRightAligned" tooltip="{=${icdGroup}+' ('+${entries}.length+')'}"/>
+                                        <table:GroupedCell text="{path: 'entries', formatter: '.formatDateRange'}" class="sapPSTableRightAligned" span="2"/>
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell text="" class="sapPSGroupedFoldingIcon"/>
+
+                                        <table:subRows>
+                                            <!-- Diagnosen -->
+                                            <table:GroupedRow>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell text="{entryName}" class="sapPSFreetext" span="1" tooltip="{entryName}"/>
+                                                <table:GroupedCell text="{institution_short}" tooltip="{institution}"/>
+                                                <table:GroupedCell text="{icd}" class="sapPSTableRightAligned"/>
+                                                <table:GroupedCell text="{path: 'date', formatter: '.formatDate'}" class="sapPSTableRightAligned" span="2"/>
+                                            </table:GroupedRow>
+                                        </table:subRows>
+
+                                    </table:GroupedRow>
+                                </table:subRows>
+
+                            </table:GroupedRow>
+                        </table:GroupedRows>
+                    </table:leftContent>
+
+                    <table:rightContent>
+                        <table:GroupedRows id="diagnosesGroupedTableRight" rows="{/grouped}">
+                            <!-- Fachbereiche -->
+                            <table:GroupedRow subRows="{path:'entries', templateShareable:false}" enabled="{=!!${entries}.length}" unfolded="{unfoldedRight}" active="true" press=".toggleUnfoldedRight">
+                                <table:GroupedCell/>
+                                <table:GroupedCell text="{=${key}+' ('+${entries}.length+')'}" span="4" tooltip="{=${key}+' ('+${entries}.length+')'}" />
+                                <table:GroupedCell text="{parts: ['start','end'], formatter: '.formatDatePair'}" class="sapPSTableRightAligned" span="2"/>
+                                <table:GroupedCell/>
+                                <table:GroupedCell text="{=${entries}.length?'':''}" class="sapPSGroupedFoldingIcon"/>
+
+                                <table:subRows>
+                                    <!-- ICD Gruppen -->
+                                    <table:GroupedRow subRows="{path:'entries', templateShareable:false}" unfolded="{unfoldedRight}" active="true" press=".toggleUnfoldedRight">
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell text="{groupName}" span="2" tooltip="{=${groupName}+' ('+${entries}.length+')'}"/>
+                                        <table:GroupedCell text="{=${icdGroup}+' ('+${entries}.length+')'}" class="sapPSTableRightAligned" tooltip="{=${icdGroup}+' ('+${entries}.length+')'}"/>
+                                        <table:GroupedCell text="{path: 'entries', formatter: '.formatDateRange'}" class="sapPSTableRightAligned" span="2"/>
+                                        <table:GroupedCell/>
+                                        <table:GroupedCell text="" class="sapPSGroupedFoldingIcon"/>
+
+                                        <table:subRows>
+                                            <!-- Diagnosen -->
+                                            <table:GroupedRow>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell/>
+                                                <table:GroupedCell text="{entryName}" class="sapPSFreetext" span="1" tooltip="{entryName}"/>
+                                                <table:GroupedCell text="{institution_short}" tooltip="{institution}"/>
+                                                <table:GroupedCell text="{icd}" class="sapPSTableRightAligned"/>
+                                                <table:GroupedCell text="{path: 'date', formatter: '.formatDate'}" class="sapPSTableRightAligned" span="2   "/>
+                                            </table:GroupedRow>
+                                        </table:subRows>
+
+                                    </table:GroupedRow>
+                                </table:subRows>
+
+                            </table:GroupedRow>
+                        </table:GroupedRows>
+                    </table:rightContent>
+                </table:Table>
+            </pages>
+        </NavContainer>
+        </l:flexContent>
+    </l:FixFlex>
+</mvc:View>

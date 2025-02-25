@@ -1,0 +1,6 @@
+[
+  {
+    "name": "MRI_PA",
+    "url": "http://localhost:7000/sap/hc/mri/tests/pa/ui/unit/unitTests.qunit.html"
+  }
+]

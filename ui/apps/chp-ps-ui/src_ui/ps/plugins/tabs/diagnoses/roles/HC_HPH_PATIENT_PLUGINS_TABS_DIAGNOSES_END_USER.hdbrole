@@ -1,0 +1,4 @@
+role sap.hc.hph.patient.plugins.tabs.diagnoses.roles::HC_HPH_PATIENT_PLUGINS_TABS_DIAGNOSES_END_USER
+{
+    application privilege: sap.hc.hph.patient.plugins.tabs.diagnoses::EndUser;
+}

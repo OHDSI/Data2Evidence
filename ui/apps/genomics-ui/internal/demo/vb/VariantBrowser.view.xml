@@ -1,0 +1,98 @@
+<mvc:View
+	controllerName="hc.hph.genomics.internal.demo.vb.VariantBrowser"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:lib="hc.hph.genomics.ui.lib"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	xmlns="sap.m"
+	xmlns:commons="sap.ui.commons"
+	height="100%">
+	<Page
+		title="Variants"
+		showHeader="true"
+		showNavButton="false"
+		enableScrolling="false"
+		backgroundDesign="Solid">
+		<headerContent>
+			<Button icon="sap-icon://search" visible="true" press="handleSearchPopover"></Button>
+			<Button icon="sap-icon://save" visible="true" press="handleSave"></Button>
+		</headerContent>
+		<content>
+        <lib:VariantBrowser preRequestPlugin="vb.TrackGroups.getSessionGroups" validationPlugin="internal.validate" validationParameters="{pruneOdd:true}" parameters="{reference:'GRCh37',dataset:'sample: 9000702, 31000514' }" overviewArcBinSize="0.5" application="hc.hph.genomics.internal.demo.vb" error="handleError">
+				<!--<lib:overviewCenter>
+					<lib:vb.overview.LDCenter name="LD Values" initPlugin="vb.OverviewLDCenter.init"/>
+				</lib:overviewCenter>-->
+
+				<lib:overviewTracks>
+					<lib:vb.overview.TrackGroup titlePrefix="Gene Variants" pluginId="vb.TrackGroups.getSessionSamples" colors="#835DCC, #5A408C, #31234C" trackHeight="10" minTrackHeight="5" maxHeight="50" maxCount="5" >
+						<lib:vb.overview.GeneVariantTrack height="10" initPlugin="vb.GeneVariantTrack.getGeneVariantsOverview" name="Gene Variants" color="#FF00FF" />
+					</lib:vb.overview.TrackGroup>
+					
+				 	<lib:vb.overview.TrackGroup titlePrefix="Quantitative Data" pluginId="vb.TrackGroups.getSessionSamples" colors="#cc0000, #ff0000, #ff3333" trackHeight="8" minTrackHeight="5" maxHeight="50" maxCount="3" >
+                        <lib:vb.overview.QuantitativeTrack height="10" initPlugin="vb.QuantitativeTrack.getQuantitativeDataOverview" logScale="-log10" level="Variants" attribute="VariantIndex" aggregate="max" color="#FF66FF" />     				
+					</lib:vb.overview.TrackGroup>
+
+					<lib:vb.overview.VariantDensityTrack height="10" initPlugin="vb.VariantTrack.getGenomeVariantDensity" name="All variants" color="green" />
+
+					<lib:vb.overview.TrackGroup titlePrefix="Variant Density" pluginId="vb.TrackGroups.getSessionSamples" colors="#835DCC, #5A408C, #31234C" trackHeight="10" minTrackHeight="5" maxHeight="50" maxCount="5" >
+						<lib:vb.overview.VariantDensityTrack initPlugin="vb.VariantTrack.getGenomeVariantDensity" />
+					</lib:vb.overview.TrackGroup>
+					
+					<lib:vb.overview.TrackGroup titlePrefix="Regions" pluginId="vb.TrackGroups.getSessionSamples" colors="#F0AB00" trackHeight="10" minTrackHeight="5" maxHeight="50" maxCount="5" >
+						<lib:vb.overview.RegionTrack initPlugin="vb.RegionTrack.getRegionDataOverview" />
+					</lib:vb.overview.TrackGroup>
+
+				</lib:overviewTracks>
+
+				<lib:chromosomeTracks>
+					<lib:vb.chromosome.ReferenceTrack color="#009de0" initPlugin="vb.ReferenceTrack.init" dataPlugin="vb.ReferenceTrack.fullReload"/>
+
+	                <lib:vb.chromosome.TrackGroup titlePrefix="Sample variants" pluginId="vb.TrackGroups.getSessionSamples" colors="#835DCC, #5A408C, #31234C" trackHeight="50" minTrackHeight="20" maxHeight="350" maxCount="3" >
+	                	<lib:vb.chromosome.GeneVariantTrack name="Gene variants" height="40px" color="#FF00FF" initPlugin="vb.GeneVariantTrack.init" showSampleCount="true" /> 
+	              	</lib:vb.chromosome.TrackGroup>
+	                    
+			       <lib:vb.chromosome.TrackGroup titlePrefix="Quantitative" pluginId="vb.TrackGroups.getSessionSamples" colors="#cc0000, #ff0000, #ff3333" trackHeight="50" minTrackHeight="20" maxHeight="350" maxCount="3" > 
+                			<lib:vb.chromosome.QuantitativeTrack level="Variants" attribute="VariantIndex" logScale="-log10" aggregate="max" initPlugin="vb.QuantitativeTrack.init" /> 
+            		</lib:vb.chromosome.TrackGroup>
+            		
+            		<lib:vb.chromosome.TrackGroup titlePrefix="Qualitative" pluginId="vb.TrackGroups.getSessionSamples" colors="#996633" trackHeight="50" minTrackHeight="50" maxHeight="350" maxCount="3"  > 
+                			<lib:vb.chromosome.QualitativeTrack initPlugin="vb.QualitativeTrack.init"  binSize="15"/> 
+            		</lib:vb.chromosome.TrackGroup> 
+            
+	                <lib:vb.chromosome.VariantTrack name="All variants" height="40px" color="#FF530D" initPlugin="vb.VariantTrack.init" dataPlugin="vb.VariantTrack.fullReload"  binSize="10" showSampleCount="true" /> 
+
+					<lib:vb.chromosome.TrackGroup titlePrefix="Sample variants" pluginId="vb.TrackGroups.getSessionSamples" colors="#835DCC, #5A408C, #31234C" trackHeight="50" minTrackHeight="20" maxHeight="350" maxCount="3" >
+						<lib:vb.chromosome.VariantTrack initPlugin="vb.VariantTrack.init" dataPlugin="vb.VariantTrack.fullReload" />
+					</lib:vb.chromosome.TrackGroup> 
+
+					<!-- <lib:vb.chromosome.VariantTrack name="Cohort variants" height="40px" color="#FF53A0" initPlugin="vb.VariantTrack.init" dataPlugin="vb.VariantTrack.fullReload" parameters="{dataset:'sample:0'}"/> -->
+					
+					<lib:vb.chromosome.TrackGroup titlePrefix="Regions" pluginId="vb.TrackGroups.getSessionSamples" colors="#F0AB00" trackHeight="50" minTrackHeight="50" maxHeight="350" maxCount="3" > 
+                        <lib:vb.chromosome.RegionTrack initPlugin="vb.RegionTrack.init"/>
+                    </lib:vb.chromosome.TrackGroup>
+                    
+					<lib:vb.chromosome.FeatureTrack name="Genes" classes="gene" color="#007f0e" height="100px" initPlugin="vb.FeatureTrack.init"/>
+					<lib:vb.chromosome.TranslationTrack name="Translations" color="#ff7f0e" dataPlugin="vb.TranslationTrack.fullReload" />
+
+			   <!-- <lib:vb.chromosome.QuantitativeTrack name="tumor_vaf" className="tumor_vaf" color="#ab218e" />
+					<lib:vb.chromosome.QuantitativeTrack name="onco_score" parameters="{dataset:'sample:0'}" className="onco_score"/>
+					<lib:vb.chromosome.QuantitativeTrack name="fi_score" parameters="{dataset:'sample:0'}" className="fi_score"/> -->
+
+			   <!-- <lib:vb.chromosome.QualitativeTrack name="Qualitative Data" height="100px" color="#00B233" parameters="{dataset:'sample:0'}" >
+						<lib:vb.chromosome.QualitativeFeature featureClass="ccpw_invasion_members_flag" featureValue="1" icon="potential-loh" color="purple"/>
+						<lib:vb.chromosome.QualitativeFeature featureClass="variant_classification" featureValue="Missense_Mutation" icon="missense-mutation" color="red"/>
+						<lib:vb.chromosome.QualitativeFeature featureClass="ccpw_apoptosis_members_flag" featureValue="1" icon="nonsense-mutation" color="green"/>
+						<lib:vb.chromosome.QualitativeFeature featureClass="variant_classification" featureValue="Silent" icon="silent-mutation" color="blue"/>
+						<lib:vb.chromosome.QualitativeFeature featureClass="variant_classification" featureValue="Splice_Site" icon="splice-site" color="beige"/>
+						<lib:vb.chromosome.QualitativeFeature featureClass="biomarker_gene_flag" featureValue="1" icon="insertion" color="yellow"/>
+					</lib:vb.chromosome.QualitativeTrack>  -->
+
+			   <!-- <lib:vb.chromosome.LDTrack name="Linkage Desiquilibrium" color="#E82C0C" limit="0.33" />-->
+			   <!-- <lib:vb.chromosome.GeneVariantTrack />
+					<lib:vb.chromosome.CoverageTrack name="Coverage" color="#FF77E5" />  -->
+
+				</lib:chromosomeTracks>
+
+			</lib:VariantBrowser>
+		</content>
+	</Page>
+</mvc:View>

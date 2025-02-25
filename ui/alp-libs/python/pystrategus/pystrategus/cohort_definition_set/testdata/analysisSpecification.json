@@ -1,0 +1,2646 @@
+{
+  "sharedResources": [
+    {
+      "cohortDefinitions": [
+        {
+          "cohortId": 1,
+          "cohortName": "Celecoxib",
+          "cohortDefinition": "{\r\n\t\"cdmVersionRange\" : \">=5.0.0\",\r\n\t\"PrimaryCriteria\" : {\r\n\t\t\"CriteriaList\" : [\r\n\t\t\t{\r\n\t\t\t\t\"DrugEra\" : {\r\n\t\t\t\t\t\"CodesetId\" : 0\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"ObservationWindow\" : {\r\n\t\t\t\"PriorDays\" : 0,\r\n\t\t\t\"PostDays\" : 0\r\n\t\t},\r\n\t\t\"PrimaryCriteriaLimit\" : {\r\n\t\t\t\"Type\" : \"First\"\r\n\t\t}\r\n\t},\r\n\t\"ConceptSets\" : [\r\n\t\t{\r\n\t\t\t\"id\" : 0,\r\n\t\t\t\"name\" : \"Celecoxib\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"items\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"concept\" : {\r\n\t\t\t\t\t\t\t\"CONCEPT_ID\" : 1118084,\r\n\t\t\t\t\t\t\t\"CONCEPT_NAME\" : \"celecoxib\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT\" : \"S\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT_CAPTION\" : \"Standard\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON\" : \"V\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON_CAPTION\" : \"Valid\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CODE\" : \"140587\",\r\n\t\t\t\t\t\t\t\"DOMAIN_ID\" : \"Drug\",\r\n\t\t\t\t\t\t\t\"VOCABULARY_ID\" : \"RxNorm\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CLASS_ID\" : \"Ingredient\"\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\"isExcluded\" : false,\r\n\t\t\t\t\t\t\"includeDescendants\" : false,\r\n\t\t\t\t\t\t\"includeMapped\" : false\r\n\t\t\t\t\t}\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"QualifiedLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"ExpressionLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"InclusionRules\" : [],\r\n\t\"EndStrategy\" : {\r\n\t\t\"CustomEra\" : {\r\n\t\t\t\"DrugCodesetId\" : 0,\r\n\t\t\t\"GapDays\" : 30,\r\n\t\t\t\"Offset\" : 0\r\n\t\t}\r\n\t},\r\n\t\"CensoringCriteria\" : [],\r\n\t\"CollapseSettings\" : {\r\n\t\t\"CollapseType\" : \"ERA\",\r\n\t\t\"EraPad\" : 0\r\n\t},\r\n\t\"CensorWindow\" : {}\r\n}"
+        },
+        {
+          "cohortId": 2,
+          "cohortName": "Diclofenac",
+          "cohortDefinition": "{\r\n\t\"cdmVersionRange\" : \">=5.0.0\",\r\n\t\"PrimaryCriteria\" : {\r\n\t\t\"CriteriaList\" : [\r\n\t\t\t{\r\n\t\t\t\t\"DrugEra\" : {\r\n\t\t\t\t\t\"CodesetId\" : 0\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"ObservationWindow\" : {\r\n\t\t\t\"PriorDays\" : 0,\r\n\t\t\t\"PostDays\" : 0\r\n\t\t},\r\n\t\t\"PrimaryCriteriaLimit\" : {\r\n\t\t\t\"Type\" : \"First\"\r\n\t\t}\r\n\t},\r\n\t\"ConceptSets\" : [\r\n\t\t{\r\n\t\t\t\"id\" : 0,\r\n\t\t\t\"name\" : \"Diclofenac\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"items\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"concept\" : {\r\n\t\t\t\t\t\t\t\"CONCEPT_ID\" : 1124300,\r\n\t\t\t\t\t\t\t\"CONCEPT_NAME\" : \"diclofenac\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT\" : \"S\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT_CAPTION\" : \"Standard\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON\" : \"V\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON_CAPTION\" : \"Valid\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CODE\" : \"3355\",\r\n\t\t\t\t\t\t\t\"DOMAIN_ID\" : \"Drug\",\r\n\t\t\t\t\t\t\t\"VOCABULARY_ID\" : \"RxNorm\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CLASS_ID\" : \"Ingredient\"\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\"isExcluded\" : false,\r\n\t\t\t\t\t\t\"includeDescendants\" : false,\r\n\t\t\t\t\t\t\"includeMapped\" : false\r\n\t\t\t\t\t}\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"QualifiedLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"ExpressionLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"InclusionRules\" : [],\r\n\t\"EndStrategy\" : {\r\n\t\t\"CustomEra\" : {\r\n\t\t\t\"DrugCodesetId\" : 0,\r\n\t\t\t\"GapDays\" : 30,\r\n\t\t\t\"Offset\" : 0\r\n\t\t}\r\n\t},\r\n\t\"CensoringCriteria\" : [],\r\n\t\"CollapseSettings\" : {\r\n\t\t\"CollapseType\" : \"ERA\",\r\n\t\t\"EraPad\" : 0\r\n\t},\r\n\t\"CensorWindow\" : {}\r\n}"
+        },
+        {
+          "cohortId": 3,
+          "cohortName": "GI bleed",
+          "cohortDefinition": "{\r\n\t\"cdmVersionRange\" : \">=5.0.0\",\r\n\t\"PrimaryCriteria\" : {\r\n\t\t\"CriteriaList\" : [\r\n\t\t\t{\r\n\t\t\t\t\"ConditionOccurrence\" : {\r\n\t\t\t\t\t\"CodesetId\" : 0,\r\n\t\t\t\t\t\"ConditionTypeExclude\" : false\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"ObservationWindow\" : {\r\n\t\t\t\"PriorDays\" : 0,\r\n\t\t\t\"PostDays\" : 0\r\n\t\t},\r\n\t\t\"PrimaryCriteriaLimit\" : {\r\n\t\t\t\"Type\" : \"All\"\r\n\t\t}\r\n\t},\r\n\t\"ConceptSets\" : [\r\n\t\t{\r\n\t\t\t\"id\" : 0,\r\n\t\t\t\"name\" : \"GI bleed\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"items\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"concept\" : {\r\n\t\t\t\t\t\t\t\"CONCEPT_ID\" : 192671,\r\n\t\t\t\t\t\t\t\"CONCEPT_NAME\" : \"Gastrointestinal hemorrhage\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT\" : \"S\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT_CAPTION\" : \"Standard\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON\" : \"V\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON_CAPTION\" : \"Valid\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CODE\" : \"74474003\",\r\n\t\t\t\t\t\t\t\"DOMAIN_ID\" : \"Condition\",\r\n\t\t\t\t\t\t\t\"VOCABULARY_ID\" : \"SNOMED\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CLASS_ID\" : \"Clinical Finding\"\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\"isExcluded\" : false,\r\n\t\t\t\t\t\t\"includeDescendants\" : true,\r\n\t\t\t\t\t\t\"includeMapped\" : false\r\n\t\t\t\t\t}\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"QualifiedLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"ExpressionLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"InclusionRules\" : [],\r\n\t\"EndStrategy\" : {\r\n\t\t\"DateOffset\" : {\r\n\t\t\t\"DateField\" : \"StartDate\",\r\n\t\t\t\"Offset\" : 0\r\n\t\t}\r\n\t},\r\n\t\"CensoringCriteria\" : [],\r\n\t\"CollapseSettings\" : {\r\n\t\t\"CollapseType\" : \"ERA\",\r\n\t\t\"EraPad\" : 0\r\n\t},\r\n\t\"CensorWindow\" : {}\r\n}"
+        },
+        {
+          "cohortId": 4,
+          "cohortName": "Celecoxib age 30 or older",
+          "cohortDefinition": "{\r\n\t\"cdmVersionRange\" : \">=5.0.0\",\r\n\t\"PrimaryCriteria\" : {\r\n\t\t\"CriteriaList\" : [\r\n\t\t\t{\r\n\t\t\t\t\"DrugEra\" : {\r\n\t\t\t\t\t\"CodesetId\" : 0\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"ObservationWindow\" : {\r\n\t\t\t\"PriorDays\" : 0,\r\n\t\t\t\"PostDays\" : 0\r\n\t\t},\r\n\t\t\"PrimaryCriteriaLimit\" : {\r\n\t\t\t\"Type\" : \"First\"\r\n\t\t}\r\n\t},\r\n\t\"ConceptSets\" : [\r\n\t\t{\r\n\t\t\t\"id\" : 0,\r\n\t\t\t\"name\" : \"Celecoxib\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"items\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"concept\" : {\r\n\t\t\t\t\t\t\t\"CONCEPT_ID\" : 1118084,\r\n\t\t\t\t\t\t\t\"CONCEPT_NAME\" : \"celecoxib\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT\" : \"S\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT_CAPTION\" : \"Standard\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON\" : \"V\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON_CAPTION\" : \"Valid\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CODE\" : \"140587\",\r\n\t\t\t\t\t\t\t\"DOMAIN_ID\" : \"Drug\",\r\n\t\t\t\t\t\t\t\"VOCABULARY_ID\" : \"RxNorm\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CLASS_ID\" : \"Ingredient\"\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\"isExcluded\" : false,\r\n\t\t\t\t\t\t\"includeDescendants\" : false,\r\n\t\t\t\t\t\t\"includeMapped\" : false\r\n\t\t\t\t\t}\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"QualifiedLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"ExpressionLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"InclusionRules\" : [\r\n\t\t{\r\n\t\t\t\"name\" : \"Age >= 30\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"Type\" : \"ALL\",\r\n\t\t\t\t\"CriteriaList\" : [],\r\n\t\t\t\t\"DemographicCriteriaList\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"Age\" : {\r\n\t\t\t\t\t\t\t\"Value\" : 30,\r\n\t\t\t\t\t\t\t\"Op\" : \"gte\"\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t],\r\n\t\t\t\t\"Groups\" : []\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"EndStrategy\" : {\r\n\t\t\"CustomEra\" : {\r\n\t\t\t\"DrugCodesetId\" : 0,\r\n\t\t\t\"GapDays\" : 30,\r\n\t\t\t\"Offset\" : 0\r\n\t\t}\r\n\t},\r\n\t\"CensoringCriteria\" : [],\r\n\t\"CollapseSettings\" : {\r\n\t\t\"CollapseType\" : \"ERA\",\r\n\t\t\"EraPad\" : 0\r\n\t},\r\n\t\"CensorWindow\" : {}\r\n}"
+        },
+        {
+          "cohortId": 5,
+          "cohortName": "Diclofenac age 30 or older",
+          "cohortDefinition": "{\r\n\t\"cdmVersionRange\" : \">=5.0.0\",\r\n\t\"PrimaryCriteria\" : {\r\n\t\t\"CriteriaList\" : [\r\n\t\t\t{\r\n\t\t\t\t\"DrugEra\" : {\r\n\t\t\t\t\t\"CodesetId\" : 0\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"ObservationWindow\" : {\r\n\t\t\t\"PriorDays\" : 0,\r\n\t\t\t\"PostDays\" : 0\r\n\t\t},\r\n\t\t\"PrimaryCriteriaLimit\" : {\r\n\t\t\t\"Type\" : \"First\"\r\n\t\t}\r\n\t},\r\n\t\"ConceptSets\" : [\r\n\t\t{\r\n\t\t\t\"id\" : 0,\r\n\t\t\t\"name\" : \"Diclofenac\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"items\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"concept\" : {\r\n\t\t\t\t\t\t\t\"CONCEPT_ID\" : 1124300,\r\n\t\t\t\t\t\t\t\"CONCEPT_NAME\" : \"diclofenac\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT\" : \"S\",\r\n\t\t\t\t\t\t\t\"STANDARD_CONCEPT_CAPTION\" : \"Standard\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON\" : \"V\",\r\n\t\t\t\t\t\t\t\"INVALID_REASON_CAPTION\" : \"Valid\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CODE\" : \"3355\",\r\n\t\t\t\t\t\t\t\"DOMAIN_ID\" : \"Drug\",\r\n\t\t\t\t\t\t\t\"VOCABULARY_ID\" : \"RxNorm\",\r\n\t\t\t\t\t\t\t\"CONCEPT_CLASS_ID\" : \"Ingredient\"\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\"isExcluded\" : false,\r\n\t\t\t\t\t\t\"includeDescendants\" : false,\r\n\t\t\t\t\t\t\"includeMapped\" : false\r\n\t\t\t\t\t}\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"QualifiedLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"ExpressionLimit\" : {\r\n\t\t\"Type\" : \"First\"\r\n\t},\r\n\t\"InclusionRules\" : [\r\n\t\t{\r\n\t\t\t\"name\" : \"Age >= 30\",\r\n\t\t\t\"expression\" : {\r\n\t\t\t\t\"Type\" : \"ALL\",\r\n\t\t\t\t\"CriteriaList\" : [],\r\n\t\t\t\t\"DemographicCriteriaList\" : [\r\n\t\t\t\t\t{\r\n\t\t\t\t\t\t\"Age\" : {\r\n\t\t\t\t\t\t\t\"Value\" : 30,\r\n\t\t\t\t\t\t\t\"Op\" : \"gte\"\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t],\r\n\t\t\t\t\"Groups\" : []\r\n\t\t\t}\r\n\t\t}\r\n\t],\r\n\t\"EndStrategy\" : {\r\n\t\t\"CustomEra\" : {\r\n\t\t\t\"DrugCodesetId\" : 0,\r\n\t\t\t\"GapDays\" : 30,\r\n\t\t\t\"Offset\" : 0\r\n\t\t}\r\n\t},\r\n\t\"CensoringCriteria\" : [],\r\n\t\"CollapseSettings\" : {\r\n\t\t\"CollapseType\" : \"ERA\",\r\n\t\t\"EraPad\" : 0\r\n\t},\r\n\t\"CensorWindow\" : {}\r\n}"
+        }
+      ],
+      "attr_class": ["CohortDefinitionSharedResources", "SharedResources"]
+    },
+    {
+      "negativeControlOutcomes": {
+        "negativeControlOutcomeCohortSet": [
+          {
+            "cohortId": "1001",
+            "cohortName": "Acute pancreatitis",
+            "outcomeConceptId": " 199074"
+          },
+          {
+            "cohortId": "1002",
+            "cohortName": "Alcohol abuse",
+            "outcomeConceptId": " 433753"
+          },
+          {
+            "cohortId": "1003",
+            "cohortName": "Allergic rhinitis",
+            "outcomeConceptId": " 257007"
+          },
+          {
+            "cohortId": "1004",
+            "cohortName": "Amenorrhea",
+            "outcomeConceptId": " 443800"
+          },
+          {
+            "cohortId": "1005",
+            "cohortName": "Bipolar disorder",
+            "outcomeConceptId": " 436665"
+          },
+          {
+            "cohortId": "1006",
+            "cohortName": "Candida infection of genital region",
+            "outcomeConceptId": "4084966"
+          },
+          {
+            "cohortId": "1007",
+            "cohortName": "Candidiasis of mouth",
+            "outcomeConceptId": "  29735"
+          },
+          {
+            "cohortId": "1008",
+            "cohortName": "Cardiomegaly",
+            "outcomeConceptId": " 314658"
+          },
+          {
+            "cohortId": "1009",
+            "cohortName": "Carotid artery obstruction",
+            "outcomeConceptId": "4288310"
+          },
+          {
+            "cohortId": "1010",
+            "cohortName": "Carpal tunnel syndrome",
+            "outcomeConceptId": " 380094"
+          },
+          {
+            "cohortId": "1011",
+            "cohortName": "Chronic obstructive lung disease",
+            "outcomeConceptId": " 255573"
+          },
+          {
+            "cohortId": "1012",
+            "cohortName": "Conduct disorder",
+            "outcomeConceptId": " 443617"
+          },
+          {
+            "cohortId": "1013",
+            "cohortName": "Dysplasia of cervix",
+            "outcomeConceptId": " 192367"
+          },
+          {
+            "cohortId": "1014",
+            "cohortName": "Gastrointestinal hemorrhage",
+            "outcomeConceptId": " 192671"
+          },
+          {
+            "cohortId": "1015",
+            "cohortName": "Hirsutism",
+            "outcomeConceptId": " 134718"
+          },
+          {
+            "cohortId": "1016",
+            "cohortName": "Hydronephrosis",
+            "outcomeConceptId": " 433811"
+          },
+          {
+            "cohortId": "1017",
+            "cohortName": "Hypersomnia",
+            "outcomeConceptId": " 438134"
+          },
+          {
+            "cohortId": "1018",
+            "cohortName": "Hypoglycemia",
+            "outcomeConceptId": "  24609"
+          },
+          {
+            "cohortId": "1019",
+            "cohortName": "Infectious mononucleosis",
+            "outcomeConceptId": " 437784"
+          },
+          {
+            "cohortId": "1020",
+            "cohortName": "Ingrowing nail",
+            "outcomeConceptId": " 139099"
+          },
+          {
+            "cohortId": "1021",
+            "cohortName": "Injury of hand",
+            "outcomeConceptId": "  80004"
+          },
+          {
+            "cohortId": "1022",
+            "cohortName": "Lipoma (clinical)",
+            "outcomeConceptId": " 440358"
+          },
+          {
+            "cohortId": "1023",
+            "cohortName": "Lymphadenitis",
+            "outcomeConceptId": " 316084"
+          },
+          {
+            "cohortId": "1024",
+            "cohortName": "Metabolic syndrome X",
+            "outcomeConceptId": " 436940"
+          },
+          {
+            "cohortId": "1025",
+            "cohortName": "Mitral valve disorder",
+            "outcomeConceptId": " 319843"
+          },
+          {
+            "cohortId": "1026",
+            "cohortName": "Obsessive-compulsive disorder",
+            "outcomeConceptId": " 440374"
+          },
+          {
+            "cohortId": "1027",
+            "cohortName": "Ovarian failure",
+            "outcomeConceptId": " 193739"
+          },
+          {
+            "cohortId": "1028",
+            "cohortName": "Perforation of tympanic membrane",
+            "outcomeConceptId": " 375292"
+          },
+          {
+            "cohortId": "1029",
+            "cohortName": "Peripheral venous insufficiency",
+            "outcomeConceptId": " 321596"
+          },
+          {
+            "cohortId": "1030",
+            "cohortName": "Posttraumatic stress disorder",
+            "outcomeConceptId": " 436676"
+          },
+          {
+            "cohortId": "1031",
+            "cohortName": "Prostatitis",
+            "outcomeConceptId": " 194997"
+          },
+          {
+            "cohortId": "1032",
+            "cohortName": "Restless legs",
+            "outcomeConceptId": "  73754"
+          },
+          {
+            "cohortId": "1033",
+            "cohortName": "Senile hyperkeratosis",
+            "outcomeConceptId": " 141932"
+          },
+          {
+            "cohortId": "1034",
+            "cohortName": "Sensorineural hearing loss",
+            "outcomeConceptId": " 374366"
+          },
+          {
+            "cohortId": "1035",
+            "cohortName": "Sleep apnea",
+            "outcomeConceptId": " 313459"
+          },
+          {
+            "cohortId": "1036",
+            "cohortName": "Uterine leiomyoma",
+            "outcomeConceptId": " 197236"
+          }
+        ],
+        "occurrenceType": "all",
+        "detectOnDescendants": true
+      },
+      "attr_class": ["NegativeControlOutcomeSharedResources", "SharedResources"]
+    }
+  ],
+  "moduleSpecifications": [
+    {
+      "module": "CohortGeneratorModule",
+      "version": "0.2.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "incremental": true,
+        "generateStats": true
+      },
+      "attr_class": ["CohortGeneratorModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "CohortDiagnosticsModule",
+      "version": "0.1.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "runInclusionStatistics": true,
+        "runIncludedSourceConcepts": true,
+        "runOrphanConcepts": true,
+        "runTimeSeries": false,
+        "runVisitContext": true,
+        "runBreakdownIndexEvents": true,
+        "runIncidenceRate": true,
+        "runCohortRelationship": true,
+        "runTemporalCohortCharacterization": true,
+        "temporalCovariateSettings": {
+          "temporal": true,
+          "temporalSequence": false,
+          "DemographicsGender": true,
+          "DemographicsAge": true,
+          "DemographicsAgeGroup": true,
+          "DemographicsRace": true,
+          "DemographicsEthnicity": true,
+          "DemographicsIndexYear": true,
+          "DemographicsIndexMonth": true,
+          "DemographicsPriorObservationTime": true,
+          "DemographicsPostObservationTime": true,
+          "DemographicsTimeInCohort": true,
+          "DemographicsIndexYearMonth": true,
+          "ConditionOccurrence": true,
+          "ConditionEraStart": true,
+          "ConditionEraOverlap": true,
+          "ConditionEraGroupOverlap": true,
+          "DrugEraStart": true,
+          "DrugEraGroupOverlap": true,
+          "ProcedureOccurrence": true,
+          "DeviceExposure": true,
+          "Measurement": true,
+          "Observation": true,
+          "CharlsonIndex": true,
+          "Dcsi": true,
+          "Chads2": true,
+          "Chads2Vasc": true,
+          "temporalStartDays": [-9999, -365, -180, -30, -365, -30, 0, 1, 31, -9999],
+          "temporalEndDays": [0, 0, 0, 0, -31, -1, 0, 30, 365, 9999],
+          "includedCovariateConceptIds": [],
+          "addDescendantsToInclude": false,
+          "excludedCovariateConceptIds": [],
+          "addDescendantsToExclude": false,
+          "includedCovariateIds": [],
+          "attr_class": "covariateSettings",
+          "attr_fun": "getDbDefaultCovariateData"
+        },
+        "minCharacterizationMean": 0.01,
+        "incremental": false
+      },
+      "attr_class": ["CohortDiagnosticsModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "CohortIncidenceModule",
+      "version": "0.1.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "irDesign": {
+          "targetDefs": [
+            {
+              "id": 1,
+              "name": "Celecoxib"
+            },
+            {
+              "id": 2,
+              "name": "Diclofenac"
+            },
+            {
+              "id": 4,
+              "name": "Celecoxib Age >= 30"
+            },
+            {
+              "id": 5,
+              "name": "Diclofenac Age >= 30"
+            }
+          ],
+          "outcomeDefs": [
+            {
+              "id": 1,
+              "name": "GI bleed",
+              "cohortId": 3,
+              "cleanWindow": 9999
+            }
+          ],
+          "timeAtRiskDefs": [
+            {
+              "id": 1,
+              "start": {
+                "dateField": "start",
+                "offset": 0
+              },
+              "end": {
+                "dateField": "end",
+                "offset": 0
+              }
+            },
+            {
+              "id": 2,
+              "start": {
+                "dateField": "start",
+                "offset": 0
+              },
+              "end": {
+                "dateField": "start",
+                "offset": 365
+              }
+            }
+          ],
+          "analysisList": [
+            {
+              "targets": [1, 2, 4, 5],
+              "outcomes": 1,
+              "tars": [1, 2]
+            }
+          ],
+          "strataSettings": {
+            "byAge": false,
+            "byGender": true,
+            "byYear": true
+          }
+        }
+      },
+      "attr_class": ["CohortIncidenceModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "CharacterizationModule",
+      "version": "0.4.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "timeToEventSettings": [
+          {
+            "targetIds": [1, 2],
+            "outcomeIds": 3,
+            "attr_class": "timeToEventSettings"
+          }
+        ],
+        "dechallengeRechallengeSettings": [
+          {
+            "targetCohortDefinitionIds": [1, 2],
+            "outcomeCohortDefinitionIds": 3,
+            "dechallengeStopInterval": 30,
+            "dechallengeEvaluationWindow": 30,
+            "attr_class": "dechallengeRechallengeSettings"
+          }
+        ],
+        "aggregateCovariateSettings": [
+          {
+            "targetIds": [1, 2],
+            "outcomeIds": 3,
+            "riskWindowStart": 1,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 0,
+            "endAnchor": "cohort end",
+            "covariateSettings": {
+              "temporal": false,
+              "temporalSequence": false,
+              "DemographicsGender": true,
+              "DemographicsAgeGroup": true,
+              "DemographicsRace": true,
+              "DemographicsEthnicity": true,
+              "DemographicsIndexYear": true,
+              "DemographicsIndexMonth": true,
+              "ConditionGroupEraLongTerm": true,
+              "ConditionGroupEraShortTerm": true,
+              "DrugGroupEraLongTerm": true,
+              "DrugGroupEraShortTerm": true,
+              "DrugGroupEraOverlapping": true,
+              "ProcedureOccurrenceLongTerm": true,
+              "ProcedureOccurrenceShortTerm": true,
+              "DeviceExposureLongTerm": true,
+              "DeviceExposureShortTerm": true,
+              "MeasurementLongTerm": true,
+              "MeasurementShortTerm": true,
+              "MeasurementRangeGroupLongTerm": true,
+              "ObservationLongTerm": true,
+              "ObservationShortTerm": true,
+              "CharlsonIndex": true,
+              "Dcsi": true,
+              "Chads2": true,
+              "Chads2Vasc": true,
+              "includedCovariateConceptIds": [],
+              "includedCovariateIds": [],
+              "addDescendantsToInclude": false,
+              "excludedCovariateConceptIds": [],
+              "addDescendantsToExclude": false,
+              "shortTermStartDays": -30,
+              "mediumTermStartDays": -180,
+              "endDays": 0,
+              "longTermStartDays": -365,
+              "attr_class": "covariateSettings",
+              "attr_fun": "getDbDefaultCovariateData"
+            },
+            "attr_class": "aggregateCovariateSettings"
+          },
+          {
+            "targetIds": [1, 2],
+            "outcomeIds": 3,
+            "riskWindowStart": 1,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 365,
+            "endAnchor": "cohort end",
+            "covariateSettings": {
+              "temporal": false,
+              "temporalSequence": false,
+              "DemographicsGender": true,
+              "DemographicsAgeGroup": true,
+              "DemographicsRace": true,
+              "DemographicsEthnicity": true,
+              "DemographicsIndexYear": true,
+              "DemographicsIndexMonth": true,
+              "ConditionGroupEraLongTerm": true,
+              "ConditionGroupEraShortTerm": true,
+              "DrugGroupEraLongTerm": true,
+              "DrugGroupEraShortTerm": true,
+              "DrugGroupEraOverlapping": true,
+              "ProcedureOccurrenceLongTerm": true,
+              "ProcedureOccurrenceShortTerm": true,
+              "DeviceExposureLongTerm": true,
+              "DeviceExposureShortTerm": true,
+              "MeasurementLongTerm": true,
+              "MeasurementShortTerm": true,
+              "MeasurementRangeGroupLongTerm": true,
+              "ObservationLongTerm": true,
+              "ObservationShortTerm": true,
+              "CharlsonIndex": true,
+              "Dcsi": true,
+              "Chads2": true,
+              "Chads2Vasc": true,
+              "includedCovariateConceptIds": [],
+              "includedCovariateIds": [],
+              "addDescendantsToInclude": false,
+              "excludedCovariateConceptIds": [],
+              "addDescendantsToExclude": false,
+              "shortTermStartDays": -30,
+              "mediumTermStartDays": -180,
+              "endDays": 0,
+              "longTermStartDays": -365,
+              "attr_class": "covariateSettings",
+              "attr_fun": "getDbDefaultCovariateData"
+            },
+            "attr_class": "aggregateCovariateSettings"
+          }
+        ],
+        "attr_class": "characterizationSettings"
+      },
+      "attr_class": ["CharacterizationModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "CohortMethodModule",
+      "version": "0.2.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "cmAnalysisList": [
+          {
+            "analysisId": 1,
+            "description": "No matching, simple outcome model",
+            "getDbCohortMethodDataArgs": {
+              "studyStartDate": "",
+              "studyEndDate": "",
+              "firstExposureOnly": true,
+              "removeDuplicateSubjects": "remove all",
+              "restrictToCommonPeriod": false,
+              "washoutPeriod": 183,
+              "maxCohortSize": 100000,
+              "covariateSettings": {
+                "temporal": false,
+                "temporalSequence": false,
+                "DemographicsGender": true,
+                "DemographicsAgeGroup": true,
+                "DemographicsRace": true,
+                "DemographicsEthnicity": true,
+                "DemographicsIndexYear": true,
+                "DemographicsIndexMonth": true,
+                "ConditionGroupEraLongTerm": true,
+                "ConditionGroupEraShortTerm": true,
+                "DrugGroupEraLongTerm": true,
+                "DrugGroupEraShortTerm": true,
+                "DrugGroupEraOverlapping": true,
+                "ProcedureOccurrenceLongTerm": true,
+                "ProcedureOccurrenceShortTerm": true,
+                "DeviceExposureLongTerm": true,
+                "DeviceExposureShortTerm": true,
+                "MeasurementLongTerm": true,
+                "MeasurementShortTerm": true,
+                "MeasurementRangeGroupLongTerm": true,
+                "ObservationLongTerm": true,
+                "ObservationShortTerm": true,
+                "CharlsonIndex": true,
+                "Dcsi": true,
+                "Chads2": true,
+                "Chads2Vasc": true,
+                "includedCovariateConceptIds": [],
+                "includedCovariateIds": [],
+                "addDescendantsToInclude": false,
+                "excludedCovariateConceptIds": [],
+                "addDescendantsToExclude": true,
+                "shortTermStartDays": -30,
+                "mediumTermStartDays": -180,
+                "endDays": 0,
+                "longTermStartDays": -365,
+                "attr_class": "covariateSettings",
+                "attr_fun": "getDbDefaultCovariateData"
+              },
+              "attr_class": "args"
+            },
+            "createStudyPopArgs": {
+              "firstExposureOnly": false,
+              "restrictToCommonPeriod": false,
+              "washoutPeriod": 0,
+              "removeDuplicateSubjects": "keep all",
+              "removeSubjectsWithPriorOutcome": true,
+              "priorOutcomeLookback": 99999,
+              "minDaysAtRisk": 1,
+              "maxDaysAtRisk": 99999,
+              "riskWindowStart": 0,
+              "startAnchor": "cohort start",
+              "riskWindowEnd": 30,
+              "endAnchor": "cohort end",
+              "censorAtNewRiskWindow": false,
+              "attr_class": "args"
+            },
+            "fitOutcomeModelArgs": {
+              "modelType": "cox",
+              "stratified": false,
+              "useCovariates": false,
+              "inversePtWeighting": false,
+              "profileBounds": [-2.3026, 2.3026],
+              "prior": {
+                "priorType": "laplace",
+                "variance": 1,
+                "exclude": null,
+                "graph": null,
+                "neighborhood": null,
+                "useCrossValidation": true,
+                "forceIntercept": false,
+                "attr_class": "cyclopsPrior"
+              },
+              "control": {
+                "maxIterations": 1000,
+                "tolerance": 2e-07,
+                "convergenceType": "gradient",
+                "autoSearch": true,
+                "fold": 10,
+                "lowerLimit": 0.01,
+                "upperLimit": 20,
+                "gridSteps": 10,
+                "minCVData": 100,
+                "cvRepetitions": 10,
+                "noiseLevel": "quiet",
+                "threads": 1,
+                "seed": 1,
+                "resetCoefficients": true,
+                "startingVariance": 0.01,
+                "useKKTSwindle": false,
+                "tuneSwindle": 10,
+                "selectorType": "auto",
+                "initialBound": 2,
+                "maxBoundCount": 5,
+                "algorithm": "ccd",
+                "attr_class": "cyclopsControl"
+              },
+              "attr_class": "args"
+            },
+            "attr_class": "cmAnalysis"
+          },
+          {
+            "analysisId": 2,
+            "description": "Matching on ps and covariates, simple outcomeModel",
+            "getDbCohortMethodDataArgs": {
+              "studyStartDate": "",
+              "studyEndDate": "",
+              "firstExposureOnly": true,
+              "removeDuplicateSubjects": "remove all",
+              "restrictToCommonPeriod": false,
+              "washoutPeriod": 183,
+              "maxCohortSize": 100000,
+              "covariateSettings": {
+                "temporal": false,
+                "temporalSequence": false,
+                "DemographicsGender": true,
+                "DemographicsAgeGroup": true,
+                "DemographicsRace": true,
+                "DemographicsEthnicity": true,
+                "DemographicsIndexYear": true,
+                "DemographicsIndexMonth": true,
+                "ConditionGroupEraLongTerm": true,
+                "ConditionGroupEraShortTerm": true,
+                "DrugGroupEraLongTerm": true,
+                "DrugGroupEraShortTerm": true,
+                "DrugGroupEraOverlapping": true,
+                "ProcedureOccurrenceLongTerm": true,
+                "ProcedureOccurrenceShortTerm": true,
+                "DeviceExposureLongTerm": true,
+                "DeviceExposureShortTerm": true,
+                "MeasurementLongTerm": true,
+                "MeasurementShortTerm": true,
+                "MeasurementRangeGroupLongTerm": true,
+                "ObservationLongTerm": true,
+                "ObservationShortTerm": true,
+                "CharlsonIndex": true,
+                "Dcsi": true,
+                "Chads2": true,
+                "Chads2Vasc": true,
+                "includedCovariateConceptIds": [],
+                "includedCovariateIds": [],
+                "addDescendantsToInclude": false,
+                "excludedCovariateConceptIds": [],
+                "addDescendantsToExclude": true,
+                "shortTermStartDays": -30,
+                "mediumTermStartDays": -180,
+                "endDays": 0,
+                "longTermStartDays": -365,
+                "attr_class": "covariateSettings",
+                "attr_fun": "getDbDefaultCovariateData"
+              },
+              "attr_class": "args"
+            },
+            "createStudyPopArgs": {
+              "firstExposureOnly": false,
+              "restrictToCommonPeriod": false,
+              "washoutPeriod": 0,
+              "removeDuplicateSubjects": "keep all",
+              "removeSubjectsWithPriorOutcome": true,
+              "priorOutcomeLookback": 99999,
+              "minDaysAtRisk": 1,
+              "maxDaysAtRisk": 99999,
+              "riskWindowStart": 0,
+              "startAnchor": "cohort start",
+              "riskWindowEnd": 30,
+              "endAnchor": "cohort end",
+              "censorAtNewRiskWindow": false,
+              "attr_class": "args"
+            },
+            "createPsArgs": {
+              "maxCohortSizeForFitting": 250000,
+              "errorOnHighCorrelation": true,
+              "stopOnError": false,
+              "prior": {
+                "priorType": "laplace",
+                "variance": 1,
+                "exclude": 0,
+                "graph": null,
+                "neighborhood": null,
+                "useCrossValidation": true,
+                "forceIntercept": false,
+                "attr_class": "cyclopsPrior"
+              },
+              "control": {
+                "maxIterations": 1000,
+                "tolerance": 1e-06,
+                "convergenceType": "gradient",
+                "autoSearch": true,
+                "fold": 10,
+                "lowerLimit": 0.01,
+                "upperLimit": 20,
+                "gridSteps": 10,
+                "minCVData": 100,
+                "cvRepetitions": 1,
+                "noiseLevel": "silent",
+                "threads": 1,
+                "seed": null,
+                "resetCoefficients": false,
+                "startingVariance": -1,
+                "useKKTSwindle": false,
+                "tuneSwindle": 10,
+                "selectorType": "auto",
+                "initialBound": 2,
+                "maxBoundCount": 5,
+                "algorithm": "ccd",
+                "attr_class": "cyclopsControl"
+              },
+              "estimator": "att",
+              "attr_class": "args"
+            },
+            "matchOnPsArgs": {
+              "caliper": 0.2,
+              "caliperScale": "standardized logit",
+              "maxRatio": 1,
+              "allowReverseMatch": false,
+              "attr_class": "args"
+            },
+            "computeSharedCovariateBalanceArgs": {
+              "maxCohortSize": 250000,
+              "attr_class": "args"
+            },
+            "computeCovariateBalanceArgs": {
+              "maxCohortSize": 250000,
+              "covariateFilter": {
+                "label": ["Age group", "Gender: female", "Race", "Ethnicity", "Medical history: General", "Medical history: Cardiovascular disease", "Medical history: Neoplasms", "Medication use", "Charlson comorbidity index", "CHADS2Vasc", "DCSI"],
+                "analysisId": [3, 1, 4, 5, 210, 210, 210, 410, 901, 904, 902],
+                "covariateIds": [null, "8532001", null, null, "4006969210,438409210,4212540210,255573210,201606210,4182210210,440383210,201820210,318800210,192671210,439727210,432867210,316866210,4104000210,433736210,80180210,255848210,140168210,4030518210,80809210,435783210,4279309210,81893210,81902210,197494210,4134440210", "313217210,381591210,317576210,321588210,316139210,4185932210,321052210,440417210,444247210", "4044013210,432571210,40481902210,443392210,4112853210,4180790210,443388210,197508210,200962210", "21601782410,21602796410,21604686410,21604389410,21603932410,21601387410,21602028410,21600960410,21601664410,21601744410,21601461410,21600046410,21603248410,21600712410,21603890410,21601853410,21604254410,21604489410,21604752410", "1901", "1904", "1902"],
+                "attr_class": ["spec_tbl_df", "tbl_df", "tbl", "data.frame"],
+                "attr_row.names": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "attr_spec": {
+                  "cols": {
+                    "label": [],
+                    "analysisId": [],
+                    "covariateIds": []
+                  },
+                  "default": [],
+                  "delim": ","
+                },
+                "attr_problems": {}
+              },
+              "attr_class": "args"
+            },
+            "fitOutcomeModelArgs": {
+              "modelType": "cox",
+              "stratified": false,
+              "useCovariates": false,
+              "inversePtWeighting": false,
+              "profileBounds": [-2.3026, 2.3026],
+              "prior": {
+                "priorType": "laplace",
+                "variance": 1,
+                "exclude": null,
+                "graph": null,
+                "neighborhood": null,
+                "useCrossValidation": true,
+                "forceIntercept": false,
+                "attr_class": "cyclopsPrior"
+              },
+              "control": {
+                "maxIterations": 1000,
+                "tolerance": 2e-07,
+                "convergenceType": "gradient",
+                "autoSearch": true,
+                "fold": 10,
+                "lowerLimit": 0.01,
+                "upperLimit": 20,
+                "gridSteps": 10,
+                "minCVData": 100,
+                "cvRepetitions": 10,
+                "noiseLevel": "quiet",
+                "threads": 1,
+                "seed": 1,
+                "resetCoefficients": true,
+                "startingVariance": 0.01,
+                "useKKTSwindle": false,
+                "tuneSwindle": 10,
+                "selectorType": "auto",
+                "initialBound": 2,
+                "maxBoundCount": 5,
+                "algorithm": "ccd",
+                "attr_class": "cyclopsControl"
+              },
+              "attr_class": "args"
+            },
+            "attr_class": "cmAnalysis"
+          }
+        ],
+        "targetComparatorOutcomesList": [
+          {
+            "targetId": 1,
+            "comparatorId": 2,
+            "outcomes": [
+              {
+                "outcomeId": 1001,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1002,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1003,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1004,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1005,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1006,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1007,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1008,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1009,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1010,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1011,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1012,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1013,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1014,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1015,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1016,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1017,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1018,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1019,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1020,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1021,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1022,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1023,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1024,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1025,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1026,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1027,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1028,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1029,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1030,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1031,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1032,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1033,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1034,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1035,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1036,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 3,
+                "outcomeOfInterest": true,
+                "trueEffectSize": null,
+                "attr_class": "outcome"
+              }
+            ],
+            "excludedCovariateConceptIds": [1118084, 1124300],
+            "attr_class": "targetComparatorOutcomes"
+          },
+          {
+            "targetId": 4,
+            "comparatorId": 5,
+            "outcomes": [
+              {
+                "outcomeId": 1001,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1002,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1003,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1004,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1005,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1006,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1007,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1008,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1009,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1010,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1011,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1012,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1013,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1014,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1015,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1016,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1017,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1018,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1019,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1020,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1021,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1022,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1023,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1024,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1025,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1026,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1027,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1028,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1029,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1030,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1031,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1032,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1033,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1034,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1035,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 1036,
+                "outcomeOfInterest": false,
+                "trueEffectSize": 1,
+                "priorOutcomeLookback": 30,
+                "attr_class": "outcome"
+              },
+              {
+                "outcomeId": 3,
+                "outcomeOfInterest": true,
+                "trueEffectSize": null,
+                "attr_class": "outcome"
+              }
+            ],
+            "excludedCovariateConceptIds": [1118084, 1124300],
+            "attr_class": "targetComparatorOutcomes"
+          }
+        ],
+        "refitPsForEveryOutcome": false,
+        "refitPsForEveryStudyPopulation": true,
+        "cmDiagnosticThresholds": {
+          "mdrrThreshold": 10,
+          "easeThreshold": 0.25,
+          "sdmThreshold": 0.1,
+          "equipoiseThreshold": 0.2,
+          "attritionFractionThreshold": 1,
+          "attr_class": "CmDiagnosticThresholds"
+        }
+      },
+      "attr_class": ["CohortMethodModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "SelfControlledCaseSeriesModule",
+      "version": "0.2.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": {
+        "sccsAnalysisList": [
+          {
+            "analysisId": 1,
+            "description": "SCCS age 18-",
+            "getDbSccsDataArgs": {
+              "useCustomCovariates": false,
+              "useNestingCohort": true,
+              "nestingCohortId": 1,
+              "deleteCovariatesSmallCount": 0,
+              "studyStartDate": "",
+              "studyEndDate": "20191130",
+              "maxCasesPerOutcome": 1000000,
+              "exposureIds": "exposureId",
+              "customCovariateIds": "",
+              "attr_class": "args"
+            },
+            "createStudyPopulationArgs": {
+              "firstOutcomeOnly": false,
+              "naivePeriod": 365,
+              "minAge": 18,
+              "attr_class": "args"
+            },
+            "createIntervalDataArgs": {
+              "eraCovariateSettings": [
+                {
+                  "includeEraIds": "exposureId",
+                  "label": "Pre-exposure",
+                  "stratifyById": false,
+                  "start": -30,
+                  "startAnchor": "era start",
+                  "end": -1,
+                  "endAnchor": "era start",
+                  "firstOccurrenceOnly": false,
+                  "allowRegularization": false,
+                  "profileLikelihood": false,
+                  "exposureOfInterest": false,
+                  "isControlInterval": false,
+                  "attr_class": "EraCovariateSettings"
+                },
+                {
+                  "includeEraIds": "exposureId",
+                  "label": "Main",
+                  "stratifyById": false,
+                  "start": 1,
+                  "startAnchor": "era start",
+                  "end": 0,
+                  "endAnchor": "era end",
+                  "firstOccurrenceOnly": false,
+                  "allowRegularization": false,
+                  "profileLikelihood": true,
+                  "exposureOfInterest": true,
+                  "isControlInterval": false,
+                  "attr_class": "EraCovariateSettings"
+                }
+              ],
+              "seasonalityCovariateSettings": {
+                "seasonKnots": 5,
+                "allowRegularization": true,
+                "computeConfidenceIntervals": false,
+                "attr_class": "SeasonalityCovariateSettings"
+              },
+              "calendarTimeCovariateSettings": {
+                "calendarTimeKnots": 5,
+                "allowRegularization": true,
+                "computeConfidenceIntervals": false,
+                "attr_class": "CalendarTimeCovariateSettings"
+              },
+              "minCasesForTimeCovariates": 100000,
+              "eventDependentObservation": false,
+              "attr_class": "args"
+            },
+            "fitSccsModelArgs": {
+              "prior": {
+                "priorType": "laplace",
+                "variance": 1,
+                "exclude": null,
+                "graph": null,
+                "neighborhood": null,
+                "useCrossValidation": true,
+                "forceIntercept": false,
+                "attr_class": "cyclopsPrior"
+              },
+              "control": {
+                "maxIterations": 1000,
+                "tolerance": 1e-06,
+                "convergenceType": "gradient",
+                "autoSearch": true,
+                "fold": 10,
+                "lowerLimit": 0.01,
+                "upperLimit": 20,
+                "gridSteps": 10,
+                "minCVData": 100,
+                "cvRepetitions": 1,
+                "noiseLevel": "quiet",
+                "threads": 1,
+                "seed": 1,
+                "resetCoefficients": true,
+                "startingVariance": 0.1,
+                "useKKTSwindle": false,
+                "tuneSwindle": 10,
+                "selectorType": "byPid",
+                "initialBound": 2,
+                "maxBoundCount": 5,
+                "algorithm": "ccd",
+                "attr_class": "cyclopsControl"
+              },
+              "profileBounds": [-2.3026, 2.3026],
+              "attr_class": "args"
+            },
+            "attr_class": "SccsAnalysis"
+          }
+        ],
+        "exposuresOutcomeList": [
+          {
+            "outcomeId": 3,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": null,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1001,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1002,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1003,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1004,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1005,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1006,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1007,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1008,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1009,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1010,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1011,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1012,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1013,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1014,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1015,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1016,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1017,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1018,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1019,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1020,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1021,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1022,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1023,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1024,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1025,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1026,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1027,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1028,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1029,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1030,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1031,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1032,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1033,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1034,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1035,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1036,
+            "exposures": [
+              {
+                "exposureId": 1,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 3,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": null,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1001,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1002,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1003,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1004,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1005,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1006,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1007,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1008,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1009,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1010,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1011,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1012,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1013,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1014,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1015,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1016,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1017,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1018,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1019,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1020,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1021,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1022,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1023,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1024,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1025,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1026,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1027,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1028,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1029,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1030,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1031,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1032,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1033,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1034,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1035,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          },
+          {
+            "outcomeId": 1036,
+            "exposures": [
+              {
+                "exposureId": 2,
+                "exposureIdRef": "exposureId",
+                "trueEffectSize": 1,
+                "attr_class": "Exposure"
+              }
+            ],
+            "attr_class": "ExposuresOutcome"
+          }
+        ],
+        "combineDataFetchAcrossOutcomes": false,
+        "sccsDiagnosticThresholds": {
+          "mdrrThreshold": 10,
+          "easeThreshold": 0.25,
+          "timeTrendPThreshold": 0.05,
+          "preExposurePThreshold": 0.05,
+          "attr_class": "SccsDiagnosticThresholds"
+        }
+      },
+      "attr_class": ["SelfControlledCaseSeriesModuleSpecifications", "ModuleSpecifications"]
+    },
+    {
+      "module": "PatientLevelPredictionModule",
+      "version": "0.2.0",
+      "remoteRepo": "github.com",
+      "remoteUsername": "ohdsi",
+      "settings": [
+        {
+          "targetId": 1,
+          "outcomeId": 3,
+          "restrictPlpDataSettings": {
+            "studyStartDate": "",
+            "studyEndDate": "",
+            "firstExposureOnly": false,
+            "washoutPeriod": 0,
+            "sampleSize": null,
+            "attr_class": "restrictPlpDataSettings"
+          },
+          "covariateSettings": {
+            "temporal": false,
+            "temporalSequence": false,
+            "DemographicsGender": true,
+            "DemographicsAgeGroup": true,
+            "DemographicsRace": true,
+            "DemographicsEthnicity": true,
+            "DemographicsIndexYear": true,
+            "DemographicsIndexMonth": true,
+            "ConditionGroupEraLongTerm": true,
+            "ConditionGroupEraShortTerm": true,
+            "DrugGroupEraLongTerm": true,
+            "DrugGroupEraShortTerm": true,
+            "DrugGroupEraOverlapping": true,
+            "ProcedureOccurrenceLongTerm": true,
+            "ProcedureOccurrenceShortTerm": true,
+            "DeviceExposureLongTerm": true,
+            "DeviceExposureShortTerm": true,
+            "MeasurementLongTerm": true,
+            "MeasurementShortTerm": true,
+            "MeasurementRangeGroupLongTerm": true,
+            "ObservationLongTerm": true,
+            "ObservationShortTerm": true,
+            "CharlsonIndex": true,
+            "Dcsi": true,
+            "Chads2": true,
+            "Chads2Vasc": true,
+            "includedCovariateConceptIds": [],
+            "includedCovariateIds": [],
+            "addDescendantsToInclude": false,
+            "excludedCovariateConceptIds": [],
+            "addDescendantsToExclude": false,
+            "shortTermStartDays": -30,
+            "mediumTermStartDays": -180,
+            "endDays": 0,
+            "longTermStartDays": -365,
+            "attr_class": "covariateSettings",
+            "attr_fun": "getDbDefaultCovariateData"
+          },
+          "populationSettings": {
+            "binary": true,
+            "includeAllOutcomes": true,
+            "firstExposureOnly": false,
+            "washoutPeriod": 0,
+            "removeSubjectsWithPriorOutcome": true,
+            "priorOutcomeLookback": 99999,
+            "requireTimeAtRisk": true,
+            "minTimeAtRisk": 1,
+            "riskWindowStart": 1,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 365,
+            "endAnchor": "cohort start",
+            "restrictTarToCohortEnd": false,
+            "attr_class": "populationSettings"
+          },
+          "sampleSettings": [
+            {
+              "numberOutcomestoNonOutcomes": 1,
+              "sampleSeed": 1,
+              "attr_class": "sampleSettings",
+              "attr_fun": "sameData"
+            }
+          ],
+          "featureEngineeringSettings": [
+            {
+              "attr_class": "featureEngineeringSettings",
+              "attr_fun": "sameData"
+            }
+          ],
+          "preprocessSettings": {
+            "minFraction": 0.001,
+            "normalize": true,
+            "removeRedundancy": true,
+            "attr_class": "preprocessSettings"
+          },
+          "modelSettings": {
+            "fitFunction": "fitCyclopsModel",
+            "param": {
+              "priorParams": {
+                "priorType": "laplace",
+                "forceIntercept": false,
+                "variance": 0.01,
+                "exclude": 0
+              },
+              "includeCovariateIds": null,
+              "upperLimit": 20,
+              "lowerLimit": 0.01,
+              "priorCoefs": null,
+              "attr_settings": {
+                "priorfunction": "Cyclops::createPrior",
+                "selectorType": "byPid",
+                "crossValidationInPrior": true,
+                "modelType": "logistic",
+                "addIntercept": true,
+                "useControl": true,
+                "seed": 14457130,
+                "name": "Lasso Logistic Regression",
+                "threads": -1,
+                "tolerance": 2e-06,
+                "cvRepetitions": 1,
+                "maxIterations": 3000
+              },
+              "attr_modelType": "binary",
+              "attr_saveType": "RtoJson"
+            },
+            "attr_class": "modelSettings"
+          },
+          "splitSettings": {
+            "test": 0.25,
+            "train": 0.75,
+            "seed": 58440,
+            "nfold": 3,
+            "attr_class": "splitSettings",
+            "attr_fun": "randomSplitter"
+          },
+          "executeSettings": {
+            "runSplitData": true,
+            "runSampleData": false,
+            "runfeatureEngineering": false,
+            "runPreprocessData": true,
+            "runModelDevelopment": true,
+            "runCovariateSummary": true,
+            "attr_class": "executeSettings"
+          },
+          "attr_class": "modelDesign"
+        },
+        {
+          "targetId": 2,
+          "outcomeId": 3,
+          "restrictPlpDataSettings": {
+            "studyStartDate": "",
+            "studyEndDate": "",
+            "firstExposureOnly": false,
+            "washoutPeriod": 0,
+            "sampleSize": null,
+            "attr_class": "restrictPlpDataSettings"
+          },
+          "covariateSettings": {
+            "temporal": false,
+            "temporalSequence": false,
+            "DemographicsGender": true,
+            "DemographicsAgeGroup": true,
+            "DemographicsRace": true,
+            "DemographicsEthnicity": true,
+            "DemographicsIndexYear": true,
+            "DemographicsIndexMonth": true,
+            "ConditionGroupEraLongTerm": true,
+            "ConditionGroupEraShortTerm": true,
+            "DrugGroupEraLongTerm": true,
+            "DrugGroupEraShortTerm": true,
+            "DrugGroupEraOverlapping": true,
+            "ProcedureOccurrenceLongTerm": true,
+            "ProcedureOccurrenceShortTerm": true,
+            "DeviceExposureLongTerm": true,
+            "DeviceExposureShortTerm": true,
+            "MeasurementLongTerm": true,
+            "MeasurementShortTerm": true,
+            "MeasurementRangeGroupLongTerm": true,
+            "ObservationLongTerm": true,
+            "ObservationShortTerm": true,
+            "CharlsonIndex": true,
+            "Dcsi": true,
+            "Chads2": true,
+            "Chads2Vasc": true,
+            "includedCovariateConceptIds": [],
+            "includedCovariateIds": [],
+            "addDescendantsToInclude": false,
+            "excludedCovariateConceptIds": [],
+            "addDescendantsToExclude": false,
+            "shortTermStartDays": -30,
+            "mediumTermStartDays": -180,
+            "endDays": 0,
+            "longTermStartDays": -365,
+            "attr_class": "covariateSettings",
+            "attr_fun": "getDbDefaultCovariateData"
+          },
+          "populationSettings": {
+            "binary": true,
+            "includeAllOutcomes": true,
+            "firstExposureOnly": false,
+            "washoutPeriod": 0,
+            "removeSubjectsWithPriorOutcome": true,
+            "priorOutcomeLookback": 99999,
+            "requireTimeAtRisk": true,
+            "minTimeAtRisk": 1,
+            "riskWindowStart": 1,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 365,
+            "endAnchor": "cohort start",
+            "restrictTarToCohortEnd": false,
+            "attr_class": "populationSettings"
+          },
+          "sampleSettings": [
+            {
+              "numberOutcomestoNonOutcomes": 1,
+              "sampleSeed": 1,
+              "attr_class": "sampleSettings",
+              "attr_fun": "sameData"
+            }
+          ],
+          "featureEngineeringSettings": [
+            {
+              "attr_class": "featureEngineeringSettings",
+              "attr_fun": "sameData"
+            }
+          ],
+          "preprocessSettings": {
+            "minFraction": 0.001,
+            "normalize": true,
+            "removeRedundancy": true,
+            "attr_class": "preprocessSettings"
+          },
+          "modelSettings": {
+            "fitFunction": "fitCyclopsModel",
+            "param": {
+              "priorParams": {
+                "priorType": "laplace",
+                "forceIntercept": false,
+                "variance": 0.01,
+                "exclude": 0
+              },
+              "includeCovariateIds": null,
+              "upperLimit": 20,
+              "lowerLimit": 0.01,
+              "priorCoefs": null,
+              "attr_settings": {
+                "priorfunction": "Cyclops::createPrior",
+                "selectorType": "byPid",
+                "crossValidationInPrior": true,
+                "modelType": "logistic",
+                "addIntercept": true,
+                "useControl": true,
+                "seed": 86642490,
+                "name": "Lasso Logistic Regression",
+                "threads": -1,
+                "tolerance": 2e-06,
+                "cvRepetitions": 1,
+                "maxIterations": 3000
+              },
+              "attr_modelType": "binary",
+              "attr_saveType": "RtoJson"
+            },
+            "attr_class": "modelSettings"
+          },
+          "splitSettings": {
+            "test": 0.25,
+            "train": 0.75,
+            "seed": 84168,
+            "nfold": 3,
+            "attr_class": "splitSettings",
+            "attr_fun": "randomSplitter"
+          },
+          "executeSettings": {
+            "runSplitData": true,
+            "runSampleData": false,
+            "runfeatureEngineering": false,
+            "runPreprocessData": true,
+            "runModelDevelopment": true,
+            "runCovariateSummary": true,
+            "attr_class": "executeSettings"
+          },
+          "attr_class": "modelDesign"
+        }
+      ],
+      "attr_class": ["PatientLevelPredictionModuleSpecifications", "ModuleSpecifications"]
+    }
+  ],
+  "attr_class": "AnalysisSpecifications"
+}

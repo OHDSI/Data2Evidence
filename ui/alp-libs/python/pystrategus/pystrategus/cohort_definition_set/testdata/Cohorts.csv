@@ -1,0 +1,6 @@
+id,cohort_id,cohort_name,logic_description,generate_stats
+5902,1,Celecoxib,NA,TRUE
+5903,2,Diclofenac,Diclofenac,TRUE
+5904,3,GI bleed,NA,TRUE
+8406,4,Celecoxib age 30 or older,NA,TRUE
+8407,5,Diclofenac age 30 or older,Diclofenac,TRUE

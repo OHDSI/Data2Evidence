@@ -1,0 +1,7 @@
+{
+    "exposed": true,
+    "authorization": [
+        "sap.hc.mri::ClinicalEnduser"
+    ],
+    "cache_control": "must-revalidate"
+}

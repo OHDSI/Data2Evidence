@@ -1,0 +1,79 @@
+@import './mri-variables';
+.pdf-dialog {
+  padding: 1rem;
+  box-sizing: border-box;
+  label.app-label {
+    color: $UiLightText;
+    font-size: 0.875rem;
+
+    font-weight: normal;
+    line-height: 3rem;
+    vertical-align: top;
+  }
+  div.app-checkbox {
+    box-sizing: border-box;
+    height: 3rem;
+    line-height: 3rem;
+    vertical-align: top;
+    text-align: left;
+    padding: 0 0 0 3rem;
+    div.app-checkbox-container {
+      background-color: $UiLightestBG;
+      position: absolute;
+      left: 0.8125rem;
+      top: 0.8125rem;
+      height: 1.125rem;
+      width: 1.125rem;
+      line-height: 1.125rem;
+      padding: 0;
+      text-align: center;
+      border: solid 0.125rem $MriDropDownBorderLight;
+      border-top-left-radius: 0.125rem;
+      border-top-right-radius: 0.125rem;
+      border-bottom-right-radius: 0.125rem;
+      border-bottom-left-radius: 0.125rem;
+      font-size: 16px;
+    }
+  }
+  .body-container {
+    width: 100%;
+    min-height: 18px;
+  }
+  .body-container.label-for {
+    min-height: 20px;
+  }
+  .input-container {
+    width: 100%;
+  }
+  .input-container > input {
+    color: $UiDarkestText;
+    background: $UiLightestBG;
+    border: 1px solid $MriDropDownBorderLight;
+    font-size: 0.875rem;
+
+    line-height: normal;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  div.flex-spacer {
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+  }
+  .dialog-warning-delay {
+    width: 368px;
+    padding: 0px;
+    label.app-label {
+      line-height: normal;
+    }
+  }
+}
+
+.dialog-warning-delay {
+  width: 400px;
+  font-style: italic;
+  padding: 0px 24px 24px;
+  box-sizing: border-box;
+}

@@ -1,0 +1,45 @@
+<mvc:View controllerName="hc.hph.patient.config.ui.views.MasterdataTab" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" xmlns:u="sap.ui.unified" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1">
+    <f:Form editable="true">
+        <f:layout>
+            <f:ResponsiveGridLayout columnsL="1" />
+        </f:layout>
+        <f:FormContainer title="{i18n>HPH_PAT_CFG_PAT_INSPECTOR_TITLE}" formElements="{analyticsModel>config/masterdata/title}">
+            <f:FormElement>
+                <Input placeholder="{i18n>HPH_PAT_CFG_PATTERN_PHOLD}" value="{analyticsModel>pattern}">
+                <layoutData>
+                    <l:GridData span="L10 M10 S10" />
+                </layoutData>
+                </Input>
+                <Button icon="sap-icon://drop-down-list" press=".handlePressOpenMenu">
+                    <layoutData>
+                        <l:GridData span="L1 M1 S1" />
+                    </layoutData>
+                </Button>
+            </f:FormElement>
+        </f:FormContainer>
+        <f:FormContainer title="{i18n>HPH_PAT_CFG_PAT_INSPECTOR_DETAILS}" formElements="{analyticsModel>config/masterdata/details}">
+            <f:FormElement>
+                <Input placeholder="{i18n>HPH_PAT_CFG_PATTERN_PHOLD}" value="{analyticsModel>pattern}">
+                <layoutData>
+                    <l:GridData span="L10 M10 S10" />
+                </layoutData>
+                </Input>
+                <Button icon="sap-icon://drop-down-list" press=".handlePressOpenMenu">
+                    <layoutData>
+                        <l:GridData span="L1 M1 S1" />
+                    </layoutData>
+                </Button>
+                <Button icon="sap-icon://delete" tooltip="{i18n>HPH_PAT_CFG_REMOVE_DETAILS_ROW}" press=".onRemoveDetailsRow">
+                    <layoutData>
+                        <l:GridData span="L1 M1 S1" />
+                    </layoutData>
+                </Button>
+            </f:FormElement>
+        </f:FormContainer>
+    </f:Form>
+    <Button class="sapUiSmallMarginBegin" icon="sap-icon://add" text="{i18n>HPH_PAT_CFG_ADD_DETAILS_ROW}" press=".onAddDetailsRow" />
+
+    <u:Menu id="modelMenu" items="{versionsModel>/currentMasterdataAttributes}">
+        <u:MenuItem text="{versionsModel>modelName}" app:key="{versionsModel>key}" />
+    </u:Menu>
+</mvc:View>

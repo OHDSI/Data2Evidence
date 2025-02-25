@@ -1,0 +1,15 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core" >
+    <Dialog title="{confDialogModel>/title}" type='Message' >
+        <content>
+            <Text text="{confDialogModel>/text}" />
+        </content>
+        <beginButton>
+            <Button text="{confDialogModel>/beginButtonText}" type='Reject' press="onDeleteCategory" />
+        </beginButton>
+        <endButton>
+            <Button text="{confDialogModel>/endButtonText}" press="onConfDialogClose" />
+        </endButton>
+    </Dialog>  
+</core:FragmentDefinition>

@@ -1,0 +1,240 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.FilterCardItem" 
+	width="100%" 
+	height="100%" 
+	xmlns="sap.m" 
+	xmlns:mvc="sap.ui.core.mvc" 
+	xmlns:l="sap.ui.layout" 
+	xmlns:html="http://www.w3.org/1999/xhtml" 
+	xmlns:m="hc.hph.cdw.config.ui.lib" 
+	xmlns:c="sap.ui.commons"
+	xmlns:core="sap.ui.core">
+	<l:VerticalLayout class="sapMxConfigFCProperties">
+		<l:content>
+			<Label class="sapMxConfigPropLabel" 
+				wrapping="true" 
+				text="{configEditorModel>additionalInformation}"></Label>
+
+			<l:VerticalLayout id="LangListLayout" 
+				width="100%">
+				<l:content>
+					<Label class="sapMxConfigPropLabel" 
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NAME}" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NAME}"></Label>
+					<m:ValidityVisualElement text="{configEditorModel>name/validity/message}" 
+						tooltip="{configEditorModel>name/validity/message}" 
+						status="{configEditorModel>name/validity/status}"></m:ValidityVisualElement>
+					<Input id="interactionName" 
+						class="sapTriggerSave sapMxConfigProp" 
+						value="{configEditorModel>name/value}" 
+						valueLiveUpdate="true" 
+						enabled="{editableModel>/editable}" 
+						tooltip="{configEditorModel>name/value}"></Input>
+
+					<html:hr class="sapMXVerticalSeparator"></html:hr>
+
+					<FlexBox alignItems="Start" 
+						justifyContent="SpaceBetween">
+						<items>
+							<Label class="sapMxConfigPropLabel" 
+								text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_LANG_TITLE}" 
+								tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_LANG_TITLE}"></Label>
+						</items>
+					</FlexBox>
+					<m:ValidityVisualElement text="{configEditorModel>langName/validity/message}" 
+						tooltip="{configEditorModel>langName/validity/message}" 
+						status="{configEditorModel>langName/validity/status}"></m:ValidityVisualElement>
+					<List items="{configEditorModel>langName/value}">
+						<CustomListItem visible="{configEditorModel>visible}">
+							<CheckBox selected="{configEditorModel>enabled}" 
+								enabled="{editableModel>/editable}" 
+								width="12%"></CheckBox>
+							<Label text="{parts:['configEditorModel>lang', 'configGeneralModel>/supportedLanguages'], formatter: '.languageFormatter'}" 
+								width="18%" 
+								class="sapMxConfigLangLabel"></Label>
+							<Input value="{configEditorModel>value}" 
+								enabled="{editableModel>/editable}" 
+								width="70%"></Input>
+						</CustomListItem>
+					</List>
+
+					<html:hr class="sapMXVerticalSeparator"></html:hr>
+
+					<Label class="sapMxConfigPropLabel" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_INTERACTION_ID}" 
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_INTERACTION_ID}"></Label>
+					<m:ValidityVisualElement text="{configEditorModel>frontEndID/validity/message}" 
+						tooltip="{configEditorModel>frontEndID/validity/message}" 
+						status="{configEditorModel>frontEndID/validity/status}"></m:ValidityVisualElement>
+					<Input class="sapTriggerSave sapMxConfigProp" 
+						value="{configEditorModel>idName}" 
+						id="interactionIDName" 
+						valueLiveUpdate="true" 
+						enabled="{editableModel>/editable}" 
+						tooltip="{configEditorModel>idName}" 
+						liveChange="onIdChangeCheck" 
+						change="onIdChange"></Input>
+
+					<html:hr class="sapMXVerticalSeparator"></html:hr>
+
+
+					<Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_COHORT_DEFINITION_KEY_TITLE}" />
+					<Input value="{configEditorModel>cohortDefinitionKey/value}" />
+
+					<html:hr class="sapMXVerticalSeparator"></html:hr>
+
+				</l:content>
+			</l:VerticalLayout>
+			<m:ValidityVisualElement text="{configEditorModel>queryValidity/validity/message}" 
+				tooltip="{configEditorModel>queryValidity/validity/message}" 
+				status="{configEditorModel>queryValidity/validity/status}"></m:ValidityVisualElement>
+			<m:ValidityVisualElement text="{configEditorModel>defaultFilter/validity/message}" 
+				tooltip="{configEditorModel>defaultFilter/validity/message}" 
+				status="{configEditorModel>defaultFilter/validity/status}"></m:ValidityVisualElement>
+			<m:SmartFilter class="sapTriggerSave sapMxConfigProp" 
+				enabled="{editableModel>/editable}" 
+				id="DefaultFilter" 
+				onPlaceholderChange="onPlaceholderChange" 
+				onToggle="onBasicAdvancedToggled"></m:SmartFilter>
+
+			<l:VerticalLayout id="tableListLayout" 
+				width="100%">
+				<l:content>
+					<FlexBox alignItems="Start" 
+						justifyContent="SpaceBetween">
+						<items>
+							<Label class="sapMxConfigPropLabel" 
+								text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FROM_TITLE}" 
+								tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FROM_TITLE}"></Label>
+							<Button class="sapTriggerSave" 
+								icon="sap-icon://add"
+								text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_TABLE}" 
+								tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_TABLE}" 
+								enabled="{editableModel>/editable}" 
+								press="_addCustomTblElem"></Button>
+						</items>
+					</FlexBox>
+					<m:ValidityVisualElement text="{configEditorModel>from/validity/message}" 
+						tooltip="{configEditorModel>from/validity/message}" 
+						status="{configEditorModel>from/validity/status}"></m:ValidityVisualElement>
+					<c:RowRepeater design="BareShell" 
+						id="rrFromTable">
+						<c:noData>
+							<Label></Label>
+						</c:noData>
+					</c:RowRepeater>
+
+					<html:hr class="sapMXVerticalSeparator"></html:hr>
+				</l:content>
+			</l:VerticalLayout>
+
+			<l:VerticalLayout id="conditionSection" 
+				width="100%">
+				<l:content>
+					<Label class="sapMxConfigPropLabel" 
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_COND_TYPE}" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_COND_TYPE}" 
+						id="condTypeLabelId"></Label>
+
+					<ActionSelect id="condTypeDDId" 
+						tooltip="{configEditorModel>conditionType/name}" 
+						enabled="{editableModel>/editable}" 
+						class="sapTriggerSave sapMxConfigProp" 
+						selectedKey="{configEditorModel>conditionType/key}"></ActionSelect>
+				</l:content>
+			</l:VerticalLayout>
+			<l:VerticalLayout id="parentSection" 
+				width="100%">
+				<l:content>
+					<Label class="sapMxConfigPropLabel" 
+						text="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION}" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION}" 
+						id="pInteractionLabelId"></Label>
+
+					<MultiComboBox id="pInteractionDDId" 
+						enabled="{editableModel>/editable}" 
+						class="sapTriggerSave sapMxConfigProp" 
+						selectedKeys="{configEditorModel>parentInteraction}" 
+						items="{
+								path: 'configEditorModel>/parentInteractions'
+							}">
+						<core:Item key="{configEditorModel>key}" text="{configEditorModel>name}" />
+					</MultiComboBox>
+
+					<Label class="sapMxConfigPropLabel" 
+						text="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
+						id="pInteractionLabelLabelId"></Label>
+
+					<Input id="pInteractionLabel" 
+						class="sapTriggerSave sapMxConfigProp" 
+						value="{configEditorModel>parentInteractionLabel/value}" 
+						enabled="{editableModel>/editable}" 
+						tooltip="{configEditorModel>parentInteractionLabel/value}" 
+						valueLiveUpdate="true"></Input>
+				</l:content>
+			</l:VerticalLayout>
+		</l:content>
+	</l:VerticalLayout>
+
+	<html:br></html:br>
+
+	<m:SmartAccordion width="100%" 
+		id="accordion">
+		<m:sections>
+			<c:AccordionSection title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_SAVED_ATTRIBUTE}" 
+				id="savedAttrSection">
+				<c:content>
+					<l:VerticalLayout id="attributeButtonLayout" 
+						width="100%">
+						<Button id="newAttributeButton" 
+							class="sapMeAccordionActionBtn" 
+							icon="sap-icon://add"
+							width="100%" 
+							tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_ATTRIBUTE}" 
+							text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_ATTRIBUTE}" 
+							enabled="{editableModel>/editable}" 
+							press="_onAddAttributePressed">
+						</Button>
+					</l:VerticalLayout>
+				</c:content>
+				<c:content>
+					<m:DragDropContainer id="dd1" 
+						width="100%"></m:DragDropContainer>
+				</c:content>
+			</c:AccordionSection>
+		</m:sections>
+	</m:SmartAccordion>
+
+	<m:SmartAccordion width="100%" 
+		id="suggestAccordion">
+		<m:sections>
+			<c:AccordionSection title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_SUGGEST_ATTRIBUTE}" 
+				id="suggestedAttrSection">
+				<c:content>
+					<m:DragDropContainer id="dd2" 
+						width="100%"></m:DragDropContainer>
+				</c:content>
+			</c:AccordionSection>
+		</m:sections>
+	</m:SmartAccordion>
+
+	<!-- 	<m:SmartAccordion width="100%" id="searchAccordion">
+		<m:sections>
+			<c:AccordionSection title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_SAVED_ATTRIBUTE}" id="searchAttrSection">
+			    <c:content>
+					<l:VerticalLayout id="attributeButtonLayoutSearch" width="100%">
+						<Button id="newSearchAttributeButton" class="sapMeAccordionActionBtn" icon="sap-icon://add" lite="true" width="100%" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_ATTRIBUTE}" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_NEW_ATTRIBUTE}" enabled="{editableModel>/editable}" press="_onAddAttributePressed">	</Button>
+						<Label text="Patients" class="sapUiSmallMarginBottom" />
+						<Label text="Documents" class="sapUiSmallMarginBottom" />
+
+					</l:VerticalLayout>
+				</c:content>
+				<c:content>
+					<m:DragDropContainer id="dd3" width="100%"></m:DragDropContainer>
+				</c:content>
+			</c:AccordionSection>
+		</m:sections>
+	</m:SmartAccordion> -->
+
+
+</mvc:View>

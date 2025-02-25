@@ -1,0 +1,11 @@
+<mvc:View controllerName="hc.hph.patient.plugins.widgets.documents.ui.view.Documents" class="sapUiSizeCompact" xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1">
+    <ObjectHeader class="sapPSWidget" busy="false" title="{i18n>PS_PLUGINS_WIDGETS_DOC_TITLE}" visible="{=!${_proxy_>/minimized}}">
+        <layoutData>
+            <FlexItemData growFactor="1"/>
+        </layoutData>
+        <ObjectAttribute title="{/entries/0/title}" text="{/entries/0/dateFormatted}" active="true" press=".showDocument" tooltip="{/entries/0/title}" app:url="{/entries/0/url}"/>
+        <ObjectAttribute title="{/entries/1/title}" text="{/entries/1/dateFormatted}" active="true" press=".showDocument" tooltip="{/entries/1/title}" app:url="{/entries/1/url}"/>
+        <ObjectAttribute title="{/entries/2/title}" text="{/entries/2/dateFormatted}" active="true" press=".showDocument" tooltip="{/entries/2/title}" app:url="{/entries/2/url}"/>
+        <ObjectAttribute visible="{=${/totalEntries}>3}" text="{parts: ['i18n>PS_PLUGINS_WIDGETS_DOC_MORE','/totalEntries'], formatter:'.formatMoreText'}" active="true" press="handleMorePress"/>
+    </ObjectHeader>
+</mvc:View>

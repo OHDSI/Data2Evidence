@@ -1,0 +1,6 @@
+{
+    "exposed": true,
+    "authorization": [
+        "sap.hc.hph.patient.plugins.widgets.diagnoses::EndUser"
+    ]
+}

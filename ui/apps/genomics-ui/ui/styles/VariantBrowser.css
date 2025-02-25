@@ -1,0 +1,1815 @@
+/* Animations */
+@keyframes rectBusyIndicator {
+  0% {
+	  fill: #dddddd;
+  } 40% {
+	  fill: #000000;
+  } 80% {
+	  fill: #dddddd;
+  } 100% {
+	  fill: #dddddd;
+  }
+}
+
+@keyframes rotateThreeSixty {
+	0% {
+		transform: rotate(0deg);
+	} 100% {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes sk-bounce {
+  0%, 100% {
+	transform: scale(0.0);
+  } 50% {
+	transform: scale(1.0);
+	}
+}
+
+@keyframes legendErrorMessage {
+	from {text-shadow: 0 0 3px #555555;}
+	to {text-shadow: none;}
+}
+
+
+.sapUiGen-VariantBrowser {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	user-select: none;
+	overflow: hidden;
+	outline : 0;
+}
+
+.sapUiGen-VariantBrowser svg text {
+	font-family: Arial,Helvetica,sans-serif;
+	pointer-events: none;
+}
+
+.sapUiGen-VariantBrowser svg.animation {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+}
+
+div.sapUiGen-PopUpOverlay{
+	position: absolute;
+	pointer-events: all;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	display: none;
+	z-index: 9;
+}
+
+/* VB config */
+/* Color picker */
+div.sapUiGen-ColorPicker div.sapMInput {
+    width: 60% !important;
+    float: left;
+}
+
+.sapUiSizeCompact div.sapUiGen-ConfigColorDiv {
+    width: 1.5rem;
+    height: 1.5rem;
+    position:relative;
+    float: left;
+}
+
+div.sapUiGen-ConfigColorDiv {
+    width: 2.5rem;
+    height: 2.5rem;
+    position:relative;
+    float: left;
+}
+
+div.sapUiGen-ConfigColorDiv.disabled {
+    opacity: 0.5;
+}
+
+div.sapUiGen-ColorDiv.invalid, div.sapUiGen-ConfigColorDiv.invalid {
+    background-color: white !important;
+    background-size: 10px 10px;
+    background-image: linear-gradient(-45deg, red 25%, transparent 25%,
+                        transparent 50%, red 50%, red 75%,
+                        transparent 75%, transparent);
+}
+
+section.sapUiGen-ConfigCategoryPanel {
+    margin-top: 0.5rem;
+    overflow: visible !important;
+}
+
+section.sapUiGen-ConfigCategoryPanel div.sapMPanelContent{
+    overflow: visible !important;
+}
+
+div.sapUiGen-ConfigCategoryDialog section.sapMDialogSection {
+    padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+}
+
+/* Fixes SAPUI5 issues with input sizing */
+div.sapUiGen-InheritWidth input.sapMInputBaseInner {
+    width: inherit !important;
+}
+
+.sapUiSizeCompact div.sapUiGen-InheritWidth input.sapMInputBaseInner {
+    height: 1.625rem !important;
+}
+
+div.sapUiGen-ConfigColorDiv.enabled:hover {
+    cursor: pointer;
+}
+
+/* Color Popover */
+div.sapUiGen-ColorPickerPopover {
+    padding: 0.5rem;
+}
+
+div.sapUiGen-ColorPickerPopover div.sapUiGen-ColorDiv {
+    width: 1.5em;
+    height: 1.5em;
+    margin: 0 1px 1px 0; 
+    opacity: 0.75;
+    transition: opacity 0.25s;
+}
+
+div.sapUiGen-ColorPickerPopover div.sapUiGen-ColorDiv:hover {
+    opacity: 1;
+}
+
+div.sapUiGen-ColorGrid{
+    padding: 0 !important;
+    max-width: calc( 6 * 25px ) !important;
+}
+
+div.sapUiGen-ColorGrid > div {
+    margin: 0 !important;
+    width: auto !important;
+}
+
+/* Group list */
+div.sapUiGen-ConfigSortList li:hover{
+    cursor: move !important; 
+}
+
+/* genome overview */
+.sapUiGen-Chrom path.chrom {
+	fill: #aaaaaa;
+	stroke: none;
+}
+
+.sapUiGen-Chrom path.invisible {
+	fill: none;
+	stroke: none;
+}
+
+.sapUiGen-Chrom text.label {
+	fill: #555555;
+	font-size: 12px;
+}
+
+.sapUiGen-Chrom path.loading {
+	opacity: 0.2 !important;
+}
+
+.sapUiGen-Chrom path.centromere {
+	fill: white;
+	stroke: none;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.grid {
+	fill: none;
+	stroke: #aaaaaa;
+	stroke-width: 1px;
+	stroke-opacity: 0.8;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.coverageArea {
+	stroke: none;
+	fill:  #1f77b4;
+	fill-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.coverage {
+	stroke: #1f77b4;
+	stroke-opacity: 0.8;
+	fill: none;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.variantDensity {
+	stroke: none;
+	fill-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.geneVariantDensity {
+	fill-opacity: 0.5;
+	stroke-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom:hover path.coverageArea {
+	fill-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom:hover path.density {
+	opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom:hover path.variantDensity {
+	fill-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom:hover path.geneVariantDensity {
+	fill-opacity: 1.0 !important;
+	stroke-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom.fakeHover path.coverageArea {
+	fill-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom.fakeHover path.coverage {
+	fill-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom.fakeHover path.variantDensity {
+	fill-opacity: 1.0 !important;
+}
+.sapUiGen-Chrom.fakeHover path.geneVariantDensity {
+	fill-opacity: 1.0 !important;
+	stroke-opacity: 1.0 !important;
+}
+
+.sapUiGen-Chrom.fakeHover path.chrom {
+	fill: #009de0;
+}
+
+/* Center Track */
+.sapUiGen-Center.loading {
+	opacity: 0.4 !important;
+}
+
+path.busyIndicator {
+	visibility: hidden;
+	stroke: #009de0;
+	opacity: 0;
+}
+
+path.busyIndicator.loading {
+	animation: rotateThreeSixty 1.1s infinite linear;
+	visibility: visible;
+	opacity: 1;
+}
+
+
+.sapUiGen-VariantBrowser svg.header g.chromosomes g rect.chrom,
+.sapUiGen-VariantBrowser svg.animation path.chrom {
+	fill: #aaaaaa;
+	stroke: none;
+}
+
+.sapUiGen-VariantBrowser svg.header g.chromosomes g.selected rect.chrom,
+.sapUiGen-VariantBrowser svg.animation path.chrom.selected,
+.sapUiGen-VariantBrowser g.overview g:hover path.chrom {
+	fill: #009de0;
+}
+
+.sapUiGen-VariantBrowser svg.header g.chromosomes g:hover rect.chrom {
+	fill: #cccccc;
+}
+
+.sapUiGen-VariantBrowser svg.header circle.overview.outer,
+.sapUiGen-VariantBrowser svg.animation circle.overview.outer {
+	stroke: #aaaaaa;
+	stroke-width: 4px;
+	fill: none;
+}
+
+.sapUiGen-VariantBrowser svg.header circle.overview.inner,
+.sapUiGen-VariantBrowser svg.animation circle.overview.inner {
+	stroke: #cccccc;
+	stroke-width: 8px;
+	fill: none;
+}
+
+.sapUiGen-VariantBrowser svg.header circle.overview.outer:hover {
+	stroke: #cccccc;
+}
+
+.sapUiGen-VariantBrowser svg.header g.chromosomes g rect.centromere,
+.sapUiGen-VariantBrowser svg.animation path.centromere {
+	fill: white;
+	stroke: none;
+}
+
+.sapUiGen-VariantBrowser svg.header text.label,
+.sapUiGen-VariantBrowser svg.animation text.label {
+	fill: #555555;
+	font-size: 12px;
+}
+
+.sapUiGen-VariantBrowser svg.header g.chromosomes g.selected text.label,
+.sapUiGen-VariantBrowser svg.animation text.label.selected,
+.sapUiGen-VariantBrowser g.overview g:hover text.label {
+	fill: black;
+}
+
+.sapUiGen-VariantBrowser svg.header rect.invisible {
+	stroke: none;
+	fill: none;
+}
+
+.sapUiGen-VariantBrowser g.overview path.cursor {
+	fill: none;
+	stroke: red;
+	stroke-width: 1.5px;
+	stroke-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-VariantBrowser g.overview g.sv path {
+	fill: #ccddff;
+	stroke: #009de0;
+	opacity: 0.5;
+}
+
+.sapUiGen-VariantBrowser g.overview g.messages > text {
+	text-anchor: middle;
+	fill: #555555;
+}
+
+/* Legend */
+.sapUiGen-LegendPanel {
+	width: auto;
+	padding-left: 5px;
+	padding-right: 5px;
+	padding-top: 5px;
+	height: auto;
+	background-color: rgba(255, 255, 255, 0.9);
+	position: absolute;
+	top: 1%;
+	left: 100%;
+	z-index: 2;
+	transition: transform 250ms ease-out;
+
+}
+
+.sapUiGen-LegendPanel div.legendTrack {
+	background-color: none;
+	width: 100%;
+}
+
+.sapUiGen-LegendPanel.show {
+	transform: translate(-100%);
+}
+
+.sapUiGen-LegendArrow {
+	direction: inherit;
+	padding-left: 4px;
+	text-align: left;
+	width: 20px;
+	background: none;
+	text-decoration: none;
+	pointer-events: all;
+	position: absolute;
+	font-size: 20pt;
+	right: 100%;
+	top: 0;
+	z-index: 2;
+	font-family: 'SAP-icons' !important;
+	color: #BFBFBF;
+
+}
+
+.sapUiGen-LegendPanel svg.stdLegend {
+	height: 1.2em;
+}
+
+.sapUiGen-LegendText{
+	font-size: 10pt;
+	position: relative;
+    padding-left: 0.25em;
+    line-height: 1.5em;
+    white-space: nowrap;
+}
+
+.sapUiGen-LegendArrow:hover {
+	color: #363E43;
+	cursor: default;
+}
+
+.sapUiGen-LegendPanel div.legendErrorDiv span{
+   /* animation-name: legendErrorMessage;
+	animation-duration: 5s;*/
+	color: #555555;
+}
+
+/* TrackGroup Legend */
+.sapUiGen-LegendPanel svg.trackGroupLegend g.connectors rect{
+	fill: #aaaaaa;
+}
+
+.sapUiGen-LegendPanel svg.trackGroupLegend{
+	position: relative;
+}
+
+/* Gradient Scale Legend */
+div.sapUiGen-GradientScale {
+	margin-left: 1.35em;
+}
+
+g.sapUiGen-GradientScaleLegend path, g.boxPlotAxis path {
+	fill: none;
+	stroke: #000000;
+	stroke-width: 1px;
+	opacity: 1;
+	shape-rendering: crispEdges;
+}
+
+g.sapUiGen-GradientScaleLegend text{
+	font-size: 0.7rem;
+}
+
+/* Boxplot legend */
+g.boxPlotAxis text{
+	font-size: 0.7rem;
+}
+
+/* Configuration *//*
+.sapUiGen-ConfigPanel {
+	width: auto;
+	height: auto;
+	background-color: rgba(255, 255, 255, 0.9);
+	position: absolute;
+	bottom: 5%;
+	left: 100%;
+	z-index: 2;
+	transition: transform 250ms ease-out;
+}*/
+
+.sapUiGen-ConfigIcon {
+	position: absolute;
+	font-size: 20pt;
+	right: 10px;
+	bottom: 5%;
+	z-index: 2;
+	font-family: 'SAP-icons' !important;
+	color: #BFBFBF;
+	transition: transform 250ms ease-out;
+}
+
+.sapUiGen-ConfigIcon:hover {
+    color: #363E43;
+    cursor: default;
+}
+
+/* chromosome ideograms */
+
+.sapUiGen-VariantBrowser g.cytobands rect.bg {
+	fill: white;
+}
+
+.sapUiGen-VariantBrowser g.cytobands rect.centromere {
+	fill: #999999;
+}
+
+.sapUiGen-VariantBrowser g.cytobands rect.cyto {
+	fill: #ccaa99;
+}
+
+.sapUiGen-VariantBrowser path.outline {
+	stroke: #999999;
+	stroke-width: 1.5px;
+	fill: none;
+}
+
+.sapUiGen-VariantBrowser rect.selection {
+	fill: #009de0;
+	stroke: none;
+}
+
+.sapUiGen-VariantBrowser div.details {
+	position: relative;
+	margin-left: 8px;
+	margin-right: 8px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details {
+	position: relative;
+	width: 100%;
+	pointer-events: none;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.grid text {
+	stroke: none;
+	fill: #555555;
+	opacity: 0.7;
+	font-size: 12px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.grid path {
+	fill: none;
+	stroke-width: 1px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.grid path.majorTick {
+	stroke: #cccccc;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.grid path.minorTick {
+	stroke: #eeeeee;
+}
+
+/* Site Popup */
+/*
+div.sapUiGen-SitePopover div.sapUiGen-TrackRow{
+	max-width: 252px;
+}
+*/
+
+div.sapUiGen-SitePopover > div{
+	margin: 0.7em 0 0.7em 0.7em !important;
+}
+
+/* Site Bar Chart */
+svg.sapUiGen-SiteBarChart > g.chartGroup > text {
+	font-size: 0.7em;
+}
+
+/* Allele frequency track */
+div.sapUiGen-SitePopover svg g.yBarChartAxis text{
+	font-size: 0.55em;
+}
+
+div.sapUiGen-SitePopover svg g.yBarChartAxis path{
+	fill: none;
+	shape-rendering: crispEdges;
+
+}
+
+div.sapUiGen-SitePopover svg g.xBarChartAxis text{
+	font-size: 0.6em;
+}
+
+div.sapUiGen-SitePopover svg g.xBarChartAxis path{
+	fill: none;
+	shape-rendering: crispEdges;
+}
+
+div.sapUiGen-SitePopover .sapMPage > section { /* avoid Safari rendering bug */
+	transform: none;
+}
+
+/* Track */
+svg.sapUiGen-Track text {
+	stroke: none;
+	font-size: 12px;
+}
+
+/* Track header */
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track g.header > rect.bg{
+	fill: white;
+	stroke: none;
+	/*pointer-events: all;*/
+	width: 100%;
+	height: 24px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track g.header > text{
+	fill: #555555;
+	font-size: 12px;
+	alignment-baseline: middle;
+	font-family: Arial,Helvetica,sans-serif;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track > g.header > g.icon {
+	visibility: hidden;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track > g.header:hover > g.icon {
+	visibility: visible;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track > g.header > g.icon > circle {
+	fill: #999999;
+	stroke: none;
+	pointer-events: all;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track > g.header > g.icon > text {
+	fill: #eeeeee;
+	alignment-baseline: central;
+	text-anchor: middle;
+	font-size: 12px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track > g.header > g.icon:hover > text {
+	fill: #555555;
+}
+
+.sapUiGen-Track g.fg text.message {
+	fill: #555555;
+	font-style: italic;
+	alignment-baseline: middle;
+}
+
+/* Busy indicator */
+rect.busyIndicator{
+	width: 100%;
+	height: 100%;
+	fill: rgba(242,242,242,0.0);
+}
+
+g.busyIndicatorRectGroup rect.busyRect3{
+	animation: rectBusyIndicator 1.7s ease infinite;
+}
+
+g.busyIndicatorRectGroup rect.busyRect1{
+	animation: rectBusyIndicator -0.76s 1.7s ease infinite;
+}
+
+g.busyIndicatorRectGroup rect.busyRect2{
+	animation: rectBusyIndicator -0.38s 1.7s ease infinite;
+}
+
+
+/* Track Group */
+/* SubGroup header */
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.track.trackGroup > g.subTrack > g.header > rect.bg {
+	fill: white;
+	stroke: none;
+	pointer-events: all;
+}
+
+/* SubGroup Text */
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper g.track.trackGroup > g.subTrack > g.header > text {
+	fill: #555555;
+	font-size: 12px;
+	font-family: Arial,Helvetica,sans-serif;
+}
+
+/* Reference Track */
+.sapUiGen-Track.reference {
+	background: white;
+}
+
+.sapUiGen-Track.reference g.bg rect {
+	fill: white;
+}
+
+.sapUiGen-Track.reference g.content g.fg text {
+	fill: white;
+	alignment-baseline: middle;
+}
+
+.sapUiGen-Track.reference g.content rect.n {
+	fill-opacity: 0.5;
+}
+
+
+/* Variant Track */
+.sapUiGen-Track.variants g.content text {
+	fill: white;
+	alignment-baseline: middle;
+	text-anchor: middle;
+}
+
+/* Quantitative Track */
+.sapUiGen-Track.quantitative g.content g.bg rect {
+	fill: #ab218e;
+}
+
+.sapUiGen-Track.quantitative g.content g.fg text  {
+	fill: white;
+	alignment-baseline: middle;
+	text-anchor: middle;
+	font-size: 54%;
+}
+
+/* Coverage Track */
+.sapUiGen-Track.coverage g.content path.densityArea {
+	stroke-opacity: 0.8;
+	fill-opacity: 0.5;
+}
+
+/* Genes Track */
+.sapUiGen-Track.features svg.track {
+	background: white;
+}
+
+.sapUiGen-Track.features svg.track g.bg rect {
+	fill: white;
+}
+
+.sapUiGen-Track.features g.content text {
+	fill: white;
+	alignment-baseline: middle;
+}
+
+/* Translations Track */
+.sapUiGen-Track.translations g.bg rect {
+	fill: white;
+}
+
+.sapUiGen-Track.translations g.content path.splice {
+	stroke-width: 2px;
+	fill: none;
+}
+
+.sapUiGen-Track.translations g.bg rect {
+	fill: white;
+}
+
+.sapUiGen-Track.translations g.content g.exon text {
+	text-anchor: middle;
+	alignment-baseline: middle;
+}
+
+.sapUiGen-Track.translations g.content text.name {
+	fill: #555555;
+	alignment-baseline: middle;
+}
+
+/* Region Track */
+.sapUiGen-Track.regions g.bg line.tick {
+    stroke: #eee;
+    stroke-width: 1px;
+}
+
+.sapUiGen-Track.regions g.bg line.tick.zero {
+    stroke: #ccc;
+}
+
+.sapUiGen-Track.regions g.content line.regionData {
+    stroke-width: 1.5px;
+}
+
+/* Linkage Disequilibrium Track */
+.sapUiGen-Track.ld svg.track {
+	background: white;
+}
+
+.sapUiGen-Track.ld svg.track g.bg rect {
+	fill: white;
+}
+
+.sapUiGen-Track.ld svg.track g.fg g.ldCanvas g.ld rect.nonValue {
+	visibility: hidden;
+}
+
+.sapUiGen-Chrom path.fill {
+	stroke: none;
+	fill-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom path.stroke {
+	fill: none;
+	stroke-opacity: 0.8;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom:hover path.fill {
+	fill-opacity: 1.0;
+	stroke-opacity: 1.0;
+}
+
+.sapUiGen-Chrom:hover path.stroke {
+	fill-opacity: 1.0;
+	stroke-opacity: 1.0;
+}
+
+.sapUiGen-Chrom path.Density.fill {
+	fill: #2ca02c;
+	fill-opacity: 0.8;
+}
+
+.sapUiGen-Chrom path.Pi.stroke {
+	stroke: #9467bd;
+}
+
+.sapUiGen-Chrom path.TajimaD.stroke {
+	stroke: #d62728;
+}
+
+/* Interaction area */
+.sapUiGen-VariantBrowser div.details > div.interaction
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 4px;
+	pointer-events: all;
+}
+
+.sapUiGen-VariantBrowser div.details > div.interaction > div.ideogram {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 40px;
+}
+
+.sapUiGen-VariantBrowser div.details > div.interaction > div.zoom {
+	position: absolute;
+	top: 48px;
+	left: 20px;
+	right: 0;
+	bottom: 0;
+}
+
+.sapUiGen-VariantBrowser div.details > div.interaction > div.zoom > div.rangeSelect {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 24px;
+	cursor: zoom-in;
+	cursor: -webkit-zoom-in;
+	cursor: -moz-zoom-in;
+}
+
+.sapUiGen-VariantBrowser div.details > div.overlay {
+	position: absolute;
+	top: 48px;
+	left: 20px;
+	right: 0;
+	bottom: 4px;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.sapUiGen-VariantBrowser div.details > div.overlay > div.cursor {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border: 1px solid red;
+	opacity: 0.5;
+	box-shadow: 2px 2px 16px rgba(0,0,0,0.5);
+	pointer-events: none;
+}
+
+.sapUiGen-VariantBrowser div.details div.overlay > ul.trackMenu {
+	position: absolute;
+	display: inline-table;
+	left: 20px;
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	cursor: pointer;
+	background: white;
+	pointer-events: all;
+}
+
+.sapUiGen-VariantBrowser div.details div.overlay > ul.trackMenu > li {
+	position: relative;
+	display: inline-table;
+	margin: 0;
+	margin-left: 4px;
+	padding: 2px;
+	overflow: visible;
+}
+
+.sapUiGen-VariantBrowser div.details div.overlay > ul.trackMenu > li:hover {
+	border: 1px solid #009de0;
+	color: #009de0;
+}
+
+.sapUiGen-VariantBrowser div.details div.overlay > ul.trackMenu > li:first-child {
+	margin-left: 0;
+}
+
+/* Allele Frequency in Site Tracks */
+div.alleleFreq > div {
+	float: none;
+	clear: both;
+	height: 20px;
+	margin-top: 2px;
+}
+
+div.alleleFreq > div:first-child {
+	margin-top: 0;
+}
+
+div.alleleFreq > div > div {
+	float: left;
+	display: inline-block;
+	position: relative;
+	height: 20px;
+	min-width: 12px;
+	font-size: 12px;
+	line-height: 20px;
+	text-align: center;
+	color: white;
+	margin-left: 2px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+div.alleleFreq > div > span.freq {
+	float: left;
+	display: inline-block;
+	position: relative;
+	width: 32px;
+	height: 20px;
+	line-height: 20px;
+	text-align: left;
+}
+
+div.alleleFreq > div > div {
+	background: #e52929;
+}
+
+div.alleleFreq > div:first-child > div {
+	background: #009de0;
+}
+
+div.alleleFreq > div > div:first-child {
+	border-left: none;
+}
+
+/*
+span.sapMText {
+	margin-bottom: 0.8em;
+}
+*/
+
+span.freq.sapMText{
+	margin-bottom: 0.8em;
+}
+
+.sapUiGen-Track g.content rect.stroke{
+	stroke-width: 1px;
+}
+
+.sapUiGen-SitePopover .menuButtonMargin{
+	margin-right: 0.45rem;
+}
+
+.sapUiGen-SitePopover .sapMDialogScroll,
+ .sapUiGen-SitePopover .sapMDialogScrollCont{
+	height: 100%;
+	padding: 0;
+}
+
+.sapUiGen-SitePopoverLayout{
+	height: 100%;
+	width: 100%;
+}
+
+.sapUiGen-SitePopoverLayout .sapUiLoSplitterBar {
+    border-right: 0.0625rem solid #c0c0c0;
+}
+
+.sapUiGen-SitePopoverLayout .sapUiHLayoutChildWrapper{
+	height: 100%;
+}
+
+.sapUiGen-SitePopoverLayout .sapUiHLayoutChildWrapper:nth-of-type(2){
+	width: calc(100% - 10rem);
+}
+
+.sapUiGen-SitePopover-List{
+	height:100%;
+	border: none;
+    border-right: 0.0625rem solid #c0c0c0;
+}
+
+.sapUiGen-SitePopover .forjustify{
+    justify-content: space-around;
+    bottom: 1.7rem;
+    position: relative;
+}
+
+.sapUiGen-SitePopover .cohrbutton{
+    z-index:1;
+}
+
+.sapUiGen-SitePopover .chromHeaderMargin{
+	margin-top: 1em;
+	margin-right: 0.5rem;
+}
+
+.sapUiGen-Chrom circle.quantitativeData {
+	fill-opacity: 0.5;
+	stroke-opacity: 0.5;
+	pointer-events: none;
+}
+
+.sapUiGen-Chrom:hover circle.quantitativeData {
+	fill-opacity: 1.0 !important;
+	stroke-opacity: 1.0 !important;
+}
+.sapUiGen-Chrom.fakeHover circle.quantitativeData {
+	fill-opacity: 1.0 !important;
+	stroke-opacity: 1.0 !important;
+}
+
+.sapUiGen-SitePopover .mutationBarChart{
+	margin-right: 1.0rem;
+	margin-bottom: 0.8rem;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.scrollIndicator {
+	pointer-events: all;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.scrollIndicator > rect {
+	fill: #ffffff;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.scrollIndicator > text {
+	fill: #aaa;
+	alignment-baseline: central;
+	text-anchor: middle;
+	font-size: 12px;
+}
+
+.sapUiGen-VariantBrowser div.details > svg.details > svg.tracks > g.trackWrapper > g.scrollIndicator:hover > text {
+	fill: #555;
+}
+
+.sapUiGen-SitePopover .mutationBarChartAnnotation{
+	margin-right: 1.0rem;
+}
+
+div.sapUiGen-ConfigCategoryDialog li.categoryItem{
+    padding-top: 0.4rem !important;
+}
+
+div.sapUiGen-ConfigCategoryDialog li.categoryItem button{
+    margin-left: 0.74rem;
+}
+
+div.sapUiGen-ConfigCategoryDialog li.categoryItem label{
+    margin-top: 0.5rem;
+}
+
+div.sapUiGen-ConfigCategoryDialog li.categoryItem > div> div > div:nth-child(4) > span{
+    padding-top: 0.25rem;
+}
+
+div.sapUiGen-ConfigCategoryDialog{
+    min-width: 40% !important;
+}
+
+.position{
+        position: relative;
+        top: 0.3rem;
+        position: relative;
+        left: 3.5rem;
+}
+
+.sapUiGen-GeneGroupSiteTrack-Cohorts {
+    display: inline-block;
+    padding-left: 0.5rem;
+}
+
+.sapUiGen-GeneGroupSiteTrack-Cohort {
+    overflow: hidden;
+}
+
+.sapUiGen-GeneGroupSiteTrack-Token {
+    line-height: 2rem;
+}
+
+.sapUiGen-GeneGroupSiteTrack-Token.right {
+    text-align: right;
+}
+
+.sapUiGen-SiteDetailsTrack-GeneDescription {
+    position: relative;
+    width: 100%;
+    white-space: normal;
+    line-height: 1.2em;
+}
+
+.sapUiGen-SiteDetailsTrack-GeneDescription.collapsed {
+    max-height: 3.65em;
+    overflow: hidden;
+}
+
+.sapUiGen-SiteDetailsTrack-GeneDescription.long {
+    cursor: zoom-out;
+}
+
+.sapUiGen-SiteDetailsTrack-GeneDescription.collapsed.long {
+    cursor: zoom-in;
+}
+
+.sapUiGen-SiteDetailsTrack-GeneDescription.collapsed.long::after {
+    content: "\2026";
+    color: #777;
+    background: white;
+    position: absolute;
+    right: 0;
+    bottom: 0.25em;
+    box-shadow: -0.5em 0 0.5em white;
+}
+
+.sapUiGen-SiteDetailsTrack-CohortStats{
+    line-height: 2em;
+}
+
+.sapUiGen-SiteDetailsTrack-CohortStatsToken .patientIcon{
+	margin-left: 0.5rem;
+}
+
+.sapUiGen-SiteDetailsTrack-CohortStatsData {
+    display: flex;
+    line-height: 1.5em;
+}
+
+.sapUiGen-SiteDetailsTrack-CohortStatsToken.right {
+    text-align: right;
+}
+
+.sapUiGen-SiteDetailsTrack-CohortStatsToken.center {
+    text-align: center;
+}
+
+.sapUiGen-SiteDetailsTrack-BarChart {
+    flex-grow: 1;
+    margin: 0.25em 0.5em 0.5em 0;
+}
+
+.sapUiGen-SiteDetailsTrack-Bar{
+    height: 100%;
+    background-color: #666;
+}
+
+.sapUiGen-SiteDetailsTrack-LinkList {
+    list-style: none;
+    padding: 0;
+}
+
+.sapUiGen-SiteDetailsTrack-LinkList > li::before {
+    content: "\e091\00a0";
+    font-family: "SAP-icons";
+    color: #00679e;
+    vertical-align: middle;
+}
+
+.sapUiGen-SiteDetailsTrack-LinkList > li > * {
+    vertical-align: middle;
+}
+
+/*sitetrack-GenesTrack*/
+.sapUiGen-GenesTrack-GenesSection{
+    width: 100%;
+}
+
+.sapUiGen-GenesTrack-Gene{
+    display: flex;
+    width:100%;
+    margin-bottom:10px;
+    cursor:pointer;
+}
+
+.sapUiGen-GenesTrack-Gene:hover{
+    background-color: #f0f0f0;
+}
+
+.sapUiGen-GenesTrack-Gene.selected{
+    background-color: #e6f2f9;
+}
+
+.sapUiGen-GenesTrack-GeneName{
+    float: left;
+    background-color :#009de0;
+    /*width:inherit !important;*/
+    font:'bold';
+    line-height:1.5em;
+    border: 5px solid #009de0;
+	color: white;
+	text-align: center;
+}
+.sapUiGen-GenesTrack-GeneContent{
+    float: right;
+    padding: 0.5rem;
+    flex-grow: 1;
+}
+
+.sapUiGen-AllelesTrack-Allele{
+    display: block;
+    width:100%;
+    margin-top: 0.5em;
+    cursor:pointer;
+}
+
+.sapUiGen-AllelesTrack-Allele:first-child {
+    margin-top: 0;
+}
+
+.sapUiGen-AllelesTrack-Allele:hover{
+    background-color: #f0f0f0;
+}
+
+.sapUiGen-AllelesTrack-Allele.selected{
+    background-color: #e6f2f9;
+}
+
+.sapUiGen-AllelesTrack-Allele > div {
+    display: flex;
+    margin-top: 0.25em;
+}
+
+.sapUiGen-AllelesTrack-Allele > div:first-child {
+    margin-top: 0;
+}
+
+.sapUiGen-AlleleTrack-HGVS{
+	margin-left: 2.5em;
+}
+
+.sapUiGen-AlleleTrack-MutationType{
+	margin-left: 0.5em;
+	margin-top: 0.75em;
+	margin-bottom: 0.25em;
+    line-height: 1.5em;
+    vertical-align: middle;
+}
+.sapUiGen-AllelesTrack-AllelesSection{
+	width:100%;
+}
+.sapUiGen-AlleleTrack-AlleleName{
+    width:1.5em;
+    height:1.5em;
+    line-height:1.5em;
+	text-align: center;
+	vertical-align: middle;
+	margin-right: 0.25em;
+}
+.sapUiGen-AlleleTrack-AlleleName.ref{
+    background-color: #009de0;
+	color: white;
+}
+.sapUiGen-AlleleTrack-AlleleName.alt{
+    background-color: #ff0000;
+	color: white;
+}
+.sapUiGen-AlleleTrack-VariantType{
+    flex-grow: 1;
+    white-space: normal;
+    margin-left: 0.5em;
+    line-height: 1.5em;
+    vertical-align: middle;
+}
+
+.sapUiGen-AlleleTrack-AminoName{
+	padding: 0.25em;
+    line-height:1.5em;
+	text-align: center;
+	vertical-align: middle;
+	margin-top: 0.5em;
+	min-width: 2em;
+}
+
+.sapUiGen-AlleleTrack-AminoName:first-child {
+    margin-left: 2.5em;
+}
+
+.sapUiGen-AlleleTrack-AminoName.ref{
+    background-color: #009de0;
+	color: white;
+}
+
+.sapUiGen-AlleleTrack-AminoName.alt{
+    background-color: #ff0000;
+	color: white;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients {
+    width: 100%;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH4 {
+    position: -webkit-sticky;
+    position: sticky;
+    top: -1rem;
+    background-color: white;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+    margin-bottom: 0;
+    line-height: 1.25rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH5 {
+    position: -webkit-sticky;
+    position: sticky;
+    top: -1rem;
+    background-color: white;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH4 ~ .sapUiFormTitleH5 {
+    top: 0.75rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .message {
+    width: 100%;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+
+.sapUiGen-SamplesSectionTrack-Patient {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patient:first-child {
+    margin-top: 0;
+}
+
+.sapUiGen-SamplesSectionTrack-Patient .sapMLnk {
+    display: inline;
+    font-weight: bold;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample {
+    display: block;
+    cursor: pointer;
+    margin-top: 0.25rem;
+    margin-left: 1.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    line-height:1.5em;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample:hover {
+    background-color: #f0f0f0;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample.selected {
+    background-color: #e6f2f9;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span {
+    display: inline-block;
+    width:1.5em;
+    height:1.5em;
+    line-height:1.5em;
+	text-align: center;
+	vertical-align: middle;
+    background-color: #009de0;
+	color: white;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span + span {
+	margin-left: 0.25em;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span.alt {
+    background-color: #ff0000;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .message {
+    width: 100%;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+.sapUiGen-SiteDetailsTrack-ReadAlignments {
+    width: 100%;
+    padding-bottom: 0.5rem;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sapUiFormTitle {
+    margin-bottom: 1rem;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .message {
+    width: 100%;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: ew-resize;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .dragging {
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence {
+    display: block;
+    position: relative;
+    height: 1.5em;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence:first-of-type {
+    margin-top: 0.75px;
+    margin-bottom: 1em;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .fwd:after {
+    display: inline-block;
+    position: relative;
+    border: solid transparent;
+    left: 1px;
+    width: 2px;
+    height: 0;
+    border-width: 0.75em;
+    border-left-color: #009de0;
+    content: " ";
+    vertical-align: middle;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .rev:before {
+    display: inline-block;
+    position: relative;
+    border: solid transparent;
+    right: 1px;
+    width: 2px;
+    height: 0;
+    border-width: 0.75em;
+    border-right-color: #009de0;
+    content: " ";
+    vertical-align: middle;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .clipped:after {
+    border-left-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .clipped:before {
+    border-right-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .ref {
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .alt {
+    background-color: #ff0000;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .allele {
+    display: inline-block;
+    height: 1.5em;
+    background-color: #009de0;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .allele.clipped {
+    background-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .base {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    line-height: 1.5em;
+    text-align: center;
+    vertical-align: middle;
+    border-left: 1px solid white;
+    border-right: 1px solid white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence:not( :first-of-type ) :not( .clipped ) .base:not( .alt ) {
+    color: transparent;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .highlight {
+   z-index: 10;
+   position: absolute;
+   border: 1.5px solid red;
+   top: 0;
+   bottom: 0.5em;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients {
+    width: 100%;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH4 {
+    position: -webkit-sticky;
+    position: sticky;
+    top: -1rem;
+    background-color: white;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+    margin-bottom: 0;
+    line-height: 1.25rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH5 {
+    position: -webkit-sticky;
+    position: sticky;
+    top: -1rem;
+    background-color: white;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients .sapUiFormTitleH4 ~ .sapUiFormTitleH5 {
+    top: 0.75rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .message {
+    width: 100%;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SamplesSectionTrack-Patients > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+
+.sapUiGen-SamplesSectionTrack-Patient {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.sapUiGen-SamplesSectionTrack-Patient:first-child {
+    margin-top: 0;
+}
+
+.sapUiGen-SamplesSectionTrack-Patient .sapMLnk {
+    display: inline;
+    font-weight: bold;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample {
+    display: block;
+    cursor: pointer;
+    margin-top: 0.25rem;
+    margin-left: 1.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    line-height:1.5em;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample:hover {
+    background-color: #f0f0f0;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample.selected {
+    background-color: #e6f2f9;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span {
+    display: inline-block;
+    width:1.5em;
+    height:1.5em;
+    line-height:1.5em;
+	text-align: center;
+	vertical-align: middle;
+    background-color: #009de0;
+	color: white;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span + span {
+	margin-left: 0.25em;
+}
+
+.sapUiGen-SamplesSectionTrack-Sample > .allele > span.alt {
+    background-color: #ff0000;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .message {
+    width: 100%;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SiteDetailsTrack-Attributes > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+.sapUiGen-SiteDetailsTrack-ReadAlignments {
+    width: 100%;
+    padding-bottom: 0.5rem;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sapUiFormTitle {
+    margin-bottom: 1rem;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .message {
+    width: 100%;
+    padding-bottom: 1rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .info:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e202";
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments > .error:before {
+    font-family: "SAP-icons";
+    font-style: normal;
+    padding-right: 0.5em;
+    content: "\e0b1";
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: ew-resize;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .dragging {
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence {
+    display: block;
+    position: relative;
+    height: 1.5em;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence:first-of-type {
+    margin-top: 0.75px;
+    margin-bottom: 1em;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .fwd:after {
+    display: inline-block;
+    position: relative;
+    border: solid transparent;
+    left: 1px;
+    width: 2px;
+    height: 0;
+    border-width: 0.75em;
+    border-left-color: #009de0;
+    content: " ";
+    vertical-align: middle;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .rev:before {
+    display: inline-block;
+    position: relative;
+    border: solid transparent;
+    right: 1px;
+    width: 2px;
+    height: 0;
+    border-width: 0.75em;
+    border-right-color: #009de0;
+    content: " ";
+    vertical-align: middle;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .clipped:after {
+    border-left-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .clipped:before {
+    border-right-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .ref {
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .alt {
+    background-color: #ff0000;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .allele {
+    display: inline-block;
+    height: 1.5em;
+    background-color: #009de0;
+	color: white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .allele.clipped {
+    background-color: #77cef0;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .base {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    line-height: 1.5em;
+    text-align: center;
+    vertical-align: middle;
+    border-left: 1px solid white;
+    border-right: 1px solid white;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .sequence:not( :first-of-type ) :not( .clipped ) .base:not( .alt ) {
+    color: transparent;
+}
+
+.sapUiGen-SiteDetailsTrack-ReadAlignments .highlight {
+   z-index: 10;
+   position: absolute;
+   border: 1.5px solid red;
+   top: 0;
+   bottom: 0.5em;
+}
