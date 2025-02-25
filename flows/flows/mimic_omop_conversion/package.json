@@ -1,0 +1,87 @@
+{
+  "name": "@data2evidence/d2e-flows",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build ../.. -f ./Dockerfile -t d2e-flows-local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/data2evidence/d2e-flow/mimic_omop_conversion",
+      "flows": [
+        {
+          "name": "mimic_omop_conversion_plugin",
+          "type": "mimic",
+          "entrypoint": "flows.mimic_omop_conversion_plugin.flow.mimic_omop_conversion_plugin",
+          "image": "ghcr.io/data2evidence/d2e-flow/mimic_omop_conversion:develop",
+          "image_pull_policy": "IfNotPresent",
+          "tags": ["mimic"],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+                "options": {
+                    "$ref": "#/definitions/MimicOMOPOptionsType",
+                    "position": 0,
+                    "title": "options"
+                }
+            },
+            "required": ["options"],
+            "definitions": {
+                "MimicOMOPOptionsType": {
+                    "properties": {
+                        "duckdb_file_path": {
+                            "default": "/app/mimic_omop/mimic/mimic_omop_duckdb",
+                            "title": "Duckdb File Path",
+                            "type": "string"
+                        },
+                        "mimic_dir": {
+                            "default": "/app/mimic_omop/mimic",
+                            "title": "Mimic Dir",
+                            "type": "string"
+                        },
+                        "vocab_dir": {
+                            "default": "/app/mimic_omop/vocab",
+                            "title": "Vocab Dir",
+                            "type": "string"
+                        },
+                        "load_mimic_vocab": {
+                            "default": true,
+                            "title": "Load MIMIC Vocab",
+                            "type": "boolean"
+                        },
+                        "database_code": {"title": "Database Code", "type": "string"},
+                        "schema_name": {"title": "Schema Name", "type": "string"},
+                        "overwrite_schema": {
+                          "default": false,
+                          "title": "Overwrite Schema",
+                          "type": "boolean"
+                        },
+                        "chunk_size": {
+                          "default": 5000,
+                          "title": "Chunk Size",
+                          "type": "integer"
+                        }
+                    },
+                    "required": ["database_code", "schema_name"],
+                    "title": "MimicOMOPOptionsType",
+                    "type": "object"
+                }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

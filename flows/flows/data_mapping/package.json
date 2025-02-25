@@ -1,0 +1,75 @@
+{
+  "name": "@data2evidence/data-mapping-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build . -t d2e-flows-local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/data2evidence/d2e-flow/perseus",
+      "flows": [
+        {
+          "name": "perseus_plugin",
+          "type": "perseus",
+          "entrypoint": "flows.perseus_plugin.flow.perseus_plugin",
+          "image": "ghcr.io/data2evidence/d2e-flow/perseus:develop",
+          "image_pull_policy": "Never",
+          "tags": [
+            "perseus"
+          ],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/PerseusRequestType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "PerseusRequestType": {
+                "properties": {
+                  "url": {
+                    "title": "Url",
+                    "type": "string"
+                  },
+                  "headers": {
+                    "title": "Headers",
+                    "type": "object"
+                  },
+                  "data": {
+                    "title": "Data",
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "url",
+                  "headers",
+                  "data"
+                ],
+                "title": "PerseusRequestType",
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+extras
+^\.git
+man-roxygen
+_pkgdown.yml
+deploy.sh
+compare_versions
+.github
+docs
+^LICENSE$
+^inst/doc/.*\.pdf$
+.lintr

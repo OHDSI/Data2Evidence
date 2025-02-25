@@ -1,0 +1,41 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.0__create_research_subject_tables
+CREATE TABLE "GDM.RESEARCH_SUBJECT" (
+  "ALP_ID"                              VARCHAR(50)		NOT NULL,
+  "ID"                                  VARCHAR(1000) NULL,
+  "PERSON_ID"                           BIGINT        NOT NULL,
+  "STATUS"                              VARCHAR(50)		NULL,
+  "PERIOD_START"			                  TIMESTAMP	    NULL,
+  "PERIOD_END"				                  TIMESTAMP	    NULL,
+  "STUDY_REFERENCE"		                  VARCHAR(500)	NULL,
+  "STUDY_TYPE"		                      VARCHAR(500)  NULL,
+  "STUDY_IDENTIFIER_USE"                VARCHAR(50)	  NULL,
+  "STUDY_IDENTIFIER_TYPE"               VARCHAR(500)	NULL,
+  "STUDY_IDENTIFIER_SYSTEM"             VARCHAR(500)	NULL,
+  "STUDY_IDENTIFIER_VALUE"              VARCHAR(500)  NULL,
+  "STUDY_IDENTIFIER_PERIOD_START"       TIMESTAMP	    NULL,
+  "STUDY_IDENTIFIER_PERIOD_END"         TIMESTAMP     NULL,
+  "STUDY_DISPLAY"                       VARCHAR(5000)	NULL,
+  "INDIVIDUAL_REFERENCE"                VARCHAR(500)	NULL,
+  "INDIVIDUAL_TYPE"                     VARCHAR(500)	NULL,
+  "INDIVIDUAL_IDENTIFIER_USE"           VARCHAR(50)	  NULL,
+  "INDIVIDUAL_IDENTIFIER_TYPE"          VARCHAR(500)	NULL,
+  "INDIVIDUAL_IDENTIFIER_SYSTEM"        VARCHAR(500)  NULL,
+  "INDIVIDUAL_IDENTIFIER_VALUE"         VARCHAR(500)  NULL,
+  "INDIVIDUAL_IDENTIFIER_PERIOD_START"  TIMESTAMP	    NULL,
+  "INDIVIDUAL_IDENTIFIER_PERIOD_END"    TIMESTAMP     NULL,
+  "INDIVIDUAL_DISPLAY"                  VARCHAR(5000)	NULL,
+  "ASSIGNED_ARM"			                  VARCHAR(500)	NULL,
+  "ACTUAL_ARM"			                    VARCHAR(500)	NULL,
+  "ETL_SOURCE_TABLE"			              VARCHAR(500)	NOT NULL,
+  "ETL_SOURCE_TABLE_RECORD_ID"	        BIGINT		    NOT NULL,
+  "ETL_SOURCE_TABLE_RECORD_CREATED_AT"  TIMESTAMP	  	NOT NULL,
+  "ETL_SESSION_ID"			                VARCHAR(50)	  NOT NULL,
+  "ETL_STARTED_AT"			                TIMESTAMP	    NOT NULL,
+  "ETL_CREATED_AT"			                TIMESTAMP	    DEFAULT (now() AT TIME ZONE 'UTC'),
+  "ETL_UPDATED_AT"                      TIMESTAMP     NULL,
+  "SOURCE_INDIVIDUAL_IDENTIFIER_VALUE"  VARCHAR(500)  NULL,
+   PRIMARY KEY ("ALP_ID")
+);
+
+--rollback DROP TABLE "GDM.RESEARCH_SUBJECT";

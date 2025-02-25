@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <script src="js/loadResults.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>OHDSI - Data Quality Dashboard</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="vendor/googlefonts/Saira_Extra_Condensed-500,700.css" rel="stylesheet">
+  <link href="vendor/googlefonts/Muli-400,400i,800,800i.css" rel="stylesheet">
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="vendor/dt/v/dt/dt-1.10.18/datatables.min.css" />
+  <link rel="stylesheet" type="text/css"
+    href="vendor/dt/buttons/1.5.6/css/buttons.dataTables.min.css" />
+  <link href="css/resume.css" rel="stylesheet">
+
+</head>
+
+<body id="page-top">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+    <a class="navbar-brand js-scroll-trigger" href="#page-top">
+      <span class="d-block d-lg-none">Data Quality Dashboard</span>
+      <span class="d-none d-lg-block">
+        <img class="img-fluid mx-auto mb-2" src="img/ohdsi.png" alt="">
+      </span>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <h3>
+            <cdm-source-name class="text-white"></cdm-source-name>
+          </h3>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link js-scroll-trigger" href="#overview">Overview</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link js-scroll-trigger" href="#metadata">Metadata</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link js-scroll-trigger" href="#results">Results</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link js-scroll-trigger" href="#about">About</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container-fluid p-0">
+    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="overview">
+      <div class="w-100">
+        <h2 class="mb-0">Data
+          <span class="text-primary">Quality</span>
+          Assessment
+        </h2>
+        <dq-metadata-heading></dq-metadata-heading>
+        <dq-dashboard></dq-dashboard>
+      </div>
+    </section>
+
+    <hr class="m-0">
+
+    <section class="resume-section p-3 p-lg-5" id="metadata">
+      <h2 class="mb-5">Metadata</h2>
+      <dq-metadata id="dq-metadata"></dq-metadata>
+    </section>
+
+    <hr class="m-0">
+
+    <section class="resume-section p-3 p-lg-5" id="results">
+      <h2 class="mb-5">Results</h2>
+      <dq-metadata-heading></dq-metadata-heading>
+      <table id="dt-results" class="display" width="100%">
+      </table>
+    </section>
+
+    <section class="resume-section p-3 p-lg-5" id="about">
+      <div class="w-100">
+        <h2 class="mb-5">About</h2>
+        <div>
+          The Data Quality Dashboard applies a Harmonized Data Quality Assessment Terminology to data that has been
+          standardized in the OMOP Common Data Model.
+        </div>
+        <br />
+        <ul class="fa-ul mb-0">
+          <li>
+            <i class="fab fa-github"></i>
+            <a href="https://github.com/ohdsi/DataQualityDashboard">Data Quality Dashboard</a>
+          </li>
+          <li>
+            <i class="fab fa-github"></i>
+            <a href="https://github.com/ohdsi/commondatamodel">OMOP Common Data Model Repository</a>
+          </li>
+        </ul>
+
+        <br><br>
+
+        <h3>References</h3>
+        <ul>
+          <li>
+            <a href="https://www.ncbi.nlm.nih.gov/pubmed/27713905">A Harmonized Data Quality Assessment Terminology and
+              Framework for the Secondary Use of Electronic Health Record Data.</a>
+          </li>
+        </ul>
+
+        <hr class="m-0">
+        Apache 2.0 Open Source Software - Brought to you by <a href="http://www.ohdsi.org">OHDSI</a>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="js/resume.js"></script>
+
+  <!-- Custom Components -->
+  <script src="htmlwidgets/lib/handlebars-latest.js"></script>
+  <script src="htmlwidgets/lib/dqDashboardComponent.js"></script>
+  <script src="htmlwidgets/lib/dqCheckRenderer.js"></script>
+  <script src="htmlwidgets/lib/dqMetadataComponent.js"></script>
+  <script src="htmlwidgets/lib/dqMetadataHeading.js"></script>
+
+  <script type="text/javascript" src="vendor/dt/v/dt/dt-1.10.18/datatables.min.js"></script>
+  <script type="text/javascript" src="vendor/dt/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" src="vendor/dt/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+  <script type="text/javascript" src="vendor/dt/buttons/1.5.6/js/buttons.html5.min.js"></script>
+
+  <script type="text/javascript">
+    // if not running in shiny, try to accomodate web server
+    if (location.port == 80 || location.port == 8080 || location.port == "") {
+      $.ajax({
+        dataType: "json",
+        url: "results.json",
+        success: function (results) {
+          loadResults(results);
+        }
+      });
+    }
+
+  </script>
+
+</body>
+
+</html>

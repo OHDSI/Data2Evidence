@@ -1,0 +1,170 @@
+{
+    "name": "@data2evidence/dicom-etl-flow",
+    "version": "0.0.99",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "build": "docker build . -t d2e-flows-dicom-etl --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/data2evidence/d2e-flows.git"
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "bugs": {
+      "url": "https://github.com/data2evidence/d2e-flows/issues"
+    },
+    "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+    "trex": {
+      "flow": {
+        "image": "ghcr.io/data2evidence/d2e-flow/dicom-etl",
+        "flows": [
+            {
+                "name": "dicom_etl_plugin",
+                "type": "dicom_etl",
+                "entrypoint": "flows.dicom_etl.dicom_etl_plugin.flow.dicom_etl_plugin",
+                "tags": [
+                  "data",
+                  "data_load",
+                  "dicom",
+                  "medical_imaging",
+                  "imaging",
+                  "radiology"
+                ],
+                "parameter_openapi_schema": {
+                  "title": "Parameters",
+                  "type": "object",
+                  "properties": {
+                    "options": {
+                      "$ref": "#/definitions/DICOMETLOptions",
+                      "position": 0,
+                      "title": "options"
+                    }
+                  },
+                  "required": [
+                    "options"
+                  ],
+                  "definitions": {
+                    "DICOMETLOptions": {
+                      "properties": {
+                        "flow_action_type": {
+                          "$ref": "#/definitions/FlowActionType"
+                        },
+                        "database_code": {
+                          "title": "Database Code",
+                          "type": "string"
+                        },
+                        "medical_imaging_schema_name": {
+                          "title": "Medical Imaging Schema Name",
+                          "type": "string"
+                        },
+                        "cdm_schema_name": {
+                          "title": "Cdm Schema Name",
+                          "type": "string"
+                        },
+                        "vocab_schema_name": {
+                          "title": "Vocab Schema Name",
+                          "type": "string"
+                        },
+                        "to_truncate": {
+                          "anyOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": false,
+                          "title": "To Truncate"
+                        },
+                        "dicom_files_abs_path": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "title": "Dicom Files Abs Path"
+                        },
+                        "upload_files": {
+                          "anyOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": false,
+                          "title": "Upload Files"
+                        },
+                        "person_to_patient_mapping": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/definitions/PersonPatientMapping"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "flow_action_type",
+                        "database_code",
+                        "medical_imaging_schema_name",
+                        "cdm_schema_name",
+                        "vocab_schema_name",
+                        "dicom_files_abs_path",
+                        "person_to_patient_mapping"
+                      ],
+                      "title": "DICOMETLOptions",
+                      "type": "object"
+                    },
+                    "FlowActionType": {
+                      "enum": [
+                        "ingest_metadata",
+                        "load_vocab"
+                      ],
+                      "title": "FlowActionType",
+                      "type": "string"
+                    },
+                    "PersonPatientMapping": {
+                      "properties": {
+                        "schema_name": {
+                          "title": "Schema Name",
+                          "type": "string"
+                        },
+                        "table_name": {
+                          "title": "Table Name",
+                          "type": "string"
+                        },
+                        "person_id_column_name": {
+                          "title": "Person Id Column Name",
+                          "type": "string"
+                        },
+                        "patient_id_column_name": {
+                          "title": "Patient Id Column Name",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "schema_name",
+                        "table_name",
+                        "person_id_column_name",
+                        "patient_id_column_name"
+                      ],
+                      "title": "PersonPatientMapping",
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+        ]
+      }
+    }
+  }

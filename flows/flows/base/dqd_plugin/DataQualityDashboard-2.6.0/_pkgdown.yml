@@ -1,0 +1,110 @@
+template:
+  params:
+    bootswatch: cosmo
+
+home:
+  links:
+  - text: Ask a question
+    href: http://forums.ohdsi.org
+  - text: DQD Example Output
+    href: https://data.ohdsi.org/DataQualityDashboardMDCD/
+    
+navbar:
+  structure:
+    left:
+    - home
+    - intro
+    - reference
+    - articles
+    - checks
+    - news
+    right: [hades, github]
+  components:
+    home:
+      icon: fa-home fa-lg
+      href: index.html
+    intro:
+      text: Get started
+      href: articles/DataQualityDashboard.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    news:
+      text: Changelog
+      href: news/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: Check Type Definitions
+        href: articles/CheckTypeDescriptions.html
+      - text: DQ Check Failure Thresholds
+        href: articles/Thresholds.html
+      - text: DQ Check Statuses
+        href: articles/CheckStatusDefinitions.html
+      - text: Adding a New Data Quality Check
+        href: articles/AddNewCheck.html
+      - text: DQD for Cohorts
+        href: articles/DqdForCohorts.html
+      - text: SQL-only Mode
+        href: articles/SqlOnly.html
+    checks:
+      text: NEW! Data Quality Check Types
+      menu:
+      - text: Index
+        href: articles/checkIndex.html
+      - text: cdmTable
+        href: articles/checks/cdmTable.html
+      - text: cdmField
+        href: articles/checks/cdmField.html
+      - text: cdmDatatype
+        href: articles/checks/cdmDatatype.html
+      - text: isPrimaryKey
+        href: articles/checks/isPrimaryKey.html
+      - text: isForeignKey
+        href: articles/checks/isForeignKey.html
+      - text: isRequired
+        href: articles/checks/isRequired.html
+      - text: fkDomain
+        href: articles/checks/fkDomain.html
+      - text: fkClass
+        href: articles/checks/fkClass.html
+      - text: plausibleAfterBirth
+        href: articles/checks/plausibleAfterBirth.html
+    hades:
+      text: hadesLogo
+      href: https://ohdsi.github.io/Hades
+  
+reference:
+  - title: "Execution"
+    desc: >
+      Function for running data quality checks
+    contents:
+      - executeDqChecks
+      - writeJsonResultsToTable
+  - title: "View Dashboard"
+    desc: >
+      Function for viewing the data quality dashboard
+    contents:
+      - viewDqDashboard
+  - title: "Re-evaluate Thresholds"
+    desc: >
+      Function to take a set of DQD results and re-evaluate them against new thresholds
+    contents: reEvaluateThresholds
+  - title: "List all DQD Checks"
+    desc: > 
+      Function to list all checks run by the application
+    contents: listDqChecks
+  - title: "Write DQD results to a CSV"
+    desc: > 
+      Function to write the JSON results to a csv file
+    contents: writeJsonResultsToCsv
+  - title: "Convert results JSON file case"
+    desc: > 
+      Function to convert the case of a results JSON file between snakecase and camelcase
+    contents: convertJsonResultsFileCase
+  - title: "Write database results to a JSON file"
+    desc: > 
+      Function to write DQD results from a database table into a JSON file
+    contents: writeDBResultsToJson
+
+url: https://ohdsi.github.io/DataQualityDashboard/

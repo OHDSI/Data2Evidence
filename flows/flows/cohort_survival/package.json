@@ -1,0 +1,85 @@
+{
+  "name": "@data2evidence/kaplan-meier-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build . -t d2e-flows-local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/data2evidence/d2e-flow/cohort-survival",
+      "flows": [
+        {
+          "name": "cohort_survival_plugin",
+          "type": "cohort_survival",
+          "entrypoint": "flows.cohort_sußrvival_plugin.flow.cohort_survival_plugin",
+          "image": "ghcr.io/data2evidence/d2e-flow/cohort-survival:develop",
+          "image_pull_policy": "IfNotPresent",
+          "tags": [
+            "cohort_survival"
+          ],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CohortSurvivalOptionsType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "CohortSurvivalOptionsType": {
+                "properties": {
+                  "databaseCode": {
+                    "title": "Databasecode",
+                    "type": "string"
+                  },
+                  "schemaName": {
+                    "title": "Schemaname",
+                    "type": "string"
+                  },
+                  "targetCohortDefinitionId": {
+                    "title": "Targetcohortdefinitionid",
+                    "type": "integer"
+                  },
+                  "outcomeCohortDefinitionId": {
+                    "title": "Outcomecohortdefinitionid",
+                    "type": "integer"
+                  },
+                  "datasetId": {
+                    "title": "Datasetid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "databaseCode",
+                  "schemaName",
+                  "targetCohortDefinitionId",
+                  "outcomeCohortDefinitionId",
+                  "datasetId"
+                ],
+                "title": "CohortSurvivalOptionsType",
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

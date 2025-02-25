@@ -1,0 +1,6 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.3__alter_item_table
+ALTER TABLE "GDM.ITEM" 
+ALTER ("GDM_QUESTIONNAIRE_RESPONSE_ID" VARCHAR(1000));
+
+--rollback ALTER TABLE "GDM.ITEM" ALTER ("GDM_QUESTIONNAIRE_RESPONSE_ID" VARCHAR(50));

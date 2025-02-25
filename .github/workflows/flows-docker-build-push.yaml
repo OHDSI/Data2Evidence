@@ -144,6 +144,7 @@ jobs:
           tags: ghcr.io/data2evidence/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
             ${{ env.DOCKER_BUILD_ARG1 }}
 
       - name: delete-untagged-images

@@ -1,0 +1,82 @@
+{
+  "name": "@data2evidence/nlp-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build . -t d2e-flows-local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/data2evidence/d2e-flow/nlp",
+      "flows": [
+        {
+          "name": "ner_extract_plugin",
+          "type": "NLP",
+          "entrypoint": "flows.ner_extract_plugin.flow.ner_extract_plugin",
+          "image": "ghcr.io/data2evidence/d2e-flow/nlp:develop",
+          "image_pull_policy": "IfNotPresent",
+          "tags": [],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "title": "options",
+                "position": 0,
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/NerExtractOptions"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "NerExtractOptions": {
+                "title": "NerExtractOptions",
+                "type": "object",
+                "properties": {
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  },
+                  "note_table": {
+                    "title": "Note Table",
+                    "default": "note",
+                    "type": "string"
+                  },
+                  "note_nlp_table": {
+                    "title": "Note NLP Table",
+                    "default": "note_nlp",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database_code",
+                  "schema_name"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,66 @@
+Admission Date:  [**2573-5-30**]              Discharge Date:   [**2573-7-1**]
+
+Date of Birth:  [**2498-8-19**]             Sex:   F
+
+Service: SURGERY
+
+Allergies:
+Hydrochlorothiazide
+
+Attending:[**First Name3 (LF) 1893**]
+Chief Complaint:
+Abdominal pain
+
+Major Surgical or Invasive Procedure:
+PICC line [**6-25**]
+ERCP w/ sphincterotomy [**5-31**]
+
+
+History of Present Illness:
+74y female with type 2 dm and a recent stroke affecting her
+speech, who presents with 2 days of abdominal pain. Imaging shows no evidence of metastasis. She is not receiving any chemo.
+
+Past Medical History:
+1. Colon cancer dx'd in [**2554**], tx'd with hemicolectomy, XRT,
+chemo. Last colonoscopy showed: Last CEA was in the 8 range
+(down from 9)
+2. Type II Diabetes Mellitus
+3. Hypertension
+
+Social History:
+Married, former tobacco use. No alcohol or drug use.
+
+Family History:
+Mother with stroke at age 82. no early deaths.
+2 daughters- healthy
+
+
+Brief Hospital Course:
+Ms. [**Known patient lastname 2004**] was admitted on [**2573-5-30**]. Ultrasound at the time of
+admission demonstrated pancreatic duct dilitation and an
+edematous gallbladder. She was admitted to the ICU.
+Discharge Medications:
+1. Miconazole Nitrate 2 % Powder Sig: One (1) Appl Topical  BID
+(2 times a day) as needed.
+2. Heparin Sodium (Porcine) 5,000 unit/mL Solution Sig: One (1)
+Injection TID (3 times a day).
+3. Acetaminophen 160 mg/5 mL Elixir Sig: One (1)  PO Q4-6H
+(every 4 to 6 hours) as needed.
+
+Discharge Diagnosis:
+Type 2 DM
+Pancreatitis
+HTN
+h/o aspiration respiratory distress
+
+
+Discharge Instructions:
+Patient may shower. Please call your surgeon or return to the
+emergency room if [**Doctor First Name **] experience fever >101.5, nausea, vomiting,
+abdominal pain, shortness of breath, abdominal pain or any
+significant  change in your medical condition. A
+
+Completed by: [**First Name11 (Name Pattern1) 2010**] [**Last Name (NamePattern1) 2011**] MD [**MD Number 2012**] [**2573-7-1**] @ 1404
+Signed electronically by: DR. [**First Name8 (NamePattern2) **] [**Last Name (NamePattern1) **]
+ on: FRI [**2573-7-2**] 8:03 AM
+(End of Report)

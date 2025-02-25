@@ -1,0 +1,11 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.3__alter_consent_table
+
+ALTER TABLE "GDM.CONSENT" 
+DROP(ALP_ID);
+
+ALTER TABLE "GDM.CONSENT"
+ADD(PERSON_ID BIGINT NOT NULL);
+
+--rollback ALTER TABLE "GDM.CONSENT" DROP(PERSON_ID);
+--rollback ALTER TABLE "GDM.CONSENT" ADD("ALP_ID" VARCHAR(50));
