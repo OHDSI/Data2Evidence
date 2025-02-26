@@ -10,13 +10,14 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER}
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install libpq5 libpq-dev curl gcc g++ -y --no-install-recommends && apt-get clean
+RUN apt-get update && apt-get install libpq5 libpq-dev curl gcc g++ unzip -y --no-install-recommends && apt-get clean
 COPY --chown=docker:docker ./postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
 
 # Download NLP 2GB linkers
 RUN mkdir -p /home/docker/.scispacy/datasets
 RUN chown -R docker:docker /home/docker/.scispacy/datasets
+
 RUN curl -o /home/docker/.scispacy/datasets/2b79923846fb52e62d686f2db846392575c8eb5b732d9d26cd3ca9378c622d40.87bd52d0f0ee055c1e455ef54ba45149d188552f07991b765da256a1b512ca0b.tfidf_vectors_sparse.npz https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/data/linkers/2023-04-23/umls/tfidf_vectors_sparse.npz \
 	&& curl -o /home/docker/.scispacy/datasets/7e8e091ec80370b87b1652f461eae9d926e543a403a69c1f0968f71157322c25.6d801a1e14867953e36258b0e19a23723ae84b0abd2a723bdd3574c3e0c873b4.nmslib_index.bin https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/data/linkers/2023-04-23/umls/nmslib_index.bin \
 	&& curl -o /home/docker/.scispacy/datasets/37bc06bb7ce30de7251db5f5cbac788998e33b3984410caed2d0083187e01d38.f0994c1b61cc70d0eb96dea4947dddcb37460fb5ae60975013711228c8fe3fba.tfidf_vectorizer.joblib https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/data/linkers/2023-04-23/umls/tfidf_vectorizer.joblib \
@@ -44,6 +45,8 @@ RUN pip install -r requirements_NLP.txt
 RUN mkdir -p ./flows/nlp
 RUN chown -R docker:docker ./flows/nlp
 COPY --chown=docker:docker --chmod=711 ./flows/nlp/ner_extract_plugin flows/ner_extract_plugin
-RUN unzip flows/nlp/ner_extract_plugin/external/CUItoOHDSIv1.csv.zip -d flows/nlp/ner_extract_plugin/external
+RUN mkdir -p flows/ner_extract_plugin/external/
+RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
+RUN unzip -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip -d flows/ner_extract_plugin/external
 
 USER docker

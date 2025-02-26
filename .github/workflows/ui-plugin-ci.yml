@@ -52,6 +52,13 @@ jobs:
           ref: ${{ env.GIT_BRANCH_NAME }}
           repository: ${{ env.GIT_REPO_FULL_NAME }}
           submodules: recursive
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            ui:
+              - "ui/**"
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -74,6 +81,7 @@ jobs:
           echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
       - name: Build
+        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
         run: yarn
         env:
           CI: false
@@ -88,6 +96,7 @@ jobs:
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
           fi
       - name: Publish
+        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
         env:
           CI: false # For portal build to ignore warnings and not treat them as errors
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

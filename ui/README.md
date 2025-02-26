@@ -1,7 +1,5 @@
 # D2E UI
 
-[![NPM Build plugin](https://github.com/data2evidence/d2e-ui/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e-ui/actions/workflows/plugin-ci.yml)
-
 ## Inital set up
 
 - Prepare your own Github Personal Access Token (classic). 

@@ -61,6 +61,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-flow/dicom-etl
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/flows/dicom_etl/Dockerfile
+          - AZ_REG_REPOSITORY: d2e-flow/mimic-omop-conversion
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/flows/mimic_omop_conversion/Dockerfile
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -134,7 +137,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: env.DOCKER_BUILD_DISABLE == 'false' && steps.changes.outputs.flows == 'true'
+        if: ${{ env.GIT_BRANCH_NAME }} == 'develop' || ${{ env.DOCKER_BUILD_DISABLE }} == 'false' && ${{ steps.changes.outputs.flows }} == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}

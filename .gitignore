@@ -28,6 +28,8 @@ deploy/**/generated
 
 **/.env*
 **/*private*
+!ui/**/.env*
+!ui/**/*private*
 
 .cubestore
 

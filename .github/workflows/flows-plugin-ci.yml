@@ -52,9 +52,11 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/nlp/
           - PKGPATH: ./flows/cohort_survival/
           - PKGPATH: ./flows/data_mapping/
+          - PKGPATH: ./flows/dicom_etl/
+          - PKGPATH: ./flows/mimic_omop_conversion/
+          - PKGPATH: ./flows/nlp/
           - PKGPATH: ./flows/white_rabbit/
 
     steps:
