@@ -60,7 +60,7 @@ jobs:
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
             RELEASE_VERSION=${{ github.event.inputs.tag }}
-            jq --arg v $RELEASE_VERSION '.version=$v | .name=d2e | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
+            jq --arg v $RELEASE_VERSION '.version=$v | .name="d2e" | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           else
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           fi

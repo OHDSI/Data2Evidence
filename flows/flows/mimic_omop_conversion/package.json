@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e-flow/mimic_omop_conversion",
+      "image": "ghcr.io/data2evidence/d2e/flow-mimic-omop-conversion",
       "flows": [
         {
           "name": "mimic_omop_conversion_plugin",
           "type": "mimic",
           "entrypoint": "flows.mimic_omop_conversion_plugin.flow.mimic_omop_conversion_plugin",
-          "image": "ghcr.io/data2evidence/d2e-flow/mimic_omop_conversion:develop",
+          "image": "ghcr.io/data2evidence/d2e/flow-mimic-omop-conversion:develop",
           "image_pull_policy": "IfNotPresent",
           "tags": ["mimic"],
           "parameter_openapi_schema": {

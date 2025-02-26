@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e-flow/cohort-survival",
+      "image": "ghcr.io/data2evidence/d2e/flow-cohort-survival",
       "flows": [
         {
           "name": "cohort_survival_plugin",
           "type": "cohort_survival",
           "entrypoint": "flows.cohort_sußrvival_plugin.flow.cohort_survival_plugin",
-          "image": "ghcr.io/data2evidence/d2e-flow/cohort-survival:develop",
+          "image": "ghcr.io/data2evidence/d2e/flow-cohort-survival:develop",
           "image_pull_policy": "IfNotPresent",
           "tags": [
             "cohort_survival"

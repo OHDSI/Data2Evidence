@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e-flow/white_rabbit",
+      "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit",
       "flows": [
         {
           "name": "white_rabbit_plugin",
           "type": "white_rabbit",
           "entrypoint": "flows.white_rabbit_plugin.flow.white_rabbit_plugin",
-          "image": "ghcr.io/data2evidence/d2e-flow/white_rabbit:develop",
+          "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit:develop",
           "image_pull_policy": "Never",
           "tags": [
             "white_rabbit"

@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e-flow/perseus",
+      "image": "ghcr.io/data2evidence/d2e/flow-data-mapping",
       "flows": [
         {
           "name": "perseus_plugin",
           "type": "perseus",
           "entrypoint": "flows.perseus_plugin.flow.perseus_plugin",
-          "image": "ghcr.io/data2evidence/d2e-flow/perseus:develop",
+          "image": "ghcr.io/data2evidence/d2e/flow-data-mapping:develop",
           "image_pull_policy": "Never",
           "tags": [
             "perseus"
