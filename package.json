@@ -40,5 +40,9 @@
     "@types/node": "^18",
     "ts-node": "10.9.2",
     "yarn": "1.22.10"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "zx": "^8.3.2"
   }
 }

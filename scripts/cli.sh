@@ -127,6 +127,10 @@ case $cmd in
     pull)
         docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}
         ;;
+    setupdemo)
+        npx zx ./scripts/load-demodatabase.mjs && 
+        npx zx ./scripts/load-demodataset.mjs
+        ;;
     *)
         if [ -z ${cmd:-} ]; then
             echo "d2e: command is missing"
@@ -139,6 +143,7 @@ case $cmd in
         echo "Commands:"
         echo "  init        Initializes D2E directory and generates .env file"
         echo "  start       Starts d2e services. Requires d2e init and d2e setup to be run."
+        echo "  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run."
         echo "  stop        Stops d2e services"
         echo "  clean       Removes d2e docker containers and volumnes"
         echo ""
