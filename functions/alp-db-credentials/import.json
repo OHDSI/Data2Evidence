@@ -69,5 +69,6 @@
   "crypto": "node:crypto",
   "url": "node:url",
   "tls": "node:tls",
-  "querystring": "node:querystring"
+  "querystring": "node:querystring",
+  "process": "node:process"
 }}

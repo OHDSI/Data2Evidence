@@ -22,6 +22,12 @@
           "env": "mri-pg-config"
         },
         {
+          "function": "/alp-dataflow-gen-init",
+          "imports": "/alp-dataflow-gen-init/import.json",
+          "env": "alp-dataflow-gen-init",
+          "waitfor": "http://alp-dataflow-gen-1:41120/api/health"
+        },
+        {
           "function": "/alp-db-credentials/src/init",
           "imports": "/alp-db-credentials/import.json",
           "env": "alp-db-credentials"

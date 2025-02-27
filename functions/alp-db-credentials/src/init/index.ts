@@ -5,6 +5,7 @@ import { runMigrations } from '../common/data-source/db-migration'
 import { loadLocalDatabaseCredentials } from '../local-setup'
 // eslint-disable-next-line
 import * as pg from 'pg'
+import process from 'process'
 
 class Init {
   private readonly logger = createLogger('alp-db-credentials-init')

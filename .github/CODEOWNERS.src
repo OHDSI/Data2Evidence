@@ -21,6 +21,7 @@ functions/portal                                    @data2evidence/integrate
 functions/prefect                                   @data2evidence/integrate
 functions/query-gen-svc                             @data2evidence/analyze
 functions/terminology-svc                           @data2evidence/analyze
+functions/alp-dataflow-gen-init                     @data2evidence/data
 flows/*                                             @data2evidence/data
 flows/flows/strategus_plugin                        @data2evidence/integrate     
 scripts                                             @data2evidence/devops

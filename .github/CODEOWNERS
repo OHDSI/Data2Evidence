@@ -21,6 +21,7 @@ functions/portal                                    @hengxian-jiang @KangJingA @
 functions/prefect                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
 functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+functions/alp-dataflow-gen-init                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 flows/*                                             @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 flows/flows/strategus_plugin                        @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann     
 scripts                                             @brandantck @brian-cornally @mwaiyee @SantanM @satish-a0 @p-hoffmann

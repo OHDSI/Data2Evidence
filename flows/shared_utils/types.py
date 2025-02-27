@@ -6,8 +6,8 @@ from prefect.input import RunInput
 
 
 class AuthMode(str, Enum):
-    JWT = "jwt"
-    PASSWORD = "password"
+    JWT = "JWT"
+    PASSWORD = "Password"
 
 
 class DBCredentialsType(BaseModel):
@@ -19,6 +19,7 @@ class DBCredentialsType(BaseModel):
     password: Optional[SecretStr] = None
     dialect: str
     databaseName: str
+    databaseCode: str
     host: str
     port: int
     encrypt: Optional[bool] = False
@@ -27,16 +28,7 @@ class DBCredentialsType(BaseModel):
     hostnameInCertificate: Optional[str] = ""
     enableAuditPolicies: bool = False
     readRole: Optional[str] = ""
-
-    # Todo: align with DATABASE_CREDENTIALS
-    # authMode: Literal[AuthMode.PASSWORD, AuthMode.JWT]
-    @property # Todo: Temporary until authMode is implemented in DATABASE_CREDENTIALS
-    def authMode(self) -> AuthMode:
-        if self.dialect == SupportedDatabaseDialects.HANA and \
-            all(pw is None for pw in [self.password, self.adminPassword, self.readPassword]):
-                return AuthMode.JWT
-        else:
-            return AuthMode.PASSWORD
+    authMode: Literal[AuthMode.PASSWORD, AuthMode.JWT]
 
 
 class CacheDBCredentialsType(DBCredentialsType):
@@ -61,15 +53,16 @@ class RequestType(str, Enum):
     POST = "post"
     PUT = "put"
     DELETE = "delete"
-    
-    
+
+
 class LiquibaseAction(str, Enum):
     UPDATE = "update"  # Create and update schema
     UPDATECOUNT = "updateCount"  # Create schema with count
     STATUS = "status"  # Get Version Info
     ROLLBACK_COUNT = "rollbackCount"  # Rollback on n changesets
     ROLLBACK_TAG = "rollback"  # Rollback on tag
-    CHANGELOG_SYNC = "changelog-sync" # mark all changesets in databasechangelog table as executed
+    # mark all changesets in databasechangelog table as executed
+    CHANGELOG_SYNC = "changelog-sync"
 
 
 class InternalPluginType(str, Enum):
@@ -102,6 +95,7 @@ class EntityCountDistributionType(BaseModel):
     NOTE_COUNT: str
     EPISODE_COUNT: str
     SPECIMEN_COUNT: str
+
 
 class AuthToken(RunInput):
     token: SecretStr

@@ -369,10 +369,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-trex -t
-      - name: print logs for alp-dataflow-gen-init-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-dataflow-gen-init-1 -t
       - name: print logs for alp-minio-post-init
         if: ${{ always() || cancelled() || failure() }}
         run: |

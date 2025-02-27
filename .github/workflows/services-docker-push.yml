@@ -86,11 +86,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: d2e-dataflow-gen
-            directory: ./services/alp-dataflow-gen
-            context: .
-            fileName: Dockerfile
-            pull: true
           - name: d2e-pg-mgmt-init
             directory: ./services/alp-pg-management
             context: ./services/alp-pg-management

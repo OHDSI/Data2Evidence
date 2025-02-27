@@ -21,6 +21,7 @@ services:
           "alp-db-credentials": false,
           "alp-fhir-svc": false,
           "alp-fhir-init": false,
+          "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
           "bookmark-svc": false,
@@ -56,18 +57,6 @@ services:
     environment:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
 
-  alp-dataflow-gen-worker:
-    volumes:
-      - ./services/alp-dataflow-gen/create_workpool_json.py:/opt/prefect/create_workpool_json.py
-
-  alp-dataflow-gen-init:
-    build:
-      context: .
-      dockerfile: ./services/alp-dataflow-gen/Dockerfile
-    environment:
-      ACHILLES_THREAD_COUNT: 1
-    volumes:
-      - ./services/alp-dataflow-gen/init.py:/opt/prefect/libs/init.py
 
   alp-logto:
     build:

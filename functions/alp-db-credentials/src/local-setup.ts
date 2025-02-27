@@ -51,7 +51,7 @@ function createVocabSchema(dialect: string, dbId: string) {
 }
 
 export function loadLocalDatabaseCredentials(logger: Logger) {
-  if (env.DATABASE_CREDENTIALS) {
+  if (env.DATABASE_CREDENTIALS && env.DATABASE_CREDENTIALS !== '{}') {
     const envCredentials = JSON.parse(env.DATABASE_CREDENTIALS)
 
     const dbRepo = Container.get(DbRepository)
