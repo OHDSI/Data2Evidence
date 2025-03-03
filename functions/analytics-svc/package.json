@@ -34,7 +34,7 @@
         "duckdb-async": "^1.1.1",
         "express": "^4.18",
         "express-validator": "6.6.1",
-        "hdb": "0.19.10",
+        "hdb": "0.19.12",
         "helmet": "4.6.0",
         "jsonwebtoken": "^9.0.0",
         "jstat": "1.9.3",
