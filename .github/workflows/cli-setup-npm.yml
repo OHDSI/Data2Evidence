@@ -56,6 +56,12 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
+      - name: Use Node.js (prod)
+        uses: actions/setup-node@v2
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
       - name: Update version
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
