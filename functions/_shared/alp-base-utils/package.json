@@ -42,7 +42,7 @@
     "@types/passport-azure-ad": "^4.3.0",
     "axios": "^0.21.2",
     "bcryptjs": "^2.4.3",
-    "hdb": "0.19.3",
+    "hdb": "0.19.10",
     "pako": "1.0.11",
     "pg": "^8.4.2",
     "pg-query-stream": "^4.2.4",
