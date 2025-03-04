@@ -99,11 +99,8 @@ const getAccessToken = async (
       refreshToken: authResult.refresh_token,
     };
   } catch (error: any) {
-    console.error(
-      "Error exchanging authorization code for token:",
-      error.message
-    );
-    throw new Error("Token exchange failed");
+    console.error("Error exchanging authorization code for token:", error);
+    throw error;
   }
 };
 
