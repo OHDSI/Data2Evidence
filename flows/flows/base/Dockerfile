@@ -112,7 +112,7 @@ RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # h
 RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.4.0")' # https://github.com/OHDSI/Cyclops
 RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https://github.com/rstudio/reticulate
 # RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")' # https://github.com/OHDSI/Achilles same version installed by HADES
-# RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
+RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 
 # # print packages and versions - before HADES
 # RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"

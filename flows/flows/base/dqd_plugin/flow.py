@@ -16,23 +16,8 @@ from shared_utils.types import UserType
 from shared_utils.dao.DBDao import DBDao
 
 
-@task
-def setup_plugin():
-    # Install dqd R package from plugin
-    r_libs_user_directory = Variable.get("r_libs_user")
-    if (r_libs_user_directory):
-        ShellOperation(
-            commands=[
-                f"Rscript -e \"install.packages('./flows/dqd_plugin/DataQualityDashboard-2.6.0', lib='{r_libs_user_directory}', repos = NULL, type='source')\""
-            ]).run()
-    else:
-        raise ValueError("Environment variable: 'R_LIBS_USER' is empty.")
-
-
 @flow(log_prints=True, timeout_seconds=3600)
 def dqd_plugin(options: DqdOptionsType):
-    setup_plugin()
-    
     schema_name = options.schemaName
     database_code = options.databaseCode
     cdm_version_number = options.cdmVersionNumber
@@ -61,7 +46,7 @@ def dqd_plugin(options: DqdOptionsType):
 
     if options.cohortTableName:
         cohort_table_name = options.cohortTableName
-    else:   
+    else:
         cohort_table_name = "cohort"
 
     flow_run_context = FlowRunContext.get().flow_run.dict()
@@ -78,8 +63,9 @@ def dqd_plugin(options: DqdOptionsType):
                 cohort_database_schema,
                 cohort_table_name,
                 use_cache_db)
-    
-@task(result_storage=RFS.load(Variable.get("flows_results_sb_name")), 
+
+
+@task(result_storage=RFS.load(Variable.get("flows_results_sb_name")),
       result_storage_key="{flow_run.id}_dqd.json",
       result_serializer=JSONSerializer(),
       persist_result=True)
@@ -100,13 +86,14 @@ def execute_dqd(
 
     threads = DQD_THREAD_COUNT
     r_libs_user_directory = Variable.get("r_libs_user")
-    
+
     read_user = UserType.READ_USER
-    
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, schema_name=schema_name)
-    
+
+    dbdao = DBDao(use_cache_db=use_cache_db,
+                  database_code=database_code, schema_name=schema_name)
+
     set_db_driver_env = dbdao.set_db_driver_env()
-    set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user, 
+    set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
                                                                               release_date=release_date)
 
     logger.info(f'''Running DQD with input parameters:
@@ -144,14 +131,11 @@ def execute_dqd(
                 cohortDatabaseSchema <- '{cohort_database_schema}'
                 cohortTableName <- '{cohort_table_name}'
 
-                # Set r_libs_user_directory to be the priority for packages to be loaded
-                .libPaths('{r_libs_user_directory}')
-
                 # Run executeDqChecks
                 DataQualityDashboard::executeDqChecks(connectionDetails = connectionDetails,cdmDatabaseSchema = cdmDatabaseSchema,resultsDatabaseSchema = resultsDatabaseSchema,cdmSourceName = cdmSourceName,numThreads = numThreads,sqlOnly = sqlOnly,outputFolder = outputFolder,outputFile = outputFile,verboseMode = verboseMode,writeToTable = writeToTable,checkLevels = checkLevels,checkNames = checkNames,cdmVersion = cdmVersion, cohortDefinitionId = cohortDefinitionId, cohortDatabaseSchema = cohortDatabaseSchema, cohortTableName = cohortTableName)
         ''')
     with open(f'{output_folder}/{schema_name}.json', 'rt') as f:
-            return json.loads(f.read())
+        return json.loads(f.read())
 
 
 if __name__ == "__main__":
