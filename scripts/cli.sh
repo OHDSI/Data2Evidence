@@ -4,7 +4,7 @@ set -o errexit
 
 version=develop #default version
 
-cmd=${@: -1}
+cmd=""
 script_full_path=$(dirname "$0")
 
 if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
@@ -14,7 +14,7 @@ elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
 elif [ -d "$script_full_path/../@data2evidence/cli/" ]; then
   node_modules_path=$script_full_path/../@data2evidence/cli/
 else
-  echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Existing"
+  echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Exiting"
   exit -1
 fi
 
@@ -32,23 +32,30 @@ demo=""
 dicom=""
 compose=""
 args=""
+services=""
 
-while getopts efd:t:c:v:a:n:p:i flag
-do
-    case "${flag}" in
-        d) function_path=${OPTARG};;
-        e) demo=--profile="demodb";;
-        f) fhir=--profile="fhir";;
-        i) dicom=--profile="dicom";;
-        c) compose="--file ${OPTARG}";;
-        t) context="--context ${OPTARG}";;
-        v) version=${OPTARG};;
-        a) args=${OPTARG};;
-        n) env=${OPTARG};;
-        p) export PORT=${OPTARG};;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--function-path) function_path="$2"; shift ;;
+        -e|--demo) demo=--profile="demodb" ;;
+        -f|--fhir) fhir=--profile="fhir" ;;
+        -i|--dicom) dicom=--profile="dicom" ;;
+        -c|--compose-file) compose="--file $2"; shift ;;
+        -t|--docker-context) context="--context $2"; shift ;;
+        -v|--version) version="$2"; shift ;;
+        -a|--args) args="$2"; shift ;;
+        -n|--env-file) env="$2"; shift ;;
+        -p|--port) export PORT="$2"; shift ;;
+        -s|--services) services="$2"; shift ;;
+        *) if [[ -z ${cmd:-} ]]; then
+               cmd=$1
+           else
+               echo "Unexpected argument after command: $1"
+               exit 1
+           fi
     esac
+    shift
 done
-
 
 if [ -n "${function_path:-}" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
@@ -58,7 +65,6 @@ else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
-
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
@@ -75,12 +81,18 @@ dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $nod
 
 case $cmd in
     start)
-        cmd="$dockerbasecmd up --wait"
+        cmd="$dockerbasecmd up --force-recreate --wait"
+        if [ -n "$services" ]; then
+            cmd="$cmd --no-deps $services"
+        fi
         echo $cmd
         $cmd
         ;;
     stop)
         cmd="$dockerbasecmd stop"
+        if [ -n "$services" ]; then
+            cmd="$cmd $services"
+        fi
         echo $cmd
         $cmd
         ;;
@@ -95,12 +107,15 @@ case $cmd in
         $cmd
         ;;
     logs)
-        cmd="$dockerbasecmd logs -f -t"
+        cmd="$dockerbasecmd logs -t"
+        if [ -n "$services" ]; then
+            cmd="$cmd $services"
+        fi
         echo $cmd
         $cmd
         ;;
     clean)
-        read -p "This action will delete all docker containers and volumnes. Continue (y/n)?" choice
+        read -p "This action will delete all docker containers and volumes. Continue (y/n)?" choice
         case "$choice" in
             y|Y)
                 cmd="$dockerbasecmd down --volumes --remove-orphans"
@@ -137,22 +152,30 @@ case $cmd in
         else
             echo "d2e: $cmd is not a d2e command."
         fi
-        echo ""
-        echo "Usage: d2e [OPTIONS] COMMAND"
-        echo ""
-        echo "Commands:"
-        echo "  init        Initializes D2E directory and generates .env file"
-        echo "  start       Starts d2e services. Requires d2e init and d2e setup to be run."
-        echo "  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run."
-        echo "  stop        Stops d2e services"
-        echo "  clean       Removes d2e docker containers and volumnes"
-        echo ""
-        echo "Options:"
-        echo " -e           Include demo database"
-        echo " -f           Include FHIR Server"
-        echo " -d [PATH]    Development mode. [PATH] is the path to functions"
-        echo " -c [PATH]    [PATH] is path to an additional docker compose file"
-        echo " -t [CONTEXT] Use docker context"
-        echo " -v [VERSION] Version of the d2e services to use"
+        cat << EOT
+
+Usage: d2e [OPTIONS] COMMAND
+
+Commands:
+  init        Initializes D2E directory and generates .env file
+  start       Starts d2e services. Requires d2e init and d2e setup to be run.
+  stop        Stops d2e services
+  clean       Removes d2e docker containers and volumes
+  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run.
+
+Options:
+ -d, --function-path [PATH] Development mode. [PATH] is the path to functions
+ -e, --demo                 Include demo database
+ -f, --fhir                 Include FHIR Server
+ -i, --dicom                Include DICOM Server
+ -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
+ -t, --docker-context [CONTEXT] Use docker context
+ -v, --version [VERSION]    Version of the d2e services to use
+ -a, --args [ARGUMENTS]     Additional arguments for docker-compose
+ -n, --env-file [FILE]      Path to environment file
+ -p, --port [PORT]          Port number to use
+ -s, --services [SERVICES]  Comma-separated list of services to start/stop
+
+EOT
         ;;
 esac
