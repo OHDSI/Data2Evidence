@@ -48,7 +48,14 @@ const actions = {
   },
   ajaxAuth(
     { dispatch, state, getters, commit },
-    { method = 'post', url, params = {}, cancelToken, responseType }: AxiosRequestConfig
+    {
+      method = 'post',
+      url,
+      params = {},
+      cancelToken,
+      responseType,
+      datasetId,
+    }: AxiosRequestConfig & { datasetId?: string }
   ) {
     const portalAPI = getPortalAPI()
 
@@ -63,6 +70,9 @@ const actions = {
       const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
       if (bearerToken != null) {
         headers = { Authorization: `Bearer ${bearerToken}` }
+      }
+      if (datasetId) {
+        headers = { ...headers, datasetid: datasetId }
       }
       if (getters.getJwtTokenValue === null && bearerToken) {
         commit(SET_JWT_TOKEN_VALUE, jwt.decode(bearerToken))

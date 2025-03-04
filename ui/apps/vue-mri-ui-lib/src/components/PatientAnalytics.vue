@@ -2,7 +2,7 @@
   <div :class="['pa-component-wrapper']">
     <div class="fullHeight pa-splitter">
       <splitpanes class="default-theme" @resize="this.paneSize = $event[0].size">
-        <pane :size="paneSize" min-size="20">
+        <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
               <div>
@@ -37,7 +37,7 @@
             <bookmarks
               @unloadBookmarkEv="toggleCohorts(false)"
               :init-bookmark-id="this.querystring.bmkId"
-              v-if="displayCohorts"
+              v-if="getMriFrontendConfig && displayCohorts"
             ></bookmarks>
 
             <filters v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"></filters>
@@ -205,6 +205,7 @@ export default {
       chartBusy: false,
       PANE_SIZE,
       PANEL,
+      splitterMinWidth: 0,
     }
   },
   created() {
@@ -246,6 +247,11 @@ export default {
   },
   mounted() {
     this.isLocal = 'isLocal' in getPortalAPI()
+    this.updateMinSplitterWidth()
+    window.addEventListener('resize', this.updateMinSplitterWidth)
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.updateMinSplitterWidth)
   },
   computed: {
     ...mapGetters([
@@ -347,9 +353,9 @@ export default {
     },
     togglePanel(panel) {
       if (panel === PANEL.LEFT) {
-        this.paneSize = this.paneSize > 0 ? PANE_SIZE.HIDDEN : PANE_SIZE.OPEN
+        this.paneSize = this.paneSize > 0 ? PANE_SIZE.HIDDEN : this.splitterMinWidth
       } else if (panel === PANEL.RIGHT) {
-        this.paneSize = this.paneSize === PANE_SIZE.FULL ? PANE_SIZE.OPEN : PANE_SIZE.FULL
+        this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
       }
     },
     toggleChartAndListModal(toggle) {
@@ -423,6 +429,9 @@ export default {
     },
     closeChartListModal() {
       this.toggleChartAndListModal(false)
+    },
+    updateMinSplitterWidth() {
+      this.splitterMinWidth = (500 / window.innerWidth) * 100
     },
   },
   components: {

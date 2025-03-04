@@ -106,6 +106,7 @@ const actions = {
   },
   setActiveChart({ commit, dispatch }, chartName) {
     dispatch('clearResponse')
+    dispatch('clearCohortDefinitionResponse')
     commit(types.SWITCH_CHART, chartName)
   },
   cancelDownloadCSV({ dispatch }) {

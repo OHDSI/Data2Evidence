@@ -24,7 +24,7 @@ const state: ModuleState = {
 const getters = {
   getText:
     (moduleState: ModuleState, moduleGetters: ModuleGetter): ModuleGetter['getText'] =>
-    (key: string, param: string | string[]) => {
+    (key: string, param?: string | string[]) => {
       let text = moduleGetters.getTextFromLocale(key, moduleState.currentLocale)
       if (text === '') {
         // if key is not in "en_US", use "en" or "DEFAULT" as locale

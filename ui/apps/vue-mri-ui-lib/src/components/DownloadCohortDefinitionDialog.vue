@@ -38,7 +38,7 @@ export default {
   },
   watch: {},
   methods: {
-    ...mapActions(['setFireDownloadZIP', 'cancelCohortDefinitionQuery', 'fireCohortDefinitionQuery']),
+    ...mapActions(['setFireDownloadZIP', 'cancelCohortDefinitionQuery', 'fireD2EToAtlasCohortDefinitionQuery']),
     cancel() {
       if (this.busy) {
         this.cancelCohortDefinitionQuery()
@@ -57,7 +57,7 @@ export default {
         document.body.removeChild(link)
         this.$emit('closeEv')
       }
-      this.fireCohortDefinitionQuery().then(callback)
+      this.fireD2EToAtlasCohortDefinitionQuery().then(callback)
     },
   },
   components: {

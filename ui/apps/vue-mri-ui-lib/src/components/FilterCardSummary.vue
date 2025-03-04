@@ -26,7 +26,9 @@
                         getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
                       }}</span>
                       <span class="bookmark-headelement" v-else>{{ filterCard.name }}</span>
-                      <b-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ml-2 filter-card-badge">{{ getBadgeText(filterCard) }}</b-badge>
+                      <b-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ml-2 filter-card-badge">{{
+                        getBadgeText(filterCard)
+                      }}</b-badge>
                       <span class="bookmark-headelement" v-if="filterCard.isExcluded"
                         >({{ getText('MRI_PA_LABEL_EXCLUDED') }})</span
                       >
@@ -136,7 +138,7 @@ export default {
     },
     getCardsFormatted() {
       const boolContainers = this.bookmark.filterCardData
-      
+
       const returnObj = []
       try {
         for (let i = 0; i < boolContainers.length; i += 1) {
@@ -222,12 +224,12 @@ export default {
       }
       return returnObj
     },
-    displayShowCohortEntryExit() {      
+    displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
-    }
+    },
   },
   methods: {
-    ...mapActions(['setActiveChart', 'fireBookmarkQuery', 'fireCohortDefinitionQuery']),
+    ...mapActions([]),
     unloadBookmark() {
       this.$emit('unloadFilterCardSummaryEv')
     },
@@ -318,11 +320,15 @@ export default {
       return attributeId
     },
     isDisplayBadge(filterCard) {
-      return this.displayShowCohortEntryExit && (filterCard.isEntry || filterCard.isExit);
+      return this.displayShowCohortEntryExit && (filterCard.isEntry || filterCard.isExit)
     },
     getBadgeText(filterCard) {
-      return filterCard.isEntry ? this.getText('MRI_PA_CHART_ENTRY') : filterCard.isExit ? this.getText('MRI_PA_CHART_EXIT') : ""
-    }
+      return filterCard.isEntry
+        ? this.getText('MRI_PA_CHART_ENTRY')
+        : filterCard.isExit
+        ? this.getText('MRI_PA_CHART_EXIT')
+        : ''
+    },
   },
   components: {
     icon,

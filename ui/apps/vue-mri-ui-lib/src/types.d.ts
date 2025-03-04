@@ -186,10 +186,92 @@ interface FormattedBookmark {
   shared: boolean
   cohortDefinitionId?: number | undefined
 }
+interface FormattedAtlasCohortDefinition {
+  id: number
+  userId: string
+  username: string
+  createdOn: string
+  updatedOn: string
+  cohortDefinitionId?: number | undefined
+  name: string
+}
 
-interface FormattedcohortDefinition {
+interface FormattedMaterializedCohort {
   id: number
   patientCount: number
   cohortDefinitionName: string
   createdOn: string
 }
+
+type FilterCardContent = {
+  content: {
+    configPath: string
+    instanceNumber: number
+    instanceID: string
+    name: string
+    inactive: boolean
+    isEntry: boolean
+    isExit: boolean
+    type: string
+    attributes: {
+      type: string
+      op: string
+      content: {
+        configPath: string
+        instanceID: string
+        type: string
+        constraints: {
+          type: string
+          op: string
+          content: {
+            content?: {
+              operator: string
+              value: string
+            }[]
+            type: string
+            operator: string
+            value: string
+          }[]
+        }
+      }[]
+    }
+    content?: { attributes: { content: {}[] } }
+    op?: string
+    advanceTimeFilter: any
+  }[]
+  type: string
+  op: string
+}
+
+type Bookmark = {
+  id: string
+  username: string
+  name: string
+  viewName: any
+  data: string
+  version: number
+  dateModified: string
+  timeModified: string
+  filterCardData: FilterCardContent[]
+  chartType: string
+  shared: boolean
+  axisInfo: string[]
+  disableUpdate: boolean
+}
+type CohortDefinition = {
+  id: number
+  patientCount: number
+  cohortDefinitionName: string
+  createdOn: string
+}
+
+type AtlasCohortDefinition = FormattedAtlasCohortDefinition
+
+type BookmarkDisplay = {
+  displayName: string
+  bookmark?: null | Bookmark
+  cohortDefinition?: null | CohortDefinition
+  atlasCohortDefinition?: null | AtlasCohortDefinition
+}
+
+type BookmarkType = 'A' | 'D' | 'M' | 'A+M' | 'D+M'

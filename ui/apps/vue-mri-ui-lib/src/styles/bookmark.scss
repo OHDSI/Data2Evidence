@@ -1,9 +1,22 @@
 @import '../styles/mri-variables';
+.ui-lightest-bg {
+  background: $UiLightestBG;
+}
+.ui-light-text {
+  color: $UiLightText;
+}
+.ui-darkest-text {
+  color: $UiDarkestText;
+}
+.ui-dark-text {
+  color: $UiDarkText;
+}
+
 // TODO: remove filtercard-summary below, as the style guide is under progress
 .bookmark-container,
 .filtercard-summary {
   width: 100%;
-  height: calc(100% - 50px);
+  height: calc(100% - 20px);
   position: static !important;
   background-color: #f2f0f1;
   display: flex;
@@ -263,7 +276,7 @@
             .bookmark-item-no-content {
               display: flex;
               justify-content: center;
-              color: #ACABA8;
+              color: #acaba8;
               font-weight: bold;
               margin-bottom: 5px;
             }
@@ -330,22 +343,6 @@
             }
           }
         }
-      }
-    }
-  }
-  .bookmark-footer {
-    height: 56px;
-    padding: 1rem;
-    background-color: #fff;
-    width: 100%;
-    .appButton {
-      color: $FooterButtonTextLight;
-    }
-    .app-checkbox {
-      display: flex;
-      line-height: 32px;
-      .app-label {
-        color: $FooterButtonTextLight;
       }
     }
   }

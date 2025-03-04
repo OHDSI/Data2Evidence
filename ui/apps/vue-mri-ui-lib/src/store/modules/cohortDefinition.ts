@@ -14,7 +14,7 @@ const getters = {
 }
 
 const actions = {
-  clearResponse({ commit }) {
+  clearCohortDefinitionResponse({ commit }) {
     commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: {} })
   },
   cancelCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }) {
@@ -22,7 +22,7 @@ const actions = {
       cancel('cancel')
     }
   },
-  fireCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }) {
+  fireD2EToAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }) {
     if (cancel) {
       cancel('cancel')
     }
@@ -55,7 +55,7 @@ const actions = {
         throw error
       })
   },
-  fireRenameCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { cohortDefinitionId, newName }) {
+  fireRenameMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, { cohortDefinitionId, newName }) {
     if (cancel) {
       cancel('cancel')
     }
@@ -87,7 +87,7 @@ const actions = {
         })
       })
   },
-  fireDeleteCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
+  fireDeleteMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
     if (cancel) {
       cancel('cancel')
     }
@@ -120,6 +120,57 @@ const actions = {
         dispatch('setAlertMessage', {
           message: rootGetters.getText('MRI_PA_DELETE_BMK_ERROR'),
         })
+      })
+  },
+  fireDeleteAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, atlasCohortDefinitionId) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+
+    const datasetId = rootGetters.getSelectedDataset.id
+
+    const url = `/d2e-webapi/cohortdefinition/${atlasCohortDefinitionId}`
+
+    return dispatch('ajaxAuth', {
+      url,
+      method: 'DELETE',
+      cancelToken,
+      datasetId,
+    })
+      .then(({ data }) => {
+        dispatch('setToastMessage', {
+          text: rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS'),
+        })
+      })
+      .catch(error => {
+        dispatch('setAlertMessage', {
+          message: rootGetters.getText('MRI_PA_DELETE_BMK_ERROR'),
+        })
+      })
+  },
+  fireCreateAtlasMaterializedCohortQuery({ state, commit, dispatch, rootGetters }, { url }) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+    return dispatch('ajaxAuth', {
+      url,
+      cancelToken,
+      datasetId: rootGetters.getSelectedDataset.id,
+      method: 'get',
+    })
+      .then(response => {
+        dispatch('setToastMessage', {
+          text: rootGetters.getText('MRI_PA_COLL_SUCCESS_ADD_PATIENT'),
+        })
+      })
+      .catch(error => {
+        throw rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
       })
   },
 }
