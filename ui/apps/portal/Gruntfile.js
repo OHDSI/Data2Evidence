@@ -81,26 +81,6 @@ module.exports = function (grunt) {
         },
         components: true,
       },
-      ps_config: {
-        options: {
-          resources: {
-            cwd: `${srcUIDir}/PatientSummaryConfig/ui5`,
-            src: [
-              "./*.js",
-              "**/*.js",
-              "**/*.xml",
-              "**/*.html",
-              "**/*.json",
-              "!**/*-dbg*.js",
-              "!**/Component-preload.js",
-            ],
-            prefix: "hc/hph/config/patient/ui/",
-          },
-          dest: `${srcUIDir}/PatientSummaryConfig/ui5`,
-          compatVersion: ui5Version,
-        },
-        components: true,
-      },
       allLibraries: {
         options: {
           resources: {
@@ -190,7 +170,6 @@ module.exports = function (grunt) {
     "less:style",
     "openui5_preload:cdm",
     "openui5_preload:pa_config",
-    "openui5_preload:ps_config",
     "openui5_preload:allLibraries",
     "copy:originalsToProcess",
     "copy:processToOriginals",

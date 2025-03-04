@@ -1,6 +1,0 @@
-{
-    "exposed": true,
-    "authorization": [
-        "sap.hc.hph.patient.plugins.tabs.diagnoses::EndUser"
-    ]
-}

@@ -1,6 +1,0 @@
-{
-    "exposed": true,
-    "authorization": [
-        "hc.hph.patient.plugins.tabs.timeline::EndUser"
-    ]
-}

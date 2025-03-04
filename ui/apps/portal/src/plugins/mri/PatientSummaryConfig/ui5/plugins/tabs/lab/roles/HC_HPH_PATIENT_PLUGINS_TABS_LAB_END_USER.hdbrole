@@ -1,4 +1,0 @@
-role hc.hph.patient.plugins.tabs.lab.roles::HC_HPH_PATIENT_PLUGINS_TABS_LAB_END_USER
-{
-    application privilege: hc.hph.patient.plugins.tabs.lab::EndUser;
-}

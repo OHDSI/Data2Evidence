@@ -1,4 +1,0 @@
-role hc.hph.patient.plugins.widgets.risks.roles::HC_HPH_PATIENT_PLUGINS_WIDGETS_RISKS_END_USER
-{
-    application privilege: hc.hph.patient.plugins.widgets.risks::EndUser;
-}

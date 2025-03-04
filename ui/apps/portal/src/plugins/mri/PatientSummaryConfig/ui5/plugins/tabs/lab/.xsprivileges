@@ -1,8 +1,0 @@
-{
-    "privileges": [
-        {
-            "name": "EndUser",
-            "description": "Privilege to use the Patient Summary Lab Documents Tab Extension"
-        }
-    ]
-}
