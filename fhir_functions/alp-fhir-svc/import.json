@@ -46,7 +46,7 @@
   "base64": "jsr:@std/encoding/base64",
   "crypto": "node:crypto",
   "pg": "npm:pg@^8.4.2",
-  "hdb": "npm:hdb@0.19.3",
+  "hdb": "npm:hdb@0.19.12",
   "underscore": "npm:underscore@^1.12.1",
   "typescript": "npm:typescript@4.4.4",
   "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
