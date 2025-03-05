@@ -352,6 +352,8 @@ async function main() {
     "*********************************** SIGN-IN EXPERIENCES **********************************************"
   );
   let signinExperience = {
+    tenantId: "default",
+    id: "default",
     branding: {
       favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/favicon.ico`,
       logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/d2e.svg`,
@@ -382,6 +384,68 @@ async function main() {
     console.log(
       "*********************************************************************************\n"
     );
+  }
+
+  if (process.env.LOGTO__CONNECTOR_CONFIG){
+    console.log(
+      "*********************************** SOCIAL CONNECTOR **********************************************"
+    );
+    const connectorEnvConfig = JSON.parse(process.env.LOGTO__CONNECTOR_CONFIG);
+
+    //Verify if existing connector exist
+    const connectorDBConfig: any = await fetchExisting(`connectors/${connectorEnvConfig.id}`, headers)
+    // console.log(`connectorDBConfig ${Object.keys(connectorDBConfig).length}`)
+    if(connectorDBConfig && Object.keys(connectorDBConfig).length > 0) {
+      //update
+      const connectorCallbackId = connectorEnvConfig.id
+      delete connectorEnvConfig.id
+      delete connectorEnvConfig.connectorId
+      await logto.patch(`connectors/${connectorCallbackId}`, headers, connectorEnvConfig)
+      console.log("Social connector updated..")
+    } else {
+      // create
+      await logto.post("connectors", headers, connectorEnvConfig)
+      console.log("Social connector created..")
+    }
+    // Update Sign-in Experiences
+    console.log(
+      "*********************************** SIGN-IN EXPERIENCES **********************************************"
+    );
+    const signinExperienceSocialConnector: {
+      branding: Object;
+      color: Object;
+      customCss: string;
+      tenantId: string;
+      id: string;
+      signInMode: string;
+      signUp: Object;
+      signIn: Object;
+      socialSignInConnectorTargets: string[];
+    } = {
+      ...signinExperience,
+      signUp : { verify: false, password: true, identifiers: ["username"] },
+      signIn: { methods: [{
+                      "password": true, "identifier": "username",
+                      "verificationCode": false, "isPasswordPrimary": true
+                    }]
+               },
+      socialSignInConnectorTargets: ["azuread-alp"]
+    };
+
+    if (process.env.LOGTO__DISABLE_BASIC_AUTH === "true") {
+      signinExperienceSocialConnector["signIn"] = { methods: [] }
+      signinExperienceSocialConnector["signUp"] = { verify: false, password: false, identifiers: [] }
+    } 
+
+    await update("sign-in-exp", headers, signinExperienceSocialConnector);
+    // console.log(`signinExperienceSocialConnector ${JSON.stringify(signinExperienceSocialConnector)}`)
+    console.log(
+      "*********************************************************************************\n"
+    );
+    console.log(
+      "*********************************************************************************\n"
+    );
+
   }
 
   console.log(
