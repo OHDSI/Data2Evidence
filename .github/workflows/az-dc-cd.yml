@@ -128,7 +128,7 @@ jobs:
 
       - name: docker compose up
         run: |
-          yarn remote:minerva up --remove-orphans --force-recreate --wait
+          yarn remote:minerva start
           DC_EXIT_CODE=$?
           echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
 

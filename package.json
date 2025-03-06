@@ -16,7 +16,7 @@
     "init:minerva": "D2ECLI_NODE_MODULES_PATH=. ENV_TYPE=${ENV_TYPE:-local} npx d2e init",
     "start": "ENV_TYPE=remote D2ECLI_NODE_MODULES_PATH=. npx d2e -e -n .env.remote -p 3000 start",
     "start:ci": "DOCKER_TREX_TAG_NAME=develop npm run start:minerva",
-    "remote:minerva": "ENV_TYPE=remote D2ECLI_NODE_MODULES_PATH=. npx d2e -e -n .env.remote start",
+    "remote:minerva": "ENV_TYPE=remote D2ECLI_NODE_MODULES_PATH=. npx d2e -e -n .env.remote",
     "local:minerva": "PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. npx d2e -e -n .env.local -d ./functions -p 41100",
     "build:minerva": "npm run local:minerva -- build",
     "start:minerva": "npm run local:minerva -- start",
