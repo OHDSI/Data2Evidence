@@ -169,6 +169,7 @@ export interface FhirValueSetExpansionContainsWithExt extends Concept {
   contains?: FhirValueSetExpansionContainsWithExt[];
   useDescendants?: boolean;
   useMapped?: boolean;
+  score?: number;
 }
 
 export interface StandardConcepts {

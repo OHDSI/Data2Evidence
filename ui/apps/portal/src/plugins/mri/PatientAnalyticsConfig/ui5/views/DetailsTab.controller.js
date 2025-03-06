@@ -472,6 +472,9 @@ sap.ui.define([
             if (oldConfig.panelOptions.hasOwnProperty("addToCohorts")) {
                 newConfig.panelOptions.addToCohorts = oldConfig.panelOptions.addToCohorts;
             }
+            if (oldConfig.panelOptions.hasOwnProperty("atlasCohortDefinition")) {
+                newConfig.panelOptions.atlasCohortDefinition = oldConfig.panelOptions.atlasCohortDefinition;
+            }
             if (oldConfig.panelOptions.hasOwnProperty("calcViewAccessPoint")) {
                 newConfig.panelOptions.calcViewAccessPoint = oldConfig.panelOptions.calcViewAccessPoint;
             }

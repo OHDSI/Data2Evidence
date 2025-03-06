@@ -93,7 +93,7 @@
             </template>
           </Button>
         </div>
-        <div style="flex: 3; margin-left: 10px">
+        <div v-if="enableAtlasCohortDefinition" style="flex: 3; margin-left: 10px">
           <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
             <template #icon-left>
               <GlobeIcon style="margin-right: 10px" fill="white" />
@@ -123,7 +123,7 @@
       <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
         {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
       </div>
-      <div style="height: calc(100% - 100px)">
+      <div v-else style="height: calc(100% - 100px)">
         <BookmarkItems
           :bookmarksDisplay="bookmarksDisplay"
           :compareCohortsSelectionList="aSelBookmarkList"
@@ -226,7 +226,6 @@ export default {
       showCohortListDialog: false,
       showAddCohortDialog: false,
       showIncompatibleMessage: false,
-      enableAddToCohort: false,
       cohortName: 'New cohort',
       isInvalidName: false,
       showSaveOrDiscardDialog: false,
@@ -241,9 +240,6 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
     }
-  },
-  created() {
-    this.enableAddToCohort = this.getMriFrontendConfig._internalConfig.panelOptions.addToCohorts
   },
   watch: {
     initBookmarkId() {
@@ -262,6 +258,9 @@ export default {
       'getDisplayBookmarks',
       'getSelectedDataset',
     ]),
+    enableAtlasCohortDefinition() {
+      return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
+    },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
     },

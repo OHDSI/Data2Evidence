@@ -2,13 +2,15 @@
 
 ## Inital set up
 
-- Prepare your own Github Personal Access Token (classic). 
+- Prepare your own Github Personal Access Token (classic).
 - Ensure that it has `read:packages` scope. See [here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages)
 - Create an environment variable in `.zshrc`
+
 ```
 export GITHUB_TOKEN=<GITHUB_PERSONAL_ACCESS_TOKEN>
 ```
-- Run `source ~/.zshrc` to refresh `.zshrc` file. 
+
+- Run `source ~/.zshrc` to refresh `.zshrc` file.
 - Run `yarn` at the root to install node-modules
 
 ## Portal (apps/portal)
@@ -54,3 +56,32 @@ For built-in plugin, refer to [this](./apps/portal/src/plugins/README.md)
 ### Plugins Troubleshooting
 
 - If nx commands do not seem to be working, try `nx clear-cache` and rerun nx commands.
+
+## Testing full UI build
+
+Attaching directly to the `/resources` folder does not work some times, when the ui npm module loads after startup and overwrites the contents. Hence we attach the files to another folder, then copy them when needed.
+
+```bash
+cd ui
+# The local .env will replace values during portal build
+mv ./apps/portal/.env ./apps/portal/.env-temp && yarn build-all && mv ./apps/portal/.env-temp ./apps/portal/.env
+```
+
+Uncomment
+
+```bash
+# docker-compose-local.yml
+- ./ui/resources:/usr/src/local-resources # For local ui development only
+
+yarn start:minerva
+```
+
+Attach shell to trex container
+
+```bash
+mv /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources-backup
+rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources
+cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources
+```
+
+Access latest built files on localhost:41100

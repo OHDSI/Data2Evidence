@@ -7,11 +7,13 @@
   &__tabs {
     display: flex;
     justify-content: center;
-    margin-bottom: 15px;
+    margin-bottom: 1px;
+    margin-top: 11px;
   }
 
-  &__related-concepts{
-    display:flex
+  &__related-concepts {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
-  
 }

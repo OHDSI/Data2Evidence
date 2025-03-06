@@ -961,6 +961,7 @@ export const i18nDefault = {
     TERMINOLOGY_LIST__ID: "ID",
     TERMINOLOGY_LIST__MAPPED: "Mapped",
     TERMINOLOGY_LIST__NAME: "Name",
+    TERMINOLOGY_LIST__SCORE: "Score",
     TERMINOLOGY_LIST__VALIDITY: "Validity",
     TERMINOLOGY_LIST__VOCABULARY: "Vocabulary",
     TEST_KEY: "default",

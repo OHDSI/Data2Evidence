@@ -1,6 +1,6 @@
 .concept-sets {
   padding: 32px;
-  background-color: #F2F0F1;
+  background-color: #f2f0f1;
   height: 100%;
 
   &__content {
@@ -37,10 +37,13 @@
   &__table {
     margin-top: 10px;
     .MuiTable-root {
-      border: 1px solid #dad7d7;
+      border: none;
     }
     .MuiTableRow-root {
-      border: 1px solid #dad7d7;
+      border: none;
+    }
+    .MuiTableCell-root {
+      border: none;
     }
 
     .MuiTableCell-root {

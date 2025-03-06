@@ -326,13 +326,17 @@ export const Terminology: FC<TerminologyProps> = ({
   const isDrawer = !!onClose;
 
   const terminologyHeaderHeightPx = 40;
-  const portalHeaderHeightPx = 72;
+  const portalHeaderHeightPx = 80;
   const conceptSetNameHeightPx = 60;
-  const conceptSetTabsHeightPx = 60;
+  const mainBodyPadding = 2 * 32;
+  const mainContentPadding = 2 * 10;
+  const conceptSearchAndSetsTabs = 58;
   const datasetSelectorHeightPx = 38;
   const searchAndDetailsHeightOffsetPx =
-    (isDrawer ? terminologyHeaderHeightPx : terminologyHeaderHeightPx + portalHeaderHeightPx) +
-    (isConceptSet ? conceptSetNameHeightPx + conceptSetTabsHeightPx : 0) +
+    (isDrawer
+      ? terminologyHeaderHeightPx
+      : portalHeaderHeightPx + mainBodyPadding + conceptSearchAndSetsTabs + mainContentPadding) +
+    (isConceptSet ? conceptSetNameHeightPx : 0) +
     (!activeDatasetId ? datasetSelectorHeightPx : 0);
 
   const onSelectConceptId = useCallback(
@@ -471,48 +475,51 @@ export const Terminology: FC<TerminologyProps> = ({
         <div
           style={{
             height: `calc(100vh - ${searchAndDetailsHeightOffsetPx}px)`,
-            padding: "10px",
             paddingLeft: "20px",
             paddingRight: "20px",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {isConceptSet ? (
             <TabSection currentTabNo={tab} changeTab={changeTab} selectedConceptsCount={selectedConcepts.length} />
           ) : null}
-          <div
-            className="terminology__search"
-            style={{ height: showDetails ? "65%" : "100%", display: "flex", flexDirection: "column" }}
-          >
-            {!userId && <div>{getText(i18nKeys.TERMINOLOGY__MISSING_USER_ID)}</div>}
-            {userId && (
-              <TerminologyList
-                userId={userId}
-                onConceptClick={setConceptId}
-                selectedConceptId={conceptId}
-                onSelectConceptId={onSelectConceptId}
-                initialInput={initialInput}
-                isConceptSet={isConceptSet}
-                selectedConcepts={selectedConcepts}
-                tab={tab}
-                toggleDescendantsAndMapped={toggleDescendantsAndMapped}
-                showAddIcon={showAddIcon}
-                conceptsResult={conceptsResult}
-                setConceptsResult={setConceptsResult}
-                datasetId={activeDatasetId}
-                isDrawer={isDrawer}
-                defaultFilters={defaultFilters}
-              />
-            )}
-          </div>
-          <div className="terminology__details" style={{ height: showDetails ? "35%" : "0%" }}>
-            {showDetails && conceptId !== null ? (
-              <TerminologyDetail
-                conceptId={conceptId}
-                setConceptId={setConceptId}
-                userId={userId}
-                datasetId={activeDatasetId}
-              />
-            ) : null}
+          <div style={{ display: "flex", overflow: "auto", height: "100%" }}>
+            <div
+              className="terminology__search"
+              style={{ width: showDetails ? "65%" : "100%", display: "flex", flexDirection: "column", height: "100%" }}
+            >
+              {!userId && <div>{getText(i18nKeys.TERMINOLOGY__MISSING_USER_ID)}</div>}
+              {userId && (
+                <TerminologyList
+                  userId={userId}
+                  onConceptClick={setConceptId}
+                  selectedConceptId={conceptId}
+                  onSelectConceptId={onSelectConceptId}
+                  initialInput={initialInput}
+                  isConceptSet={isConceptSet}
+                  selectedConcepts={selectedConcepts}
+                  tab={tab}
+                  toggleDescendantsAndMapped={toggleDescendantsAndMapped}
+                  showAddIcon={showAddIcon}
+                  conceptsResult={conceptsResult}
+                  setConceptsResult={setConceptsResult}
+                  datasetId={activeDatasetId}
+                  isDrawer={isDrawer}
+                  defaultFilters={defaultFilters}
+                />
+              )}
+            </div>
+            <div className="terminology__details" style={{ width: showDetails ? "100%" : "0%" }}>
+              {showDetails && conceptId !== null ? (
+                <TerminologyDetail
+                  conceptId={conceptId}
+                  setConceptId={setConceptId}
+                  userId={userId}
+                  datasetId={activeDatasetId}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

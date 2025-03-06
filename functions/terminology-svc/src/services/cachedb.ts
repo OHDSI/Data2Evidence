@@ -9,7 +9,6 @@ import {
   FhirConceptMapGroup,
   FhirConceptMap,
   FhirConceptMapElementWithExt,
-  FhirConceptMapElementTarget,
   IConcept,
   Filters,
   IDuckdbFacet,
@@ -97,7 +96,6 @@ export class CachedbService {
     };
     try {
       const searchConcepts1: number[] = [conceptId];
-
       const vocabSchemaName = await this.getVocabSchemaName(datasetId);
       const cachedbDao = new CachedbDAO(this.token, datasetId, vocabSchemaName);
       const DuckdbResultConcept1 = await cachedbDao.getMultipleExactConcepts(
@@ -118,63 +116,67 @@ export class CachedbService {
       if (conceptC1.expansion.contains.length > 0) {
         const detailsC1: FhirValueSetExpansionContainsWithExt =
           conceptC1.expansion.contains[0];
-        const fhirTargetElements: FhirConceptMapElementTarget[] = [];
         const conceptRelations = await cachedbDao.getConceptRelationships(
           detailsC1.conceptId
         );
 
-        for (let i = 0; i < conceptRelations.hits.length; i++) {
-          const relationships = await cachedbDao.getRelationships(
-            conceptRelations.hits[i].relationship_id
-          );
-          const searchConcepts2: number[] = [
-            conceptRelations.hits[i].concept_id_2,
-          ];
-          const DuckdbResultConcept2 =
-            await cachedbDao.getMultipleExactConcepts(searchConcepts2, true);
-          if (!DuckdbResultConcept2) {
-            continue;
-          }
-          const conceptC2: FhirValueSet =
-            this.duckdbResultMapping(DuckdbResultConcept2);
+        const relationshipIds = conceptRelations.hits.map(
+          (hit) => hit.relationship_id
+        );
+        const relationships = await cachedbDao.getRelationships(
+          relationshipIds
+        );
 
-          if (!conceptC2.expansion.contains) {
-            continue;
-          }
-          const detailsC2: FhirValueSetExpansionContainsWithExt =
-            conceptC2.expansion.contains[0];
-          if (!detailsC2) {
-            continue;
-          }
-          const searchConcepts3: number[] = [
-            relationships.hits[0].relationship_concept_id,
-          ];
-          const DuckdbResultConcept3 =
-            await cachedbDao.getMultipleExactConcepts(searchConcepts3, true);
-          if (!DuckdbResultConcept3) {
-            continue;
-          }
-          const conceptC3: FhirValueSet =
-            this.duckdbResultMapping(DuckdbResultConcept3);
+        const conceptIds2 = conceptRelations.hits.map(
+          (hit) => hit.concept_id_2
+        );
 
-          if (!conceptC3.expansion.contains) {
-            continue;
-          }
-          const detailsC3: FhirValueSetExpansionContainsWithExt =
-            conceptC3.expansion.contains[0];
-          if (!detailsC3) {
-            continue;
-          }
-          const fhirTargetElement: FhirConceptMapElementTarget = {
-            code: detailsC2.conceptId,
-            display: detailsC2.display,
-            equivalence: detailsC3.display,
-            vocabularyId: detailsC2.system,
-          };
-          fhirTargetElements.push(fhirTargetElement);
-        }
+        const exactConcepts2 = await cachedbDao.getMultipleExactConcepts(
+          conceptIds2,
+          true
+        );
+        const exactConcepts2Mapped = this.duckdbResultMapping(exactConcepts2);
+
+        const conceptIds3 = relationships.hits.map(
+          (hit) => hit.relationship_concept_id
+        );
+        const exactConcepts3 = await cachedbDao.getMultipleExactConcepts(
+          conceptIds3,
+          true
+        );
+        const exactConcepts3Mapped = this.duckdbResultMapping(exactConcepts3);
+
+        const conceptsWithRelationships = conceptRelations.hits
+          .map((hit) => {
+            const c2 = exactConcepts2Mapped.expansion.contains?.find(
+              (hit2) => hit2.conceptId === hit.concept_id_2
+            );
+            const relationship = relationships.hits.find(
+              (r) => r.relationship_id === hit.relationship_id
+            );
+            const detailsConcept3 =
+              exactConcepts3Mapped.expansion.contains?.find(
+                (c) => c.conceptId === relationship?.relationship_concept_id
+              );
+            if (!c2 || !detailsConcept3) {
+              return null;
+            }
+            return {
+              code: c2.conceptId,
+              display: c2.display,
+              vocabularyId: c2.system,
+              equivalence: detailsConcept3.display,
+            };
+          })
+          .filter((c) => c !== null) as {
+          code: number;
+          display: string;
+          vocabularyId: string;
+          equivalence: string;
+        }[];
+
         const conceptRelationsGroupByVocab = groupBy(
-          fhirTargetElements,
+          conceptsWithRelationships,
           "vocabularyId"
         );
         for (const targetVocab in conceptRelationsGroupByVocab) {
@@ -363,6 +365,7 @@ export class CachedbService {
         ? new Date(item.valid_end_date * 1000).toISOString()
         : "",
       validity,
+      score: item.score,
     };
     return details;
   }

@@ -319,7 +319,7 @@ onErrorCaptured((err, instance, info) => {
             </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">By:</div>
-              <div>{{ bookmarkDisplay.atlasCohortDefinition.userId }}</div>
+              <div>{{ bookmarkDisplay.atlasCohortDefinition.username }}</div>
             </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Updated On:</div>

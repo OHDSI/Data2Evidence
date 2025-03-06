@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState, useCallback, Dispatch, SetStateAction } from "react";
-import { Table, TableBody, TableHead, Tabs, Tab, Typography } from "@mui/material";
+import { Table, TableBody, TableHead, Tabs, Tab, Typography, Paper } from "@mui/material";
 import { TableRow, TableCell, Loader } from "@portal/components";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { TerminologyDetailsList } from "../../utils/types";
@@ -67,33 +67,31 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
     return <Loader />;
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {data && data.details && (
-        <Typography>
-          Selected {getText(i18nKeys.TERMINOLOGY_LIST__ID)}: {data?.details.conceptId}
-          <br />
-          Selected {getText(i18nKeys.TERMINOLOGY_LIST__NAME)}: {data?.details.display}
-        </Typography>
-      )}
-      <div
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", marginLeft: "5px" }}>
+      <div className="terminology_detail__tabs" style={{ display: "flex" }}>
+        <Tabs value={tabValue} onChange={handleTabSelectionChange}>
+          <Tab
+            disableRipple
+            label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
+            value={TerminologyDetailsTab.Hierarchy}
+          />
+          <Tab
+            disableRipple
+            label={getText(i18nKeys.TERMINOLOGY_DETAIL__RELATED_CONCEPTS)}
+            value={TerminologyDetailsTab.RelatedConcepts}
+          />
+        </Tabs>
+      </div>
+      <Paper
         className="terminology_detail__container"
-        style={{ visibility: data ? "inherit" : "hidden", height: "100%", overflowY: "auto" }}
+        style={{
+          visibility: data ? "inherit" : "hidden",
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <div className="terminology_detail__tabs">
-          <Tabs value={tabValue} onChange={handleTabSelectionChange}>
-            <Tab
-              disableRipple
-              label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
-              value={TerminologyDetailsTab.Hierarchy}
-            />
-            <Tab
-              disableRipple
-              label={getText(i18nKeys.TERMINOLOGY_DETAIL__RELATED_CONCEPTS)}
-              value={TerminologyDetailsTab.RelatedConcepts}
-            />
-          </Tabs>
-        </div>
-
         {tabValue == TerminologyDetailsTab.Hierarchy && (
           <ConceptHierarchy datasetId={datasetId} conceptId={conceptId} userId={userId} />
         )}
@@ -104,7 +102,8 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
               style={{
                 visibility: data ? "inherit" : "hidden",
                 overflow: "auto",
-                width: "60%",
+                width: "100%",
+                flex: 1,
               }}
             >
               <div className="terminology_detail__table-connections">
@@ -112,15 +111,21 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
                   <TableHead>
                     <TableRow>
                       <TableCell width="20%">{getText(i18nKeys.TERMINOLOGY_DETAIL__RELATIONSHIP)}</TableCell>
-                      <TableCell width="40%">{getText(i18nKeys.TERMINOLOGY_DETAIL__RELATES_TO)}</TableCell>
-                      <TableCell width="20%">{getText(i18nKeys.TERMINOLOGY_DETAIL__CONCEPT_ID)}</TableCell>
+                      <TableCell width="30%">{getText(i18nKeys.TERMINOLOGY_DETAIL__RELATES_TO)}</TableCell>
+                      <TableCell width="30%">{getText(i18nKeys.TERMINOLOGY_DETAIL__CONCEPT_ID)}</TableCell>
                       <TableCell width="20%">{getText(i18nKeys.TERMINOLOGY_DETAIL__VOCABULARY)}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody
                     sx={{
+                      "& .MuiTableRow-root:nth-of-type(odd)": {
+                        backgroundColor: "white",
+                      },
                       "& .MuiTableRow-root:nth-of-type(even)": {
-                        backgroundColor: "transparent",
+                        backgroundColor: "#fafafa",
+                      },
+                      "& .MuiTableCell-body": {
+                        border: "none",
                       },
                     }}
                   >
@@ -133,7 +138,7 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
                           sx={{
                             cursor: "pointer",
                             "&.MuiTableRow-root:hover": {
-                              backgroundColor: "#ccdef1",
+                              backgroundColor: "#f2f0f1",
                             },
                           }}
                         >
@@ -147,7 +152,7 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
                 </Table>
               </div>
             </div>
-            <div style={{ flex: 1, marginLeft: 15, overflow: "auto" }}>
+            <div style={{ flex: 1, overflow: "auto" }}>
               <div className="terminology_detail__table-details">
                 {data && data?.connections.length > 0 && (
                   <Table size="small" sx={{ "& .MuiTableCell-root": { color: "#000080" } }} stickyHeader>
@@ -202,6 +207,14 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
               </div>
             </div>
           </div>
+        )}
+      </Paper>
+
+      <div style={{ height: "52px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        {data && data.details && (
+          <Typography>
+            Currently viewing: {data?.details.conceptId} | {data?.details.display}
+          </Typography>
         )}
       </div>
     </div>

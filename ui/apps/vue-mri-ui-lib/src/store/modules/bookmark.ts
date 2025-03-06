@@ -247,7 +247,9 @@ const actions = {
         if (params.cmd === 'loadAll') {
           commit(types.SET_BOOKMARKS, data)
           commit(types.SET_MATERIALIZED_COHORTS, data)
-          commit(types.SET_ATLAS_COHORT_DEFINITIONS, data)
+          if (rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition) {
+            commit(types.SET_ATLAS_COHORT_DEFINITIONS, data)
+          }
           commit(types.SET_SCHEMANAME, {
             schemaName: data.schemaName,
           })

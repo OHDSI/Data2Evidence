@@ -29,6 +29,7 @@ export interface IConcept {
   invalid_reason: string;
   valid_start_date?: number;
   valid_end_date?: number;
+  score?: number;
 }
 
 export const IDuckdbFacetSchema = z.object({
@@ -128,6 +129,7 @@ export type FhirValueSetExpansionContainsWithExt = {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
 };
 
 export const FhirResourceType = {

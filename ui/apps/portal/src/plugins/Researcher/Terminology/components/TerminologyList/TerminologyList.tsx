@@ -319,6 +319,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       "conceptId",
       "conceptCode",
       "conceptName",
+      ...(listData.some((d) => d.score) ? ["score"] : []),
       "vocabularyId",
       "concept",
       "domainId",
@@ -344,6 +345,19 @@ const TerminologyList: FC<TerminologyListProps> = ({
         grow: true,
         size: isDrawer ? 250 : 350,
       },
+      ...(listData.some((d) => d.score)
+        ? [
+            {
+              accessorKey: "score",
+              header: getText(i18nKeys.TERMINOLOGY_LIST__SCORE),
+              grow: true,
+              size: 150,
+              // Round to 4 decimal places
+              accessorFn: (row: FhirValueSetExpansionContainsWithExt) =>
+                `${row.score ? Math.round(row.score * 10000) / 10000 : ""}`,
+            },
+          ]
+        : []),
       {
         accessorKey: "conceptClassId",
         header: getText(i18nKeys.TERMINOLOGY_LIST__CLASS),
@@ -387,7 +401,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
         filterSelectOptions: filterOptions?.validity ? mapFilterOptions(filterOptions.validity) : [],
         enableColumnFilter: tab === tabNames.SEARCH,
         grow: true,
-        size: 180,
+        size: 150,
       },
     ];
 
@@ -435,7 +449,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
           grow: false,
           size: 120,
           muiTableBodyCellProps: {
-            sx: { justifyContent: "center" },
+            sx: { justifyContent: "center", border: "none" },
           },
         },
         {
@@ -456,7 +470,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
           grow: false,
           size: 80,
           muiTableBodyCellProps: {
-            sx: { justifyContent: "center" },
+            sx: { justifyContent: "center", border: "none" },
           },
         },
       ];
@@ -482,6 +496,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       enableColumnFilter: false,
       enableColumnActions: false,
     },
+    enableStickyHeader: true,
     onColumnFiltersChange: setColumnFilters,
     state: { columnFilters, columnOrder, isLoading },
     enablePagination: false, // Use TablePagination instead of built in
@@ -497,12 +512,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
             selectedConceptId === row.original.conceptId
               ? "#ccdef1 !important"
               : staticRowIndex % 2
-              ? "#edf2f7  !important"
-              : "transparent !important",
+              ? "#fafafa  !important"
+              : "white !important",
           cursor: selectedConceptId === row.original.conceptId ? "auto" : "pointer",
         },
         "&.MuiTableRow-root:hover": {
-          backgroundColor: "#ccdef1 !important",
+          backgroundColor: "#f2f0f1 !important",
         },
       },
     }),
@@ -511,6 +526,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
         whiteSpace: "normal",
         wordWrap: "break-word",
         color: "#000080",
+        border: "none",
       },
     },
     muiTableContainerProps: {
