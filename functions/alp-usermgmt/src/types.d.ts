@@ -127,3 +127,8 @@ export interface AzureADSetupRequest {
   systemAdminGroupId: string
   userAdminGroupId: string
 }
+
+export interface IDataset {
+  id: string
+  token_dataset_code: string
+}

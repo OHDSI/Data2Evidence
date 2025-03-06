@@ -19,6 +19,11 @@
   - Restart services
   - **Note**: redirect url will now always be `https://<fqdn>/callback/y9nq6f91yeg19kwt1x6xz`
 
+- Add dataset researcher role
+  - Add `role.researcher.<token_dataset_code>` to `LOGTO__ROLES`, `LOGTO__SCOPES` and `LOGTO__SCOPE`
+  - Update the mapping between `role.researcher.<token_dataset_code>` to Entra Group ID in `LOGTO_ROLES_AZ_GROUPS_MAPPING`
+  - Restart services
+
 # Microsoft Azure AD connector
 
 The Microsoft Azure AD connector provides a succinct way for your application to use Azure’s OAuth 2.0 authentication system.
