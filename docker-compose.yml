@@ -356,7 +356,32 @@ services:
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
           },
-          "d2e-webapi": {}
+          "d2e-webapi": {},
+          "alp-dataflow-gen-init": {
+            "PREFECT_API_URL": "http://alp-dataflow-gen-${BASE_PORT:-1}:41${BASE_PORT:-1}20/api",
+            "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
+            "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
+            "R_LIBS_USER": "/home/docker/plugins/R/site-library",
+            "DUCKDB__DATA_FOLDER": "/app/duckdb_data",
+            "CDW_CONFIG_DUCKDB__DATA_FOLDER": "/app/cdw-config/duckdb_data",
+            "FHIR_SCHEMA_JSON_PATH": "/home/docker/fhir",
+            "PYTHON_VERIFY_SSL": "false",
+            "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
+            "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+            "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-5}",
+            "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
+            "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
+            "LIQUIBASE_PATH": "",
+            "HANA__DRIVER_CLASS_PATH": "",
+            "POSTGRES__DRIVER_CLASS_PATH": "",
+            "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
+            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+            "STRATEGUS__KEYRING_PASSWORD": "${STRATEGUS__KEYRING_PASSWORD}",
+            "DATABASE_CREDENTIALS": "{}",
+            "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
+            "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
+            "WORKPOOL_NAME": "docker-pool"
+          }
         }
       SERVICE_ROUTES: |-
         {
