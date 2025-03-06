@@ -447,6 +447,9 @@
           "portal.userArtifact.conceptSets.read",
           "portal.userArtifact.conceptSets.write",
           "portal.userArtifact.conceptSets.delete",
+          "portal.userArtifact.atlasCohortDefinitions.read",
+          "portal.userArtifact.atlasCohortDefinitions.write",
+          "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read"
         ],
         "ALP_SHARED": [
@@ -1309,6 +1312,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/concept_sets/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/concept_sets$",
           "scopes": [
             "portal.userArtifact.conceptSets.write"
@@ -1322,6 +1334,43 @@
           "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
           "scopes": [
             "portal.userArtifact.conceptSets.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.delete"
           ],
           "httpMethods": [
             "DELETE"
@@ -1404,6 +1453,15 @@
         },
         {
           "path": "^/terminology/concept-set/included-concepts$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/resolveConceptSetExpression$",
           "scopes": [
             "gateway.terminology.conceptSet.read"
           ],

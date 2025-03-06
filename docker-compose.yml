@@ -65,7 +65,7 @@ x-envs:
        "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
        "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
-       "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/webapi",
+       "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
@@ -533,7 +533,7 @@ services:
       alp:
         priority: 20
     platform: linux/amd64
-    command: > 
+    command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
         cat <<EOT > /srv/caddy-config/Caddyfile
@@ -818,11 +818,11 @@ services:
       TRUST_PROXY_HEADER: true
       DATABASE_CONNECTION_TIMEOUT: 30000
 
-  alp-logto-seed: 
+  alp-logto-seed:
     container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
     image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
-    entrypoint: 
+    entrypoint:
       - sh
       - -c
       - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.22.0 && npx @logto/cli db alteration deploy 1.23.1
@@ -1066,46 +1066,46 @@ services:
     profiles: [fhir]
 
   fhir-server:
-      container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
-      depends_on:
-        trex:
-          condition: service_healthy
-        redis:
-          condition: service_healthy
-      healthcheck:
-        interval: 20s
-        retries: 5
-        start_period: 120s
-        test:
-          - CMD
-          - wget
-          - -O
-          - fhir.status
-          - http://localhost:8103/healthcheck
-      hostname: ${PROJECT_NAME:-d2e}-minerva-fhir-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-      image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
-      logging:
-        options:
-          tag: *c6
-      networks:
-        alp:
-          priority: 20
-      restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-      volumes:
-        - fhir-schema-file-1:/home/docker/app/medplum/packages/definitions/dist/fhir/r4
-      environment:
-        <<:
-          - *x-pg
-          - *x-redis
-          - *x-fhir
-        PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
-        PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
-        REDIS_PASSWORD: ${REDIS_PASSWORD}
-        DUCKDB_PATH: /home/docker/app
-        FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
-        FHIR_SCHEMA_FILE_NAME: fhir.schema.json
-      profiles: [fhir]
-  
+    container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
+    depends_on:
+      trex:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      interval: 20s
+      retries: 5
+      start_period: 120s
+      test:
+        - CMD
+        - wget
+        - -O
+        - fhir.status
+        - http://localhost:8103/healthcheck
+    hostname: ${PROJECT_NAME:-d2e}-minerva-fhir-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
+    logging:
+      options:
+        tag: *c6
+    networks:
+      alp:
+        priority: 20
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    volumes:
+      - fhir-schema-file-1:/home/docker/app/medplum/packages/definitions/dist/fhir/r4
+    environment:
+      <<:
+        - *x-pg
+        - *x-redis
+        - *x-fhir
+      PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
+      PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      DUCKDB_PATH: /home/docker/app
+      FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
+      FHIR_SCHEMA_FILE_NAME: fhir.schema.json
+    profiles: [fhir]
+
   dicom-server:
     # uses 8042 port on the container
     image: orthancteam/orthanc:24.6.1
@@ -1133,9 +1133,9 @@ services:
       ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
       ORTHANC__AUTHENTICATION_ENABLED: false
       ORTHANC__REGISTERED_USERS: |
-                {
-                    "healthcheck": ${DICOM__HEALTH_CHECK_PASSWORD}
-                }
+        {
+            "healthcheck": ${DICOM__HEALTH_CHECK_PASSWORD}
+        }
     healthcheck:
       test:
         [

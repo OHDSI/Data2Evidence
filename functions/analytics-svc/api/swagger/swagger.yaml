@@ -744,8 +744,8 @@ paths:
           schema:
             $ref: "#/definitions/Error"
     put:
-      description: Renames a cohort definition
-      operationId: renameCohortDefinition
+      description: Updates a cohort definition
+      operationId: updateCohortDefinition
       produces:
         - application/json
       consumes:
@@ -758,7 +758,6 @@ paths:
             required:
               - datasetId
               - cohortDefinitionId
-              - name
             properties:
               datasetId:
                 type: string
@@ -768,7 +767,19 @@ paths:
                 description: Cohort Definition Id
               name:
                 type: string
-                description: Cohort Name
+                description: Cohort Definition Name
+              description:
+                type: string
+                description: Cohort Definition Description
+              definitionTypeConceptId:
+                type: number
+                description: Cohort Definition Definition Type Concept Id
+              syntax:
+                type: string
+                description: Cohort Definition Syntax
+              subjectConceptId:
+                type: number
+                description: Cohort Definition Subject Concept Id
       responses:
         "200":
           description: Success

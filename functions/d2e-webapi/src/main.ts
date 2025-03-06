@@ -7,6 +7,7 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import routes from "./routes/routes.ts";
+import routesPublic from "./routes/routesPublic.ts";
 
 const main = () => {
   const PORT = 4949;
@@ -44,10 +45,16 @@ const main = () => {
       ],
       components: {
         securitySchemes: {
-          BearerAuth: {
+          bearerAuth: {
             description: 'Authorization header token, sample: "Bearer #TOKEN#"',
             type: "http",
             scheme: "Bearer",
+          },
+          datasetid: {
+            description: "Dataset id",
+            type: "apiKey",
+            name: "datasetid",
+            in: "header",
           },
         },
       },
@@ -58,6 +65,7 @@ const main = () => {
     routePrefix: `/${routePrefix}/documentation`,
   });
 
+  app.after(() => app.register(routesPublic, { prefix: routePrefix }));
   app.after(() => app.register(routes, { prefix: routePrefix }));
 
   async function run() {

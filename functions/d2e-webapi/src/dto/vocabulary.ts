@@ -1,13 +1,31 @@
 import { z } from "zod";
-import { Concept, ConceptRecommended, ConceptSetExpression } from "../types.ts";
+import {
+  Concept,
+  ConceptRecommended,
+  ConceptRelated,
+  ConceptSetExpression,
+} from "../types.ts";
+
+export const VocabularySourceInfo = z.object({
+  version: z.string(),
+  dialect: z.string(),
+});
+
+export type IVocabularySourceInfo = z.infer<typeof VocabularySourceInfo>;
 
 export const ConceptSetExpressionDto = z.object({
   items: z.array(ConceptSetExpression),
 });
 
 export const ConceptListResponseDto = z.array(Concept);
+export type IConceptListResponseDto = z.infer<typeof ConceptListResponseDto>;
 
 export const ConceptResponseDto = Concept;
+
+export const ConceptRelatedResponseDto = z.array(ConceptRelated);
+export type IConceptRelatedResponseDto = z.infer<
+  typeof ConceptRelatedResponseDto
+>;
 
 export const LookupIdentifierAncestorsDto = z.object({
   ancestors: z.array(z.number()),
@@ -17,8 +35,14 @@ export const LookupIdentifierAncestorsResponseDto = z.record(
   z.string(),
   z.array(z.number())
 );
+export type ILookupIdentifierAncestorsResponseDto = z.infer<
+  typeof LookupIdentifierAncestorsResponseDto
+>;
 
 export const ConceptRecommendedListResponseDto = z.array(ConceptRecommended);
+export type IConceptRecommendedListResponseDto = z.infer<
+  typeof ConceptRecommendedListResponseDto
+>;
 
 export const DomainsResponseDto = z.array(
   z.object({
@@ -27,6 +51,7 @@ export const DomainsResponseDto = z.array(
     DOMAIN_CONCEPT_ID: z.number(),
   })
 );
+export type IDomainsResponseDto = z.infer<typeof DomainsResponseDto>;
 
 export const VocabulariesResponseDto = z.array(
   z.object({
@@ -37,3 +62,4 @@ export const VocabulariesResponseDto = z.array(
     VOCABULARY_CONCEPT_ID: z.number(),
   })
 );
+export type IVocabulariesResponseDto = z.infer<typeof VocabulariesResponseDto>;

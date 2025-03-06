@@ -71,3 +71,17 @@ export const getIncludedConceptsBody = z.object({
 export const getIncludedConcepts = z.object({
   body: getIncludedConceptsBody,
 });
+
+export const resolveConceptSetExpressionBody = z.object({
+  datasetId: z.string(),
+  concepts: z.array(
+    z.object({
+      id: z.number(),
+      useMapped: z.boolean(),
+      useDescendants: z.boolean(),
+    })
+  ),
+});
+export const resolveConceptSetExpression = z.object({
+  body: resolveConceptSetExpressionBody,
+});

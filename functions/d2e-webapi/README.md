@@ -1,4 +1,4 @@
-# Terminology Service
+# d2e Webapi Service
 
 ## Run the server locally
 

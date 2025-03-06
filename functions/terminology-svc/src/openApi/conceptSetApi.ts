@@ -138,7 +138,34 @@ export const registerApi = (registry: OpenAPIRegistry) => {
         description: "Object with concept set data.",
         content: {
           "application/json": {
-            schema: z.string(),
+            schema: z.array(z.string()),
+          },
+        },
+      },
+    },
+    tags: ["Concept Set"],
+  });
+
+  registry.registerPath({
+    method: "post",
+    path: "/terminology/concept-set/resolveConceptSetExpression",
+    description: "Resolve concept set expression",
+    summary: "Resolve concept set expression",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: conceptSetSchemas.resolveConceptSetExpression,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Object with concept set data.",
+        content: {
+          "application/json": {
+            schema: z.array(z.string()),
           },
         },
       },

@@ -1,23 +1,35 @@
 import { z } from "zod";
 import { CohortExpression, CohortExpressionQueryOptions } from "../types.ts";
 
-export const CohortDefinitionDto = z.object({
+export const AtlasCohortDefinitionDto = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
   createdBy: z.number().nullable(),
-  createdDate: z.number(),
+  createdDate: z.number().nullable(),
   modifiedBy: z.number().nullable(),
   modifiedDate: z.number().nullable(),
   tags: z.array(z.string()),
 });
+export type IAtlasCohortDefinitionDto = z.infer<
+  typeof AtlasCohortDefinitionDto
+>;
 
-export const CohortDefinitionResponseDto = z.array(
+export const UserArtifactAtlasCohortDefinitionDto =
+  AtlasCohortDefinitionDto.extend({
+    materializedCohortDefinitionIds: z.array(z.number()),
+  });
+export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
+  typeof UserArtifactAtlasCohortDefinitionDto
+>;
+
+export const CohortDefinitionListResponseDto = z.array(
   z.object({
     id: z.number(),
     name: z.string(),
+    description: z.string().optional(),
     createdDate: z.number(),
     hasWriteAccess: z.boolean(),
     hasReadAccess: z.boolean(),
@@ -25,25 +37,24 @@ export const CohortDefinitionResponseDto = z.array(
   })
 );
 
-export const CohortDefinitionCreateResponseDto = z.object({
+export const CohortDefinitionResponseDto = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
-  createdDate: z.number(),
+  createdDate: z.number().nullable(),
+  modifiedDate: z.number().nullable(),
+  tags: z.array(z.string()),
   hasWriteAccess: z.boolean(),
   hasReadAccess: z.boolean(),
 });
 
+export const CohortDefinitionCreateResponseDto =
+  CohortDefinitionResponseDto.omit({ modifiedDate: true, tags: true });
+
 export const CohortDefinitionCopyResponseDto =
   CohortDefinitionCreateResponseDto.omit({ description: true });
-
-export const CohortDefinitionPutResponseDto =
-  CohortDefinitionCreateResponseDto.omit({ description: true }).extend({
-    modifiedDate: z.number(),
-    tags: z.array(z.string()),
-  });
 
 export const CohortDefinitionSqlDto = z.object({
   expression: CohortExpression,

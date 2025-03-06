@@ -46,7 +46,7 @@ import { UpdateDatasetAddPlugin17211757718561 } from "./migrations/1721175771856
 import { UpdateDatasetSplitDatamodelColumn17211757718562 } from "./migrations/17211757718562-update-dataset-split-datamodel-column.ts";
 import { CreateUserArtifactTable1729863090719 } from "./migrations/1729863090719-create-user-artifact-table.ts";
 import { CreateUserArtifactGroupTable1730946830529 } from "./migrations/1730946830529-create-user-artifact-group-table.ts";
-import * as pg from 'npm:pg';
+import { CreateUserArtifactSequence1739779063184 } from "./migrations/1739779063184-create-user-artifact-sequence.ts";
 
 const _env = Deno.env.toObject();
 
@@ -118,8 +118,9 @@ const migrationDataSourceOptions: DataSourceOptions = {
     CreateUserArtifactGroupTable1730946830529,
     UpdateDatasetAddFhirProjectId17211757718560,
     UpdateDatasetAddPlugin17211757718561,
-    UpdateDatasetSplitDatamodelColumn17211757718562
-  ]
+    UpdateDatasetSplitDatamodelColumn17211757718562,
+    CreateUserArtifactSequence1739779063184,
+  ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
 export default migrationDataSource;

@@ -1,15 +1,9 @@
 import fastify from "fastify";
-import { health } from "./health.ts";
 import { cohortdefinition } from "./cohortdefinition.ts";
 import { conceptset } from "./conceptset.ts";
 import { vocabulary } from "./vocabulary.ts";
 
 export default (app: fastify.FastifyInstance) => {
-  app.register(health, {
-    prefix: "/health",
-  });
-
-  // TODO: Tempoarily put datasetid to be received in req header, will change to move to query params/body | after discussion
   // Add hook to pull datasetId and token from req header
   app.addHook("preHandler", (req, res, done) => {
     // Get datasetId from header

@@ -1,27 +1,30 @@
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
-  CohortDefinitionResponseDto,
+  CohortDefinitionListResponseDto,
   CohortDefinitionSqlDto,
   CohortDefinitionSqlResponseDto,
   CohortDefinitionIdVersionResponseDto,
   CohortDefinitionIdInfoResponseDto,
-  CohortDefinitionDto,
+  AtlasCohortDefinitionDto,
   CohortDefinitionCheckV2ResponseDto,
   CohortDefinitionCreateResponseDto,
   CohortDefinitionCopyResponseDto,
-  CohortDefinitionPutResponseDto,
+  CohortDefinitionResponseDto,
   GenerateCohortResponseDto,
 } from "../dto/cohortdefinition.ts";
 import {
   createCohortDefinition,
+  updateCohortDefinition,
   generateCohort,
+  getCohortDefinition,
+  deleteCohortDefinition,
+  copyCohortDefinition,
+  checkIfCohortDefinitionExists,
 } from "../services/cohortdefinition.service.ts";
 
 // deno-lint-ignore require-await
 export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
-  // TODO: Placeholder, to update router
-
   app.get(
     "/",
     {
@@ -29,7 +32,13 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         description:
           "Returns metadata about all cohort definitions in the database",
         tags: ["cohortdefinition"],
-        response: { 200: CohortDefinitionResponseDto },
+        response: { 200: CohortDefinitionListResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -65,8 +74,14 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Creates a cohort definition in the database.",
         tags: ["cohortdefinition"],
-        body: CohortDefinitionDto,
+        body: AtlasCohortDefinitionDto,
         response: { 200: CohortDefinitionCreateResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     async (req, res) => {
@@ -87,11 +102,42 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         tags: ["cohortdefinition"],
         body: CohortDefinitionSqlDto,
         response: { 200: CohortDefinitionSqlResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
       // TODO: ADD  LOGIC
       res.send({ tempplateSql: "dummy response" });
+    }
+  );
+
+  app.get(
+    "/:id",
+    {
+      schema: {
+        description: "Returns the 'raw' cohort definition for the given id.",
+        tags: ["cohortdefinition"],
+        params: z.object({ id: z.coerce.number() }),
+        response: { 200: CohortDefinitionResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const { id } = req.params;
+
+      const result = await getCohortDefinition(req.token, req.datasetId, id);
+
+      res.status(200).send(result);
     }
   );
 
@@ -101,121 +147,28 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Saves the cohort definition for the given id.",
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
-        body: CohortDefinitionDto,
-        response: { 200: CohortDefinitionPutResponseDto },
+        params: z.object({ id: z.coerce.number() }),
+        body: AtlasCohortDefinitionDto,
+        response: { 200: CohortDefinitionCreateResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (_req, res) => {
-      const dummyresponse = {
-        id: 1791729,
-        name: "Awful diabetes",
-        createdDate: 1737138222515,
-        modifiedDate: 1737620825277,
-        hasWriteAccess: false,
-        hasReadAccess: false,
-        tags: [],
-        expressionType: "SIMPLE_EXPRESSION",
-        expression: {
-          cdmVersionRange: ">=5.0.0",
-          PrimaryCriteria: {
-            CriteriaList: [],
-            ObservationWindow: {
-              PriorDays: 0,
-              PostDays: 0,
-            },
-            PrimaryCriteriaLimit: {
-              Type: "First",
-            },
-          },
-          ConceptSets: [
-            {
-              id: 0,
-              name: "A1C trial",
-              expression: {
-                items: [
-                  {
-                    concept: {
-                      CONCEPT_ID: 4184637,
-                      CONCEPT_NAME: "Hemoglobin A1c measurement",
-                      STANDARD_CONCEPT: "S",
-                      STANDARD_CONCEPT_CAPTION: "Standard",
-                      INVALID_REASON: "V",
-                      INVALID_REASON_CAPTION: "Valid",
-                      CONCEPT_CODE: "43396009",
-                      DOMAIN_ID: "Measurement",
-                      VOCABULARY_ID: "SNOMED",
-                      CONCEPT_CLASS_ID: "Procedure",
-                    },
-                    isExcluded: false,
-                    includeDescendants: true,
-                    includeMapped: false,
-                  },
-                ],
-              },
-            },
-            {
-              id: 1,
-              name: "Test",
-              expression: {
-                items: [
-                  {
-                    concept: {
-                      CONCEPT_ID: 3037958,
-                      CONCEPT_NAME:
-                        "Deprecated Testosterone.bioavailable+Free/Testosterone.total in Serum or Plasma",
-                      STANDARD_CONCEPT: "N",
-                      STANDARD_CONCEPT_CAPTION: "Non-Standard",
-                      INVALID_REASON: "U",
-                      INVALID_REASON_CAPTION: "Invalid",
-                      CONCEPT_CODE: "41869-9",
-                      DOMAIN_ID: "Measurement",
-                      VOCABULARY_ID: "LOINC",
-                      CONCEPT_CLASS_ID: "Lab Test",
-                    },
-                    isExcluded: false,
-                    includeDescendants: false,
-                    includeMapped: false,
-                  },
-                  {
-                    concept: {
-                      CONCEPT_ID: 1019874,
-                      CONCEPT_NAME:
-                        "Testosterone.bioavailable+Free/Testosterone.total",
-                      STANDARD_CONCEPT: "N",
-                      STANDARD_CONCEPT_CAPTION: "Non-Standard",
-                      INVALID_REASON: "V",
-                      INVALID_REASON_CAPTION: "Valid",
-                      CONCEPT_CODE: "LP287194-7",
-                      DOMAIN_ID: "Observation",
-                      VOCABULARY_ID: "LOINC",
-                      CONCEPT_CLASS_ID: "LOINC Component",
-                    },
-                    isExcluded: false,
-                    includeDescendants: false,
-                    includeMapped: false,
-                  },
-                ],
-              },
-            },
-          ],
-          QualifiedLimit: {
-            Type: "First",
-          },
-          ExpressionLimit: {
-            Type: "First",
-          },
-          InclusionRules: [],
-          CensoringCriteria: [],
-          CollapseSettings: {
-            CollapseType: "ERA",
-            EraPad: 0,
-          },
-          CensorWindow: {},
-        },
-      };
+    async (req, res) => {
+      const { id } = req.params;
 
-      res.status(200).send(dummyresponse);
+      const result = await updateCohortDefinition(
+        req.token,
+        req.datasetId,
+        id,
+        req.body
+      );
+
+      res.status(200).send(result);
     }
   );
 
@@ -225,13 +178,21 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Deletes the specified cohort definition",
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         response: { 204: z.null() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD  LOGIC
-      res.status(204).send();
+    async (req, res) => {
+      const { id } = req.params;
+
+      await deleteCohortDefinition(req.token, req.datasetId, id);
+      await res.status(204).send();
     }
   );
 
@@ -241,50 +202,23 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Copies the specified cohort definition.",
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         response: {
           200: CohortDefinitionCopyResponseDto,
         },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD  LOGIC
-      const dummyresponse = {
-        id: 1791707,
-        name: "COPY OF test cohort definition2r1212r",
-        createdDate: 1737606795581,
-        hasWriteAccess: false,
-        hasReadAccess: false,
-        expressionType: "SIMPLE_EXPRESSION",
-        expression: {
-          cdmVersionRange: ">=5.0.0",
-          PrimaryCriteria: {
-            CriteriaList: [],
-            ObservationWindow: {
-              PriorDays: 0,
-              PostDays: 0,
-            },
-            PrimaryCriteriaLimit: {
-              Type: "First",
-            },
-          },
-          ConceptSets: [],
-          QualifiedLimit: {
-            Type: "First",
-          },
-          ExpressionLimit: {
-            Type: "First",
-          },
-          InclusionRules: [],
-          CensoringCriteria: [],
-          CollapseSettings: {
-            CollapseType: "ERA",
-            EraPad: 0,
-          },
-          CensorWindow: {},
-        },
-      };
-      res.status(200).send(dummyresponse);
+    async (req, res) => {
+      const { id } = req.params;
+
+      const result = await copyCohortDefinition(req.token, req.datasetId, id);
+      res.status(200).send(result);
     }
   );
 
@@ -294,8 +228,14 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Returns a list of cohort generation info objects.",
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         response: { 200: CohortDefinitionIdInfoResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -343,8 +283,14 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Get list of versions of Cohort Definition",
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         response: { 200: CohortDefinitionIdVersionResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -370,8 +316,14 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
           This method runs a series of logical checks on a cohort definition and returns the set of warning, info and error messages. <br> 
           This method is similar to /check except this method accepts a ChortDTO which includes tags.`,
         tags: ["cohortdefinition"],
-        body: CohortDefinitionDto,
+        body: AtlasCohortDefinitionDto,
         response: { 200: CohortDefinitionCheckV2ResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -429,18 +381,28 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
                       used when you have an existing cohort definition which should be ignored
                       when checking if the name already exists.`,
         tags: ["cohortdefinition"],
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         querystring: z.object({ name: z.string() }),
         response: { 200: z.number() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (req, res) => {
-      // select count(cd) from CohortDefinition AS cd WHERE cd.name = :name and cd.id <> :id
-      // TODO: ADD  LOGIC
-      console.log(req.query.name);
-      console.log(req.params.id);
+    async (req, res) => {
+      const { id } = req.params;
+      const { name } = req.query;
+      const result = await checkIfCohortDefinitionExists(
+        req.token,
+        req.datasetId,
+        id,
+        name
+      );
 
-      res.send(1);
+      res.send(result);
     }
   );
 
@@ -452,6 +414,12 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         tags: ["cohortdefinition"],
         params: z.object({ id: z.coerce.number(), sourceKey: z.string() }),
         response: { 200: GenerateCohortResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     async (req, res) => {

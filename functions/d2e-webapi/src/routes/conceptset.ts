@@ -10,6 +10,11 @@ import {
   ConceptSetItemsResponseDto,
 } from "../dto/conceptset.ts";
 
+import {
+  getConceptSets,
+  checkIfConceptSetExists,
+} from "../services/conceptset.service.ts";
+
 // deno-lint-ignore require-await
 export const conceptset: FastifyPluginAsyncZod = async function (app) {
   app.get(
@@ -19,40 +24,17 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         description: "Get the full list of concept sets in the database",
         tags: ["conceptset"],
         response: { 200: ConceptSetListResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD LOGIC
-      const dummyresponse = [
-        {
-          createdDate: 1722897391902,
-          modifiedDate: 1722897391903,
-          hasWriteAccess: false,
-          hasReadAccess: false,
-          tags: [],
-          id: 1884615,
-          name: "adhdv1",
-        },
-        {
-          createdDate: 1561786323607,
-          modifiedDate: 1561786323607,
-          hasWriteAccess: false,
-          hasReadAccess: false,
-          tags: [],
-          id: 1799713,
-          name: "XD_Myocardial Infarction",
-        },
-        {
-          createdDate: 1598264069763,
-          modifiedDate: 1598264069764,
-          hasWriteAccess: false,
-          hasReadAccess: false,
-          tags: [],
-          id: 1865306,
-          name: "COVID-19 conditions",
-        },
-      ];
-      res.send(dummyresponse);
+    async (req, res) => {
+      const results = await getConceptSets(req.token, req.datasetId);
+      res.send(results);
     }
   );
 
@@ -64,6 +46,12 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         body: ConceptSetDto,
         tags: ["conceptset"],
         response: { 200: ConceptSetResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -89,6 +77,12 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         tags: ["conceptset"],
         body: ConceptSetCheckDto,
         response: { 200: ConceptSetCheckResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -108,11 +102,24 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         params: z.object({ id: z.coerce.number() }),
         querystring: z.object({ name: z.string() }),
         response: { 200: z.number() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD LOGIC
-      res.send(1);
+    async (req, res) => {
+      const { id } = req.params;
+      const { name } = req.query;
+      const result = await checkIfConceptSetExists(
+        req.token,
+        req.datasetId,
+        id,
+        name
+      );
+      res.send(result);
     }
   );
 
@@ -124,6 +131,12 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         tags: ["conceptset"],
         params: z.object({ id: z.coerce.number() }),
         response: { 200: ConceptSetItemsResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {
@@ -184,6 +197,12 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         params: z.object({ id: z.coerce.number() }),
         body: ConceptSetItemListDto,
         response: { 200: z.boolean() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
       },
     },
     (_req, res) => {

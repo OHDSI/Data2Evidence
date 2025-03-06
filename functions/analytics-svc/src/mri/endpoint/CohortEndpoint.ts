@@ -238,7 +238,7 @@ export class CohortEndpoint {
     public async updateCohortDefinitionToDb(
         cohortDefinition: CohortDefinitionTableType
     ) {
-        let queryString = `
+        const queryString = `
         UPDATE $$SCHEMA$$.COHORT_DEFINITION SET (
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
@@ -261,7 +261,7 @@ export class CohortEndpoint {
                 cohortDefinition.subjectConceptId,
                 cohortDefinition.id
             );
-            let result = await query.executeQuery(this.connection);
+            const result = await query.executeQuery(this.connection);
             return result;
         } catch (err) {
             logger.error(

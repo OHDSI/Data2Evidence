@@ -30,7 +30,7 @@ export interface ICohortGeneratorFlowRun {
   schemaName: string;
   vocabSchemaName: string;
   cohortJson: ICohortJsonType;
-  description: string;
+  description: string | null;
   cohortDefinitionId: number;
 }
 
@@ -43,4 +43,72 @@ export interface ICohortJsonType {
   tags: string[];
   expressionType: string;
   expression: z.infer<typeof CohortExpression>;
+}
+
+export interface IResolveConceptSetExpressionConcept {
+  id: number;
+  useMapped: boolean;
+  useDescendants: boolean;
+}
+
+export interface ITerminologyConceptSetConcept {
+  id: number;
+  useMapped: boolean;
+  useDescendants: boolean;
+}
+export interface ITerminologyConceptSet {
+  id: string;
+  name: string;
+  shared: boolean;
+  concepts: ITerminologyConceptSetConcept[];
+  userName: string;
+  createdBy: string;
+  modifiedBy: string;
+  createdDate: string;
+  modifiedDate: string;
+}
+
+export interface ITerminologyFhirConcept {
+  conceptId: number;
+  display: string;
+  domainId: string;
+  system: string;
+  conceptClassId: string;
+  standardConcept: string;
+  concept: string;
+  code: string;
+  validStartDate: string;
+  validEndDate: string;
+  validity: string;
+}
+export interface ITerminologyFhirResource {
+  resourceType: string;
+  expansion: {
+    total: number;
+    offset: number;
+    timestamp: string;
+    contains: ITerminologyFhirConcept[];
+  };
+}
+
+export interface ITerminologyConcept {
+  concept_id: number;
+  concept_name: string;
+  domain_id: string;
+  vocabulary_id: string;
+  concept_class_id: string;
+  standard_concept: string;
+  concept_code: string;
+  valid_start_date: string;
+  valid_end_date: string;
+  invalid_reason: string | null;
+}
+
+export interface PortalUserArtifacts {
+  createdBy: string;
+  createdDate: string;
+  modifiedBy: string;
+  modifiedDate: string;
+  userId: string;
+  artifacts: unknown;
 }
