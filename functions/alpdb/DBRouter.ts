@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { JobpluginsAPI } from "./api/JobpluginsAPI.ts";
 import { DBDAO } from "../analytics-svc/src/dao/DBDAO";
+import TrexDao from "./dao/trex.ts";
 
 export class DBRouter {
   public router = express.Router();
@@ -87,6 +88,25 @@ export class DBRouter {
           const httpResponse = {
             status: 500,
             message: "Something went wrong when checking if schema exists",
+            data: [],
+          };
+          res.status(500).json(httpResponse);
+        }
+      }
+    );
+
+    this.router.get(
+      "/database-creds/list",
+      async (req: Request, res: Response) => {
+        try {
+          const dbDao = new TrexDao();
+          const dbs = await dbDao.getDbs();
+          return res.status(200).json(dbs);
+        } catch (error) {
+          this.logger.error(`Error fetching database credentials: ${error}`);
+          const httpResponse = {
+            status: 500,
+            message: "Something went wrong when fetching database credentials",
             data: [],
           };
           res.status(500).json(httpResponse);

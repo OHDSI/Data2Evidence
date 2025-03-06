@@ -459,6 +459,7 @@
         ],
         "IDP_ALP_SVC_CLIENT_ID": [
           "dbCredentials.db.list",
+          "gateway.db.datbase.credentials.list",
           "portal.dataset.read"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
@@ -2072,6 +2073,15 @@
           "path": "^/gateway/api/dataset/dashboard/list$",
           "scopes": [
             "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/database-creds/list",
+          "scopes": [
+            "gateway.db.datbase.credentials.list"
           ],
           "httpMethods": [
             "GET"

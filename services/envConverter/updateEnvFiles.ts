@@ -31,11 +31,23 @@ api
   .getDatabases()
   .then((encryptedDatabases) => {
     const databaseCredentials = encryptedDatabases.map((db) => {
-      const { credentials, extra: extraArr, dialect, name, port, ...rest } = db;
-      const extra = extraArr?.[0]?.value || {};
+      const {
+        credentials,
+        db_extra: dbExtra,
+        dialect,
+        name,
+        port,
+        id,
+        ...rest
+      } = db;
       const decryptedCreds = credentials.reduce<{ [key: string]: string }>(
         (acc, c) => {
-          const { username, password: encryptedPassword, salt, userScope } = c;
+          const {
+            username,
+            password: encryptedPassword,
+            salt,
+            user_scope: userScope,
+          } = c;
           const decrypted = decrypt(encryptedPassword);
           const password = decrypted.replace(salt, "");
           switch (userScope) {
@@ -54,14 +66,15 @@ api
 
       return {
         ...dbCredentialsTemplate,
-        name: rest.code,
+        name: name,
         type: getType(dialect),
         values: {
           ...rest,
           ...getDbName(dialect, name),
+          ...dbExtra,          
+          code: id,
           dialect: getDialect(dialect),
           port: port.toString(),
-          ...extra,
           credentials: decryptedCreds,
         },
       };

@@ -27,6 +27,11 @@ function initEnv(__env) {
     env["PG__TENANT_CONFIGS"] = _env["PG__TENANT_CONFIGS"];
     env["HANA__TENANT_CONFIGS"] = _env["HANA__TENANT_CONFIGS"];
     env["VCAP_SERVICES"] = _env["VCAP_SERVICES"];
+    env["PG_USER"] = _env["PG_USER"];
+    env["PG_PASSWORD"] = _env["PG_PASSWORD"];
+    env["PG_HOST"] = _env["PG_HOST"];
+    env["PG_PORT"] = _env["PG_PORT"];
+    env["PG_DATABASE"] = _env["PG_DATABASE"];
   } else {
     console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
     throw new Error("ZOD parse failed");
