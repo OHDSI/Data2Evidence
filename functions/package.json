@@ -1640,15 +1640,7 @@
             "DELETE"
           ]
         },
-        {
-          "path": "^/dataflow-mgmt/db-svc/(run|dataset-attributes|fetch-version-info)$",
-          "scopes": [
-            "dataflowmgmt.dbsvc.flowRun.run"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
+
         {
           "path": "^/dataflow-mgmt/prefect/flow/list$",
           "scopes": [
@@ -1801,114 +1793,6 @@
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(results|overview)$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cohort/[0-9]+/flow-run/latest$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.cohort.flowRun.latest.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-(quality|characterization)/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/flow-run/latest$",
-          "scopes": [
-            "dataflowmgmt.dqd.job.dataset.flowRun.latest.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-(quality|characterization)/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/release/([0-9]+)/flow-run$",
-          "scopes": [
-            "dataflowmgmt.dqd.job.dataset.release.flowRun.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/category|/domain)?/history$$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/domain/continuity$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/schema-mapping/list",
-          "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.schemaMapping.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/results/(.*)",
-          "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/job-history/flow-runs",
-          "scopes": [
-            "dataflowmgmt.jobHistory.filter.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/db-svc/run",
-          "scopes": [
-            "dataflowmgmt.dbSvc.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {

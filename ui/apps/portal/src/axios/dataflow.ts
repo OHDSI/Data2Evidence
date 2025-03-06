@@ -71,7 +71,7 @@ export class Dataflow {
   public getFlowRuns(filter: string, extraFilters: FlowRunFilters = {}) {
     return request({
       baseURL: DATAFLOW_MGMT_URL,
-      url: "job-history/flow-runs",
+      url: "job-history/flow-runs", // endpoint deprecated and removed
       method: "GET",
       params: {
         filter,
