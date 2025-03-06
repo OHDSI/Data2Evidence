@@ -496,6 +496,142 @@
           ]
         },
         {
+          "path": "^/jobplugins/db-svc/(flow-run|dataset-attributes)$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(results|overview)$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-(quality|characterization)/flow-run/latest$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/cohort/[0-9]+/flow-run/latest$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-(quality|characterization)/release/([0-9]+)/flow-run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-(quality|characterization)/flow-run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/cohort/flow-run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/cohort-survival/flow-run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/cohort-survival/results/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-characterization/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/results/(.*)(/.*)?$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-characterization/schema-mapping/list$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/datamodel/list$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/datamodel/get_version_info$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/datamodel/create_datamodel_run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/datamodel/create_datamart_run$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/jobplugins(.*)",
           "scopes": [
             "jobplugins"
@@ -1553,7 +1689,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/(.*)",
+          "path": "^/jobplugins/dataflow/(.*)$",
           "scopes": [
             "dataflowmgmt.dataflow.read"
           ],
@@ -1562,7 +1698,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow(.*)",
+          "path": "^/jobplugins/dataflow(.*)$",
           "scopes": [
             "dataflowmgmt.dataflow.add"
           ],
@@ -1571,7 +1707,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.dataflow.delete"
           ],
@@ -1580,7 +1716,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.dataflow.revision.delete"
           ],
@@ -1589,7 +1725,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/(.*)",
+          "path": "^/jobplugins/analysisflow/(.*)$",
           "scopes": [
             "dataflowmgmt.analysisflow.read"
           ],
@@ -1598,7 +1734,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow(.*)",
+          "path": "^/jobplugins/analysisflow(.*)$",
           "scopes": [
             "dataflowmgmt.analysisflow.add"
           ],
@@ -1607,7 +1743,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.analysisflow.delete"
           ],
@@ -1616,7 +1752,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.analysisflow.revision.delete"
           ],
@@ -1624,100 +1760,8 @@
             "DELETE"
           ]
         },
-
         {
-          "path": "^/dataflow-mgmt/prefect/flow/list$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/metadata/list$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/datamodels/list$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/deployment$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.deployment.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/file-deployment$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.fileDeployment.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/git-deployment$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.fileDeployment.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/default-deployment$",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.fileDeployment.add"
-          ],
-          "httpMethods": [
-            "POST",
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/(.*)",
-          "scopes": [
-            "dataflowmgmt.prefect.flow.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow-run/(.*)",
-          "scopes": [
-            "dataflowmgmt.prefect.flowRun.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation$",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.cancel"
           ],
@@ -1726,7 +1770,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/deployment",
+          "path": "^/jobplugins/prefect/flow-run/(.*)$",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.add"
           ],
@@ -1735,7 +1779,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/(.*)",
+          "path": "^/jobplugins/prefect/analysis-run/(.*)$",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.add"
           ],
@@ -1744,25 +1788,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/analysis-run/(.*)",
-          "scopes": [
-            "dataflowmgmt.prefect.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/task-run/(.*)",
-          "scopes": [
-            "dataflowmgmt.prefect.taskRun.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/test-run",
+          "path": "^/jobplugins/prefect/test-run$",
           "scopes": [
             "dataflowmgmt.prefect.testRun.add"
           ],
@@ -1771,9 +1797,25 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/state",
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(state|logs)$",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.state"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/cachedb/create-file$",
+          "scopes": [
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/cachedb/results/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "scopes": [
           ],
           "httpMethods": [
             "GET"

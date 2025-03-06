@@ -82,7 +82,7 @@ export class DataCharacterizationController {
       }
     );
 
-    // GET /data-characterization/dataset/:datasetId/flow-run/latest
+    // GET /data-characterization/schema-mapping/list
     this.router.get(
       "/schema-mapping/list",
       async (req: Request, res: Response) => {
