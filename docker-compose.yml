@@ -350,10 +350,12 @@ services:
           },
           "terminology-svc": {},
           "code-suggestion": {
-            "COGNITO_CLIENT_ID": "${COGNITO_CLIENT_ID:-null}",
-            "COGNITO_CLIENT_SECRET": "${COGNITO_CLIENT_SECRET:-null}",
-            "COGNITO_TOKEN_ENDPOINT": "${COGNITO_TOKEN_ENDPOINT:-null}",
-            "LAMBDA_API_ENDPOINT": "${LAMBDA_API_ENDPOINT:-null}"
+            "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+            "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+            "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+            "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+            "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+            "AI_MODEL": "${AI_MODEL:-null}"
           },
           "demo": {
             "DEMO__DB_CODE": "demo_database",
