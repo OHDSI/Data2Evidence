@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -o nounset
 set -o errexit
 
 version=develop #default version

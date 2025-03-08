@@ -865,6 +865,10 @@ services:
       data:
         priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
     shm_size: 1gb
     volumes:
       - pg-minerva-data-1:/var/lib/postgresql/data

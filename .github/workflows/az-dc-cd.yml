@@ -142,7 +142,7 @@ jobs:
       - name: Logs minerva
         if: success() || failure()
         run: |
-          yarn ci:logs:minerva
+          yarn deploy:logs:minerva
 
       - name: Post cleanup
         if: always()
