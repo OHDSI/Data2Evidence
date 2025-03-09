@@ -1,5 +1,5 @@
 {
-  "name": "@data2evidence/d2e-flows",
+  "name": "@data2evidence/mimic-omop-conversion",
   "version": "0.0.99",
   "description": "",
   "main": "index.js",
