@@ -320,6 +320,15 @@
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
           "terminology.user.read",
+          "jobplugins.dbsvc.flowRun.run",
+          "jobplugins.dqd.dataQuality.flowRun.results.overview.read",
+          "jobplugins.dqd.job.dataset.flowRun.latest.read",
+          "jobplugins.dqd.dataQuality.flowRun.add",
+          "jobplugins.dqd.dataCharacterization.flowRun.add",
+          "jobplugins.dqd.dataCharacterization.flowRun.results.drilldown.read",
+          "jobplugins.datamodel.flowRun.create-datamart",
+          "jobplugins.datamodel.flowRun.create-datamodel",
+          "jobplugins.datamodel.flowRun.get-version-info",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
           "dataflowmgmt.dataflow.add",
@@ -395,7 +404,13 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.tenantview.read"
+          "codesuggestion.tenantview.read",
+          "jobplugins.dqd.dataQuality.flowRun.results.overview.read",
+          "jobplugins.dqd.job.dataset.flowRun.latest.read",
+          "jobplugins.dqd.dataQuality.dataset.cohort.flowRun.latest.read",
+          "jobplugins.dqd.job.dataset.release.flowRun.read",
+          "jobplugins.dqd.dataQuality.dataset.history.read",
+          "jobplugins.dqd.dataQuality.dataset.continuity.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -487,6 +502,20 @@
           "datasetId": "dsid"
         },
         {
+          "path": "^/jobplugins/db-svc/(flow-run|dataset-attributes)$",
+          "scopes": ["jobplugins.dbsvc.flowRun.run"],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(results|overview)$",
+          "scopes": ["jobplugins.dqd.dataQuality.flowRun.results.overview.read"],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/jobplugins/dqd/(data-characterization|data-quality)/flow-run(.*)",
           "scopes": [
             "jobplugins.dqd.read"
@@ -496,24 +525,9 @@
           ]
         },
         {
-          "path": "^/jobplugins/db-svc/(flow-run|dataset-attributes)$",
-          "scopes": [
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/jobplugins/dqd/data-quality/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(results|overview)$",
-          "scopes": [
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
           "path": "^/jobplugins/dqd/data-(quality|characterization)/flow-run/latest$",
           "scopes": [
+            "jobplugins.dqd.job.dataset.flowRun.latest.read"
           ],
           "httpMethods": [
             "GET"
@@ -522,6 +536,7 @@
         {
           "path": "^/jobplugins/dqd/data-quality/cohort/[0-9]+/flow-run/latest$",
           "scopes": [
+            "jobplugins.dqd.dataQuality.dataset.cohort.flowRun.latest.read"
           ],
           "httpMethods": [
             "GET"
@@ -530,6 +545,7 @@
         {
           "path": "^/jobplugins/dqd/data-(quality|characterization)/release/([0-9]+)/flow-run$",
           "scopes": [
+            "jobplugins.dqd.job.dataset.release.flowRun.read"
           ],
           "httpMethods": [
             "GET"
@@ -538,6 +554,8 @@
         {
           "path": "^/jobplugins/dqd/data-(quality|characterization)/flow-run$",
           "scopes": [
+            "jobplugins.dqd.dataQuality.flowRun.add",
+            "jobplugins.dqd.dataCharacterization.flowRun.add"
           ],
           "httpMethods": [
             "POST"
@@ -546,6 +564,7 @@
         {
           "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$$",
           "scopes": [
+            "jobplugins.dqd.dataQuality.dataset.history.read"
           ],
           "httpMethods": [
             "GET"
@@ -554,6 +573,7 @@
         {
           "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
           "scopes": [
+            "jobplugins.dqd.dataQuality.dataset.continuity.read"
           ],
           "httpMethods": [
             "GET"
@@ -562,6 +582,7 @@
         {
           "path": "^/jobplugins/cohort/flow-run$",
           "scopes": [
+            "jobplugins.cohort.flowRun.add"
           ],
           "httpMethods": [
             "POST"
@@ -570,6 +591,7 @@
         {
           "path": "^/jobplugins/cohort-survival/flow-run$",
           "scopes": [
+            "jobplugins.cohort-survival.flowRun.add"
           ],
           "httpMethods": [
             "POST"
@@ -578,6 +600,7 @@
         {
           "path": "^/jobplugins/cohort-survival/results/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
+            "jobplugins.cohort-survival.flowRun.results"
           ],
           "httpMethods": [
             "GET"
@@ -586,6 +609,7 @@
         {
           "path": "^/jobplugins/dqd/data-characterization/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/results/(.*)(/.*)?$",
           "scopes": [
+            "jobplugins.dqd.dataCharacterization.flowRun.results.drilldown.read"
           ],
           "httpMethods": [
             "GET"
@@ -594,6 +618,7 @@
         {
           "path": "^/jobplugins/dqd/data-characterization/schema-mapping/list$",
           "scopes": [
+            "jobplugins.dqd.dataCharacterization.flowRun.schema-mapping.list"
           ],
           "httpMethods": [
             "GET"
@@ -602,6 +627,7 @@
         {
           "path": "^/jobplugins/datamodel/list$",
           "scopes": [
+            "jobplugins.datamodel.flowRun.list"
           ],
           "httpMethods": [
             "GET"
@@ -610,6 +636,7 @@
         {
           "path": "^/jobplugins/datamodel/get_version_info$",
           "scopes": [
+            "jobplugins.datamodel.flowRun.get-version-info"
           ],
           "httpMethods": [
             "POST"
@@ -618,6 +645,7 @@
         {
           "path": "^/jobplugins/datamodel/create_datamodel_run$",
           "scopes": [
+            "jobplugins.datamodel.flowRun.create-datamodel"
           ],
           "httpMethods": [
             "POST"
@@ -626,6 +654,7 @@
         {
           "path": "^/jobplugins/datamodel/create_datamart_run$",
           "scopes": [
+            "jobplugins.datamodel.flowRun.create-datamart"
           ],
           "httpMethods": [
             "POST"
