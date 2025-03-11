@@ -38,6 +38,11 @@
           "env": "files-manager"
         },
         {
+          "function": "/perseus/src/init",
+          "imports": "/perseus/import.json",
+          "env": "perseus"
+        },
+        {
           "function": "/jobplugins/src/init",
           "imports": "/jobplugins/import.json",
           "env": "jobplugins"
@@ -51,6 +56,11 @@
           "function": "/portal/src/init",
           "imports": "/portal/import.json",
           "env": "portal"
+        },
+        {
+          "function": "/white-rabbit/src/init",
+          "imports": "/white-rabbit/import.json",
+          "env": "white-rabbit"
         }
       ],
       "api": [
@@ -208,6 +218,18 @@
           "function": "/files-manager",
           "env": "files-manager",
           "imports": "/files-manager/import.json"
+        },
+        {
+          "source": "/backend",
+          "function": "/perseus",
+          "env": "perseus",
+          "imports": "/perseus/import.json"
+        },
+        {
+          "source": "/white-rabbit",
+          "function": "/white-rabbit",
+          "env": "white-rabbit",
+          "imports": "/white-rabbit/import.json"
         },
         {
           "source": "/demo",
@@ -382,6 +404,9 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
+          "perseus.read",
+          "whiteRabbit.read",
+          "whiteRabbit.post",
           "demo.setup",
           "d2e.webapi"
         ],
@@ -481,6 +506,26 @@
             "GET",
             "POST",
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/backend/api/(.*)",
+          "scopes": [
+            "perseus.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/white-rabbit/api/(.*)",
+          "scopes": [
+            "whiteRabbit.read",
+            "whiteRabbit.post"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
           ]
         },
         {

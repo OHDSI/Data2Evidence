@@ -196,6 +196,7 @@ services:
               "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
               "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
               "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+              "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001"
@@ -288,6 +289,13 @@ services:
             "USER_MGMT__PATH": "/usermgmt/",
             "USER_MGMT__PORT": 41104
           },
+          "white-rabbit": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "white_rabbit"
+          },
           "bookmark-svc": {
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
@@ -347,6 +355,13 @@ services:
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
             "PG_SCHEMA": "files_manager"
+          },
+          "perseus": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "perseus"
           },
           "terminology-svc": {},
           "code-suggestion": {
@@ -655,6 +670,7 @@ services:
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: prefecthq/prefect:3.0.3-python3.11
+    platform: linux/amd64
     logging:
       options:
         tag: *c2
@@ -987,50 +1003,7 @@ services:
         limits:
           cpus: ${D2E_CPU_LIMIT:-2}
           memory: ${D2E_MEMORY_LIMIT:-7G}
-
-  alp-perseus-backend:
-    image: ghcr.io/data2evidence/d2e-perseus:master
-    container_name: &c35 ${PROJECT_NAME:-d2e}-perseus-backend-1
-    environment:
-      <<:
-        - *x-pg
-        - *x-perseus
-      PERSEUS_ENV: Docker
-      PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
-      PG_ADMIN_USER: ${PG_ADMIN_USER:-alp_pg_admin_user}
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-    platform: linux/amd64
-    profiles: [perseus]
-
-  alp-perseus-white-rabbit:
-    image: ghcr.io/data2evidence/whiterabbit:master
-    container_name: &c36 ${PROJECT_NAME:-d2e}-perseus-white-rabbit-1
-    platform: linux/amd64
-    environment:
-      <<:
-        - *x-pg
-        - *x-perseus
-      SPRING_PROFILES_ACTIVE: docker
-      PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
-      PG_ADMIN_USER: ${PG_ADMIN_USER:-alp_pg_admin_user}
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-    entrypoint: ["sh", "-c", "./init.sh"]
-    profiles: [perseus]
-
+    
   demodb:
     image: ohdsi/broadsea-atlasdb:2.0.0
     container_name: ${PROJECT_NAME:-d2e}-demodb

@@ -36,7 +36,9 @@ services:
           "portal": false,
           "files-manager": false,
           "demo": false,
-          "d2e-webapi": false
+          "d2e-webapi": false,
+          "perseus": false,
+          "white-rabbit": false
         }
 
   alp-caddy:
@@ -122,14 +124,6 @@ services:
     environment:
       LOCAL_DEBUG: "true"
 
-  alp-perseus-white-rabbit:
-    environment:
-      JAVA_OPTs: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
-    # mapping debug port 5005 for local development
-    ports:
-      - 5005:5005
-      - 8000:8000
- 
   fhir-server:
     build:
       context: ./services/alp-fhir

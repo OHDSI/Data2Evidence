@@ -1,0 +1,2 @@
+WHERE lower(SOURCE_VOCABULARY_ID) IN ('icd9cm')
+and lower(target_vocabulary_id) in ('icd9cm')

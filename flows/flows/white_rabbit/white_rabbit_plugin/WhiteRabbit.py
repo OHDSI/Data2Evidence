@@ -31,19 +31,25 @@ class WhiteRabbit:
     def start(self):
         try:
             self.logger.info("Running command to start white rabbit...")
-            process = ShellOperation(commands=['java -jar /app.jar'],
-                                     env=self.service_credentials.model_dump(mode='json')).trigger()
+            process = ShellOperation(
+                commands=[
+                    # Start Xvfb in the background
+                    "Xvfb :1 &",
+                    "java -Djava.awt.headless=false -Djava.awt.display=:1 -jar /app.jar 2>&1 | tee /tmp/java_log.txt",
+                ],
+                env=self.service_credentials.model_dump(mode='json')
+            ).trigger()
+            
+            self.process = process
         except Exception as e:
             self.logger.error(f"Failed to start service: {e}")
             raise Exception(e)
         else:
-            self.logger.info(
-                "Successfully run command to start white rabbit service")
+            self.logger.info("Successfully run command to start white rabbit service")
 
         while not self.health_check():
-            time.sleep(5)
-        self.logger.info("white rabbit service is ready to accept requests")
-        self.process = process
+            time.sleep(10)
+        self.logger.info("White rabbit service is ready to accept requests")
 
     def health_check(self):
         try:
@@ -51,7 +57,7 @@ class WhiteRabbit:
 
             return response.status_code == 200
         except requests.RequestException as e:
-            self.logger.error(f"WhiteRabbit service is not ready: {e}")
+            self.logger.info(f"WhiteRabbit service is not ready: {e}")
             return False
 
     def handle_request(self, options: WhiteRabbitRequestType):
@@ -62,13 +68,9 @@ class WhiteRabbit:
             }
         )
 
-        result = requests.post(
+        response = requests.post(
             url=f"{self.white_rabbit_endpoint}{options.url}",
             headers=options.headers,
             data=json.dumps(options.data))
 
-        if ((result.status_code >= 400) and (result.status_code < 600)):
-            raise Exception(
-                f"White Rabbbit failed to complete request, {result.content}")
-        else:
-            return result.json()
+        return response

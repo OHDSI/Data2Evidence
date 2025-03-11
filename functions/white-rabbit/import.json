@@ -1,0 +1,19 @@
+{
+  "imports": {
+    "@alp/alp-base-utils": "../_shared/alp-base-utils/src/index.ts",
+    "@alp/alp-config-utils": "../_shared/alp-config-utils/src/index.ts",
+    "../_shared/alp-base-utils/src/api/request-util": "../_shared/alp-base-utils/src/api/request-util.ts",
+    "axios": "npm:axios@^0.21.2",
+    "UserMgmtAPI": "../_shared/alp-base-utils/src/api/UserMgmtAPI.ts",
+    "express": "npm:express@^4.18",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "knex": "npm:knex@2.4.2",
+    "path": "https://deno.land/std@0.188.0/path/mod.ts",
+    "reflect-metadata": "npm:reflect-metadata@^0.2.2",
+    "typedi": "npm:typedi@^0.10.0",
+    "class-validator": "npm:class-validator@^0.14.0",
+    "pg": "npm:pg@8.3.0",
+    "zod": "npm:zod@^3.23.8",
+    "dotenv": "npm:dotenv@10.0.0"
+  }
+}

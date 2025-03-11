@@ -477,4 +477,27 @@ export class PrefectAPI {
       throw new Error(errorMessage);
     }
   }
+
+  async getFlowRunsArtifactsByFlowRunId(flowRunId: string) {
+    const errorMessage = `Error while getting prefect flow run artifacts flow run id: ${flowRunId}`;
+    try {
+      const url = `${this.baseURL}/artifacts/filter`;
+      const data: Record<string, string | object> = {
+        flow_runs: {
+          id: {
+            any_: [flowRunId],
+          },
+        },
+      };
+      const options = await this.createOptions("POST", data);
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return await res.json();
+    } catch (error) {
+      console.info(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
+  }
 }

@@ -4,6 +4,10 @@
     "express-validator": "npm:express-validator@^7.2.0",
     "pg": "npm:pg@^8.4.2",
     "uuid": "npm:uuid@^10.0.0",
-    "jsonwebtoken": "npm:jsonwebtoken@^9.0.2"
+    "jsonwebtoken": "npm:jsonwebtoken@^9.0.2",
+    "buffer": "node:buffer",
+    "axios": "npm:axios@^0.21.2",
+    "UserMgmtAPI": "../_shared/alp-base-utils/src/api/UserMgmtAPI.ts",
+    "../_shared/alp-base-utils/src/api/request-util": "../_shared/alp-base-utils/src/api/request-util.ts"
   }
 }

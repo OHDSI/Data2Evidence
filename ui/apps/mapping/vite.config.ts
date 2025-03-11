@@ -74,6 +74,10 @@ export default defineConfig(({ command, mode }) => {
           target: "https://localhost:41100",
           secure: false,
         },
+        "/jobplugins": {
+          target: "https://localhost:41100",
+          secure: false,
+        },
       },
     },
   };

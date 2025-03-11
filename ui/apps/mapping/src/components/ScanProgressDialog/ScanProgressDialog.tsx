@@ -2,10 +2,11 @@ import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { useNavigate } from "react-router-dom";
 import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
+import { Loader } from "@portal/components";
 import { api } from "../../axios/api";
-import { TableSourceHandleData, useField, useScannedSchema, useTable } from "../../contexts";
+import { ScannedSchemaState, TableSourceHandleData, useField, useScannedSchema, useTable } from "../../contexts";
 import { ScanDataProgressLogs, ScanDataSourceTable } from "../../types/scanDataDialog";
-import { buildFieldHandle, getColumns, saveBlobAs } from "../../utils/utils";
+import { buildFieldHandle, getColumns, saveBlobAs, sleep } from "../../utils/utils";
 import { CloseDialogType } from "../ScanDataDialog/ScanDataDialog";
 import "./ScanProgressDialog.scss";
 
@@ -19,6 +20,7 @@ interface ScanProgressDialogProps {
 
 export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, onClose, nodeId, scanId }) => {
   const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [scanCompleted, setScanCompleted] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,10 +49,30 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   const handleLinkTables = useCallback(async () => {
     try {
-      const response = await api.whiteRabbit.getScanResult(scanId);
-      const dataId = response.dataId;
-      const fileName = response.fileName;
-      const scannedResult = await api.backend.createSourceSchemaByScanReport(dataId, fileName);
+      setLoading(true);
+      const scanResultResponse = await api.whiteRabbit.getScanResult(scanId);
+      const fileId = scanResultResponse.fileId;
+      const fileName = scanResultResponse.fileName;
+
+      const flowRunResponse = await api.backend.createSourceSchemaByScanReportFlowRun(fileId, fileName);
+      const flowRunId = flowRunResponse.flowRunId;
+
+      let fetchedStatus = false;
+
+      while (!fetchedStatus) {
+        sleep(5000);
+        try {
+          const status = await api.backend.getFlowRunStatus(flowRunId);
+          if (status.state_name === "Completed") {
+            fetchedStatus = true;
+          }
+        } catch (error) {
+          console.error("Failed to check job status", error);
+          setLoading(false);
+          return;
+        }
+      }
+      const scannedResult: ScannedSchemaState = await api.backend.getSourceSchemaByFlowRunId(flowRunId);
 
       let sourceHandles: Partial<NodeProps<TableSourceHandleData>>[];
       sourceHandles = scannedResult.source_tables.map((table: ScanDataSourceTable, index: number) => ({
@@ -72,6 +94,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         setFieldSourceHandles({ tableName, data: handles });
       });
 
+      setLoading(false);
       setScannedSchema(scannedResult);
       updateNodeInternals(nodeId);
       handleClose("success");
@@ -126,8 +149,15 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   }, [open, scanId, scanCompleted, fetchScanProgress]);
 
   return (
-    <Dialog className="scan-progress-dialog" open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Scan Data</DialogTitle>
+    <Dialog className="scan-progress-dialog" open={open} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        Scan Data
+        {(loading || !scanCompleted) && (
+          <div className="scan-progress-dialog__loader">
+            <Loader />
+          </div>
+        )}
+      </DialogTitle>
       <div className="scan-progress-dialog__content">
         <div className="scan-progress-dialog__status">Scanning... Estimated time depends on selected database</div>
         <LinearProgress variant="determinate" value={progress} />
@@ -138,13 +168,13 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         </div>
       </div>
       <div className="scan-progress-dialog__actions">
-        <Button onClick={handleBack} variant="outlined" disabled={!scanCompleted}>
+        <Button onClick={handleBack} variant="outlined" disabled={!scanCompleted || loading}>
           Back
         </Button>
         <Button onClick={handleSaveReport} variant="contained" color="primary" disabled={!scanCompleted}>
           Save report
         </Button>
-        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted}>
+        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted || loading}>
           Link tables
         </Button>
       </div>

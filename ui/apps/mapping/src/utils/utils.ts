@@ -31,3 +31,7 @@ export const buildFieldHandle = (columnList: any[], tableName: string, isSource?
     } as FieldHandleData,
     targetPosition: isSource ? Position.Right : Position.Left,
   }));
+
+export async function sleep(duration: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, duration));
+}

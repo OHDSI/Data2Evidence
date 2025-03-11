@@ -9,6 +9,7 @@ from prefect_shell import ShellOperation
 from flows.perseus_plugin.types import ServiceCredentials, PerseusRequestType
 from shared_utils.api.OpenIdAPI import OpenIdAPI
 
+
 class Perseus:
     def __init__(self):
         self.logger = get_run_logger()
@@ -33,7 +34,7 @@ class Perseus:
             self.logger.info("Running command to start perseus...")
             process = ShellOperation(commands=['/usr/src/app/bin/python3 /app/main.py'],
                                      env=self.service_credentials.model_dump(mode='json')).trigger()
-               
+
         except Exception as e:
             self.logger.error(f"Failed to start service: {e}")
             raise Exception(e)
@@ -42,7 +43,7 @@ class Perseus:
                 "Successfully run command to start perseus service")
 
         while not self.health_check():
-            time.sleep(5)
+            time.sleep(10)
         self.logger.info("Perseus service is ready to accept requests")
         self.process = process
 
@@ -52,10 +53,10 @@ class Perseus:
 
             return response.status_code == 200
         except requests.RequestException as e:
-            self.logger.error(f"Perseus service is not ready: {e}")
+            self.logger.info(f"Perseus service is not ready: {e}")
             return False
-        
-    def handle_request(self, options:PerseusRequestType):
+
+    def handle_request(self, options: PerseusRequestType):
         options.headers.update(
             {
                 "Authorization": f"Bearer {OpenIdAPI().getClientCredentialToken()}"
@@ -66,9 +67,5 @@ class Perseus:
             url=f"{self.perseus_endpoint}{options.url}",
             headers=options.headers,
             data=json.dumps(options.data))
-
-        if ((result.status_code >= 400) and (result.status_code < 600)):
-            raise Exception(
-                f"Perseus failed to complete request, {result.content}")
-        else:
-            return result.json()
+        
+        return result

@@ -1,10 +1,10 @@
-import React, { FC, useEffect, useCallback, useMemo, useRef, useState } from "react";
-import { Button, Dialog, InputLabel, DialogTitle, TextField, FormGroup, FormControlLabel } from "@mui/material";
+import { Button, Dialog, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField } from "@mui/material";
+import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import Checkbox from "@mui/material/Checkbox";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../axios/api";
 import { ScanDataDBConnectionForm } from "../../types/scanDataDialog";
 import { ConnectionErrorDialog } from "../ConnectionErrorDialog/ConnectionErrorDialog";
@@ -51,6 +51,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
   const [connectionErrorMessage, setConnectionErrorMesssage] = useState<string>("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (dataType) {
@@ -60,6 +62,14 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
       }));
     }
   }, [dataType]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -184,32 +194,70 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const scanData = useCallback(async () => {
     try {
       setLoading(true);
+      setIsScanning(true);
       if (uploadedFiles) {
         const response = await api.whiteRabbit.createScanReport(uploadedFiles, delimiter);
-        setScanId(response.id);
+        const flowRunId = response.flowRunId;
+
+        intervalRef.current = setInterval(async () => {
+          try {
+            const status = await api.whiteRabbit.getFlowRunStatus(flowRunId);
+            if (status.state_name === "Completed") {
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+              }
+              setIsScanning(false);
+              const scanArtifacts = await api.whiteRabbit.getScanIdByFlowRunId(flowRunId);
+              setScanId(scanArtifacts.scan_id);
+              handleClose("success");
+            }
+          } catch (error) {
+            console.error("Failed to check job status", error);
+          }
+        }, 10000);
       } else {
         console.error("No file was uploaded");
       }
-    } catch {
-      console.error("Failed to create scan report from CSV");
+    } catch (error) {
+      console.error("Failed to create scan report from CSV", error);
       setLoading(false);
+      setIsScanning(false);
     }
   }, [uploadedFiles, delimiter]);
 
   const scanDBData = useCallback(async () => {
     try {
       setLoading(true);
+      setIsScanning(true);
       if (canConnect) {
         const response = await api.whiteRabbit.createDBScanReport(dbConnectionForm, selectedTables);
-        setScanId(response.id);
+        const flowRunId = response.flowRunId;
+
+        intervalRef.current = setInterval(async () => {
+          try {
+            const status = await api.whiteRabbit.getFlowRunStatus(flowRunId);
+            if (status.state_name === "Completed") {
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+              }
+              setIsScanning(false);
+              const scanArtifacts = await api.whiteRabbit.getScanIdByFlowRunId(flowRunId);
+              setScanId(scanArtifacts.scan_id);
+              handleClose("success");
+            }
+          } catch (error) {
+            console.error("Failed to check job status", error);
+          }
+        }, 10000);
       } else {
         console.error("No connection to the database was established");
       }
     } catch (error) {
       console.error("Failed to create scan report from DB", error);
       setLoading(false);
+      setIsScanning(false);
     }
-  }, [dbConnectionForm, selectedTables]);
+  }, [dbConnectionForm, selectedTables, canConnect]);
 
   const fileNames = useMemo(() => uploadedFiles.map((file) => file.name).join(", "), [uploadedFiles]);
 
@@ -231,7 +279,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
       className="scan-data-dialog"
       title="Scan Data"
       open={open}
-      onClose={() => handleClose("cancelled")}
       maxWidth="md"
       fullWidth
     >
@@ -410,10 +457,10 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
         <Button
           onClick={handleApply}
           variant="contained"
-          disabled={selectedTables.length === 0}
+          disabled={selectedTables.length === 0 || isScanning}
           style={{ marginLeft: "20px" }}
         >
-          {loading ? "Loading..." : "Apply"}
+          {isScanning ? "Scanning..." : loading ? "Loading..." : "Apply"}
         </Button>
       </div>
       {connectionErrorDialogVisible && (

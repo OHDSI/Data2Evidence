@@ -1,58 +1,85 @@
 import { ScanDataDBConnectionForm } from "../types/scanDataDialog";
 import { EtlModel } from "../utils/etl-transformer";
 import request from "./request";
+import pako from "pako";
+import { Buffer } from "buffer";
 
 const WHITE_RABBIT_BASE_ENDPOINT = `white-rabbit/api/`;
+const JOBPLUGINS_BASE_ENDPOINT = `jobplugins/white-rabbit/`;
+
+export interface WhiteRabbitJobStatus {
+  state_name: string;
+  id: string;
+}
 
 export class WhiteRabbit {
-  public createScanReport(files: File[], delimiter: string = ",") {
-    const formData = new FormData();
+  public async createScanReport(files: File[], delimiter: string = ",") {
+    const csvToJSON = async (file: File): Promise<any[]> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.onload = () => {
+          const csvText = reader.result as string;
+          const lines = csvText.split("\n");
+          const headers = lines[0].split(delimiter).map((header) => header.trim());
 
-    const settings = {
-      fileType: "CSV files",
-      delimiter,
-      scanDataParams: {
-        sampleSize: 100000,
-        scanValues: true,
-        minCellCount: 5,
-        maxValues: 1000,
-        calculateNumericStats: false,
-        numericStatsSamplerSize: 100000,
-      },
+          const jsonArray = lines
+            .slice(1)
+            .filter((line) => line.trim() !== "") // Skip empty lines
+            .map((line) => {
+              const values = line.split(delimiter);
+              return headers.reduce((obj, header, index) => {
+                obj[header] = values[index]?.trim() || "";
+                return obj;
+              }, {} as any);
+            });
+
+          resolve(jsonArray);
+        };
+        reader.onerror = (error) => reject(error);
+      });
     };
-    formData.append("settings", JSON.stringify(settings));
 
-    // Append each file to the FormData object
-    files.forEach((file) => {
-      formData.append("files", file, file.name);
-    });
+    const fileContents = await Promise.all(
+      files.map(async (file) => ({
+        fileName: file.name,
+        fileContent: await csvToJSON(file),
+      }))
+    );
 
-    return request({
-      url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/files`,
-      method: "POST",
-      data: formData,
-      headers: {
-        "Content-Type": "multipart/form-data",
+    // Compress the data
+    const jsonString = JSON.stringify({
+      files: fileContents,
+      settings: {
+        fileType: "CSV files",
+        delimiter,
+        scanDataParams: {
+          sampleSize: 100000,
+          scanValues: true,
+          minCellCount: 5,
+          maxValues: 1000,
+          calculateNumericStats: false,
+          numericStatsSamplerSize: 100000,
+        },
       },
     });
-  }
+    const compressed = pako.gzip(jsonString);
+    const base64Compressed = Buffer.from(compressed).toString('base64');
 
-  public createDBScanReport(postgresqlForm: ScanDataDBConnectionForm, tablesToScan: string[]) {
+
     const data = {
-      ...postgresqlForm,
-      scanDataParams: {
-        sampleSize: 100000,
-        scanValues: true,
-        minCellCount: 5,
-        maxValues: 1000,
-        calculateNumericStats: false,
-        numericStatsSamplerSize: 100000,
+      options: {
+        url: "scan-report/files",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: base64Compressed,
       },
-      tablesToScan: tablesToScan.join(","),
     };
 
     return request({
-      url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/db`,
+      url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
       method: "POST",
       data: data,
       headers: {
@@ -76,7 +103,7 @@ export class WhiteRabbit {
     });
   }
 
-  public getScanResult(id: number) {
+  public async getScanResult(id: number): Promise<{ fileId: number; fileName: string }> {
     return request({
       url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/result/${id}`,
       method: "GET",
@@ -97,6 +124,82 @@ export class WhiteRabbit {
       method: "POST",
       responseType: "blob",
       data: etlModel,
+    });
+  }
+
+  public createDBScanReport(postgresqlForm: ScanDataDBConnectionForm, tablesToScan: string[]) {
+    const data = {
+      options: {
+        url: "scan-report/db",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: {
+          ...postgresqlForm,
+          scanDataParams: {
+            sampleSize: 100000,
+            scanValues: true,
+            minCellCount: 5,
+            maxValues: 1000,
+            calculateNumericStats: false,
+            numericStatsSamplerSize: 100000,
+          },
+          tablesToScan: tablesToScan.join(","),
+        },
+      },
+    };
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
+      method: "POST",
+      data: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  public getFlowRunStatus(flowRunId: string): Promise<WhiteRabbitJobStatus> {
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}results/${flowRunId}`,
+      method: "GET",
+    });
+  }
+
+  public getScanIdByFlowRunId(flowRunId: string) {
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}artifacts/${flowRunId}`,
+      method: "GET",
+    });
+  }
+
+  public createEtlReport(etlModel: EtlModel) {
+    const data = {
+      options: {
+        url: "report/word",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: etlModel,
+      },
+    };
+  
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
+      method: "POST",
+      data: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+  
+  public getEtlReportFromArtifacts(flowRunId: string) {
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}etl-report/${flowRunId}`,
+      method: "GET",
+      responseType: "blob",
     });
   }
 }

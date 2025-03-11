@@ -1,17 +1,18 @@
-import { useEffect, useCallback } from "react";
-import ReactFlow, { Controls, EdgeChange, PanOnScrollMode } from "reactflow";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ReactFlow, { Controls, EdgeChange, PanOnScrollMode } from "reactflow";
 import { nodeTypes } from "../Nodes";
+import { api } from "../axios/api";
 import { useApp, useCdmSchema, useField, useTable } from "../contexts";
-import { TableToTable } from "./TableToTable";
 import { transformEtlModel } from "../utils/etl-transformer";
 import { saveBlobAs } from "../utils/utils";
-import { api } from "../axios/api";
 import "./FieldMapLayout.scss";
+import { TableToTable } from "./TableToTable";
 
 export const FieldMapLayout = () => {
   const { state } = useApp();
+  const [loading, setLoading] = useState(false);
   const {
     nodes,
     edges: fieldEdges,
@@ -50,24 +51,40 @@ export const FieldMapLayout = () => {
   }, [setFieldEdges, fieldEdges]);
 
   const handleReport = useCallback(async () => {
-    const model = transformEtlModel(
-      1,
-      "Source",
-      state.scannedSchema,
-      2,
-      `CDM ${cdmVersion}`,
-      state.cdmTables,
-      tableEdges,
-      fieldEdges,
-      allTargetFields
-    );
-    console.debug("Model", model);
-
     try {
-      const response = await api.whiteRabbit.generateEtlReport("word", model);
-      saveBlobAs(response, "etl-mapping.docx");
+      setLoading(true);
+      const model = transformEtlModel(
+        1,
+        "Source",
+        state.scannedSchema,
+        2,
+        `CDM ${cdmVersion}`,
+        state.cdmTables,
+        tableEdges,
+        fieldEdges,
+        allTargetFields
+      );
+      const response = await api.whiteRabbit.createEtlReport(model);
+      const flowRunId = response.flowRunId;
+
+      const intervalId = setInterval(async () => {
+        try {
+          const status = await api.whiteRabbit.getFlowRunStatus(flowRunId);
+          if (status.state_name === "Completed") {
+            clearInterval(intervalId);
+            const reportBlob = await api.whiteRabbit.getEtlReportFromArtifacts(flowRunId);
+            saveBlobAs(reportBlob, "etl-mapping.docx");
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error("Failed to check ETL report status", error);
+          clearInterval(intervalId);
+          setLoading(false);
+        }
+      }, 10000);
     } catch (error) {
       console.error("Failed to generate ETL report", error);
+      setLoading(false);
     }
   }, [fieldEdges, tableEdges, sourceFields, targetFields, allTargetFields, sourceTables, targetTables, cdmVersion]);
 
@@ -104,8 +121,8 @@ export const FieldMapLayout = () => {
           <Button variant="outlined" color="error" onClick={deleteLinks}>
             Delete links
           </Button>
-          <Button variant="contained" onClick={handleReport}>
-            Report
+          <Button variant="contained" onClick={handleReport} disabled={loading}>
+            {loading ? "Generating..." : "Report"}
           </Button>
         </div>
       </div>

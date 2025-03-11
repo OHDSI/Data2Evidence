@@ -2,6 +2,7 @@ import request from "./request";
 import { LookupListItem, TableSchemaState } from "../contexts";
 
 const PERSEUS_BACKEND_BASE_ENDPOINT = `backend/api/`;
+const JOBPLUGINS_BASE_ENDPOINT = `jobplugins/perseus/`;
 
 export class Backend {
   public getCDMVersions(): Promise<string[]> {
@@ -11,14 +12,24 @@ export class Backend {
     });
   }
 
-  public createSourceSchemaByScanReport(id: number, fileName: string) {
-    return request({
-      url: `${PERSEUS_BACKEND_BASE_ENDPOINT}create_source_schema_by_scan_report`,
-      method: "POST",
-      data: {
-        dataId: id,
-        fileName,
+  public async createSourceSchemaByScanReportFlowRun(id: number, fileName: string): Promise<{ flowRunId: string }> {
+    const data = {
+      options: {
+        url: "create_source_schema_by_scan_report",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: {
+          dataId: id,
+          fileName,
+        },
+        method: "POST",
       },
+    };
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
+      method: "POST",
+      data: data,
       headers: {
         "Content-Type": "application/json",
       },
@@ -46,6 +57,23 @@ export class Backend {
       url: `${PERSEUS_BACKEND_BASE_ENDPOINT}lookup/sql`,
       method: "GET",
       params: { name, lookupType },
+    });
+  }
+
+  public getFlowRunStatus(flowRunId: string): Promise<{
+    state_name: string;
+    id: string;
+  }> {
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}results/${flowRunId}`,
+      method: "GET",
+    });
+  }
+
+  public getSourceSchemaByFlowRunId(flowRunId: string) {
+    return request({
+      url: `${JOBPLUGINS_BASE_ENDPOINT}artifacts/${flowRunId}`,
+      method: "GET",
     });
   }
 }

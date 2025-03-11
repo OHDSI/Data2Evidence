@@ -4,6 +4,30 @@
   .MuiDialogTitle-root {
     color: $primary-color;
     font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .scan-progress-dialog__loader {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    
+    :first-child {
+      width: 24px !important;
+      height: 24px !important;
+      
+      svg {
+        width: 24px !important;
+        height: 24px !important;
+      }
+      
+      .MuiCircularProgress-root {
+        width: 24px !important;
+        height: 24px !important;
+      }
+    }
   }
 
   .scan-progress-dialog__content {

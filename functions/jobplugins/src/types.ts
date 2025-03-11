@@ -313,7 +313,7 @@ interface ICreateDatamodelFlowRunOptions {
     cleansed_schema_option: string;
     vocab_schema: string;
     plugin: string;
-  }
+  };
 }
 
 interface IGetVersionInfoFlowRunOptions {
@@ -324,10 +324,37 @@ interface IGetVersionInfoFlowRunOptions {
     schema_name: string;
     vocab_schema: string;
     plugin: string;
-  }
+  };
 }
 
 export interface ICreateCachedbFileFlowRunDto {
   databaseCode: string;
   schemaName: string;
+}
+
+export interface ICreateWhiteRabbitFlowRunDto {
+  options: ICreateWhiteRabbitFlowRunOptions;
+}
+
+export interface ICreatePerseusFlowRunDto {
+  options: ICreateWhiteRabbitFlowRunOptions;
+}
+
+interface ICreateWhiteRabbitFlowRunOptions {
+  url: string;
+  headers?: object;
+  data?: object;
+}
+
+export interface IPrefectArtifact {
+  id: string;
+  created: string;
+  updated: string;
+  key: string;
+  type: string;
+  description: string;
+  data: string;
+  metadata_: string;
+  flow_run_id: string;
+  task_run_id: string;
 }
