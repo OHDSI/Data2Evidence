@@ -67,7 +67,6 @@ def data_characterization_plugin(options: DCOptionsType):
     )
 
     if dc_schema:
-        r_libs_user_directory = Variable.get("r_libs_user")
         
         set_admin_connection_string = results_schema_dao.get_database_connector_connection_string(
             user_type=admin_user,
@@ -85,7 +84,6 @@ def data_characterization_plugin(options: DCOptionsType):
                                                   results_schema_dao=results_schema_dao,
                                                   exclude_analysis_ids=exclude_analysis_ids,
                                                   output_folder=output_folder,
-                                                  r_libs_user_directory=r_libs_user_directory,
                                                   set_connection_string=set_admin_connection_string,
                                                   flow_run_id=flow_run_id
                                                   )
@@ -98,7 +96,6 @@ def data_characterization_plugin(options: DCOptionsType):
                                vocab_schema_name=vocab_schema_name,
                                results_schema_dao=results_schema_dao,
                                output_folder=output_folder,
-                               r_libs_user_directory=r_libs_user_directory,
                                set_connection_string=set_read_connection_string,
                                flow_run_id=flow_run_id)
 
@@ -162,7 +159,6 @@ def execute_data_characterization(schema_name: str,
                                   results_schema_dao,
                                   exclude_analysis_ids: str,
                                   output_folder: str,
-                                  r_libs_user_directory: str,
                                   set_connection_string: str,
                                   flow_run_id: str):
     try:
@@ -214,9 +210,7 @@ def execute_export_to_ares(schema_name: str,
                                  vocab_schema_name: str,
                                  results_schema_dao,
                                  output_folder: str,
-                                 r_libs_user_directory: str,
                                  set_connection_string: str,
-                                 flow_run_id: str
                                  ):
     try:
         logger = get_run_logger()
