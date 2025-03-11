@@ -35,7 +35,6 @@ import { validateCredentials } from "../CredentialValidator";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
 import { useTranslation } from "../../../../contexts";
-import { useVocabSchemas } from "../../../../hooks";
 import omit from "lodash/omit";
 import "./SaveDbDialog.scss";
 
@@ -124,7 +123,6 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
   const [feedback, setFeedback] = useState<Feedback>({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
-  const [vocabSchemas] = useVocabSchemas(formData.dialect);
 
   useEffect(() => {
     if (open) {
@@ -313,7 +311,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         <Box mb={4}>
           <Autocomplete
             multiple
-            options={vocabSchemas || []}
+            freeSolo
+            options={[] as string[]}
             sx={styles}
             id="autocomplete-vocab-schemas"
             renderTags={(value: string[], getTagProps) =>

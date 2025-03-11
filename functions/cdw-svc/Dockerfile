@@ -24,9 +24,6 @@ WORKDIR /usr/src/
 RUN yarn workspace cdw-config run compile && \
     yarn install --network-timeout 1000000 --ignore-scripts --production
 
-WORKDIR /usr/src/services/app/envConverter
-COPY ./services/envConverter .
-RUN yarn install
 
 FROM node:18.20.4-slim AS final
 

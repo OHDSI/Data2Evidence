@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'npm:express'
 import { CDMSchemaTypes, DbDialect } from './const.ts'
 import { PortalAPI }from './api/PortalAPI.ts'
-import { AlpDbAPI } from './api/AlpDbAPI.ts'
+import { AnalyticsSvcAPI } from './api/AnalyticsSvcAPI.ts'
 const logger = console
 
 export const generateDatasetSchema = async (req: Request, res: Response, next: NextFunction) => {
@@ -9,14 +9,14 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
 
   const token = req.headers.authorization!
   const portalAPI = new PortalAPI(token)
-  const alpDbAPI = new AlpDbAPI(token)
+  const analyticsSvcApi = new AnalyticsSvcAPI(token)
 
   //CDM Schema preparation
   logger.info('Option for schema: ' + schemaOption + ' with the value: ' + cdmSchemaValue)
   if (schemaOption === CDMSchemaTypes.CustomCDM || schemaOption === CDMSchemaTypes.ExistingCDM) {
     const datasets = await portalAPI.getStudiesAsSystemAdmin()
 
-    const schemaExists = await alpDbAPI.checkIfSchemaExists(dialect, databaseCode, cdmSchemaValue)
+    const schemaExists = await analyticsSvcApi.checkIfSchemaExists(dialect, databaseCode, cdmSchemaValue)
 
     const foundDataset = datasets.find(
       dataset => dataset.schemaName === cdmSchemaValue && dataset.databaseCode === databaseCode

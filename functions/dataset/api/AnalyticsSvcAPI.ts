@@ -49,6 +49,26 @@ export class AnalyticsSvcAPI {
   }
 
   // alpdb endpoints
+  async checkIfSchemaExists(
+    databaseDialect: string,
+    databaseCode: string,
+    schemaName: string
+  ): Promise<boolean> {
+    this.logger.info(
+      `Checking if schema exists for ${schemaName} in ${databaseCode}`
+    );
+    const options = await this.getRequestConfig();
+    const url = `${this.baseURL}alpdb/${databaseDialect}/database/${databaseCode}/schema/${schemaName}/exists`;
+    try {
+      const result = await get(url, options);
+      return result.data;
+    } catch (error) {
+      const errorMessage = `Failed to check if schema exists for ${schemaName} in ${databaseCode}`;
+      this.logger.error(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
+  }
+
   async getCdmSchemaSnapshotMetadata(datasetId: string) {
     this.logger.info(`Getting CDM schema snapshot metadata for ${datasetId}`);
     const options = await this.getRequestConfig();

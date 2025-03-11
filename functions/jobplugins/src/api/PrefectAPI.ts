@@ -1,3 +1,4 @@
+import { decode } from "jsonwebtoken";
 import dayjs from "npm:dayjs";
 import { services } from "../env.ts";
 import { IFlowRunQueryDto, IPrefectFlowRunDto } from "../types.ts";
@@ -334,9 +335,17 @@ export class PrefectAPI {
   async createInputAuthToken(flowrunId: string) {
     const retries = 3;
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
+
+    const thirdPartyToken: string | undefined = decode(
+      this.token.replace(/bearer /i, ""),
+    )['thirdPartyToken'];
+
     const options = this.createOptions("POST", {
       key: key,
-      value: JSON.stringify({ token: this.token }), // 'value' must be a string always. Convert the json object to a string
+      value: JSON.stringify({ 
+        token: this.token,
+        thirdpartytoken: thirdPartyToken || ''
+      }), // 'value' must be a string always. Convert the json object to a string
     });
     const errorMessage =
       "Error occurred while passing user token to the flow run";

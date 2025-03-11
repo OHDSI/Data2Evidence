@@ -12,23 +12,9 @@ from shared_utils.types import UserType
 from shared_utils.dao.DBDao import DBDao
 from shared_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
 
-@task
-def setup_plugin():
-    r_libs_user_directory = Variable.get("r_libs_user")
-    # force=TRUE for fresh install everytime flow is run
-    if (r_libs_user_directory):
-        ShellOperation(
-            commands=[
-                f"Rscript -e \"remotes::install_github('OHDSI/CohortGenerator@v0.8.1',quiet=FALSE,upgrade='never',force=TRUE, dependencies=FALSE, lib='{r_libs_user_directory}')\""
-            ]).run()
-    else:
-        raise ValueError("Environment variable: 'R_LIBS_USER' is empty.")
-
-
 
 @flow(log_prints=True, persist_result=True)
 def cohort_generator_plugin(options: CohortGeneratorOptionsType):
-    setup_plugin()
     logger = get_run_logger()
     logger.info('Running Cohort Generator')
         
@@ -91,12 +77,10 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
         user_type=admin_user
     )
    
-    r_libs_user_directory = Variable.get("r_libs_user")
     
     with robjects.conversion.localconverter(robjects.default_converter):
         robjects.r(f'''
-                .libPaths(c('{r_libs_user_directory}',.libPaths()))
-                library('CohortGenerator', lib.loc = '{r_libs_user_directory}')
+                library('CohortGenerator')
                 {set_db_driver_env_string}
                 {set_connection_string}
                 cohortJson <- '{cohort_json_expression}'

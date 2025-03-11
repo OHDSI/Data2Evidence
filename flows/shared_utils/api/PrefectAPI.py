@@ -14,3 +14,6 @@ def get_auth_token_from_input() -> AuthToken:
 
 def get_token_value(auth_token: AuthToken) -> str:
     return auth_token.token.get_secret_value().replace("Bearer ", "")
+
+def get_third_party_token_value(auth_token: AuthToken) -> str:
+    return auth_token.thirdpartytoken.get_secret_value()

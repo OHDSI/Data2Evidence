@@ -74,7 +74,7 @@ jobs:
         run: npm install
       - name: Publish
         run: |
-          if [[ ${{ github.ref_name }} == 'develop' ]]; then
+          if [[ ${{ env.GIT_BRANCH_NAME }} == 'develop' && ${{ github.event_name }} != 'workflow_dispatch' ]]; then
             npm publish
           else
             npm publish --dry-run

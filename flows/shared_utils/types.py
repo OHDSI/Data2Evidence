@@ -99,3 +99,4 @@ class EntityCountDistributionType(BaseModel):
 
 class AuthToken(RunInput):
     token: SecretStr
+    thirdpartytoken: SecretStr

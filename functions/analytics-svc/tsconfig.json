@@ -13,10 +13,5 @@
         "types": ["jest", "node"],
         "resolveJsonModule": true
     },
-    "include": [
-        "src",
-        "spec",
-        "typings"
-    ],
-    "exclude": ["envConverter"]
+    "include": ["src", "spec", "typings"]
 }

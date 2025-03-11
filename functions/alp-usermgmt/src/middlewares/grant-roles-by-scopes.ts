@@ -147,7 +147,11 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
     let group = await groupService.getGroupByStudyRole(dataset.id, role)
     if (!group?.id) {
       await groupService.createGroup({ role, tenantId, studyId: dataset.id })
-      group = await groupService.getGroupsByStudyRole(dataset.id, role)
+      group = await groupService.getGroupByStudyRole(dataset.id, role)
+    }
+
+    if (!group?.id) {
+      continue;
     }
 
     const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)

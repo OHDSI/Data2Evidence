@@ -12,18 +12,6 @@ from shared_utils.dao.DBDao import DBDao
 import logging
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
 
-@task
-def setup_plugin():
-    r_libs_user_directory = Variable.get("r_libs_user")
-    # force=TRUE for fresh install everytime flow is run
-    if (r_libs_user_directory):
-        ShellOperation(
-            commands=[
-                f"""Rscript -e "install.packages('CohortGenerator', quiet=FALSE, upgrade='never', force=TRUE, dependencies=FALSE, lib='{r_libs_user_directory}')" """,
-                f"Rscript -e \"remotes::install_github('OHDSI/PhenotypeLibrary@v3.32.0',quiet=FALSE,upgrade='never',force=TRUE, dependencies=FALSE, lib='{r_libs_user_directory}')\""
-            ]).run()
-    else:
-        raise ValueError("Environment variable: 'R_LIBS_USER' is empty.")
 
 @task
 def validate_integer_string(input_string):
@@ -46,8 +34,6 @@ def phenotype_plugin(options: PhenotypeOptionsType):
 
     logger = get_run_logger()
     logger.info('Running Phenotype')
-    # setup_plugin()
-    # logger.info('Setup Done')
 
     database_code = options.databaseCode
     cdmschema_name = options.cdmschemaName
@@ -72,16 +58,14 @@ def phenotype_plugin(options: PhenotypeOptionsType):
         user_type=user
     )
    
-    r_libs_user_directory = Variable.get("r_libs_user")
 
     with robjects.conversion.localconverter(robjects.default_converter):
         robjects.r(f'''
                 print('Start loading library')
-                .libPaths(c('{r_libs_user_directory}',.libPaths()))
-                library('CohortGenerator', lib.loc = '/usr/local/lib/R/site-library')
-                library('PhenotypeLibrary', lib.loc = '/usr/local/lib/R/site-library')
-                library('DatabaseConnector', lib.loc = '/usr/local/lib/R/site-library')
-                library('CirceR', lib.loc = '/usr/local/lib/R/site-library')
+                library('CohortGenerator')
+                library('PhenotypeLibrary')
+                library('DatabaseConnector')
+                library('CirceR')
                 {set_db_driver_env_string}
                 {set_connection_string}
 

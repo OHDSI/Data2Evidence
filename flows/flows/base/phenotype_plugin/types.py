@@ -8,8 +8,6 @@ class PhenotypeOptionsType(BaseModel):
     cohortsId: str   # as.integer(c(25,3,4)) or 'default'
     vocabschemaName: str # cdmvocab
     description: str   
-    owner: str   
-    # token: str   # bear token
     
     @property
     def use_cache_db(self) -> str:

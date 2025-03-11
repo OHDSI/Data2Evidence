@@ -85,7 +85,7 @@ ENV APP_VERSION=0.0.0
 ENV PRING_PROFILES_ACTIVE=prod
 
 # OpenJDK 17
-RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_openj9_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_openj9_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
+RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
 
 RUN rm openjdk.tgz*
 
@@ -122,6 +122,7 @@ RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upg
 # public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
 RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.13.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortMethod@v5.2.0")'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.8.1", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)' # for cohort_generator plugin: HADES@v1.13.0 has CohortGenerator@v0.8.0
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v3.3.0")'
 
 # OHDSI packages and versions - after HADES
@@ -191,15 +192,6 @@ RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postg
     && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
     && gzip -d postgres_scanner.duckdb_extension.gz \
     && gzip -d fts.duckdb_extension.gz
-
-# To support offline installation
-# Create folder to store R packages installed during runtime for plugins which require custom R packages
-ENV R_LIBS_USER_DIR /home/docker/plugins/R/site-library
-RUN mkdir -p $R_LIBS_USER_DIR
-RUN chown -R docker:docker $R_LIBS_USER_DIR
-
-# Common Data Model
-RUN Rscript -e "remotes::install_github('OHDSI/CommonDataModel@v5.4.1', quiet=FALSE, upgrade='never', force=TRUE, dependencies=FALSE, lib='$R_LIBS_USER_DIR')"
 
 # Uncomment for installation of i2b2 source code
 # # Add Apache Ant for i2b2 data model creation

@@ -1,10 +1,9 @@
 name: d2e DC Deploy AzureTest CD
-run-name: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+run-name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
 
 on:
-  push:
-    branches:
-      - develop
+  schedule:
+    - cron: '0 22 * * *' # UTC timing
 
   workflow_dispatch:
     inputs:
@@ -25,20 +24,20 @@ on:
 
 env:
   DOCKER_TAG_NAME: ${{ github.event.inputs.docker_tag_name || 'develop' }}
-  ENV_NAME: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+  ENV_NAME: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
   ENV_TYPE: remote
 
 concurrency:
-  group: az-dc-cd-${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+  group: az-dc-cd-${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
   cancel-in-progress: true
 
 jobs:
   deploy:
-    environment: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
-    name: ${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+    environment: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+    name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
     runs-on:
       [
-        "${{ github.event_name == 'push' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}",
+        "${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}",
         self-hosted,
         Linux,
         X64,
@@ -108,7 +107,7 @@ jobs:
             ${{ github.job }}*.yml
 
       - shell: bash
-        if: github.event_name == 'push'
+        if: github.event_name == 'schedule'
         id: enable_delay_for_docker_build_to_complete
         run: |
           sleep 240 # Temporary solution
@@ -128,7 +127,7 @@ jobs:
 
       - name: docker compose up
         run: |
-          yarn remote:minerva up --remove-orphans --force-recreate --wait
+          yarn remote:minerva start
           DC_EXIT_CODE=$?
           echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
 
@@ -142,7 +141,7 @@ jobs:
       - name: Logs minerva
         if: success() || failure()
         run: |
-          yarn ci:logs:minerva
+          yarn deploy:logs:minerva
 
       - name: Post cleanup
         if: always()

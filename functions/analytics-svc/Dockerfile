@@ -25,10 +25,6 @@ WORKDIR /usr/src/
 RUN yarn workspace analytics run compile && \
     yarn install --network-timeout 1000000 --ignore-scripts --production
 
-WORKDIR /usr/envConverter
-COPY ./services/envConverter .
-RUN yarn install
-
 FROM node:18.20.4-slim AS final
 
 RUN apt update && apt install -y openssl zlib1g wget
@@ -60,7 +56,6 @@ RUN chown docker:alp ./duckdb_data
 
 COPY --chown=docker:alp --chmod=711 ./services/analytics-svc/start.sh .
 
-COPY --chown=docker:alp --chmod=711 --from=final-build /usr/envConverter envConverter/
 
 CMD ["sh", "start.sh"]
 EXPOSE ${PORT}

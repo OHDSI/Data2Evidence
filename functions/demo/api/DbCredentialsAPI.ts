@@ -15,8 +15,8 @@ export class DbCredentialsAPI {
       throw new Error("No token passed for DbCredentialsApi!");
     }
 
-    if (services.dbCredentialsMgr) {
-      this.baseURL = services.dbCredentialsMgr;
+    if (services.trex) {
+      this.baseURL = services.trex;
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT
@@ -31,7 +31,7 @@ export class DbCredentialsAPI {
     try {
       this.logger.info("Get database list");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/db/list`;
+      const url = `${this.baseURL}/trex/db/`;
       const result = await get(url, options);
       return result.data;
     } catch (error) {
@@ -44,7 +44,7 @@ export class DbCredentialsAPI {
     try {
       this.logger.info("Create database");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/db`;
+      const url = `${this.baseURL}/trex/db/`;
       const result = await post(url, dto, options);
       return result.data;
     } catch (error) {

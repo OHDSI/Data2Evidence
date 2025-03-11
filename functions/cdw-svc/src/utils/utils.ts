@@ -465,9 +465,6 @@ const filterVcapByTag = (
 export async function getAnalyticsConnection(userObj, token?: string) {
   let analyticsCredentials;
   let analyticsConnection;
-  let cdwService = filterVcapByTag(env.VCAP_SERVICES, "cdw").map(
-    (db) => db.credentials
-  );
   if (env.USE_DUCKDB === "true") {
     if (env.USE_CACHEDB === "true") {
       // Get duckdb db connection via alp-cachedb
@@ -480,6 +477,9 @@ export async function getAnalyticsConnection(userObj, token?: string) {
       analyticsConnection = await getDuckdbDBConnection();
     }
   } else {
+    let cdwService = filterVcapByTag(env.VCAP_SERVICES, "cdw").map(
+      (db) => db.credentials
+    );
     cdwService = cdwService.filter((db) => db.dialect == "hana");
     analyticsCredentials = cdwService[0];
     // node hdb library checks for these to use TLS
