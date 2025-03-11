@@ -1,6 +1,7 @@
 import { env } from '../env'
 import https from 'https'
 import axios, { AxiosRequestConfig } from 'axios'
+import { IAtlasCohortDefinition } from '../types'
 
 interface CreateBookmarkDto {
   serviceArtifact: any
@@ -99,6 +100,19 @@ export class PortalAPI {
       console.error(error)
       this.logger.error(`Error while deleting Bookmark`)
       throw new Error(`Error while deleting Bookmark`)
+    }
+  }
+
+  async getAtlasCohortDefinitions(datasetId: string): Promise<IAtlasCohortDefinition[]> {
+    try {
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/user-artifact/atlas_cohort_definitions/list?datasetId=${datasetId}`
+      const result = await axios.get(url, options)
+      return result.data
+    } catch (error) {
+      console.error(error)
+      this.logger.error(`Error while getting user artifacts for Atlas cohort definitions`)
+      throw new Error(`Error while getting user artifacts for Atlas cohort definitions`)
     }
   }
 }

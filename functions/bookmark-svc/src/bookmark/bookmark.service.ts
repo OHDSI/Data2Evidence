@@ -8,10 +8,12 @@ import CallBackInterface = connLib.CallBackInterface
 import * as utils from '@alp/alp-base-utils'
 import {
   BookmarkDto,
-  IcohortDefinition,
+  IMaterializedCohort,
   IFormattedBookmark,
   IFormattedcohortDefinition,
   IFrontendBookmark,
+  IAtlasCohortDefinition,
+  IFormattedAtlasCohortDefinition,
 } from '../types'
 import { PortalAPI } from '../api/PortalAPI'
 import { AnalyticsSvcAPI } from '../api/AnalyticsAPI'
@@ -99,17 +101,28 @@ export async function _loadAllBookmarks(
 ) {
   try {
     const portalAPI = new PortalAPI(token)
+
+    // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
 
+    // Get and format atlas cohort definitions
+    const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
+
+    const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
+      _formatAtlasCohortDefinition(atlasCohortDefinition)
+    )
+
+    // Get and format materialized cohorts
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
     const cohortDefinitions = await analyticsSvcAPI.getAllCohorts(datasetId)
-    const formattedCohortDefinitions = cohortDefinitions.map(cohort => _formatCohortDefinitions(cohort))
+    const formattedCohortDefinitions = cohortDefinitions.map(cohort => _formatCohortDefinition(cohort))
 
     const returnValue: IFrontendBookmark = {
       schemaName: connection.schemaName,
       bookmarks: formattedBookmarks,
-      cohortDefinitions: formattedCohortDefinitions,
+      materializedCohorts: formattedCohortDefinitions,
+      atlasCohortDefinitions: formattedAtlasCohortDefinitions,
     }
     callback(null, _convertBookmarkIFR(returnValue))
   } catch (error) {
@@ -537,9 +550,27 @@ function _convertBookmarkIFR(result) {
   return result
 }
 
-const _formatCohortDefinitions = (cohortDefinition: IcohortDefinition): IFormattedcohortDefinition => ({
+const _formatCohortDefinition = (cohortDefinition: IMaterializedCohort): IFormattedcohortDefinition => ({
   id: cohortDefinition.id,
   patientCount: cohortDefinition.patientIds.length,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp,
+})
+
+const _formatAtlasCohortDefinition = (
+  atlasCohortDefinition: IAtlasCohortDefinition
+): IFormattedAtlasCohortDefinition => ({
+  id: atlasCohortDefinition.id,
+  name: atlasCohortDefinition.name,
+  username: atlasCohortDefinition.createdBy,
+  createdOn: new Date(atlasCohortDefinition.createdDate).toISOString(),
+  updatedOn: new Date(atlasCohortDefinition.modifiedDate).toISOString(),
+
+  // Only add key cohortDefinitionId if materializedCohortDefinitionIds array is not empty. If array is not empty, get last value of array, which is the latest materialized cohort
+  ...(atlasCohortDefinition.materializedCohortDefinitionIds.length > 0 && {
+    cohortDefinitionId:
+      atlasCohortDefinition.materializedCohortDefinitionIds[
+        atlasCohortDefinition.materializedCohortDefinitionIds.length - 1
+      ],
+  }),
 })

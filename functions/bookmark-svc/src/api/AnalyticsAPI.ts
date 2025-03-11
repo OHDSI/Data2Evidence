@@ -1,6 +1,6 @@
 import https from 'https'
 import axios, { AxiosRequestConfig } from 'axios'
-import { ICohort } from '../types'
+import { IMaterializedCohort } from '../types'
 import { env } from '../env'
 
 export class AnalyticsSvcAPI {
@@ -33,7 +33,7 @@ export class AnalyticsSvcAPI {
       : true
   }
 
-  async getAllCohorts(datasetId: string): Promise<ICohort[]> {
+  async getAllCohorts(datasetId: string): Promise<IMaterializedCohort[]> {
     try {
       const url = `${this.baseURL}/cohort`
       console.log(`Calling ${url} to get all cohorts`)
