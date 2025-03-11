@@ -398,7 +398,7 @@ paths:
         - Concept Set
       parameters:
         - schema:
-            type: string
+            type: number
           required: true
           name: conceptSetId
           in: path
@@ -421,7 +421,7 @@ paths:
         - Concept Set
       parameters:
         - schema:
-            type: string
+            type: number
           required: true
           name: conceptSetId
           in: path
@@ -466,7 +466,7 @@ paths:
         - Concept Set
       parameters:
         - schema:
-            type: string
+            type: number
           required: true
           name: conceptSetId
           in: path
@@ -494,7 +494,7 @@ paths:
                 conceptSetIds:
                   type: array
                   items:
-                    type: string
+                    type: number
               required:
                 - datasetId
                 - conceptSetIds
@@ -504,4 +504,52 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  type: string
+  /terminology/concept-set/resolveConceptSetExpression:
+    post:
+      description: Resolve concept set expression
+      summary: Resolve concept set expression
+      tags:
+        - Concept Set
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: object
+                  properties:
+                    datasetId:
+                      type: string
+                    concepts:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                          useMapped:
+                            type: boolean
+                          useDescendants:
+                            type: boolean
+                        required:
+                          - id
+                          - useMapped
+                          - useDescendants
+                  required:
+                    - datasetId
+                    - concepts
+              required:
+                - body
+      responses:
+        "200":
+          description: Object with concept set data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string

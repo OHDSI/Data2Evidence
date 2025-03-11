@@ -1,7 +1,6 @@
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
-  ConceptSetDto,
   ConceptSetCheckDto,
   ConceptSetCheckResponseDto,
   ConceptSetListResponseDto,
@@ -13,6 +12,9 @@ import {
 import {
   getConceptSets,
   checkIfConceptSetExists,
+  createConceptSet,
+  updateConceptSetItems,
+  getConceptSetExpression,
 } from "../services/conceptset.service.ts";
 
 // deno-lint-ignore require-await
@@ -43,7 +45,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     {
       schema: {
         description: "Save a new concept set to the database",
-        body: ConceptSetDto,
+        body: ConceptSetCheckDto,
         tags: ["conceptset"],
         response: { 200: ConceptSetResponseDto },
         security: [
@@ -54,17 +56,13 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD LOGIC
-      const dummyresponse = {
-        createdDate: 1738548790447,
-        modifiedDate: 1738548790447,
-        hasWriteAccess: false,
-        hasReadAccess: false,
-        id: 1885989,
-        name: "2025_allergicasthma",
-      };
-      res.send(dummyresponse);
+    async (req, res) => {
+      const results = await createConceptSet(
+        req.token,
+        req.datasetId,
+        req.body
+      );
+      res.send(results);
     }
   );
 
@@ -139,51 +137,13 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD LOGIC
-      const dummyreponse = {
-        items: [
-          {
-            concept: {
-              CONCEPT_ID: 4191479,
-              CONCEPT_NAME: "Allergic asthma",
-              STANDARD_CONCEPT: "S",
-              STANDARD_CONCEPT_CAPTION: "Standard",
-              INVALID_REASON: "V",
-              INVALID_REASON_CAPTION: "Valid",
-              CONCEPT_CODE: "389145006",
-              DOMAIN_ID: "Condition",
-              VOCABULARY_ID: "SNOMED",
-              CONCEPT_CLASS_ID: "Disorder",
-              VALID_START_DATE: 1043971200000,
-              VALID_END_DATE: 4102358400000,
-            },
-            isExcluded: false,
-            includeDescendants: true,
-            includeMapped: false,
-          },
-          {
-            concept: {
-              CONCEPT_ID: 4211530,
-              CONCEPT_NAME: "Asthma caused by wood dust",
-              STANDARD_CONCEPT: "S",
-              STANDARD_CONCEPT_CAPTION: "Standard",
-              INVALID_REASON: "V",
-              INVALID_REASON_CAPTION: "Valid",
-              CONCEPT_CODE: "56968009",
-              DOMAIN_ID: "Condition",
-              VOCABULARY_ID: "SNOMED",
-              CONCEPT_CLASS_ID: "Disorder",
-              VALID_START_DATE: 1012435200000,
-              VALID_END_DATE: 4102358400000,
-            },
-            isExcluded: true,
-            includeDescendants: true,
-            includeMapped: false,
-          },
-        ],
-      };
-      res.send(dummyreponse);
+    async (req, res) => {
+      const result = await getConceptSetExpression(
+        req.token,
+        req.datasetId,
+        req.params.id
+      );
+      res.send(result);
     }
   );
 
@@ -205,9 +165,14 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD LOGIC
-      res.send(true);
+    async (req, res) => {
+      const result = await updateConceptSetItems(
+        req.token,
+        req.datasetId,
+        req.params.id,
+        req.body
+      );
+      res.send(result);
     }
   );
 };

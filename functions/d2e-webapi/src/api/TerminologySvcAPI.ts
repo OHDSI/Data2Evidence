@@ -6,6 +6,8 @@ import {
   ITerminologyConceptSet,
   ITerminologyFhirResource,
   ITerminologyConcept,
+  ITerminologyCreateConceptSet,
+  ITerminologyConceptSetWithConceptData,
 } from "./types.ts";
 
 export class TerminologySvcAPI {
@@ -37,6 +39,71 @@ export class TerminologySvcAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while getting concept sets: ${error}`);
+      throw error;
+    }
+  }
+
+  async getConceptSetById(
+    datasetId: string,
+    conceptSetId: number
+  ): Promise<ITerminologyConceptSetWithConceptData> {
+    try {
+      const url = `${this.baseURL}/concept-set/${conceptSetId}`;
+      console.log(`Calling ${url} to get concept set by id`);
+      const options = this.getRequestConfig();
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+      const result = await axios.get(url, { params, ...options });
+      return result.data;
+    } catch (error) {
+      console.error(`Error while getting concept set by id: ${error}`);
+      throw error;
+    }
+  }
+
+  async createConceptSet(
+    datasetId: string,
+    conceptSetDto: ITerminologyCreateConceptSet
+  ): Promise<number> {
+    try {
+      const url = `${this.baseURL}/concept-set`;
+      console.log(`Calling ${url} to create concept sets`);
+      const options = this.getRequestConfig();
+
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+
+      const result = await axios.post(url, conceptSetDto, {
+        params,
+        ...options,
+      });
+      return result.data;
+    } catch (error) {
+      console.error(`Error while creating concept sets: ${error}`);
+      throw error;
+    }
+  }
+
+  async updateConceptSet(
+    datasetId: string,
+    conceptSetId: number,
+    conceptSetDto: ITerminologyCreateConceptSet
+  ): Promise<number> {
+    try {
+      const url = `${this.baseURL}/concept-set/${conceptSetId}`;
+      console.log(`Calling ${url} to update concept sets`);
+      const options = this.getRequestConfig();
+
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+
+      const result = await axios.put(url, conceptSetDto, {
+        params,
+        ...options,
+      });
+      return result.data;
+    } catch (error) {
+      console.error(`Error while updating concept sets: ${error}`);
       throw error;
     }
   }

@@ -2,7 +2,6 @@
 import { NextFunction, Response, Request } from "express";
 import { SystemPortalAPI } from "../api/portal-api.ts";
 import { JwtPayload, decode } from "jsonwebtoken";
-import { randomUUID } from "crypto";
 import * as schemas from "./validators/conceptSetSchemas.ts";
 import { CachedbService } from "../services/cachedb.ts";
 
@@ -58,17 +57,22 @@ export const createConceptSet = async (
 ) => {
   try {
     const { body, query } = schemas.createConceptSet.parse(req);
+    const systemPortalApi = new SystemPortalAPI(req);
+
+    const conceptSetId = await systemPortalApi.getConceptSetSequenceNextval(
+      query.datasetId
+    );
+
     const userId = getUserIdFromToken(req.headers["authorization"]!);
     const newConceptSet = addOwner(
       {
-        id: randomUUID(),
+        id: conceptSetId,
         ...body,
       },
       true,
       userId
     );
 
-    const systemPortalApi = new SystemPortalAPI(req);
     await systemPortalApi.createConceptSet(
       {
         serviceArtifact: newConceptSet,

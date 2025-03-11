@@ -56,8 +56,41 @@ export interface ITerminologyConceptSetConcept {
   useMapped: boolean;
   useDescendants: boolean;
 }
+
+export interface ITerminologyConceptSetConceptWithConceptData {
+  conceptId: number;
+  display: string;
+  domainId: string;
+  system: string;
+  conceptClassId: string;
+  standardConcept: string;
+  concept: string;
+  code: string;
+  validStartDate: string;
+  validEndDate: string;
+  validity: string;
+  id: number;
+  useMapped: boolean;
+  useDescendants: boolean;
+  conceptCode: string;
+  conceptName: string;
+  vocabularyId: string;
+}
+
+export interface ITerminologyConceptSetWithConceptData {
+  id: number;
+  name: string;
+  shared: boolean;
+  concepts: ITerminologyConceptSetConceptWithConceptData[];
+  userName: string;
+  createdBy: string;
+  modifiedBy: string;
+  createdDate: string;
+  modifiedDate: string;
+}
+
 export interface ITerminologyConceptSet {
-  id: string;
+  id: number;
   name: string;
   shared: boolean;
   concepts: ITerminologyConceptSetConcept[];
@@ -104,6 +137,13 @@ export interface ITerminologyConcept {
   invalid_reason: string | null;
 }
 
+export interface ITerminologyCreateConceptSet {
+  concepts: ITerminologyConceptSetConcept[];
+  name: string;
+  shared: boolean;
+  userName: string;
+}
+
 export interface PortalUserArtifacts {
   createdBy: string;
   createdDate: string;
@@ -111,4 +151,9 @@ export interface PortalUserArtifacts {
   modifiedDate: string;
   userId: string;
   artifacts: unknown;
+}
+
+export interface IUserMe {
+  id: string;
+  username: string;
 }

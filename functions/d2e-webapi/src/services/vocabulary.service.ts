@@ -478,7 +478,7 @@ const _getStandardConceptFromCaption = (standardConcept: string): string => {
   }
 };
 
-const _getInvalidReasonFromCaption = (invalidReason: string): string => {
+export const _getInvalidReasonFromCaption = (invalidReason: string): string => {
   if (invalidReason == "Unknown") return "";
 
   switch (invalidReason) {

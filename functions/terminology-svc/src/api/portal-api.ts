@@ -9,7 +9,7 @@ interface CreateConceptSetDto {
   serviceArtifact: any;
 }
 interface UpdateConceptSetDto {
-  id: string;
+  id: number;
   serviceArtifact: any;
 }
 
@@ -90,7 +90,7 @@ export class SystemPortalAPI {
     }
   }
 
-  async getConceptSetById(id: string, datasetId: string): Promise<ConceptSet> {
+  async getConceptSetById(id: number, datasetId: string): Promise<ConceptSet> {
     console.info(`Portal request to get concept set for id ${id}`);
     const errorMessage = `Error while getting concept set for id ${id}`;
     try {
@@ -141,7 +141,7 @@ export class SystemPortalAPI {
     }
   }
 
-  async deleteConceptSet(id: string, datasetId: string): Promise<any> {
+  async deleteConceptSet(id: number, datasetId: string): Promise<any> {
     console.info(`Portal request to delete concept set for id: ${id}`);
     const errorMessage = `Error while deleting concept set for id: ${id}`;
     try {
@@ -149,6 +149,27 @@ export class SystemPortalAPI {
       options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets/${id}`;
       const result = await axios.delete(url, options);
+      return result.data;
+    } catch (error) {
+      console.error(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
+  }
+
+  async getConceptSetSequenceNextval(datasetId: string) {
+    console.info(`Portal request to get concept set sequence nextval`);
+    const errorMessage = `Error getting concept set sequence nextval`;
+    try {
+      const options = await this.createOptions();
+      const url = `${this.url}/user-artifact/concept_sets/sequence/nextval`;
+
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+
+      const result = await axios.get(url, {
+        params,
+        ...options,
+      });
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);

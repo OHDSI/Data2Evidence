@@ -5,10 +5,14 @@ export const ConceptSetDto = z.object({
   id: z.number(),
   name: z.string(),
 });
+export type IConceptSetDto = z.infer<typeof ConceptSetDto>;
 
 export const ConceptSetItemsResponseDto = z.object({
   items: z.array(ConceptSetExpression),
 });
+export type IConceptSetItemsResponseDto = z.infer<
+  typeof ConceptSetItemsResponseDto
+>;
 
 export const ConceptSetCheckDto = ConceptSetDto.extend({
   description: z.string().nullable(),
@@ -20,6 +24,12 @@ export const ConceptSetCheckResponseDto = z.object({
   warnings: z.array(z.unknown()),
 });
 
+export const CreateSetCheckDto = ConceptSetDto.extend({
+  description: z.string().nullable(),
+  expression: ConceptSetItemsResponseDto,
+});
+export type ICreateSetCheckDto = z.infer<typeof CreateSetCheckDto>;
+
 export const ConceptSetItemDto = z.object({
   conceptId: z.number(),
   isExcluded: z.boolean(),
@@ -28,6 +38,7 @@ export const ConceptSetItemDto = z.object({
 });
 
 export const ConceptSetItemListDto = z.array(ConceptSetItemDto);
+export type IConceptSetItemListDto = z.infer<typeof ConceptSetItemListDto>;
 
 export const ConceptSetTagGroup = z.object({
   createdDate: z.number(),
@@ -76,6 +87,7 @@ export const ConceptSetResponseDto = z.object({
   id: z.number(),
   name: z.string(),
 });
+export type IConceptSetResponseDto = z.infer<typeof ConceptSetResponseDto>;
 
 export const ConceptSetListResponseDto = z.array(ConceptSetResponseDto);
 export type IConceptSetListResponseDto = z.infer<
