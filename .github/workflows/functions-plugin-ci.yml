@@ -60,6 +60,8 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+          - PKGPATH: ./plugins/chat_functions/
+            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/chat
 
     steps:
       - uses: actions/checkout@v4

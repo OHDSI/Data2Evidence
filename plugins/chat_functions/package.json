@@ -1,0 +1,43 @@
+{
+    "name": "@data2evidence/chat",
+    "version": "0.5.0",
+    "description": "Assistant for D2E",
+    "scripts": {
+      "postinstall": "wget -O llm.gguf https://huggingface.co/QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF/resolve/main/Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
+      "build": "tbuild node_modules/@data2evidence/trex"
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "devDependencies": {
+      "@data2evidence/trex": "latest",
+      "deno": "latest"
+    },
+    "trex": {
+        "model": {
+            "path": "llm.gguf"
+        },
+        "functions": {
+          "init": [],
+          "api": [
+            {
+              "source": "/d2e/api/chat",
+              "function": "/chat"
+            }
+          ],
+          "roles": {
+            "TENANT_VIEWER": [
+              "chat"
+            ]
+          },
+          "scopes": [
+            {
+              "path": "^/d2e/api/chat",
+              "scopes": [
+                "chat"
+              ]
+            }
+          ]
+        }
+      }
+  }
+  
