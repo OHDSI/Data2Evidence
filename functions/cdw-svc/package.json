@@ -18,8 +18,7 @@
     "localdevjs": "npm run compile && npm start",
     "dev2": "TS_NODE_FILES=true TS_NODE_PROJECT=./tsconfig.json nodemon --watch src --watch src_ui -e js,ts,json --exec \"ts-node src/main.ts\"",
     "dev": "tsnd --inspect=0.0.0.0:9206 --respawn ./src/main.ts",
-    "postgres:start": "docker-compose down && docker-compose up",
-    "convertenv": "cd envConverter && yarn generate:envs -s alp-minerva-cdw-svc"
+    "postgres:start": "docker-compose down && docker-compose up"
   },
   "keywords": [],
   "author": "",

@@ -1,7 +1,5 @@
 import {
   CombinedEnv,
-  DbSvcPostgres,
-  EnvHana,
   HanaConfig,
   IntTestConfig,
   PostgresConfig,
@@ -11,8 +9,21 @@ import {
   VcapMridb,
   HanaValues,
   PostgresValues,
-  IntTestValues
-} from "./types";
+  IntTestValues,
+} from "./types.ts";
+
+export const dbCredentialsTemplate = {
+  key: "mridb",
+  description: "",
+  analyticsSvcValues: {
+    autoCommit: true,
+  },
+  dbSvcValues: {
+    autoCommit: true,
+    validateCertificate: false,
+  },
+  tags: ["cdw"],
+};
 
 function overrideValues(
   value: HanaValues,
@@ -45,71 +56,6 @@ function overrideValues(value: any, override: any): any {
   }
   return value;
 }
-
-export const dbSvcConverter = (
-  envJson: CombinedEnv
-): {
-  hana: EnvHana;
-  postgres: DbSvcPostgres;
-} => {
-  let hanaDbs: EnvHana = {};
-  let postgresDbs: DbSvcPostgres = {};
-  for (let i = 0; i < envJson.length; i += 1) {
-    const val = envJson[i];
-    if (!(val.type === "HANA" || val.type === "POSTGRES")) {
-      continue;
-    }
-    if (val.type === "HANA") {
-      val.values = overrideValues(val.values, val.dbSvcValues);
-      const config = {
-        host: val.values.host,
-        port: val.values.port,
-        databaseName: val.values.databaseName,
-        validate_certificate: val.values.validateCertificate,
-        pooling: val.values.pooling,
-        autoCommit: val.values.autoCommit,
-        encrypt: val.values.encrypt,
-        hanaAdminUser: val.values.credentials.adminUser,
-        hanaAdminPassword: val.values.credentials.adminPassword,
-        hanaReadUser: val.values.credentials.readUser,
-        hanaReadPassword: val.values.credentials.readPassword,
-        hanaCustomUser: val.values.credentials.customUser,
-        hanaCustomPassword: val.values.credentials.customPassword,
-        hanaWriteUser: val.values.credentials.writeUser,
-        hanaWritePassword: val.values.credentials.writePassword,
-        enableAuditPolicies: val.values.enableAuditPolicies,
-        sslTrustStore: val.values.sslTrustStore,
-        ca: val.values.ca,
-      };
-      hanaDbs[val.values.code] = config;
-    }
-    if (val.type === "POSTGRES") {
-      val.values = overrideValues(val.values, val.dbSvcValues);
-      const config = {
-        host: val.values.host,
-        port: val.values.port,
-        databaseName: val.values.database,
-        user: val.values.credentials.user,
-        password: val.values.credentials.password,
-        postgresAdminUser: val.values.credentials.adminUser,
-        postgresAdminPassword: val.values.credentials.adminPassword,
-        postgresReadUser: val.values.credentials.readUser,
-        postgresReadPassword: val.values.credentials.readPassword,
-        postgresWriteUser: val.values.credentials.writeUser,
-        postgresWritePassword: val.values.credentials.writePassword,
-        postgresCustomUser: val.values.credentials.customUser,
-        postgresCustomPassword: val.values.credentials.customPassword,
-        connectionTimeoutMillis: val.values.connectionTimeoutMillis,
-        idle_in_transaction_session_timeout:
-          val.values.idleInTransactionSessionTimeout,
-        query_timeout: val.values.queryTimeout,
-        statement_timeout: val.values.statementTimeout,
-      };
-      postgresDbs[val.values.code] = config;
-    }
-  }
-  return { hana: hanaDbs, postgres: postgresDbs };
-};
 
 export const vcapSvcConverter = (envJson: CombinedEnv): VcapMridb => {
   let mridbs: (VcapAlpHana | VcapAlpPostgres | VcapAlpHanaHttpTest)[] = [];

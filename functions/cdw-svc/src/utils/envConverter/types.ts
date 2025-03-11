@@ -1,26 +1,30 @@
+export interface IDatabaseCredentialCredentialsItem {
+  username: string;
+  userScope: string;
+  serviceScope: string;
+  password: string;
+}
+
+export interface IDatabaseCredential {
+  code: string;
+  id: string;
+  host: number;
+  port: string;
+  name: string;
+  dialect: string;
+  credentials: IDatabaseCredentialCredentialsItem[];
+  vocab_schemas: string[];
+  publications: string[];
+  db_extra: any;
+  cation_: string;
+}
+
 type ConfigTypes = {
   HANA: "HANA";
   POSTGRES: "POSTGRES";
   AUDIT: "AUDIT";
   INT_TEST: "INT_TEST";
 };
-
-// type ConfigKey = "type" | "tags" | "name" | "values";
-
-// type AllowedKeys = "type" | "tags" | "name" | "values";
-
-// type MyGenericType<T extends AllowedKeys> = {
-//     type: T;
-// };
-
-// type MyObjectTypeGuard = { [T in AllowedKeys]: MyGenericType<T> };
-
-// type VerifyType<
-//     T extends MyObjectTypeGuard &
-//         { [U in Exclude<keyof T, AllowedKeys>]: never }
-// > = T;
-
-// type blah = VerifyType<HanaConfig>;
 
 export type CombinedEnv = (HanaConfig | PostgresConfig | IntTestConfig)[];
 
@@ -139,48 +143,6 @@ export type VcapMridb = {
   )[];
 };
 
-export type EnvHana = {
-  [key: string]: {
-    host: string;
-    port: string;
-    databaseName: string;
-    validate_certificate: boolean;
-    pooling: boolean;
-    autoCommit: boolean;
-    encrypt: boolean;
-    hanaAdminUser: string;
-    hanaAdminPassword: string;
-    hanaReadUser: string;
-    hanaReadPassword: string;
-    hanaWriteUser: string;
-    hanaWritePassword: string;
-    enableAuditPolicies: boolean;
-    sslTrustStore: string;
-    ca?: string;
-  };
-};
-
-export type DbSvcPostgres = {
-  [key: string]: {
-    host: string;
-    port: string;
-    databaseName: string;
-    user: string;
-    password: string;
-    postgresAdminUser: string;
-    postgresAdminPassword: string;
-    postgresReadUser: string;
-    postgresReadPassword: string;
-    postgresWriteUser: string;
-    postgresWritePassword: string;
-    postgresCustomUser: string;
-    postgresCustomPassword: string;
-    connectionTimeoutMillis: number;
-    idle_in_transaction_session_timeout: number;
-    query_timeout: number;
-    statement_timeout: number;
-  };
-};
 // Subtypes
 
 export type VcapAlpHana = {

@@ -1,6 +1,5 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import { JobpluginsAPI } from "./api/JobpluginsAPI.ts";
-import { DBDAO } from "../analytics-svc/src/dao/DBDAO";
 import TrexDao from "./dao/trex.ts";
 
 export class DBRouter {
@@ -64,36 +63,6 @@ export class DBRouter {
         res.status(500).send(`Error when updating schema ${schemaName}`);
       }
     });
-
-    this.router.get(
-      "/:databaseType/database/:tenant/schema/:schemaName/exists",
-      async (req: Request, res: Response) => {
-        const { databaseType, tenant, schemaName } = req.params;
-
-        try {
-          let dbDao = new DBDAO(databaseType, tenant);
-
-          const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            tenant,
-            req,
-            res
-          );
-          const schemaExists = await dbDao.checkIfSchemaExists(
-            dbConnection,
-            schemaName
-          );
-          res.status(200).send(schemaExists);
-        } catch (error) {
-          this.logger.error(`Error checking if schema exists: ${error}`);
-          const httpResponse = {
-            status: 500,
-            message: "Something went wrong when checking if schema exists",
-            data: [],
-          };
-          res.status(500).json(httpResponse);
-        }
-      }
-    );
 
     this.router.get(
       "/database-creds/list",
