@@ -68,7 +68,6 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
   const [originalExtra, setOriginalExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
-  const [vocabSchemaOptions, setVocabSchemaOptions] = useState<string[]>([]);
   const publication = db.publications?.length > 0 ? db.publications[0].publication : "";
   const slot = db.publications?.length > 0 ? db.publications[0].slot : "";
 
@@ -86,11 +85,6 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
 
   useEffect(() => {
     if (open) {
-      if (db.dialect === "hana") {
-        setVocabSchemaOptions(["CDMVOCAB"]);
-      } else {
-        setVocabSchemaOptions(["cdmvocab"]);
-      }
       const extraStr = JSON.stringify(mapExtraToHashmap(db.extra), null, 4);
       setFormData({
         name: db.name,
@@ -226,7 +220,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
             <Autocomplete
               multiple
               freeSolo
-              options={vocabSchemaOptions}
+              options={[] as string[]}
               sx={styles}
               id="autocomplete-vocab-schemas"
               renderTags={(value: string[], getTagProps) =>

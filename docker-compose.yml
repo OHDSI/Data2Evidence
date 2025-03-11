@@ -360,7 +360,7 @@ services:
           "demo": {
             "DEMO__DB_CODE": "demo_database",
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"credentials\": [] }",
+            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": [] }",
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"

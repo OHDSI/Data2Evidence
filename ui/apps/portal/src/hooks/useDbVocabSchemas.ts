@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { DbCredentialsMgr } from "../axios/db-credentials-mgr";
 
-export const useDbVocabSchemas = (dialect: string): [{ [key: string]: string[] }] => {
+export const useDbVocabSchemas = (dbCode: string): [{ [key: string]: string[] }] => {
   const [dbVocabSchemas, setDbVocabSchemas] = useState<{ [key: string]: string[] }>({});
 
   const getDbVocabSchemas = useCallback(
-    async (dialect: string) => {
+    async (dbCode: string) => {
       try {
         const dbCredentialsMgr = new DbCredentialsMgr();
-        const dbVocabSchemas = await dbCredentialsMgr.getDbVocabSchemas(dialect);
+        const dbList = await dbCredentialsMgr.getDbList();
+        const dbVocabSchemas = dbList
+          .filter((db) => db.code === dbCode)
+          .reduce<{ [key: string]: string[] }>((acc, item) => {
+            acc[item.code] = item.vocabSchemas;
+            return acc;
+          }, {});
+
         setDbVocabSchemas(dbVocabSchemas);
       } catch (error) {
         console.error(error);
@@ -18,10 +25,10 @@ export const useDbVocabSchemas = (dialect: string): [{ [key: string]: string[] }
   );
 
   useEffect(() => {
-    if (dialect) {
-      getDbVocabSchemas(dialect);
+    if (dbCode) {
+      getDbVocabSchemas(dbCode);
     }
-  }, [dialect, getDbVocabSchemas]);
+  }, [dbCode, getDbVocabSchemas]);
 
   return [dbVocabSchemas];
 };
