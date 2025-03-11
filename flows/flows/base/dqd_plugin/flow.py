@@ -85,7 +85,6 @@ def execute_dqd(
     logger = get_run_logger()
 
     threads = DQD_THREAD_COUNT
-    r_libs_user_directory = Variable.get("r_libs_user")
 
     read_user = UserType.READ_USER
 

@@ -719,6 +719,7 @@ export const i18nDefault = {
     OIDC_CALLBACK_SUCCESS__LOADER: "Authentication completed. Redirecting...",
     OIDC_ERROR__MESSAGE: "Error occurred while authenticating",
     OIDC_SESSION_LOST__BUTTON: "Logout",
+    OIDC_TOKEN__THIRD_PARTY_TOKEN_MISSING: "The user session is incomplete. Please log out and log in again.",
     OVERVIEW__CLEAR_AND_IMPORT: "Clear and Import another file",
     OVERVIEW__CONCEPT_ID: "Concept Id",
     OVERVIEW__CONCEPT_MAPPING: "Concept Mapping",

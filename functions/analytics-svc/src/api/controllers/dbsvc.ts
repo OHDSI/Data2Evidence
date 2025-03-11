@@ -29,12 +29,14 @@ export async function getCDMVersion(req, res, next) {
             dialect === config.DB.HANA
                 ? hanaKey
                 : dbUtils.convertNameToPg(hanaKey);
-        let cdmVersionValue = cdmVersion[0][cdmVersionKey]
+        let cdmVersionValue = cdmVersion[0][cdmVersionKey];
         if (cdmVersionValue) {
             //Cater to scenarios if vx.x is stored in the CDM schema
-            cdmVersionValue = cdmVersionValue.toUpperCase().startsWith("V") ? cdmVersionValue.slice(1) : cdmVersionValue;
+            cdmVersionValue = cdmVersionValue.toUpperCase().startsWith("V")
+                ? cdmVersionValue.slice(1)
+                : cdmVersionValue;
         } else {
-            throw new Error("Invalid cdm version value")
+            throw new Error("Invalid cdm version value");
         }
         res.status(200).json(cdmVersionValue);
     } catch (err) {
@@ -42,6 +44,34 @@ export async function getCDMVersion(req, res, next) {
         const httpResponse = {
             status: 500,
             message: "Something went wrong when retrieving data",
+            data: [],
+        };
+        res.status(500).json(httpResponse);
+    }
+}
+
+export async function checkIfSchemaExists(req, res, next) {
+    const dialect: string = req.params.databaseType;
+    const tenant: string = req.params.tenant;
+    const schema: string = req.params.schemaName;
+
+    try {
+        const dbDao = new DBDAO(dialect, tenant);
+        const dbConnection = await dbDao.getDBConnectionByTenantPromise(
+            tenant,
+            req,
+            res
+        );
+        const schemaExists = await dbDao.checkIfSchemaExists(
+            dbConnection,
+            schema
+        );
+        res.status(200).send(schemaExists);
+    } catch (err) {
+        logger.error(`Error checking if schema exists: ${err}`);
+        const httpResponse = {
+            status: 500,
+            message: "Something went wrong when checking if schema exists",
             data: [],
         };
         res.status(500).json(httpResponse);

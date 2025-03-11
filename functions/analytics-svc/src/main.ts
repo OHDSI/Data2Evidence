@@ -179,9 +179,11 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
-                if (env.USE_CACHEDB === "true" && credentials.dialect != DB.HANA) {
+                if (
+                    env.USE_CACHEDB === "true" &&
+                    credentials.dialect != DB.HANA
+                ) {
                     req.dbConnections = await getCachedbDbConnections({
                         analyticsCredentials: credentials,
                         userObj: userObj,
@@ -676,13 +678,18 @@ const getDBConnections = async ({
             delete analyticsCredentials.pfx;
         }
 
-        if (analyticsCredentials.dialect === DB.HANA && env.USE_HANA_JWT_AUTHC === "true") {
-            delete analyticsCredentials.user
-            delete analyticsCredentials.password
+        if (
+            analyticsCredentials.dialect === DB.HANA &&
+            env.USE_HANA_JWT_AUTHC === "true"
+        ) {
+            delete analyticsCredentials.user;
+            delete analyticsCredentials.password;
             if (userObj.thirdPartyToken) {
                 analyticsCredentials["token"] = userObj.thirdPartyToken;
             } else {
-                throw new Error("Intermediary IDP token doesnt exist for HANA JWT Authentication!");
+                throw new Error(
+                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                );
             }
         }
 

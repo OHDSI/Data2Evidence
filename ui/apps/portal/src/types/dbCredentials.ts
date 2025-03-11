@@ -21,6 +21,21 @@ export interface IDatabase {
   publications: IDbPublication[];
 }
 
+// Response from API
+export interface IDatabaseResponse {
+  id: string;
+  code: string;
+  host: string;
+  port: number;
+  name: string;
+  dialect: DbDialect;
+  db_extra: any;
+  authentication_mode: AuthenticationMode;
+  credentials: IDbCredential[];
+  vocab_schemas: string[];
+  publications: IDbPublication[];
+}
+
 export interface IDbExtra {
   id?: string;
   value: string;

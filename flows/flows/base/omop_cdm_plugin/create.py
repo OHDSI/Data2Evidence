@@ -65,8 +65,6 @@ def create_datamodel_parent_task(cdm_version: str,
       task_run_name="create_cdm_tables-{dbdao.schema_name}")
 def create_cdm_tables(dbdao: DaoBase, cdm_version: str, logger) -> bool:
     # currently only supports pg dialect
-    r_libs_user_directory = Variable.get("r_libs_user")
-
     admin_user =  UserType.ADMIN_USER
     set_connection_string = dbdao.get_database_connector_connection_string(
         user_type=admin_user
@@ -78,8 +76,7 @@ def create_cdm_tables(dbdao: DaoBase, cdm_version: str, logger) -> bool:
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(
                 f'''
-                .libPaths(c('{r_libs_user_directory}',.libPaths()))
-                library('CommonDataModel', lib.loc = '{r_libs_user_directory}')
+                library('CommonDataModel')
                 {set_db_driver_env_string}
                 {set_connection_string}
                 cdm_version <- "{cdm_version}"
