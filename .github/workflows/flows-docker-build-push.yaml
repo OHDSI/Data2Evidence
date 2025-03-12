@@ -30,7 +30,29 @@ on:
         type: string
 
 jobs:
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/**"
+              - ".github/workflows/flows-docker-build-push.yaml"
+              - "package.json"
+              - "docker-compose.yml"
+
+
   bld:
+    needs: [check_file_changes]
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ubuntu-latest
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
@@ -89,14 +111,6 @@ jobs:
           repository: ${{ env.GIT_REPO_FULL_NAME }}
           submodules: recursive
 
-      - uses: dorny/paths-filter@v3.0.2
-        id: file_changes
-        with:
-          initial-fetch-depth: 1
-          filters: |
-            flows:
-              - "flows/**"
-
       - name: Setting up variables
         id: setup
         env:
@@ -137,7 +151,6 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{ env.GIT_BRANCH_NAME }} == 'develop' || ${{ env.DOCKER_BUILD_DISABLE }} == 'false' && ${{ steps.changes.outputs.flows }} == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}

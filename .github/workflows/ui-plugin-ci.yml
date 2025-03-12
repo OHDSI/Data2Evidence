@@ -49,8 +49,27 @@ env:
   NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS'}}
 
 jobs:
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "ui/**"
+              - ".github/workflows/ui-plugin-ci.yml"
+
   build:
     runs-on: ubuntu-latest
+    needs: [check_file_changes]
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     defaults:
       run:
         working-directory: ./ui
@@ -60,13 +79,6 @@ jobs:
           ref: ${{ env.GIT_BRANCH_NAME }}
           repository: ${{ env.GIT_REPO_FULL_NAME }}
           submodules: recursive
-      - uses: dorny/paths-filter@v3.0.2
-        id: file_changes
-        with:
-          initial-fetch-depth: 1
-          filters: |
-            ui:
-              - "ui/**"
       - name: Use Node.js - OSS
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'OSS'
@@ -97,7 +109,6 @@ jobs:
           echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
       - name: Build
-        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
         run: yarn
         env:
           CI: false

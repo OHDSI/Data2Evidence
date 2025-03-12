@@ -89,7 +89,7 @@ jobs:
       - name: npminstall
         working-directory: ${{ matrix.PKGPATH }}
         run: |
-          npm install
+          npm install --ignore-scripts
           cp -a . ${{ matrix.DESTPATH }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
