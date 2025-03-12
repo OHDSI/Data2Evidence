@@ -84,7 +84,7 @@ case $cmd in
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
         fi
-        echo $cmd
+        echo . $cmd
         $cmd
         ;;
     stop)
@@ -92,17 +92,17 @@ case $cmd in
         if [ -n "$services" ]; then
             cmd="$cmd $services"
         fi
-        echo $cmd
+        echo . $cmd
         $cmd
         ;;
     build)
         cmd="$dockerbasecmd build"
-        echo $cmd
+        echo . $cmd
         $cmd
         ;;
     status)
         cmd="$dockerbasecmd ps"
-        echo $cmd
+        echo . $cmd
         $cmd
         ;;
     logs)
@@ -110,15 +110,20 @@ case $cmd in
         if [ -n "$services" ]; then
             cmd="$cmd $services"
         fi
-        echo $cmd
+        echo . $cmd
         $cmd
+        ;;
+    config)
+        cmd="$dockerbasecmd config"
+        echo "# $cmd"
+        $cmd 2> /dev/null
         ;;
     clean)
         read -p "This action will delete all docker containers and volumes. Continue (y/n)?" choice
         case "$choice" in
             y|Y)
                 cmd="$dockerbasecmd down --volumes --remove-orphans"
-                echo $cmd
+                echo . $cmd
                 $cmd
                 ;;
             *)
@@ -127,7 +132,7 @@ case $cmd in
         ;;
     cleanci)
         cmd="$dockerbasecmd down --volumes --remove-orphans"
-        echo $cmd
+        echo . $cmd
         $cmd
         ;;
     patchdemodb)
@@ -143,20 +148,20 @@ case $cmd in
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
         [ -v DOTENV_FILE ] || DOTENV_FILE=.env.${ENV_TYPE}
         DOTENV_KEYS=$DOTENV_FILE.keys
-        
+
         echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE
-        
+
         # vars
         [ $ENV_TYPE = local ] && [ -z DOCKER_TAG_NAME ] && DOCKER_TAG_NAME=local
-        
+
         source $node_modules_path/scripts/lib.sh # functions here
-        
+
         echo ". INFO generate public & private keys - DB_CREDENTIALS__INTERNAL"
         DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$(random-password 41)
         DB_CREDENTIALS__INTERNAL__PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl genpkey -algorithm RSA -aes-256-cbc -pkeyopt rsa_keygen_bits:4096 -pass env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE -quiet)"
         DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
         DB_CREDENTIALS__INTERNAL__PUBLIC_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
-        
+
         # action
         echo -n '' > $DOTENV_FILE
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
@@ -181,30 +186,35 @@ case $cmd in
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo STRATEGUS__KEYRING_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
-        
+
         echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
         echo PG__LOGTO_MANAGER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        
+
         set-cpu-limit
         set-memory-limit
         gen-tls-internal
-        
+
         # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE"\' >> $DOTENV_FILE
         # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY"\' >> $DOTENV_FILE
         echo DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY"\' >> $DOTENV_FILE
         echo DB_CREDENTIALS__INTERNAL__PUBLIC_KEY=\'"$DB_CREDENTIALS__INTERNAL__PUBLIC_KEY"\' >> $DOTENV_FILE
-        
+
         # finalize
         cat $DOTENV_FILE | grep = | awk -F= '{print $1}' | grep _ | sort -u > $DOTENV_KEYS
         echo . INFO linecounts
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}
+        cmd="docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        echo . $cmd
+        $cmd
+        cmd="$dockerbasecmd pull"
+        echo . $cmd
+        $cmd
         ;;
     setupdemo)
-        npx zx ./scripts/load-demodatabase.mjs && 
+        npx zx ./scripts/load-demodatabase.mjs &&
         npx zx ./scripts/load-demodataset.mjs
         ;;
     *)
