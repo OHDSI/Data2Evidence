@@ -64,7 +64,6 @@ jobs:
           filters: |
             src:
               - "flows/**"
-              - ".github/workflows/flows-plugin-ci.yml"
               - "package.json"
               - "docker-compose.yml"
 
@@ -140,3 +139,11 @@ jobs:
            else 
               npm publish --dry-run
            fi
+
+  check:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure() || cancelled()
+    steps:
+      - name: Fail on purpose
+        run: exit 1

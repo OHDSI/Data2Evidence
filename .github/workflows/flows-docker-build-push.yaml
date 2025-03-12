@@ -45,7 +45,6 @@ jobs:
           filters: |
             src:
               - "flows/**"
-              - ".github/workflows/flows-docker-build-push.yaml"
               - "package.json"
               - "docker-compose.yml"
 
@@ -172,3 +171,11 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
+
+  check:
+    needs: bld
+    runs-on: ubuntu-latest
+    if: failure() || cancelled()
+    steps:
+      - name: Fail on purpose
+        run: exit 1
