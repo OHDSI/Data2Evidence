@@ -229,10 +229,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       type: SchemaTypes.CustomCDM,
     },
     {
-      title: getText(i18nKeys.ADD_STUDY_DIALOG__NO_SCHEMA),
-      type: SchemaTypes.NoCDM,
-    },
-    {
       title: getText(i18nKeys.ADD_STUDY_DIALOG__EXISTING_SCHEMA),
       type: SchemaTypes.ExistingCDM,
     },
@@ -605,16 +601,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             onChange={(event) => handleFormDataChange({ summary: event.target.value })}
           />
         </Box>
-        <div>
-          <Checkbox
-            checked={formData.showRequestAccess}
-            checkbox-id="request-access"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ showRequestAccess: event.target.checked });
-            }}
-          />
-        </div>
         <FhirServerCheckbox
           checked={formData.createFhirProject}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
@@ -920,7 +906,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </FormControl>
         </Box>
-        <Box mb={4}>
+        {/* <Box mb={4}>
           <TextField
             fullWidth
             variant="standard"
@@ -928,7 +914,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={formData.type}
             onChange={(event) => handleFormDataChange({ type: event.target.value })}
           />
-        </Box>
+        </Box> */}
+        <div>
+          <Checkbox
+            checked={formData.showRequestAccess}
+            checkbox-id="request-access"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              handleFormDataChange({ showRequestAccess: event.target.checked });
+            }}
+          />
+        </div>
         <Box mb={4}>
           <TextField
             fullWidth
@@ -947,7 +943,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
-        {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
+        {/* {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
           <div>
             <Checkbox
               checked={formData.cleansedSchemaOption}
@@ -958,7 +954,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               }}
             />
           </div>
-        )}
+        )} */}
 
         <Box mb={4}>
           <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__METADATA)}</Box>
@@ -981,7 +977,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           />
         </Box>
 
-        <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</Box>
+        {/* <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</Box>
         <Box mb={4}>
           <Autocomplete
             multiple
@@ -997,9 +993,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={studyTagsData}
             onChange={handleTagChange}
           />
-        </Box>
+        </Box> */}
 
-        <Box mb={4}>
+        {/* <Box mb={4}>
           <FormControl component="fieldset">
             <FormLabel component="legend">{getText(i18nKeys.ADD_STUDY_DIALOG__DATA_VISIBILITY)}</FormLabel>
             <RadioGroup
@@ -1018,7 +1014,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormControlLabel value="HIDDEN" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__HIDDEN)} />
             </RadioGroup>
           </FormControl>
-        </Box>
+        </Box> */}
       </div>
       <Divider />
       <div className="button-group-actions">

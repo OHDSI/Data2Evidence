@@ -267,14 +267,34 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
           />
         </Tabs>
         {tabIndex == 0 && (
-          <RequestPanel
-            studyId={study?.id!}
-            selectedAction={selectedAction}
-            handleActionChange={handleActionChange}
-            accessRequests={accessRequests}
-            fetchStudyAccessRequests={fetchStudyAccessRequests}
-          />
+          <>
+            <RequestPanel
+              studyId={study?.id!}
+              selectedAction={selectedAction}
+              handleActionChange={handleActionChange}
+              accessRequests={accessRequests}
+              fetchStudyAccessRequests={fetchStudyAccessRequests}
+            />
+            <Divider />
+            <div className="button-group-actions">
+              <Button
+                text={getText(i18nKeys.PERMISSIONS_DIALOG__CLOSE)}
+                onClick={handleClose}
+                variant="outlined"
+                block
+                disabled={loading}
+              />
+              <Button
+                text={getText(i18nKeys.PERMISSIONS_DIALOG__SAVE)}
+                onClick={handleSave}
+                block
+                loading={loading}
+                disabled={!hasChanges()}
+              />
+            </div>
+          </>
         )}
+
         {tabIndex == 1 && (
           <AccessPanel
             studyId={study?.id!}
@@ -291,24 +311,6 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
             setLoading={setLoading}
           />
         )}
-      </div>
-
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.PERMISSIONS_DIALOG__CLOSE)}
-          onClick={handleClose}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button
-          text={getText(i18nKeys.PERMISSIONS_DIALOG__SAVE)}
-          onClick={handleSave}
-          block
-          loading={loading}
-          disabled={!hasChanges()}
-        />
       </div>
     </Dialog>
   );
