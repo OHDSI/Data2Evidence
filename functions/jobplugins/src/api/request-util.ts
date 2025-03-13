@@ -9,10 +9,10 @@ const logger = console;
 axios.defaults.timeout = 30000;
 
 if (env.NODE_ENV === "development") {
-  const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
-  });
-  axios.defaults.httpsAgent = httpsAgent;
+  // const httpsAgent = new https.Agent({
+  //   rejectUnauthorized: false,
+  // });
+  // axios.defaults.httpsAgent = httpsAgent;
   logger.info("rejectUnauthorized is disabled");
 }
 

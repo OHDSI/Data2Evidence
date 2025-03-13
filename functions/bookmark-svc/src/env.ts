@@ -47,6 +47,7 @@ const Env = z.object({
 
   TLS__INTERNAL__KEY: z.string().optional(),
   TLS__INTERNAL__CRT: z.string().optional(),
+  TLS__INTERNAL__CA_CRT: z.string().optional(),
   SERVICE_ROUTES: z.string().transform((str, ctx): z.infer<ReturnType<typeof object>> => {
     try {
       return JSON.parse(str)

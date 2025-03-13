@@ -39,7 +39,6 @@ export default {
   data() {
     return {
       showDialog: false,
-      listener: null,
     }
   },
   created() {
@@ -48,7 +47,7 @@ export default {
     this.requestMriConfig()
   },
   mounted() {
-    this.listener = window.addEventListener('alp-dataset-change', () => {
+    const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
       // Update the config in state before doing further queries
@@ -57,10 +56,18 @@ export default {
         this.requestTotalPatientCount()
         this.refreshPatientCount()
       })
-    })
-  },
-  unmounted() {
-    window.removeEventListener('alp-dataset-change', this.listener)
+    }
+    const listenerInfo = { type: 'alp-dataset-change', app: 'patient-analytics', listener: datasetChangeHandler }
+    if (!window.d2eListeners) {
+      window.d2eListeners = {
+        'alp-dataset-change': [listenerInfo],
+      }
+    } else if (!window.d2eListeners['alp-dataset-change']) {
+      window.d2eListeners['alp-dataset-change'] = [listenerInfo]
+    } else {
+      window.d2eListeners['alp-dataset-change'].push(listenerInfo)
+    }
+    window.addEventListener('alp-dataset-change', datasetChangeHandler)
   },
   computed: {
     ...mapGetters([

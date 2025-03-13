@@ -16,3 +16,9 @@ declare module 'd3' {
   let d3: any
   export default d3
 }
+
+interface Window {
+  d2eListeners: {
+    [key: string]: { type: string; app: string; listener: any }[]
+  }
+}

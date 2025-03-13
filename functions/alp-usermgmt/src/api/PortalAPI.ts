@@ -54,9 +54,12 @@ export class PortalAPI {
 
   async getDataset(id: string) {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-usermgmt-svc-getDataset-${timestamp}`)
       const options = await this.getRequestConfig()
       options.params = { datasetId: id }
       const result = await axios.get(`${this.baseURL}/dataset`, options)
+      console.timeEnd(`time-usermgmt-svc-getDataset-${timestamp}`)
       return result.data
     } catch (error) {
       this.logger.error(`Error when get study ${id}: ${JSON.stringify(error?.response?.data || error?.code)}`)

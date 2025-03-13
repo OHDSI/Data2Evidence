@@ -13,13 +13,14 @@ from .backends.hana import HANAConnection
 from buenavista import bv_dialects, rewrite
 from config import Env
 from .cdw_config import _resolve_cdw_config_duckdb_file_path
+from api.OpenIdAPI import OpenIdAPI
 
 logger = logging.getLogger(__name__)
 
 
 class DBCredentialsType(BaseModel):
-    user: str
-    password: str
+    user: Optional[str]
+    password: Optional[str]
     dialect: str
     databaseName: str
     host: str
@@ -38,6 +39,9 @@ class DatabaseDialects(str, Enum):
 class ConnectionTypes(str, Enum):
     READ = "read"
     WRITE = "write"
+class AuthenticationTypes(str, Enum):
+    PASSWORD = "password"
+    JWT = "JWT"
 
 
 class CachedbDatabaseClients(BaseModel):
@@ -95,8 +99,21 @@ class DatabaseCredentials:
 
         return values
 
+def GetAuthenticationTypePerDialect(database_code: str):
+    try:
+        conn_details = extract_db_credentials(database_code)
+        dialect = conn_details["dialect"]
+        if "readUser" not in conn_details or "readPassword" not in conn_details:
+            if dialect == DatabaseDialects.HANA:
+                return AuthenticationTypes.JWT
+            elif dialect == DatabaseDialects.POSTGRES:
+                raise ValueError(f"Username/Password is undefined for db credentials - {database_code}")
+        return AuthenticationTypes.PASSWORD
+    except Exception as e:
+        raise ValueError(
+            f"Failed to extract database credential values for database code '{database_code}'") from e
 
-def GetDBConnection(database_code: str, connection_type: ConnectionTypes):
+def GetDBConnection(database_code: str, connection_type: ConnectionTypes, connect_args: Dict[str, str|int|bool] = {}):
     try:
         conn_details = extract_db_credentials(database_code)
     except Exception as e:
@@ -106,10 +123,11 @@ def GetDBConnection(database_code: str, connection_type: ConnectionTypes):
         database_name = conn_details["databaseName"]
         if conn_details["dialect"] == DatabaseDialects.HANA:
             dialect_driver = "hana+hdbcli"
-            encrypt = conn_details["encrypt"]
-            validateCertificate = conn_details["validateCertificate"]
-            db = database_name + \
-                f"?encrypt={encrypt}?validateCertificate={validateCertificate}"
+            connect_args["encrypt"] = conn_details["encrypt"]
+            connect_args["sslValidateCertificate"] = conn_details["validateCertificate"]
+            if connect_args["sslValidateCertificate"] == True and conn_details["hostnameInCertificate"]:
+                connect_args["sslHostNameInCertificate"] = conn_details["hostnameInCertificate"]
+            db = database_name
         elif conn_details['dialect'] == DatabaseDialects.POSTGRES:
             dialect_driver = "postgresql+psycopg2"
             db = database_name
@@ -117,27 +135,29 @@ def GetDBConnection(database_code: str, connection_type: ConnectionTypes):
         port = conn_details["port"]
         if connection_type == ConnectionTypes.WRITE:
             # Get admin user credentials if connection type is write
-            user = conn_details["adminUser"]
-            password = conn_details["adminPassword"]
+            user = conn_details["adminUser"] if "adminUser" in conn_details else None
+            password = conn_details["adminPassword"] if "adminPassword" in conn_details else None
         else: 
             # Get read user credentials by default
-            user = conn_details["user"]
-            password = conn_details["password"]
-        conn_string = _CreateConnectionString(
-            dialect_driver, user, password, host, port, db)
-        engine = create_engine(
-            conn_string, pool_size=Env.CACHEDB__POOL_SIZE)
-
+            user = conn_details["user"] if "user" in conn_details else None
+            password = conn_details["password"] if "password" in conn_details else None
+        conn_string = _CreateConnectionString(dialect_driver, user, password, host, port, db, database_code)
+        engine = create_engine(conn_string, pool_size=Env.CACHEDB__POOL_SIZE, connect_args=connect_args)
         return engine
 
-
 def _CreateConnectionString(dialect_driver: str, user: str, pw: str,
-                            host: str, port: int, db: str) -> str:
-    conn_string = f"{dialect_driver}://{user}:{pw}@{host}:{port}/{db}"
+                            host: str, port: int, db: str, database_code: str) -> str:
+    if user is None or pw is None:
+        if dialect_driver == "hana+hdbcli":
+            conn_string = f"{dialect_driver}://{host}:{port}/{db}" # JWT Authentication
+        else:
+            raise ValueError(f"Username/Password is undefined for db credentials - {database_code}")
+    else:
+        conn_string = f"{dialect_driver}://{user}:{pw}@{host}:{port}/{db}"
     return conn_string
 
 
-def get_db_connection(clients: CachedbDatabaseClients, dialect: str, connection_type: ConnectionTypes, database_code: str, schema: str, vocab_schema: str):
+def get_db_connection(clients: CachedbDatabaseClients, dialect: str, connection_type: ConnectionTypes, database_code: str, schema: str, vocab_schema: str, token: str):
     connection = None
 
     # Handle special case whereby cdw-config-svc is using alp-cachedb to get connection to cdw-svc duckdb file
@@ -163,8 +183,17 @@ def get_db_connection(clients: CachedbDatabaseClients, dialect: str, connection_
             clients[dialect][database_code][connection_type])
 
     if dialect == DatabaseDialects.HANA:
-        connection = HANAConnection(
-            clients[dialect][database_code][connection_type])
+        hana_authentication_mode = clients[dialect][database_code]["AuthenticationMode"]
+        if hana_authentication_mode == AuthenticationTypes.JWT:
+            openIdAPI = OpenIdAPI()
+            third_party_token = openIdAPI.get_third_party_token(token)
+            # New connection is needed every single time since the end user's jwt is used
+            jwt_engine = GetDBConnection(database_code, connection_type, {"password": third_party_token})
+            connection = HANAConnection(jwt_engine)
+        else:
+            if clients[dialect][database_code][connection_type] is None:
+                clients[dialect][database_code][connection_type] = GetDBConnection(database_code, connection_type)
+            connection = HANAConnection(clients[dialect][database_code][connection_type])
 
     if dialect == DatabaseDialects.DUCKDB:
         '''
@@ -285,9 +314,14 @@ def initialize_db_clients() -> CachedbDatabaseClients:
     database_codes_and_dialects = get_database_code_and_dialect_from_db_creds()
 
     for database_code, dialect in database_codes_and_dialects:
-        if dialect == DatabaseDialects.HANA or dialect == DatabaseDialects.POSTGRES:
-            cachedb_database_clients[dialect][database_code] = {}
-            # Create read and write engines
+        # Initialize
+        cachedb_database_clients[dialect][database_code] = {}
+        cachedb_database_clients[dialect][database_code]["AuthenticationMode"] = GetAuthenticationTypePerDialect(database_code)
+        cachedb_database_clients[dialect][database_code][ConnectionTypes.READ] = None
+        cachedb_database_clients[dialect][database_code][ConnectionTypes.WRITE] = None
+
+        if dialect == DatabaseDialects.POSTGRES:
+            # Create read and write engines for postgres dialect only initially. 
             cachedb_database_clients[dialect][database_code][ConnectionTypes.READ] = GetDBConnection(database_code, ConnectionTypes.READ)
             cachedb_database_clients[dialect][database_code][ConnectionTypes.WRITE] = GetDBConnection(database_code, ConnectionTypes.WRITE)
     return cachedb_database_clients

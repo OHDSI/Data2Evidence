@@ -116,6 +116,9 @@ services:
       context: .
       dockerfile: ./services/cachedb/Dockerfile
       target: development
+      # To test without Hana
+      # args:
+      #   BUILD_TYPE: OSS
     volumes:
       - ./services/cachedb/src:/home/docker/src
     ports:

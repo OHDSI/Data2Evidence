@@ -5,7 +5,7 @@ import { env } from '../env'
 
 export class AnalyticsSvcAPI {
   private readonly baseURL: string
-  private readonly httpsAgent: any
+  // private readonly httpsAgent: any
   private readonly token: string
   private readonly endpoint: string = '/analytics-svc/api/services'
 
@@ -17,10 +17,11 @@ export class AnalyticsSvcAPI {
 
     if (env.SERVICE_ROUTES.analytics) {
       this.baseURL = env.SERVICE_ROUTES.analytics + this.endpoint
-      this.httpsAgent = new https.Agent({
-        rejectUnauthorized: true,
-        ca: env.GATEWAY_CA_CERT,
-      })
+      // this.httpsAgent = new https.Agent({
+      //   rejectUnauthorized: true,
+      //   ca: env.TLS__INTERNAL__CA_CRT,
+      // })
+
     } else {
       console.error('No url is set for AnalyticsSvcAPI')
       throw new Error('No url is set for AnalyticsAPI')
@@ -87,8 +88,8 @@ export class AnalyticsSvcAPI {
       headers: {
         Authorization: this.token,
       },
-      httpsAgent: this.httpsAgent,
-      timeout: 60000,
+      // httpsAgent: this.httpsAgent,
+      timeout: 100000,
     }
 
     return options

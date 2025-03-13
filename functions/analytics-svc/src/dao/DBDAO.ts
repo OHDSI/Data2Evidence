@@ -247,7 +247,8 @@ export class DBDAO {
             try {
                 if (
                     credentials.dialect === config.DB.HANA &&
-                    env.USE_HANA_JWT_AUTHC === "true"
+                    ((Deno.env.get("USE_HANA_JWT_AUTHC") && Deno.env.get("USE_HANA_JWT_AUTHC") === "true") || 
+                     (process.env.USE_HANA_JWT_AUTHC && process.env.USE_HANA_JWT_AUTHC === "true"))
                 ) {
                     delete credentials.user;
                     delete credentials.password;

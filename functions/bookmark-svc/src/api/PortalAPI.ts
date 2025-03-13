@@ -1,5 +1,5 @@
 import { env } from '../env'
-import https from 'https'
+import http from 'http'
 import axios, { AxiosRequestConfig } from 'axios'
 import { IAtlasCohortDefinition } from '../types'
 
@@ -11,7 +11,7 @@ export class PortalAPI {
   private readonly baseURL: string
   private readonly token: string
   private readonly logger = console
-  // private readonly httpsAgent: https.Agent
+  private readonly httpAgent: http.Agent
 
   constructor(token: string) {
     this.token = token
@@ -20,9 +20,7 @@ export class PortalAPI {
     }
     if (env.SERVICE_ROUTES.portalServer) {
       this.baseURL = env.SERVICE_ROUTES.portalServer
-      // this.httpsAgent = new https.Agent({
-      //   rejectUnauthorized: true,
-      // })
+      this.httpAgent = new http.Agent({keepAlive: true})
     } else {
       throw new Error('No url is set for PortalAPI')
     }
@@ -33,6 +31,7 @@ export class PortalAPI {
       headers: {
         Authorization: this.token,
       },
+      httpAgent: this.httpAgent,
     }
 
     return options
@@ -40,9 +39,12 @@ export class PortalAPI {
 
   async getBookmarks(datasetId: string): Promise<any> {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${datasetId}`
       const result = await axios.get(url, options)
+      console.timeEnd(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       return result.data
     } catch (error) {
       console.error(error)
@@ -53,9 +55,12 @@ export class PortalAPI {
 
   async getBookmarkById(bookmarkId: string, datasetId: string): Promise<any> {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
       const result = await axios.get(url, options)
+      console.timeEnd(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       return result.data
     } catch (error) {
       console.error(error)

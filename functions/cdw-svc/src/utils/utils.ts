@@ -490,6 +490,17 @@ export async function getAnalyticsConnection(userObj, token?: string) {
       delete analyticsCredentials.ca;
       delete analyticsCredentials.pfx;
     }
+
+    if (env.USE_HANA_JWT_AUTHC === "true") {
+      delete analyticsCredentials.user
+      delete analyticsCredentials.password
+      if (userObj.thirdPartyToken) {
+          analyticsCredentials["token"] = userObj.thirdPartyToken;
+      } else {
+          throw new Error("Intermediary IDP token doesnt exist for HANA JWT Authentication!");
+      }
+    }
+
     analyticsConnection =
       await dbConnectionUtil.DBConnectionUtil.getDBConnection({
         credentials: analyticsCredentials,

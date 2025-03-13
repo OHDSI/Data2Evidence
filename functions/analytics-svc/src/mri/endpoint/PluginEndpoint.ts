@@ -623,7 +623,7 @@ export class PluginEndpoint {
                     querySql,
                     ...queryParams
                 );
-                log.debug("Executing query: " + filteredQuery.queryString);
+                // log.debug("Executing query: " + filteredQuery.queryString);
                 try {
                     await filteredQuery.executeQuery(
                         this.connection,

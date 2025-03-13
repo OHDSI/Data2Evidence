@@ -5,13 +5,17 @@ import {
   IConceptRelationship,
   IDuckdbConcept,
   IConceptRecommended,
+  IHanaConceptRecommended,
   IConceptAncestor,
+  IHanaConceptAncestor,
+  IHanaConcept,
+  IHanaConceptRelationship,
   IConcept,
   DatasetDialects,
 } from "../types.ts";
 import { env } from "../env.ts";
 
-export class CachedbDAO {
+export class CachedbHanaDAO {
   private readonly jwt: string;
   private readonly datasetId: string;
   private readonly vocabSchemaName: string;
@@ -21,7 +25,7 @@ export class CachedbDAO {
     this.datasetId = datasetId;
     this.vocabSchemaName = vocabSchemaName;
     if (!jwt) {
-      throw new Error("No token passed for CachedbDAO!");
+      throw new Error("No token passed for CachedbHanaDAO!");
     }
   }
 
@@ -33,10 +37,10 @@ export class CachedbDAO {
   ) {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
-      const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-        this.getDuckdbFtsBaseQuery(searchText, filters);
+      const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
+        this.getHanaFtsBaseQuery(searchText, filters);
       const conceptsSql = `
-      ${duckdbFtsBaseQuery}
+      ${hanaFtsBaseQuery}
       select *
           from fts
           limit ? OFFSET ?;
@@ -44,22 +48,21 @@ export class CachedbDAO {
 
       const offset = pageNumber * rowsPerPage;
       const conceptsSqlParams = [
-        ...duckdbFtsBaseQueryParams,
+        ...hanaFtsBaseQueryParams,
         rowsPerPage,
         offset,
       ];
 
-      const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
-      const countSqlParams = duckdbFtsBaseQueryParams;
+      const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = hanaFtsBaseQueryParams;
       const sqlPromises = [
-        client.query<IConcept>(conceptsSql, conceptsSqlParams),
-        client.query<{ count: string }>(countSql, countSqlParams),
+        client.query<IHanaConcept>(conceptsSql, conceptsSqlParams),
+        client.query<{ COUNT: string }>(countSql, countSqlParams),
       ] as const;
       const results = await Promise.all(sqlPromises);
-
       const data = {
-        hits: results[0].rows,
-        totalHits: results[1] ? parseInt(results[1].rows[0].count) : 0,
+        hits: this.mapHanaConcepts(results[0].rows),
+        totalHits: results[1] ? parseInt(results[1].rows[0].COUNT) : 0,
       };
       return data;
     } catch (error) {
@@ -73,42 +76,40 @@ export class CachedbDAO {
   async getMultipleExactConcepts(
     searchTexts: number[],
     includeInvalid = true
-  ): Promise<IDuckdbConcept> {
-    if (!searchTexts.length) {
+  ): Promise<IDuckdbConcept | null> {
+    if (searchTexts.length === 0) {
       return {
         hits: [],
         totalHits: 0,
       };
     }
+
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
-      const searchTextWhereClause =
-        searchTexts.reduce((accumulator, _searchText, index: number) => {
-          accumulator += `$${index + 1},`;
-          return accumulator;
-        }, `concept_id IN (`) + ") ";
-
       const invalidReasonWhereClause = includeInvalid
         ? ""
-        : `AND invalid_reason = '' `;
+        : `AND invalid_reason IS NULL `;
 
       const sql = `
         select *
         from ${this.vocabSchemaName}.concept
         WHERE
-        ${searchTextWhereClause}
+        concept_id IN (${searchTexts.join(", ")})
         ${invalidReasonWhereClause}
         `;
-
-      const result: { rows: IConcept[]; rowCount: number } = await client.query(
-        sql,
-        [...searchTexts]
-      );
-      const data = {
-        hits: result.rows,
-        totalHits: result.rowCount ?? 0,
-      };
-      return data;
+      // TODO: Move searchTexts as a sql parameter instead of being in the sql statement itself.
+      // searchTexts has to be in sql statement now as cachedb does not support array sql parameter types
+      // https://github.com/alp-os/internal/issues/1411
+      const result = await client.query<IHanaConcept>(sql);
+      if (result) {
+        const data = {
+          hits: this.mapHanaConcepts(result.rows),
+          totalHits: result.rowCount ?? 0,
+        };
+        return data;
+      } else {
+        return null;
+      }
     } catch (error) {
       console.error(error);
       throw error;
@@ -164,8 +165,8 @@ export class CachedbDAO {
     try {
       const facetPromises = Object.values(facetColumns).map(
         (column: string) => {
-          const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-            this.getDuckdbFtsBaseQuery(searchText, filters, [column]);
+          const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
+            this.getHanaFtsBaseQuery(searchText, filters, [column]);
           let facetSql;
           if (column === "valid_end_date") {
             facetSql = getValidityFacetSql(column);
@@ -173,21 +174,21 @@ export class CachedbDAO {
             facetSql = getFacetSql(column);
           }
           const sql = `
-            ${duckdbFtsBaseQuery}
+            ${hanaFtsBaseQuery}
             ${facetSql}
           `;
-          const sqlParams = duckdbFtsBaseQueryParams;
+          const sqlParams = hanaFtsBaseQueryParams;
           return client.query(sql, sqlParams);
         }
       );
 
-      const results = await Promise.all(facetPromises).then(function (
-        data: { rows: string[] }[]
-      ) {
-        return data.map((result) => {
-          return result.rows;
-        });
-      });
+      const results = await Promise.all(facetPromises).then(
+        (data: { rows: string[] }[]) => {
+          return data.map((result) => {
+            return this.lowercaseArrayObjectKeys(result.rows);
+          });
+        }
+      );
 
       // Map data to match existing concept.service logic which works with meilisearch search results
       const filterOptions = Object.entries(facetColumns).reduce<{
@@ -240,7 +241,7 @@ export class CachedbDAO {
     }
   }
 
-  private getDuckdbFtsBaseQuery = (
+  private getHanaFtsBaseQuery = (
     searchText: string,
     filters: Filters,
     columns: string[] = []
@@ -263,27 +264,26 @@ export class CachedbDAO {
         [],
       ];
     } else {
-      const duckdbFtsWhereClause = filterWhereClause
-        ? `${filterWhereClause} AND score is not null`
-        : "WHERE score is not null ";
       return [
         `
       with fts as (
         select
           ${columnsToSelect},
-          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as score
+          SCORE() as score
         from
           ${this.vocabSchemaName}.concept
-          ${duckdbFtsWhereClause} 
+          WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
+          ${filterWhereClause.replace("WHERE", "AND")}
           order by score desc
         )
       `,
-        [searchText],
+        // Surround searchText with asteriks for greedy search
+        [`*${searchText}*`],
       ];
     }
   };
 
-  public generateFilterWhereClause(filters: Filters): string {
+  private generateFilterWhereClause(filters: Filters): string {
     const conceptClassIdFilter = filters.conceptClassId.map((filterValue) => {
       return `concept_class_id = '${filterValue}'`;
     });
@@ -299,12 +299,12 @@ export class CachedbDAO {
     });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todaySeconds = Math.floor(Number(today) / 1000);
+    const todayDate = today.toISOString().slice(0, 10).replace("T", " ");
     const validityFilter = filters.validity.map((filterValue) => {
       if (filterValue === "Valid") {
-        return `valid_end_date >= ${todaySeconds}`;
+        return `valid_end_date >= '${todayDate}'`;
       } else {
-        return `valid_end_date < ${todaySeconds}`;
+        return `valid_end_date < '${todayDate}'`;
       }
     });
 
@@ -323,14 +323,7 @@ export class CachedbDAO {
     }
   }
 
-  async getConceptRelationships(conceptId: number): Promise<{
-    hits: {
-      relationship_id: string;
-      concept_id_1: number;
-      concept_id_2: number;
-    }[];
-    totalHits: number;
-  }> {
+  async getConceptRelationships(conceptId: number): Promise<any> {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
       const sql = `
@@ -341,54 +334,42 @@ export class CachedbDAO {
       const result = await client.query(sql, [conceptId]);
 
       const data = {
-        hits: result.rows,
+        hits: this.lowercaseArrayObjectKeys(result.rows),
         totalHits: result.rowCount,
       };
       return data;
     } catch (error) {
       console.error(error);
-      throw error;
     } finally {
       await client.end();
     }
   }
 
-  async getRelationships(relationshipIds: string[]): Promise<{
-    hits: {
-      relationship_id: string;
-      relationship_name: string;
-      is_hierarchical: string;
-      defines_ancestry: string;
-      reverse_relationship_id: string;
-      relationship_concept_id: number;
-    }[];
-    totalHits: number;
-  }> {
-    if (!relationshipIds.length) {
+  async getRelationships(relationshipIds: string[]): Promise<any> {
+    if (relationshipIds.length === 0) {
       return {
         hits: [],
         totalHits: 0,
       };
     }
+
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
-      const placeholders = relationshipIds
-        .map((_, index) => `$${index + 1}`)
-        .join(", ");
       const sql = `
       select *
           from ${this.vocabSchemaName}.relationship
-          WHERE relationship_id in (${placeholders})
+          WHERE relationship_id IN (${relationshipIds
+            .map((rid) => `'${rid}'`)
+            .join(", ")})
           `;
-      const result = await client.query(sql, relationshipIds);
+      const result = await client.query(sql, [relationshipIds]);
       const data = {
-        hits: result.rows,
+        hits: this.lowercaseArrayObjectKeys(result.rows),
         totalHits: result.rowCount,
       };
       return data;
     } catch (error) {
       console.error(error);
-      throw error;
     } finally {
       await client.end();
     }
@@ -404,7 +385,7 @@ export class CachedbDAO {
         select concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason from ${this.vocabSchemaName}.concept WHERE ${conceptColumnName}=? AND standard_concept='S';
             `;
       const result = await client.query(sql, [conceptName]);
-      return result.rows ?? [];
+      return this.lowercaseArrayObjectKeys(result.rows) ?? [];
     } catch (error) {
       console.error(error);
     } finally {
@@ -426,9 +407,9 @@ export class CachedbDAO {
         }.concept_recommended WHERE concept_id_1 IN (${searchConceptIds.join(
         ", "
       )});
-            `;
-      const result = await client.query(sql);
-      return result.rows ?? [];
+      `;
+      const result = await client.query<IHanaConceptRecommended>(sql);
+      return this.mapHanaConceptsRecommended(result.rows) ?? [];
     } catch (error) {
       console.error(error);
       throw error;
@@ -452,8 +433,8 @@ export class CachedbDAO {
         ", "
       )});
       `;
-      const result = await client.query(sql);
-      return result.rows ?? [];
+      const result = await client.query<IHanaConceptAncestor>(sql);
+      return this.mapHanaConceptsAncestor(result.rows) ?? [];
     } catch (error) {
       console.error(error);
       throw error;
@@ -479,7 +460,7 @@ export class CachedbDAO {
       )}) AND min_levels_of_separation = (?);
             `;
       const result = await client.query(sql, [level]);
-      return result.rows;
+      return this.mapHanaConceptsAncestor(result.rows);
     } catch (error) {
       console.error(error);
       throw error;
@@ -504,8 +485,10 @@ export class CachedbDAO {
         ", "
       )}) AND relationship_id = ? AND invalid_reason IS NULL;
             `;
-      const result = await client.query(sql, [conceptRelationshipType]);
-      return result.rows;
+      const result = await client.query<IHanaConceptRelationship>(sql, [
+        conceptRelationshipType,
+      ]);
+      return this.mapHanaConceptsRelationship(result.rows);
     } catch (error) {
       console.error(error);
       throw error;
@@ -520,7 +503,7 @@ export class CachedbDAO {
         host: env.CACHEDB__HOST,
         port: env.CACHEDB__PORT,
         user: jwt,
-        database: `A|${DatasetDialects.DUCKDB}|read|${datasetId}`,
+        database: `A|${DatasetDialects.HANA}|read|${datasetId}`,
         connectionTimeoutMillis: 30000,
       });
       client.connect();
@@ -529,5 +512,82 @@ export class CachedbDAO {
       console.error(err);
       throw err;
     }
+  };
+
+  // Map IHanaConcept to IConcept type
+  private mapHanaConcepts = (concepts: IHanaConcept[]): IConcept[] => {
+    const mappedConcepts = concepts.map((concept) => {
+      return {
+        concept_id: parseInt(concept.CONCEPT_ID),
+        concept_name: concept.CONCEPT_NAME,
+        domain_id: concept.DOMAIN_ID,
+        vocabulary_id: concept.VOCABULARY_ID,
+        concept_class_id: concept.CONCEPT_CLASS_ID,
+        standard_concept: concept.STANDARD_CONCEPT,
+        concept_code: concept.CONCEPT_CODE,
+        invalid_reason: concept.INVALID_REASON ?? "",
+        valid_start_date: Date.parse(concept.VALID_START_DATE),
+        valid_end_date: Date.parse(concept.VALID_END_DATE),
+      };
+    });
+    return mappedConcepts;
+  };
+
+  // Map IHanaConceptRecommended to IConceptRecommended type
+  private mapHanaConceptsRecommended = (
+    conceptsRecommended: IHanaConceptRecommended[]
+  ): IConceptRecommended[] => {
+    const mappedConcepts = conceptsRecommended.map((conceptRecommended) => {
+      return {
+        concept_id_1: parseInt(conceptRecommended.CONCEPT_ID_1),
+        concept_id_2: parseInt(conceptRecommended.CONCEPT_ID_2),
+        relationship_id: conceptRecommended.RELATIONSHIP_ID,
+      };
+    });
+    return mappedConcepts;
+  };
+
+  // Map IHanaConceptAncestor to IConceptAncestor type
+  private mapHanaConceptsAncestor = (
+    conceptsAncestor: IHanaConceptAncestor[]
+  ): IConceptAncestor[] => {
+    const mappedConcepts = conceptsAncestor.map((conceptAncestor) => {
+      return {
+        ancestor_concept_id: parseInt(conceptAncestor.ANCESTOR_CONCEPT_ID),
+        descendant_concept_id: parseInt(conceptAncestor.DESCENDANT_CONCEPT_ID),
+        min_levels_of_separation: parseInt(
+          conceptAncestor.MIN_LEVELS_OF_SEPARATION
+        ),
+        max_levels_of_separation: parseInt(
+          conceptAncestor.MAX_LEVELS_OF_SEPARATION
+        ),
+      };
+    });
+    return mappedConcepts;
+  };
+
+  // Map IHanaConceptRelationship to IConceptRelationship type
+  private mapHanaConceptsRelationship = (
+    conceptsRelationship: IHanaConceptRelationship[]
+  ): IConceptRelationship[] => {
+    const mappedConcepts = conceptsRelationship.map((conceptRelationship) => {
+      return {
+        concept_id_1: parseInt(conceptRelationship.CONCEPT_ID_1),
+        concept_id_2: parseInt(conceptRelationship.CONCEPT_ID_2),
+        relationship_id: conceptRelationship.RELATIONSHIP_ID,
+        valid_start_date: Date.parse(conceptRelationship.VALID_START_DATE),
+        valid_end_date: Date.parse(conceptRelationship.VALID_END_DATE),
+        invalid_reason: conceptRelationship.INVALID_REASON,
+      };
+    });
+    return mappedConcepts;
+  };
+
+  private lowercaseArrayObjectKeys = (objectArray: any[]) => {
+    return objectArray.map((obj) => {
+      return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => [k.toLowerCase(), v])
+      );
+    });
   };
 }

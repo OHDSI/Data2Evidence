@@ -53,6 +53,7 @@ const Env = z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
+    USE_HANA_JWT_AUTHC: z.string()
   })
   .superRefine(
     (
