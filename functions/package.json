@@ -355,6 +355,7 @@
           "dbSvc.schema.versionInfo.read",
           "dbSvc.datamodels.read",
           "dbSvc.schema.cdmVersion.read",
+          "dbSvc.schema.exists.read",
           "dbSvc.vocabSchemas.read",
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
@@ -561,6 +562,15 @@
           "path": "^/analytics-svc/api/services/alpdb/cdmversion",
           "scopes": [
             "dbSvc.schema.cdmVersion.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/api/services/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "scopes": [
+            "dbSvc.schema.exists.read"
           ],
           "httpMethods": [
             "GET"
