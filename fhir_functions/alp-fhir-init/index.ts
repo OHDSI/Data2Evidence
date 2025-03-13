@@ -1,5 +1,7 @@
 import {seed} from "./src/seed.ts"
-import {readAndCreateBotFromConfig} from "./src/loadBots.ts"
+//import {readAndCreateBotFromConfig} from "./src/loadBots.ts"
 
 await seed()
-readAndCreateBotFromConfig()
+
+// Todo: remove code as part of bots and subscriptions
+//readAndCreateBotFromConfig()

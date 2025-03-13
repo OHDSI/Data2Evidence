@@ -11,9 +11,9 @@ volumes:
   pg-minerva-data-1:
   r-libs:
   trex:
-  fhir-schema-file-1:
   demodb-data:
   dicom-sqlite-storage:
+  fhir-binary-1:
 
 x-envs:
   db-svc: &x-dbsvc
@@ -49,6 +49,7 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: 1000
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
+    PG__FHIR_DB_NAME: alp_fhir
   fhir: &x-fhir
     FHIR__CLIENT_ID: db6b2304-f236-45ec-b10c-a852681e7129
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
@@ -163,6 +164,7 @@ services:
             "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
             "NODE_ENV": "${NODE_ENV:-development}",
             "PG__DB_NAME": "alp",
+            "PG__FHIR_DB_NAME": "alp_fhir",
             "PG__DEBUG": "${PG_DEBUG:-1}",
             "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
             "PG__SSL": "${PG__SSL:-false}",
@@ -232,7 +234,8 @@ services:
             "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
             "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}"
+            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           },
           "alp-fhir-init": {
             "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
@@ -451,7 +454,7 @@ services:
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
       NODE_ENV: development
-      PREFECT_DOCKER_VOLUMES: '["${PROJECT_NAME:-d2e}_cachedb-data-1:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library", "${PROJECT_NAME:-d2e}_fhir-schema-file-1:/home/docker/fhir"]'
+      PREFECT_DOCKER_VOLUMES: '["${PROJECT_NAME:-d2e}_cachedb-data-1:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]'
       GH_TOKEN: ${GH_TOKEN}
       PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows"]'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
@@ -508,6 +511,22 @@ services:
             "+white_rabbit": {},
             "+trex": {}
            }
+          },
+          "+${PG__FHIR_DB_NAME:-alp_fhir}": {
+           "schemas": {
+            "+public": {}
+           }
+          }
+         }
+        }
+      POSTGRES_PUBLICATION_CONFIG: |-
+        {
+         "databases": {
+          "+${PG_DB_NAME:-alp_fhir}": {
+           "+fhir_publication": {
+             "schema": "public",
+             "publication": "fhir_publication"
+           }
           }
          }
         }
@@ -522,6 +541,14 @@ services:
           "writerPassword": "${PG_WRITE_PASSWORD}",
           "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
           "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
+         },
+         "${PG__FHIR_DB_NAME:-alp_fhir}": {
+          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "managerPassword": "${PG_ADMIN_PASSWORD}",
+          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "readerPassword": "${PG_WRITE_PASSWORD}",
+          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "writerPassword": "${PG_WRITE_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
@@ -975,7 +1002,6 @@ services:
     volumes:
       - cachedb-data-1:/home/docker/duckdb_data
       - cdw-config-cachedb-data-1:/home/docker/cdw_svc/duckdb_data # Volume for dynamically generated cdw-config duckdb file (refer to docs/3-configure/9-create-cdw-config-duckdb-file.md for information)
-      - fhir-schema-file-1:/home/docker/fhir
     environment:
       <<:
         - *x-converter
@@ -1062,12 +1088,13 @@ services:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
-      - fhir-schema-file-1:/home/docker/app/medplum/packages/definitions/dist/fhir/r4
+      - fhir-binary-1:/home/docker/app/medplum/binary
     environment:
       <<:
         - *x-pg
         - *x-redis
         - *x-fhir
+      PG__DB_NAME: alp_fhir
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
       REDIS_PASSWORD: ${REDIS_PASSWORD}

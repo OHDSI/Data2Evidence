@@ -29,12 +29,7 @@
           "function": "/alp-fhir-svc",
           "env": "alp-fhir-svc",
           "imports": "/alp-fhir-svc/import.json"
-        },
-        {
-          "source": "/api/fhir/helloworld",
-          "function": "/helloworld"
         }
-
       ],
       "roles": {
         "ALP_SYSTEM_ADMIN": [
@@ -46,18 +41,25 @@
       },
       "scopes": [
         {
-          "path": "^/api/fhir/helloworld",
-          "scopes": [
-            "gateway.fhir.create"
-          ]
-        },
-        {
-          "path": "^/gateway/api/fhir",
+          "path": "^/gateway/api/fhir/createProject",
           "scopes": [
             "gateway.fhir.create"
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(.*)",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET",
+            "PUT",
+            "PATCH",
+            "DELETE"
           ]
         }
       ]

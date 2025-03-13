@@ -16,7 +16,7 @@ export const env = {
   PG_SUPER_PASSWORD: _env.PG_SUPER_PASSWORD,
   PG__HOST: _env.PG__HOST,
   PG__PORT: _env.PG__PORT,
-  PG__DB_NAME: _env.PG__DB_NAME
+  PG__DB_NAME: _env.PG__FHIR_DB_NAME
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)

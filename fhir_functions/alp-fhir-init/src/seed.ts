@@ -1,16 +1,16 @@
 import pg from "pg";
-import { env, services } from './env.ts'
+import { env, services } from "./env.ts";
 
 const queryPostgres = async (
-    client: pg.Client,
-    query: string,
-    values: Array<string | number>
-  ) => {
-    return await client.query(query, values);
-  };
-  
+  client: pg.Client,
+  query: string,
+  values: Array<string | number>
+) => {
+  return await client.query(query, values);
+};
+
 export const seed = async () => {
-  const FHIR_CLIENT_ID = env.FHIR__CLIENT_ID
+  const FHIR_CLIENT_ID = env.FHIR__CLIENT_ID;
   const FHIR_CLIENT_SECRET = env.FHIR__CLIENT_SECRET;
 
   if (!FHIR_CLIENT_ID || !FHIR_CLIENT_SECRET) {
@@ -48,49 +48,43 @@ export const seed = async () => {
 
   console.log("Seeding tables");
 
+  //console.log("Enable bots for Super Admin")
 
-  console.log("Enable bots for Super Admin")
-  
-  let jsonParsedProjectContent = JSON.parse(projectContent)
-  jsonParsedProjectContent.features = ['bots']
-  jsonParsedProjectContent.meta.versionId = '2c8b0331-863a-432e-a5d1-ef0619acc3d2'
+  let jsonParsedProjectContent = JSON.parse(projectContent);
+  //jsonParsedProjectContent.features = ["bots"]; //Todo: Remove bots code
+  jsonParsedProjectContent.meta.versionId =
+    "2c8b0331-863a-432e-a5d1-ef0619acc3d2";
   jsonParsedProjectContent.secret = [
     {
-      "name": "client_id",
-      "valueString": env.IDP__ALP_DATA_CLIENT_ID
+      name: "client_id",
+      valueString: env.IDP__ALP_DATA_CLIENT_ID,
     },
     {
-      "name": "client_secret",
-      "valueString": env.IDP__ALP_DATA__CLIENT_SECRET
+      name: "client_secret",
+      valueString: env.IDP__ALP_DATA__CLIENT_SECRET,
     },
     {
-      "name": "alp_auth_route",
-      "valueString": env.ALP_GATEWAY_OAUTH__URL
+      name: "alp_auth_route",
+      valueString: env.ALP_GATEWAY_OAUTH__URL,
     },
     {
-      "name": "fhir_svc_route",
-      "valueString": services.fhirSvc
-    }
-  ]
+      name: "fhir_svc_route",
+      valueString: services.fhirSvc,
+    },
+  ];
 
   await queryPostgres(
     client,
     `INSERT INTO public."Project_History" ("versionId", id, "content", "lastUpdated")
     values('2c8b0331-863a-432e-a5d1-ef0619acc3d2', $1, $2, $3) ON CONFLICT("versionId") \
-    DO NOTHING;` ,
-    [
-      projectId,
-      jsonParsedProjectContent,
-      "2024-06-13 14:40:48.738 +0800"
-    ]
+    DO NOTHING;`,
+    [projectId, jsonParsedProjectContent, "2024-06-13 14:40:48.738 +0800"]
   );
-  
+
   await queryPostgres(
     client,
-    `UPDATE public."Project" SET "content" = $1 WHERE name = 'Super Admin'` ,
-    [
-      jsonParsedProjectContent
-    ]
+    `UPDATE public."Project" SET "content" = $1 WHERE name = 'Super Admin'`,
+    [jsonParsedProjectContent]
   );
 
   const ClientApplicationContent = `{"meta":{"project":"${projectId}","versionId":"7ef81144-11f4-40ef-a017-da8885a0d36e","lastUpdated":"2024-06-13T06:40:48.738Z","author":{"reference":"Practitioner/${practitioner}","display":"Medplum Admin"},"compartment":[{"reference":"Project/${projectId}"}]},"resourceType":"ClientApplication","name":"d2eClient","secret":"${FHIR_CLIENT_SECRET}","description":"d2eClient","id":"${FHIR_CLIENT_ID}"}`;
@@ -167,4 +161,4 @@ export const seed = async () => {
   client.end();
 };
 
-seed()
+seed();
