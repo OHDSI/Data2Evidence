@@ -89,7 +89,6 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       }
 
       const scopes = scope?.split(" ") || []
-      await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, scopes.includes(IDP_SCOPE_ROLE.TENANT_VIEWER))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_SYSTEM_ADMIN, scopes.includes(IDP_SCOPE_ROLE.SYSTEM_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scopes.includes(IDP_SCOPE_ROLE.USER_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scopes.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
@@ -143,6 +142,7 @@ const grantOrRevokeSystemRole = async (userId: string, role: string, isGrant: bo
 const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, role: string, datasets: IDataset[], grantDatasetCodes: string[]) => {
   const groupService = Container.get(B2cGroupService)
 
+  let isResearcher = false
   for (const dataset of datasets) {
     let group = await groupService.getGroupByStudyRole(dataset.id, role)
     if (!group?.id) {
@@ -156,11 +156,15 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
 
     const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)
     if (isGrant) {
+      isResearcher = true
       await addUserToGroup(userId, group!.id)
     } else {
       await removeUserFromGroup(userId, group!.id)
     }
   }
+
+  // Automatically grant viewer role when is researcher
+  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
 }
 
 const addUserToGroup = async (userId: string, groupId: string) => {
