@@ -51,7 +51,7 @@ x-envs:
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp_fhir
   fhir: &x-fhir
-    FHIR__CLIENT_ID: db6b2304-f236-45ec-b10c-a852681e7129
+    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
   perseus: &x-perseus
     PERSEUS__FILES_MANAGER_HOST: trex
@@ -228,7 +228,7 @@ services:
           "alp-fhir-svc": {
             "FHIR__LOG_LEVEL": "debug",
             "PORT": 41112,
-            "FHIR__CLIENT_ID": "db6b2304-f236-45ec-b10c-a852681e7129",
+            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
             "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
             "FHIR_SCHEMA_PATH": "/home/docker/fhir",
             "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
@@ -242,7 +242,7 @@ services:
             "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
             "FHIR__LOG_LEVEL": "debug",
             "PORT": 41112,
-            "FHIR__CLIENT_ID": "db6b2304-f236-45ec-b10c-a852681e7129",
+            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
             "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
             "DUCKDB_PATH": "/home/docker/alp-data-node/app/src/duckdb",
             "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
@@ -1020,7 +1020,7 @@ services:
         limits:
           cpus: ${D2E_CPU_LIMIT:-2}
           memory: ${D2E_MEMORY_LIMIT:-7G}
-    
+
   demodb:
     image: ohdsi/broadsea-atlasdb:2.0.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
