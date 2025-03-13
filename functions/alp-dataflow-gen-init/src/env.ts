@@ -34,6 +34,7 @@ export const env = {
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
+    perseus_host: _env.PERSEUS__FILES_MANAGER_HOST,
   },
   SECRETS: {
     // Prefect Secrets
@@ -42,6 +43,8 @@ export const env = {
     "idp-alp-data-client-secret": _env.IDP__ALP_DATA__CLIENT_SECRET,
     "minio-secret-key": _env.MINIO__SECRET_KEY,
     "strategus-keyring-password": _env.STRATEGUS__KEYRING_PASSWORD,
+    "pg-admin-user": _env.PG_ADMIN_USER,
+    "pg-admin-password": _env.PG_ADMIN_PASSWORD,
   },
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,

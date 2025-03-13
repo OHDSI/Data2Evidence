@@ -404,7 +404,10 @@ services:
             "DATABASE_CREDENTIALS": "{}",
             "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
             "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
-            "WORKPOOL_NAME": "docker-pool"
+            "WORKPOOL_NAME": "docker-pool",
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST}"
           }
         }
       SERVICE_ROUTES: |-
