@@ -96,8 +96,7 @@ def data_characterization_plugin(options: DCOptionsType):
                                vocab_schema_name=vocab_schema_name,
                                results_schema_dao=results_schema_dao,
                                output_folder=output_folder,
-                               set_connection_string=set_read_connection_string,
-                               flow_run_id=flow_run_id)
+                               set_connection_string=set_read_connection_string)
 
 
 def create_data_characterization_schema(vocab_schema_name: str,
@@ -210,7 +209,7 @@ def execute_export_to_ares(schema_name: str,
                                  vocab_schema_name: str,
                                  results_schema_dao,
                                  output_folder: str,
-                                 set_connection_string: str,
+                                 set_connection_string: str
                                  ):
     try:
         logger = get_run_logger()

@@ -1,6 +1,6 @@
 FROM ghcr.io/data2evidence/d2e-perseus:master AS base
 
-COPY ./requirements_perseus.txt .
+COPY ./flows/data_mapping/requirements_perseus.txt .
 
 # Python Library Setup
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20

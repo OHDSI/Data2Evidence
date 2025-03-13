@@ -37,16 +37,15 @@ RUN pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/rel
 RUN pip3 install --upgrade pip
 
 COPY --chown=docker:docker --chmod=711 ./shared_utils shared_utils
-COPY --chown=docker:docker --chmod=711 ./requirements_NLP.txt .
+COPY --chown=docker:docker --chmod=711 ./flows/nlp/requirements_NLP.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' requirements*.txt; fi
 RUN pip install -r requirements_NLP.txt
 
-RUN mkdir -p ./flows/nlp
-RUN chown -R docker:docker ./flows/nlp
 COPY --chown=docker:docker --chmod=711 ./flows/nlp/ner_extract_plugin flows/ner_extract_plugin
 RUN mkdir -p flows/ner_extract_plugin/external/
 RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
 RUN unzip -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip -d flows/ner_extract_plugin/external
+RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
 
 USER docker

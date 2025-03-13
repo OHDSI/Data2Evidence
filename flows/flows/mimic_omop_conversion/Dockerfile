@@ -82,10 +82,10 @@ WORKDIR /app
 RUN mkdir ./mimic_omop
 RUN chown docker:docker ./mimic_omop
 
-COPY --chown=docker:docker --chmod=711 ./requirements.txt .
+COPY --chown=docker:docker --chmod=711 ./flows/mimic_omop_conversion/requirements_mimic.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' requirements*.txt; fi
-RUN pip install -r requirements.txt
+RUN pip install -r requirements_mimic.txt
 
 COPY --chown=docker:docker --chmod=711 ./shared_utils shared_utils
 COPY --chown=docker:docker --chmod=711 ./flows/mimic_omop_conversion flows

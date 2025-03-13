@@ -1,5 +1,5 @@
 FROM ghcr.io/data2evidence/whiterabbit:master AS base
-COPY ./requirements_perseus.txt .
+COPY --chown=docker:docker --chmod=711 ./flows/white_rabbit/requirements_perseus.txt .
 
 ENV DISPLAY=:1
 

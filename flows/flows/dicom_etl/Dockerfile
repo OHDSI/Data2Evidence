@@ -17,10 +17,10 @@ RUN apt-get update && apt-get install libpq5 libpq-dev curl gcc g++ -y --no-inst
 COPY --chown=docker:docker ./postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker ./__init__.py .
 
-COPY --chown=docker:docker --chmod=711 ./flows/dicom_etl/requirements.txt .
+COPY --chown=docker:docker --chmod=711 ./flows/dicom_etl/requirements_dicom.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' requirements*.txt; fi
-RUN pip install -r requirements.txt
+RUN pip install -r requirements_dicom.txt
 
 COPY --chown=docker:docker --chmod=711 ./shared_utils shared_utils
 COPY --chown=docker:docker --chmod=711 ./flows/dicom_etl flows
