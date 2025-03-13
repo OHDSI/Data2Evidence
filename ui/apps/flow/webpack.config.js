@@ -43,7 +43,7 @@ module.exports = (env, argv) => {
       libraryTarget: 'umd',
       umdNamedDefine: true,
       globalObject: 'self',
-      publicPath: isProduction ? '/flow/' : 'https://localhost:4900/',
+      publicPath: '/flow/',
     },
     externals,
     target: 'web',

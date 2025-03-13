@@ -30,15 +30,17 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   database: "",
+  schemaname: "",
   dataframe: [],
   dbtablename: "",
 };
 
-const sourceOptions: SourceOptions = {
-  python_node: [SourceTypes.NODE],
-  python_notebook_node: [SourceTypes.NODE],
-  r_node: [SourceTypes.NODE],
-};
+// Allow all connected nodes to db writer (dataframe & any)
+// const sourceOptions: SourceOptions = {
+//   sql_node: [SourceTypes.NODE],
+//   py2table_node: [SourceTypes.NODE],
+//   db_reader_node: [SourceTypes.NODE],
+// };
 
 export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   node,
@@ -59,6 +61,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         dataframe: node.data.dataframe,
         dbtablename: node.data.dbtablename,
         database: node.data.database,
+        schemaname: node.data.schemaname,
       });
     } else {
       setFormData({
@@ -102,7 +105,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       <Box mb={4}>
         <SelectSource
           nodeId={node.id}
-          sourceOptions={sourceOptions}
+          sourceOptions={null}
           label="Dataframe"
           value={formData.dataframe?.join(".")}
           onChange={(value: string) =>
@@ -127,6 +130,15 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
           value={formData.database}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ database: e.target.value })
+          }
+        />
+      </Box>
+      <Box mb={4}>
+        <TextInput
+          label="Schema name"
+          value={formData.schemaname}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ schemaname: e.target.value })
           }
         />
       </Box>

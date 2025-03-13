@@ -59,8 +59,10 @@ export const SelectSource: FC<SelectSourceProps> = ({
     const nodeAsSource = nodes
       .filter(
         (n) =>
-          n.type in sourceOptions &&
-          sourceOptions[n.type].includes(SourceTypes.NODE)
+          // Filter by source options if defined, otherwise show all
+          sourceOptions == null ||
+          (n.type in sourceOptions &&
+            sourceOptions[n.type].includes(SourceTypes.NODE))
       )
       .map(
         (n) =>
@@ -74,6 +76,8 @@ export const SelectSource: FC<SelectSourceProps> = ({
     const scriptNodeAsSource = nodes
       .filter(
         (n) =>
+          // Filter by source options if defined, otherwise show none
+          sourceOptions != null &&
           n.type in sourceOptions &&
           sourceOptions[n.type].includes(SourceTypes.SCRIPT_NODE)
       )
