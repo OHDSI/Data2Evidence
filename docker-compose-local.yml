@@ -19,7 +19,6 @@ services:
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-db-credentials": false,
           "alp-fhir-svc": false,
           "alp-fhir-init": false,
           "alp-dataflow-gen-init": false,

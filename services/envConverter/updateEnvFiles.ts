@@ -46,7 +46,7 @@ api
             username,
             password: encryptedPassword,
             salt,
-            user_scope: userScope,
+            userScope,
           } = c;
           const decrypted = decrypt(encryptedPassword);
           const password = decrypted.replace(salt, "");

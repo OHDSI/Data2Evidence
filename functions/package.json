@@ -28,11 +28,6 @@
           "waitfor": "http://alp-dataflow-gen-1:41120/api/health"
         },
         {
-          "function": "/alp-db-credentials/src/init",
-          "imports": "/alp-db-credentials/import.json",
-          "env": "alp-db-credentials"
-        },
-        {
           "function": "/files-manager/src/init",
           "imports": "/files-manager/import.json",
           "env": "files-manager"
@@ -116,12 +111,6 @@
           "function": "/code-suggestion",
           "imports": "/code-suggestion/import.json",
           "env": "code-suggestion"
-        },
-        {
-          "source": "/db-credentials",
-          "function": "/alp-db-credentials",
-          "imports": "/alp-db-credentials/import.json",
-          "env": "alp-db-credentials"
         },
         {
           "source": "/analytics-svc/api/services/bookmark",
@@ -303,13 +292,6 @@
           "usermgmt.user.read",
           "usermgmt.user.add",
           "usermgmt.setup",
-          "dbCredentials.db.list",
-          "dbCredentials.db.read",
-          "dbCredentials.db.vocabSchema.list",
-          "dbCredentials.db.write",
-          "dbCredentials.db.credential.update",
-          "dbCredentials.db.delete",
-          "dbCredentials.vocab.schema.list",
           "portal.dataset.systemAdmin.read",
           "portal.dataset.read",
           "portal.dataset.exist",
@@ -485,7 +467,6 @@
           "usermgmt.group.delete"
         ],
         "IDP_ALP_SVC_CLIENT_ID": [
-          "dbCredentials.db.list",
           "gateway.db.datbase.credentials.list",
           "portal.dataset.read"
         ],
@@ -890,70 +871,6 @@
           ],
           "httpMethods": [
             "POST",
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/list$",
-          "scopes": [
-            "dbCredentials.db.list"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-          "scopes": [
-            "dbCredentials.db.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/(postgres|hana)/vocab-schema/list$",
-          "scopes": [
-            "dbCredentials.db.vocabSchema.list"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db$",
-          "scopes": [
-            "dbCredentials.db.write"
-          ],
-          "httpMethods": [
-            "POST",
-            "PUT"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/credential$",
-          "scopes": [
-            "dbCredentials.db.credential.update"
-          ],
-          "httpMethods": [
-            "PUT"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-          "scopes": [
-            "dbCredentials.db.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/db-credentials/vocab/(postgres|hana)/schema/list$",
-          "scopes": [
-            "dbCredentials.vocab.schema.list"
-          ],
-          "httpMethods": [
             "GET"
           ]
         },

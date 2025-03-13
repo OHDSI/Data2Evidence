@@ -2,7 +2,6 @@
 .github/workflows                                   @data2evidence/devops
 fhir_functions/                                     @data2evidence/data
 functions/_shared                                   @data2evidence/analyze
-functions/alp-db-credentials                        @data2evidence/integrate
 functions/alp-usermgmt                              @data2evidence/integrate
 functions/alpdb                                     @data2evidence/integrate
 functions/analytics-svc                             @data2evidence/analyze

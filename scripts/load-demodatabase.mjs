@@ -149,7 +149,7 @@ var payload = JSON.stringify({
     ]
 })
 try { 
-    var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/db-credentials/db' \
+    var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db' \
     --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
     --header 'Content-Type: application/json' \
     --header 'Authorization: Bearer ${BEARER_TOKEN}' \
