@@ -23,7 +23,7 @@
             {
                 "name": "dicom_etl_plugin",
                 "type": "dicom_etl",
-                "entrypoint": "flows.dicom_etl.dicom_etl_plugin.flow.dicom_etl_plugin",
+                "entrypoint": "flows.dicom_etl_plugin.flow.dicom_etl_plugin",
                 "tags": [
                   "data",
                   "data_load",

@@ -77,7 +77,7 @@ x-envs:
        "minio": "",
        "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
-       "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server:8042",
+       "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
       }
@@ -197,7 +197,7 @@ services:
               "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-              "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server:8042",
+              "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001"
             }
           },
@@ -420,7 +420,7 @@ services:
         "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
         "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server:8042",
+        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir"
         }
@@ -1117,7 +1117,7 @@ services:
     networks:
       alp:
       data:
-    hostname: ${PROJECT_NAME:-d2e}-dicom-server.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     environment:
       VERBOSE_ENABLED: true
       VERBOSE_STARTUP: true
@@ -1129,10 +1129,6 @@ services:
       ORTHANC__AWS_S3_STORAGE__VIRTUAL_ADDRESSING: false
       ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
       ORTHANC__AUTHENTICATION_ENABLED: false
-      ORTHANC__REGISTERED_USERS: |
-        {
-            "healthcheck": ${DICOM__HEALTH_CHECK_PASSWORD}
-        }
     healthcheck:
       test:
         [

@@ -87,10 +87,11 @@ services:
     ports:
       # - 9000:9000 #Port for API connectivity, internal communication is good enough. Needs to be uncommented only when testing from outside the alp docker network
       - 9090:9090
-  #alp-dicom-server:
+
+  dicom-server:
   # uses 8042 port on the container
-  #  ports:
-  #    - 8042:8042
+    ports:
+      - 8042:8042
 
   alp-logto-post-init:
     build:
