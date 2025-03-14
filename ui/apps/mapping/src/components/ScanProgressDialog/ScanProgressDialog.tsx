@@ -22,6 +22,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [scanCompleted, setScanCompleted] = useState(false);
+  const [scanFailed, setScanFailed] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
@@ -111,6 +112,9 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
       setProgress(response.logs[response.logs.length - 1].percent);
       if (response.statusName === "COMPLETED") {
         setScanCompleted(true);
+      } else if (response.statusName === "FAILED") {
+        setScanCompleted(true);
+        setScanFailed(true);
       }
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
@@ -171,10 +175,10 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         <Button onClick={handleBack} variant="outlined" disabled={!scanCompleted || loading}>
           Back
         </Button>
-        <Button onClick={handleSaveReport} variant="contained" color="primary" disabled={!scanCompleted}>
+        <Button onClick={handleSaveReport} variant="contained" color="primary" disabled={!scanCompleted || scanFailed}>
           Save report
         </Button>
-        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted || loading}>
+        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted || loading || scanFailed}>
           Link tables
         </Button>
       </div>

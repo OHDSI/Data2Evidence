@@ -473,7 +473,10 @@
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "portal.dataset.read",
-          "dataflowmgmt.dataflow.flowRun.results.read"
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "filesmanager.read",
+          "filesmanager.post",
+          "filesmanager.delete"
         ]
       },
       "scopes": [

@@ -138,6 +138,7 @@ services:
         - *x-fhir
         - *x-minio
         - *x-pg
+        - *x-perseus
       REP_PG: postgres://postgres:mypass@demodb:5432/postgres
       SERVICE_ENV: |-
         {
@@ -399,7 +400,7 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST}"
+            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}"
           }
         }
       SERVICE_ROUTES: |-

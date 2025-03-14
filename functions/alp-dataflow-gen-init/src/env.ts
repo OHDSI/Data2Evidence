@@ -29,16 +29,20 @@ export const env = {
       _env.OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL,
     cachedb_host: _env.CACHEDB__HOST,
     cachedb_port: _env.CACHEDB__PORT,
+    pg_db_name: _env.PG__DB_NAME,
+    pg_db_host: _env.PG__HOST,
+    pg_db_port: _env.PG__PORT,
+    perseus_host: _env.PERSEUS__FILES_MANAGER_HOST,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
-    perseus_host: _env.PERSEUS__FILES_MANAGER_HOST,
   },
   SECRETS: {
     // Prefect Secrets
-    "tls-internal-ca-cert": _env.TLS__INTERNAL__CA_CRT,
+    "tls-internal-ca-cert":
+      _env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n") ?? "",
     "idp-alp-data-client-id": _env.IDP__ALP_DATA_CLIENT_ID,
     "idp-alp-data-client-secret": _env.IDP__ALP_DATA__CLIENT_SECRET,
     "minio-secret-key": _env.MINIO__SECRET_KEY,
