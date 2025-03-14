@@ -149,7 +149,7 @@ var payload = JSON.stringify({
     ]
 })
 try { 
-    var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db' \
+    var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
     --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
     --header 'Content-Type: application/json' \
     --header 'Authorization: Bearer ${BEARER_TOKEN}' \
@@ -157,9 +157,9 @@ try {
 } catch (error) { 
     console.error(error);
 }
-var resp_status_code = await $`echo ${resp} | grep status_code: | awk -F':' '{print $2}'`
+var resp_status_code = await $`echo ${resp} | grep -o 'status_code:[0-9]*' | awk -F':' '{print $2}'`
 
-if (resp_status_code == 201) { 
+if (resp_status_code == '200') { 
     console.log(chalk.green(`Setup completed successfully.`));
 } else {
     console.log(chalk.red(`Setup unsuccessful.`));
@@ -173,4 +173,3 @@ await $`d2e -e start`
 console.log(chalk.blue(`Patching demo database...`));
 await $`d2e patchdemodb`
 console.log(chalk.green(`Completed patching demo database.`));
-
