@@ -173,7 +173,6 @@
           },
           {
             "enabled": true,
-            "featureFlag": "analysisFlow",
             "name": "Analysis",
             "route": "analysis_parent",
             "requiredRoles": [

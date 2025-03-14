@@ -62,11 +62,11 @@ export class FeatureService {
 
       const pluginFeatureFlags: string[] = [];
       this.featurePlugins.forEach(f => {
-        if (f.enabled) {
+        if (f.enabled && f.featureFlag) {
           pluginFeatureFlags.push(f.featureFlag);
         }
         f.children?.forEach(childPlugin => {
-          if (childPlugin.enabled) {
+          if (childPlugin.enabled && childPlugin.featureFlag) {
             pluginFeatureFlags.push(childPlugin.featureFlag);
           }
         });

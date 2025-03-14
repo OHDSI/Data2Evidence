@@ -29,12 +29,6 @@ export const Feature: FC = () => {
       datasetSearch: {
         name: getText(i18nKeys.FEATURE__DATASET_SEARCH),
       },
-      terminology: {
-        name: getText(i18nKeys.FEATURE__TERMINOLOGY),
-      },
-      pa: {
-        name: getText(i18nKeys.FEATURE__PATIENT_ANALYTICS),
-      },
       conceptSets: {
         name: getText(i18nKeys.FEATURE__CONCEPTS),
       },
@@ -44,14 +38,11 @@ export const Feature: FC = () => {
       starboard: {
         name: getText(i18nKeys.FEATURE__NOTEBOOKS),
       },
-      dataflow: {
-        name: getText(i18nKeys.FEATURE__DATAFLOW),
-      },
-      cohorts: {
-        name: "Cohorts",
-      },
       kaplanMeier: {
-        name: "Kaplan-Meier",
+        name: getText(i18nKeys.FEATURE__KAPLAN_MEIER),
+      },
+      strategus: {
+        name: getText(i18nKeys.FEATURE__STRATEGUS),
       },
       fhirServer: {
         name: getText(i18nKeys.FEATURE__FHIR_SERVER),
@@ -103,13 +94,24 @@ export const Feature: FC = () => {
           </div>
           <div className="feature__content">
             {formData.features
-              .filter((f) => Object.keys(FEATURES).includes(f.feature))
-              .sort((a, b) => Object.keys(FEATURES).indexOf(a.feature) - Object.keys(FEATURES).indexOf(b.feature))
+              .sort((a, b) => {
+                const featureOrder = Object.keys(FEATURES);
+                const indexA = featureOrder.indexOf(a.feature);
+                const indexB = featureOrder.indexOf(b.feature);
+
+                if (indexA === -1 && indexB === -1) {
+                  return a.feature.localeCompare(b.feature);
+                }
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+
+                return indexA - indexB;
+              })
               .map((feat) => (
                 <Box key={feat.feature} className="feature__item">
                   <Checkbox
                     checked={feat.isEnabled}
-                    label={FEATURES[feat.feature]?.name}
+                    label={FEATURES[feat.feature]?.name ?? feat.feature}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
                       handleFormDataChange({
                         features: formData.features.map((f) =>

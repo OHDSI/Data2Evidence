@@ -38,6 +38,16 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
   const requiredRoles = useMemo(() => plugin?.requiredRoles || [], [plugin?.requiredRoles]);
   const featureFlag = useMemo(() => plugin?.featureFlag || "", [plugin?.featureFlag]);
 
+  const clonedPlugin = useMemo(() => {
+    const cloned = { ...plugin } as Plugins;
+    if (cloned && "children" in cloned) {
+      cloned.children = cloned.children?.filter(
+        (child) => !("featureFlag" in child) || featureFlags.includes(child.featureFlag || "")
+      );
+    }
+    return cloned;
+  }, [plugin, featureFlags]);
+
   const isResearcherPluginAllowed = useCallback(() => {
     let allowed = (requiredRoles.length || 0) === 0;
     if (type === MenuType.Dataset || isSysAdmin) return allowed;
@@ -49,15 +59,13 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
       }
     }
 
-    if (allowed && plugin?.children) {
-      plugin.children.map((childPlugin: Plugins) => {
-        allowed = featureFlags.includes(childPlugin.featureFlag || "");
-      });
+    if (allowed && clonedPlugin?.children) {
+      allowed = clonedPlugin.children.length > 0;
     } else if (allowed) {
       allowed = featureFlags.includes(featureFlag);
     }
     return allowed;
-  }, [activeDataset.id, featureFlag, featureFlags, isSysAdmin, plugin?.children, requiredRoles, type, user]);
+  }, [activeDataset.id, featureFlag, featureFlags, isSysAdmin, clonedPlugin?.children, requiredRoles, type, user]);
 
   const portalTypePath = useMemo(() => {
     if (isSysAdmin) {
@@ -207,7 +215,7 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
           {getText(i18nKeys.MENU_NAV__DATASET)}
         </Link>
       )}
-      {type === MenuType.Plugin && plugin && renderPluginMenu(plugin)}
+      {type === MenuType.Plugin && clonedPlugin && renderPluginMenu(clonedPlugin)}
     </li>
   );
 };
