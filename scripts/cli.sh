@@ -8,10 +8,16 @@ script_full_path=$(dirname "$0")
 
 if [[ -n "$D2ECLI_NODE_MODULES_PATH" ]]; then
   node_modules_path=$D2ECLI_NODE_MODULES_PATH
+elif [ -d "$script_full_path/../lib/node_modules/d2e/" ]; then
+  node_modules_path=$script_full_path/../lib/node_modules/d2e/
+elif [ -d "$script_full_path/../d2e/" ]; then
+  node_modules_path=$script_full_path/../d2e/
 elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
   node_modules_path=$script_full_path/../lib/node_modules/@data2evidence/cli/
 elif [ -d "$script_full_path/../@data2evidence/cli/" ]; then
   node_modules_path=$script_full_path/../@data2evidence/cli/
+elif [[ "$(basename "$0")" == "cli.sh" || "$(basename "$(dirname "$0")")" == "scripts" ]]; then
+  node_modules_path=$script_full_path/..
 else
   echo "Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Exiting"
   exit -1
@@ -146,7 +152,7 @@ case $cmd in
         DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
-        [ -v DOTENV_FILE ] || DOTENV_FILE=.env.${ENV_TYPE}
+        [ -v DOTENV_FILE ] || DOTENV_FILE=$env
         DOTENV_KEYS=$DOTENV_FILE.keys
 
         echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE

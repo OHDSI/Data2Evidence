@@ -1,8 +1,10 @@
 # Data2Evidence
- [![NPM Version](https://img.shields.io/npm/v/d2e?label=d2e%20installer&logo=npm&color=blue)](https://www.npmjs.com/package/d2e) 
- [![GitHub release](https://img.shields.io/github/v/release/data2evidence/d2e?color=blue&label=latest%20release&logo=github)](https://github.com/data2evidence/d2e/releases/latest)
- [![Discord](https://img.shields.io/discord/1189126876577403001?label=discord&logo=discord&logoColor=white)](https://discord.gg/5XtHky2BZe) 
- [![Static Badge](https://img.shields.io/badge/docs-d2e.sg-lightblue?logo=googledocs&logoColor=white)](https://docs.d2e.sg)
+[![GitHub Activity](https://img.shields.io/github/commit-activity/m/data2evidence/d2e?logo=github&color=lightgreen)](https://github.com/data2evidence/d2e/graphs/contributors)
+[![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=d2e%20installer&logo=npm&color=blue)](https://www.npmjs.com/package/d2e) 
+[![D2E Release](https://img.shields.io/github/v/release/data2evidence/d2e?color=blue&label=latest%20release&logo=github)](https://github.com/data2evidence/d2e/releases/latest)
+[![D2E Docs](https://img.shields.io/badge/docs-d2e.sg-lightblue?logo=googledocs&logoColor=white)](https://docs.d2e.sg)
+[![Discord](https://img.shields.io/discord/1189126876577403001?label=discord&logo=discord&logoColor=white)](https://discord.gg/5XtHky2BZe) 
+
 
 <!--- [![GitHub Release](https://img.shields.io/github/v/release/data2evidence/d2e?label=notes&logo=github)](https://github.com/data2evidence/d2e/releases) --->
 
@@ -68,11 +70,11 @@ Encounter an issue or have a feature request? Please help us improve by reportin
 ### CICD
 
 #### Build / Tests
-| d2e services  | d2e  functions/flows | d2e ui  |
+| d2e services  | d2e  functions | d2e ui  |
 |---|---|---|
 | [![d2e/cli build and publish](https://github.com/data2evidence/d2e/actions/workflows/cli-setup-npm.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/cli-setup-npm.yml) |  [![d2e-functions build plugin](https://github.com/data2evidence/d2e/actions/workflows/functions-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-plugin-ci.yml) | [![d2e-ui build plugin](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml)  |  
 | [![d2e/services Docker Build](https://github.com/data2evidence/d2e/actions/workflows/services-docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-docker-push.yml)   | [![d2e-functions/pa Run HTTP tests](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml)  | [![d2e-ui/pa (vue)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml)   |  
-| [![d2e/services Docker Compose Up](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml)| | [![d2e-ui/portal unit tests (Frontend)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
+| [![d2e/services Docker Compose Up](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml)| **d2e flows** | [![d2e-ui/portal unit tests (Frontend)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
 |[![d2e/services Cachedb tests](https://github.com/data2evidence/d2e/actions/workflows/services-cachedb-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-cachedb-test.yml)|  [![d2e-flows Docker Build](https://github.com/data2evidence/d2e/actions/workflows/flows-docker-build-push.yaml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/flows-docker-build-push.yaml)  | [![d2e-ui/portal unit tests (Components Library)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-components.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-components.yml) | 
 |[![d2e/services envConverter unit tests](https://github.com/data2evidence/d2e/actions/workflows/services-env-converter-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-env-converter-test.yml)| [![d2e-flows build plugin](https://github.com/data2evidence/d2e/actions/workflows/flows-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/flows-plugin-ci.yml) | [![d2e-ui/pyqe unit tests](https://github.com/data2evidence/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-pyqe-test.yml) |  
 
