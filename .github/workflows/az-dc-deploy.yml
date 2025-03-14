@@ -3,7 +3,7 @@ run-name: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }} ${{ git
 
 on:
   push:
-    branches: 
+    branches:
       - develop
   workflow_dispatch:
     inputs:
@@ -51,13 +51,18 @@ jobs:
   deploy:
     environment: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
     name: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
-    runs-on: ["${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}", self-hosted, Linux, X64]
+    runs-on:
+      [
+        "${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}",
+        self-hosted,
+        Linux,
+        X64,
+      ]
     steps:
       - uses: actions/checkout@v4.1.1
         name: checkout d2e repo
         with:
           clean: false
-          ref: ${{ env.DOCKER_TAG_NAME }}
           repository: ${{ env.REPO_FULL_NAME }}
 
       - name: Force cleanup containers
@@ -95,7 +100,7 @@ jobs:
 
           if [[ $DOCKER_TAG_NAME = */* ]]; then
             DOCKER_TAG_NAME=$(printf "%s" "$DOCKER_TAG_NAME" | awk -F '/' '{print $2}')
-          fi 
+          fi
           [ "${{ env.DOCKER_TAG_DEVELOP }}" = true ] && DOCKER_TAG_NAME=develop
 
           echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
