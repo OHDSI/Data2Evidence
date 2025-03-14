@@ -16,7 +16,7 @@ import {
   FeatureInput,
   Config,
 } from "../types";
-
+import { ConfigTypes } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
 
 export class SystemPortal {
@@ -269,6 +269,24 @@ export class SystemPortal {
       baseURL: SYSTEM_PORTAL_URL,
       url: "config/overview-description",
       method: "GET",
+    });
+  }
+
+  public getConfigsByTypes(types: ConfigTypes[]) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "config/public",
+      method: "GET",
+      params: { types: JSON.stringify(types) },
+    });
+  }
+
+  public insertOrUpdateConfigs(configs: Config[]) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "config",
+      method: "PUT",
+      data: JSON.stringify(configs),
     });
   }
 

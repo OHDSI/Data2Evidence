@@ -1,6 +1,6 @@
 import React, { FC, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card, Tab, Tabs } from "@portal/components";
+import { Button, Card } from "@portal/components";
 import { PortalType, User } from "../../../types";
 import { useDialogHelper } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
@@ -8,19 +8,11 @@ import env from "../../../env";
 import { config } from "../../../config";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
-import TermsOfUse from "../LegalPages/TermsOfUse";
-import PrivacyPolicy from "../LegalPages/PrivacyPolicy";
-import Imprint from "../LegalPages/Imprint";
+import { LegalCard } from "../Legal/LegalCard";
 import "./Account.scss";
 
 interface AccountProps {
   portalType: PortalType;
-}
-
-enum LegalTab {
-  TermsOfUse,
-  PrivacyPolicy,
-  Imprint,
 }
 
 const subProp = env.REACT_APP_IDP_SUBJECT_PROP;
@@ -32,17 +24,10 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
   const { getText, i18nKeys } = useTranslation();
   const navigate = useNavigate();
   const { idTokenClaims } = useToken();
-  const [tabValue, setTabValue] = useState<LegalTab>(LegalTab.TermsOfUse);
   const [myUser, setMyUser] = useState(EMPTY_MY_USER);
   const [showDeleteAccount, openDeleteAccount, closeDeleteAccount] = useDialogHelper(false);
   const [showPwd, openPwdDialog, closePwdDialog] = useDialogHelper(false);
   const { user } = useUser();
-
-  const legalTabs = [
-    getText(i18nKeys.ACCOUNT__TERMS_OF_USE),
-    getText(i18nKeys.ACCOUNT__PRIVACY_POLICY),
-    getText(i18nKeys.ACCOUNT__IMPRINT),
-  ];
 
   useEffect(() => {
     if (idTokenClaims) {
@@ -52,10 +37,6 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
       });
     }
   }, [idTokenClaims]);
-
-  const handleTabSelectionChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  }, []);
 
   const handleSwitch = useCallback(() => {
     navigate(portalType === "researcher" ? config.ROUTES.systemadmin : config.ROUTES.researcher);
@@ -105,32 +86,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
             </div>
           </div>
           <div className="account__content_legal">
-            <Card
-              title={
-                <Tabs value={tabValue} onChange={handleTabSelectionChange} centered>
-                  {legalTabs.map((tab, index) => (
-                    <Tab
-                      label={tab}
-                      key={index}
-                      value={index}
-                      sx={{
-                        "&.MuiTab-root": {
-                          width: "180px",
-                        },
-                      }}
-                    />
-                  ))}
-                </Tabs>
-              }
-            >
-              <div className="tab__content">
-                <div className="tab__content__container">
-                  {tabValue === LegalTab.TermsOfUse && <TermsOfUse />}
-                  {tabValue === LegalTab.PrivacyPolicy && <PrivacyPolicy />}
-                  {tabValue === LegalTab.Imprint && <Imprint />}
-                </div>
-              </div>
-            </Card>
+            <LegalCard />
           </div>
         </div>
       </div>

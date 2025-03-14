@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from "axios";
 import memoize from "memoizee";
 import { getAuthToken } from "../containers/auth/auth";
 
-const PUBLIC_URLS = ["dataset/public/list", "config/public/overview-description"];
+const PUBLIC_URLS = ["dataset/public/list", "config/public", "config/public/overview-description"];
 const client = axios.create();
 
 client.interceptors.request.use(

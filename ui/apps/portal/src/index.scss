@@ -21,6 +21,10 @@ button.button--disabled {
   border-color: var(--color-primary-extra-lightest) !important;
 }
 
+input[type="checkbox"].sc-d4l-checkbox {
+  position: relative;
+}
+
 #root {
   height: 100vh;
 }
