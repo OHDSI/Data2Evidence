@@ -56,7 +56,7 @@ export class FeatureService {
       const systemadminPlugins = JSON.parse(plugins).systemadmin || [];
 
       this.featurePlugins = [
-        ...researcherPlugins.filter(p => Boolean(p.featureFlag)),
+        ...researcherPlugins.filter(p => Boolean(p.featureFlag)  || "children" in p),
         ...systemadminPlugins.filter(p => Boolean(p.featureFlag))
       ];
 
