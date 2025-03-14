@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "npm:typeorm";
+import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
 
 import { Audit } from "./audit.ts";
 import { Graph } from "./graph.ts";

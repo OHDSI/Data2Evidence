@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, UpdateDateColumn } from "npm:typeorm";
+import { Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 export abstract class Audit {
   @Column({ name: "created_by" })

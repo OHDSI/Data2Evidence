@@ -1,6 +1,6 @@
 import https from "node:https";
-import axios, { AxiosRequestConfig } from "npm:axios";
-import * as dotenv from "npm:dotenv";
+import axios, { AxiosRequestConfig } from "axios";
+import * as dotenv from "dotenv";
 import { env } from "../env.ts";
 dotenv.config();
 

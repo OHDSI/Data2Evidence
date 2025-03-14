@@ -1,4 +1,4 @@
-import pg from "npm:pg";
+import pg from "pg";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
 import {

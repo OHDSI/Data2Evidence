@@ -4,7 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
-} from "npm:typeorm";
+} from "typeorm";
 
 import { Audit } from "./audit.ts";
 import { type IReactFlow } from "../types.ts";

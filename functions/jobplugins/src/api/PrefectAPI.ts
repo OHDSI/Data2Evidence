@@ -1,5 +1,5 @@
+import dayjs from "dayjs";
 import { decode } from "jsonwebtoken";
-import dayjs from "npm:dayjs";
 import { services } from "../env.ts";
 import { IFlowRunQueryDto, IPrefectFlowRunDto } from "../types.ts";
 

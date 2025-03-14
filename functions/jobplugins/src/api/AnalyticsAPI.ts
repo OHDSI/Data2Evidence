@@ -1,5 +1,5 @@
 import https from "node:https";
-import { AxiosRequestConfig } from "npm:axios";
+import { AxiosRequestConfig } from "axios";
 import { env, services } from "../env.ts";
 import { get } from "./request-util.ts";
 

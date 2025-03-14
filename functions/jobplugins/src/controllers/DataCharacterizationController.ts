@@ -1,5 +1,5 @@
-import { Request, Response, Router } from "npm:express";
-import { param, query, validationResult } from "npm:express-validator";
+import { Request, Response, Router } from "express";
+import { param, query, validationResult } from "express-validator";
 import { validateDataCharacterizationFlowRunDto } from "../middlewares/DataCharacterizationValidatorMiddlewares.ts";
 import { DataCharacterizationService } from "../services/DataCharacterizationService.ts";
 
