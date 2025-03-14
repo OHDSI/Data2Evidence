@@ -47,14 +47,16 @@ api
             password: encryptedPassword,
             salt,
             userScope,
+            user_scope
           } = c;
           const decrypted = decrypt(encryptedPassword);
           const password = decrypted.replace(salt, "");
-          switch (userScope) {
+          const scope = (userScope || user_scope); // required: db-credentials-mgr used user_scope
+          switch (scope) {
             case USER_SCOPE.ADMIN:
             case USER_SCOPE.READ:
-              acc[userScope.toLowerCase() + "User"] = username;
-              acc[userScope.toLowerCase() + "Password"] = password;
+              acc[scope.toLowerCase() + "User"] = username;
+              acc[scope.toLowerCase() + "Password"] = password;
             default:
               acc["user"] = username;
               acc["password"] = password;

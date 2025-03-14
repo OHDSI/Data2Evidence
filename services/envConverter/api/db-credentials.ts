@@ -16,6 +16,7 @@ type Database = {
     password: string;
     salt: string;
     userScope: string;
+    user_scope: string;
   }[];
   vocab_schemas: string[];
   authentication_mode: string;
