@@ -275,7 +275,7 @@ export class SystemPortal {
   public getConfigsByTypes(types: ConfigTypes[]) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
-      url: "config/public",
+      url: "config/public/types",
       method: "GET",
       params: { types: JSON.stringify(types) },
     });

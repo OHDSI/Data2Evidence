@@ -21,7 +21,7 @@ export class ConfigController {
     return await this.configService.getConfigByType(type);
   }
 
-  @Get("public")
+  @Get("public/types")
   async getConfigValuesByTypes(@Query("types") types: string) {
     return await this.configService.getConfigValuesByTypes(JSON.parse(types));
   }
