@@ -1,4 +1,10 @@
 import fastify from "fastify";
+
+import { health } from "./health.ts";
+import { i18n } from "./i18n.ts";
+import { source } from "./source.ts";
+import { notification } from "./notification.ts";
+
 import { cohortdefinition } from "./cohortdefinition.ts";
 import { conceptset } from "./conceptset.ts";
 import { vocabulary } from "./vocabulary.ts";
@@ -20,6 +26,22 @@ export default (app: fastify.FastifyInstance) => {
 
     req.token = req.headers.authorization as string;
     done();
+  });
+
+  app.register(health, {
+    prefix: `/health`,
+  });
+
+  app.register(i18n, {
+    prefix: "/i18n",
+  });
+
+  app.register(source, {
+    prefix: "/source",
+  });
+
+  app.register(notification, {
+    prefix: "/notifications",
   });
 
   app.register(cohortdefinition, {

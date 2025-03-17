@@ -390,8 +390,7 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup",
-          "d2e.webapi"
+          "demo.setup"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -457,7 +456,8 @@
           "portal.userArtifact.atlasCohortDefinitions.read",
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
-          "jobplugins.dqd.read"
+          "jobplugins.dqd.read",
+          "d2e.webapi"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
