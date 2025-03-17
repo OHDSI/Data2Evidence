@@ -239,7 +239,12 @@ export const Header: FC<HeaderProps> = ({
             style={{ display: "none" }}
           />
           <Button variant="text" text={getText(i18nKeys.HEADER__NEW)} onClick={createNotebook} />
-          <Button variant="text" text={getText(i18nKeys.HEADER__SAVE)} onClick={saveNotebook} />
+          <Button
+            variant="text"
+            text={getText(i18nKeys.HEADER__SAVE)}
+            onClick={saveNotebook}
+            disabled={isNotUserNotebook}
+          />
           <Button
             variant="text"
             text={getText(i18nKeys.HEADER__DELETE)}
