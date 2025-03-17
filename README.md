@@ -60,7 +60,7 @@ Create and load demo dataset by running:
 d2e setupdemo
 ```
 
-You should now be able to seee the d2e portal when opening **[https://localhost:3000](https://localhost:3000)**. You can login with the **username** `admin` and the **password** `Updatepassword12345`.
+You should now be able to see the d2e portal when opening **[https://localhost:443](https://localhost:443)**. You can login with the **username** `admin` and the **password** `Updatepassword12345`.
 
 For additional setup details and configuration options, please visit the **[D2E documentation](https://docs.d2e.sg)**.
 

@@ -626,7 +626,7 @@ services:
           }
 
           handle @logto {
-            reverse_proxy http://$PROJECT_NAME-logto-1:3001 {
+            reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
               header_up Host {upstream_hostport}
               transport http {
                 read_buffer 8192
@@ -636,7 +636,7 @@ services:
 
           ## call gateway if there are no matched files
           handle {
-            reverse_proxy https://$PROJECT_NAME-trex:33000 {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
               transport http {
                 tls
                 tls_insecure_skip_verify

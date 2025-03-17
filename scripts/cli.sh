@@ -220,8 +220,8 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx ./scripts/load-demodatabase.mjs &&
-        npx zx ./scripts/load-demodataset.mjs
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs &&
+        npx zx $node_modules_path/scripts/load-demodataset.mjs
         ;;
     *)
         if [ -z ${cmd:-} ]; then
