@@ -120,4 +120,18 @@ export class PortalAPI {
       throw new Error(`Error while getting user artifacts for Atlas cohort definitions`)
     }
   }
+
+  async getDatasetDialect(datasetId: string): Promise<string> {
+    try {
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/dataset`
+      options.params = { datasetId }
+      const result = await axios.get(url, options)
+      return result.data.dialect
+    } catch (error) {
+      console.error(error)
+      this.logger.error(`Error while dialect from datasetId:${datasetId}`)
+      throw new Error(`Error while dialect from datasetId:${datasetId}`)
+    }
+  }
 }

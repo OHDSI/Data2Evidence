@@ -146,7 +146,7 @@ export interface IFormattedBookmark {
   shared: boolean
   cohortDefinitionId?: number | undefined
 }
-export interface IFormattedcohortDefinition {
+export interface IFormattedMaterializedCohort {
   id: number
   patientCount: number
   cohortDefinitionName: string
@@ -179,6 +179,6 @@ export interface IFormattedAtlasCohortDefinition {
 export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
-  materializedCohorts: IFormattedcohortDefinition[]
+  materializedCohorts: IFormattedMaterializedCohort[]
   atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
 }
