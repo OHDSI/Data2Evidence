@@ -174,5 +174,5 @@ export const checkIfConceptSetExists = async (
       terminologyConceptSet.name === conceptSetName
   );
 
-  return result === undefined ? 1 : 0;
+  return result === undefined ? 0 : 1;
 };

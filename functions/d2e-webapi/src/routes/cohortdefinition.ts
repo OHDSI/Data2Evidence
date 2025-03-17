@@ -17,10 +17,11 @@ import {
   createCohortDefinition,
   updateCohortDefinition,
   generateCohort,
+  getCohortDefinitionList,
   getCohortDefinition,
   deleteCohortDefinition,
   copyCohortDefinition,
-  checkIfCohortDefinitionExists,
+  checkIfAtlasCohortDefinitionExists,
 } from "../services/cohortdefinition.service.ts";
 
 // deno-lint-ignore require-await
@@ -41,30 +42,9 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD  LOGIC
-      const dummyresponse = [
-        {
-          id: 98149,
-          name: "Humira + MI",
-          createdDate: 1489065125084,
-          hasWriteAccess: false,
-          hasReadAccess: false,
-          tags: [],
-        },
-        {
-          id: 101431,
-          name: "Vinci Type 2 Diabetes",
-          description:
-            "This definition is based on the PheKB Diabetes definition found at https://phekb.org/phenotype/type-2-diabetes-mellitus",
-          createdDate: 1490910390379,
-          modifiedDate: 1490910408053,
-          hasWriteAccess: false,
-          hasReadAccess: false,
-          tags: [],
-        },
-      ];
-      res.send(dummyresponse);
+    async (req, res) => {
+      const result = await getCohortDefinitionList(req.token, req.datasetId);
+      res.send(result);
     }
   );
 
@@ -330,41 +310,41 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       // TODO: ADD  LOGIC
       const dummyresult = {
         warnings: [
-          {
-            type: "DefaultWarning",
-            severity: "WARNING",
-            message:
-              "Tags - no assigned tags from mandatory groups [Prod_Group]",
-          },
-          {
-            type: "ConceptSetWarning",
-            severity: "WARNING",
-            message: 'Concept Set "[blkrudolph] hospitalization" is not used',
-            conceptSetId: 0,
-          },
-          {
-            type: "ConceptSetWarning",
-            severity: "WARNING",
-            message: 'Concept Set "[blkrudolph] Emergency Room" is not used',
-            conceptSetId: 1,
-          },
-          {
-            type: "DefaultWarning",
-            severity: "CRITICAL",
-            message: "Inclusion rule No warfarin exposure.",
-          },
-          {
-            type: "DefaultWarning",
-            severity: "WARNING",
-            message:
-              ' "all events" are selected and cohort exit criteria has not been specified',
-          },
-          {
-            type: "DefaultWarning",
-            severity: "INFO",
-            message:
-              "It's not specified what type of records to look for in condition occurrence at initial event",
-          },
+          // {
+          //   type: "DefaultWarning",
+          //   severity: "WARNING",
+          //   message:
+          //     "Tags - no assigned tags from mandatory groups [Prod_Group]",
+          // },
+          // {
+          //   type: "ConceptSetWarning",
+          //   severity: "WARNING",
+          //   message: 'Concept Set "[blkrudolph] hospitalization" is not used',
+          //   conceptSetId: 0,
+          // },
+          // {
+          //   type: "ConceptSetWarning",
+          //   severity: "WARNING",
+          //   message: 'Concept Set "[blkrudolph] Emergency Room" is not used',
+          //   conceptSetId: 1,
+          // },
+          // {
+          //   type: "DefaultWarning",
+          //   severity: "CRITICAL",
+          //   message: "Inclusion rule No warfarin exposure.",
+          // },
+          // {
+          //   type: "DefaultWarning",
+          //   severity: "WARNING",
+          //   message:
+          //     ' "all events" are selected and cohort exit criteria has not been specified',
+          // },
+          // {
+          //   type: "DefaultWarning",
+          //   severity: "INFO",
+          //   message:
+          //     "It's not specified what type of records to look for in condition occurrence at initial event",
+          // },
         ],
       };
 
@@ -395,7 +375,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
     async (req, res) => {
       const { id } = req.params;
       const { name } = req.query;
-      const result = await checkIfCohortDefinitionExists(
+      const result = await checkIfAtlasCohortDefinitionExists(
         req.token,
         req.datasetId,
         id,

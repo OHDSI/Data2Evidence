@@ -55,6 +55,7 @@ const actions = {
       cancelToken,
       responseType,
       datasetId,
+      headers: overwriteHeaders,
     }: AxiosRequestConfig & { datasetId?: string }
   ) {
     const portalAPI = getPortalAPI()
@@ -73,6 +74,9 @@ const actions = {
       }
       if (datasetId) {
         headers = { ...headers, datasetid: datasetId }
+      }
+      if (overwriteHeaders) {
+        headers = { ...headers, ...overwriteHeaders }
       }
       if (getters.getJwtTokenValue === null && bearerToken) {
         commit(SET_JWT_TOKEN_VALUE, jwt.decode(bearerToken))

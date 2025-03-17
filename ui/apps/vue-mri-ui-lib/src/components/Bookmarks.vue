@@ -547,7 +547,7 @@ export default {
       }
     },
     openAtlasLink() {
-      window.open(`/atlas/#/cohortdefinitions`, '_blank')
+      getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
     },
   },
   components: {

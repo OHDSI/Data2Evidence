@@ -14,7 +14,7 @@ export const source: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description:
           "Gets the list of all Sources in WebAPI database. Sources with a non-null deleted_date are not returned (ie: these are soft deleted)",
-        querystring: z.object({ lang: z.string() }),
+        querystring: z.object({ lang: z.string().optional() }).optional(),
         response: { 200: SourcesResponseDto },
       },
     },
@@ -90,7 +90,7 @@ export const source: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description:
           "Get the first daimon (ad associated source) that has priority. In the event of a tie, the first source searched wins.",
-        querystring: z.object({ lang: z.string() }),
+        querystring: z.object({ lang: z.string().optional() }).optional(),
         response: { 200: DaimonPriorityResponseDto },
       },
     },

@@ -132,7 +132,8 @@ export class TerminologySvcAPI {
     datasetId: string,
     query: string,
     offset: number,
-    count: number
+    count: number,
+    filters?: { domainId?: string[] }
   ): Promise<ITerminologyFhirResource> {
     try {
       const url = `${this.baseURL}/fhir/4_0_0/valueset/$expand`;
@@ -143,6 +144,9 @@ export class TerminologySvcAPI {
       params.append("offset", offset.toString());
       params.append("count", count.toString());
       params.append("code", query);
+      if (filters) {
+        params.append("filter", JSON.stringify(filters));
+      }
       const result = await axios.get(url, { params, ...options });
       return result.data;
     } catch (error) {

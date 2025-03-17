@@ -62,9 +62,9 @@
     </div>
     <div class="download-cohort-definition">
       <d4l-button
-        @click="onClickDownloadCohortDefinition"
-        :text="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_COHORT_DEFINITION')"
-        :title="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_COHORT_DEFINITION')"
+        @click="onClickCreateCohortDefinition"
+        :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION')"
+        :title="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION')"
         classes="button--block"
         :disabled="chartBusy"
       />
@@ -78,10 +78,10 @@
         :disabled="chartBusy"
       />
     </div>
-    <download-cohort-definition-dialog
+    <create-cohort-definition-dialog
       v-if="showCohortDefinitionDownloadDialog"
       @closeEv="showCohortDefinitionDownloadDialog = false"
-    ></download-cohort-definition-dialog>
+    ></create-cohort-definition-dialog>
   </div>
 </template>
 
@@ -92,7 +92,7 @@ import icon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import messageBox from './MessageBox.vue'
-import downloadCohortDefinitionDialog from './DownloadCohortDefinitionDialog.vue'
+import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
 
 export default {
   // compatConfig: {
@@ -243,7 +243,7 @@ export default {
       link.click()
       document.body.removeChild(link)
     },
-    onClickDownloadCohortDefinition() {
+    onClickCreateCohortDefinition() {
       this.showCohortDefinitionDownloadDialog = true
     },
     getAdvanceTimeFilterFormatted(filter) {
@@ -335,7 +335,7 @@ export default {
     messageBox,
     appButton,
     appLabel,
-    downloadCohortDefinitionDialog,
+    CreateCohortDefinitionDialog,
   },
 }
 </script>

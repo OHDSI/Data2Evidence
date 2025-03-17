@@ -229,7 +229,8 @@ export const getRecommendedConceptsFromIdentifiers = async (
 export const searchConcept = async (
   token: string,
   datasetId: string,
-  query: string
+  query: string,
+  filters?: { domainId?: string[] }
 ): Promise<IConceptListResponseDto> => {
   const terminologySvcApi = new TerminologySvcAPI(token);
 
@@ -238,7 +239,8 @@ export const searchConcept = async (
     datasetId,
     query,
     0,
-    9999
+    9999,
+    filters
   );
 
   // Map results to webapi format

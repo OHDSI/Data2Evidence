@@ -77,14 +77,17 @@ export class PortalServerAPI {
 
       const params = new URLSearchParams();
       params.append("datasetId", datasetId);
-      const body = { serviceArtifact: atlasCohortDefinition };
+      const body = {
+        serviceArtifact: atlasCohortDefinition,
+        id: atlasCohortDefinition.id,
+      };
 
       const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}`;
-      const result = await axios.post(url, body, { params, ...options });
+      const result = await axios.put(url, body, { params, ...options });
       return result.data;
     } catch (error) {
       console.error(error);
-      throw new Error(`Error while creating atlas cohort definition`);
+      throw new Error(`Error while updating atlas cohort definition`);
     }
   }
 
@@ -111,7 +114,26 @@ export class PortalServerAPI {
       return result.data;
     } catch (error) {
       console.error(error);
-      throw new Error(`Error while creating atlas cohort definition`);
+      throw new Error(`Error while deleting atlas cohort definition`);
+    }
+  }
+
+  async getAtlasCohortDefinitionList(
+    datasetId: string
+  ): Promise<IUserArtifactAtlasCohortDefinitionDto[]> {
+    try {
+      const options = await this.getRequestConfig();
+
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+
+      const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}/list`;
+      const result = await axios.get(url, { params, ...options });
+
+      return result.data;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while getting atlas cohort definition`);
     }
   }
 

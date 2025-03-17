@@ -55,6 +55,41 @@ const actions = {
         throw error
       })
   },
+  fireCreateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { content }) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+
+    const params = JSON.stringify(content)
+
+    return dispatch('ajaxAuth', {
+      url: '/d2e-webapi/cohortdefinition',
+      params,
+      cancelToken,
+      datasetId: rootGetters.getSelectedDataset.id,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        if (response.data.noDataReason) {
+          response.data.noDataReason = getters.getText(response.data.noDataReason)
+        }
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
+        return response.data
+      })
+      .catch(error => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, {
+          response: {
+            data: 'An error occured',
+          },
+        })
+        throw error
+      })
+  },
   fireRenameMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, { cohortDefinitionId, newName }) {
     if (cancel) {
       cancel('cancel')

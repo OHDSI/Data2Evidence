@@ -20,7 +20,8 @@ export function formatBookmark(bookmark: FormattedBookmark) {
     viewName: bookmark.viewname,
     data: bookmark.bookmark,
     version: bookmark.version,
-    dateModified: DateUtils.displayBookmarkDateFormat(bookmark.modified),
+    dateModified: bookmark.modified,
+    dateModifiedFormatted: DateUtils.displayBookmarkDateFormat(bookmark.modified),
     timeModified: DateUtils.displayBookmarkTimeFormat(bookmark.modified),
     filterCardData: filterCardsContent,
     chartType: bookmarkObj.chartType,
@@ -36,8 +37,8 @@ export function formatAtlasCohortDefinition(atlasCD: FormattedAtlasCohortDefinit
 
   return {
     ...atlasCD,
-    createdOn: DateUtils.displayBookmarkDateFormat(atlasCD.createdOn),
-    updatedOn: DateUtils.displayBookmarkDateFormat(atlasCD.updatedOn),
+    createdOnFormatted: DateUtils.displayBookmarkDateFormat(atlasCD.createdOn),
+    updatedOnFormatted: DateUtils.displayBookmarkDateFormat(atlasCD.updatedOn),
   }
 }
 
@@ -46,7 +47,8 @@ export function formatCohortDefinition(cohortDefinition: FormattedMaterializedCo
     id: cohortDefinition.id,
     patientCount: cohortDefinition.patientCount,
     cohortDefinitionName: cohortDefinition.cohortDefinitionName,
-    createdOn: DateUtils.displayBookmarkDateFormat(cohortDefinition.createdOn),
+    createdOn:  cohortDefinition.createdOn,
+    createdOnFormatted: DateUtils.displayBookmarkDateFormat(cohortDefinition.createdOn),
   }
 }
 

@@ -345,4 +345,32 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
       res.send(result);
     }
   );
+
+  app.post(
+    "/:sourceKey/search",
+    {
+      schema: {
+        description:
+          "Search for a concept based on a query using the default vocabulary source.",
+        tags: ["vocabulary"],
+        params: z.object({ sourceKey: z.string() }),
+        body: z.object({ QUERY: z.string(), DOMAIN_ID: z.array(z.string()) }),
+        response: { 200: ConceptListResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const { QUERY: query, DOMAIN_ID: domainId } = req.body;
+      const result = await searchConcept(req.token, req.datasetId, query, {
+        domainId,
+      });
+
+      res.send(result);
+    }
+  );
 };

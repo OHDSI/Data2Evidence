@@ -192,6 +192,8 @@ interface FormattedAtlasCohortDefinition {
   username: string
   createdOn: string
   updatedOn: string
+  createdOnFormatted: string
+  updatedOnFormatted: string
   cohortDefinitionId?: number | undefined
   name: string
 }
@@ -201,6 +203,7 @@ interface FormattedMaterializedCohort {
   patientCount: number
   cohortDefinitionName: string
   createdOn: string
+  createdOnFormatted: string
 }
 
 type FilterCardContent = {
@@ -251,6 +254,7 @@ type Bookmark = {
   data: string
   version: number
   dateModified: string
+  dateModifiedFormatted: string
   timeModified: string
   filterCardData: FilterCardContent[]
   chartType: string
@@ -263,6 +267,7 @@ type CohortDefinition = {
   patientCount: number
   cohortDefinitionName: string
   createdOn: string
+  createdOnFormatted: string
 }
 
 type AtlasCohortDefinition = FormattedAtlasCohortDefinition

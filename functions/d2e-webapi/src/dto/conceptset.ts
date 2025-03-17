@@ -15,8 +15,8 @@ export type IConceptSetItemsResponseDto = z.infer<
 >;
 
 export const ConceptSetCheckDto = ConceptSetDto.extend({
-  description: z.string().nullable(),
-  expression: ConceptSetItemsResponseDto,
+  description: z.string().nullable().optional(),
+  expression: ConceptSetItemsResponseDto.optional(),
 });
 
 // TODO: ADD TYPES
@@ -32,9 +32,9 @@ export type ICreateSetCheckDto = z.infer<typeof CreateSetCheckDto>;
 
 export const ConceptSetItemDto = z.object({
   conceptId: z.number(),
-  isExcluded: z.boolean(),
-  includeDescendants: z.boolean(),
-  includeMapped: z.boolean(),
+  isExcluded: z.number().transform((val) => val !== 0),
+  includeDescendants: z.number().transform((val) => val !== 0),
+  includeMapped: z.number().transform((val) => val !== 0),
 });
 
 export const ConceptSetItemListDto = z.array(ConceptSetItemDto);

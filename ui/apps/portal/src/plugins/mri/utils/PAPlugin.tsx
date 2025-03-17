@@ -9,6 +9,7 @@ interface PAPluginProps {
   studyId?: string;
   releaseId?: string;
   getToken?: () => Promise<string>;
+  toggleAtlas?(val: boolean, path: string): void;
 }
 
 const PA_ASSETS_URL = "mri/assets.json";
@@ -16,7 +17,7 @@ const VUE_APP_HOST = env.REACT_APP_DN_BASE_URL.endsWith("/")
   ? env.REACT_APP_DN_BASE_URL.slice(0, -1)
   : env.REACT_APP_DN_BASE_URL;
 
-const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken }) => {
+const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas }) => {
   const [isLoading, setIsLoading] = useState(false);
   const isLocalDev = window.location.hostname === "localhost";
 
@@ -47,7 +48,13 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken }) => {
   }, [isLocalDev]);
 
   return (
-    <PluginContainer studyId={studyId} releaseId={releaseId} getToken={getToken} qeSvcUrl={VUE_APP_HOST}>
+    <PluginContainer
+      studyId={studyId}
+      releaseId={releaseId}
+      getToken={getToken}
+      qeSvcUrl={VUE_APP_HOST}
+      toggleAtlas={toggleAtlas}
+    >
       <div className="vue-main" style={{ height: "100%" }}>
         {isLoading && <Loader />}
       </div>

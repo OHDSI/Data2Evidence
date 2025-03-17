@@ -9,17 +9,13 @@ export const SourceDaimon = z.array(
   })
 );
 
-export const SourcesResponseDto = z.array(
-  z.object({
-    sourceId: z.number(),
-    sourceName: z.string(),
-    sourceDialect: z.string(),
-    sourceKey: z.string(),
-    daimons: SourceDaimon,
-  })
-);
+export const SourceDto = z.object({
+  sourceId: z.number(),
+  sourceName: z.string(),
+  sourceDialect: z.string(),
+  sourceKey: z.string(),
+  daimons: SourceDaimon,
+});
+export const SourcesResponseDto = z.array(SourceDto);
 
-export const DaimonPriorityResponseDto = z.record(
-  z.unknown(),
-  SourcesResponseDto
-);
+export const DaimonPriorityResponseDto = z.record(z.unknown(), SourceDto);

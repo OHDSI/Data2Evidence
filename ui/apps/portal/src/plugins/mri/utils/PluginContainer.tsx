@@ -8,11 +8,19 @@ interface PluginContainerProps {
   studyId?: string;
   releaseId?: string;
   children?: ReactNode;
+  toggleAtlas?(val: boolean, path: string): void;
 }
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
-const PluginContainer: FC<PluginContainerProps> = ({ children, getToken, qeSvcUrl, studyId, releaseId }) => {
+const PluginContainer: FC<PluginContainerProps> = ({
+  children,
+  getToken,
+  qeSvcUrl,
+  studyId,
+  releaseId,
+  toggleAtlas,
+}) => {
   const { idTokenClaims } = useToken();
 
   useEffect(() => {
@@ -31,6 +39,7 @@ const PluginContainer: FC<PluginContainerProps> = ({ children, getToken, qeSvcUr
             studyId,
             releaseId,
             username: idTokenClaims[nameProp],
+            toggleAtlas,
           };
         }
       }}

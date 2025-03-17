@@ -24,6 +24,7 @@ import { onErrorCaptured } from 'vue'
 import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
 import { getBookmarkType } from '../utils/BookmarkUtils'
+import { getPortalAPI } from '../utils/PortalUtils'
 
 const store = useStore()
 
@@ -32,6 +33,7 @@ const {
   getMriFrontendConfig: mriFrontEndConfig,
   getAxis,
   getDomainValues,
+  getSelectedDataset,
 }: {
   getText: (key: string, param?: string | string[]) => string
   getMriFrontendConfig: MriFrontendConfig
@@ -41,6 +43,7 @@ const {
     isLoaded: false
     values: []
   }
+  getSelectedDataset: { id: string }
 } = store.getters
 
 const props = defineProps<{
@@ -121,7 +124,7 @@ const openAtlasLink = (id: number) => {
   if (selection.toString().length > 0) {
     return
   }
-  window.open(`/atlas/cohortdefinition/${id}`, '_blank')
+  getPortalAPI()?.toggleAtlas(true, `/#/cohortdefinition/${id}`)
 }
 
 // Lifecycle hooks
@@ -220,7 +223,7 @@ onErrorCaptured((err, instance, info) => {
             </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Updated On:</div>
-              <div>{{ bookmarkDisplay.bookmark.dateModified }}</div>
+              <div>{{ bookmarkDisplay.bookmark.dateModifiedFormatted }}</div>
             </div>
             <div style="display: flex; margin-top: 15px">
               <div class="bookmark-item-content">
@@ -323,7 +326,7 @@ onErrorCaptured((err, instance, info) => {
             </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Updated On:</div>
-              <div>{{ bookmarkDisplay.atlasCohortDefinition.updatedOn }}</div>
+              <div>{{ bookmarkDisplay.atlasCohortDefinition.updatedOnFormatted }}</div>
             </div>
           </div>
           <!-- MATERIALIZED COHORTS -->
@@ -355,7 +358,7 @@ onErrorCaptured((err, instance, info) => {
             </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Created On:</div>
-              <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.createdOn }}</div>
+              <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.createdOnFormatted }}</div>
             </div>
           </div>
         </div>

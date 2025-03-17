@@ -178,10 +178,10 @@ const getters = {
 
       // Atlas Cohort Definitions without a materialized cohort
       atlasCohortDefinitions
-        .filter(cd => !cd.cohortDefinitionId)
+        .filter(cd => !materializedCohorts.find(mc => mc.id === cd.cohortDefinitionId))
         .forEach(cd => {
           displayBookmarks.push({
-            displayName: cd.id,
+            displayName: cd.name,
             cohortDefinition: null,
             atlasCohortDefinition: formatAtlasCohortDefinition(cd),
           })

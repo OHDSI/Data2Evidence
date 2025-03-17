@@ -63,7 +63,7 @@ export const generateCohort = async (
     cdmCohortDefinitionId
   );
   // Create atlas_cohort_definition in user artifact
-  await portalServerApi.createAtlasCohortDefinition(
+  await portalServerApi.updateAtlasCohortDefinition(
     datasetId,
     userArtifactAtlasCohortDefinition
   );
@@ -157,6 +157,35 @@ export const createCohortDefinition = async (
   return response;
 };
 
+export const getCohortDefinitionList = async (
+  token: string,
+  datasetId: string
+) => {
+  const portalServerApi = new PortalServerAPI(token);
+  const atlasCohortDefinitions =
+    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+
+  // Construct response
+  const result: z.infer<(typeof CohortDefinitionResponseDto)[]> =
+    atlasCohortDefinitions.map(
+      (atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto) => {
+        return {
+          id: atlasCohortDefinition.id,
+          name: atlasCohortDefinition.name,
+          description: atlasCohortDefinition.description,
+          createdBy: atlasCohortDefinition.createdBy,
+          createdDate: atlasCohortDefinition.createdDate,
+          modifiedBy: atlasCohortDefinition.modifiedBy,
+          modifiedDate: atlasCohortDefinition.modifiedDate,
+          hasWriteAccess: true,
+          hasReadAccess: true,
+          tags: atlasCohortDefinition.tags,
+        };
+      }
+    );
+  return result;
+};
+
 export const getCohortDefinition = async (
   token: string,
   datasetId: string,
@@ -173,7 +202,9 @@ export const getCohortDefinition = async (
     id: atlasCohortDefinition.id,
     name: atlasCohortDefinition.name,
     description: atlasCohortDefinition.description,
+    createdBy: atlasCohortDefinition.createdBy,
     createdDate: atlasCohortDefinition.createdDate,
+    modifiedBy: atlasCohortDefinition.modifiedBy,
     modifiedDate: atlasCohortDefinition.modifiedDate,
     hasWriteAccess: true,
     hasReadAccess: true,
@@ -292,20 +323,21 @@ export const copyCohortDefinition = async (
   return result;
 };
 
-export const checkIfCohortDefinitionExists = async (
+export const checkIfAtlasCohortDefinitionExists = async (
   token: string,
   datasetId: string,
   cohortDefinitionId: number,
   cohortDefinitionName: string
 ): Promise<number> => {
   const portalServerApi = new PortalServerAPI(token);
-  const { schemaName } = await portalServerApi.getDatasetDetails(datasetId);
+  const userArtifactAtlasCohortDefinitions =
+    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
 
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.POSTGRES);
-  const result = await cachedbDao.checkIfCohortDefinitionExists(
-    schemaName,
-    cohortDefinitionId,
-    cohortDefinitionName
+  const nameUsedInOtherDefinition = userArtifactAtlasCohortDefinitions.find(
+    (cd) => {
+      cd.id !== cohortDefinitionId && cd.name === cohortDefinitionName;
+    }
   );
+  const result = nameUsedInOtherDefinition ? 1 : 0;
   return result;
 };

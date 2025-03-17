@@ -853,10 +853,10 @@ export const i18n = {
     MRI_PA_OR: 'OR',
     MRI_PA_FILTER_SUMMARY_DESC_LABEL: 'Showing patients with:',
     MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL: 'Download SQL',
-    MRI_PA_FILTER_SUMMARY_DOWNLOAD_COHORT_DEFINITION: 'Export cohort definition',
-    MRI_PA_FILTER_SUMMARY_DOWNLOAD_COHORT_DEFINITION_WARNING:
-      'Note that conversion to cohort definition is an approximation, and currently does not support "datetime" and "text" types and advanced time filtering',
-    MRI_PA_FILTER_SUMMARY_DOWNLOAD_COHORT_DEFINITION_DOWNLOAD: 'Download',
+    MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION: 'Create cohort definition',
+    MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING:
+      'Note that conversion to cohort definition is an approximation, and currently does not support "datetime" and "text" types and advanced time filtering. Your cohort definition will be available as an "Atlas Cohort Definition" in the Cohorts overview screen.',
+    MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_DOWNLOAD: 'Create',
     MRI_PA_FILTERCARD_CLEAR_ALL_BTN: 'Clear All',
     MRI_PA_BMK_COMPATIBLE_ERROR: 'Saved filter incompatible',
     MRI_PA_BMK_CONVERSION_ERROR: "Bookmark couldn't be converted",

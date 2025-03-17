@@ -7,9 +7,9 @@ export const AtlasCohortDefinitionDto = z.object({
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
-  createdBy: z.number().nullable(),
+  createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
   createdDate: z.number().nullable(),
-  modifiedBy: z.number().nullable(),
+  modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
   modifiedDate: z.number().nullable(),
   tags: z.array(z.string()),
 });
@@ -29,8 +29,11 @@ export const CohortDefinitionListResponseDto = z.array(
   z.object({
     id: z.number(),
     name: z.string(),
-    description: z.string().optional(),
-    createdDate: z.number(),
+    description: z.string().nullable(),
+    createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+    createdDate: z.number().nullable(),
+    modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+    modifiedDate: z.number().nullable(),
     hasWriteAccess: z.boolean(),
     hasReadAccess: z.boolean(),
     tags: z.array(z.string()),
@@ -43,7 +46,9 @@ export const CohortDefinitionResponseDto = z.object({
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
+  createdBy: z.string().nullable().optional(),
   createdDate: z.number().nullable(),
+  modifiedBy: z.string().nullable().optional(),
   modifiedDate: z.number().nullable(),
   tags: z.array(z.string()),
   hasWriteAccess: z.boolean(),

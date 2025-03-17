@@ -25,29 +25,6 @@ export class CachedbDAO {
     }
   }
 
-  async checkIfCohortDefinitionExists(
-    schemaName: string,
-    cohortDefinitionId: number,
-    cohortDefinitionName: string
-  ): Promise<number> {
-    const client = this.getCachedbConnection();
-    try {
-      const sql = `
-                select count(cd) from ${schemaName}.cohort_definition AS cd WHERE cd.cohort_definition_name = %s and cd.cohort_definition_id <> %s;
-                `;
-      const result = await client.query(sql, [
-        cohortDefinitionName,
-        cohortDefinitionId,
-      ]);
-      return result.rows[0].count;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    } finally {
-      await client.end();
-    }
-  }
-
   async getConceptsFromIdentifiers(
     vocabSchemaName: string,
     searchConceptIds: number[]
