@@ -20,7 +20,7 @@ export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {
   baseUserId?: string;
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
-  selectedConceptSetId?: string;
+  selectedConceptSetId?: number;
   mode?: "CONCEPT_MAPPING" | "CONCEPT_SET" | "CONCEPT_SEARCH";
   selectedDatasetId?: string;
   defaultFilters?: {
@@ -75,7 +75,7 @@ const NameSection = ({
   isUserConceptSet: boolean;
   saveConceptSet(): void;
   isLoading: boolean;
-  conceptSetId: string | null;
+  conceptSetId: number | null;
   onClickClose(): void;
   errorMsg: string;
 }) => {
@@ -228,7 +228,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const [selectedConcepts, setSelectedConcepts] = useState<FhirValueSetExpansionContainsWithExt[]>([]);
   const [tab, setTab] = useState<TabName>(tabNames.SEARCH);
   const [conceptSetName, setConceptSetName] = useState("");
-  const [conceptSetId, setConceptSetId] = useState<string | null>(null);
+  const [conceptSetId, setConceptSetId] = useState<number | null>(null);
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
@@ -284,7 +284,7 @@ export const Terminology: FC<TerminologyProps> = ({
       const updatedConceptSetId = conceptSetId
         ? await terminologyApi.updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await terminologyApi.createConceptSet(conceptSet, activeDatasetId);
-      if (typeof updatedConceptSetId !== "string") {
+      if (typeof updatedConceptSetId !== "number") {
         if (updatedConceptSetId?.statusCode === 500) {
           setErrorMsg(
             getText(i18nKeys.TERMINOLOGY__ERROR, [
@@ -304,7 +304,7 @@ export const Terminology: FC<TerminologyProps> = ({
   }, [selectedConcepts, conceptSetName, conceptSetId, conceptSetShared, activeDatasetId]);
 
   const getConceptSet = useCallback(
-    async (conceptSetId: string) => {
+    async (conceptSetId: number) => {
       if (!activeDatasetId) {
         return;
       }
@@ -421,8 +421,14 @@ export const Terminology: FC<TerminologyProps> = ({
     if (!onClose) {
       return;
     }
+
     const onCloseReturnValues: OnCloseReturnValues = {
-      currentConceptSet,
+      currentConceptSet: currentConceptSet
+        ? {
+            ...currentConceptSet,
+            id: currentConceptSet.id.toString(),
+          }
+        : currentConceptSet,
     };
     // Run some callback to make data available to caller app
     // When using drawer, component is no unmounted

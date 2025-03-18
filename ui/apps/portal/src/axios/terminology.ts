@@ -114,7 +114,7 @@ export class Terminology {
     });
   }
 
-  public getConceptSet(conceptSetId: string, datasetId: string) {
+  public getConceptSet(conceptSetId: number, datasetId: string) {
     return request<ConceptSetWithConceptDetails>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
@@ -122,8 +122,8 @@ export class Terminology {
     });
   }
 
-  public removeConceptSet(conceptSetId: string, datasetId: string) {
-    return request<string>({
+  public removeConceptSet(conceptSetId: number, datasetId: string) {
+    return request<number>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
       method: "DELETE",
@@ -131,7 +131,7 @@ export class Terminology {
   }
 
   public createConceptSet(conceptSet: Omit<ConceptSet, "id">, datasetId: string) {
-    return request<string>({
+    return request<number>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept-set?datasetId=${datasetId}`,
       method: "POST",
@@ -139,8 +139,8 @@ export class Terminology {
     });
   }
 
-  public updateConceptSet(conceptSetId: string, conceptSet: Partial<ConceptSet>, datasetId: string) {
-    return request<string | { statusCode: number }>({
+  public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>, datasetId: string) {
+    return request<number | { statusCode: number }>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
       method: "PUT",

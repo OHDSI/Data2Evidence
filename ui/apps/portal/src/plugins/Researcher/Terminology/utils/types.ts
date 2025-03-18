@@ -33,7 +33,7 @@ export type ConceptSetConcept = {
 export type ConceptSet = {
   concepts: ConceptSetConcept[];
   name: string;
-  id: string;
+  id: number;
   shared: boolean;
   createdBy?: string;
   createdDate?: string;
@@ -46,8 +46,9 @@ export type ConceptSetWithConceptDetails = ConceptSet & {
   concepts: (ConceptSetConcept & FhirValueSetExpansionContainsWithExt)[];
 };
 
+// Vue requires id as a string instead of number because addThis.value in ui/apps/vue-mri-ui-lib/src/lib/ui/app-tag-input.vue
 export type OnCloseReturnValues = {
-  currentConceptSet: ConceptSet | null;
+  currentConceptSet: (Omit<ConceptSet, "id"> & { id: string }) | null;
 };
 
 export type FilterOptions = {

@@ -99,7 +99,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   }, [fetchData]);
 
   const handleAddAndEditConceptSet = useCallback(
-    (conceptSetId?: string) => {
+    (conceptSetId?: number) => {
       if (!activeDatasetId) {
         return;
       }
