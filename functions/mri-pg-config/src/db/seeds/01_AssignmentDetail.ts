@@ -31,6 +31,12 @@ export async function seed(knex: Knex): Promise<void> {
         ConfigVersion: "A",
         ConfigType: "HC/MRI/PA",
       },
+      {
+        HeaderId: "0dcbe37c-199e-4884-89f9-42f7386e4f54",
+        ConfigId: "e10f83a0-ade9-4a33-90ae-cf760813943c",
+        ConfigVersion: "1",
+        ConfigType: "HC/HPH/CDW",
+      },
     ])
     .onConflict(["HeaderId", "ConfigId"])
     .ignore();
