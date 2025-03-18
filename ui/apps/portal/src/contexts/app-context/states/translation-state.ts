@@ -1026,6 +1026,8 @@ export const i18nDefault = {
     TREX_PLUGIN_UNINSTALL_DIALOG__ENTER_EXACT_FLOW_NAME: "Enter the exact plugin name",
     TREX_PLUGIN_UNINSTALL_DIALOG__ENTER_FLOW_NAME: "Enter plugin name",
     TREX_PLUGIN_UNINSTALL_DIALOG__ERROR: "Plugin {0} failed to uninstall",
+    TREX_PLUGIN_UNINSTALL_DIALOG__SUCCESS:
+      "Plugin {0} successfully uninstalled. Changes will be reflected upon system restart.",
     TREX_PLUGIN_UNINSTALL_DIALOG__UNINSTALL: "Uninstall plugin",
     UPDATE_SCHEMA_DIALOG__CANCEL: "Cancel",
     UPDATE_SCHEMA_DIALOG__CONFIRM: "Are you sure you want to update the schema of this dataset:",

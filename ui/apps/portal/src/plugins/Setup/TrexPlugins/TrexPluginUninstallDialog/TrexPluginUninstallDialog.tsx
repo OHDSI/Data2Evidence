@@ -3,7 +3,7 @@ import { Button, Dialog, TextInput } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import FormHelperText from "@mui/material/FormHelperText";
 import { api } from "../../../../axios/api";
-import { useTranslation } from "../../../../contexts";
+import { useTranslation, useFeedback } from "../../../../contexts";
 import { Feedback, CloseDialogType, TrexPlugin } from "../../../../types";
 import "./TrexPluginUninstallDialog.scss";
 
@@ -15,14 +15,20 @@ interface TrexPluginUninstallDialogProps {
 
 const TrexPluginUninstallDialog: FC<TrexPluginUninstallDialogProps> = ({ plugin, open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
-  const [feedback, setFeedback] = useState<Feedback>({});
+  const { setFeedback } = useFeedback();
+  const [dialogFeedback, setDialogFeedback] = useState<Feedback>({});
   const [confirmationText, setConfirmationText] = useState("");
   const [confirmationError, setConfirmationError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
-      setFeedback({});
+      setDialogFeedback({});
+      setFeedback({
+        type: "success",
+        message: getText(i18nKeys.TREX_PLUGIN_UNINSTALL_DIALOG__SUCCESS, [String(plugin?.name)]),
+        autoClose: 6000,
+      });
       setConfirmationText("");
       typeof onClose === "function" && onClose(type);
     },
@@ -46,7 +52,7 @@ const TrexPluginUninstallDialog: FC<TrexPluginUninstallDialogProps> = ({ plugin,
         await api.trex.uninstallPlugin(name);
       } catch (error: any) {
         console.log(error);
-        setFeedback({
+        setDialogFeedback({
           type: "error",
           message: getText(i18nKeys.TREX_PLUGIN_UNINSTALL_DIALOG__ERROR, [String(plugin?.name)]),
           description: error.data.message,
@@ -73,7 +79,7 @@ const TrexPluginUninstallDialog: FC<TrexPluginUninstallDialogProps> = ({ plugin,
       closable
       open={open}
       onClose={() => handleClose("cancelled")}
-      feedback={feedback}
+      feedback={dialogFeedback}
     >
       <Divider />
       <div className="trex-plugin-uninstall-dialog__content">
