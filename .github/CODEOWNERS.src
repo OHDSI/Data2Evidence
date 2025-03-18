@@ -22,7 +22,7 @@ functions/query-gen-svc                             @data2evidence/analyze
 functions/terminology-svc                           @data2evidence/analyze
 functions/alp-dataflow-gen-init                     @data2evidence/data
 flows/*                                             @data2evidence/data
-flows/flows/strategus_plugin                        @data2evidence/integrate     
+flows/strategus_plugin                              @data2evidence/integrate     
 scripts                                             @data2evidence/devops
 services/alp-dataflow-gen                           @data2evidence/data
 services/alp-fhir                                   @data2evidence/data

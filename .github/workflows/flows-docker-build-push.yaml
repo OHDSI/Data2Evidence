@@ -66,25 +66,25 @@ jobs:
         include:
           - AZ_REG_REPOSITORY: d2e/flow-base
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/base/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-nlp
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/nlp/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/nlp/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/cohort_survival/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-mapping
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/data_mapping/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/data_mapping/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-white-rabbit
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/white_rabbit/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/white_rabbit/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-dicom-etl
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/dicom_etl/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/dicom_etl/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-mimic-omop-conversion
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/flows/mimic_omop_conversion/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/mimic_omop_conversion/Dockerfile
 
     steps:
       - name: Free Disk Space (Ubuntu)

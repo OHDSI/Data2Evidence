@@ -81,13 +81,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/cohort_survival/
-          - PKGPATH: ./flows/data_mapping/
-          - PKGPATH: ./flows/dicom_etl/
-          - PKGPATH: ./flows/mimic_omop_conversion/
-          - PKGPATH: ./flows/nlp/
-          - PKGPATH: ./flows/white_rabbit/
+          - PKGPATH: ./base/
+          - PKGPATH: ./cohort_survival/
+          - PKGPATH: ./data_mapping/
+          - PKGPATH: ./dicom_etl/
+          - PKGPATH: ./mimic_omop_conversion/
+          - PKGPATH: ./nlp/
+          - PKGPATH: ./white_rabbit/
 
     steps:
       - uses: actions/checkout@v4
