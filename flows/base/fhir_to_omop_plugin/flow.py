@@ -1,7 +1,7 @@
 from prefect_shell.commands import ShellOperation, shell_run_command
 from prefect import flow, task, get_run_logger
 
-from fhir_to_omop_plugin.types import FHIRToOMOPOptionsType
+from .types import FHIRToOMOPOptionsType
 
 
 @flow(log_prints=True)

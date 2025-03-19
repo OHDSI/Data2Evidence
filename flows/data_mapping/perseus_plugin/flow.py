@@ -7,7 +7,7 @@ from prefect.artifacts import create_markdown_artifact
 from prefect.variables import Variable
 from pathlib import Path
 import json
-from perseus_plugin.files_manager_client import FilesManagerClient
+from .files_manager_client import FilesManagerClient
 
 POSTGRES_TYPES_MAPPING = {
     'BINARY': 'BYTEA',

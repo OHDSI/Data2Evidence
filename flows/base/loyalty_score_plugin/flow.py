@@ -1,5 +1,5 @@
-from loyalty_score_plugin.types import *
-from loyalty_score_plugin.features import *
+from .types import *
+from .features import *
 
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import train_test_split

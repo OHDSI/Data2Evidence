@@ -5,7 +5,7 @@ from prefect.variables import Variable
 from prefect_shell import ShellOperation
 from prefect.logging import get_run_logger
 
-from phenotype_plugin.types import PhenotypeOptionsType
+from .types import PhenotypeOptionsType
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao

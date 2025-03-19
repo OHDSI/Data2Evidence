@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import List, Union
-from ner_extract_plugin.types import *
+from .types import *
 
 CUItoOHDSI_CSV=f"flows/ner_extract_plugin/external/CUItoOHDSIv1.csv"
 

@@ -1,11 +1,11 @@
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
-from data_management_plugin.types import *
-from data_management_plugin.dataset import *
-from data_management_plugin.versioninfo import *
-from data_management_plugin.const import get_db_dialect
-from data_management_plugin.types import DataModelType, FlowActionType
+from .types import *
+from .dataset import *
+from .versioninfo import *
+from .const import get_db_dialect
+from .types import DataModelType, FlowActionType
 
 from _shared_flow_utils.create_dataset_tasks import get_plugin_classpath
 

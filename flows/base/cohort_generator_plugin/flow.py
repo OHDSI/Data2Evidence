@@ -6,7 +6,7 @@ from prefect.variables import Variable
 from prefect_shell import ShellOperation
 from prefect.logging import get_run_logger
 
-from cohort_generator_plugin.types import CohortGeneratorOptionsType
+from .types import CohortGeneratorOptionsType
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao

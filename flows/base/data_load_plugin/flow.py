@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
-from data_load_plugin.types import DataloadOptions, FileType
+from .types import DataloadOptions, FileType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects

@@ -1,8 +1,8 @@
 from sqlalchemy import select
 import re
 
-from datamart_plugin.const import *
-from datamart_plugin.types import *
+from .const import *
+from .types import *
 
 from _shared_flow_utils.update_dataset_metadata import extract_version
 

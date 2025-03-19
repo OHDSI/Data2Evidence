@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 
-from dataflow_ui_plugin.flow import setup_plugin
+from flows.dataflow_ui_plugin.flow import setup_plugin
 # from main import execute_dataflow_flow
 # import flows.dataflow.flow as dataflow_flow
 

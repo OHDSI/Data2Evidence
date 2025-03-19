@@ -3,10 +3,10 @@ from functools import partial
 
 from prefect import flow
 
-from omop_cdm_plugin.types import *
-from omop_cdm_plugin.update import update_omop_cdm_dataset_flow
-from omop_cdm_plugin.versioninfo import update_dataset_metadata_flow
-from omop_cdm_plugin.create import create_datamodel_parent_task
+from .types import *
+from .update import update_omop_cdm_dataset_flow
+from .versioninfo import update_dataset_metadata_flow
+from .create import create_datamodel_parent_task
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *

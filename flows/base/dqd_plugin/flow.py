@@ -10,7 +10,7 @@ from prefect.logging import get_run_logger
 from prefect.serializers import JSONSerializer
 from prefect.filesystems import RemoteFileSystem as RFS
 
-from dqd_plugin.types import DqdOptionsType, DQD_THREAD_COUNT
+from .types import DqdOptionsType, DQD_THREAD_COUNT
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao

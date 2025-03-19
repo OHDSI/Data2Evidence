@@ -4,8 +4,8 @@ from typing import Union
 from prefect import task
 from prefect.logging import get_run_logger
 
-from create_cachedb_file_plugin.utils import resolve_duckdb_file_path, DUCKDB_EXTENSIONS_FILEPATH
-from create_cachedb_file_plugin.config import DUCKDB_FULLTEXT_SEARCH_CONFIG, DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
+from .utils import resolve_duckdb_file_path, DUCKDB_EXTENSIONS_FILEPATH
+from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG, DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
 
 
 

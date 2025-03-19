@@ -17,7 +17,7 @@ from prefect.cache_policies import NONE
 if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
 
-from omop_cdm_plugin.types import CDMVersion, RELEASE_VERSION_MAPPING
+from .types import CDMVersion, RELEASE_VERSION_MAPPING
 
     
 @task(log_prints=True, 

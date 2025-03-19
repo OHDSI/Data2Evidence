@@ -1,5 +1,5 @@
-from ner_extract_plugin.nel import *
-from ner_extract_plugin.types import *
+from .nel import *
+from .types import *
 from _shared_flow_utils.dao.DBDao import DBDao
 
 import pandas as pd

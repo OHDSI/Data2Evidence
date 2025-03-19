@@ -11,8 +11,8 @@ from prefect import flow, task
 from prefect_shell import ShellOperation
 from prefect.logging import get_run_logger
 
-from i2b2_plugin.types import *
-from i2b2_plugin.utils import *
+from .types import *
+from .utils import *
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.update_dataset_metadata import *

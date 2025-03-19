@@ -1,7 +1,7 @@
 import requests
 from prefect.logging import get_run_logger
 from pydantic import BaseModel
-from shared_utils.api.OpenIdAPI import OpenIdAPI
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 class FileSaveResponse(BaseModel):
     id: str

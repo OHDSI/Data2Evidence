@@ -4,8 +4,8 @@ from typing import List, Dict
 from prefect import task
 from prefect.logging import get_run_logger
 
-from data_management_plugin.const import OMOP_DATA_MODELS, check_table_case, convert_case
-from data_management_plugin.types import (PortalDatasetType, 
+from .const import OMOP_DATA_MODELS, check_table_case, convert_case
+from .types import (PortalDatasetType, 
                                                 ExtractDatasetSchemaType)
 
 from _shared_flow_utils.dao.DBDao import DBDao

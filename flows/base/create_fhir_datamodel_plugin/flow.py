@@ -6,8 +6,8 @@ from prefect.variables import Variable
 from prefect.logging import get_run_logger
 from prefect.states import Failed, Completed
 
-from create_fhir_datamodel_plugin.types import *
-from create_fhir_datamodel_plugin.fhir_utils import *
+from .types import *
+from .fhir_utils import *
 
 from _shared_flow_utils.dao.DBDao import DBDao
 

@@ -1,10 +1,10 @@
 from prefect import flow
 from prefect.logging import get_run_logger
 
-from create_cachedb_file_plugin.duckdb_fts import create_duckdb_fts_index
-from create_cachedb_file_plugin.config import CreateDuckdbDatabaseFileType
-from create_cachedb_file_plugin.duckdb_postgres import copy_postgres_to_duckdb
-from create_cachedb_file_plugin.utils import remove_existing_file_if_exists, check_supported_duckdb_dialects
+from .duckdb_fts import create_duckdb_fts_index
+from .config import CreateDuckdbDatabaseFileType
+from .duckdb_postgres import copy_postgres_to_duckdb
+from .utils import remove_existing_file_if_exists, check_supported_duckdb_dialects
 
 from _shared_flow_utils.dao.DBDao import DBDao
 

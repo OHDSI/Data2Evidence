@@ -8,9 +8,9 @@ from prefect.filesystems import RemoteFileSystem as RFS
 from prefect.serializers import JSONSerializer
 from prefect.variables import Variable
 
-from strategus_plugin.hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
-from strategus_plugin.flowutils import get_node_list, get_incoming_edges
-from strategus_plugin.nodes import generate_nodes_flow
+from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
+from .flowutils import get_node_list, get_incoming_edges
+from .nodes import generate_nodes_flow
 
 
 @flow(log_prints=True)

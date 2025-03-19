@@ -6,7 +6,7 @@ from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
 from prefect_shell import ShellOperation
-from white_rabbit_plugin.types import ServiceCredentials, WhiteRabbitRequestType
+from .types import ServiceCredentials, WhiteRabbitRequestType
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 

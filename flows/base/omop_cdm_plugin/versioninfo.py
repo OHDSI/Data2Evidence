@@ -5,7 +5,7 @@ from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 
-from omop_cdm_plugin.types import OmopCDMPluginOptions, RELEASE_VERSION_MAPPING
+from .types import OmopCDMPluginOptions, RELEASE_VERSION_MAPPING
 
 
 def update_dataset_metadata_flow(options: OmopCDMPluginOptions):

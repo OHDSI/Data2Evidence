@@ -8,8 +8,8 @@ from prefect.logging import get_run_logger
 from prefect.serializers import JSONSerializer
 from prefect.filesystems import RemoteFileSystem as RFS
 
-from data_characterization_plugin.hooks import *
-from data_characterization_plugin.types import *
+from .hooks import *
+from .types import *
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *

@@ -6,7 +6,7 @@ from prefect.logging import get_run_logger
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-from omop_cdm_plugin.types import OmopCDMPluginOptions, CDMVersion
+from .types import OmopCDMPluginOptions, CDMVersion
 
 from _shared_flow_utils.dao.DBDao import DBDao
 

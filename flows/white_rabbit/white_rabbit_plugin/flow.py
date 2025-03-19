@@ -2,8 +2,8 @@ from typing import List, Dict, Any, BinaryIO
 from prefect import flow, task, runtime
 from prefect.logging import get_run_logger
 from dataclasses import dataclass
-from white_rabbit_plugin.WhiteRabbit import WhiteRabbit
-from white_rabbit_plugin.types import WhiteRabbitRequestType
+from .WhiteRabbit import WhiteRabbit
+from .types import WhiteRabbitRequestType
 from prefect.artifacts import create_link_artifact, create_markdown_artifact
 import json
 import csv

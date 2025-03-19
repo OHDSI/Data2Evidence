@@ -3,7 +3,7 @@ import spacy
 from scispacy.linking import EntityLinker
 from scispacy.abbreviation import AbbreviationDetector
 
-from ner_extract_plugin.umls2omop import mapper
+from .umls2omop import mapper
 
 from prefect.logging import get_run_logger
 

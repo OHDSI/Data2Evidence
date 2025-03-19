@@ -6,7 +6,7 @@ from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
 from prefect_shell import ShellOperation
-from perseus_plugin.types import ServiceCredentials, PerseusRequestType
+from .types import ServiceCredentials, PerseusRequestType
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 

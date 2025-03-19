@@ -1,4 +1,4 @@
-from create_fhir_datamodel_plugin.types import *
+from .types import *
 
 
 def get_property_for_table(duckdb_data_types: dict[str, DuckDBDataTypes] , 

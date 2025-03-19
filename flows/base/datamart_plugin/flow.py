@@ -6,9 +6,9 @@ from prefect import flow, task
 from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
-from datamart_plugin.types import *
-from datamart_plugin.const import *
-from datamart_plugin.utils import *
+from .types import *
+from .const import *
+from .utils import *
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.dao.MinioDao import MinioDao

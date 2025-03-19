@@ -7,7 +7,7 @@ from prefect.logging import get_run_logger
 from prefect.serializers import JSONSerializer
 from prefect.filesystems import RemoteFileSystem as RFS
 
-from cohort_survival_plugin.types import CohortSurvivalOptionsType
+from .types import CohortSurvivalOptionsType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 

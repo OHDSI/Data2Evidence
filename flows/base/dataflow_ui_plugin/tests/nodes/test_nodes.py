@@ -1,9 +1,9 @@
 import pytest
 from importlib import import_module
 
-import dataflow_ui_plugin.nodes as nodes
-from dataflow_ui_plugin.flow import setup_plugin
-import dataflow_ui_plugin.flowutils as flowutils
+import flows.dataflow_ui_plugin.nodes as nodes
+from flows.dataflow_ui_plugin.flow import setup_plugin
+import flows.dataflow_ui_plugin.flowutils as flowutils
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-from loyalty_score_plugin.types import Concept_ls_Standard
+from .types import Concept_ls_Standard
 
 import pandas as pd
 

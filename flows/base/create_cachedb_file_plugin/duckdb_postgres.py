@@ -3,7 +3,7 @@ import duckdb
 from prefect import task
 from prefect.logging import get_run_logger
 
-from create_cachedb_file_plugin.utils import resolve_duckdb_file_path, DUCKDB_EXTENSIONS_FILEPATH
+from .utils import resolve_duckdb_file_path, DUCKDB_EXTENSIONS_FILEPATH
 
 
 @task(log_prints=True)
