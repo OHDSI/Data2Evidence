@@ -12,7 +12,9 @@ export const Atlas: FC<Props> = ({ datasetId, getToken, username, toggleAtlas, a
   const [tokenInterval, setTokenInterval] = useState<NodeJS.Timer | null>(null);
 
   useEffect(() => {
-    const originUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+    const originUrl = `${window.location.protocol}//${window.location.hostname}${
+      window.location.port ? ":" + window.location.port : ""
+    }`;
     const fn = (event: MessageEvent) => {
       if (event.origin !== originUrl || event.data.type !== "CLOSE_ATLAS") {
         return;
