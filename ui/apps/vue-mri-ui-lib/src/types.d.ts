@@ -204,6 +204,7 @@ interface FormattedMaterializedCohort {
   cohortDefinitionName: string
   createdOn: string
   createdOnFormatted: string
+  description?: string
 }
 
 type FilterCardContent = {
@@ -268,6 +269,7 @@ type CohortDefinition = {
   cohortDefinitionName: string
   createdOn: string
   createdOnFormatted: string
+  description?: string
 }
 
 type AtlasCohortDefinition = FormattedAtlasCohortDefinition

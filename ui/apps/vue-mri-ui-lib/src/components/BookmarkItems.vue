@@ -348,6 +348,10 @@ onErrorCaptured((err, instance, info) => {
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Cohort ID:</div>
               <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.id }}</div>
             </div>
+            <div style="display: flex" v-if="!!bookmarkDisplay.cohortDefinition.description">
+              <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Description:</div>
+              <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.description }}</div>
+            </div>
             <div style="display: flex">
               <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Cohort Name:</div>
               <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}</div>

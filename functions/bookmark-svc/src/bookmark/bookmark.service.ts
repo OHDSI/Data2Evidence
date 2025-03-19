@@ -564,6 +564,7 @@ const _formatMaterializedCohort = (cohortDefinition: IMaterializedCohort): IForm
   patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp,
+  description: cohortDefinition.description,
 })
 
 const _formatAtlasCohortDefinition = (

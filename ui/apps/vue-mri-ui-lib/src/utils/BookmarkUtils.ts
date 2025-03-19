@@ -47,7 +47,8 @@ export function formatCohortDefinition(cohortDefinition: FormattedMaterializedCo
     id: cohortDefinition.id,
     patientCount: cohortDefinition.patientCount,
     cohortDefinitionName: cohortDefinition.cohortDefinitionName,
-    createdOn:  cohortDefinition.createdOn,
+    description: cohortDefinition.description === 'NoValue' ? '' : cohortDefinition.description,
+    createdOn: cohortDefinition.createdOn,
     createdOnFormatted: DateUtils.displayBookmarkDateFormat(cohortDefinition.createdOn),
   }
 }
