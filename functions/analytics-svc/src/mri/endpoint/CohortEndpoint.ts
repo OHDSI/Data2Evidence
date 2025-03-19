@@ -71,16 +71,27 @@ export class CohortEndpoint {
     public async queryCohorts(
         queryParams: Object,
         offset?: number,
-        limit?: number
+        limit?: number,
+        excludePatientIds?: boolean
     ) {
-        let selectQueryString = `SELECT 
-        COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
-        COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
-        TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
-        COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
-        TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX"
-        FROM $$SCHEMA$$.COHORT_DEFINITION
-        `;
+        const selectQueryString = `
+            SELECT 
+                cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
+                cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
+                TO_VARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
+                cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
+                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
+                COUNT(c.COHORT_DEFINITION_ID) AS "count"
+            FROM $$SCHEMA$$.COHORT_DEFINITION cd
+            LEFT JOIN $$SCHEMA$$.COHORT c 
+                ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
+            GROUP BY 
+                cd.COHORT_DEFINITION_ID,
+                cd.COHORT_DEFINITION_NAME,
+                cd.COHORT_DEFINITION_DESCRIPTION,
+                cd.COHORT_INITIATION_DATE,
+                cd.COHORT_DEFINITION_SYNTAX
+        `
 
         let cohortArray = [];
 
@@ -96,18 +107,18 @@ export class CohortEndpoint {
                 this.connection
             );
 
-            const processingCohort = async (cohortObj) => {
+            const processingCohort = async (cohortDefObj, excludePatientIds?: boolean) => {
             //For each cohort definition, query cohort table for list of patient ids
-                let patientIds = await this.queryPatientIds(
-                    cohortObj.COHORT_DEFINITION_ID
-                );
+                const patientIds = excludePatientIds ? undefined : await this.queryPatientIds(
+                    cohortDefObj.COHORT_DEFINITION_ID);
                 return <CohortType>{
-                    id: cohortObj.COHORT_DEFINITION_ID,
+                    id: cohortDefObj.COHORT_DEFINITION_ID,
                     patientIds,
-                    name: cohortObj.COHORT_DEFINITION_NAME,
-                    description: cohortObj.COHORT_DEFINITION_DESCRIPTION,
-                    creationTimestamp: cohortObj.COHORT_INITIATION_DATE,
-                    syntax: cohortObj.COHORT_DEFINITION_SYNTAX,
+                    name: cohortDefObj.COHORT_DEFINITION_NAME,
+                    description: cohortDefObj.COHORT_DEFINITION_DESCRIPTION,
+                    creationTimestamp: cohortDefObj.COHORT_INITIATION_DATE,
+                    syntax: cohortDefObj.COHORT_DEFINITION_SYNTAX,
+                    patientCount: cohortDefObj.count
                 };
             };
 
@@ -125,7 +136,7 @@ export class CohortEndpoint {
                     const slicedResults = await Promise.all(
                         items
                             .slice(start, end)
-                            .map(async (item) => await processingCohort(item))
+                            .map(async (item) => await processingCohort(item, excludePatientIds))
                     );
                     results = [...results, ...slicedResults];
                 }

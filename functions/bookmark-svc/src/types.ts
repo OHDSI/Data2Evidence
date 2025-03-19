@@ -128,11 +128,11 @@ export interface BookmarkDto {
 
 export interface IMaterializedCohort {
   id: number
-  patientIds: number[]
   name: string
   description: string
   creationTimestamp: string
   syntax: string
+  patientCount: number
 }
 
 export interface IFormattedBookmark {

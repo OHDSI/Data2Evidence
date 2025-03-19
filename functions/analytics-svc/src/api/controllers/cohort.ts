@@ -104,18 +104,19 @@ async function getStudyDetails(
 export async function getAllCohorts(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
-        let cohortEndpoint = new CohortEndpoint(
+        const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
             analyticsConnection.schemaName
         );
 
         const offset = req.query.offset;
         const limit = req.query.limit;
+        const excludePatientIds = req.query.excludePatientIds === 'true';
 
         // Send empty object to query all cohorts
-        let result = await cohortEndpoint.queryCohorts({}, offset, limit);
+        const result = await cohortEndpoint.queryCohorts({}, offset, limit, excludePatientIds);
         // Get count of all cohort definitions for pagination
-        let cohortDefinitionCount =
+        const cohortDefinitionCount =
             await cohortEndpoint.queryCohortDefinitionCount({});
 
         res.status(200).send({ data: result, cohortDefinitionCount });

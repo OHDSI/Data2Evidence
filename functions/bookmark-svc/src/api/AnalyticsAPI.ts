@@ -21,7 +21,6 @@ export class AnalyticsSvcAPI {
       //   rejectUnauthorized: true,
       //   ca: env.TLS__INTERNAL__CA_CRT,
       // })
-
     } else {
       console.error('No url is set for AnalyticsSvcAPI')
       throw new Error('No url is set for AnalyticsAPI')
@@ -41,6 +40,7 @@ export class AnalyticsSvcAPI {
       const options = this.getRequestConfig()
       const params = new URLSearchParams()
       params.append('datasetId', datasetId)
+      params.append('excludePatientIds', 'true')
       const result = await axios.get(url, { ...options, params })
       return result.data.data
     } catch (error) {

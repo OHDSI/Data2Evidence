@@ -561,7 +561,7 @@ function _convertBookmarkIFR(result) {
 
 const _formatMaterializedCohort = (cohortDefinition: IMaterializedCohort): IFormattedMaterializedCohort => ({
   id: cohortDefinition.id,
-  patientCount: cohortDefinition.patientIds.length,
+  patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp,
 })
