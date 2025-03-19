@@ -283,6 +283,12 @@ export default {
         filterCard.attributes.forEach(attribute => {
           let disabled = false
           const attributeKey = attribute.sConfigPath.split('.').pop()
+
+          // Skip adding attributes with 'conceptset' in the key
+          if (attributeKey.includes('conceptset') || attributeKey.includes('conceptset')) {
+            return
+          }
+
           selectedAttributes.forEach(sAttr => {
             if (sAttr.active && sAttr.filterCardId === filterCard.id && sAttr.key === attributeKey) {
               disabled = true
@@ -353,6 +359,11 @@ export default {
           const attributesMenu = []
           let attributeIndex = 0
           filterCard.aAllAttributes.forEach(attribute => {
+            // Skip adding attributes with 'conceptset' in the key
+            if (attribute.sConfigPath.includes('conceptset') || attribute.sConfigPath.includes('concept_set')) {
+              return
+            }
+
             if (
               (this.axisModel.props.isMeasure && attribute.oInternalConfigAttribute.measure) ||
               (this.axisModel.props.isCategory && attribute.oInternalConfigAttribute.category)
