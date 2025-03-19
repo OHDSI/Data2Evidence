@@ -577,27 +577,11 @@ services:
           debug
           pki {
             ca local {
-              name \"ALP Local CA\"
-              root_cn \"ALP Local CA - 2024 ECC Root\"
-              intermediate_cn \"ALP Local CA - ECC Intermediate\"
-            }
-            ca alp-internal {
-              name \"ALP Internal CA\"
-              root_cn \"ALP Internal CA - 2024 ECC Root\"
-              intermediate_cn \"ALP Internal CA - ECC Intermediate\"
+              name \"D2E Local CA\"
+              root_cn \"D2E Local CA - 2024 ECC Root\"
+              intermediate_cn \"D2E Local CA - ECC Intermediate\"
             }
           }
-        }
-
-        https://*.alp.local:55555 {
-          tls {
-            issuer internal {
-              ca alp-internal
-              lifetime 360d
-              sign_with_root
-            }
-          }
-          respond alp-internal
         }
 
         (publicurlredirect) {
