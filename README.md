@@ -52,7 +52,7 @@ d2e init
 
 Start the Data2Evidence services by running:
 ```bash
-d2e start
+d2e -e start
 ```
 
 Create and load demo dataset by running:
