@@ -3,9 +3,6 @@ To use code-suggestion, the API_KEY for specific AI models should be provided in
 ##### If use model directly from model providers, set below API_KEY
 - OPENAI_API_KEY=xxx
 - ANTHROPIC_API_KEY=xxx
-- MISTRAL_API_KEY=xxx
-- XAI_API_KEY=xxx
-- GROQ_API_KEY=xxx
 
 ##### If use Azure OpenAI, set below variables, values can be extracted from "Endpoint" of the deployment.
 - AZURE_OPENAI_API_KEY='yyy'
@@ -17,3 +14,4 @@ To use code-suggestion, the API_KEY for specific AI models should be provided in
 The name of specific model is provided as well
 - For calling model directly from AI model provider, use the model name, e.g. 'gpt-4o'
 - For calling model from Azure OpenAI, set the AI_MODEL='azure:gpt-4o'
+- For calling model from local, set the AI_MODEL='local'
