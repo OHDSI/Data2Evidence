@@ -5,13 +5,8 @@ from subprocess import PIPE, STDOUT, run, CalledProcessError
 
 from prefect.variables import Variable
 
-from flows.data_management_plugin.const import *
-from flows.data_characterization_plugin.types import CHARACTERIZATION_DATA_MODEL
-
-from _shared_flow_utils.dao.daobase import DaoBase
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_token_value
-from _shared_flow_utils.types import (AuthMode, AuthToken, LiquibaseAction,
-                                DBCredentialsType, SupportedDatabaseDialects)
+from .types import *
+from .api.PrefectAPI import get_auth_token_from_input, get_token_value
 
 
 class Liquibase:
@@ -59,12 +54,16 @@ class Liquibase:
             admin_password = self.tenant_configs.adminPassword.get_secret_value()
 
         # path to liquibase executable
-        liquibase_path = Variable.get("liquibase_path") if Variable.get("liquibase_path") else "/app/liquibase/liquibase"
+        liquibase_path = Variable.get("liquibase_path") if Variable.get(
+            "liquibase_path") else "/app/liquibase/liquibase"
         liquibase_dir = os.path.dirname(liquibase_path)
-        liquibase_properties = os.path.join(liquibase_dir, 'liquibase.properties')
-        
-        hana_driver_class_path = Variable.get("hana_driver_class_path") if Variable.get("hana_driver_class_path") else "/app/liquibase/lib/ngdbc-latest.jar"
-        postgres_driver_class_path = Variable.get("postgres_driver_class_path") if Variable.get("postgres_driver_class_path") else "/app/inst/drivers/postgresql-42.3.1.jar"
+        liquibase_properties = os.path.join(
+            liquibase_dir, 'liquibase.properties')
+
+        hana_driver_class_path = Variable.get("hana_driver_class_path") if Variable.get(
+            "hana_driver_class_path") else "/app/liquibase/lib/ngdbc-latest.jar"
+        postgres_driver_class_path = Variable.get("postgres_driver_class_path") if Variable.get(
+            "postgres_driver_class_path") else "/app/inst/drivers/postgresql-42.3.1.jar"
         match self.dialect:
             case SupportedDatabaseDialects.HANA:
                 classpath = f"{hana_driver_class_path}:{self.plugin_classpath}"
@@ -99,7 +98,7 @@ class Liquibase:
                 url: {connection_base_url}{connection_properties}
                 password: {admin_password}
                 ''')
-            
+
         match self.action:
             case LiquibaseAction.STATUS:
                 params.append("--verbose")
@@ -112,7 +111,7 @@ class Liquibase:
 
         if self.data_model in OMOP_DATA_MODELS:
             params.append(f"-DVOCAB_SCHEMA={self.vocab_schema}")
-            
+
         if self.data_model == CHARACTERIZATION_DATA_MODEL:
             params.append(f"-DVOCAB_SCHEMA={self.vocab_schema}")
             params.append(f"-DDATA_CHARACTERIZATION_SCHEMA={self.schema_name}")
@@ -124,17 +123,20 @@ class Liquibase:
             params = self.create_params()
             result = run(params, check=True, stderr=STDOUT,
                          stdout=PIPE, text=True)
-            masked_output = "\n".join([self._mask_secrets(line, "***") for line in result.stdout.splitlines()])
+            masked_output = "\n".join(
+                [self._mask_secrets(line, "***") for line in result.stdout.splitlines()])
             print(masked_output)
         except CalledProcessError as cpe:  # catches non-0 return code exception
             # print(f"Command ran: '{cpe.cmd}'")  # for debugging
-            masked_output = "\n".join([self._mask_secrets(line, "***") for line in cpe.output.splitlines()])
+            masked_output = "\n".join(
+                [self._mask_secrets(line, "***") for line in cpe.output.splitlines()])
             print(masked_output)
             liquibase_msg_list = cpe.output.split("\n")
             liquibase_error_message = self._mask_secrets(self._find_error_message(
                 liquibase_msg_list), "***")
             raise RuntimeError(
-                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}")  # from cpe
+                # from cpe
+                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}")
         else:
             print(f"Successfully ran liquibase command '{params[1]}'")
 
@@ -144,10 +146,12 @@ class Liquibase:
             result = run(params, check=True, stderr=STDOUT,
                          stdout=PIPE, text=True)
             liquibase_msg_masked = self._mask_secrets(result.stdout, "***")
-            masked_output = "\n".join([self._mask_secrets(line, "***") for line in result.stdout.splitlines()])
+            masked_output = "\n".join(
+                [self._mask_secrets(line, "***") for line in result.stdout.splitlines()])
             print(masked_output)
         except CalledProcessError as cpe:
-            masked_output = "\n".join([self._mask_secrets(line, "***") for line in cpe.output.splitlines()])
+            masked_output = "\n".join(
+                [self._mask_secrets(line, "***") for line in cpe.output.splitlines()])
             print(masked_output)
             liquibase_msg_list = cpe.output.split("\n")
             liquibase_error_message = self._mask_secrets(self._find_error_message(

@@ -1,5 +1,4 @@
-prefect[dask, shell, docker]==3.0.3
-bokeh==2.4.2
+prefect[shell, docker]==3.0.3
 minio==7.2.5
 debugpy==1.8.1
 sqlalchemy==2.0.38
@@ -11,4 +10,3 @@ pandas==2.2.2
 numpy==2.0.0
 pyarrow==17.0.0
 ibis-framework[duckdb, postgres]==9.5.0
-scikit-learn==1.4.2
