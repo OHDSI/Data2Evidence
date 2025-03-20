@@ -476,6 +476,7 @@ services:
     networks:
       alp:
         priority: 20
+    platform: linux/amd64
     environment:
       <<:
         - *x-tls
@@ -766,6 +767,7 @@ services:
     networks:
       alp:
         priority: 20
+    platform: linux/amd64
     environment:
       ENV_TYPE: ${ENV_TYPE:-local}
       PG__DB_NAME: alp
@@ -1018,6 +1020,7 @@ services:
         priority: 20
       data:
         priority: 10
+    platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
     healthcheck:
