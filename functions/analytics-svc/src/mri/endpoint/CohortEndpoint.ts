@@ -78,7 +78,7 @@ export class CohortEndpoint {
             SELECT 
                 cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
                 cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
-                TO_VARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
+                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
                 cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
                 COUNT(c.COHORT_DEFINITION_ID) AS "count"
@@ -88,9 +88,9 @@ export class CohortEndpoint {
             GROUP BY 
                 cd.COHORT_DEFINITION_ID,
                 cd.COHORT_DEFINITION_NAME,
-                cd.COHORT_DEFINITION_DESCRIPTION,
+                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
                 cd.COHORT_INITIATION_DATE,
-                cd.COHORT_DEFINITION_SYNTAX
+                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
         `
 
         let cohortArray = [];
