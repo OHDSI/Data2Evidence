@@ -63,8 +63,8 @@
     <div class="download-cohort-definition">
       <d4l-button
         @click="onClickCreateCohortDefinition"
-        :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION')"
-        :title="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION')"
+        :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION')"
+        :title="getText('MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION')"
         classes="button--block"
         :disabled="chartBusy"
       />

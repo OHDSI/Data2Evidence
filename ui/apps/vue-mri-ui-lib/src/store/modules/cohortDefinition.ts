@@ -79,6 +79,9 @@ const actions = {
           response.data.noDataReason = getters.getText(response.data.noDataReason)
         }
         commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
+        dispatch('setToastMessage', {
+          text: rootGetters.getText('MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_SUCCESS'),
+        })
         return response.data
       })
       .catch(error => {
@@ -86,6 +89,9 @@ const actions = {
           response: {
             data: 'An error occured',
           },
+        })
+        dispatch('setAlertMessage', {
+          message: rootGetters.getText('MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_ERROR'),
         })
         throw error
       })
