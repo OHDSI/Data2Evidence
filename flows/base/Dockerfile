@@ -191,25 +191,6 @@ RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postg
     && gzip -d postgres_scanner.duckdb_extension.gz \
     && gzip -d fts.duckdb_extension.gz
 
-# Uncomment for installation of i2b2 source code
-# # Add Apache Ant for i2b2 data model creation
-# WORKDIR /app
-# ENV ANT_VERSION=1.9.6
-# ENV I2B2_TAG_NAME 1.8.1.0001
-
-# RUN wget http://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
-#     && tar xvfvz apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt \
-#     && ln -sfn /opt/apache-ant-${ANT_VERSION} /opt/ant \
-#     && sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment' \
-#     && ln -sfn /opt/ant/bin/ant /usr/bin/ant \
-#     && rm apache-ant-${ANT_VERSION}-bin.tar.gz
-
-# # Download i2b2 source code
-# RUN wget https://github.com/i2b2/i2b2-data/archive/refs/tags/v$I2B2_TAG_NAME.tar.gz
-# RUN tar -xzf v$I2B2_TAG_NAME.tar.gz
-# # Change ownership to overwrite db.properties in flow definition
-# RUN chown -R docker:docker /app/i2b2-data-$I2B2_TAG_NAME
-
 WORKDIR /app
 
 # Create folder for duckdb database files
