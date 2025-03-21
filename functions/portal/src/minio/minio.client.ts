@@ -162,8 +162,12 @@ export class MinioClient {
   async getMultipleFlowRunResults(filePaths: string[]) {
     const results = [];
     for (const filePath of filePaths) {
-      const flowRunResult = await this.getFlowRunResults(filePath);
-      results.push(flowRunResult);
+      try {
+        const flowRunResult = await this.getFlowRunResults(filePath);
+        results.push(flowRunResult);          
+      } catch (error) {
+        console.error(`Error retrieving file ${filePath}: ${error}`)
+      }
     }
     return results;
   }

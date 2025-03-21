@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@danet/core'
 import { Controller, Get, Query } from "@danet/core";
 import { PrefectFlowRunResultDto } from "./dto/index.ts";
 import { PrefectService } from "./prefect.service.ts";
@@ -19,6 +20,10 @@ export class PrefectController {
       prefectFlowRunResultDto.filePaths = filePaths;
     }
 
-    return await this.prefectService.getFlowRunResults(prefectFlowRunResultDto);
+    try {
+      return await this.prefectService.getFlowRunResults(prefectFlowRunResultDto);
+    } catch (error) {
+      throw new InternalServerErrorException('File path is not defined for DQD flow run results');
+    }
   }
 }

@@ -115,7 +115,7 @@ export class PrefectAPI {
       }
 
       const result = await response.json();
-      return result as IPrefectFlowRunDto[];
+      return result;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw error;
