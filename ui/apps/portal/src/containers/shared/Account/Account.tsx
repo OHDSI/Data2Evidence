@@ -1,11 +1,12 @@
 import React, { FC, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card } from "@portal/components";
+import { Button, Card, Loader } from "@portal/components";
 import { PortalType, User } from "../../../types";
 import { useDialogHelper } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
 import { config } from "../../../config";
+import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
 import { LegalCard } from "../Legal/LegalCard";
@@ -27,16 +28,25 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
   const [myUser, setMyUser] = useState(EMPTY_MY_USER);
   const [showDeleteAccount, openDeleteAccount, closeDeleteAccount] = useDialogHelper(false);
   const [showPwd, openPwdDialog, closePwdDialog] = useDialogHelper(false);
-  const { user } = useUser();
+  const { user, setUserGroup } = useUser();
+  const [loading, setLoading] = useState(false);
+
+  const fetchUserGroups = useCallback(async () => {
+    setLoading(true);
+    const userGroups = await api.userMgmt.getUserGroupList(idTokenClaims[subProp]);
+    setUserGroup(idTokenClaims[subProp], userGroups);
+    setLoading(false);
+  }, [idTokenClaims, setUserGroup]);
 
   useEffect(() => {
     if (idTokenClaims) {
+      fetchUserGroups();
       setMyUser({
         id: idTokenClaims[subProp],
         name: idTokenClaims[nameProp],
       });
     }
-  }, [idTokenClaims]);
+  }, [idTokenClaims, fetchUserGroups]);
 
   const handleSwitch = useCallback(() => {
     navigate(portalType === "researcher" ? config.ROUTES.systemadmin : config.ROUTES.researcher);
@@ -64,25 +74,35 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
               </div>
             </Card>
             <div className="account__content_actions">
-              {portalType === "system_admin" && user.canAccessResearcherPortal && (
-                <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)} onClick={handleSwitch} />
+              {loading ? (
+                <Loader />
+              ) : (
+                <>
+                  {portalType === "system_admin" && user.canAccessResearcherPortal && (
+                    <Button
+                      block
+                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
+                      onClick={handleSwitch}
+                    />
+                  )}
+                  {portalType === "researcher" && user.canAccessSystemAdminPortal && (
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitch} />
+                  )}
+                  <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
+                  <Button
+                    block
+                    variant="outlined"
+                    text={getText(i18nKeys.ACCOUNT__CHANGE_PASSWORD)}
+                    onClick={openPwdDialog}
+                  />
+                  <Button
+                    block
+                    variant="outlined"
+                    text={getText(i18nKeys.ACCOUNT__DELETE_ACCOUNT)}
+                    onClick={openDeleteAccount}
+                  />
+                </>
               )}
-              {portalType === "researcher" && user.canAccessSystemAdminPortal && (
-                <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitch} />
-              )}
-              <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
-              <Button
-                block
-                variant="outlined"
-                text={getText(i18nKeys.ACCOUNT__CHANGE_PASSWORD)}
-                onClick={openPwdDialog}
-              />
-              <Button
-                block
-                variant="outlined"
-                text={getText(i18nKeys.ACCOUNT__DELETE_ACCOUNT)}
-                onClick={openDeleteAccount}
-              />
             </div>
           </div>
           <div className="account__content_legal">
