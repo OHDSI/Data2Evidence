@@ -32,7 +32,7 @@ export enum PrefectDeploymentName {
   UI_DATA_FLOW = "dataflow_ui_plugin",
   CACHEDB_CREATE_FILE = "create_cachedb_file_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
-  PERSEUS = "perseus_plugin",
+  PERSEUS = "data_mapping_plugin",
 }
 
 export enum PrefectFlowName {
@@ -49,7 +49,7 @@ export enum PrefectFlowName {
   CACHEDB_CREATE_FILE = "create_cachedb_file_plugin",
   DATAMART = "datamart_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
-  PERSEUS = "perseus_plugin",
+  PERSEUS = "data_mapping_plugin",
 }
 
 export enum FLOW_RUN_STATE_TYPES {

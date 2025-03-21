@@ -1,6 +1,5 @@
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
-  FlowRunState,
   PrefectDeploymentName,
   PrefectFlowName,
 } from "../const.ts";
@@ -26,7 +25,7 @@ export class PerseusService {
     };
 
     const flowRunId = await prefectApi.createFlowRun(
-      "Run perseus",
+      "Run data mapping",
       deploymentName,
       flowName,
       parameters

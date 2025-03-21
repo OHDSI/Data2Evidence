@@ -151,7 +151,7 @@ def process_scan_report(scan_report_path: Path) -> List[Dict]:
         raise
 
 @flow(log_prints=True)
-def perseus_plugin(options: Dict) -> str:
+def data_mapping_plugin(options: Dict) -> str:
     logger = get_run_logger()
 
     username = options["headers"]["username"]

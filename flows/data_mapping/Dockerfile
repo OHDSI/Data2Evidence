@@ -16,6 +16,6 @@ RUN pip freeze
 RUN mkdir -p /tmp/scan_reports && chmod 777 /tmp/scan_reports
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./data_mapping/perseus_plugin flows/perseus_plugin
+COPY --chown=docker:docker --chmod=711 ./data_mapping/data_mapping_plugin flows/data_mapping_plugin
 
 ENTRYPOINT []

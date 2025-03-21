@@ -21,13 +21,13 @@
       "image": "ghcr.io/data2evidence/d2e/flow-data-mapping",
       "flows": [
         {
-          "name": "perseus_plugin",
+          "name": "data_mapping_plugin",
           "type": "perseus",
-          "entrypoint": "flows.perseus_plugin.flow.perseus_plugin",
+          "entrypoint": "flows.data_mapping_plugin.flow.data_mapping_plugin",
           "image": "ghcr.io/data2evidence/d2e/flow-data-mapping:develop",
           "image_pull_policy": "Never",
           "tags": [
-            "perseus"
+            "data_mapping"
           ],
           "parameter_openapi_schema": {
             "title": "Parameters",
