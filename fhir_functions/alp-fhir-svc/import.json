@@ -28,7 +28,7 @@
   "@medplum/bot-layer": "npm:@medplum/bot-layer@3.2.2",
   "@medplum/core": "npm:@medplum/core@3.2.2",
   "@medplum/fhirtypes": "npm:@medplum/fhirtypes@3.2.2",
-  "duckdb-async": "npm:duckdb-async@^1.1.1",
+  "duckdb-async": "npm:duckdb-async@^1.2.0",
   "express": "npm:express@^4.19.2",
   "express-validator": "npm:express-validator@^7.2.0",
   "helmet": "npm:helmet@^7.1.0",

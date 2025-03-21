@@ -59,7 +59,7 @@
     "async": "npm:async@3.2.4",
     "csv-write-stream": "npm:csv-write-stream@^2.0.0",
     "dotenv": "npm:dotenv@10.0.0",
-    "duckdb-async": "npm:duckdb-async@^1.1.1",
+    "duckdb-async": "npm:duckdb-async@^1.2.0",
     "express": "npm:express@^4.18",
     "express-validator": "npm:express-validator@6.6.1",
     "helmet": "npm:helmet@4.6.0",
