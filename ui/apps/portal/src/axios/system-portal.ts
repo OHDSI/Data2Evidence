@@ -60,7 +60,7 @@ export class SystemPortal {
 
     return request<Study[]>({
       baseURL: SYSTEM_PORTAL_URL,
-      url: "dataset/list",
+      url: "dataset/list" + (role == "systemAdmin" ? "/systemadmin" : ""),
       method: "GET",
       params,
     });

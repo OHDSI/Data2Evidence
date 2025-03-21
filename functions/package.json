@@ -473,10 +473,9 @@
         ],
         "IDP_ALP_SVC_CLIENT_ID": [
           "gateway.db.datbase.credentials.list",
-          "portal.dataset.read"
+          "portal.dataset.systemAdmin.read"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
-          "portal.dataset.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
@@ -901,27 +900,18 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/list/systemadmin$",
+          "scopes": [
+            "portal.dataset.systemAdmin.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/list$",
           "scopes": [
             "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?(.*)role=researcher(&.*)?$",
-          "scopes": [
-            "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?role=systemAdmin$",
-          "scopes": [
-            "portal.dataset.systemAdmin.read"
           ],
           "httpMethods": [
             "GET"

@@ -124,7 +124,7 @@ try {
 
 // Adding admin user access permissions to demo dataset  
 console.log(chalk.blue(`Adding admin user access permissions to demo dataset...\n`));
-var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list?role=systemAdmin' \
+var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list/systemadmin' \
         --header 'Content-Type: application/x-www-form-urlencoded' \
         --header 'Authorization: Bearer ${BEARER_TOKEN}'`    
 var resp = JSON.parse(resp);

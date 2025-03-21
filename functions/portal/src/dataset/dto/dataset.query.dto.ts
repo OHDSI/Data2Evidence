@@ -1,6 +1,6 @@
 import { Transform, Type } from 'npm:class-transformer'
 import { IsArray, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, ValidateIf, ValidateNested } from 'npm:class-validator'
-import { DATASET_QUERY_ROLES, DomainRequirement } from '../../common/const.ts'
+import { DATASET_RESEARCHER_ROLE, DATASET_SYSTEM_ADMIN_ROLE, DomainRequirement } from '../../common/const.ts'
 import { type DatasetQueryRole, IDatasetQueryDto } from '../../types.d.ts'
 
 class NumberFilterDto {
@@ -13,9 +13,11 @@ class NumberFilterDto {
 }
 
 export class DatasetQueryDto implements IDatasetQueryDto {
+  // TODO: remove role; dataset.controller.ts is overriding the parameter
+  // based on the endpoint
   @IsOptional()
   @IsNotEmpty()
-  @IsIn(DATASET_QUERY_ROLES)
+  @IsIn([DATASET_RESEARCHER_ROLE, DATASET_SYSTEM_ADMIN_ROLE])
   role?: DatasetQueryRole
 
   @IsOptional()

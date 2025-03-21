@@ -16,6 +16,7 @@ import {
 // import { transformPipe } from '../common/pipe/TransformPipe.ts'
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { IDataset } from "../types.d.ts";
+import { DATASET_SYSTEM_ADMIN_ROLE, DATASET_RESEARCHER_ROLE } from '../common/const.ts'
 import { DatasetCommandService } from "./command/dataset-command.service.ts";
 import { DatasetFilterService } from "./dataset-filter.service.ts";
 import { DatasetDetailMetadataUpdateDto } from "./dto/dataset-detail-metadata.update.dto.ts";
@@ -55,9 +56,14 @@ export class DatasetController {
     return { exist }
   }
 
+  @Get("list/systemadmin")
+  async getSystemAdminDatasets(@Query() queryParams: DatasetQueryDto) {
+    return await this.datasetQueryService.getDatasets({ ...queryParams, role: DATASET_SYSTEM_ADMIN_ROLE });
+  }
+
   @Get("list")
-  async getDatasets(@Query() queryParams: DatasetQueryDto) {
-    return await this.datasetQueryService.getDatasets(queryParams);
+  async getResearcherDatasets(@Query() queryParams: DatasetQueryDto) {
+    return await this.datasetQueryService.getDatasets({ ...queryParams, role: DATASET_RESEARCHER_ROLE });
   }
 
   @Get("filter-scopes")
