@@ -160,28 +160,32 @@ export const Information: FC = () => {
             id="tab-0"
             value="info"
           />
-          <Tab
-            disableRipple
-            sx={{
-              "&.MuiTab-root": {
-                width: "200px",
-              },
-            }}
-            label={getText(i18nKeys.INFORMATION__TAB_DATA_QUALITY)}
-            id="tab-1"
-            value="quality"
-          />
-          <Tab
-            disableRipple
-            sx={{
-              "&.MuiTab-root": {
-                width: "200px",
-              },
-            }}
-            label={getText(i18nKeys.INFORMATION__TAB_DATA_CHARACTERIZATION)}
-            id="tab-2"
-            value="characterization"
-          />
+          {user.isDatasetResearcher[activeDatasetId] && (
+            <Tab
+              disableRipple
+              sx={{
+                "&.MuiTab-root": {
+                  width: "200px",
+                },
+              }}
+              label={getText(i18nKeys.INFORMATION__TAB_DATA_QUALITY)}
+              id="tab-1"
+              value="quality"
+            />
+          )}
+          {user.isDatasetResearcher[activeDatasetId] && (
+            <Tab
+              disableRipple
+              sx={{
+                "&.MuiTab-root": {
+                  width: "200px",
+                },
+              }}
+              label={getText(i18nKeys.INFORMATION__TAB_DATA_CHARACTERIZATION)}
+              id="tab-2"
+              value="characterization"
+            />
+          )}
           {releases.length !== 0 && (
             <Tab
               disableRipple
