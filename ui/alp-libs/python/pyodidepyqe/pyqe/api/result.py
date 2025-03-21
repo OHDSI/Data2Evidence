@@ -26,7 +26,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             filter: request generated using :py:class:`Query <pyqe.api.query.Query>`
         """
         params = {
-            'mriquery': self._encode_query_string(filter).decode('ascii')
+            'mriquery': self._encode_query_string(filter),
+            'datasetId' : os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
         
         response = await self._get('/analytics-svc/api/services/population/json/patientcount', params)
@@ -58,9 +59,10 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             }
         else:
             params = {
-                'mriquery': self._encode_query_string(cohort).decode('ascii')
+                'mriquery': self._encode_query_string(cohort)
             }
-        print(type(self._encode_query_string(cohort).decode('ascii')))
+        params["datasetId"] = os.environ["PYQE_STUDY_ENTITY_VALUE"]
+        print(type(self._encode_query_string(cohort)))
         response = await self._get('/analytics-svc/api/services/patient', params)
         return await response.json()
     #### DEAL WITH STREAMS LATER ##########################
@@ -181,17 +183,19 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
         """
         if dataFormat.upper() == "PARQUET":
             params = {
-                'mriquery': self._encode_query_string(cohort).decode('ascii'),
+                'mriquery': self._encode_query_string(cohort),
                 'dataFormat': "PARQUET",
                 'cohortId':  str(cohortId),
-                'returnOnlyPatientCount': 'False'
+                'returnOnlyPatientCount': 'False',
                 }
         else:
             params = {
-                'mriquery': self._encode_query_string(cohort).decode('ascii'),
+                'mriquery': self._encode_query_string(cohort),
                 'cohortId': str(cohortId),
                 'returnOnlyPatientCount': 'False'
             }
+
+            params["datasetId"] = os.environ["PYQE_STUDY_ENTITY_VALUE"]
         result = await self._get('/analytics-svc/api/services/datastream/patient', params)
         return await result.string()
     
@@ -202,9 +206,10 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             cohort: request generated using :py:class:`Query <pyqe.api.query.Query>`
         """
         params = {
-                'mriquery': self._encode_query_string(cohort).decode('ascii'),
-                'cohortId':  str(cohortId),
-                'returnOnlyPatientCount': 'True'
+                    'mriquery': self._encode_query_string(cohort),
+                    'cohortId':  str(cohortId),
+                    'returnOnlyPatientCount': 'True',
+                    'datasetId': os.environ["PYQE_STUDY_ENTITY_VALUE"]
                 }
         result = await self._get('/analytics-svc/api/services/datastream/patient', params)
         return await result.string()
@@ -217,7 +222,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             filename: name of the file to be created
         """
         params = {
-            'mriquery': self._encode_query_string(cohort)
+            'mriquery': self._encode_query_string(cohort),
+            'datasetId': os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
 
         response = self._get('/analytics-svc/api/services/recontact/patient', params)

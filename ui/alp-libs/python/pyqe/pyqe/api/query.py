@@ -64,6 +64,7 @@ class Query(_AuthApi):
         else:
             self._study_name = selected_study['studyDetail']['name']
             self._selectedStudyId = selected_study['id']
+            os.environ["PYQE_STUDY_ENTITY_VALUE"] = selected_study['id']
             self.set_study_config()
 
     def set_study_config(self):

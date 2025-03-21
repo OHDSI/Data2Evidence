@@ -23,7 +23,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             filter: request generated using :py:class:`Query <pyqe.api.query.Query>`
         """
         params = {
-            'mriquery': self._encode_query_string(filter)
+            'mriquery': self._encode_query_string(filter),
+            'datasetId' : os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
 
         response = self._get('/analytics-svc/api/services/population/json/patientcount', params)
@@ -48,7 +49,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
 
     def get_patient(self, cohort: dict) -> dict:
         params = {
-            'mriquery': self._encode_query_string(cohort)
+            'mriquery': self._encode_query_string(cohort),
+            'datasetId' : os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
         response = self._get('/analytics-svc/api/services/patient', params)
         return response.json()
@@ -61,7 +63,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
         """
 
         params = {
-            'mriquery': self._encode_query_string(cohort)
+            'mriquery': self._encode_query_string(cohort),
+            'datasetId' : os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
 
         return self._get_stream('/analytics-svc/api/services/datastream/patient', params)
@@ -185,7 +188,7 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
                 'cohortId': cohortId,
                 'returnOnlyPatientCount': getOnlyPatientCount
             }
-
+        params["datasetId"] = os.environ["PYQE_STUDY_ENTITY_VALUE"]
         return self._get_stream('/analytics-svc/api/services/datastream/patient', params)
 
     def get_recontact_info(self, cohort: dict, filename: str):
@@ -196,7 +199,8 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             filename: name of the file to be created
         """
         params = {
-            'mriquery': self._encode_query_string(cohort)
+            'mriquery': self._encode_query_string(cohort),
+            'datasetId' : os.environ["PYQE_STUDY_ENTITY_VALUE"]
         }
 
         response = self._get('/analytics-svc/api/services/recontact/patient', params)

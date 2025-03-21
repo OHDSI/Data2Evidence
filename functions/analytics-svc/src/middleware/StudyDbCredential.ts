@@ -150,6 +150,6 @@ export default async (req: IMRIRequest, res, next) => {
     } catch (err) {
         log.enrichErrorWithRequestCorrelationID(err, req);
         log.error(err);
-        res.status(500);
+        next(err);
     }
 };

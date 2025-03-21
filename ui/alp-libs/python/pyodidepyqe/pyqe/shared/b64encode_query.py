@@ -1,7 +1,7 @@
 import json
 import base64
 import zlib
-from urllib.parse import unquote
+from urllib.parse import unquote, quote_from_bytes
 import logging
 from pyqe.shared import decorator
 from pyqe.setup import setup_simple_console_log
@@ -21,10 +21,8 @@ class _EncodeQueryStringMixin():
 
     def _encode_query_string(self, data):
         print(type(data))
-        return base64.urlsafe_b64encode(self._pako_deflate(json.dumps(data)))
+        return quote_from_bytes(base64.b64encode(self._pako_deflate(json.dumps(data))))
         
-        #b64encode(self._pako_deflate(json.dumps(data)))
-
     def _pako_deflate(self, data):
         compress = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 15,
                                     memLevel=8, strategy=zlib.Z_DEFAULT_STRATEGY)

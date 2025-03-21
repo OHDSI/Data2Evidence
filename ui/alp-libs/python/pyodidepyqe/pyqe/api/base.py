@@ -113,9 +113,6 @@ class _AuthApi(_StarboardApi):
 
     def _load_environment_variables(self) -> None:
         super()._load_environment_variables()
-        self._default_username: Optional[str] = None
-        self._default_username = os.getenv('PYQE_USERNAME')
-        self._default_password: Optional[str] = os.getenv('PYQE_PASSWORD')
         self._default_auth_type: Optional[str] = os.getenv('PYQE_AUTH_TYPE')
         self._auth_audience: Optional[str] = os.getenv('PYQE_JWT_AUDIENCE')
         self._auth_algorithms: list = []

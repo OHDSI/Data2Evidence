@@ -43,7 +43,7 @@ from pyqe import *
 query = Query('All_Patients_Dataframe_Query')
 
 # Create download cohort request
-request = query.get_dataframe_cohort()
+request = await query.get_dataframe_cohort()
 
 # Download dataframe with request
 patient_dataframe = Result().download_dataframe(request)
