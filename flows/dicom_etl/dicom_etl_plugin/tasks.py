@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 @task(log_prints=True)
-def ingest_eav_table(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFrame,
-                     image_feature_df: pd.DataFrame, dbdao: DBDao):
+def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFrame,
+               image_feature_df: pd.DataFrame, dbdao: DBDao):
     table_name = "dicom_file_metadata"
     logger = get_run_logger()
     eav_table_id = dbdao.get_next_record_id(table_name, "metadata_id")
