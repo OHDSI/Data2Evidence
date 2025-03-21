@@ -22,5 +22,5 @@ numpy==2.0.0
 orthanc-api-client==0.15.3
 pydicom==2.4.4
 pyarrow==17.0.0
-ibis-framework[duckdb, postgres]==9.5.0
+ibis-framework[duckdb, postgres]==10.0.0
 scikit-learn==1.4.2

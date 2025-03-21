@@ -13,4 +13,4 @@ orthanc-api-client==0.15.3
 pydicom==2.4.4
 pyarrow==17.0.0
 s3fs==2023.1.0
-ibis-framework[duckdb, postgres]==9.5.0
+ibis-framework[duckdb, postgres]==10.0.0
