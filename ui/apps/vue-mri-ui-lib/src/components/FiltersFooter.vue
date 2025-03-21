@@ -13,10 +13,17 @@
       <div class="d-flex justify-content-center align-items-center">
         <b-dropdown variant="link" size="sm" no-caret style="margin-left: 8px">
           <template v-slot:button-content>
-            <d4l-button 
+            <d4l-button
               v-if="!splitAddButton"
               :text="getText('MRI_PA_VB_CREATE_FILTERS')"
-              :title="this.hasExceededMaxFilterCount ? getText('MRI_PA_TOOLTIP_CREATE_FILTERS_DISABLED_DUE_TO_EXCEEDING_MAX_FILTERCARD_COUNT', this.maxFiltercardCount) : getText('MRI_PA_TOOLTIP_CREATE_FILTERS')"
+              :title="
+                this.hasExceededMaxFilterCount
+                  ? getText(
+                      'MRI_PA_TOOLTIP_CREATE_FILTERS_DISABLED_DUE_TO_EXCEEDING_MAX_FILTERCARD_COUNT',
+                      this.maxFiltercardCount
+                    )
+                  : getText('MRI_PA_TOOLTIP_CREATE_FILTERS')
+              "
               :disabled="this.hasExceededMaxFilterCount"
             />
             <d4l-button
@@ -62,7 +69,7 @@
       </div>
     </div>
 
-    <messageBox v-if="showSaveBookmark" dim="true" @close="closeSaveBookmark">
+    <messageBox v-if="showSaveBookmark" dim="true" @close="closeSaveBookmark" :busy="getBookmarksLoading">
       <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') }}</template>
       <template v-slot:body>
         <div>
@@ -118,7 +125,7 @@
           :click="saveBookmark"
           :text="getText('MRI_PA_BUTTON_SAVE')"
           :tooltip="getText('MRI_PA_BUTTON_SAVE')"
-          :disabled="this.hasExceededLength"
+          :disabled="this.hasExceededLength || getBookmarksLoading"
         ></appButton>
         <appButton
           :click="closeSaveBookmark"
@@ -185,7 +192,8 @@ export default {
   },
   mounted() {
     // Get maxFiltercardCount from config if available.
-    this.maxFiltercardCount = this.getMriFrontendConfig._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
+    this.maxFiltercardCount =
+      this.getMriFrontendConfig._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
   },
   computed: {
     ...mapGetters([
@@ -194,6 +202,7 @@ export default {
       'getText',
       'getBookmarksData',
       'getBookmarks',
+      'getBookmarksLoading',
       'getMriFrontendConfig',
       'getActiveBookmark',
       'getCurrentBookmarkHasChanges',
@@ -254,10 +263,6 @@ export default {
     },
     async saveBookmark() {
       if (this.hasChanges) {
-        await this.fireBookmarkQuery({
-          params: { cmd: 'loadAll' },
-          method: 'get',
-        })
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
         const isNewBookmark = activeBookmark.isNew || false

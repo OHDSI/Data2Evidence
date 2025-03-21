@@ -17,12 +17,14 @@ const state = {
   schemaName: '',
   activeBookmark: null,
   addNewCohort: false,
+  loading: false,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
 
 // getters
 const getters = {
+  getBookmarksLoading: modulestate => modulestate.loading,
   getBookmarks: modulestate => modulestate.bookmarks,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
@@ -222,6 +224,7 @@ const actions = {
     commit(types.SET_ADD_NEW_COHORT, { addNewCohort })
   },
   fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId }) {
+    commit(types.SET_BOOKMARKS_LOADING, { loading: true })
     if (cancel) {
       cancel()
     }
@@ -288,6 +291,9 @@ const actions = {
         } else {
           throw error
         }
+      })
+      .finally(() => {
+        commit(types.SET_BOOKMARKS_LOADING, { loading: false })
       })
   },
   setFilterSummaryVisibility({ commit }, { filterSummaryVisibility }) {
@@ -387,6 +393,9 @@ const actions = {
 const mutations = {
   [types.SET_BOOKMARKS](modulestate, { bookmarks }) {
     modulestate.bookmarks = bookmarks
+  },
+  [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
+    modulestate.loading = loading
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, { materializedCohorts, cohortDefinitions }) {
     // fallback to cohortDefinitions in interim until api changes
