@@ -143,7 +143,7 @@ jobs:
             # customize dc.yml
             yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
             yarn remote:minerva pull
-            docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME} # To handle if not present
+            docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME} # To handle if not present
 
       - name: docker compose up
         env:

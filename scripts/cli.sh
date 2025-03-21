@@ -212,7 +212,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/data2evidence/d2e-flow/base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
