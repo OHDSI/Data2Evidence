@@ -123,7 +123,6 @@ class IbisDao(SqlAlchemyDao):
             return vocab_version.iloc[0,0]
 
     def get_columns(self, table: str) -> list[str]:
-        print(f"table {table} schema {self.schema_name}")
         with self.ibis_connect() as con:
             table_obj = con.table(table, database=self.schema_name)
         return table_obj.columns
