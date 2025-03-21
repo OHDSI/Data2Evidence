@@ -241,17 +241,14 @@ export class CachedbService {
       if (!duckdbMappedResult.expansion.contains) {
         return [];
       }
-      const mappedResult = duckdbMappedResult.expansion.contains[0];
       // Result has to be mapped like this due to expected response from frontend
-      const mappedResult2 = [
-        {
-          ...mappedResult,
-          conceptCode: mappedResult.code,
-          conceptName: mappedResult.display,
-          vocabularyId: mappedResult.system,
-        },
-      ];
-      return mappedResult2;
+      const mappedResults = duckdbMappedResult.expansion.contains.map((mappedResult) => 
+              ({...mappedResult,
+              conceptCode: mappedResult.code,
+              conceptName: mappedResult.display,
+              vocabularyId: mappedResult.system})
+      );
+      return mappedResults;
     } catch (err) {
       console.error(err);
       throw err;
