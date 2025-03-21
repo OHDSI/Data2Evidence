@@ -109,6 +109,7 @@ export const i18nDefault = {
     ADD_USER_DIALOG__GENERATE: "Generate",
     ADD_USER_DIALOG__HIDE_PASSWORD: "Hide password",
     ADD_USER_DIALOG__PASSWORD: "Password",
+    ADD_USER_DIALOG__REQUIRED: "This is required",
     ADD_USER_DIALOG__SHOW_PASSWORD: "Show password",
     ADD_USER_DIALOG__USERNAME_HELPER: "Username should only contain letters, numbers, or underscore.",
     ADD_USER_DIALOG__USERNAME: "Username",
