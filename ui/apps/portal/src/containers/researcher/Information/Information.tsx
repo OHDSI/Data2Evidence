@@ -1,34 +1,34 @@
-import React, { FC, useState, useCallback, useEffect, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
-import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import Tabs from "@mui/material/Tabs";
 import {
   Button,
   Card,
+  DownloadIcon,
+  IconButton,
   Loader,
+  SubTitle,
   TableCell,
   TableRow,
-  SubTitle,
-  IconButton,
-  DownloadIcon,
   Title,
 } from "@portal/components";
-import { StudyAttribute, StudyTag, DatasetResource } from "../../../types";
-import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
-import { useDatasetResources, useDataset, useDatasetReleases } from "../../../hooks";
-import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
-import DataQualityHistory from "./DataQualityHistory/DataQualityHistory";
-import { Roles } from "../../../config";
-import { saveBlobAs } from "../../../utils";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { api } from "../../../axios/api";
-import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
+import { Roles } from "../../../config";
+import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
+import { useDataset, useDatasetReleases, useDatasetResources } from "../../../hooks";
+import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
+import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
+import { DatasetResource, StudyAttribute, StudyTag } from "../../../types";
+import { downloadFromJsonResponse } from "../../../utils/downloadResource";
+import DataQualityHistory from "./DataQualityHistory/DataQualityHistory";
 import "./Information.scss";
 
 enum Access {
@@ -96,8 +96,10 @@ export const Information: FC = () => {
     async (resource: DatasetResource) => {
       try {
         setDownloading(resource.name);
-        const blob = await api.systemPortal.downloadResource(activeDatasetId, resource.name);
-        saveBlobAs(blob, resource.name);
+        const response = await api.systemPortal.downloadResource(activeDatasetId, resource.name);
+        await downloadFromJsonResponse(response, resource.name);
+      } catch (error) {
+        console.error("Download error:", error);
       } finally {
         setDownloading(undefined);
       }

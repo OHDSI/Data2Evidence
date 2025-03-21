@@ -1,18 +1,17 @@
-import React, { ChangeEvent, FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
-import { DownloadIcon, IconButton, Loader, TableCell, TableRow, TrashIcon } from "@portal/components";
-import { Button, Dialog } from "@portal/components";
-import DatasetResourceUploadConfirmDialog from "./DatasetResourceUploadConfirmDialog/DatasetResourceUploadConfirmDialog";
-import DatasetDeleteResourceDialog from "./DatasetDeleteResourceDialog/DatasetDeleteResourceDialog";
-import { useDatasetResources, useDialogHelper } from "../../../../hooks";
-import { Study, Feedback, DatasetResource, CloseDialogType } from "../../../../types";
+import { Button, Dialog, DownloadIcon, IconButton, Loader, TableCell, TableRow, TrashIcon } from "@portal/components";
+import React, { ChangeEvent, FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
-import { saveBlobAs } from "../../../../utils";
-import "./DatasetResourcesDialog.scss";
 import { useTranslation } from "../../../../contexts";
+import { useDatasetResources, useDialogHelper } from "../../../../hooks";
+import { CloseDialogType, DatasetResource, Feedback, Study } from "../../../../types";
+import { downloadFromJsonResponse } from "../../../../utils/downloadResource";
+import DatasetDeleteResourceDialog from "./DatasetDeleteResourceDialog/DatasetDeleteResourceDialog";
+import "./DatasetResourcesDialog.scss";
+import DatasetResourceUploadConfirmDialog from "./DatasetResourceUploadConfirmDialog/DatasetResourceUploadConfirmDialog";
 
 interface DatasetResourcesDialogProps {
   study?: Study;
@@ -75,13 +74,19 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
     async (resource: DatasetResource) => {
       try {
         setDownloading(resource.name);
-        const blob = await api.systemPortal.downloadResource(datasetId, resource.name);
-        saveBlobAs(blob, resource.name);
+        const response = await api.systemPortal.downloadResource(datasetId, resource.name);
+        await downloadFromJsonResponse(response, resource.name);
+      } catch (error) {
+        console.error("File Download error:", error);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.DATASET_RESOURCES_DIALOG__ERROR),
+        });
       } finally {
         setDownloading(undefined);
       }
     },
-    [datasetId]
+    [datasetId, getText, i18nKeys]
   );
 
   const handleDeleteResource = useCallback(
