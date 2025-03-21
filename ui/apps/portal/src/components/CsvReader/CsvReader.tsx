@@ -46,10 +46,20 @@ export const CsvReader: FC<CsvReaderProps> = ({
     [onFileLoaded, onError, parseOptions, fileEncoding, getText]
   );
 
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      const files = e.dataTransfer.files;
+      const event = { target: { files } } as ChangeEvent<HTMLInputElement>;
+      handleChangeFile(event);
+    },
+    [handleChangeFile]
+  );
+
   return (
     <div className={`csv-reader ${className}`} style={style}>
       <label>File</label>
-      <div className="csv-reader__wrapper">
+      <div className="csv-reader__wrapper" onDrop={handleDrop} onDragOver={(event) => event.preventDefault()}>
         <input
           className="csv-reader__file"
           type="file"
