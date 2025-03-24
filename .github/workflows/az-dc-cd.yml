@@ -3,7 +3,7 @@ run-name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || git
 
 on:
   schedule:
-    - cron: '0 22 * * *' # UTC timing
+    - cron: "0 22 * * *" # UTC timing
 
   workflow_dispatch:
     inputs:
@@ -47,33 +47,22 @@ jobs:
         with:
           clean: false
 
-      - name: Install 1Password CLI
-        uses: 1Password/install-cli-action@v1.0.0
-
-      - name: Force cleanup containers
-        if: github.event.inputs.force-cleanup-containers
-        continue-on-error: true
-        run: docker rm -v -f $(docker ps -qa)
-
       - name: Generate dotenv
         env:
           DOTENV_FILE: .env.${{ env.ENV_TYPE }}
-          DOTENV_YML: .env.${{ env.ENV_NAME }}.yml
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OP_VAULT_NAME: ${{ secrets.OP_VAULT_NAME }}
-          OVERWRITE: true
+          ENV_YML: ${{ secrets.ENV_YML }}
         run: |
-          ./internal/scripts/get-op-ratelimit.sh
-          ACTIONS_STEP_DEBUG=false
-
-          # get env yml from 1password
-          yarn --cwd internal op:get:$ENV_TYPE
-
           # mask sensitive values
           internal/scripts/gha-mask.sh
 
-          # generate dotenv
-          yarn --cwd internal gen:env
+          echo "# ${DOTENV_FILE##*/} $ENV_NAME" > $DOTENV_FILE
+          echo "# https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> $DOTENV_FILE
+          echo "${ENV_YML}" | yq -o sh >> $DOTENV_FILE
+          source scripts/lib.sh
+          gen-tls-internal
+          set-cpu-limit
+          set-memory-limit
+          wc -l $DOTENV_FILE
 
           cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
 
@@ -81,30 +70,12 @@ jobs:
           echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
           echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Load dotenv from 1password
-        uses: 1password/load-secrets-action@v2
-        id: op-load-secret
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          REGISTRY_USERNAME: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/username"
-          REGISTRY_PASSWORD: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/password"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-      - name: 1password ratelimit end
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-        run: |
-          ./internal/scripts/get-op-ratelimit.sh
-
-      - name: Upload stats.yml artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: stats
-          retention-days: 30
-          path: |
-            ${{ github.job }}*.yml
+      - name: Force cleanup containers
+        if: github.event.inputs.force-cleanup-containers
+        continue-on-error: true
+        run: docker rm -v -f $(docker ps -qa)
 
       - shell: bash
         if: github.event_name == 'schedule'
