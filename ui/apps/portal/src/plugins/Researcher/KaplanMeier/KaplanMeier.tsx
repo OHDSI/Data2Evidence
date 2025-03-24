@@ -101,7 +101,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
     setIsLoading(true);
     const fetchData = async () => {
       try {
-        const result = await cohortMgmtClient.getCohorts();
+        const result = await cohortMgmtClient.getCohorts({ excludePatientIds: true });
         const cohortsForDataset = result.data.filter((res) => {
           try {
             const cohortSyntax = JSON.parse(res.syntax);

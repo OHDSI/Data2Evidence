@@ -6,12 +6,20 @@ const MRI_BASE_URL = "analytics-svc";
 export class CohortSurvival {
   constructor(public datasetId: string) {}
 
-  public getCohorts(offset?: number, limit?: number): Promise<{ data: CohortMapping[] }> {
+  public getCohorts({
+    offset,
+    limit,
+    excludePatientIds,
+  }: {
+    offset?: number;
+    limit?: number;
+    excludePatientIds?: boolean;
+  }): Promise<{ data: CohortMapping[] }> {
     return request({
       baseURL: MRI_BASE_URL,
       url: `/api/services/cohort`,
       method: "GET",
-      params: { datasetId: this.datasetId, offset, limit },
+      params: { datasetId: this.datasetId, offset, limit, excludePatientIds },
     });
   }
 
