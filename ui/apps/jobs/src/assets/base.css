@@ -120,3 +120,7 @@ body {
     text-decoration: none !important;
     color: var(--p-color-text-default) !important;
 }
+
+.list-header--sticky {
+  position: relative !important;
+}
