@@ -92,7 +92,6 @@ jobs:
 
           wc -l $DOTENV_FILE
 
-          echo CADDY__ALP__PUBLIC_FQDN=$(yq '.CADDY__ALP__PUBLIC_FQDN' $DOTENV_YML) | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
 
           if [[ $DOCKER_TAG_NAME = */* ]]; then
