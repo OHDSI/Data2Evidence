@@ -189,10 +189,21 @@
     overflow-x: hidden;
     overflow-y: auto;
     text-align: left;
+    display: flex;
+    flex-direction: column;
     &__break {
       opacity: 0.5;
       margin: 10px -1rem 0 -1rem;
       border-bottom: solid 1px #acaba8;
+    }
+    &__spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+    }
+    &__list {
+      flex: 1;
     }
     .bookmark-noContent {
       color: $UiDarkText;

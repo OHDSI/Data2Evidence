@@ -120,20 +120,25 @@
       </div>
       <div class="bookmark-content__break" />
 
-      <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
-        {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+      <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
+        <d4l-spinner />
       </div>
-      <div v-else style="height: calc(100% - 100px)">
-        <BookmarkItems
-          :bookmarksDisplay="bookmarksDisplay"
-          :compareCohortsSelectionList="aSelBookmarkList"
-          @onSelectBookmark="onSelectBookmark"
-          @renameBookmark="renameBookmark"
-          @deleteBookmark="deleteBookmark"
-          @addCohort="addCohort"
-          @openDataQualityDialog="openDataQualityDialog"
-          @loadBookmarkCheck="loadBookmarkCheck"
-        />
+      <div v-else>
+        <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
+          {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+        </div>
+        <div v-else class="bookmark-content__list">
+          <BookmarkItems
+            :bookmarksDisplay="bookmarksDisplay"
+            :compareCohortsSelectionList="aSelBookmarkList"
+            @onSelectBookmark="onSelectBookmark"
+            @renameBookmark="renameBookmark"
+            @deleteBookmark="deleteBookmark"
+            @addCohort="addCohort"
+            @openDataQualityDialog="openDataQualityDialog"
+            @loadBookmarkCheck="loadBookmarkCheck"
+          />
+        </div>
       </div>
     </div>
 
@@ -257,6 +262,7 @@ export default {
       'getCurrentBookmarkHasChanges',
       'getDisplayBookmarks',
       'getSelectedDataset',
+      'getBookmarksLoading',
     ]),
     enableAtlasCohortDefinition() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
@@ -272,6 +278,9 @@ export default {
     },
     hasExceededLength() {
       return this.renamedBookmark.length == this.maxLength
+    },
+    isBookmarksLoading() {
+      return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
     },
   },
   methods: {
