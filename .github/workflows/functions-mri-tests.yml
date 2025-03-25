@@ -45,8 +45,16 @@ jobs:
     # if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ubuntu-latest
     env:
+      HANASERVER: ${{ secrets.HN_DE_FQDN }} # az-hn-db/DE_FQDN"
+      HDIPORT: ${{ vars.HN_DE_PORT }} # az-hn-db/DB Port"
+      HDIPW: ${{ secrets.HN_DE_ADMIN_PASSWORD }} # az-hn-db/Admin password"
+      HDIUSER: ${{ vars.HN_DE_ADMIN_USERNAME }} # az-hn-db/Admin user"
       isTestEnv: "true"
+      TESTPORT: ${{ vars.HN_DE_PORT }} # az-hn-db/DB Port"
       TESTSCHEMA: MRI_${{github.run_id}}
+      TESTSYSTEMPW: ${{ secrets.HN_DE_ADMIN_PASSWORD }} # az-hn-db/Admin password"
+      VCAP_SERVICES: '{"mridb":[{"name":"OMOP","credentials":{"host":"${HANASERVER}","port":"${HDIPORT}","databaseName":"ALPDEV","user":"${HDIUSER}","password":"${HDIPW}","validate_certificate":false,"probeSchema":"${TESTSCHEMA}","vocabSchema":"${TESTSCHEMA}","schema":"${TESTSCHEMA}","dialect":"hana","encrypt":false,"pooling":"true"},"tags":["httptest"]}]}'
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -62,21 +70,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Load DB credentials from 1password
-        uses: 1password/load-secrets-action@v2
-        id: op-load-secret
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          HANASERVER: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/DE_FQDN"
-          HDIUSER: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin user"
-          HDIPORT: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/DB Port"
-          HDIPW: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin password"
-          TESTSYSTEMPW: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin password"
-          TESTPORT: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/DB Port"
-          VCAP_SERVICES: '{"mridb":[{"name":"OMOP","credentials":{"host":"${HANASERVER}","port":"${HDIPORT}","databaseName":"ALPDEV","user":"${HDIUSER}","password":"${HDIPW}","validate_certificate":false,"probeSchema":"${TESTSCHEMA}","vocabSchema":"${TESTSCHEMA}","schema":"${TESTSCHEMA}","dialect":"hana","encrypt":false,"pooling":"true"},"tags":["httptest"]}]}'
-
       - name: Print env vars
         run: |
           echo "TESTSCHEMA: ${TESTSCHEMA}"
@@ -89,15 +82,14 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-
-      - name: Get drivers from 1password
+      - name: Get drivers
         env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OP_VAULT_NAME: ${{ secrets.OP_VAULT_NAME }}
+          ASSET_DBCLI_TGZ_URL: ${{ secrets.ASSET_DBCLI_TGZ_URL }}
+          ASSET_NGDBC_JAR_URL: ${{ secrets.ASSET_NGDBC_JAR_URL }}
+          DRIVERS_DIR: cache/drivers
         run: |
-          yarn --cwd internal get:drivers
+          curl "$ASSET_DBCLI_TGZ_URL" -o $DRIVERS_DIR/$(echo ${ASSET_DBCLI_TGZ_URL%\?*} | awk -F/ '{print $NF}')
+          curl "$ASSET_NGDBC_JAR_URL" -o $DRIVERS_DIR/$(echo ${ASSET_NGDBC_JAR_URL%\?*} | awk -F/ '{print $NF}')
 
       - uses: actions/setup-node@v4
         with:
