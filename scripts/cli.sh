@@ -143,8 +143,7 @@ case $cmd in
         ;;
     patchdemodb)
         database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm;"
-        docker exec $database_host psql -h localhost -U postgres -c "CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
+        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
