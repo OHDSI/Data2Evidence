@@ -7,6 +7,7 @@ services:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/chat_functions:/usr/src/plugins/chat
+      - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
