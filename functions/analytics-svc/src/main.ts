@@ -91,7 +91,7 @@ const initRoutes = async (app: express.Application) => {
         //     )}`
         // );
         const hasExpiredStudiesDbMetadataCache = (studiesDb): boolean => {
-            if (!studiesDb) {
+            if (!studiesDb?.studies) {
                 return true;
             }
             const timeToLiveInMilliseconds: number =
@@ -122,9 +122,9 @@ const initRoutes = async (app: express.Application) => {
                             // Get Analytics Credential for study based on selected study
                             const timestamp = (new Date()).valueOf();
                             console.time(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
-                            studies = await new PortalServerAPI().getStudies(
-                                req.headers.authorization
-                            );
+                            const portalServerAPI = new PortalServerAPI();
+                            const accessToken = await portalServerAPI.getClientCredentialsToken();
+                            studies = await portalServerAPI.getStudies(accessToken);
                             console.timeEnd(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
                             studiesDbMetadata = {
                                 studies,

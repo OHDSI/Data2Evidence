@@ -122,12 +122,14 @@ export class DatasetQueryService {
       if (!isResearcher) {
         acc.push(datasetDto)
       } else if (!hasFilterParams) {
-        acc.push({ dataModel: formattedDataModel, ...rest })
+        acc.push({ dataModel: formattedDataModel, databaseCode, schemaName, ...rest })
       } else if (databaseCode && Object.keys(dbFilterResults).length > 0) {
         const filterResults = dbFilterResults[databaseCode]
         if (filterResults && filterResults[schemaName] && filterResults[schemaName].isMatched) {
           acc.push({
             ...rest,
+            databaseCode,
+            schemaName,
             totalSubjects: filterResults[schemaName].totalSubjects,
             dataModel: formattedDataModel
           })
