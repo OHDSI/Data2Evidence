@@ -29,7 +29,7 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/import.json",
           "env": "alp-dataflow-gen-init",
-          "waitfor": "http://alp-dataflow-gen-1:41120/api/health"
+          "waitfor": "http://dataflow-gen-1:41120/api/health"
         },
         {
           "function": "/files-manager/src/init",
