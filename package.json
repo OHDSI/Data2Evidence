@@ -1,6 +1,6 @@
 {
   "name": "@data2evidence/cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Data2Evidence Installer",
   "license": "Apache-2.0",
   "bin": {
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "gen:dotenv": "npm run init",
-    "init": "ENV_TYPE=remote npx d2e -n .env.local init",
+    "init": "ENV_TYPE=remote npx d2e -n .env.remote init",
     "init:minerva": "PROJECT_NAME=alp ENV_TYPE=local npx d2e -n .env.local init",
     "start": "ENV_TYPE=remote npx d2e -e -n .env.remote -p 3000 start",
     "start:ci": "DOCKER_TREX_TAG_NAME=develop npm run start:minerva",

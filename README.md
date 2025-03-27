@@ -51,9 +51,14 @@ d2e init
 ```
 
 Start the Data2Evidence services by running:
-```bash
-d2e -e start
-```
+- For stable release
+	```bash
+	d2e -e start -v 0.6.0
+	```
+- For latest build / unstable
+	```bash
+	d2e -e start
+	```
 
 Create and load demo dataset by running:
 ```bash

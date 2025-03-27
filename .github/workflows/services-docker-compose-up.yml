@@ -27,30 +27,14 @@ jobs:
     runs-on: ubuntu-latest # Custom runner 4 cpus & 14gb ram
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     steps:
-      # - name: Free Disk Space (Ubuntu)
-      #   uses: jlumbroso/free-disk-space@main
-      #   with:
-      #     # this might remove tools that are actually needed,
-      #     # if set to "true" but frees about 6 GB
-      #     tool-cache: false
-
-      #     # all of these default to true, but feel free to set to
-      #     # "false" if necessary for your workflow
-      #     android: true
-      #     dotnet: true
-      #     haskell: true
-      #     large-packages: false
-      #     docker-images: true
-      #     swap-storage: true
 
       - uses: actions/checkout@v4
 
       - name: Generate dotenv
         run: |
           # generate dotenv
-          npm run init
-          echo "TREX_PULL_POLICY=always" >> .env
-
+          npm run init:minerva
+          echo "TREX_PULL_POLICY=always" >> .env.local
 
       - name: Docker compose build
         run: |

@@ -75,11 +75,15 @@ if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
+  export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
+  export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $dev $compose $args"
