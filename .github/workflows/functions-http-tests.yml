@@ -8,16 +8,11 @@ on:
       - develop
   workflow_dispatch:
 
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  ENV_NAME: local
-  ENV_TYPE: local
-  D2E_RESOURCE_LIMIT: 1 # Use all the resources for GHA
-
 # Run only one job per branch
 concurrency:
   group: ${{ github.head_ref || github.ref_name }}-http-tests # Run the latest push
   cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
+
 jobs:
   check_file_changes:
     runs-on: ubuntu-latest
@@ -50,41 +45,25 @@ jobs:
   run-http-tests:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-latest
+    runs-on:
+      ["${{ vars.ENVIRONMENT_NAME_HTTP_TESTS }}", self-hosted, Linux, X64]
     timeout-minutes: 60
     env:
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
       DOCKER_TAG_NAME: "local"
+      HANASERVER: ${{ secrets.HN_SG_FQDN }} # az-hn-db/SG_FQDN
+      HDIPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
+      HDIPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
+      HDIUSER: ${{ vars.HN_SG_ADMIN_USERNAME }} # az-hn-db/Admin user
+      TESTPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
+      TESTSYSTEMPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
+
     steps:
       - uses: actions/checkout@v4
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: false
-
-      - name: Load dotenv from 1password
-        uses: 1password/load-secrets-action@v2
-        id: op-load-secret
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DOCKER_COMPOSE_DN_BASE_ALL_ENV: op://${{ secrets.OP_VAULT_NAME }}/.env.base-all.yml/notesPlain
-          DOCKER_COMPOSE_DN_BASE_LOCAL_ENV: op://${{ secrets.OP_VAULT_NAME }}/.env.base-local.yml/notesPlain
-          HANASERVER: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/SG_FQDN"
-          HDIUSER: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin user"
-          HDIPORT: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/DB Port"
-          HDIPW: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin password"
-          TESTSYSTEMPW: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/Admin password"
-          TESTPORT: "op://${{ secrets.OP_VAULT_NAME }}/az-hn-db/DB Port"
-          REGISTRY_USERNAME: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/username"
-          REGISTRY_PASSWORD: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/password"
+          clean: false
 
       - name: Print env vars
         run: |
@@ -97,15 +76,14 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
 
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-
-      - name: Get drivers from 1password
+      - name: Get drivers
         env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OP_VAULT_NAME: ${{ secrets.OP_VAULT_NAME }}
+          ASSET_DBCLI_TGZ_URL: ${{ secrets.ASSET_DBCLI_TGZ_URL }}
+          ASSET_NGDBC_JAR_URL: ${{ secrets.ASSET_NGDBC_JAR_URL }}
+          DRIVERS_DIR: cache/drivers
         run: |
-          yarn --cwd internal get:drivers
+          curl "$ASSET_DBCLI_TGZ_URL" -o $DRIVERS_DIR/$(echo ${ASSET_DBCLI_TGZ_URL%\?*} | awk -F/ '{print $NF}')
+          curl "$ASSET_NGDBC_JAR_URL" -o $DRIVERS_DIR/$(echo ${ASSET_NGDBC_JAR_URL%\?*} | awk -F/ '{print $NF}')
 
       - uses: actions/setup-node@v4
         with:
@@ -113,14 +91,24 @@ jobs:
 
       - name: create .env.local for docker-compose in system services
         env:
-          OP_VAULT_NAME: ${{ secrets.OP_VAULT_NAME }}
-          OVERWRITE: true
+          DOTENV_FILE: .env.local
+          DOTENV_LOCAL_YML: ${{ secrets.DOTENV_LOCAL_YML }}
         run: |
-          echo "${DOCKER_COMPOSE_DN_BASE_ALL_ENV}" > .env.base-all.yml
-          echo "${DOCKER_COMPOSE_DN_BASE_LOCAL_ENV}" > .env.base-local.yml
-          wc -l .env.base-all.yml .env.base-local.yml
-          yarn --cwd internal gen:env
-          sed -i "s/CDMDEFAULT/${TESTSCHEMA}/g" .env.local
+          echo "${DOTENV_LOCAL_YML}" | yq -o sh > $DOTENV_FILE
+
+          source scripts/lib.sh
+          gen-logto-values
+          gen-tls-internal
+
+          echo D2E_MEMORY_LIMIT=5G >> $DOTENV_FILE
+          sed -i "s/CDMDEFAULT/${TESTSCHEMA}/g" $DOTENV_FILE
+          grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+
+          # HTTP tests use HANA db, hence USE_DUCKDB and USE_CACHEDB must be false
+          # due to logic in analytics service getDBConnections
+          echo "USE_DUCKDB=false" >> $DOTENV_FILE
+          echo "USE_CACHEDB=false" >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
 
       - name: Setup Test DB
         run: |
@@ -129,36 +117,17 @@ jobs:
 
       - name: Build system services
         run: |
-          grep _LIMIT .env.${ENV_TYPE}
           yarn build:minerva
 
       - name: Manipulate configuration
         run: |
           yq -i '.networks.alp.external=true' docker-compose.yml
+          # as not required for http tests omit cachedb to limit memory requirements
+          yq -i '.services.alp-cachedb.profiles = ["cachedb"]' docker-compose.yml
 
       - name: Create network for external to use
         run: |
-          docker network create alp
-
-      - name: Get and set logto values
-        env:
-          ENV_TYPE: "local"
-        run: |
-          # HTTP tests use hana db, hence USE_DUCKDB and USE_CACHEDB must be false
-          # due to logic in analytics service getDBConnections
-          echo "USE_DUCKDB=false" >>.env.local
-          echo "USE_CACHEDB=false" >>.env.local
-          echo "NODE_ENV=production" >>.env.local
-
-          # Inject Logto Apps envs
-          echo "LOGTO__ALP_APP__CLIENT_ID='GlEUkUOlpdpKgl01BrEVR'" >> .env.local
-          echo "LOGTO__ALP_APP__CLIENT_ID=GlEUkUOlpdpKgl01BrEVR" >> $GITHUB_ENV # Intentional to not surround the value with single quotes
-
-          echo "LOGTO__ALP_APP__CLIENT_SECRET='2X2hFU4BiW44odwB0OwjtJoQxtX7E5'" >> .env.local
-          echo "LOGTO__ALP_SVC__CLIENT_ID='FcvGMfGsNm8QNdt9aCRuX'" >> .env.local
-          echo "LOGTO__ALP_SVC__CLIENT_SECRET='IoJRGVHm05P8B0XRmqLozdK2U7TN1p'" >> .env.local
-          echo "LOGTO__ALP_DATA__CLIENT_ID='zUkAG2MRaNmnMTWHBzlVb'" >> .env.local
-          echo "LOGTO__ALP_DATA__CLIENT_SECRET='vgkToG2nuxzRDU7yMhAHiz5m1VZgLk'" >> .env.local
+          docker network inspect alp > /dev/null || docker network create alp
 
       - name: Start system services
         run: |
@@ -338,10 +307,6 @@ jobs:
         working-directory: ./tests/backend_integration_tests
         run: yarn test-specs --test_schema_name=$TESTSCHEMA
 
-      - name: print logs for alp-cachedb
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-cachedb -t
       - name: print logs for alp-dataflow-gen-1
         if: ${{ always() || cancelled() || failure() }}
         run: |
@@ -390,7 +355,6 @@ jobs:
       - name: Clean Docker compose
         if: always()
         run: |
-          # Clean DataNode services
-          # cd alp-data-node
           yarn clean:minerva
+          docker container prune --force
           docker network rm combined_network -f
