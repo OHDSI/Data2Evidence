@@ -30,10 +30,9 @@ Organize, store, and secure your research datasets with robust governance and st
 
 
 #### Data2Evidence Cohort Functionality
-<img src="https://github.com/data2evidence/d2e/blob/develop/internal/portal.png?raw=true" alt="D2E Portal" width="49%"/>
-<img src="https://github.com/data2evidence/d2e/blob/develop/internal/pa.png?raw=true" alt="D2E Analyze" width="49%"/>
-<img src="https://github.com/data2evidence/d2e/blob/develop/internal/atlas.png?raw=true" alt="D2E Atlas" width="49%"/>
-<img src="https://github.com/data2evidence/d2e/blob/develop/internal/notebook.png?raw=true" alt="D2E Notebook" width="49%"/>
+
+[<img src="https://github.com/data2evidence/d2e/blob/develop/internal/portal.png?raw=true" alt="D2E Portal" width="48%"/>](https://d2e.sg) [<img src="https://github.com/data2evidence/d2e/blob/develop/internal/pa.png?raw=true" alt="D2E Analyze" width="48%"/>](https://d2e.sg)
+[<img src="https://github.com/data2evidence/d2e/blob/develop/internal/atlas.png?raw=true" alt="D2E Atlas" width="48%"/>](https://d2e.sg) [<img src="https://github.com/data2evidence/d2e/blob/develop/internal/notebook.png?raw=true" alt="D2E Notebook" width="48%"/>](https://d2e.sg)
 
 You can find a video of Data2Evidence Cohort Functionality [here](https://www.youtube.com/watch?v=PxkCutzJgkI)
 
