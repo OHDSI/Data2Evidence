@@ -1,4 +1,4 @@
-# Data2Evidence
+# [<img src="./internal/d2e2.svg?raw=true" alt="Data2eEvidence" width="400px"/>](#)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/m/data2evidence/d2e?logo=github&color=lightgreen)](https://github.com/data2evidence/d2e/graphs/contributors)
 [![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=d2e%20installer&logo=npm&color=blue)](https://www.npmjs.com/package/d2e) 
 [![D2E Release](https://img.shields.io/github/v/release/data2evidence/d2e?color=blue&label=latest%20release&logo=github)](https://github.com/data2evidence/d2e/releases/latest)
@@ -22,23 +22,26 @@ Explore datasets with interactive views of the data to evaluate the utility of t
 - **Visual Cohort Creation:**  
 Easily create and manage cohorts using a visual interface without any coding knowledge.
 
-- **Integrated OHDSI Solutions:**  
+- **Integrated OHDSI Solutions:**
 OHDSI solutions like **Achilles** for descriptive analytics, **Data Quality Dashboard** for data quality analysis and **ATLAS** for cohort building are integrated in the platform.
 
 - **Efficient Data Management:**  
 Organize, store, and secure your research datasets with robust governance and streamlined access.
 
 
-#### Data2Evidence Cohort Functionality
+#### Data2Evidence Screenshots
 
-[<img src="https://github.com/data2evidence/d2e/blob/develop/internal/portal.png?raw=true" alt="D2E Portal" width="48%"/>](https://d2e.sg) [<img src="https://github.com/data2evidence/d2e/blob/develop/internal/pa.png?raw=true" alt="D2E Analyze" width="48%"/>](https://d2e.sg)
-[<img src="https://github.com/data2evidence/d2e/blob/develop/internal/atlas.png?raw=true" alt="D2E Atlas" width="48%"/>](https://d2e.sg) [<img src="https://github.com/data2evidence/d2e/blob/develop/internal/notebook.png?raw=true" alt="D2E Notebook" width="48%"/>](https://d2e.sg)
+[<img src="./internal/portal.png" alt="D2E Portal" width="48%"/>](https://d2e.sg) [<img src="./internal/pa.png" alt="D2E Analyze" width="48%"/>](https://d2e.sg)
+[<img src="./internal/atlas.png" alt="D2E Atlas" width="48%"/>](https://d2e.sg) [<img src="./internal/notebook.png" alt="D2E Notebook" width="48%"/>](https://d2e.sg)
 
 You can find a video of Data2Evidence Cohort Functionality [here](https://www.youtube.com/watch?v=PxkCutzJgkI)
 
 ### Data2Evidence Quick Start
 
 Data2Evidence requires **Docker** and **npm** to be installed. You can find more information [here](https://docs.d2e.sg)
+
+> [!IMPORTANT]  
+> On Windows [WSL/Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) is required to run D2E
 
 Install the Data2Evidence CLI by running:
 ```bash

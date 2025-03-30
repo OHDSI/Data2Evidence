@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=develop #default version
+version=0.6.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -12,6 +12,10 @@ elif [ -d "$script_full_path/../lib/node_modules/d2e/" ]; then
   node_modules_path=$script_full_path/../lib/node_modules/d2e/
 elif [ -d "$script_full_path/../d2e/" ]; then
   node_modules_path=$script_full_path/../d2e/
+elif [ -d "$script_full_path/../lib/node_modules/@ohdsi/d2e/" ]; then
+  node_modules_path=$script_full_path/../lib/node_modules/@ohdsi/d2e/
+elif [ -d "$script_full_path/../@ohdsi/d2e/" ]; then
+  node_modules_path=$script_full_path/../@ohdsi/d2e/
 elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
   node_modules_path=$script_full_path/../lib/node_modules/@data2evidence/cli/
 elif [ -d "$script_full_path/../@data2evidence/cli/" ]; then
