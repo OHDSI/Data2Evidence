@@ -18,6 +18,7 @@ on:
         required: false
         type: choice
         options:
+          - ohdsi/d2e
           - data2evidence/d2e
       GIT_BRANCH_NAME:
         default: develop
@@ -159,7 +160,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
-          tags: ghcr.io/data2evidence/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ghcr.io/ohdsi/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
