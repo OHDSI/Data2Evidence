@@ -8,6 +8,7 @@ on:
         required: false
         type: choice
         options:
+          - ohdsi/d2e
           - data2evidence/d2e
       GIT_BRANCH_NAME:
         default: develop
@@ -55,7 +56,7 @@ jobs:
         with:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
-          scope: "@data2evidence"
+          scope: "@ohdsi"
       - name: Use Node.js (prod)
         uses: actions/setup-node@v2
         if: github.event_name == 'workflow_dispatch'
