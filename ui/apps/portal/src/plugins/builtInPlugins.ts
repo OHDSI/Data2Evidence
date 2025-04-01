@@ -17,6 +17,7 @@ const moduleNames = [
   "SystemAdmin/FlowOverview",
   "SystemAdmin/ConceptMapping",
   "Starboard",
+  "JupyterLite",
   "Cohort",
   "Admin/Permissions",
   "Admin/Configuration",

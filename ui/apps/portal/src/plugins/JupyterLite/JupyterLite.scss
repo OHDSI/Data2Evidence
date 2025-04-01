@@ -1,0 +1,20 @@
+.jupyterlite {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .jupyterlite-iframe {
+    width: 100%;
+    height: 90vh;
+    border: none;
+  }
+  
+  .card {
+    padding: 0 !important;
+    overflow: visible;
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+  }
+} 
