@@ -1,0 +1,204 @@
+header.portal__header {
+  width: 100%;
+  background-color: #fbfbfd;
+  box-shadow: 0 0.5px 8px 0 #acaba8;
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+
+  .active-dataset-container {
+    margin-right: 2rem;
+
+    .select-release {
+      margin-left: 1rem;
+    }
+  }
+}
+
+.header__logo-group {
+  .logo {
+    margin-left: 2rem;
+    cursor: pointer;
+  }
+}
+
+.header__menu-group {
+  padding-right: 32px;
+
+  ul {
+    padding-left: 0;
+    margin: 0;
+
+    li {
+      display: inline-block;
+      position: relative;
+
+      > a {
+        display: inline-block;
+        padding: 28px 16px;
+      }
+
+      > p {
+        display: inline-block;
+        padding: 10px 8px;
+      }
+    }
+  }
+
+  span {
+    margin-right: -6px;
+  }
+}
+
+.header__menu-group ul {
+  li {
+    display: inline-block;
+    position: relative;
+
+    > a {
+      display: inline-block;
+      padding: 28px 16px;
+    }
+
+    > p {
+      display: inline-block;
+      padding: 10px 8px;
+    }
+
+    &.header__menu-overview {
+      svg {
+        position: relative;
+        top: 6px;
+        right: 16px;
+
+        // Avoid overwritten by Job UI css which apply on svg { display: block; vertical-align: middle; }
+        display: inline;
+        vertical-align: baseline;
+      }
+    }
+
+    &.header__menu-item--active {
+      font-weight: 500;
+
+      &:hover {
+        background-color: initial;
+
+        > a {
+          cursor: pointer;
+        }
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 8px;
+        width: 100%;
+        background-color: var(--color-primary);
+        border-radius: 10px 10px 0 0;
+      }
+    }
+
+    p::before {
+      display: block;
+      content: attr(data-text);
+      font-weight: 500;
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+    }
+  }
+
+  li:hover {
+    p,
+    a {
+      color: #3a52a8;
+    }
+
+    p {
+      cursor: default;
+    }
+
+    svg.portal_menu__chevron-down {
+      filter: brightness(0) saturate(100%) invert(28%) sepia(13%) saturate(5728%) hue-rotate(204deg) brightness(96%)
+        contrast(86%);
+    }
+  }
+}
+
+.header__menu-group a {
+  text-decoration: none;
+  color: var(--color-primary);
+}
+
+.header__menu-group .plugin-type-title {
+  cursor: default;
+}
+
+.portal__menu ul {
+  padding: 0;
+}
+
+.portal__menu-content {
+  padding: 0.2rem;
+  border-radius: 0.3rem;
+
+  li,
+  a {
+    &:hover {
+      background-color: #ebf2fa;
+      font-weight: 500;
+    }
+  }
+
+  .MuiTouchRipple-root {
+    color: transparent;
+  }
+
+  span::before {
+    display: block;
+    content: attr(data-text);
+    font-weight: 500;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .MuiListItem-root.Mui-selected {
+    background-color: #ebf2fa;
+    font-weight: 500;
+  }
+}
+
+.study_overview___tenant {
+  font-size: 14px;
+  color: var(--color-neutral);
+  margin: 12px 12px 4px 12px;
+}
+
+.portal__menu-item {
+  min-width: 80px;
+  color: #001579;
+  display: flex;
+  flex-wrap: nowrap;
+
+  img {
+    position: absolute;
+    left: 0.3em;
+    top: 0.7em;
+    height: 16px;
+    width: 16px;
+  }
+
+  &__is-active {
+    font-weight: 500;
+  }
+}
+
+// Hover menu settings
+.MuiMenu-paper {
+  pointer-events: auto;
+}

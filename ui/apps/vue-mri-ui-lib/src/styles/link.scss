@@ -1,0 +1,10 @@
+@import './mri-variables';
+.app-link {
+  color: $LinkText;
+  text-decoration-line: none;
+  cursor: pointer;
+}
+
+.app-link:hover {
+  text-decoration: underline;
+}

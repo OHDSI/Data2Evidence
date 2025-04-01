@@ -26,3 +26,8 @@ export function groupBy(
     return acc;
   }, {});
 }
+
+export enum DB {
+  HANA = "hana",
+  POSTGRES = "postgres",
+}

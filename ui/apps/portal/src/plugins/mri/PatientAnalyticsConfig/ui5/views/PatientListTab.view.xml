@@ -1,0 +1,67 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.PatientListTab" 
+	xmlns="sap.m" 
+	xmlns:mvc="sap.ui.core.mvc" 
+	xmlns:t="sap.ui.table">
+	<List showNoData="false" 
+		items="{analyticsModel>config/filtercards}">
+		<CustomListItem>
+			<Panel expandable="true" 
+				expanded="false">
+				<headerToolbar>
+					<Toolbar active="true" 
+						press="onHeaderToolbarPress">
+						<Text text="{parts:['analyticsModel>modelName', 'analyticsModel>attributes'], formatter: '.formatter.interactionTextHeader'}"/>
+						<ToolbarSpacer />
+						<Switch state="{analyticsModel>initialPatientlistColumn}" 
+							tooltip="{i18n>MRI_PA_CFG_PATIENT_LIST_DEFAULT_INTERACTION_COLUMN_TOOLTIP}" 
+							visible="{parts:['analyticsModel>modelName'], formatter: '.formatter.hideInitialControls'}" />
+					</Toolbar>
+				</headerToolbar>
+				<Table headerText="{i18n>MRI_PA_CFG_FILTER_CARDS_ATTRIBUTES_TITEL}" 
+					items="{analyticsModel>attributes}">
+					<columns>
+						<Column>
+							<Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_NAME_COL}" 
+								tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_NAME_COL}" />
+						</Column>
+						<Column hAlign="Center">
+							<VBox>
+								<Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_COL}" 
+									tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_COL}" />
+								<Switch state="false" 
+									change="onAllVisiblePressed" />
+							</VBox>
+						</Column>
+						<Column hAlign="Center">
+							<VBox>
+								<Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_INITIAL_COL}" 
+									tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_INITIAL_IN_LIST_TOOLTIP}" />
+								<CheckBox selected="false" 
+									select="onAllInitialPressed" />
+							</VBox>
+						</Column>
+						<Column hAlign="Center">
+							<VBox>
+								<Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_LINK_COL}" 
+									tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_LINK_COL_IN_LIST_TOOLTIP}" />
+								<CheckBox selected="false" 
+									select="onAllLinkPressed" />
+							</VBox>
+						</Column>
+					</columns>
+					<ColumnListItem vAlign="Middle">
+						<Text text="{analyticsModel>modelName}" />
+						<Switch state="{analyticsModel>patientlist/visible}" 
+							change="onVisibleChanged" 
+							tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_IN_LIST_TOOLTIP}" />
+						<CheckBox selected="{analyticsModel>patientlist/initial}" 
+							select="onInitialSelected" 
+							enabled="{analyticsModel>patientlist/visible}" />
+						<CheckBox selected="{analyticsModel>patientlist/linkColumn}" />
+					</ColumnListItem>
+				</Table>
+			</Panel>
+		</CustomListItem>
+	</List>
+
+</mvc:View>

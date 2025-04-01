@@ -1,0 +1,118 @@
+.account {
+  height: 100%;
+
+  .account__container {
+    height: 100%;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .account__content {
+    display: flex;
+    flex: 1 1 0;
+    justify-content: space-between;
+
+    &_account {
+      margin-right: 2rem;
+      width: 350px;
+
+      &_details {
+        display: flex;
+        flex-direction: column;
+        margin: 1.5rem 1.5rem;
+
+        div {
+          display: flex;
+          flex-direction: column;
+        }
+        div:nth-child(-n + 1) {
+          margin-bottom: 1.5rem;
+        }
+      }
+    }
+
+    &_actions {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    &_legal {
+      display: flex;
+      flex: 1 1 0;
+    }
+  }
+
+  .alp-card {
+    flex: 1;
+
+    &__header {
+      justify-content: center;
+    }
+  }
+
+  .tab__content {
+    flex: 1 1;
+    flex-basis: 0;
+    overflow: auto;
+
+    &__container {
+      margin: 1.5rem 2.5rem;
+
+      .page-header {
+        font-size: 24px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        margin-bottom: 24px;
+      }
+
+      .sub-header {
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 0.27px;
+      }
+
+      .content {
+        font-size: 16px;
+        line-height: 1.5;
+        letter-spacing: 0.27px;
+        white-space: pre-line;
+
+        a {
+          color: var(--color-neutral);
+        }
+      }
+
+      .margin-small {
+        margin-bottom: 16px;
+      }
+
+      .margin-medium {
+        margin-bottom: 24px;
+      }
+
+      .margin-large {
+        margin-bottom: 32px;
+      }
+
+      .strong {
+        font-weight: bold;
+      }
+    }
+
+    &__title {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-primary);
+    }
+
+    &__info {
+      width: 70%;
+    }
+  }
+}

@@ -1,10 +1,7 @@
 import crypto from "crypto";
-import PGUserDAO from "./dao/PGUserDAO.js";
-import PGDBDAO from "./dao/PGDBDAO.js";
-import * as config from "./utils/config.js";
-//import { Client } from "pg";
-
-//require("dotenv");
+import PGUserDAO from "./dao/PGUserDAO";
+import PGDBDAO from "./dao/PGDBDAO";
+import * as config from "./utils/config";
 
 type pgUsers = {
   reader: string;
@@ -13,6 +10,8 @@ type pgUsers = {
   writerPassword: string;
   manager: string;
   managerPassword: string;
+  logtoManager?: string;
+  logtoManagerPassword?: string;
 };
 
 export class App {
@@ -44,7 +43,7 @@ export class App {
     if (!user) {
       throw new Error("Invalid User configured!");
     }
-    return user.split("@")[0]; //To handle Azure postgres scenario
+    return user;
   }
 
   getSchemaName(schema: string): string {
@@ -74,6 +73,42 @@ export class App {
     return name.toLowerCase();
   }
 
+  async grantRolesToUsers() {
+    let client;
+    const postgres_roles_users =
+      config.getProperties()["postgres_manage_grant_roles_users"];
+
+    if (postgres_roles_users && Object.keys(postgres_roles_users).length > 0) {
+      try {
+        const pg_superuser = {
+          user: config.getProperties()["postgres_superuser"],
+          password: config.getProperties()["postgres_superuser_password"],
+        };
+
+        //Switch to super user connection
+        const pg_superuser_config = Object.assign(
+          JSON.parse(
+            JSON.stringify(config.getProperties()["postgres_connection_config"])
+          ),
+          pg_superuser
+        );
+        const client = await this.dbDao.openConnection(pg_superuser_config);
+
+        //Grant role to user
+        for (const role in postgres_roles_users) {
+          for (const user of postgres_roles_users[role]) {
+            await this.userDao.grantRoleToUser(client, role, user);
+          }
+        }
+        await this.dbDao.closeConnection(client);
+      } catch (e: any) {
+        this.logger.error(e.message);
+        await this.dbDao.closeConnection(client);
+        throw e;
+      }
+    }
+  }
+
   async createUsers(databaseName: string) {
     let client;
     try {
@@ -82,7 +117,7 @@ export class App {
         password: config.getProperties()["postgres_superuser_password"],
       };
 
-      //Switch to super user connection only for database creation
+      //Switch to super user connection
       const pg_superuser_config = Object.assign(
         JSON.parse(
           JSON.stringify(config.getProperties()["postgres_connection_config"])
@@ -124,6 +159,17 @@ export class App {
         "Manager"
       );
 
+      if (
+        pgUsers.logtoManager !== undefined &&
+        pgUsers.logtoManagerPassword !== undefined
+      ) {
+        await this.userDao.createUserWithCreateRolePrivilege(
+          client,
+          pgUsers.logtoManager,
+          pgUsers.logtoManagerPassword
+        );
+      }
+
       await this.dbDao.closeConnection(client);
     } catch (e: any) {
       this.logger.error(e.message);
@@ -150,10 +196,9 @@ export class App {
         this.logger.info(
           `${databaseName} Database Already exists! Skipping the rest of the operations such as create users`
         );
-        return false;
+      } else {
+        await this.dbDao.createDatabase(client, databaseName);
       }
-
-      await this.dbDao.createDatabase(client, databaseName);
 
       const pg_owneruserWithoutAtSuffix = this.getUserName(
         pg_owneruser_config.user
@@ -237,9 +282,7 @@ export class App {
 
         //Reattempt, due to the old databases created by SRE. Manager User is the owner instead of alp_owner
         const pg_manage_user = {
-          user: pg_owneruser_config.host.includes("azure")
-            ? `${pgUsers.manager}@${pg_owneruser_config.host.split(".")[0]}`
-            : pgUsers.manager, //cater to azure pg db
+          user: pgUsers.manager,
           password: pgUsers.managerPassword,
         };
         const pg_manageruser_config: any = {
@@ -259,8 +302,22 @@ export class App {
       await this.userDao.grantManagePrivilegesForSchema(
         client,
         schemaName,
-        pgUsers.manager
+        pgUsers.manager,
+        false
       );
+
+      if (
+        pgUsers.logtoManager !== undefined &&
+        pgUsers.logtoManagerPassword !== undefined
+      ) {
+        await this.userDao.grantManagePrivilegesForSchema(
+          client,
+          schemaName,
+          pgUsers.logtoManager,
+          true
+        );
+      }
+
       await this.userDao.grantUsageSchemaPrivileges(
         client,
         schemaName,
@@ -284,15 +341,83 @@ export class App {
     }
   }
 
+  async alterTableReplica(databaseName: string, schemaName: string) {
+    let client;
+
+    try {
+      //Switch to super user connection only for database creation
+      const pg_owneruser_config =
+        config.getProperties()["postgres_connection_config"];
+      //Connect with existing database and itsowner user
+      let client = await this.dbDao.openConnection({
+        ...pg_owneruser_config,
+        database: databaseName,
+      });
+
+      const tablesWithNoPK = await this.dbDao.getTablesWithNoPK(
+        client,
+        schemaName
+      );
+
+      for (const table of tablesWithNoPK) {
+        await this.dbDao.alterReplicaIdentity(client, table);
+      }
+      this.logger.info(
+        `Successfully altered table replica identity to full for tables with no primary key in ${schemaName} schema!`
+      );
+    } catch (e: any) {
+      this.logger.error(e.message);
+      await this.dbDao.closeConnection(client);
+      return false;
+    }
+  }
+
+  async createPublication(
+    databaseName: string,
+    schemaName: string,
+    publicationName: string
+  ) {
+    let client;
+
+    try {
+      //Switch to super user connection only for database creation
+      const pg_owneruser_config =
+        config.getProperties()["postgres_connection_config"];
+      //Connect with existing database and itsowner user
+      let client = await this.dbDao.openConnection({
+        ...pg_owneruser_config,
+        database: databaseName,
+      });
+
+      const ifPublicationExists = await this.dbDao.verifyIfPublicationExists(
+        client,
+        publicationName
+      );
+
+      if (ifPublicationExists) {
+        this.logger.info(`${publicationName} publication already exists!`);
+      } else {
+        await this.dbDao.createPublication(
+          client,
+          databaseName,
+          schemaName,
+          publicationName
+        );
+      }
+    } catch (e: any) {
+      this.logger.error(e.message);
+      await this.dbDao.closeConnection(client);
+      return false;
+    }
+  }
+
   async grantReadWritePrivileges(databaseName: string, schemaName: string) {
     let client;
     try {
       const pgUsers: pgUsers = this.getPGUsers(databaseName);
       const pg_config = config.getProperties()["postgres_connection_config"];
       const pg_manage_user = {
-        user: pg_config.host.includes("azure")
-          ? `${pgUsers.manager}@${pg_config.host.split(".")[0]}`
-          : pgUsers.manager, //cater to azure pg db
+        user: pgUsers.manager,
         password: pgUsers.managerPassword,
       };
       //Switch to super user connection only for database creation
@@ -354,11 +479,24 @@ export class App {
       if (database.startsWith("+")) {
         //+ indicating creation scenarios
         const databaseName = this.getDatabaseName(database);
+        const pgUsers = this.getPGUsers(databaseName);
+
         await this.createDatabase(databaseName);
         await this.grantCreatePrivilegesForDatabase(
           databaseName,
-          this.getPGUsers(databaseName).manager
+          pgUsers.manager
         );
+
+        if (
+          pgUsers.logtoManager !== undefined &&
+          pgUsers.logtoManagerPassword !== undefined
+        ) {
+          await this.grantCreatePrivilegesForDatabase(
+            databaseName,
+            pgUsers.logtoManager
+          );
+        }
+
         const schemas = databases[database]["schemas"];
         for (let schema of Object.keys(schemas)) {
           if (schema.startsWith("+")) {
@@ -370,6 +508,29 @@ export class App {
         // Creat required table for supabase storage
         await this.createStorageTables(databaseName);
       }
+
+      // create publication if database in POSTGRES_PUBLICATION_CONFIG
+      // const pg_publication_config =
+      //   config.getProperties()["postgres_publication_config"];
+      // const databaseName = this.getDatabaseName(database);
+      // const dbPublications =
+      //   pg_publication_config["databases"][`+${databaseName}`];
+
+      // if (dbPublications !== undefined) {
+      //   for (let publicationConig of Object.keys(dbPublications)) {
+      //     if (publicationConig.startsWith("+")) {
+      //       //+ indicating creation scenarios
+      //       const { schema, publication } = dbPublications[publicationConig];
+      //       await this.createPublication(databaseName, schema, publication);
+      //       this.logger.info("Altering table replicas...");
+      //       await this.alterTableReplica(databaseName, schema);
+      //     }
+      //   }
+      // } else {
+      //   this.logger.info(
+      //     `No publication to create for database ${databaseName}`
+      //   );
+      // }
     }
     this.logger.info("Postgres Automation tasks completed.");
     process.exit(0);

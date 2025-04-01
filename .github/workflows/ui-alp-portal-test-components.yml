@@ -1,0 +1,42 @@
+name: d2e-ui/portal components tests
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  push:
+    branches:
+      - develop
+
+jobs:
+  test-alp-portal-components:
+    defaults:
+      run:
+        working-directory: ./ui
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - uses: dorny/paths-filter@v3
+      id: check_file_changed
+      with:
+        filters: |
+          portal_components_changed:
+            - 'libs/portal-components/**'
+
+    - name: Setup node if files have changed
+      uses: actions/setup-node@v4
+      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
+      with:
+        node-version: '18.14.0'
+
+    # Run the step only with "portal_components_changed" equals "True"
+    - name: Run unit tests if files have changed
+      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
+      run: |
+        cd libs/portal-components
+        yarn --prefer-offline
+        yarn svgr
+        yarn test

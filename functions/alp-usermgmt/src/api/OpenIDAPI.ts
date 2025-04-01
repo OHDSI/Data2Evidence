@@ -25,9 +25,9 @@ export class OpenIDAPI {
   constructor({ issuerUrl }: IClientMetadata) {
     this.issuerUrl = issuerUrl.endsWith('/') ? issuerUrl : `${issuerUrl}/`
 
-    this.httpsAgent = new https.Agent({
-      rejectUnauthorized: this.issuerUrl.startsWith('https://alp-logto-') ? false : true
-    })
+    // this.httpsAgent = new https.Agent({
+    //   rejectUnauthorized: this.issuerUrl.startsWith('https://alp-logto-') ? false : true
+    // })
   }
 
   async getClientCredentialsToken({ clientId, clientSecret, scope, resource }: IClientCredentials) {
@@ -46,7 +46,7 @@ export class OpenIDAPI {
     let result: AxiosResponse<ITokenResponse> | undefined
     try {
       result = await post<ITokenResponse>(`${this.issuerUrl}token`, body, {
-        httpsAgent: this.httpsAgent,
+        // httpsAgent: this.httpsAgent,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }

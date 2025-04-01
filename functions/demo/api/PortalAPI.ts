@@ -30,7 +30,7 @@ export class PortalAPI {
   async getDatasets(): Promise<IDataset[]> {
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/dataset/list?role=systemAdmin`;
+      const url = `${this.baseURL}/dataset/list/systemadmin`;
       const result = await get(url, options);
       return result.data;
     } catch (error) {

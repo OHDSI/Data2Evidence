@@ -126,13 +126,13 @@ export interface BookmarkDto {
   shared: boolean
 }
 
-export interface IcohortDefinition {
+export interface IMaterializedCohort {
   id: number
-  patientIds: number[]
   name: string
   description: string
   creationTimestamp: string
   syntax: string
+  patientCount: number
 }
 
 export interface IFormattedBookmark {
@@ -146,15 +146,39 @@ export interface IFormattedBookmark {
   shared: boolean
   cohortDefinitionId?: number | undefined
 }
-export interface IFormattedcohortDefinition {
+export interface IFormattedMaterializedCohort {
   id: number
   patientCount: number
   cohortDefinitionName: string
   createdOn: string
 }
 
+export interface IAtlasCohortDefinition {
+  id: number
+  name: string
+  description: string | null
+  expressionType: string
+  expression: unknown
+  createdBy: string
+  createdDate: number
+  modifiedBy: string
+  modifiedDate: number
+  tags: string[]
+  materializedCohortDefinitionIds: number[]
+}
+
+export interface IFormattedAtlasCohortDefinition {
+  id: number
+  name: string
+  username: string
+  createdOn: string
+  updatedOn: string
+  cohortDefinitionId?: number | undefined
+}
+
 export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
-  cohortDefinitions: IFormattedcohortDefinition[]
+  materializedCohorts: IFormattedMaterializedCohort[]
+  atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
 }

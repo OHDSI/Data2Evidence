@@ -23,12 +23,22 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
   private dataSource: DataSource;
 
   constructor() {
+
+    let ssl = JSON.parse(this._env.PG__SSL.toLowerCase());
+    if (this._env.PG__CA_ROOT_CERT) {
+      ssl = {
+        rejectUnauthorized: true,
+        ca: this._env.PG__CA_ROOT_CERT,
+      };
+    }
+
     this.client = new Client({
       user: this._env.PG_USER,
       password: this._env.PG_PASSWORD,
       database: this._env.PG__DB_NAME,
       hostname: this._env.PG_HOST,
       schema: this._env.PG_SCHEMA,
+      ssl
     });
 
     this.dataSource = new DataSource({
@@ -39,6 +49,7 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
       password: this._env.PG_PASSWORD,
       database: this._env.PG__DB_NAME,
       schema: this._env.PG_SCHEMA,
+      ssl,
       entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook],
     });
   }

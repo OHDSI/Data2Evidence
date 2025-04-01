@@ -11,11 +11,18 @@ import { DataTransformationController } from "./src/controllers/DataTransformati
 import { PrefectController } from "./src/controllers/PrefectController.ts";
 import { AnalysisController } from "./src/controllers/AnalysisController.ts";
 import { CachedbController } from "./src/controllers/CachedbController.ts";
+import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
+import { PerseusController } from "./src/controllers/PerseusController.ts";
+import extractUsernameFromJwt from "./src/middlewares/extractUsernameFromJwt.ts";
 
 const app = express();
 const env = Deno.env.toObject();
 
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 app.use(express.json());
+app.use(extractUsernameFromJwt);
 app.use("/jobplugins/dqd/data-quality", new DqdController().router);
 app.use("/jobplugins/cohort", new CohortController().router);
 app.use("/jobplugins/cohort-survival", new CohortSurvivalController().router);
@@ -29,6 +36,16 @@ app.use("/dataflow-mgmt/dataflow", new DataTransformationController().router);
 app.use("/dataflow-mgmt/prefect", new PrefectController().router);
 app.use("/dataflow-mgmt/analysisflow", new AnalysisController().router);
 app.use("/jobplugins/cachedb", new CachedbController().router);
+app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
+app.use("/jobplugins/perseus", new PerseusController().router);
+
+let ssl = JSON.parse(env.PG__SSL.toLowerCase());
+if (env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: env.PG__CA_ROOT_CERT,
+  };
+}
 
 const opt = {
   user: env.PG_USER,
@@ -36,6 +53,7 @@ const opt = {
   host: env.PG__HOST,
   port: parseInt(env.PG__PORT),
   database: env.PG__DB_NAME,
+  ssl,
 };
 const pgclient = new pg.Client(opt);
 await pgclient.connect();

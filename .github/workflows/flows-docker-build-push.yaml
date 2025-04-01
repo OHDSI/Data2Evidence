@@ -1,0 +1,183 @@
+name: d2e-flows Docker Build
+
+on:
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - develop
+
+  workflow_dispatch:
+    inputs:
+      GIT_REPO_FULL_NAME:
+        description: Select RepoName
+        required: false
+        type: choice
+        options:
+          - data2evidence/d2e
+      GIT_BRANCH_NAME:
+        default: develop
+        description: Enter BranchName / ReleaseTagName
+        required: true
+        type: string
+      tag:
+        description: Enter Tag name for docker image
+        required: true
+        type: string
+
+jobs:
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/**"
+              - "package.json"
+              - "docker-compose.yml"
+
+
+  bld:
+    needs: [check_file_changes]
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
+      DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
+      GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
+      GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+      DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - AZ_REG_REPOSITORY: d2e/flow-base
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-nlp
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/nlp/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-data-mapping
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/data_mapping/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-white-rabbit
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/white_rabbit/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-dicom-etl
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/dicom_etl/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-mimic-omop-conversion
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/mimic_omop_conversion/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-i2b2
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
+
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
+          submodules: recursive
+
+      - name: Setting up variables
+        id: setup
+        env:
+          DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || false }}
+        run: |
+
+          DOCKER_BUILD_PUSH_BOOL_STR=false
+          if [[ $GITHUB_EVENT_NAME == "push" ]] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ] || [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true]; then
+            DOCKER_BUILD_PUSH_BOOL_STR=true
+          fi
+
+          if [[ ${{ github.event_name }} == "workflow_dispatch" ]]; then
+            DOCKER_IMG_TAG_NAME=${{ github.event.inputs.tag }}
+          elif [[ ${{ github.event_name }} == "push" ]]; then
+            DOCKER_IMG_TAG_NAME=develop
+          else
+            DOCKER_IMG_TAG_NAME=$(echo $(git rev-parse --short HEAD))
+          fi
+
+          echo DOCKER_BUILD_PUSH_BOOL_STR=$DOCKER_BUILD_PUSH_BOOL_STR | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+          echo DOCKER_IMG_TAG_NAME=$DOCKER_IMG_TAG_NAME | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+          echo GIT_BRANCH_NAME="${GIT_BRANCH_NAME}" | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+          echo GIT_REPO_FULL_NAME="${GIT_REPO_FULL_NAME}" | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+
+          echo AZ_REG_REPOSITORY=${{ matrix.AZ_REG_REPOSITORY }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+          echo DOCKER_BUILD_CONTEXT_PATH=${{ matrix.DOCKER_BUILD_CONTEXT_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+          echo DOCKER_BUILD_FILE_PATH=${{ matrix.DOCKER_BUILD_FILE_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+
+          echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
+          echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Build and Push
+        id: build-push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
+          file: ${{ env.DOCKER_BUILD_FILE_PATH }}
+          platforms: "linux/amd64"
+          push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          tags: ghcr.io/data2evidence/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            ${{ env.DOCKER_BUILD_ARG1 }}
+
+      - name: delete-untagged-images
+        uses: actions/delete-package-versions@v5
+        if: env.GIT_BRANCH_NAME == 'develop'
+        continue-on-error: true
+        with:
+          package-name: ${{ env.AZ_REG_REPOSITORY }}
+          package-type: "container"
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: "true"
+
+  success:
+    needs: bld
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check
+        run: echo "Check"

@@ -1,0 +1,104 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.ConfigList" 
+	xmlns="sap.m" 
+	xmlns:mvc="sap.ui.core.mvc" 
+	xmlns:f="sap.ui.layout.form">
+	<List id="mriConfigList" 
+		items="{analyticsModel>configs}" 
+		noDataText="{i18n>MRI_PA_CFG_NO_CONFIGS_FOUND_TEXT}" 
+		mode="SingleSelectMaster" 
+		itemPress="onChooseMriConfig" 
+		includeItemInSelection="true">
+		<CustomListItem type="Active">
+			<FlexBox alignItems="Start" 
+				justifyContent="SpaceBetween">
+				<Text class="sapMRIPAConfigLargeText" 
+					text="{analyticsModel>meta/configName}" />
+				<FlexBox alignItems="Start" 
+					justifyContent="End">
+					<Button visible="{= ${analyticsModel>frontEndProperties/isValid} === true}" 
+						icon="sap-icon://message-success" 
+						type="Transparent" 
+						class="sapMRIPAConfigValidityTrue" 
+						enabled="false" 
+						tooltip="{i18n>MRI_PA_CFG_VALIDITY_TRUE_TOOLTIP}"/>
+					<Button visible="{= ${analyticsModel>frontEndProperties/isValid} === false}" 
+						icon="sap-icon://message-warning" 
+						type="Transparent" 
+						class="sapMRIPAConfigValidityFalse" 
+						tooltip="{i18n>MRI_PA_CFG_VALIDITY_FALSE_TOOLTIP}" 
+						press=".onShowValidationErrors"/>
+					<Button visible="{= ${analyticsModel>frontEndProperties/isValid} === null}" 
+						icon="sap-icon://question-mark" 
+						type="Transparent" 
+						class="sapMRIPAConfigValidityUnknown" 
+						enabled="{= ${analyticsModel>frontEndProperties/errors/length} > 0}" 
+						tooltip="{= ${analyticsModel>frontEndProperties/errors/length} > 0 ?
+                                    ${i18n>MRI_PA_CFG_VALIDITY_UNKNOWN_WITH_PREV_ERROR_TOOLTIP} :
+                                    ${i18n>MRI_PA_CFG_VALIDITY_UNKNOWN_TOOLTIP}}" 
+						press=".onShowValidationErrors"/>
+				</FlexBox>
+			</FlexBox>
+			<f:SimpleForm class="sapMriConfigForm" 
+				layout="GridLayout" 
+				labelSpanS="12">
+				<Label text="{i18n>MRI_PA_CFG_OVERVIEW_CREATOR}" />
+				<Text text="{analyticsModel>meta/creator}" />
+				<Label text="{i18n>MRI_PA_CFG_OVERVIEW_STATUS}" />
+				<Text text="{parts: ['analyticsModel>frontEndProperties/isSaved', 'analyticsModel>frontEndProperties/isModified'], formatter:'.stateFormatter'}" />
+			</f:SimpleForm>
+			<OverflowToolbar class="sapPAConfigButtonToolbar">
+				<Button icon="sap-icon://sys-enter" 
+					text="{i18n>MRI_PA_CFG_BUTTON_SAVE}" 
+					tooltip="{i18n>MRI_PA_CFG_ACTIVATE_CONFIG_TOOLTIP}" 
+					press="onActivateConfig" 
+					type="Transparent"/>
+				<Button icon="sap-icon://approvals" 
+					text="{i18n>MRI_PA_CFG_BUTTON_VALIDATE}" 
+					tooltip="{i18n>MRI_PA_CFG_VALIDATE_CONFIG_TOOLTIP}" 
+					press="onValidateConfiguration" 
+					type="Transparent" />
+				<Button icon="sap-icon://delete" 
+					text="{i18n>MRI_PA_CFG_BUTTON_DELETE}" 
+					tooltip="{i18n>MRI_PA_CFG_DELETE_CONFIG_TOOLTIP}" 
+					press="onDeleteConfig" 
+					type="Transparent" />
+				<Button icon="sap-icon://duplicate" 
+					text="{i18n>MRI_PA_CFG_BUTTON_DUPLICATE}" 
+					tooltip="{i18n>MRI_PA_CFG_DUPLICATE_CONFIG_TOOLTIP}" 
+					press="onDuplicateConfiguration" 
+					type="Transparent">
+					<!-- FUTURE: this is a workaround for a bug (1580170208) in SAPUI5 1.28.5 -->
+					<layoutData>
+						<OverflowToolbarLayoutData stayInOverflow="true" />
+					</layoutData>
+				</Button>
+				<Button icon="sap-icon://inspection" 
+					text="{i18n>MRI_PA_CFG_BUTTON_PREVIEW}" 
+					tooltip="{i18n>MRI_PA_CFG_PREVIEW_CONFIG_TOOLTIP}" 
+					press="onPreviewConfigPressed">
+					<!-- FUTURE: this is a workaround for a bug (1580170208) in SAPUI5 1.28.5 -->
+					<layoutData>
+						<OverflowToolbarLayoutData stayInOverflow="true" />
+					</layoutData>
+				</Button>
+				<Button icon="sap-icon://cause" 
+					text="{i18n>MRI_PA_CFG_BUTTON_IMPORT}" 
+					tooltip="{i18n>MRI_PA_CFG_IMPORT_CONFIGURATION_TOOLTIP}" 
+					press="onImportConfigurationPressed">
+					<!-- FUTURE: this is a workaround for a bug (1580170208) in SAPUI5 1.28.5 -->
+					<layoutData>
+						<OverflowToolbarLayoutData stayInOverflow="true" />
+					</layoutData>
+				</Button>
+				<Button icon="sap-icon://download" 
+					text="{i18n>MRI_PA_CFG_BUTTON_EXPORT}" 
+					tooltip="{i18n>MRI_PA_CFG_BUTTON_EXPORT_TOOLTIP}" 
+					press=".onExportConfigurationPressed">
+					<layoutData>
+						<OverflowToolbarLayoutData stayInOverflow="true" />
+					</layoutData>
+				</Button>
+			</OverflowToolbar>
+		</CustomListItem>
+	</List>
+</mvc:View>

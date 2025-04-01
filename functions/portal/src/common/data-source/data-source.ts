@@ -19,6 +19,15 @@ import UserArtifactSeeder from './seeds/user-artifact.seeder.ts';
 import * as pg from 'npm:pg';
 
 const _env = Deno.env.toObject();
+
+let ssl = JSON.parse(_env.PG__SSL.toLowerCase());
+if (_env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: _env.PG__CA_ROOT_CERT,
+  };
+}
+
 export const dataSourceOptions: DataSourceOptions & SeederOptions = {
   type: "postgres",
   host: _env.PG_HOST,
@@ -27,6 +36,7 @@ export const dataSourceOptions: DataSourceOptions & SeederOptions = {
   password: _env.PG_PASSWORD,
   database: _env.PG__DB_NAME,
   schema: _env.PG_SCHEMA,
+  ssl,
   poolSize: parseInt(_env.PG__MAX_POOL) || 10,
   entities: [Config, DatasetAttributeConfig, DatasetAttribute, DatasetDashboard, DatasetDetail, DatasetRelease, DatasetTagConfig, DatasetTag, Dataset, Feature, Notebook, UserArtifactGroup, UserArtifact],
   seeds: [ConfigSeeder, DatasetAttributeConfigSeeder, UserArtifactSeeder]

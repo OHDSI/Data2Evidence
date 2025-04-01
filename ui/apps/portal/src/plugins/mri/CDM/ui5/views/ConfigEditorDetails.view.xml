@@ -1,0 +1,23 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.ConfigEditorDetails"
+width="100%" height="99.5%" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.commons.layout" xmlns:c="sap.ui.commons">
+
+<c:Splitter width="100%" showScrollBars="false">
+	<c:firstPaneContent>
+		<l:BorderLayout width="100%">
+			<l:center>
+				<l:BorderLayoutArea id="filterCardItemLayout">
+				</l:BorderLayoutArea>			
+			</l:center>
+		</l:BorderLayout>
+	</c:firstPaneContent>
+	<c:secondPaneContent>
+		<l:BorderLayout width="100%">
+			<l:center>
+				<l:BorderLayoutArea id="AttributeLayout" class="attributeLayout">
+				</l:BorderLayoutArea>			
+			</l:center>
+		</l:BorderLayout>		
+	</c:secondPaneContent>
+</c:Splitter>
+</mvc:View>
+

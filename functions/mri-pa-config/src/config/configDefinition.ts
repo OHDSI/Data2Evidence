@@ -741,6 +741,11 @@ function _getValidDefinition(cdwConfig) {
           type: "boolean",
           strict: false,
         },
+        {
+          name: "atlasCohortDefinition",
+          type: "boolean",
+          strict: false,
+        },
         // deprecated
         {
           name: "afp",

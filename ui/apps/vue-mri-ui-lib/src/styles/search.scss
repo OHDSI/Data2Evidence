@@ -1,0 +1,132 @@
+@import './mri-variables';
+@import './mixins';
+@import './patientAnalytics.scss';
+
+.searchContainer {
+  @include wrapper-components;
+}
+
+.searchWrapper {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  padding: 0 2rem;
+  margin: auto;
+  color: $MriBrand;
+  font-size: medium;
+  letter-spacing: 0.27px;
+
+  .searchBar {
+    margin: 2rem;
+  }
+
+  .backButton {
+    display: flex;
+    align-items: center;
+    margin: 2rem 0;
+    cursor: pointer;
+    font-size: large;
+
+    .icon {
+      margin-right: 8px;
+      height: 24px;
+      width: 24px;
+    }
+  }
+
+  .resultsPage {
+    display: flex;
+    flex-flow: column;
+    flex-grow: 1;
+    overflow-y: hidden;
+
+    .resultSummary {
+      margin-bottom: 1rem;
+    }
+
+    .results {
+      flex-grow: 1;
+      padding-bottom: 1rem;
+      padding-right: 1rem;
+      overflow-y: scroll;
+      border-bottom: 1px solid $UiLighterBorder;
+
+      .patientCard {
+        margin-bottom: 1rem;
+      }
+    }
+  }
+
+  .resultPlaceholder {
+    display: flex;
+    flex-flow: column;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    font-size: x-large;
+    text-align: center;
+
+    .placeholderImage {
+      padding-bottom: 3rem;
+    }
+  }
+
+  .noteView {
+    display: flex;
+    flex-flow: column;
+    flex-grow: 1;
+    min-height: 0;
+
+    .patientCard {
+      display: flex;
+      flex-flow: column;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+  }
+
+  .patientCard {
+    border: 1px solid $UiLighterBorder;
+
+    .patientCardHeader {
+      padding: 0.5rem 1rem;
+      background-color: $UiExtraLightBG;
+      font-weight: 500;
+    }
+
+    .patientNotes {
+      padding: 0 2rem 1rem;
+    }
+
+    .notesContainer {
+      overflow-y: scroll;
+      padding: 0 1rem 1rem;
+    }
+
+    .patientNote {
+      padding-top: 1rem;
+      line-height: 1.75;
+
+      .noteHeader {
+        font-weight: 500;
+        text-decoration: underline;
+        &.link {
+          cursor: pointer;
+        }
+      }
+
+      .noteText {
+        color: $UiLightText;
+        mark {
+          padding: 0.3rem;
+          background-color: #ffe190;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  footer {
+    padding: 2rem 0;
+  }
+}

@@ -1,0 +1,183 @@
+name: d2e-functions/pa integration tests
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+# Run only one job per branch
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-mri-tests # Run the latest push
+  cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
+jobs:
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "functions/_shared/alp-libs/nodejs/**"
+              - "functions/analytics-svc/**"
+              - "functions/bookmark-svc/**"
+              - "functions/cdw-svc/**"
+              - "functions/mri-pa-config/**"
+              - "functions/mri-pg-config/**"
+              - "functions/query-gen-svc/**"
+              - "services/mri-db/**"
+              - ".github/workflows/http-tests.yml"
+
+  test-mri:
+    # needs: [check_file_changes]
+    # if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    runs-on: ubuntu-latest
+    env:
+      HANASERVER: ${{ secrets.HN_DE_FQDN }} # az-hn-db/DE_FQDN"
+      HDIPORT: ${{ vars.HN_DE_PORT }} # az-hn-db/DB Port"
+      HDIPW: ${{ secrets.HN_DE_ADMIN_PASSWORD }} # az-hn-db/Admin password"
+      HDIUSER: ${{ vars.HN_DE_ADMIN_USERNAME }} # az-hn-db/Admin user"
+      isTestEnv: "true"
+      TESTPORT: ${{ vars.HN_DE_PORT }} # az-hn-db/DB Port"
+      TESTSCHEMA: MRI_${{github.run_id}}
+      TESTSYSTEMPW: ${{ secrets.HN_DE_ADMIN_PASSWORD }} # az-hn-db/Admin password"
+      VCAP_SERVICES: '{"mridb":[{"name":"OMOP","credentials":{"host":"${HANASERVER}","port":"${HDIPORT}","databaseName":"ALPDEV","user":"${HDIUSER}","password":"${HDIPW}","validate_certificate":false,"probeSchema":"${TESTSCHEMA}","vocabSchema":"${TESTSCHEMA}","schema":"${TESTSCHEMA}","dialect":"hana","encrypt":false,"pooling":"true"},"tags":["httptest"]}]}'
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: "postgres"
+          POSTGRES_PASSWORD: "Toor1234"
+          POSTGRES_DB: "alp"
+        ports:
+          - 35432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Print env vars
+        run: |
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "VCAP_SERVICES: ${VCAP_SERVICES}"
+          echo "HANASERVER: ${HANASERVER}"
+          echo "HDIUSER: ${HDIUSER}"
+          echo "HDIPORT: ${HDIPORT}"
+          echo "HDIPW: ${HDIPW}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+
+      - uses: actions/checkout@v4
+
+      - name: Get drivers
+        env:
+          ASSET_DBCLI_TGZ_URL: ${{ secrets.ASSET_DBCLI_TGZ_URL }}
+          ASSET_NGDBC_JAR_URL: ${{ secrets.ASSET_NGDBC_JAR_URL }}
+          DRIVERS_DIR: cache/drivers
+        run: |
+          curl "$ASSET_DBCLI_TGZ_URL" -o $DRIVERS_DIR/$(echo ${ASSET_DBCLI_TGZ_URL%\?*} | awk -F/ '{print $NF}')
+          curl "$ASSET_NGDBC_JAR_URL" -o $DRIVERS_DIR/$(echo ${ASSET_NGDBC_JAR_URL%\?*} | awk -F/ '{print $NF}')
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.20.4"
+
+      - name: check if files changed
+        id: check_file_changed
+        run: |
+          # Fetch develop & get file changes from feature branch
+          git fetch origin develop
+
+          # Diff HEAD with the last commit of develop & filter for services
+          analytics_diff=$(git diff --name-only origin/develop HEAD | grep '^services/analytics-svc/**' || :)
+          bookmarks_diff=$(git diff --name-only origin/develop HEAD | grep '^services/bookmark-svc/**' || :)
+          query_gen_diff=$(git diff --name-only origin/develop HEAD | grep '^services/query-gen-svc/**' || :)
+
+          # Check if a file under services/*-svc/** has changed (added, modified, deleted)
+          analytics_hasDiff=$(if [ ${#analytics_diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
+          bookmarks_hasDiff=$(if [ ${#bookmarks_diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
+          query_gen_hasDiff=$(if [ ${#query_gen_diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
+
+          # Set the output named "has_*_changed"
+          echo "has_analytics_svc_changed=$analytics_hasDiff" >> $GITHUB_OUTPUT
+          echo "has_bookmarks_svc_changed=$bookmarks_hasDiff" >> $GITHUB_OUTPUT
+          echo "has_query_gen_svc_changed=$query_gen_hasDiff" >> $GITHUB_OUTPUT
+
+          echo "Files changed: $analytics_diff,  $bookmarks_diff, $query_gen_diff"
+
+          echo "Does analytics-svc have changes: $analytics_hasDiff"
+          echo "Does bookmarks-svc have changes: $bookmarks_hasDiff"
+          echo "Does query-gen-svc have changes: $query_gen_hasDiff"
+
+      - name: Create postgres schema
+        run: psql -d postgresql://postgres@localhost:35432/alp -f create-test-schema.sql
+        working-directory: ./services/cdw-svc/test-migrations
+        env:
+          PGPASSWORD: Toor1234
+
+      - name: Build Project
+        run: |
+          yarn
+          yarn build --no-ui
+
+      - name: Setup Test DB (Hana)
+        run: yarn inittestdb
+
+      - name: Setup Test DB (postgres)
+        env:
+          PG_HOST: "localhost"
+          PG_PORT: 35432
+          PG_DATABASE: "alp"
+          PG_USER: "postgres"
+          PG_PASSWORD: "Toor1234"
+          PG_ADMIN_USER: "postgres"
+          PG_ADMIN_PASSWORD: "Toor1234"
+          PG_SCHEMA: "cdw_test_schema"
+          PG_MIN_POOL: 2
+          PG_MAX_POOL: 10
+          PG_DEBUG: 1
+          NODE_ENV: "development"
+        run: yarn workspace mri-pg-config migrate
+
+      - name: echo WS
+        run: |
+          echo "WS ${{ github.workspace }}"
+          ls ${{ github.workspace }}
+
+      - name: Run query-gen svc
+        run: PORT=41008 yarn workspace query-gen run start &
+
+      - name: Run query-gen tests
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
+        run: yarn workspace query-gen run test
+
+      - name: Run bookmark tests
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_bookmarks_svc_changed == 'True'
+        run: yarn workspace bookmark run test
+      # Existing tests for assignment service uses opaTest and not compatible with current set up
+      # We should uncomment this when we have tests available.
+      # - name: Run assignment-svc tests
+      #   run: yarn workspace config-assignment run test
+
+      - name: Run Analytics tests
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_analytics_svc_changed == 'True' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
+        run: yarn workspace analytics run testci
+      # - name: Run cdw-config tests
+      #   run: yarn workspace cdw-config run test:ci
+
+      - name: Remove Test DB
+        if: ${{ always() }}
+        run: yarn removetestdb

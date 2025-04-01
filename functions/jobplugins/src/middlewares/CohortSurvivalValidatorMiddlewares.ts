@@ -1,4 +1,4 @@
-import { body } from "npm:express-validator";
+import { body } from "express-validator";
 
 // Validation rules for CohortSurvivalFlowRunOptions
 export const validateCohortSurvivalFlowRunDto = () => [

@@ -1,0 +1,149 @@
+@import './mri-variables';
+@import './mixins';
+
+@mixin card-header {
+  background-color: $MRICardHeaderBG;
+  color: $MriBrand;
+  padding: 0.25rem 0;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+@mixin card {
+  border-radius: 4px;
+  border: solid 1px #acabab80;
+}
+
+.FilterCard {
+  .btn-filtercard-menu {
+    .btn-link {
+      padding: 0 !important;
+      color: $MRICardHeaderBG;
+    }
+    .app-icon {
+      color: $MriHeaderTextDark;
+      font-size: large;
+    }
+  }
+
+  .btn-collapse {
+    @include mriActionButtonHoverable;
+    .app-icon {
+      color: $MriHeaderTextDark;
+    }
+    width: 25px;
+  }
+
+  .MriPaFilterCardDisabled {
+    background-color: $TableHeaderRowBG !important;
+  }
+
+  .card {
+    @include card;
+  }
+
+  .card-header {
+    @include card-header;
+
+    label {
+      padding-left: 3px;
+      margin-bottom: 0px;
+    }
+    .card-header-left {
+      display: flex;
+      align-items: center;
+
+      .card-help-button {
+        cursor: pointer;
+        margin-left: 10px;
+        font-size: 16px;
+      }
+    }
+  }
+
+  .card-body {
+    padding: 0 0.75rem;
+    min-height: 0;
+  }
+
+  .body-collapse {
+    padding-top: 0.75rem;
+  }
+
+  .multiselect__single {
+    font-size: 0.75rem;
+    padding-left: 2px;
+  }
+
+  .custom-control-input:checked {
+    ~ .custom-control-label::after {
+      background-color: #fff;
+      background-size: 100%;
+      border: 1px solid #666666;
+    }
+  }
+
+  .custom-checkbox {
+    .custom-control-label::before {
+      border: 1px solid #666666;
+      background-color: #fff;
+    }
+  }
+
+  .btn-boolean-toggle {
+    position: absolute;
+    top: -4px;
+    z-index: 0;
+    margin-top: -10px !important;
+    margin-left: 10px;
+    background-color: $ToggleButtonLightBG;
+    color: $UiDarkestText;
+    // margin: 10px 10px;
+    font-size: 10px;
+    .app-icon {
+      margin-left: 8px;
+      color: $UiDarkestText;
+    }
+  }
+
+  .dropdown-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+}
+
+.appBasicFilterCard {
+  padding-bottom: 0rem;
+
+  .card {
+    @include card;
+    margin: 0 8px;
+  }
+
+  .card-header {
+    @include card-header;
+  }
+}
+
+.sortable-ghost {
+  .btn-boolean-toggle {
+    display: none;
+  }
+}
+
+.MriPaFilterCardNew {
+  .card {
+    @include card;
+  }
+
+  .card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-top: 11px solid $FiltercardNewState;
+    border-right: 11px solid $MRICardHeaderBG;
+    width: 0;
+    //margin: 4px 0;
+  }
+}

@@ -1,0 +1,77 @@
+.study-nav {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  
+  .MuiAccordionSummary-root {
+    color: var(--color-neutral);
+    border-left: 6px solid transparent;
+  }
+  .MuiAccordionSummary-content {
+    font-weight: 500;
+  }
+
+  .Mui-expanded {
+    &.MuiAccordionSummary-root {
+      min-height: 48px;
+      color: var(--color-primary);
+      border-left: 6px solid var(--color-primary);
+      background-color: #f7f5f3;
+    }
+
+    &.MuiAccordionSummary-content {
+      margin: 0;
+    }
+    .MuiAccordion-root {
+      margin: 0;
+    }
+  }
+
+  .MuiAccordion-root {
+    &::before {
+      display: none;
+    }
+  }
+
+  .MuiAccordionDetails-root {
+    padding: 0;
+  }
+
+  .MuiList-root {
+    width: 100%;
+  }
+
+  .MuiListItem-root {
+    color: var(--color-neutral);
+    padding-left: 32px;
+
+    &.Mui-selected {
+      color: var(--color-primary);
+      background-color: white;
+
+      &:hover {
+        cursor: pointer;
+        background-color: inherit;
+
+        &:active {
+          background-color: inherit;
+        }
+      }
+      .MuiTypography-body1 {
+        font-weight: 500;
+      }
+    }
+
+    &:hover {
+      color: var(--color-primary);
+      background-color: var(--color-neutral--transparent);
+
+      &:active {
+        background-color: var(--color-primary-extra-lightest);
+      }
+      .MuiTypography-body1 {
+        font-weight: 500;
+      }
+    }
+  }
+}

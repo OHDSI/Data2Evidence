@@ -1,0 +1,9 @@
+*                                  @data2evidence/integrate
+alp-libs                           @data2evidence/analyze
+apps/mri-pa-ui                     @data2evidence/analyze
+apps/vue-mri-ui-lib                @data2evidence/analyze
+apps/portal/src/plugins/Starboard  @data2evidence/analyze
+apps/portal/src/plugins/mri        @data2evidence/analyze
+apps/portal/src/plugins/Researcher/ConceptSets @data2evidence/analyze
+apps/portal/src/plugins/Researcher/KaplanMeier @data2evidence/analyze
+apps/portal/src/plugins/Researcher/Terminology @data2evidence/analyze

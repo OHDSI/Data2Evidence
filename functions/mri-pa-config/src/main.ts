@@ -219,6 +219,14 @@ export function main() {
     const envFile = `${mountPath}default-env.json`;
     xsenv.loadEnv(envVarUtils.getEnvFile(envFile));
 
+    let ssl = JSON.parse(env.PG__SSL.toLowerCase());
+    if (env.PG__CA_ROOT_CERT) {
+      ssl = {
+        rejectUnauthorized: true,
+        ca: env.PG__CA_ROOT_CERT,
+      };
+    }
+
   credentials = {
     database: env.PG__DB_NAME,
     schema: env.PG_SCHEMA,
@@ -227,6 +235,7 @@ export function main() {
     port: env.PG__PORT,
     user: env.PG_USER,
     password: env.PG_PASSWORD,
+    ssl,
     max: env.PG__MAX_POOL,
     min: env.PG__MIN_POOL,
     idleTimeoutMillis: env.PG__IDLE_TIMEOUT_IN_MS,

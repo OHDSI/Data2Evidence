@@ -1,0 +1,90 @@
+<mvc:View class="sapMriPaView sapThemePageBG" controllerName="sap.hc.mri.pa.ui.views.PatientAnalytics" displayBlock="true" height="100%" xmlns="sap.ui.commons" xmlns:cl="sap.ui.commons.layout" xmlns:l="sap.ui.layout" xmlns:m="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:pa="sap.hc.mri.pa.ui.lib">
+    <l:Splitter id="splitterLayout" class="sapMriPaSplitter">
+        <m:NavContainer id="navFilterBmkContainer">
+            <m:layoutData>
+                <l:SplitterLayoutData size="{filterbar_data>/currentSize}" minSize="{filterbar_data>/currentMinSize}" />
+            </m:layoutData>
+            <cl:BorderLayout id="filtersPage">
+                <cl:top>
+                    <cl:BorderLayoutArea size="33px">
+                        <m:Toolbar id="filtersToolbar" class="sapMriPaToolbar">
+                            <m:ToolbarSpacer />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button id="addBookmarkBtn" icon="sap-icon://unfavorite" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_ADD_BOOKMARK_BUTTON}" press="onAddBookmarkButtonPressed" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button icon="sap-icon://favorite-list" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_LOAD_BOOKMARK}" press="onGoToBookmarksPage" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button icon="sap-icon://refresh" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_REFRESH_BUTTON}" press="onResetFilters" />
+                        </m:Toolbar>
+                    </cl:BorderLayoutArea>
+                </cl:top>
+                <cl:center>
+                    <cl:BorderLayoutArea class="sapMriPaLeftPanel">
+                        <pa:BoolContainer id="filterContainer" change=".onFilterChange" />
+                    </cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+            <cl:BorderLayout id="bookmarksPage">
+                <cl:top>
+                    <cl:BorderLayoutArea size="33px">
+                        <m:Toolbar id="bookmarksToolbar" class="sapMriPaToolbar">
+                            <Button icon="sap-icon://nav-back" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_BOOKMARK_BACK}" press="onGoToFiltersPage" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <m:ToolbarSpacer />
+                            <Label class="sapMriPaToolbarTitle" text="{i18n>MRI_PA_TITLE_SAVED_BOOKMARKS}" />
+                            <m:ToolbarSpacer />
+                        </m:Toolbar>
+                    </cl:BorderLayoutArea>
+                </cl:top>
+                <cl:center>
+                    <cl:BorderLayoutArea class="sapMriPaLeftPanel">
+                        <pa:BookmarkList id="bookmarks" restoreBmk="onRestoreBookmarkRequested" />
+                    </cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+        </m:NavContainer>
+        <cl:BorderLayout>
+            <cl:top>
+                <cl:BorderLayoutArea size="33px">
+                    <m:Toolbar id="tlbAnalytics" class="sapMriPaToolbar">
+                        <Button icon="{filterbar_data>/buttonIcon}" styled="false" tooltip="{= ${filterbar_data>/collapsed} ? ${i18n>MRI_PA_TOOLTIP_EXPAND_FILTER_BAR} : ${i18n>MRI_PA_TOOLTIP_COLLAPSE_FILTER_BAR}}" press="._collapseOrExpandFilterBar" />
+                        <m:ToolbarSpacer />
+                        <Label class="sapMriPaFakeToolbarSeparator" />
+                        <!-- Chart Buttons to be inserted here -->
+                        <m:ToolbarSpacer />
+                        <Label id="patientCountLabel" class="sapMriPaPatientCount" icon="sap-icon://wounds-doc" text="{results>/total/size}" visible="{results>/total/visible}" />
+                        <Label class="sapMriPaFakeToolbarSeparator" />
+                        <Button enabled="{results>/drilldown/enabled}" icon="sap-icon://drill-down" styled="false" tooltip="{i18n>MRI_PA_BUTTON_DRILL_DOWN}" visible="{results>/drilldown/visible}" press=".onDrillDownBtnPress" />
+                        <Label class="sapMriPaFakeToolbarSeparator" />
+                        <Button enabled="{= ${results>/collection/enabled} &amp;&amp; ${componentAvailableModel>/collectionComponentAvailable}}" icon="sap-icon://add-product" styled="false" tooltip="{i18n>MRI_PA_BUTTON_ADD_TO_COLLECTION}" visible="{results>/collection/visible}" press=".onAddToCollectionsBtnPress" />
+                        <Label class="sapMriPaFakeToolbarSeparator" />
+                        <Button enabled="{= ${results>/pdfDownload/enabled} || ${results>/download/enabled}}" icon="sap-icon://download" styled="false" tooltip="{i18n>MRI_PA_BUTTON_DOWNLOAD_TOOLTIP}" visible="true" press=".onDownloadBtnPress" />
+                    </m:Toolbar>
+                </cl:BorderLayoutArea>
+            </cl:top>
+            <cl:center>
+                <cl:BorderLayoutArea>
+                    <cl:BorderLayout id="layMain">
+                        <cl:top>
+                            <cl:BorderLayoutArea contentAlign="center" size="50px">
+                                <Label class="sapMriPaCensorDisclaimer" icon="sap-icon://locked" text="{i18n>MRI_PA_MESSAGE_CENSORING_DISCLAIMER}" />
+                            </cl:BorderLayoutArea>
+                        </cl:top>
+                        <cl:begin>
+                            <cl:BorderLayoutArea size="195px" visible="{status>/beginVisible}">
+                                <cl:AbsoluteLayout id="layAttributesContainer" visible="{status>/beginVisible}" />
+                            </cl:BorderLayoutArea>
+                        </cl:begin>
+                        <cl:center>
+                            <cl:BorderLayoutArea></cl:BorderLayoutArea>
+                        </cl:center>
+                    </cl:BorderLayout>
+                </cl:BorderLayoutArea>
+            </cl:center>
+        </cl:BorderLayout>
+    </l:Splitter>
+    <Menu id="downloadMenu">
+        <MenuItem enabled="{results>/download/enabled}" text="{i18n>MRI_PA_BUTTON_DOWNLOAD_CSV}" select=".onDownloadCsvBtnPress" visible="{results>/download/enabled}" />
+        <MenuItem enabled="{results>/pdfDownload/enabled}" text="{i18n>MRI_PA_BUTTON_DOWNLOAD_PDF}" select=".onDownloadPdfBtnPress" visible="{results>/pdfDownload/enabled}" />
+    </Menu>
+</mvc:View>

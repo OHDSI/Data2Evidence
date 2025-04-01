@@ -1,0 +1,54 @@
+@import './mri-variables';
+.patientcount-wrapper {
+  //   padding: 5px;
+  .patientCount {
+    color: $MriHeaderTextDark;
+    font-size: 16px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    height: 100%;
+    .patientIcon {
+      font-size: 20px;
+    }
+  }
+  .patientCountTotalText {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+  .patientCountHeader {
+    font-size: 17px;
+    color: $MriHeaderTextDark;
+    font-weight: bold;
+  }
+  .patientCountContent {
+    width: 270px;
+    height: 150px;
+    padding-left: 1rem;
+    font-size: 14px;
+    color: $UiLightText;
+  }
+  .patientCountContent-container {
+    vertical-align: middle;
+    margin-bottom: 10px;
+  }
+  .patientCountContent-data {
+    text-align: left;
+    color: #595757;
+  }
+  .disclaimerMessage {
+    .icon {
+      margin-right: 12px;
+      font-style: normal;
+    }
+    text-align: left;
+    font-style: italic;
+    color: $UiLightText;
+    padding-top: 10px;
+    border-top: 2px solid $UiMediumBorder;
+    font-size: 12px;
+    vertical-align: middle;
+    line-height: 18px;
+    display: flex;
+  }
+}

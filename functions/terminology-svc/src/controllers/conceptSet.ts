@@ -2,7 +2,6 @@
 import { NextFunction, Response, Request } from "express";
 import { SystemPortalAPI } from "../api/portal-api.ts";
 import { JwtPayload, decode } from "jsonwebtoken";
-import { randomUUID } from "crypto";
 import * as schemas from "./validators/conceptSetSchemas.ts";
 import { CachedbService } from "../services/cachedb.ts";
 
@@ -58,17 +57,22 @@ export const createConceptSet = async (
 ) => {
   try {
     const { body, query } = schemas.createConceptSet.parse(req);
+    const systemPortalApi = new SystemPortalAPI(req);
+
+    const conceptSetId = await systemPortalApi.getConceptSetSequenceNextval(
+      query.datasetId
+    );
+
     const userId = getUserIdFromToken(req.headers["authorization"]!);
     const newConceptSet = addOwner(
       {
-        id: randomUUID(),
+        id: conceptSetId,
         ...body,
       },
       true,
       userId
     );
 
-    const systemPortalApi = new SystemPortalAPI(req);
     await systemPortalApi.createConceptSet(
       {
         serviceArtifact: newConceptSet,
@@ -135,7 +139,7 @@ export const updateConceptSet = async (
       { id: params.conceptSetId, serviceArtifact: updatedConceptSet },
       query.datasetId
     );
-    res.send(updatedConceptSet.id);
+    res.send(params.conceptSetId);
   } catch (e) {
     next(e);
   }
@@ -227,32 +231,103 @@ export const getIncludedConcepts = async (
       res.send([]);
       return;
     }
-    const cachedbService = new CachedbService(req);
 
-    const includedConceptIds = await cachedbService.getConceptsAndDescendantIds(
+    const uniqueConceptIds = await _getConceptSetConceptIds(
+      req,
+      datasetId,
       conceptIds,
       conceptIdsToIncludeDescendant,
-      datasetId
+      conceptIdsToIncludeMapped,
+      conceptIdsToIncludeMappedAndDescendant
     );
-    const mappedConceptsAndDescendantIds =
-      await cachedbService.getConceptsAndDescendantIds(
-        conceptIdsToIncludeMapped,
-        conceptIdsToIncludeMappedAndDescendant,
-        datasetId
-      );
-
-    const mappedConceptIds = await cachedbService.getConceptRelationshipMapsTo(
-      mappedConceptsAndDescendantIds,
-      datasetId
-    );
-    mappedConceptIds.forEach((concept) => {
-      includedConceptIds.push(concept.concept_id_1);
-    });
-
-    const uniqueConceptIds = Array.from(new Set(includedConceptIds)).sort();
     res.send(uniqueConceptIds);
   } catch (e) {
     console.error("Error getting included concepts for concept sets!");
     next(e);
   }
+};
+
+export const resolveConceptSetExpression = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { body } = schemas.resolveConceptSetExpression.parse(req);
+
+    const { concepts, datasetId } = body;
+
+    const conceptIds: number[] = [];
+    const conceptIdsToIncludeDescendant: number[] = [];
+    const conceptIdsToIncludeMapped: number[] = [];
+    const conceptIdsToIncludeMappedAndDescendant: number[] = [];
+
+    concepts.forEach((concept) => {
+      if (!concept.id) {
+        return;
+      }
+      conceptIds.push(concept.id);
+      if (concept.useDescendants) {
+        conceptIdsToIncludeDescendant.push(concept.id);
+      }
+      if (concept.useMapped) {
+        conceptIdsToIncludeMapped.push(concept.id);
+        if (concept.useDescendants) {
+          conceptIdsToIncludeMappedAndDescendant.push(concept.id);
+        }
+      }
+    });
+
+    if (conceptIds.length === 0) {
+      res.send([]);
+      return;
+    }
+
+    const uniqueConceptIds = await _getConceptSetConceptIds(
+      req,
+      datasetId,
+      conceptIds,
+      conceptIdsToIncludeDescendant,
+      conceptIdsToIncludeMapped,
+      conceptIdsToIncludeMappedAndDescendant
+    );
+    res.send(uniqueConceptIds);
+  } catch (e) {
+    console.error("Error resolving concept set expression for concepts!");
+    next(e);
+  }
+};
+
+const _getConceptSetConceptIds = async (
+  req: Request,
+  datasetId: string,
+  conceptIds: number[],
+  conceptIdsToIncludeDescendant: number[],
+  conceptIdsToIncludeMapped: number[],
+  conceptIdsToIncludeMappedAndDescendant: number[]
+): Promise<number[]> => {
+  const cachedbService = new CachedbService(req);
+
+  const includedConceptIds = await cachedbService.getConceptsAndDescendantIds(
+    conceptIds,
+    conceptIdsToIncludeDescendant,
+    datasetId
+  );
+  const mappedConceptsAndDescendantIds =
+    await cachedbService.getConceptsAndDescendantIds(
+      conceptIdsToIncludeMapped,
+      conceptIdsToIncludeMappedAndDescendant,
+      datasetId
+    );
+
+  const mappedConceptIds = await cachedbService.getConceptRelationshipMapsTo(
+    mappedConceptsAndDescendantIds,
+    datasetId
+  );
+  mappedConceptIds.forEach((concept) => {
+    includedConceptIds.push(concept.concept_id_1);
+  });
+
+  const uniqueConceptIds = Array.from(new Set(includedConceptIds)).sort();
+  return uniqueConceptIds;
 };

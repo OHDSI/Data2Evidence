@@ -1,0 +1,343 @@
+{
+  "name": "@data2evidence/d2e-ui",
+  "version": "0.0.99",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/data2evidence/d2e-ui.git"
+  },
+  "license": "Apache-2.0",
+  "scripts": {
+    "build-all": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && yarn build-ui5 && yarn build-starboard",
+    "build-all-skip-cache": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && yarn build-ui5",
+    "build-ui5": "yarn ui5 build -a --clean-dest --dest ./resources/ui5",
+    "build-starboard": "node scripts/build-starboard.js",
+    "mri-vue": "yarn; nx build vue-mri",
+    "portal-ui": "yarn; nx build @portal/plugin; nx build @portal/components; nx build portal; nx build-mri portal",
+    "flow": "yarn; nx build @portal/plugin; nx build @portal/components; nx build flow",
+    "analysis": "yarn; nx build @portal/plugin; nx build @portal/components; nx build analysis_flow",
+    "prepack": "yarn build-all"
+  },
+  "workspaces": {
+    "packages": [
+      "libs/*",
+      "apps/*"
+    ],
+    "nohoist": [
+      "**/@vue",
+      "**/@vue/**"
+    ]
+  },
+  "devDependencies": {
+    "@ui5/cli": "^2.12.0",
+    "nx": "^18.0.0"
+  },
+  "trex": {
+    "ui": {
+      "routes": [
+        {
+          "source": "/portal",
+          "target": "/resources/portal"
+        },
+        {
+          "source": "/flow",
+          "target": "/resources/flow"
+        },
+        {
+          "source": "/analysis",
+          "target": "/resources/analysis"
+        },
+        {
+          "source": "/mapping",
+          "target": "/resources/mapping"
+        },
+        {
+          "source": "/jobs",
+          "target": "/resources/jobs"
+        },
+        {
+          "source": "/starboard-jupyter",
+          "target": "/resources/starboard-jupyter"
+        },
+        {
+          "source": "/starboard-notebook-base",
+          "target": "/resources/starboard-notebook-base"
+        },
+        {
+          "source": "/mri",
+          "target": "/resources/mri"
+        },
+        {
+          "source": "/hc/hph/core/ui",
+          "target": "/resources/mri-ui5/utils/core"
+        },
+        {
+          "source": "/hc/hph/config/global/ui",
+          "target": "/resources/mri-ui5/utils/global"
+        },
+        {
+          "source": "/hc/mri/pa/config/ui",
+          "target": "/resources/mri-ui5/PatientAnalyticsConfig/ui5/"
+        },
+        {
+          "source": "/hc/mri/pa/ui",
+          "target": "/resources/mri-ui5/mri-pa-ui/mri/"
+        },
+        {
+          "source": "/hc/hph/genomics/ui",
+          "target": "/resources/mri-ui5/genomics-ui/ui/"
+        },
+        {
+          "source": "/hc/mri/pa/config/i18n",
+          "target": "/resources/mri-ui5/PatientAnalyticsConfig/ui5/i18n/"
+        },
+        {
+          "source": "/ui/core",
+          "target": "/resources/ui5/resources/sap/ui/core/"
+        },
+        {
+          "source": "/ui/m",
+          "target": "/resources/ui5/resources/sap/m"
+        },
+        {
+          "source": "/hc/hph/patient/app/ui",
+          "target": "/resources/mri-ui5/chp-ps-ui"
+        },
+        {
+          "source": "/hc/hph/cdw/config/i18n",
+          "target": "/resources/mri-ui5/CDM/ui5/i18n/"
+        },
+        {
+          "source": "/hc/hph/cdw/config/ui",
+          "target": "/resources/mri-ui5/CDM/ui5"
+        },
+        {
+          "source": "/hc/hph/patient/config/ui",
+          "target": "/resources/mri-ui5/PatientSummaryConfig/ui5/"
+        },
+        {
+          "source": "/hc/hph/patient/shared",
+          "target": "/resources/mri-ui5/PatientSummaryConfig/ui5/shared"
+        },
+        {
+          "source": "/hc/hph/patient/config/i18n",
+          "target": "/resources/mri-ui5/PatientSummaryConfig/ui5/i18n/"
+        },
+        {
+          "source": "/ui",
+          "target": "/resources/ui5/resources/"
+        }
+      ],
+      "uiplugins": {
+        "researcher": [
+          {
+            "enabled": true,
+            "featureFlag": "conceptSets",
+            "name": "Concepts",
+            "pluginPath": "plugins/Researcher/ConceptSets/module",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "concepts"
+          },
+          {
+            "enabled": true,
+            "featureFlag": "cohort",
+            "name": "Cohorts",
+            "pluginPath": "plugins/mri/PatientAnalytics/module",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "cohort"
+          },
+          {
+            "enabled": false,
+            "featureFlag": "cohorts",
+            "name": "Cohorts M",
+            "pluginPath": "plugins/Cohort/module",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "cohorts"
+          },
+          {
+            "enabled": true,
+            "featureFlag": "starboard",
+            "name": "Notebooks",
+            "pluginPath": "plugins/Starboard/module",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "starboard",
+            "subMenus": "true"
+          },
+          {
+            "enabled": true,
+            "name": "Analysis",
+            "route": "analysis_parent",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "children": [
+              {
+                "name": "Kaplan-Meier",
+                "route": "kaplan-meier",
+                "pluginPath": "plugins/Researcher/KaplanMeier/module",
+                "featureFlag": "kaplanMeier",
+                "requiredRoles": [
+                  "RESEARCHER"
+                ],
+                "enabled": true
+              },
+              {
+                "name": "Strategus",
+                "route": "analysis",
+                "pluginPath": "https://$$FQDN$$/analysis/module.js",
+                "featureFlag": "strategus",
+                "requiredRoles": [
+                  "RESEARCHER"
+                ],
+                "enabled": false
+              }
+            ]
+          }
+        ],
+        "setup": [
+          {
+            "description": "Database connection and credentials",
+            "enabled": true,
+            "name": "Databases",
+            "notes": "",
+            "pluginPath": "plugins/Setup/Db/module",
+            "route": "db"
+          },
+          {
+            "description": "Allow user to sign-in with Azure Active Directory",
+            "enabled": false,
+            "name": "Azure AD integration",
+            "notes": "Notes: Require manual update of the environment variable to switch the identity provider to Azure",
+            "pluginPath": "plugins/Setup/AzureAD/module",
+            "route": "azure-ad"
+          },
+          {
+            "description": "Enable / disable feature",
+            "enabled": true,
+            "name": "Feature flags",
+            "pluginPath": "plugins/Setup/Feature/module",
+            "route": "feature"
+          },
+          {
+            "description": "Configure dataset metadata and tags",
+            "enabled": true,
+            "name": "Metadata",
+            "notes": "",
+            "pluginPath": "plugins/Setup/Metadata/module",
+            "route": "metadata"
+          },
+          {
+            "description": "Configure patient analytics",
+            "enabled": true,
+            "name": "Patient Analytics Config",
+            "notes": "",
+            "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",
+            "route": "pa-config"
+          },
+          {
+            "description": "Configure CDM",
+            "enabled": true,
+            "name": "CDM Config",
+            "notes": "",
+            "pluginPath": "plugins/mri/CDM/module",
+            "route": "cdm-config"
+          },
+          {
+            "description": "Configure patient summary",
+            "enabled": false,
+            "name": "Patient Summary Config",
+            "notes": "",
+            "pluginPath": "plugins/mri/PatientSummaryConfig/module",
+            "route": "ps-config"
+          },
+          {
+            "description": "Configure overview description text",
+            "enabled": true,
+            "name": "Overview description",
+            "notes": "",
+            "pluginPath": "plugins/Setup/OverviewDescription/module",
+            "route": "overview-description"
+          },
+          {
+            "description": "Manage plugins",
+            "enabled": true,
+            "name": "Plugins",
+            "notes": "",
+            "pluginPath": "plugins/Setup/TrexPlugins/module",
+            "route": "plugins"
+          },
+          {
+            "description": "Setting up demo dataset",
+            "enabled": true,
+            "name": "Demo setup",
+            "notes": "",
+            "pluginPath": "plugins/Setup/DemoSetup/module",
+            "route": "demo-setup"
+          }
+        ],
+        "systemadmin": [
+          {
+            "name": "Users",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/UserOverview/module",
+            "route": "user-overview"
+          },
+          {
+            "name": "Datasets",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/StudyOverview/module",
+            "route": "dataset-overview"
+          },
+          {
+            "name": "Jobs",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/Jobs/module",
+            "route": "jobs"
+          },
+          {
+            "name": "ETL",
+            "enabled": true,
+            "route": "etl",
+            "children": [
+              {
+                "name": "Concept mapping",
+                "enabled": true,
+                "pluginPath": "plugins/SystemAdmin/ConceptMapping/module",
+                "route": "concept-mapping"
+              },
+              {
+                "name": "Data mapping",
+                "enabled": true,
+                "pluginPath": "https://$$FQDN$$/mapping/module.js",
+                "route": "data-mapping"
+              },
+              {
+                "data": {
+                  "dnBaseUrl": "https://$$FQDN$$/"
+                },
+                "name": "Data transformation",
+                "enabled": true,
+                "pluginPath": "https://$$FQDN$$/flow/module.js",
+                "route": "dataflow"
+              }
+            ]
+          },
+          {
+            "name": "Setup",
+            "enabled": true,
+            "pluginPath": "plugins/Setup/module",
+            "route": "setup"
+          }
+        ]
+      }
+    }
+  }
+}

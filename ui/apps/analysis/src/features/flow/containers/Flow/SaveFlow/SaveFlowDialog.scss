@@ -1,0 +1,30 @@
+@import '../../../../../theme/variables.scss';
+
+.save-flow-dialog {
+  &__content {
+    padding: 1.5em;
+  }
+
+  &__footer {
+    border-top: 1px solid $border-color;
+    padding: 1.5em;
+
+    &-actions {
+      justify-content: center;
+
+      button {
+        width: 150px;
+      }
+    }
+  }
+
+  d4l-snack-bar {
+    position: initial;
+
+    .snack-bar {
+      margin-bottom: 1.5em;
+      margin-left: -1.5em;
+      margin-right: -1.5em;
+    }
+  }
+}

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "wget -O llm.gguf https://huggingface.co/QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF/resolve/main/Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tbuild node_modules/@data2evidence/trex"
   },
@@ -14,6 +15,9 @@
     "deno": "latest"
   },
   "trex": {
+    "model": {
+      "path": "llm.gguf"
+    },
     "functions": {
       "init": [
         {
@@ -22,20 +26,20 @@
           "env": "mri-pg-config"
         },
         {
-          "function": "/alp-fhir-init",
-          "imports": "/alp-fhir-init/import.json",
-          "env": "alp-fhir-init",
-          "waitfor": "http://alp-minerva-fhir-server-1:8103/healthcheck"
-        },
-        {
-          "function": "/alp-db-credentials/src/init",
-          "imports": "/alp-db-credentials/import.json",
-          "env": "alp-db-credentials"
+          "function": "/alp-dataflow-gen-init",
+          "imports": "/alp-dataflow-gen-init/import.json",
+          "env": "alp-dataflow-gen-init",
+          "waitfor": "http://dataflow-gen-1:41120/api/health"
         },
         {
           "function": "/files-manager/src/init",
           "imports": "/files-manager/import.json",
           "env": "files-manager"
+        },
+        {
+          "function": "/perseus/src/init",
+          "imports": "/perseus/import.json",
+          "env": "perseus"
         },
         {
           "function": "/jobplugins/src/init",
@@ -51,6 +55,11 @@
           "function": "/portal/src/init",
           "imports": "/portal/import.json",
           "env": "portal"
+        },
+        {
+          "function": "/white-rabbit/src/init",
+          "imports": "/white-rabbit/import.json",
+          "env": "white-rabbit"
         }
       ],
       "api": [
@@ -106,12 +115,6 @@
           "function": "/code-suggestion",
           "imports": "/code-suggestion/import.json",
           "env": "code-suggestion"
-        },
-        {
-          "source": "/db-credentials",
-          "function": "/alp-db-credentials",
-          "imports": "/alp-db-credentials/import.json",
-          "env": "alp-db-credentials"
         },
         {
           "source": "/analytics-svc/api/services/bookmark",
@@ -174,7 +177,7 @@
           "env": "cdw-svc"
         },
         {
-          "source": "/index.html",
+          "source": "/index*",
           "service": "logto"
         },
         {
@@ -186,7 +189,7 @@
           "service": "logto"
         },
         {
-          "source": "/sign-in",
+          "source": "/sign-in*",
           "service": "logto"
         },
         {
@@ -196,12 +199,6 @@
         {
           "source": "/callback",
           "service": "logto"
-        },
-        {
-          "source": "/gateway/api/fhir",
-          "function": "/alp-fhir-svc",
-          "env": "alp-fhir-svc",
-          "imports": "/alp-fhir-svc/import.json"
         },
         {
           "source": "/concept-mapping",
@@ -216,10 +213,28 @@
           "imports": "/files-manager/import.json"
         },
         {
+          "source": "/backend",
+          "function": "/perseus",
+          "env": "perseus",
+          "imports": "/perseus/import.json"
+        },
+        {
+          "source": "/white-rabbit",
+          "function": "/white-rabbit",
+          "env": "white-rabbit",
+          "imports": "/white-rabbit/import.json"
+        },
+        {
           "source": "/demo",
           "function": "/demo",
           "env": "demo",
           "imports": "/demo/import.json"
+        },
+        {
+          "source": "/d2e-webapi",
+          "function": "/d2e-webapi",
+          "env": "d2e-webapi",
+          "imports": "/d2e-webapi/deno.json"
         }
       ],
       "roles": {
@@ -281,13 +296,6 @@
           "usermgmt.user.read",
           "usermgmt.user.add",
           "usermgmt.setup",
-          "dbCredentials.db.list",
-          "dbCredentials.db.read",
-          "dbCredentials.db.vocabSchema.list",
-          "dbCredentials.db.write",
-          "dbCredentials.db.credential.update",
-          "dbCredentials.db.delete",
-          "dbCredentials.vocab.schema.list",
           "portal.dataset.systemAdmin.read",
           "portal.dataset.read",
           "portal.dataset.exist",
@@ -351,6 +359,7 @@
           "dbSvc.schema.versionInfo.read",
           "dbSvc.datamodels.read",
           "dbSvc.schema.cdmVersion.read",
+          "dbSvc.schema.exists.read",
           "dbSvc.vocabSchemas.read",
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
@@ -364,7 +373,6 @@
           "gateway.db.dataModels.read",
           "gateway.db.vocabSchemas.read",
           "gateway.db.dataset.versionInfo.read",
-          "gateway.db.schema.exists.read",
           "gateway.db.schema.update",
           "gateway.terminology.concept.getStandardConcepts.read",
           "gateway.terminology.concept.searchByName.read",
@@ -374,7 +382,6 @@
           "dataflowmgmt.analysisflow.add",
           "dataflowmgmt.analysisflow.delete",
           "dataflowmgmt.analysisflow.revision.delete",
-          "gateway.fhir.create",
           "prefect.read",
           "prefect.delete",
           "prefect.post",
@@ -384,6 +391,9 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
+          "perseus.read",
+          "whiteRabbit.read",
+          "whiteRabbit.post",
           "demo.setup"
         ],
         "ALP_DASHBOARD_VIEWER": [
@@ -447,7 +457,11 @@
           "portal.userArtifact.conceptSets.read",
           "portal.userArtifact.conceptSets.write",
           "portal.userArtifact.conceptSets.delete",
-          "jobplugins.dqd.read"
+          "portal.userArtifact.atlasCohortDefinitions.read",
+          "portal.userArtifact.atlasCohortDefinitions.write",
+          "portal.userArtifact.atlasCohortDefinitions.delete",
+          "jobplugins.dqd.read",
+          "d2e.webapi"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -458,13 +472,14 @@
           "usermgmt.group.delete"
         ],
         "IDP_ALP_SVC_CLIENT_ID": [
-          "dbCredentials.db.list",
-          "portal.dataset.read"
+          "gateway.db.datbase.credentials.list",
+          "portal.dataset.systemAdmin.read"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
-          "portal.dataset.read",
-          "gateway.fhir.create",
-          "dataflowmgmt.dataflow.flowRun.results.read"
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "filesmanager.read",
+          "filesmanager.post",
+          "filesmanager.delete"
         ]
       },
       "scopes": [
@@ -479,6 +494,26 @@
             "GET",
             "POST",
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/backend/api/(.*)",
+          "scopes": [
+            "perseus.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/white-rabbit/api/(.*)",
+          "scopes": [
+            "whiteRabbit.read",
+            "whiteRabbit.post"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
           ]
         },
         {
@@ -539,13 +574,22 @@
           ]
         },
         {
+          "path": "^/analytics-svc/api/services/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "scopes": [
+            "dbSvc.schema.exists.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/analytics-svc/api/services/population/studies/patientcount",
           "scopes": [
             "PA.DatasetOverview.svc"
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies)/(?!schema)(.*)",
+          "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
           "scopes": [
             "PA.svc"
           ]
@@ -847,70 +891,6 @@
           ]
         },
         {
-          "path": "^/db-credentials/db/list$",
-          "scopes": [
-            "dbCredentials.db.list"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-          "scopes": [
-            "dbCredentials.db.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/(postgres|hana)/vocab-schema/list$",
-          "scopes": [
-            "dbCredentials.db.vocabSchema.list"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db$",
-          "scopes": [
-            "dbCredentials.db.write"
-          ],
-          "httpMethods": [
-            "POST",
-            "PUT"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/credential$",
-          "scopes": [
-            "dbCredentials.db.credential.update"
-          ],
-          "httpMethods": [
-            "PUT"
-          ]
-        },
-        {
-          "path": "^/db-credentials/db/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-          "scopes": [
-            "dbCredentials.db.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/db-credentials/vocab/(postgres|hana)/schema/list$",
-          "scopes": [
-            "dbCredentials.vocab.schema.list"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
           "path": "^/system-portal/dataset$",
           "scopes": [
             "portal.dataset.read"
@@ -920,27 +900,18 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/list/systemadmin$",
+          "scopes": [
+            "portal.dataset.systemAdmin.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/list$",
           "scopes": [
             "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?(.*)role=researcher(&.*)?$",
-          "scopes": [
-            "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?role=systemAdmin$",
-          "scopes": [
-            "portal.dataset.systemAdmin.read"
           ],
           "httpMethods": [
             "GET"
@@ -1309,6 +1280,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/concept_sets/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/concept_sets$",
           "scopes": [
             "portal.userArtifact.conceptSets.write"
@@ -1322,6 +1302,43 @@
           "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
           "scopes": [
             "portal.userArtifact.conceptSets.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.delete"
           ],
           "httpMethods": [
             "DELETE"
@@ -1412,7 +1429,16 @@
           ]
         },
         {
-          "path": "^/terminology/concept-set/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}?",
+          "path": "^/terminology/concept-set/resolveConceptSetExpression$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/[0-9]+$",
           "scopes": [
             "gateway.terminology.conceptSet.read"
           ],
@@ -1421,7 +1447,7 @@
           ]
         },
         {
-          "path": "^/terminology/concept-set/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/terminology/concept-set/[0-9]+$",
           "scopes": [
             "gateway.terminology.conceptSet.update"
           ],
@@ -1430,7 +1456,7 @@
           ]
         },
         {
-          "path": "^/terminology/concept-set/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/terminology/concept-set/[0-9]+$",
           "scopes": [
             "gateway.terminology.conceptSet.delete"
           ],
@@ -2079,6 +2105,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/db/database-creds/list",
+          "scopes": [
+            "gateway.db.datbase.credentials.list"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/gateway/api/db/[a-zA-Z0-9_]+/data-models$",
           "scopes": [
             "gateway.db.dataModels.read"
@@ -2112,24 +2147,6 @@
           ],
           "httpMethods": [
             "PUT"
-          ]
-        },
-        {
-          "path": "^/gateway/api/db/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
-          "scopes": [
-            "gateway.db.schema.exists.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/gateway/api/fhir",
-          "scopes": [
-            "gateway.fhir.create"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {
@@ -2187,6 +2204,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi(.*)",
+          "scopes": [
+            "d2e.webapi"
           ]
         }
       ]

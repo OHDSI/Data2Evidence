@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<control xmlns="http://www.sap.com/sap.ui.library.xsd" >
+
+	<name>InformationTable</name>
+	<author>Mouli Kalakota</author>
+	<documentation>The structure of information (Ex: Mapping Info) is represented using this control. This extends Table control of ui5 providing an additional event 'contentUpdate' when the content in the table is updated</documentation>
+
+	<baseType>sap.ui.table/Table</baseType>
+	<events>
+		<event name="contentUpdate">
+			<documentation>This event is fired when the content in the table is changed</documentation>
+		</event>
+	</events>
+</control>

@@ -11,8 +11,7 @@
         "compile": "tsc",
         "start:dev": "tsnd --inspect=0.0.0.0:9222 --respawn ./src/main.ts",
         "start:docker": "yarn convertenv && . ./generated-env.sh && if [ \"$LOCAL_DEBUG\" = \"true\" ] ; then yarn start:dev; else yarn start; fi",
-        "buildvue": "grunt css && cd ../vue && npm run build",
-        "convertenv": "cd envConverter && yarn generate:envs -s alp-minerva-analytics-svc"
+        "buildvue": "grunt css && cd ../vue && npm run build"
     },
     "keywords": [],
     "author": "",
@@ -25,7 +24,6 @@
     "dependencies": {
         "@alp/alp-base-utils": "1.1.9",
         "@alp/alp-config-utils": "1.0.20",
-        "@alp/alp-metadata": "1.0.2",
         "@alp/swagger-node-runner": "0.7.4-1",
         "@godaddy/terminus": "^4.4.1",
         "@sap/xsenv": "^3.3.2",
@@ -35,7 +33,7 @@
         "duckdb-async": "^1.1.1",
         "express": "^4.18",
         "express-validator": "6.6.1",
-        "hdb": "^0.19.3",
+        "hdb": "0.19.12",
         "helmet": "4.6.0",
         "jsonwebtoken": "^9.0.0",
         "jstat": "1.9.3",

@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from "npm:axios";
-import { env, services } from "../env.ts";
+import { services } from "../env.ts";
 import { get, post } from "./request-util.ts";
 //import { createLogger } from '../Logger'
 // import { Agent } from "node:https";
@@ -34,7 +34,7 @@ export class JobpluginsAPI {
     options = {
       headers: {
         Authorization: this.token,
-      }
+      },
     };
 
     return options;

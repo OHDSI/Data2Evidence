@@ -1,0 +1,29 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog class="sapUiPopupWithPadding" busyIndicatorDelay="0" title="{i18n>MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION}">
+        <VBox>
+            <Text text="{i18n>MRI_PA_COLL_PATIENTS_TO_ADD_TO_COLLECTION}" />
+            <RadioButton groupName="collectionRdBGroupAmount" selected="{selection>/subset}" text="{parts: ['i18n>MRI_PA_COLL_PATIENTS_I_CAN_ACCESS', 'selection>/subsetCount'], formatter: '.formatAmountText'}" />
+            <RadioButton groupName="collectionRdBGroupAmount" selected="{selection>/total}" text="{parts: ['i18n>MRI_PA_COLL_ALL_MATCHING_PATIENTS', 'selection>/totalCount'], formatter: '.formatAmountText'}" tooltip="{i18n>MRI_PA_COLL_ALL_MATCHING_PATIENTS_TOOLTIP}" />
+        </VBox>
+        <VBox>
+            <Text text="{i18n>MRI_PA_COLL_ADD_TO}" />
+            <HBox justifyContent="SpaceBetween">
+                <RadioButton class="sapUiSmallMarginEnd" groupName="collectionRdBGroup" selected="{selection>/newCollection}" text="{i18n>MRI_PA_COLL_NEW_COLLECTION}" />
+                <Input enabled="{selection>/newCollection}" placeholder="{i18n>MRI_PA_COLL_ENTER_NAME}" value="{selection>/collectionTitle}" valueLiveUpdate="true" valueState="{parts: ['selection>/collectionTitle', 'selection>/newCollection'], formatter: '.formatTitleValueState'}" valueStateText="{path: 'selection>/collectionTitle', formatter: '.formatTitleValueStateText'}" width="300px" />
+            </HBox>
+            <HBox justifyContent="SpaceBetween">
+                <RadioButton class="sapUiSmallMarginEnd" enabled="{selection>/hasExistingCollections}" groupName="collectionRdBGroup" selected="{selection>/oldCollection}" text="{i18n>MRI_PA_COLL_EXISTING_COLLECTION}" />
+                <ComboBox enabled="{selection>/oldCollection}" placeholder="{= ${selection>/hasExistingCollections} ? ${i18n>MRI_PA_COLL_SELECT_FROM_AVAILBALE_COLLECTIONS} : ${i18n>MRI_PA_COLL_NO_COLLECTIONS_AVAILABLE}}" selectedKey="{selection>/collectionId}" width="300px" items="{path: '/MyCollections', sorter: [{path: 'ChangedAt', descending: true}]}">
+                    <core:Item key="{Id}" text="{parts:[{path:'Title'},{path:'CreatedBy'},{path:'full_name'}],
+						 formatter: 'sap.hc.hph.collections.ui.components.collectionsManager.util.Formatters.getCohortFullName'}" enabled="{= ${PrivilegeId} !== 1}" />
+                </ComboBox>
+            </HBox>
+        </VBox>
+        <beginButton>
+            <Button enabled="{parts: ['selection>/oldCollection', 'selection>/newCollection', 'selection>/collectionId', 'selection>/collectionTitle'], formatter: '.formatButtonEnabled'}" text="{i18n>MRI_PA_COLL_BUT_OK}" press="onOkButtonPress" />
+        </beginButton>
+        <endButton>
+            <Button text="{i18n>MRI_PA_COLL_BUT_CANCEL}" press="onCancelButtonPress" />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

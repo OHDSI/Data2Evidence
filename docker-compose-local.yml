@@ -4,21 +4,25 @@ services:
     ports:
       - 9229:9229
     volumes:
-      - ./functions:/usr/src/plugins/d2ef
+      - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
+      - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
+      - ./plugins/chat_functions:/usr/src/plugins/chat
+      - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
+      # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-db-credentials": false,
           "alp-fhir-svc": false,
           "alp-fhir-init": false,
+          "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
           "bookmark-svc": false,
@@ -32,16 +36,20 @@ services:
           "code-suggestion": false,
           "portal": false,
           "files-manager": false,
-          "demo": false
+          "demo": false,
+          "d2e-webapi": false,
+          "perseus": false,
+          "white-rabbit": false
         }
 
   alp-caddy:
     command: caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile --watch
     image: caddy:2.8-alpine
     ports:
-      - 41100:41100
       - 41000:41000
       - 41130:41130
+    volumes:
+      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config 
     environment:
       CADDY__FHIR_SERVER__PUBLIC_FQDN: ${CADDY__FHIR_SERVER__PUBLIC_FQDN:-localhost}
       CADDY__CORS_LOCAL_UI: "import cors"
@@ -50,21 +58,8 @@ services:
     ports:
       - 41120:41120
     environment:
-      PORTAL__API_URL: https://trex:33000/portalsvc/graphql
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
 
-  alp-dataflow-gen-worker:
-    volumes:
-      - ./services/alp-dataflow-gen/create_workpool_json.py:/opt/prefect/create_workpool_json.py
-
-  alp-dataflow-gen-init:
-    build:
-      context: .
-      dockerfile: ./services/alp-dataflow-gen/Dockerfile
-    environment:
-      ACHILLES_THREAD_COUNT: 1
-    volumes:
-      - ./services/alp-dataflow-gen/init.py:/opt/prefect/libs/init.py
 
   alp-logto:
     build:
@@ -72,20 +67,20 @@ services:
       dockerfile: Dockerfile
 
   alp-minerva-pg-mgmt-init:
+    ports:
+      - 9211:9211
     build:
       context: services/alp-pg-management
       dockerfile: Dockerfile
     volumes:
       - ./services/alp-pg-management/app:/home/docker/app
-    environment:
-      LOCAL_DEBUG: "true"
 
   alp-minerva-postgres:
     ports:
       - 41190:5432
       - 5432:5432
 
-  broadsea-atlasdb:
+  demodb:
     ports:
       - "15432:5432"
 
@@ -93,10 +88,11 @@ services:
     ports:
       # - 9000:9000 #Port for API connectivity, internal communication is good enough. Needs to be uncommented only when testing from outside the alp docker network
       - 9090:9090
-  #alp-dicom-server:
+
+  dicom-server:
   # uses 8042 port on the container
-  #  ports:
-  #    - 8042:8042
+    ports:
+      - 8042:8042
 
   alp-logto-post-init:
     build:
@@ -122,6 +118,9 @@ services:
       context: .
       dockerfile: ./services/cachedb/Dockerfile
       target: development
+      # To test without Hana
+      # args:
+      #   BUILD_TYPE: OSS
     volumes:
       - ./services/cachedb/src:/home/docker/src
     ports:
@@ -130,10 +129,31 @@ services:
     environment:
       LOCAL_DEBUG: "true"
 
-  alp-perseus-white-rabbit:
-    environment:
-      JAVA_OPTs: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
-    # mapping debug port 5005 for local development
+  fhir-server:
+    build:
+      context: ./services/alp-fhir
+      dockerfile: Dockerfile
+  
+  fhir-fe-server:
+    container_name: &c28 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+    image: ghcr.io/data2evidence/fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+    build:
+      context: ./services/alp-fhir/
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
     ports:
-      - 5005:5005
-      - 8000:8000
+      - 41130:3000
+    logging:
+      options:
+        tag: *c28
+    depends_on:
+      fhir-server:
+        condition: service_started
+      # alp-fhir-server-post-init:
+      #   condition: service_completed_successfully
+    networks:
+      alp:
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    profiles: [fhir]
+

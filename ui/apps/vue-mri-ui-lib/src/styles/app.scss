@@ -1,0 +1,23 @@
+@import './mri-variables';
+@import './mixins';
+
+html,
+body,
+#app {
+  height: 100%;
+  .UiLbl {
+    color: $UiLightText;
+  }
+
+  button {
+    @include mriFocusable;
+  }
+
+  .MriFocus {
+    @include mriFocusStyle;
+  }
+
+  .MriHilite {
+    @include mriHiliteStyle;
+  }
+}

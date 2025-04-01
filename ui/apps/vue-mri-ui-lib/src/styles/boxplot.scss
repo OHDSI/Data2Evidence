@@ -1,0 +1,91 @@
+@import './mri-variables';
+.boxplot-container {
+  height: 100%;
+  width: 100%;
+  .visible {
+    height: 100%;
+    width: 100%;
+  }
+  .appMriPaBoxplotChart {
+    position: relative;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .appMriPaBoxplotChart text {
+    cursor: default;
+  }
+  .appMriPaBoxplotChartBackground {
+    fill: $UiLightestBG;
+  }
+  .appMriPaBoxplotChartxAxis line,
+  .appMriPaBoxplotChartyAxis line {
+    stroke: $MriDarkerBorder;
+  }
+  .appMriPaBoxplotChartLabelBackground {
+    fill: transparent;
+  }
+  .appMriPaBoxplotChartLabel:hover .appMriPaBoxplotChartLabelBackground {
+    fill: $UiExtraLightBG;
+  }
+  .appMriPaBoxplotChartLabel:hover text {
+    display: block;
+  }
+  .appMriPaBoxplotChartLabel text {
+    fill: $UiDarkText;
+    font-size: 12px;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .appMriPaBoxplotChartLabelTextHidden {
+    display: none;
+  }
+  .appMriPaBoxplotChartyAxis .domain {
+    display: none;
+  }
+  .appMriPaBoxplotChartyAxis .appMriPaBoxplotChartGridline {
+    stroke: $UiExtraLightBorder;
+  }
+  .appMriPaBoxplotChartyAxis text {
+    fill: $UiDarkText;
+    font-size: 12px;
+  }
+  .appMriPaBoxplotChartWhisker {
+    stroke: $UiExtraDarkBorder;
+  }
+  .appMriPaBoxplotChartMedian {
+    stroke: $MriLightestText;
+  }
+  .appMriPaBoxplotChartBox {
+    fill: #eb7300;
+  }
+  .appMriPaBoxplotChartOverlay {
+    fill: transparent;
+  }
+  .appMriPaBoxplotChartBoxplot:hover > .appMriPaBoxplotChartBox {
+    stroke: #e35500;
+    stroke-width: 2px;
+  }
+  .appMriPaBoxplotChartBoxplot:hover > .appMriPaBoxplotChartWhisker {
+    stroke-width: 2px;
+  }
+  .appMriPaBoxplotChartSelection .appMriPaBoxplotChartBoxplot {
+    fill-opacity: 0.4;
+    stroke-opacity: 0.4;
+  }
+  .appMriPaBoxplotChartSelection .appMriPaBoxplotChartBoxplot:hover {
+    fill-opacity: 1;
+    stroke-opacity: 1;
+  }
+  .appMriPaBoxplotChartBoxplot.appMriPaBoxplotChartSelected {
+    fill-opacity: 1;
+    stroke-opacity: 1;
+  }
+  .appMriPaBoxplotChartBoxplot.appMriPaBoxplotChartSelected .appMriPaBoxplotChartBox {
+    stroke: #e35500;
+    stroke-width: 1px;
+  }
+}

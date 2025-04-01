@@ -1,0 +1,128 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.Settings" width="100%" height="100%" 
+    xmlns:core="sap.ui.core" 
+    xmlns="sap.m" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:f="sap.ui.layout.form" 
+    xmlns:l="sap.ui.layout" 
+    xmlns:lib="hc.hph.config.global.ui.lib" 
+    xmlns:m="hc.hph.cdw.config.ui.lib" 
+    xmlns:html="http://www.w3.org/1999/xhtml">
+    <Page showHeader="false" showSubHeader="false" enableScrolling="true" class="sapConfigSettings">
+        <content>
+            <FlexBox direction="Column" alignItems="Center" height="100%" fitContainer="true" class="sapUiUfdShellBackground">
+                <items>
+                    <Text >
+                        <layoutData>
+                            <FlexItemData growFactor="1" />
+                        </layoutData>
+                    </Text>
+                    <Panel width="800px" class="sapUiNoContentPadding sapTransparentPanel">
+                        <layoutData>
+                            <FlexItemData growFactor="4" />
+                        </layoutData>
+                        <content>
+                            <Panel width="100%" class="sapUiContentPadding sapUiMediumMarginTopBottom">
+                                <headerToolbar>
+                                    <Toolbar height="3rem" design="Transparent">
+                                        <Title text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_LANGUAGE_LABEL}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_LANGUAGE_TOOLTIP}" />
+                                    </Toolbar>
+                                </headerToolbar>
+                                <m:ValidityVisualElement width="70%" text="{configEditorModel>/settings/languages/validity/message}" tooltip="{configEditorModel>/settings/languages/validity/message}" status="{configEditorModel>/settings/languages/validity/status}" />
+                                <Button icon="sap-icon://add" press="addLanguage" width="140px" text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_BUTTON_ADD_LANGUAGE_TEXT}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_BUTTON_ADD_LANGUAGE_TOOLTIP}" class="excludeValidate"/>
+                                <List class="sapGlobalSettingLanguageList" backgroundDesign="Transparent" items="{ path: 'configEditorModel>/settings/languages/value'}">
+                                    <CustomListItem class="sapGlobalSettingLanguageForm">
+                                        <Select selectedKey="{configEditorModel>key}" items="{ path: 'allLanguages>/list' }">
+                                            <core:Item key="{allLanguages>key}" text="{allLanguages>text}" />
+                                        </Select>
+                                        <Button type="Transparent" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_BUTTON_DELETE_LANGUAGE_TOOLTIP}" icon="sap-icon://delete" press="deleteLanguage" />
+                                    </CustomListItem>
+                                </List>
+                            </Panel>
+                            <Panel width="100%" class="sapUiContentPadding sapUiMediumMarginTopBottom">
+                                <headerToolbar>
+                                    <Toolbar height="3rem" design="Transparent">
+                                        <Title text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_OTHER_SETTINGS_SECTION_TAB}" />
+                                    </Toolbar>
+                                </headerToolbar>
+                                <m:ValidityVisualElement text="{configEditorModel>/settings/fuzziness/validity/message}" tooltip="{configEditorModel>/settings/fuzziness/validity/message}" status="{configEditorModel>/settings/fuzziness/validity/status}"></m:ValidityVisualElement>
+                                <FlexBox width="100%" alignItems="Start" justifyContent="Start">
+                                    <items>
+                                        <Label class="sapMxConfigPropLabel" text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_FUZINESS_LABEL}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_FUZINESS_TOOLTIP}">
+                                            <layoutData>
+                                                <FlexItemData growFactor="1" />
+                                            </layoutData>
+                                        </Label>
+                                        <Input class="sapMxConfigProp" value="{ path: 'configEditorModel>/settings/fuzziness/value', type: 'sap.ui.model.type.Float', formatOptions: { minFractionDigits: 1,maxFractionDigits: 1}}" type="Number">
+                                            <layoutData>
+                                                <FlexItemData growFactor="10" />
+                                            </layoutData>
+                                        </Input>
+                                    </items>
+                                </FlexBox>
+                                <m:ValidityVisualElement text="{configEditorModel>/settings/maxResultSize/validity/message}" tooltip="{configEditorModel>/settings/maxResultSize/validity/message}" status="{configEditorModel>/settings/maxResultSize/validity/status}"></m:ValidityVisualElement>
+                                <FlexBox width="100%" alignItems="Start" justifyContent="Start">
+                                    <items>
+                                        <Label class="sapMxConfigPropLabel" text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_RESULT_SIZE_LABEL}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_RESULT_SIZE_TOOLTIP}">
+                                            <layoutData>
+                                                <FlexItemData growFactor="1" />
+                                            </layoutData>
+                                        </Label>
+                                        <Input class="sapMxConfigProp" value="{ path: 'configEditorModel>/settings/maxResultSize/value', type: 'sap.ui.model.type.Integer'}" type="Number">
+                                            <layoutData>
+                                                <FlexItemData growFactor="10" />
+                                            </layoutData>
+                                        </Input>
+                                    </items>
+                                </FlexBox>
+                            </Panel>
+                            <Panel width="100%" class="sapUiContentPadding">
+                                <headerToolbar>
+                                    <Toolbar height="3rem" design="Transparent">
+                                        <Title text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_MENU_OTHERS_SETTINGS_PAGE_TOOLTIP}" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_MENU_OTHERS_SETTINGS_PAGE_TOOLTIP}" />
+                                    </Toolbar>
+                                </headerToolbar>
+                                <FlexBox width="100%" alignItems="Start" justifyContent="Start">
+                                    <items>
+                                        <!-- <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_DATE_FORMAT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_DATE_FORMAT_TOOLTIP}"> -->
+                                        <Label class="sapMxConfigPropLabel" text="Date Format">
+                                            <layoutData>
+                                                <FlexItemData growFactor="1" />
+                                            </layoutData>
+                                        </Label>
+                                        <Input class="sapMxConfigProp" value="{configEditorModel>/settings/dateFormat/value}" width="70%" change=".isValidDateFormat">
+                                            <layoutData>
+                                                <FlexItemData growFactor="10" />
+                                            </layoutData>
+                                        </Input>
+                                    </items>
+                                </FlexBox>
+
+                                <FlexBox width="100%" alignItems="Start" justifyContent="Start">
+                                    <items>
+                                        <!-- <Label class="sapMxConfigProp" text="{i18n>HPH_CFG_GLOBAL_TIME_FORMAT_LABEL}" tooltip="{i18n>HPH_CFG_GLOBAL_TIME_FORMAT_TOOLTIP}"> -->
+                                        <Label class="sapMxConfigPropLabel" text="Time Format">
+                                            <layoutData>
+                                                <FlexItemData growFactor="1" />
+                                            </layoutData>
+                                        </Label>
+                                        <Input class="sapMxConfigProp" value="{configEditorModel>/settings/timeFormat/value}" width="70%" change=".isValidTimeFormat">
+                                            <layoutData>
+                                                <FlexItemData growFactor="10" />
+                                            </layoutData>
+                                        </Input>
+                                    </items>
+                                </FlexBox>
+
+                            </Panel>
+                        </content>
+                    </Panel>
+                    <Text >
+                        <layoutData>
+                            <FlexItemData growFactor="1" />
+                        </layoutData>
+                    </Text>
+                </items>
+            </FlexBox>
+        </content>
+    </Page>
+</mvc:View>

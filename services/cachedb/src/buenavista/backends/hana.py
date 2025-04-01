@@ -62,7 +62,6 @@ class HANASession(Session):
         self.parent = parent
         self.conn = conn
         self._cursor = conn.connection.cursor()
-        self._cursor.connection.autocommit = True
 
     def close(self):
         self._cursor.close()
@@ -132,9 +131,9 @@ class HANAConnection(Connection):
         return HANASession(self, conn)
 
     def release(self, conn):
-        '''
+        """
         Connection session is bound by sqlalchemy engine, after closing connection, the connection resource will be returned to the connection pool
-        '''
+        """
         conn.close()
 
     def parameters(self) -> Dict[str, str]:

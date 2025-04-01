@@ -1,0 +1,74 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.0__create_questionnaire_response_tables
+CREATE TABLE "GDM.QUESTIONNAIRE_RESPONSE" (
+  "ID"                                  VARCHAR(1000)	NOT NULL,
+  "PERSON_ID"                           BIGINT    		NOT NULL,
+  "LANGUAGE"				                    VARCHAR(50)	  NULL,
+  "QUESTIONNAIRE_REFERENCE"		          VARCHAR(1000)	NULL,
+  "QUESTIONNAIRE_VERSION"		            VARCHAR(50)	  NULL,
+  "STATUS"                		          VARCHAR(50)	  NULL,
+  "AUTHORED"			                      TIMESTAMP	  	NULL,
+  "ETL_SOURCE_TABLE"			              VARCHAR(500)	NOT NULL,
+  "ETL_SOURCE_TABLE_RECORD_ID"          BIGINT		    NOT NULL,
+  "ETL_SOURCE_TABLE_RECORD_CREATED_AT"  TIMESTAMP	  	NOT NULL,
+  "ETL_SESSION_ID"			                VARCHAR(50)	  NOT NULL,
+  "ETL_STARTED_AT"			                TIMESTAMP	    NOT NULL,
+  "ETL_CREATED_AT"			                TIMESTAMP	    DEFAULT (now() AT TIME ZONE 'UTC'),
+  "ETL_UPDATED_AT"			                TIMESTAMP	    NULL,
+  PRIMARY KEY ("ID")
+);
+
+
+
+CREATE TABLE "GDM.ITEM" (
+  "ID"	                                      VARCHAR(50)		  NOT NULL,
+  "GDM_QUESTIONNAIRE_RESPONSE_ID"	            VARCHAR(1000)	  NOT NULL,
+  "PARENT_ITEM_ID"				                    VARCHAR(50)	    NULL,
+  "PARENT_ANSWER_ID"		                      VARCHAR(50)	    NULL,
+  "LINK_ID"		                                VARCHAR(50)	    NULL,
+  "TEXT"                		                  VARCHAR(5000)	  NULL,
+  "DEFINITION"			                          VARCHAR(500)		NULL,
+  "ETL_STARTED_AT"			                      TIMESTAMP	      NOT NULL,
+  "ETL_CREATED_AT"			                      TIMESTAMP	      DEFAULT (now() AT TIME ZONE 'UTC'),
+  PRIMARY KEY ("ID"),
+  FOREIGN KEY ("GDM_QUESTIONNAIRE_RESPONSE_ID") REFERENCES "GDM.QUESTIONNAIRE_RESPONSE" ("ID") ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE "GDM.ANSWER" (
+  "ID"	                            VARCHAR(50)		  NOT NULL,
+  "GDM_ITEM_ID"	                    VARCHAR(50)	    NOT NULL,
+  "VALUE_TYPE"				              VARCHAR(50)	    NULL,
+  "VALUE"		                        VARCHAR(5000)	  NULL,
+  "VALUEATTACHMENT_CONTENTTYPE"		  VARCHAR(500)	  NULL,
+  "VALUEATTACHMENT_LANGUAGE"        VARCHAR(50)	    NULL,
+  "VALUEATTACHMENT_DATA"			      BYTEA       		NULL,
+  "VALUEATTACHMENT_URL"		          VARCHAR(500)	  NULL,
+  "VALUEATTACHMENT_SIZE"            VARCHAR(50)		  NULL,
+  "VALUEATTACHMENT_HASH"			      BYTEA         	NULL,
+  "VALUEATTACHMENT_TITLE"		        VARCHAR(500)	  NULL,
+  "VALUEATTACHMENT_CREATION"        TIMESTAMP	      NULL,
+  "VALUECODING_SYSTEM"			        VARCHAR(500)		NULL,
+  "VALUECODING_VERSION"		          VARCHAR(50)	    NULL,
+  "VALUECODING_CODE"                VARCHAR(100)	  NULL,
+  "VALUECODING_DISPLAY"			        VARCHAR(5000)		NULL,
+  "VALUECODING_USERSELECTED"		    VARCHAR(50)	    NULL,
+  "VALUEQUANTITY_VALUE"             VARCHAR(50)	    NULL,
+  "VALUEQUANTITY_COMPARATOR"			  VARCHAR(50)		  NULL,
+  "VALUEQUANTITY_UNIT"			        VARCHAR(100)		NULL,
+  "VALUEQUANTITY_SYSTEM"			      VARCHAR(500)		NULL,
+  "VALUEQUANTITY_CODE"			        VARCHAR(100)		NULL,
+  "VALUEREFERENCE_REFERENCE"			  VARCHAR(500)		NULL,
+  "VALUEREFERENCE_TYPE"			        VARCHAR(500)		NULL,
+  "VALUEREFERENCE_IDENTIFIER"			  VARCHAR(500)		NULL,
+  "VALUEREFERENCE_DISPLAY"			    VARCHAR(5000)		NULL,
+  "ETL_STARTED_AT"			            TIMESTAMP	      NOT NULL,
+  "ETL_CREATED_AT"			            TIMESTAMP	      DEFAULT (now() AT TIME ZONE 'UTC'),
+  PRIMARY KEY ("ID"),
+  FOREIGN KEY ("GDM_ITEM_ID") REFERENCES "GDM.ITEM" ("ID") ON DELETE CASCADE
+);
+
+--rollback DROP TABLE "GDM.ANSWER";
+--rollback DROP TABLE "GDM.ITEM";
+--rollback DROP TABLE "GDM.QUESTIONNAIRE_RESPONSE";

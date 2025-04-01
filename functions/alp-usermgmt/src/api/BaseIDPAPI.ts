@@ -21,14 +21,16 @@ export abstract class BaseIDPAPI {
     this.issuerUrl = services.idIssuerUrl!
     this.logger = createLogger(this.constructor.name)
 
-    this.httpsAgent = new https.Agent({
-      rejectUnauthorized: this.issuerUrl.startsWith('https://alp-logto-') ? false : true,
-      ca: this.issuerUrl.startsWith('https://alp-logto-') ? env.SSL_CA_CERT : undefined
-    })
+    // this.httpsAgent = new https.Agent({
+    //   rejectUnauthorized: this.issuerUrl.startsWith('https://alp-logto-') ? false : true,
+    //   ca: this.issuerUrl.startsWith('https://alp-logto-') ? env.SSL_CA_CERT : undefined
+    // })
   }
 
   protected async getRequestConfig(scope: string, params?: ITokenExchangeOptions) {
-    let options: AxiosRequestConfig = { httpsAgent: this.httpsAgent }
+    let options: AxiosRequestConfig = { 
+      // httpsAgent: this.httpsAgent 
+    }
 
     const token = await this.getToken(scope, params)
     if (!token || !token.access_token) {

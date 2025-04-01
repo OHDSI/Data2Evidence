@@ -1,0 +1,337 @@
+// tslint:disable
+
+const DEFAULT_START_VALUE = 0
+const STRATEGY_KEYS = {
+  DEFAULT: 'default',
+  ALWAYS_INCREASE: 'alwaysIncrease',
+  INCREASE_FROM_MAX_AVAILABLE: 'increaseFromMaxAvailable',
+}
+
+/**
+ * "Abstract base class" for key counter object implementing a specific counting strategy.
+ *
+ * It handles the bookkeepring needed to keep of indices used and i
+ * instatiates the start value.
+ *
+ * @constructor
+ * @param {integer} [counterStartValue=DEFAULT_START_VALUE]  - the first value to be returned for each new key
+ *
+ * @classdesc
+ * BaseKeyCounter class
+ * @alias hc.mri.pa.ui.lib.utils.BaseKeyCounter
+ */
+function BaseKeyCounter(counterStartValue, strategy) {
+  this.init({
+    strategy,
+    counterStartValue,
+    valuesGenerated: {},
+    counterMap: {},
+  })
+}
+
+BaseKeyCounter.prototype.init = function ({ strategy, counterStartValue, valuesGenerated, counterMap }) {
+  this.strategy = strategy || STRATEGY_KEYS.DEFAULT
+  this.counterStartValue = counterStartValue || DEFAULT_START_VALUE
+  this.valuesGenerated = valuesGenerated || {}
+  this.counterMap = counterMap || {}
+}
+
+/**
+ * Get next index for the given key.
+ *
+ * This method is called BEFORE the newly generated index has been stored
+ * in the internal list of indices used.
+ *
+ * This methods must be overrriden in derived classes, but should not be
+ * called directly (only through getNextValueFor()).
+ *
+ * @protected
+ * @param {string} key - key for which new index is needed
+ * @returns {integer} next index
+ */
+BaseKeyCounter.prototype.getUncheckedNextValueFor = function (key) {
+  throw new Error('This function must be implemented!')
+}
+
+/**
+ * Get next index for the given key, storing and checking the generated
+ * index.
+ *
+ * This method is wrapper on getUncheckedNextValueFor() which keeps
+ * track of the indices produced and throws an error if a non-released index
+ * is about to be handed out a second time.
+ *
+ * This method should NOT be overrriden, overrride getUncheckedNextValueFor()
+ * instead.
+ *
+ * @param {string} key - key for which new index is needed
+ * @returns {integer} next index
+ */
+BaseKeyCounter.prototype.getNextValueFor = function (key) {
+  const nextValue = this.getUncheckedNextValueFor(key)
+  if (!(key in this.valuesGenerated)) {
+    this.valuesGenerated[key] = []
+  } else if (this.valuesGenerated[key].indexOf(nextValue) >= 0) {
+    throw new Error(`Already used the index ${nextValue} for the key ${key}!`)
+  }
+  this.valuesGenerated[key].push(nextValue)
+  return nextValue
+}
+
+/**
+ * Set the next index to be handed out to a specified value.
+ *
+ * This methods must be overrriden in derived classes.
+ *
+ * @abstract
+ * @param {string} key - key for which to reset the next index
+ * @param {integer} value - next index value to be handed out
+ */
+BaseKeyCounter.prototype.setNextValueFor = function (key, value) {
+  throw new Error('This function must be implemented!')
+}
+
+/**
+ * Reset the counter after the release of a given index.
+ *
+ * This method is called AFTER the index to be released has already been
+ * removed from the internal list of used indices.
+ *
+ * This methods must be overrriden in derived classes, but should not be
+ * called directly (only through releaseIndexFor()).
+ *
+ * @protected
+ * @param {string} key - key for which index has been released
+ * @param {integer} index - index that was released
+ */
+BaseKeyCounter.prototype.resetCounterAfterRelease = function (key, index) {
+  throw new Error('This function must be implemented!')
+}
+
+/**
+ * Inform the counter that a given index for a given key has been released.
+ *
+ * This method wraps resetCounterAfterRelease() and removes
+ * the released index from the internal list of used indices.
+ *
+ * This method should NOT be overrriden, overrride resetCounterAfterRelease()
+ * instead.
+ *
+ * @param {string} key - key for which index has been released
+ * @param {integer} index - index that was released
+ */
+BaseKeyCounter.prototype.releaseIndexFor = function (key, index) {
+  if (!(key in this.valuesGenerated)) {
+    throw new Error(`Trying to release index for the unknown key ${key}!`)
+  } else {
+    this.valuesGenerated[key] = this.valuesGenerated[key].filter(storedIndex => storedIndex !== index)
+  }
+  this.resetCounterAfterRelease(key, index)
+}
+
+/**
+ * Reset the internal counter state after blocking a given index (primarily
+ * by ensuring that the next index to generate is set correctly).
+ *
+ * This method is called AFTER the index to be blocked has already been
+ * added to the internal list of used indices.
+ *
+ * This methods must be overrriden in derived classes, but should not be
+ * called directly (only through blockIndexFor()).
+ *
+ * @protected
+ * @param {string} key - key for which index has been blocked
+ * @param {integer} index - index that was blocked
+ */
+BaseKeyCounter.prototype.resetCounterAfterBlock = function (key, index) {
+  throw new Error('This function must be implemented!')
+}
+
+/**
+ * Inform the counter that a given index has been taken. This is used to
+ * keep the counter up-to-date when using externally added indices.
+ *
+ * This method wraps resetCounterAfterBlock() and removes
+ * the released index from the internal list of used indices.
+ *
+ * This method should NOT be overrriden, overrride resetCounterAfterBlock()
+ * instead.
+ *
+ * @param {string} key - key for which index has been blocked
+ * @param {integer} index - index that was blocked
+ */
+BaseKeyCounter.prototype.blockIndexFor = function (key, index) {
+  if (!(key in this.valuesGenerated)) {
+    this.valuesGenerated[key] = []
+  } else if (this.valuesGenerated[key].indexOf(index) >= 0) {
+    throw new Error(`Already used the index ${index} for the key ${key}!`)
+  }
+  this.valuesGenerated[key].push(index)
+  this.resetCounterAfterBlock(key, index)
+}
+
+/**
+ * Constructor for an AlwaysIncreaseCounter which always increases the
+ * index by 1 each time without ever going back (filtercard labelling
+ * behavior in FP2).
+ *
+ * @constructor
+ * @param {integer} counterStartValue The first value to be returned for each new key.
+ *
+ * @classdesc
+ * AlwaysIncreaseCounter class
+ * @alias hc.mri.pa.ui.lib.utils.AlwaysIncreaseCounter
+ */
+function AlwaysIncreaseCounter(counterStartValue, strategyName) {
+  BaseKeyCounter.call(this, counterStartValue, strategyName)
+}
+
+AlwaysIncreaseCounter.prototype = Object.create(BaseKeyCounter.prototype)
+AlwaysIncreaseCounter.prototype.constructor = AlwaysIncreaseCounter
+
+AlwaysIncreaseCounter.prototype.getUncheckedNextValueFor = function (key) {
+  const nextValue = this.counterMap[key] || this.counterStartValue
+  this.counterMap[key] = nextValue + 1
+  return nextValue
+}
+
+AlwaysIncreaseCounter.prototype.setNextValueFor = function (key, value) {
+  this.counterMap[key] = value
+}
+
+AlwaysIncreaseCounter.prototype.resetCounterAfterRelease = function () {
+  // Does not do anything.
+}
+
+AlwaysIncreaseCounter.prototype.resetCounterAfterBlock = function (key, index) {
+  /* Update if key is new or the new index is larger than what we
+  already have generated */
+  if (!(key in this.counterMap) || this.counterMap[key] < index + 1) {
+    this.counterMap[key] = index + 1
+  }
+}
+
+/**
+ * Constructor for a new IncreaseFromMaxAvailableCounter, the strategy of
+ * always picking the highest free index for each key (filtercard
+ * labelling behavior in FP3).
+ *
+ * @constructor
+ * @param {integer} counterStartValue The first value to be returned for each new key.
+ *
+ * @classdesc
+ * IncreaseFromMaxAvailableCounter class
+ * @alias hc.mri.pa.ui.lib.utils.IncreaseFromMaxAvailableCounter
+ */
+function IncreaseFromMaxAvailableCounter(counterStartValue, strategyName) {
+  BaseKeyCounter.call(this, counterStartValue, strategyName)
+  this.counterMap = {}
+}
+
+IncreaseFromMaxAvailableCounter.prototype = Object.create(BaseKeyCounter.prototype)
+IncreaseFromMaxAvailableCounter.prototype.constructor = IncreaseFromMaxAvailableCounter
+
+IncreaseFromMaxAvailableCounter.prototype.getUncheckedNextValueFor = function (key) {
+  const nextValue = this.counterMap[key] || this.counterStartValue
+  this.counterMap[key] = nextValue + 1
+  return nextValue
+}
+
+IncreaseFromMaxAvailableCounter.prototype.setNextValueFor = function (key, value) {
+  this.counterMap[key] = value
+}
+
+IncreaseFromMaxAvailableCounter.prototype.resetCounterAfterRelease = function (key) {
+  /* We reset so that the next generated value is 1 above the highest,
+  unreleased value generated so far */
+  if (this.valuesGenerated[key].length === 0) {
+    this.counterMap[key] = this.counterStartValue
+  } else {
+    this.counterMap[key] = Math.max.apply(null, this.valuesGenerated[key]) + 1
+  }
+}
+
+IncreaseFromMaxAvailableCounter.prototype.resetCounterAfterBlock = function (key, index) {
+  /* We reset so that the next generated value is 1 above the highest,
+  unreleased value generated so far */
+  if (!(key in this.counterMap) || this.counterMap[key] < index + 1) {
+    this.counterMap[key] = index + 1
+  }
+}
+
+/**
+ * Object holding all possible strategies.
+ *
+ * The key "default" acts as an alias for another strategy to allow
+ * swapping the default everywhere; this key should always be present.
+ */
+const ALLOWED_STRATEGIES = Object.freeze({
+  [STRATEGY_KEYS.DEFAULT]: IncreaseFromMaxAvailableCounter,
+  [STRATEGY_KEYS.ALWAYS_INCREASE]: AlwaysIncreaseCounter,
+  [STRATEGY_KEYS.INCREASE_FROM_MAX_AVAILABLE]: IncreaseFromMaxAvailableCounter,
+})
+
+let keyCounterInstance = null
+
+const factory = {
+  /**
+   * Get a list of the names of all allowed strategies.
+   *
+   * @returns {string[]} - list of strategy names
+   */
+  getAllowedStrategies() {
+    return Object.keys(ALLOWED_STRATEGIES)
+  },
+
+  /**
+   * Factory function for counter strategies (implemented as KeyCounter objects).
+   *
+   * @param {string} strategyName Name (key) for the chosen satrategy
+   * @param {integer} counterStartValue The first value to be returned for each new key. Defaults to 0;
+   * @returns {BaseKeyCounter} key counter obejct implementing required strategy
+   */
+  getKeyCountingStrategy(strategyName, counterStartValue) {
+    if (strategyName in ALLOWED_STRATEGIES) {
+      keyCounterInstance = new ALLOWED_STRATEGIES[strategyName](counterStartValue, strategyName)
+      return keyCounterInstance
+    }
+    throw new Error(
+      `No counting strategy named '${strategyName}' - possible strategies are:\n'${Object.keys(ALLOWED_STRATEGIES)}`
+    )
+  },
+
+  createKeyCounter({ strategy, counterStartValue, valuesGenerated, counterMap }) {
+    if (strategy in ALLOWED_STRATEGIES) {
+      const keyCounter = new ALLOWED_STRATEGIES[strategy](counterStartValue, strategy)
+      keyCounter.init({
+        strategy,
+        counterStartValue,
+        valuesGenerated,
+        counterMap,
+      })
+      return keyCounter
+    }
+    throw new Error(
+      `No counting strategy named '${strategy}' - possible strategies are:\n'${Object.keys(ALLOWED_STRATEGIES)}`
+    )
+  },
+
+  resetKeyCounter(strategyName, counterStartValue) {
+    if (strategyName in ALLOWED_STRATEGIES) {
+      keyCounterInstance = new ALLOWED_STRATEGIES[strategyName](counterStartValue, strategyName)
+      return keyCounterInstance
+    }
+    throw new Error(
+      `No counting strategy named '${strategyName}' - possible strategies are:\n'${Object.keys(ALLOWED_STRATEGIES)}`
+    )
+  },
+
+  getInstance() {
+    if (!keyCounterInstance) {
+      throw new Error('No key counting instance found')
+    }
+    return keyCounterInstance
+  },
+}
+
+export default factory

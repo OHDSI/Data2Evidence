@@ -1,0 +1,19 @@
+.field-source-handle {
+  &__content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 1em;
+    font-size: 0.9em;
+    word-break: break-all;
+  }
+
+  &__label {
+    flex: 1;
+  }
+
+  &__column-type {
+    width: 100px;
+    text-transform: capitalize;
+  }
+}

@@ -14,7 +14,7 @@ config.connection = async () => {
     await sleep(30000)
   }
 
-  let ssl: any = Boolean(env.PG_SSL)
+  let ssl: any = JSON.parse(env.PG_SSL.toLowerCase())
   if (env.PG_CA_ROOT_CERT) {
     ssl = {
       rejectUnauthorized: true,

@@ -1,0 +1,218 @@
+/* ===================================================================== */
+/* CSS for control sap.m/TimePicker.control BlueCrystal theme            */
+/* ===================================================================== */
+
+@sapMFontMediumSize: 0.875rem;
+@sapMFontSmallSize: 0.75rem;
+@sapUiAccent4: #ab218e;
+@sapUiBtnBGTransparentDown: #007cc0;
+@sapUiBtnBGTransparentHover: fadeout(darken(#f7f7f7, 10%), 50%);
+@sapUiBtnTextActive:  #ffffff;
+@sapUiElement: #666666;
+@sapUiExtraLightBG: #f2f2f2;
+@sapUiFocus: #005483;
+@sapUiHighlight: #007cc0;
+@sapUiLightestBorder: #ffffff;
+@sapUiInputBaseFocus: @sapUiHighlight;
+@sapUiInvertedFocus: @sapUiLightestBorder;
+@sapUiLightText:  #666666;
+@sapUiStandardText: #000000;
+@sapUiTextInverted: #ffffff;
+
+/* ======================================== */
+/* TimePicker Input Field                   */
+/* ======================================== */
+.sapMriTimePicker {
+	.sapUiIcon {
+		color: @sapUiElement;
+		&:hover {
+			background-color: @sapUiBtnBGTransparentHover;
+		}
+		&:focus {
+			background-color: @sapUiBtnBGTransparentHover;
+			outline: 1px dotted @sapUiFocus;
+			outline-offset: -1px;
+		}
+		&:active {
+			background-color: @sapUiBtnBGTransparentDown;
+			color: @sapUiBtnTextActive;
+			outline: 1px dotted @sapUiInvertedFocus;
+		}
+	}
+	&.sapMriTPInputActive {
+		.sapMInputBaseInner {
+			border: 1px solid @sapUiInputBaseFocus;
+		}
+		.sapUiIcon {
+			background-color: @sapUiBtnBGTransparentDown;
+			color: @sapUiBtnTextActive;
+			&:hover {
+				background-color: @sapUiBtnBGTransparentHover;
+				color: @sapUiElement;
+			}
+			&:focus {
+				background-color: @sapUiBtnBGTransparentHover;
+			}
+		}
+	}
+}
+/* ======================================== */
+/* TimePicker Dropdown                      */
+/* ======================================== */
+.sapMriTimePickerDropDown {
+	.sapMriTimePickerContainer {
+		.sapMriTPColumn {
+			.sapMriTimePickerLabel {
+				font-size: @sapMFontSmallSize;
+				color: @sapUiLightText;
+				text-align: center;
+				vertical-align: middle;
+			}
+			.sapMriTimePickerSlider {
+				.sapMriTimePickerItem {
+					background: @sapUiHighlight;
+					border: 1px solid @sapUiLightestBorder;
+					font-size: @sapMFontMediumSize;
+					color: @sapUiTextInverted;
+					text-align: center;
+					&:hover {
+						background: darken(@sapUiHighlight, 10);
+						color: @sapUiTextInverted;
+					}
+					&:active {
+						background: @sapUiHighlight;
+						color: @sapUiTextInverted;
+					}
+					&:focus {
+						outline: 1px dotted @sapUiTextInverted;
+						outline-offset: -3px;
+					}
+				}
+			}
+			&.sapMriTPSliderExpanded {
+				.sapMriTimePickerSlider {
+					.sapMriTimePickerItem {
+						background: @sapUiExtraLightBG;
+						color: @sapUiStandardText;
+						&:hover {
+							background: darken(@sapUiExtraLightBG, 10);
+						}
+						&:active {
+							background: @sapUiHighlight;
+							color: @sapUiTextInverted;
+						}
+						&:focus {
+							outline: 1px dotted @sapUiFocus;
+							outline-offset: -3px;
+						}
+					}
+					.sapMriTPPickerSelectionFrame {
+						border: 2px solid @sapUiHighlight;
+						&:hover {
+							border: 2px solid darken(@sapUiHighlight,10);
+							& + ul > li.sapMriTimePickerItem.sapMriTimePickerItemSelected {
+								background: darken(@sapUiExtraLightBG, 10);
+							}
+						}
+						&:active {
+							border: 2px solid @sapUiHighlight;
+							& + ul > li.sapMriTimePickerItem.sapMriTimePickerItemSelected {
+								background: @sapUiHighlight;
+								color: @sapUiTextInverted;
+							}
+						}
+					}
+				}
+			}
+			&:focus {
+				outline: none;
+			}
+		}
+	}
+}
+
+html.sap-phone {
+	/* ======================================== */
+	/* TimePicker Input Field                   */
+	/* ======================================== */
+	.sapMriTimePicker {
+		.sapUiIcon {
+			color: @sapUiElement;
+			&:focus {
+				background-color: @sapUiBtnBGTransparentHover;
+				outline: 1px dotted @sapUiFocus;
+				outline-offset: -1px;
+			}
+			&:active {
+				background-color: @sapUiBtnBGTransparentDown;
+				color: @sapUiBtnTextActive;
+				outline: 1px dotted @sapUiInvertedFocus;
+			}
+		}
+		&.sapMriTPInputActive {
+			.sapMInputBaseInner {
+				border: 1px solid @sapUiInputBaseFocus;
+			}
+			.sapUiIcon {
+				background-color: @sapUiBtnBGTransparentDown;
+				color: @sapUiBtnTextActive;
+			}
+		}
+	}
+	/* ======================================== */
+	/* TimePicker Dropdown                      */
+	/* ======================================== */
+	.sapMriTimePickerDropDown {
+		.sapMriTimePickerContainer {
+			.sapMriTimePickerContainerLabel {
+				font-size: @sapMFontMediumSize;
+				color: @sapUiAccent4;
+			}
+			.sapMriTPColumn {
+				.sapMriTimePickerLabel {
+					font-size: @sapMFontSmallSize;
+					color: @sapUiLightText;
+					text-align: center;
+					vertical-align: middle;
+				}
+				.sapMriTimePickerSlider {
+					.sapMriTimePickerItem {
+						background: @sapUiHighlight;
+						border: 1px solid @sapUiLightestBorder;
+						font-size: @sapMFontMediumSize;
+						color: @sapUiTextInverted;
+						text-align: center;
+						&:active {
+							background: @sapUiHighlight;
+							color: @sapUiTextInverted;
+						}
+						&:focus {
+							outline: 1px dotted @sapUiTextInverted;
+							outline-offset: -3px;
+						}
+					}
+				}
+				&.sapMriTPSliderExpanded {
+					.sapMriTimePickerSlider {
+						.sapMriTimePickerItem {
+							background: @sapUiExtraLightBG;
+							color: @sapUiStandardText;
+							&:active {
+							}
+							&:focus {
+								outline: 1px dotted @sapUiFocus;
+								outline-offset: -3px;
+							}
+						}
+						.sapMriTPPickerSelectionFrame {
+							border: 2px solid @sapUiHighlight;
+						}
+					}
+				}
+				&:focus {
+					outline: none;
+				}
+			}
+		}
+	}
+}

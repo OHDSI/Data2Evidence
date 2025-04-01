@@ -1,0 +1,246 @@
+/* ============================================= */
+/* CSS for control sap.m/TimePicker.control      */
+/* ============================================= */
+
+/* ======================================== */
+/* TimePicker Input Field                   */
+/* ======================================== */
+.sapMriTimePicker {
+	.sapUiIcon {
+		cursor: pointer;
+	}
+}
+/* ======================================== */
+/* TimePicker Dropdown                      */
+/* ======================================== */
+.sapMriTimePickerDropDown {
+	overflow: hidden !important;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+	.sapMriTimePickerContainer {
+		height: 100%;
+		min-width: 20rem;
+		box-sizing: border-box;
+		padding: 1rem;
+		text-align: center;
+		&:before {
+			content: '';
+			display: inline-block;
+			height: 100%;
+			vertical-align: middle;
+		}
+		.sapMriTimePickerContainerLabel {
+			display: none;
+			box-sizing: border-box;
+		}
+		.sapMriTPColumn {
+			display: inline-block;
+			overflow: hidden;
+			height: 3rem;
+			vertical-align: middle;
+			text-align: center;
+			box-sizing: border-box;
+			cursor: pointer;
+			.sapMriTimePickerLabel {
+				display: none;
+				box-sizing: border-box;
+				height: 2rem;
+				line-height: 2rem;
+				width: 4.5rem;
+				text-align: center;
+			}
+			.sapMriTimePickerItemArrows {
+				display: none;
+				box-sizing: border-box;
+			}
+			.sapMriTimePickerSlider {
+				overflow: hidden;
+				height: 100%;
+				box-sizing: border-box;
+				.sapMriTimePickerItem {
+					height: 3rem;
+					line-height: 3rem;
+					width: 4.5rem;
+					box-sizing: border-box;
+				}
+				.sapMriTPPickerSelectionFrame {
+					width: 4.5rem;
+					height: 3rem;
+					position: absolute;
+					box-sizing: border-box;
+					display: none;
+				}
+				& > ul {
+					list-style: none;
+					margin: 0;
+					padding: 0;
+				}
+			}
+			&.sapMriTPSliderExpanded {
+				height: 100%;
+				cursor: default;
+				margin: 0;
+				.sapMriTimePickerLabel {
+					display: block;
+				}
+				.sapMriTimePickerItemArrows {
+					display: none;
+				}
+				.sapMriTimePickerSlider {
+					height: calc(100% - 2rem);
+					.sapMriTPPickerSelectionFrame {
+						display: block;
+					}
+				}
+			}
+		}
+	}
+}
+/* ======================================== */
+/* COMPACT MODE STYLES                      */
+/* ======================================== */
+.sapUiSizeCompact {
+	/* ======================================== */
+	/* TimePicker Dropdown                      */
+	/* ======================================== */
+	.sapMriTimePickerDropDown {
+		.sapMriTimePickerContainer {
+			min-width: 17rem;
+			padding: 0.5rem;
+			margin: auto;
+			.sapMriTPColumn {
+				height: 2rem;
+				.sapMriTimePickerLabel {
+					width: 4rem;
+				}
+				.sapMriTimePickerSlider {
+					.sapMriTimePickerItem {
+						height: 2rem;
+						line-height: 2rem;
+						width: 4rem;
+						box-sizing: border-box;
+					}
+					.sapMriTPPickerSelectionFrame {
+						width: 4rem;
+						height: 2rem;
+					}
+				}
+				&.sapMriTPSliderExpanded {
+					height: 100%;
+					cursor: default;
+					margin: 0;
+					.sapMriTimePickerItemArrows {
+						display: block;
+					}
+					.sapMriTimePickerSlider {
+						height: ~"calc(100% - 6rem)";
+					}
+				}
+			}
+		}
+	}
+}
+/* PHONE STYLES */
+html.sap-phone {
+	/* ======================================== */
+	/* TimePicker Dropdown                      */
+	/* ======================================== */
+	.sapMriTimePickerDropDown {
+		/* This centers content in landscape & portrait mode */
+		.sapMDialogScrollCont {
+			display: flex;
+			height: 100%;
+			padding: 0;
+		}
+		.sapMriTimePickerContainer {
+			max-height: 38rem; // 12 * item height + label's height
+			height: 100%;
+			padding: 1rem;
+			box-sizing: border-box;
+			margin: auto;
+			text-align: center;
+			&:before {
+				content: '';
+				display: inline-block;
+				height: 100%;
+				margin-right: -0.25rem;
+				vertical-align: middle;
+			}
+			.sapMriTimePickerContainerLabel {
+				position: absolute;
+				top: 0;
+				left: 50%;
+				transform: translate(-50%, 0);
+				display: block;
+				height: 2rem;
+				line-height: 2rem;
+			}
+			.sapMriTPColumn {
+				display: inline-block;
+				height: 3rem;
+				text-align: center;
+				overflow: hidden;
+				cursor: pointer;
+				vertical-align: middle;
+				box-sizing: border-box;
+				.sapMriTimePickerLabel {
+					height: 2rem;
+					width: 4.5rem;
+					text-align: center;
+					vertical-align: middle;
+					display: none;
+				}
+				.sapMriTimePickerItemArrows {
+					display: none;
+				}
+				.sapMriTimePickerSlider {
+					height: 100%;
+					//for Android 4.1 - 4.3 calc is not supported, so use 100% instead
+					max-height: 100%;
+					overflow: hidden;
+					.sapMriTimePickerItem {
+						height: 3rem;
+						line-height: 3rem;
+						width: 4.5rem;
+						box-sizing: border-box;
+					}
+					.sapMriTPPickerSelectionFrame {
+						width: 4.5rem;
+						height: 3rem;
+						position: absolute;
+						display: none;
+						box-sizing: border-box;
+					}
+				}
+				&.sapMriTPSliderExpanded {
+					height: 100%;
+					cursor: default;
+					.sapMriTimePickerLabel {
+						display: block;
+					}
+					.sapMriTimePickerItemArrows {
+						display: none;
+					}
+					.sapMriTimePickerSlider {
+						height: calc(100% - 2rem);
+						//for Android 4.1 - 4.3 calc is not supported, so use 100% instead
+						max-height: 100%;
+						overflow: hidden;
+						.sapMriTimePickerItem {
+							height: 3rem;
+							line-height: 3rem;
+							width: 4.5rem;
+							box-sizing: border-box;
+						}
+						.sapMriTPPickerSelectionFrame {
+							display: block;
+						}
+					}
+				}
+			}
+		}
+	}
+}

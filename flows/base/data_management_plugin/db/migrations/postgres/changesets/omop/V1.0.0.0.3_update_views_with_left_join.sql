@@ -1,0 +1,519 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.3_update_views_with_left_join.sql
+
+
+/*
+Join status for OMOP Views
+1. VIEW::OMOP.PATIENT          -> already left join    (✓) * Added columns to reflect match Hana
+2. VIEW::OMOP.COND             -> changed to left join (✗) 
+3. VIEW::OMOP.COND_ERA         -> changed to left join (✗)
+4. VIEW::OMOP.COND_ICD10       -> changed to left join (✗)
+5. VIEW::OMOP.PROC             -> already left join    (✓)
+6. VIEW::OMOP.VISIT            -> changed to left join (✗)
+7. VIEW::OMOP.SPEC             -> already left join    (✓)
+8. VIEW::OMOP.PP_PER           -> no joins to update   (✓)
+9. VIEW::OMOP.OBS_PER          -> already left join    (✓)
+10. VIEW::OMOP_OBS             -> already left join    (✓)
+11. VIEW::OMOP_MEAS            -> changed to left join (✗)
+12. VIEW::OMOP_DRUG_EXP        -> changed to left join (✗)
+13. VIEW::OMOP_DRUG_ERA        -> already left join    (✓)
+14. VIEW::OMOP_DOSE_ERA        -> changed to left join (✗)
+15. VIEW::OMOP_DEVICE_EXPOSURE -> changed to left join (✗)
+16. VIEW::OMOP_DEATH           -> changed to left join (✗)
+17. VIEW::OMOP_CONCEPT         -> no joins to update   (✓)
+*/
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.PATIENT" (
+  "PATIENT_ID",
+  "BIRTH_DATE",
+  "MONTH_OF_BIRTH",
+  "YEAR_OF_BIRTH",
+  "DEATH_DATE",
+  "GENDER",
+  "RACE",
+  "ETHNICITY",
+  "STATE",
+  "COUNTY",
+  "GENDER_CONCEPT_CODE",
+  "RACE_CONCEPT_CODE",
+  "ETHNICITY_CONCEPT_CODE",
+  "GENDER_CONCEPT_ID", -- new column
+  "RACE_CONCEPT_ID", -- new column
+  "ETHNICITY_CONCEPT_ID" -- new column
+  ) AS
+SELECT
+  "p_$0"."PERSON_ID" AS "PATIENT_ID",
+  TO_DATE (
+    (
+      (TO_CHAR("p_$0"."YEAR_OF_BIRTH", '0000') || TO_CHAR("p_$0"."MONTH_OF_BIRTH", '00')) || 
+      TO_CHAR("p_$0"."DAY_OF_BIRTH", '00')
+    ), 'yyyymmdd') AS "BIRTH_DATE",
+  "p_$0"."MONTH_OF_BIRTH",
+  "p_$0"."YEAR_OF_BIRTH",
+  COALESCE ("d_$1"."DEATH_DATE", NULL) AS "DEATH_DATE",
+  "gender_c_$2"."CONCEPT_NAME" AS "GENDER",
+  "race_c_$3"."CONCEPT_NAME" AS "RACE",
+  "ethnicity_c_$4"."CONCEPT_NAME" AS "ETHNICITY",
+  "l_$5"."STATE" AS "STATE",
+  "l_$5"."COUNTY" AS "COUNTY",
+  "gender_c_$2"."CONCEPT_CODE" AS "GENDER_CONCEPT_CODE",
+  "race_c_$3"."CONCEPT_CODE" AS "RACE_CONCEPT_CODE",
+  "ethnicity_c_$4"."CONCEPT_CODE" AS "ETHNICITY_CONCEPT_CODE",
+  "gender_c_$2"."CONCEPT_ID" AS "GENDER_CONCEPT_ID",
+  "race_c_$3"."CONCEPT_ID" AS "RACE_CONCEPT_ID",
+  "ethnicity_c_$4"."CONCEPT_ID" AS "ETHNICITY_CONCEPT_ID"
+FROM
+  (
+    (
+      (
+        (
+          (
+            "PERSON" AS "p_$0"
+            LEFT OUTER JOIN "DEATH" AS "d_$1" ON("d_$1"."PERSON_ID" = "p_$0"."PERSON_ID")
+          )
+          LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "gender_c_$2" ON(
+            "gender_c_$2"."CONCEPT_ID" = "p_$0"."GENDER_CONCEPT_ID"
+          )
+        )
+        LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "race_c_$3" ON(
+          "race_c_$3"."CONCEPT_ID" = "p_$0"."RACE_CONCEPT_ID"
+        )
+      )
+      LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "ethnicity_c_$4" ON(
+          "ethnicity_c_$4"."CONCEPT_ID" = "p_$0"."ETHNICITY_CONCEPT_ID"
+      )
+    )
+    LEFT OUTER JOIN "LOCATION" AS "l_$5" ON("l_$5"."LOCATION_ID" = "p_$0"."LOCATION_ID")
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.COND" (
+    "CONDITION_OCCURRENCE_ID",
+    "CONDITION_CONCEPT_ID",
+    "CONDITION_NAME",
+    "CONDITION_TYPE_NAME",
+    "CONDITION_SOURCE_NAME",
+    "CONDITION_STATUS_NAME",
+    "PATIENT_ID",
+    "CONDITION_START_DATE",
+    "CONDITION_END_DATE",
+    "VISIT_OCCURRENCE_ID",
+    "CONDITION_SOURCE_VALUE",
+    "CONDITION_CONCEPT_CODE",
+    "CONDITION_TYPE_CONCEPT_CODE",
+    "CONDITION_SOURCE_CONCEPT_CODE",
+    "CONDITION_STATUS_CONCEPT_CODE"
+  ) AS
+SELECT
+  "co_$0"."CONDITION_OCCURRENCE_ID",
+  "co_$0"."CONDITION_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "CONDITION_NAME",
+  "t_$3"."CONCEPT_NAME" AS "CONDITION_TYPE_NAME",
+  "s_$4"."CONCEPT_NAME" AS "CONDITION_SOURCE_NAME",
+  "cs_$5"."CONCEPT_NAME" AS "CONDITION_STATUS_NAME",
+  "p_$1"."PATIENT_ID",
+  "co_$0"."CONDITION_START_DATE",
+  "co_$0"."CONDITION_END_DATE",
+  "co_$0"."VISIT_OCCURRENCE_ID",
+  "co_$0"."CONDITION_SOURCE_VALUE",
+  "c_$2"."CONCEPT_CODE" AS "CONDITION_CONCEPT_CODE",
+  "t_$3"."CONCEPT_CODE" AS "CONDITION_TYPE_CONCEPT_CODE",
+  "s_$4"."CONCEPT_CODE" AS "CONDITION_SOURCE_CONCEPT_CODE",
+  "cs_$5"."CONCEPT_CODE" AS "CONDITION_STATUS_CONCEPT_CODE"
+FROM
+  (
+    (
+      (
+         (
+           (
+            "CONDITION_OCCURRENCE" AS "co_$0"
+            INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("co_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+          )
+          LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+             "c_$2"."CONCEPT_ID" = "co_$0"."CONDITION_CONCEPT_ID"
+          )
+        )
+        LEFT JOIN "VIEW::OMOP.CONCEPT" AS "t_$3" ON(
+           "t_$3"."CONCEPT_ID" = "co_$0"."CONDITION_TYPE_CONCEPT_ID"
+        )
+      )
+      LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "s_$4" ON(
+        "s_$4"."CONCEPT_ID" = "co_$0"."CONDITION_SOURCE_CONCEPT_ID"
+      )
+    )
+    LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "cs_$5" ON(
+      "cs_$5"."CONCEPT_ID" = "co_$0"."CONDITION_STATUS_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.COND_ERA" (
+    "CONDITION_ERA_ID",
+    "CONDITION_CONCEPT_ID",
+    "CONDITION_NAME",
+    "PATIENT_ID",
+    "CONDITION_ERA_START_DATE",
+    "CONDITION_ERA_END_DATE",
+    "CONDITION_OCCURRENCE_COUNT",
+    "CONDITION_CONCEPT_CODE"
+  ) AS
+SELECT
+  "ce_$0"."CONDITION_ERA_ID",
+  "ce_$0"."CONDITION_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "CONDITION_NAME",
+  "p_$1"."PATIENT_ID",
+  "ce_$0"."CONDITION_ERA_START_DATE",
+  "ce_$0"."CONDITION_ERA_END_DATE",
+  "ce_$0"."CONDITION_OCCURRENCE_COUNT",
+  "c_$2"."CONCEPT_CODE" AS "CONDITION_CONCEPT_CODE"
+FROM
+  (
+    (
+      "CONDITION_ERA" AS "ce_$0"
+      INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("ce_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+       "c_$2"."CONCEPT_ID" = "ce_$0"."CONDITION_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.COND_ICD10" (
+    "CONDITION_OCCURRENCE_ID",
+    "CONDITION_CONCEPT_ID",
+    "CONDITION_NAME",
+    "CONDITION_TYPE_NAME",
+    "CONDITION_SOURCE_NAME",
+    "CONDITION_STATUS_NAME",
+    "PATIENT_ID",
+    "CONDITION_START_DATE",
+    "CONDITION_END_DATE",
+    "VISIT_OCCURRENCE_ID",
+    "CONDITION_SOURCE_VALUE",
+    "CONDITION_CONCEPT_CODE",
+    "CONDITION_TYPE_CONCEPT_CODE",
+    "CONDITION_SOURCE_CONCEPT_CODE",
+    "CONDITION_STATUS_CONCEPT_CODE"
+  ) AS
+SELECT
+  "co_$0"."CONDITION_OCCURRENCE_ID",
+  "co_$0"."CONDITION_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "CONDITION_NAME",
+  "t_$3"."CONCEPT_NAME" AS "CONDITION_TYPE_NAME",
+  "s_$4"."CONCEPT_NAME" AS "CONDITION_SOURCE_NAME",
+  "cs_$5"."CONCEPT_NAME" AS "CONDITION_STATUS_NAME",
+  "p_$1"."PATIENT_ID",
+  "co_$0"."CONDITION_START_DATE",
+  "co_$0"."CONDITION_END_DATE",
+  "co_$0"."VISIT_OCCURRENCE_ID",
+  "co_$0"."CONDITION_SOURCE_VALUE",
+  "c_$2"."CONCEPT_CODE" AS "CONDITION_CONCEPT_CODE",
+  "t_$3"."CONCEPT_CODE" AS "CONDITION_TYPE_CONCEPT_CODE",
+  "s_$4"."CONCEPT_CODE" AS "CONDITION_SOURCE_CONCEPT_CODE",
+  "cs_$5"."CONCEPT_CODE" AS "CONDITION_STATUS_CONCEPT_CODE"
+FROM
+  (
+    (
+      (
+        (
+          (
+            "CONDITION_OCCURRENCE" AS "co_$0"
+            INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON ("co_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+          )
+          LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON (
+            (
+              "c_$2"."CONCEPT_ID" = "co_$0"."CONDITION_CONCEPT_ID"
+            )
+            AND ("c_$2"."VOCABULARY_ID" = 'icd10cm')
+          )
+        )
+        LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "t_$3" ON (
+          "t_$3"."CONCEPT_ID" = "co_$0"."CONDITION_TYPE_CONCEPT_ID"
+        )
+      )
+      LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "s_$4" ON (
+        "s_$4"."CONCEPT_ID" = "co_$0"."CONDITION_SOURCE_CONCEPT_ID"
+      )
+    )
+    LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "cs_$5" ON (
+      "cs_$5"."CONCEPT_ID" = "co_$0"."CONDITION_STATUS_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.VISIT" (
+    "VISIT_OCCURRENCE_ID",
+    "VISIT_CONCEPT_ID",
+    "VISIT_NAME",
+    "VISIT_TYPE_NAME",
+    "PATIENT_ID",
+    "VISIT_START_DATE",
+    "PRECEDING_VISIT_OCCURRENCE_ID",
+    "VISIT_END_DATE",
+    "VISIT_CONCEPT_CODE",
+    "VISIT_TYPE_CONCEPT_CODE"
+  ) AS
+SELECT
+  "vo_$0"."VISIT_OCCURRENCE_ID",
+  "vo_$0"."VISIT_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "VISIT_NAME",
+  "t_$3"."CONCEPT_NAME" AS "VISIT_TYPE_NAME",
+  "p_$1"."PATIENT_ID",
+  "vo_$0"."VISIT_START_DATE",
+  "vo_$0"."PRECEDING_VISIT_OCCURRENCE_ID",
+  "vo_$0"."VISIT_END_DATE",
+  "c_$2"."CONCEPT_CODE" AS "VISIT_CONCEPT_CODE",
+  "t_$3"."CONCEPT_CODE" AS "VISIT_TYPE_CONCEPT_CODE"
+FROM
+  (
+     (
+       (
+        "VISIT_OCCURRENCE" AS "vo_$0"
+        INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("vo_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+      )
+      LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+         "c_$2"."CONCEPT_ID" = "vo_$0"."VISIT_CONCEPT_ID"
+      )
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "t_$3" ON(
+       "t_$3"."CONCEPT_ID" = "vo_$0"."VISIT_TYPE_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.MEAS" (
+    "MEASUREMENT_ID",
+    "MEASUREMENT_CONCEPT_ID",
+    "MEASUREMENT_NAME",
+    "MEASUREMENT_TYPE_NAME",
+    "MEASUREMENT_VALUE_NAME",
+    "PATIENT_ID",
+    "MEASUREMENT_DATE",
+    "VALUE_AS_NUMBER",
+    "VISIT_OCCURRENCE_ID",
+    "MEASUREMENT_CONCEPT_CODE",
+    "MEASUREMENT_TYPE_CONCEPT_CODE",
+    "VALUE_AS_CONCEPT_CODE",
+    "UNIT_CONCEPT_CODE"
+  ) AS
+SELECT
+  "m_$0"."MEASUREMENT_ID",
+  "m_$0"."MEASUREMENT_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "MEASUREMENT_NAME",
+  "t_$3"."CONCEPT_NAME" AS "MEASUREMENT_TYPE_NAME",
+  "vt_$4"."CONCEPT_NAME" AS "MEASUREMENT_VALUE_NAME",
+  "p_$1"."PATIENT_ID",
+  "m_$0"."MEASUREMENT_DATE",
+  "m_$0"."VALUE_AS_NUMBER",
+  "m_$0"."VISIT_OCCURRENCE_ID",
+  "c_$2"."CONCEPT_CODE" AS "MEASUREMENT_CONCEPT_CODE",
+  "t_$3"."CONCEPT_CODE" AS "MEASUREMENT_TYPE_CONCEPT_CODE",
+  "vt_$4"."CONCEPT_CODE" AS "VALUE_AS_CONCEPT_CODE",
+  "u_$5"."CONCEPT_CODE" AS "UNIT_CONCEPT_CODE"
+FROM
+  (
+    (
+      (
+        (
+          (
+            "MEASUREMENT" AS "m_$0"
+            INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("m_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+          )
+          LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON("c_$2"."CONCEPT_ID" = "m_$0"."MEASUREMENT_CONCEPT_ID")
+        )
+        LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "t_$3" ON(
+          "t_$3"."CONCEPT_ID" = "m_$0"."MEASUREMENT_TYPE_CONCEPT_ID"
+        )
+      )
+      LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "vt_$4" ON(
+        "vt_$4"."CONCEPT_ID" = "m_$0"."VALUE_AS_CONCEPT_ID"
+      )
+    )
+    LEFT OUTER JOIN "VIEW::OMOP.CONCEPT" AS "u_$5" ON("u_$5"."CONCEPT_ID" = "m_$0"."UNIT_CONCEPT_ID")
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.DRUG_EXP" (
+    "DRUG_EXPOSURE_ID",
+    "PATIENT_ID",
+    "DRUG_CONCEPT_ID",
+    "DRUG_NAME",
+    "DRUG_EXPOSURE_START_DATE",
+    "DRUG_EXPOSURE_END_DATE",
+    "DRUG_EXPOSURE_START_DATETIME",
+    "DRUG_EXPOSURE_END_DATETIME",
+    "VERBATIM_END_DATE",
+    "DRUG_TYPE_CONCEPT_ID",
+    "DRUG_TYPE_NAME",
+    "STOP_REASON",
+    "REFILLS",
+    "DAYS_SUPPLY",
+    "SIG",
+    "ROUTE_CONCEPT_ID",
+    "ROUTE_NAME",
+    "LOT_NUMBER",
+    "PROVIDER_ID",
+    "VISIT_OCCURRENCE_ID",
+    "DRUG_CONCEPT_CODE",
+    "DRUG_TYPE_CONCEPT_CODE",
+    "ROUTE_CONCEPT_CODE"
+  ) AS
+SELECT
+  "de_$0"."DRUG_EXPOSURE_ID",
+  "p_$1"."PATIENT_ID",
+  "de_$0"."DRUG_CONCEPT_ID",
+  "c_$2"."CONCEPT_NAME" AS "DRUG_NAME",
+  "de_$0"."DRUG_EXPOSURE_START_DATE",
+  "de_$0"."DRUG_EXPOSURE_END_DATE",
+  "de_$0"."DRUG_EXPOSURE_START_DATETIME",
+  "de_$0"."DRUG_EXPOSURE_END_DATETIME",
+  "de_$0"."VERBATIM_END_DATE",
+  "de_$0"."DRUG_TYPE_CONCEPT_ID",
+  "ct_$3"."CONCEPT_NAME" AS "DRUG_TYPE_NAME",
+  "de_$0"."STOP_REASON",
+  "de_$0"."REFILLS",
+  "de_$0"."DAYS_SUPPLY",
+  "de_$0"."SIG",
+  "de_$0"."ROUTE_CONCEPT_ID",
+  "r_$4"."CONCEPT_NAME" AS "ROUTE_NAME",
+  "de_$0"."LOT_NUMBER",
+  "de_$0"."PROVIDER_ID",
+  "de_$0"."VISIT_OCCURRENCE_ID",
+  "c_$2"."CONCEPT_CODE" AS "DRUG_CONCEPT_CODE",
+  "ct_$3"."CONCEPT_CODE" AS "DRUG_TYPE_CONCEPT_CODE",
+  "r_$4"."CONCEPT_CODE" AS "ROUTE_CONCEPT_CODE"
+FROM
+  (
+    (
+      (
+        (
+         "DRUG_EXPOSURE" AS "de_$0"
+          INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("de_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+        )
+        LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+          "c_$2"."CONCEPT_ID" = "de_$0"."DRUG_CONCEPT_ID"
+        )
+      )
+      LEFT JOIN "VIEW::OMOP.CONCEPT" AS "ct_$3" ON(
+        "ct_$3"."CONCEPT_ID" = "de_$0"."DRUG_TYPE_CONCEPT_ID"
+      )
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "r_$4" ON(
+      "r_$4"."CONCEPT_ID" = "de_$0"."ROUTE_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.DOSE_ERA" (
+    "DOSE_ERA_ID",
+    "PATIENT_ID",
+    "DRUG_NAME",
+    "UNIT_NAME",
+    "DOSE_VALUE",
+    "DOSE_ERA_START_DATE",
+    "DOSE_ERA_END_DATE",
+    "DRUG_CONCEPT_CODE",
+    "UNIT_CONCEPT_CODE"
+  ) AS
+SELECT
+  "de_$0"."DOSE_ERA_ID",
+  "p_$1"."PATIENT_ID",
+  "c_$2"."CONCEPT_NAME" AS "DRUG_NAME",
+  "u_$3"."CONCEPT_NAME" AS "UNIT_NAME",
+  "de_$0"."DOSE_VALUE",
+  "de_$0"."DOSE_ERA_START_DATE",
+  "de_$0"."DOSE_ERA_END_DATE",
+  "c_$2"."CONCEPT_CODE" AS "DRUG_CONCEPT_CODE",
+  "u_$3"."CONCEPT_CODE" AS "UNIT_CONCEPT_CODE"
+FROM
+  (
+     (
+       (
+        "DOSE_ERA" AS "de_$0"
+        INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("de_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+      )
+      LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+        "c_$2"."CONCEPT_ID" = "de_$0"."DRUG_CONCEPT_ID"
+      )
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "u_$3" ON(
+      "u_$3"."CONCEPT_ID" = "de_$0"."UNIT_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.DEVICE_EXPOSURE" (
+    "DEVICE_EXPOSURE_ID",
+    "PATIENT_ID",
+    "DEVICE_NAME",
+    "DEVICE_CONCEPT_ID",
+    "DEVICE_EXPOSURE_START_DATE",
+    "DEVICE_EXPOSURE_END_DATE",
+    "DEVICE_TYPE_NAME",
+    "VISIT_OCCURRENCE_ID",
+   "DEVICE_CONCEPT_CODE",
+   "DEVICE_TYPE_CONCEPT_CODE"
+  ) AS
+SELECT
+  "de_$0"."DEVICE_EXPOSURE_ID",
+  "p_$1"."PATIENT_ID",
+  "c_$2"."CONCEPT_NAME" AS "DEVICE_NAME",
+  "de_$0"."DEVICE_CONCEPT_ID",
+  "de_$0"."DEVICE_EXPOSURE_START_DATE",
+  "de_$0"."DEVICE_EXPOSURE_END_DATE",
+  "ct_$3"."CONCEPT_NAME" AS "DEVICE_TYPE_NAME",
+  "de_$0"."VISIT_OCCURRENCE_ID",
+  "c_$2"."CONCEPT_CODE" AS "DEVICE_CONCEPT_CODE",
+  "ct_$3"."CONCEPT_CODE" AS "DEVICE_TYPE_CONCEPT_CODE"
+FROM
+  (
+    (
+      (
+        "DEVICE_EXPOSURE" AS "de_$0"
+        INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("de_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+      )
+      LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+         "c_$2"."CONCEPT_ID" = "de_$0"."DEVICE_CONCEPT_ID"
+      )
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "ct_$3" ON(
+     "ct_$3"."CONCEPT_ID" = "de_$0"."DEVICE_TYPE_CONCEPT_ID"
+    )
+  );
+
+
+CREATE OR REPLACE VIEW "VIEW::OMOP.DEATH" (
+  "PATIENT_ID",
+  "DEATH_TYPE_NAME",
+  "DEATH_DATE",
+  "DEATH_DATETIME",
+  "DEATH_TYPE_CONCEPT_CODE"
+  ) AS
+SELECT
+  "p_$1"."PATIENT_ID",
+  "c_$2"."CONCEPT_NAME" AS "DEATH_TYPE_NAME",
+  "d_$0"."DEATH_DATE",
+  "d_$0"."DEATH_DATETIME",
+  "c_$2"."CONCEPT_CODE" AS "DEATH_TYPE_CONCEPT_CODE"
+FROM
+  (
+    (
+      "DEATH" AS "d_$0"
+      INNER JOIN "VIEW::OMOP.PATIENT" AS "p_$1" ON("d_$0"."PERSON_ID" = "p_$1"."PATIENT_ID")
+    )
+    LEFT JOIN "VIEW::OMOP.CONCEPT" AS "c_$2" ON(
+     "c_$2"."CONCEPT_ID" = "d_$0"."DEATH_TYPE_CONCEPT_ID"
+    )
+  );
+
+--rollback DROP VIEW "VIEW::OMOP.PATIENT";
+--rollback DROP VIEW "VIEW::OMOP.COND";
+--rollback DROP VIEW "VIEW::OMOP.COND_ERA";
+--rollback DROP VIEW "VIEW::OMOP.COND_ICD10";
+--rollback DROP VIEW "VIEW::OMOP.VISIT";
+--rollback DROP VIEW "VIEW::OMOP.MEAS";
+--rollback DROP VIEW "VIEW::OMOP.DRUG_EXP";
+--rollback DROP VIEW "VIEW::OMOP.DOSE_ERA";
+--rollback DROP VIEW "VIEW::OMOP.DEVICE_EXPOSURE";
+--rollback DROP VIEW "VIEW::OMOP.DEATH";

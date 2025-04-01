@@ -349,7 +349,7 @@ class BuenaVistaHandler(socketserver.StreamRequestHandler):
 
             # Get database connection and rewriter
             conn = get_db_connection(
-                self.server.db_clients, dialect, connection_type, database_code, schema, vocab_schema)
+                self.server.db_clients, dialect, connection_type, database_code, schema, vocab_schema, token)
             rewriter = get_rewriter_from_dialect(dialect)
 
             logger.info("Client connection params: %s", params)

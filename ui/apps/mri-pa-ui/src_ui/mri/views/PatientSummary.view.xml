@@ -1,0 +1,46 @@
+<mvc:View controllerName="hc.mri.pa.ui.views.PatientSummary" 
+    xmlns="sap.m" 
+    xmlns:core="sap.ui.core" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:ffh="sap.hc.hph.core.ui" 
+    xmlns:hph="sap.hc.hph.core.ui">
+    <Dialog id="contentDialog" 
+        contentHeight="100%" 
+        contentWidth="100%" 
+        afterClose=".onClosePressed">
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button type="Back" 
+                        press="onClosePressed" />
+                </contentLeft>
+                <contentMiddle>
+                    <Title text="{i18n>MRI_PA_PATIENT_INSPECTOR_TITLE}" />
+                </contentMiddle>
+                <contentRight>
+                    <Button icon="sap-icon://action-settings" 
+                        text="{i18n>MRI_PA_SETTINGS}" 
+                        press="onSelectConfigurationPressed" 
+                        tooltip="{i18n>MRI_PA_SETTINGS}" />
+                </contentRight>
+            </Bar>
+        </customHeader>
+        <core:ComponentContainer id="contentContainer"/>
+        <buttons>
+            <Button enabled="{patientSummary>/dataLoaded}" 
+                text="{i18n>MRI_PA_RESET_SETTINGS}" 
+                press="onResetSettingsPressed" 
+                tooltip="{i18n>MRI_PA_RESET_SETTINGS_TOOLTIP}">
+            </Button>
+            <!-- <ToolbarSpacer class="sapTlConfigDialogToolbarSpacer"/> -->
+            <Button enabled="{patientSummary>/dataLoaded}" 
+                icon="sap-icon://add-favorite" 
+                text="{i18n>MRI_PA_SAVE_AS_TILE}" 
+                press="onAddTilePressed">
+            </Button>
+            <Button text="{i18n>MRI_PA_CLOSE_BUTTON}" 
+                press="onClosePressed">
+            </Button>
+        </buttons>
+    </Dialog>
+</mvc:View>

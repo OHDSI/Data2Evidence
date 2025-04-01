@@ -62,6 +62,21 @@ export async function patch(
   return resp;
 }
 
+export async function put(
+  path: string,
+  headers: any,
+  data: object
+): Promise<Response> {
+  const resp = await fetch(`${LOGTO__ADMIN_SERVER__FQDN_URL}/api/${path}`, {
+    method: "PUT",
+    headers: Object.assign({}, headers, {
+      "Content-Type": "application/json",
+    }),
+    body: JSON.stringify(data),
+  });
+  return resp;
+}
+
 export async function get(path: string, headers: any): Promise<Response> {
   const resp = await fetch(`${LOGTO__ADMIN_SERVER__FQDN_URL}/api/${path}`, {
     method: "GET",

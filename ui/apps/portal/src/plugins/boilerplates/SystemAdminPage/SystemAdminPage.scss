@@ -1,0 +1,37 @@
+.sa-plugin {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+  
+  header {
+    padding: 20px 0;
+    margin-bottom: 10px;
+    background-color: aliceblue;
+  }
+
+  nav, section {
+    float: left;
+    padding: 20px 0;
+    height: 500px;
+    background-color: aliceblue;
+  }
+
+  &__subtitle {
+    font-size: 18px;
+  }
+
+  &__description {
+    font-size: 14px;
+    color: #414141;
+  }
+
+  nav {
+    width: 200px;
+    margin-right: 10px;
+  }
+
+  section {
+    width: 750px;
+  }
+}

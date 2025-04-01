@@ -17,10 +17,6 @@ export class CohortEndpoint {
         public schemaName: string
     ) {}
 
-    private parseDateToString(date: Date): string {
-        return date.toISOString().slice(0, 10).replace("T", " ");
-    }
-
     private getInsertSyntaxQuery(): string {
         return `JOIN
         (SELECT DISTINCT * FROM 
@@ -75,16 +71,27 @@ export class CohortEndpoint {
     public async queryCohorts(
         queryParams: Object,
         offset?: number,
-        limit?: number
+        limit?: number,
+        excludePatientIds?: boolean
     ) {
-        let selectQueryString = `SELECT 
-        COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
-        COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
-        TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
-        COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
-        TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
-        FROM $$SCHEMA$$.COHORT_DEFINITION
-        `;
+        const selectQueryString = `
+            SELECT 
+                cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
+                cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
+                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
+                cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
+                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
+                COUNT(c.COHORT_DEFINITION_ID) AS "count"
+            FROM $$SCHEMA$$.COHORT_DEFINITION cd
+            LEFT JOIN $$SCHEMA$$.COHORT c 
+                ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
+            GROUP BY 
+                cd.COHORT_DEFINITION_ID,
+                cd.COHORT_DEFINITION_NAME,
+                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
+                cd.COHORT_INITIATION_DATE,
+                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
+        `
 
         let cohortArray = [];
 
@@ -100,20 +107,47 @@ export class CohortEndpoint {
                 this.connection
             );
 
-            // For each cohort definition, query cohort table for list of patient ids
-            for (const cohortObj of selectQueryResult.data as any[]) {
-                let patientIds = await this.queryPatientIds(
-                    cohortObj.COHORT_DEFINITION_ID
-                );
-                cohortArray.push(<CohortType>{
-                    id: cohortObj.COHORT_DEFINITION_ID,
+            const processingCohort = async (cohortDefObj, excludePatientIds?: boolean) => {
+            //For each cohort definition, query cohort table for list of patient ids
+                const patientIds = excludePatientIds ? undefined : await this.queryPatientIds(
+                    cohortDefObj.COHORT_DEFINITION_ID);
+                return <CohortType>{
+                    id: cohortDefObj.COHORT_DEFINITION_ID,
                     patientIds,
-                    name: cohortObj.COHORT_DEFINITION_NAME,
-                    description: cohortObj.COHORT_DEFINITION_DESCRIPTION,
-                    creationTimestamp: cohortObj.COHORT_INITIATION_DATE,
-                    syntax: cohortObj.COHORT_DEFINITION_SYNTAX,
-                });
-            }
+                    name: cohortDefObj.COHORT_DEFINITION_NAME,
+                    description: cohortDefObj.COHORT_DEFINITION_DESCRIPTION,
+                    creationTimestamp: cohortDefObj.COHORT_INITIATION_DATE,
+                    syntax: cohortDefObj.COHORT_DEFINITION_SYNTAX,
+                    patientCount: cohortDefObj.count
+                };
+            };
+
+            const processInBatch = async (
+                items: any[],
+                limit: number,
+                fn: (item: any) => Promise<any>
+            ) => {
+                let results = [];
+                for (let start = 0; start < items.length; start += limit) {
+                    const end =
+                        start + limit > items.length
+                            ? items.length
+                            : start + limit;
+                    const slicedResults = await Promise.all(
+                        items
+                            .slice(start, end)
+                            .map(async (item) => await processingCohort(item, excludePatientIds))
+                    );
+                    results = [...results, ...slicedResults];
+                }
+                return results;
+            };
+
+            cohortArray = await processInBatch(
+                selectQueryResult.data,
+                10,
+                processingCohort
+            );
 
             return cohortArray;
         } catch (err) {
@@ -143,6 +177,35 @@ export class CohortEndpoint {
         }
     }
 
+    // Get cohort definition via cohort definition id
+    public async getCohortDefinition(cohortDefinitionId: string) {
+        const queryString = `
+        SELECT
+            COHORT_DEFINITION_ID,
+            COHORT_DEFINITION_NAME,
+            COHORT_DEFINITION_DESCRIPTION,
+            DEFINITION_TYPE_CONCEPT_ID,
+            COHORT_DEFINITION_SYNTAX,
+            SUBJECT_CONCEPT_ID,
+            COHORT_INITIATION_DATE
+        FROM
+            $$SCHEMA$$.COHORT_DEFINITION
+        WHERE
+            COHORT_DEFINITION_ID = %s;
+        `;
+
+        try {
+            const query = QueryObject.format(queryString, cohortDefinitionId);
+            const result = await query.executeQuery(this.connection);
+            return result;
+        } catch (err) {
+            logger.error(
+                `Failed to get cohort definition with id: ${cohortDefinitionId}`
+            );
+            throw err;
+        }
+    }
+
     // Save cohort definition to db
     public async saveCohortDefinitionToDb(
         cohortDefinition: CohortDefinitionTableType
@@ -167,7 +230,7 @@ export class CohortEndpoint {
                 queryString,
                 cohortDefinition.name,
                 cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
+                cohortDefinition.creationTimestamp,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId
@@ -186,7 +249,7 @@ export class CohortEndpoint {
     public async updateCohortDefinitionToDb(
         cohortDefinition: CohortDefinitionTableType
     ) {
-        let queryString = `
+        const queryString = `
         UPDATE $$SCHEMA$$.COHORT_DEFINITION SET (
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
@@ -203,13 +266,13 @@ export class CohortEndpoint {
                 queryString,
                 cohortDefinition.name,
                 cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
+                cohortDefinition.creationTimestamp,
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId,
                 cohortDefinition.id
             );
-            let result = await query.executeQuery(this.connection);
+            const result = await query.executeQuery(this.connection);
             return result;
         } catch (err) {
             logger.error(
@@ -341,18 +404,26 @@ export class CohortEndpoint {
     ): Promise<number> {
         let selectQueryString = `SELECT COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID" FROM $$SCHEMA$$.COHORT_DEFINITION 
         WHERE COHORT_DEFINITION_NAME=%s AND 
-        TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s AND 
         TO_DATE(COHORT_INITIATION_DATE)=TO_DATE(%s) AND 
         TO_NVARCHAR(COHORT_DEFINITION_SYNTAX)=%s
         `;
+        const sqlParams = [
+            cohortDefinition.name,
+            cohortDefinition.creationTimestamp,
+            cohortDefinition.syntax,
+        ];
+
+        // Add description clause only if description is not null
+        if (cohortDefinition.description !== null) {
+            selectQueryString +=
+                " AND TO_NVARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s";
+            sqlParams.push(cohortDefinition.description);
+        }
 
         try {
             const selectQuery = QueryObject.format(
                 selectQueryString,
-                cohortDefinition.name,
-                cohortDefinition.description,
-                this.parseDateToString(cohortDefinition.creationTimestamp),
-                cohortDefinition.syntax
+                ...sqlParams
             );
             let selectQueryResult = await selectQuery.executeQuery(
                 this.connection

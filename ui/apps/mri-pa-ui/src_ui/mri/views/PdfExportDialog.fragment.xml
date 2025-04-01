@@ -1,0 +1,43 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout">
+	<Dialog id="pdfExportDialog"
+		title="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_TITLE}"
+		initialFocus="exportFileName" >
+		<content>
+    		<l:VerticalLayout
+                class="sapUiContentPadding sapUiContentPaddingExtraBottom"
+                width="100%">
+                <l:content>
+                    <Label text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_FILENAME}" />
+        			<Input value="{pdfModel>/fileName}" id="exportFileName" placeholder="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_FILENAME_PLACEHOLDER}"/>
+        			
+        			<Label text="" />
+        			
+        			<Label text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_CONTENT}" labelFor="exportFilterCard" />
+        			<CheckBox id="exportFilterCard" selected="{pdfModel>/includeFiltercard}" text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_CONTENT_FILTERCARD}" />
+        			<CheckBox id="exportDetails" selected="{pdfModel>/includeDetails}" text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_CONTENT_DETAILS}" class="checkBoxDialogMargin" />
+        			
+        			<Label text="" />
+        			
+        			<Label text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_PAPERSIZE}" labelFor="exportSize" />
+        			<Select id="exportSize" selectedKey="{pdfModel>/paperSize}" items="{pdfModel>/availableSize}" width="100%">
+        				<core:Item key="{pdfModel>sizeId}" text="{pdfModel>sizeName}" />
+        			</Select>
+        			
+        			<Label text="" />
+        			
+        			<Label text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_ORIENTATION}" labelFor="exportOrientation" />
+        			<SegmentedButton id="exportOrientation" selectedKey="{pdfModel>/orientation}">
+        				<items>
+        					<SegmentedButtonItem text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_ORIENTATION_LANDSCAPE}" key="l" />
+        					<SegmentedButtonItem text="{i18n>MRI_PA_DOWNLOAD_PDF_DIALOG_ORIENTATION_PORTRAIT}" key="p" />
+        				</items>
+        			</SegmentedButton>
+                </l:content>
+            </l:VerticalLayout>
+        </content>
+		<buttons>
+			<Button text="{i18n>MRI_PA_BUTTON_EXPORT}" press="onPdfExportConfirmed" />
+			<Button text="{i18n>MRI_PA_BUTTON_CANCEL}" press="onPdfExportCancelled" />			
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

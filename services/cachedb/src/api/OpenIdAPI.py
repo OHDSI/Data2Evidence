@@ -36,3 +36,18 @@ class OpenIdAPI:
         except Exception as err:
             logger.error(str(err))
             raise err
+        
+    def get_third_party_token(self, token: str) -> str:
+        # Remove "Bearer" prefix from token
+        token = token.removeprefix("Bearer ")
+        try:
+            signing_key = self.get_signing_key(token)
+            decoded_token = jwt.decode(
+                token, signing_key, audience=self.scope, algorithms=["ES384"])
+            # Token can be successfully decoded and is still valid.
+            if "thirdPartyToken" not in decoded_token:
+                raise ValueError("Intermediary IDP token doesnt exist for JWT Authentication!")
+            return decoded_token["thirdPartyToken"]
+        except Exception as err:
+            logger.error(str(err))
+            raise err

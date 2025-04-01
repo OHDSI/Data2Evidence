@@ -1,0 +1,85 @@
+name: d2e/services Docker Compose Up
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  push:
+    branches:
+      - develop
+      - "release/*"
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  DOCKER_TAG_NAME: ${{ github.sha }}
+  ENV_NAME: local
+  ENV_TYPE: local
+  GIT_COMMIT_ARG: ${{ github.sha }}
+  D2E_RESOURCE_LIMIT: 1 # Use all the resources for GHA
+
+# Run only one job per branch
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-docker-compose-up # Run the latest push
+  cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
+
+jobs:
+  docker-compose-up:
+    runs-on: ubuntu-latest # Custom runner 4 cpus & 14gb ram
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Generate dotenv
+        run: |
+          # generate dotenv
+          npm run init:minerva
+          echo "TREX_PULL_POLICY=always" >> .env.local
+
+      - name: Docker compose build
+        run: |
+          # Build DataNode services
+          npm run build:minerva
+
+      - name: Docker compose up Local Mode
+        uses: nick-fields/retry@v3
+        id: retry
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            # Run DataNode services without sql-editor
+            npm run start:ci
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.retry.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.retry.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.retry.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs minerva
+        if: success() || failure()
+        run: |
+          yarn ci:logs:minerva
+
+      - name: print logs for alp-logto-seed
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs alp-logto-seed -t
+
+      - name: Clean Docker compose
+        if: always()
+        run: |
+          # Clean DataNode services
+          yarn clean:minerva
+          docker system prune -af

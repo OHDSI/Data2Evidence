@@ -57,6 +57,34 @@ async function update(
   }
 }
 
+async function upsert(
+  path: string,
+  headers: object,
+  data: object,
+  hasResponseBody = true
+) {
+  try {
+    console.log(`Request create/update ${path}`);
+    console.log(JSON.stringify(data));
+    const resp = await logto.put(path, headers, data);
+    console.log(`Responded with ${resp.status}`);
+
+    if (resp.ok) {
+      if (hasResponseBody) {
+        let json = await resp.json();
+        console.log(JSON.stringify(json));
+        return json;
+      }
+    } else {
+      console.error("Request failed");
+      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      return -1;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function fetchExisting(path: string, headers: object, showLog = true) {
   try {
     showLog && console.log(`Request existing ${path}`);
@@ -86,7 +114,7 @@ async function queryPostgres(
 }
 
 async function main() {
-  let apps: Array<{ name: string, id: string }> =
+  let apps: Array<{ name: string; id: string }> =
     JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
 
   let resource: { name: string } = JSON.parse(process.env.LOGTO__RESOURCE) || {
@@ -324,6 +352,8 @@ async function main() {
     "*********************************** SIGN-IN EXPERIENCES **********************************************"
   );
   let signinExperience = {
+    tenantId: "default",
+    id: "default",
     branding: {
       favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/favicon.ico`,
       logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/d2e.svg`,
@@ -333,13 +363,91 @@ async function main() {
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: 'a[aria-label="Powered By Logto"] { display: none; }',
+    customCss: `a[aria-label="Powered By Logto"] { display: none; }
+img[alt="app logo"] { height: 80px; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
   };
   await update("sign-in-exp", headers, signinExperience);
   console.log(
     "*********************************************************************************\n"
   );
+
+  if (process.env.LOGTO__CUSTOM_JWT) {
+    // Create custom JWT
+    console.log(
+      "*********************************** CONFIGS **********************************************"
+    );
+
+    const payload = JSON.parse(process.env.LOGTO__CUSTOM_JWT);
+    console.log("payload", payload);
+    await upsert("configs/jwt-customizer/access-token", headers, payload);
+
+    console.log(
+      "*********************************************************************************\n"
+    );
+  }
+
+  if (process.env.LOGTO__CONNECTOR_CONFIG){
+    console.log(
+      "*********************************** SOCIAL CONNECTOR **********************************************"
+    );
+    const connectorEnvConfig = JSON.parse(process.env.LOGTO__CONNECTOR_CONFIG);
+
+    //Verify if existing connector exist
+    const connectorDBConfig: any = await fetchExisting(`connectors/${connectorEnvConfig.id}`, headers)
+    // console.log(`connectorDBConfig ${Object.keys(connectorDBConfig).length}`)
+    if(connectorDBConfig && Object.keys(connectorDBConfig).length > 0) {
+      //update
+      const connectorCallbackId = connectorEnvConfig.id
+      delete connectorEnvConfig.id
+      delete connectorEnvConfig.connectorId
+      await logto.patch(`connectors/${connectorCallbackId}`, headers, connectorEnvConfig)
+      console.log("Social connector updated..")
+    } else {
+      // create
+      await logto.post("connectors", headers, connectorEnvConfig)
+      console.log("Social connector created..")
+    }
+    // Update Sign-in Experiences
+    console.log(
+      "*********************************** SIGN-IN EXPERIENCES **********************************************"
+    );
+    const signinExperienceSocialConnector: {
+      branding: Object;
+      color: Object;
+      customCss: string;
+      tenantId: string;
+      id: string;
+      signInMode: string;
+      signUp: Object;
+      signIn: Object;
+      socialSignInConnectorTargets: string[];
+    } = {
+      ...signinExperience,
+      signUp : { verify: false, password: true, identifiers: ["username"] },
+      signIn: { methods: [{
+                      "password": true, "identifier": "username",
+                      "verificationCode": false, "isPasswordPrimary": true
+                    }]
+               },
+      socialSignInConnectorTargets: ["azuread-alp"]
+    };
+
+    if (process.env.LOGTO__DISABLE_BASIC_AUTH === "true") {
+      signinExperienceSocialConnector["signIn"] = { methods: [] }
+      signinExperienceSocialConnector["signUp"] = { verify: false, password: false, identifiers: [] }
+    } 
+
+    await update("sign-in-exp", headers, signinExperienceSocialConnector);
+    // console.log(`signinExperienceSocialConnector ${JSON.stringify(signinExperienceSocialConnector)}`)
+    console.log(
+      "*********************************************************************************\n"
+    );
+    console.log(
+      "*********************************************************************************\n"
+    );
+
+  }
 
   console.log(
     "*********************************** SUMMARY **********************************\n"
@@ -428,7 +536,6 @@ async function main() {
       createdUserRoles.length == userRoles.map((x) => x.roleIds).flat().length
     }`
   );
-
 }
 
 async function getDBClient() {
@@ -438,6 +545,16 @@ async function getDBClient() {
     host: process.env.PG__HOST,
     port: parseInt(process.env.PG__PORT),
     database: process.env.PG__DB_NAME,
+    ssl: (() => {
+      let ssl: any = JSON.parse(process.env.PG__SSL.toLowerCase());
+      if (process.env.PG__CA_ROOT_CERT) {
+        return {
+          rejectUnauthorized: true,
+          ca: process.env.PG__CA_ROOT_CERT,
+        };
+      }
+      return ssl;
+    })(),
   });
   await client.connect();
   return client;
@@ -458,6 +575,7 @@ async function seeding_alp_admin() {
 
   const client = await getDBClient();
 
+  const pg_schema = process.env.PG__SCHEMA
   let LOGTO__ADMIN_ROLE__ID = "jrmtgmb34iznwqdu5dhl1";
   let LOGTO__ADMIN_APP__ID = alpAdminApp.id;
   let LOGTO__ADMIN_APP_ROLE__ID = "34vzakbak1tp830d0s30o";
@@ -472,9 +590,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
+    `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
     VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) \
-    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata",
+    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP__ID,
@@ -492,9 +610,9 @@ async function seeding_alp_admin() {
   console.log(`Inserting ${alpAdminRole.name} role to roles table`);
   await queryPostgres(
     client,
-    "INSERT INTO public.roles(tenant_id, id, name, description, type) \
-    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles(tenant_id, id, name, description, type) 
+    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE__ID,
@@ -512,9 +630,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO public.applications_roles(tenant_id, id, application_id, role_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.applications_roles(tenant_id, id, application_id, role_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP_ROLE__ID,
@@ -529,9 +647,9 @@ async function seeding_alp_admin() {
   console.log(`Adding scope "management-api-all" to role ${alpAdminRole.name}`);
   await queryPostgres(
     client,
-    "INSERT INTO public.roles_scopes(tenant_id, id, role_id, scope_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles_scopes(tenant_id, id, role_id, scope_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE_SCOPE__ID,
@@ -548,14 +666,21 @@ async function seeding_apps() {
     "****************************SEEDING LOGTO APPS*****************************************************\n"
   );
   const client = await getDBClient();
-  let envApps: Array<{ name: string, id: string, secret: string, tenant_id: string, type: string, description: string,  oidcClientMetadata?: string}> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
+  const pg_schema = process.env.PG__SCHEMA
+  let envApps: Array<{
+    name: string;
+    id: string;
+    secret: string;
+    tenant_id: string;
+    type: string;
+    description: string;
+    oidcClientMetadata?: string;
+  }> = JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
   for (const envapp of envApps) {
-    console.log(
-      `Seeding app ${envapp.name} | id ${envapp.id}`
-    );
+    console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
-      `INSERT INTO public.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
+      `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) 
       DO UPDATE SET secret = EXCLUDED.secret`,
       [
@@ -565,7 +690,8 @@ async function seeding_apps() {
         envapp.secret,
         envapp.description,
         envapp.type,
-        envapp.oidcClientMetadata ?? '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
+        envapp.oidcClientMetadata ??
+          '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
       ]
     );
   }
@@ -573,13 +699,13 @@ async function seeding_apps() {
 }
 
 (async () => {
-try {
+  try {
     await seeding_alp_admin();
     await seeding_apps();
     await main();
-    process.exit(0)
+    process.exit(0);
   } catch (e) {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   }
 })();

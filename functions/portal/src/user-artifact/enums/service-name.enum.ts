@@ -9,5 +9,6 @@ export enum ServiceName {
   PA_CONFIG = 'pa_config',
   CDW_CONFIG = 'cdw_config',
   BOOKMARKS = 'bookmarks',
-  CONCEPT_SETS = 'concept_sets'
+  CONCEPT_SETS = 'concept_sets',
+  ATLAS_COHORT_DEFINITIONS = 'atlas_cohort_definitions'
 }

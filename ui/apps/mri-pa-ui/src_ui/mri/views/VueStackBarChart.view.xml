@@ -1,0 +1,19 @@
+<mvc:View
+    controllerName="sap.hc.mri.pa.ui.views.VueStackBarChart"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:lib="sap.viz.ui5"
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns="sap.m"
+    xmlns:commons="sap.ui.commons"
+    xmlns:appdata="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+    height="100%">
+    <Page
+        showHeader="false"
+        showNavButton="false"
+        enableScrolling="false"
+        backgroundDesign="Solid">
+        <content>
+            <lib:StackedColumn id="mriSbCohorts"/>
+        </content>
+    </Page>
+</mvc:View>

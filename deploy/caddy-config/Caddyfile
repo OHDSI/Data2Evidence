@@ -2,94 +2,9 @@
 	debug
 	pki {
 		ca local {
-			name "ALP Local CA"
-			root_cn "ALP Local CA - 2024 ECC Root"
-			intermediate_cn "ALP Local CA - ECC Intermediate"
-		}
-		ca alp-internal {
-			name "ALP Internal CA"
-			root_cn "ALP Internal CA - 2024 ECC Root"
-			intermediate_cn "ALP Internal CA - ECC Intermediate"
-		}
-	}
-}
-
-https://*.alp.local:55555 {
-	tls {
-		issuer internal {
-			ca alp-internal
-			lifetime 360d
-			sign_with_root
-		}
-	}
-	respond alp-internal
-}
-
-(forward_authentication) {
-	# Enable this for using perseus user service
-	# forward_auth http://alp-perseus-user-1:5001 {
-	# 	uri /user/api/is_token_valid_internal
-	# 	copy_headers Username
-	# }
-
-	# Enable this for using D2E user-mgmt service
-	forward_auth https://trex:33000 {
-		transport http {
-			tls
-			tls_insecure_skip_verify
-			read_buffer 8192
-		}
-		uri /usermgmt/api/me/is_token_valid_internal
-		copy_headers Username
-	}
-}
-
-(cors) {
-	@cors_preflight method OPTIONS
-
-	@cors_origin {
-		header_regexp Origin ^https?://localhost:(4000|4900)?$
-	}
-
-	header @cors_origin {
-		Access-Control-Allow-Origin "{http.request.header.Origin}"
-		Vary Origin
-		Access-Control-Allow-Headers "*"
-		Access-Control-Allow-Credentials "true"
-		defer
-	}
-
-	handle @cors_preflight {
-		header {
-			Access-Control-Allow-Origin "{http.request.header.Origin}"
-			Access-Control-Allow-Credentials true
-			Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE"
-			Access-Control-Max-Age "3600"
-			Vary Origin
-			defer
-		}
-		respond "" 204
-	}
-}
-
-(perseus) {
-	log {
-		format console {
-			level_format color
-		}
-	}
-
-	handle /backend/* {
-		import forward_authentication
-		reverse_proxy http://alp-perseus-backend-1:5004 {
-			header_up X-Real-IP {http.request.remote_host}
-		}
-	}
-
-	handle /white-rabbit/* {
-		import forward_authentication
-		reverse_proxy http://alp-perseus-white-rabbit-1:8000 {
-			header_up X-Real-IP {http.request.remote_host}
+			name "D2E Local CA"
+			root_cn "D2E Local CA - 2024 ECC Root"
+			intermediate_cn "D2E Local CA - ECC Intermediate"
 		}
 	}
 }
@@ -110,7 +25,8 @@ https://*.alp.local:55555 {
 
 	# Logto api server
 	@logto {
-		path /index.*
+		path /index.html
+		path /assets/* # logto assets are moved to this path
 		path /api/*
 		path /oidc/*
 		path /sign-in
@@ -119,7 +35,7 @@ https://*.alp.local:55555 {
 	}
 
 	handle @logto {
-		reverse_proxy http://alp-logto-1:3001 {
+		reverse_proxy http://{$PROJECT_NAME}-logto-1:3001 {
 			header_up Host {upstream_hostport}
 			transport http {
 				read_buffer 8192
@@ -127,24 +43,9 @@ https://*.alp.local:55555 {
 		}
 	}
 
-	@portalpath {
-		path /
-		path /portal/researcher/*
-		path /portal/systemadmin/*
-	}
-
-	handle @portalpath {
-		rewrite * /portal/index.html
-		reverse_proxy https://trex:33000 {
-			transport http {
-				tls_insecure_skip_verify
-			}
-		}
-	}
-
 	## call gateway if there are no matched files
 	handle {
-		reverse_proxy https://trex:33000 {
+		reverse_proxy https://{$PROJECT_NAME}-trex:33000 {
 			transport http {
 				tls
 				tls_insecure_skip_verify
@@ -154,34 +55,10 @@ https://*.alp.local:55555 {
 	}
 }
 
-https://localhost:41101 {
-	tls internal
-	respond ""
-}
-
 {$INSTANCE_SPECIFIC_CONFIG}
 
 https://{$CADDY__ALP__PUBLIC_FQDN} {
-	{$TLS__CADDY_DIRECTIVE} 
-	{$CADDY__CORS_LOCAL_UI}
-	import perseus
+	{$TLS__CADDY_DIRECTIVE}
+	redir / /portal
 	import portal
-}
-
-https://{$CADDY__FHIR_SERVER__PUBLIC_FQDN:localhost}:41130 {
-	log {
-		format console {
-			level_format color
-		}
-	}
-
-	tls internal
-	handle /* {
-		reverse_proxy http://alp-minerva-fhir-fe-server-1:3000 {
-			header_up Host {$CADDY__FHIR_SERVER__PUBLIC_FQDN}:3000
-			transport http {
-				read_buffer 8192
-			}
-		}
-	}
 }

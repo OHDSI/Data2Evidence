@@ -1,0 +1,101 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.ConfigOverview"
+	xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:c="sap.ui.commons"
+	xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" xmlns:x="hc.hph.cdw.config.ui.lib" class="configOverviewClass">
+	<Page showHeader="false" showSubHeader="false" showFooter="true">
+    	<SplitContainer class="sapFfhCDMonfig" mode="StretchCompressMode">
+    		<masterPages>
+    		    <x:ConfigSelector id="configSelector" dataModelVisible="false" configItems="{configOverviewModel>/configurations}" noConfigText="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NO_CONFIGS_MSG}"
+    		        leftButtonIcon="sap-icon://add" leftButtonLabel="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIGURATION}" leftButtonTooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIGURATION_TOOLTIP}"
+    		        rightButtonIcon="sap-icon://cause" rightButtonLabel="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIGURATION}" rightButtonTooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIGURATION_TOOLTIP}"
+    		        onLeftButtonPress="onAddConfiguration" onRightButtonPress="onImportConfiguration" onConfigPress="onCDMConfigSelected">
+    		        <x:configItems>
+    		            <CustomListItem type="Active">
+    		            <HBox>
+    		                <VBox>
+        		                <f:SimpleForm class="sapCDMConfigForm" layout="ResponsiveGridLayout" labelSpanS="3">
+									<f:content>
+										<Text class="sapFfhCDMonfigLargeText" text="{configOverviewModel>name}" />
+										<Label text="{hc.hph.patient.config.i18n>HPH_PAT_CFG_CONFIG_OVERVIEW_CREATOR}" />
+										<Text text="{configOverviewModel>creator}" class="sapMLabel" />
+										<Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_MODIFIED}" />
+										<Text text= "{path: 'configOverviewModel>modified', type: 'sap.ui.model.type.DateTime', formatOptions: {source: {pattern: 'yyyy-MM-dd\'T\'HH:mm:ss.ZZZ\'Z\''}}}" class="sapMLabel" />
+									</f:content>
+                    			</f:SimpleForm>
+                    			<OverflowToolbar class="sapCDMConfigButtonToolbar">
+                    			    <Button icon="sap-icon://delete" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE}"
+                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_CONFIG}" press="onDeleteConfig" type="Transparent"/>
+                                    <Button icon="sap-icon://duplicate" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE}"
+                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE_CONFIG_VERSION}" press="onDuplicateConfiguration" type="Transparent"/>
+                                    <Button icon="sap-icon://cause" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_IMPORT}"
+                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIGURATION_TOOLTIP}" press="onImportExistingConfiguration" type="Transparent">
+                                    </Button>
+                    			</OverflowToolbar>
+    		                </VBox>
+    		            </HBox>
+
+                		</CustomListItem>
+    		        </x:configItems>
+    		    </x:ConfigSelector>
+    		</masterPages>
+    		<detailPages>
+    			<Page id="anConfigAll" visible="true" showHeader="false" class="sapUiUfdShellBackground">
+        			<FlexBox class="sapMxConfigVersionList" alignItems="Center" justifyContent="SpaceBetween" width="90%">
+        					<items>
+        						<Label id="configVersionTitle" class="sapCDMConfigVersionTitle" text="{parts:['configOverviewModel>name','hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_SELECTION'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configVersionTitleFormatter'}" />
+            					<Button icon="sap-icon://refresh" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_REFRESH}" press="onRefreshConfiguration" />
+        					</items>
+        			</FlexBox>
+        			<FlexBox class="sapMxConfigVersionList" alignItems="Center" justifyContent="SpaceBetween" width="90%">
+        			    <items>
+        			        <CheckBox id="configSelectAllDelete" select="onSelectAllVersion" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_SELECT_ALL}" visible="{configOverviewModel>/deleteModeConfig}" selected="{configOverviewModel>deleteFlagAllVersion}"></CheckBox>
+        			    </items>
+        			</FlexBox>
+        			<List class="sapMxConfigVersionList" id="configVersionListing" showNoData="false" items="{configOverviewModel>versions}"
+        				itemPress="onEditConfigVersion" width="90%">
+        				<CustomListItem class="sapMxConfigVersionItem" type="Navigation">
+        				    <HBox>
+        		                <VBox justifyContent="Center" class="sapMFlexItemH">
+        		                    <CheckBox select="updateDeleteMode" selected="{configOverviewModel>deleteFlagSelect}" visible="{configOverviewModel>/deleteModeConfig}"></CheckBox>
+        		                </VBox>
+    		                    <VBox>
+                					<f:SimpleForm layout="GridLayout">
+                					        <Label class="sapMxConfigOverviewTextItem" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB}" />
+                							<Text class="sapMxConfigOverviewTextItem sapMxConfigVersionNumber sapMLabel" text="{parts:['configOverviewModel>version','hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_VERSION_AUTOSAVE'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configVersionFormatter'}" />
+                					        <Label class="sapMxConfigOverviewTextItem" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_STATUS}" />
+                							<Text class="sapMxConfigOverviewTextItem sapMLabel" text="{parts: ['configOverviewModel>active', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ACTIVE', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_INACTIVE', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DRAFT'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configVersionStatusFormatter'}" />
+                					    	<Label class="sapMxConfigOverviewTextItem" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_CREATED}" />
+                					    	<Text class="sapMxConfigOverviewTextItem sapMLabel" text="{path: 'configOverviewModel>versionCreated', type: 'sap.ui.model.type.DateTime', formatOptions: {source: {pattern: 'yyyy-MM-dd\'T\'HH:mm:ss.ZZZ\'Z\''}}}" />
+                					</f:SimpleForm>
+                					<OverflowToolbar class="sapCDMConfigVersionButtonToolbar">
+                					    <Button class="sapMxBtnLite sapMxBtnSuperLite"
+                								enabled="{path: 'configOverviewModel>active', formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configActivationFormatter'}"
+                								icon="sap-icon://sys-enter"
+                								text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ACTIVATE}"
+                								tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_ACTIVATE_CONFIG_VERSION}"
+                								press="onActivateConfigVersion" type="Transparent"/>
+                							<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://download"
+                								text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EXPORT}"
+                								tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EXPORT_CONFIG_VERSION}"
+                								press="onExportConfigVersion" type="Transparent"/>
+                					</OverflowToolbar>
+            					</VBox>
+        		            </HBox>
+        				</CustomListItem>
+        			</List>
+    			</Page>
+    		</detailPages>
+    	</SplitContainer>
+    	    <footer>
+            <Bar class="sapMeToolbarFooter">
+    				<contentRight>
+    				    <Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_VERSIONS}" visible="{=!${configOverviewModel>/deleteModeConfig}}"
+    						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_VERSIONS_TOOLTIP}" press="enterDeleteMode"></Button>
+    				    <Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_MULTIPLE}" visible="{=${configOverviewModel>/deleteModeConfig}}"
+    						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_MULTIPLE_TOOLTIP}" press="deleteMultipleConfig"></Button>
+    					<Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CANCEL}" visible="{=${configOverviewModel>/deleteModeConfig}}"
+    						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CLEAR_TOOLTIP}" press="clearSelection"></Button>
+    				</contentRight>
+    			</Bar>
+        </footer>
+	</Page>
+</mvc:View>

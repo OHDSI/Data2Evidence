@@ -51,7 +51,10 @@ export class PaConfigApi {
       action: "getAll",
     };
     const url = `${this.url}/enduser`;
+    const timestamp = (new Date()).valueOf();
+    console.time(`time-portal-pa-getAllConfigs-${timestamp}`)
     const result = await post<CdmConfig[]>(url, body, requestConfig);
+    console.timeEnd(`time-portal-pa-getAllConfigs-${timestamp}`)
     return result.data;
   }
 
@@ -66,7 +69,10 @@ export class PaConfigApi {
       configId: id,
     };
     const url = `${this.url}/enduser?datasetId=${datasetId}`;
+    const timestamp = (new Date()).valueOf();
+    console.time(`time-portal-pa-config-${timestamp}`)
     const result = await post<PaConfig>(url, body, requestConfig);
+    console.timeEnd(`time-portal-pa-config-${timestamp}`)
     return result.data;
   }
 

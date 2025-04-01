@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Pager.vue not rendered when there is only a single page 1`] = `
+<div class="pager-disabled" style="padding-top: 20px;">
+  <!--v-if-->
+</div>
+`;
+
+exports[`Pager.vue renders a div with class pager-container if there is at least 2 pages 1`] = `
+<div class="" style="padding-top: 20px;">
+  <div class="pager-container"><button title="MRI_PA_PAGER_FIRST_PAGE" class="pager-nav pager-ll pager-disabled"><span>&nbsp;</span></button><button title="MRI_PA_PAGER_PREV_PAGE" class="pager-nav pager-l pager-disabled"><span>&nbsp;</span></button><button class="page-button current-page-button"><span>1</span></button><button class="page-button"><span>2</span></button><button title="MRI_PA_PAGER_NEXT_PAGE" class="pager-nav pager-r"><span>&nbsp;</span></button><button title="MRI_PA_PAGER_LAST_PAGE" class="pager-nav pager-rr"><span>&nbsp;</span></button></div>
+</div>
+`;
+
+exports[`Pager.vue sets the correct default data 1`] = `
+Object {
+  "currentPage": 1,
+  "pageSize": 20,
+  "rowCount": 1,
+  "v2": false,
+}
+`;

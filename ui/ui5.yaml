@@ -1,0 +1,12 @@
+specVersion: '2.5'
+metadata:
+  name: approuter
+type: application
+framework:
+  name: OpenUI5
+  version: "1.52.17"
+  libraries:
+    - name: sap.m
+    - name: sap.ui.table
+    - name: sap.ui.ux3
+    - name: themelib_sap_belize

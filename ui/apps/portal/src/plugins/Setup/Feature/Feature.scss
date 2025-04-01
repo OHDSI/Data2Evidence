@@ -1,0 +1,28 @@
+.feature {
+  padding: 0 2.5em;
+  max-width: 700px;
+  margin: 0 auto;
+
+  &__item {
+    display: flex;
+    border: 1px solid #ddd;
+    padding: 1.2em 2em;
+    margin-top: -1px;
+
+    .alp-checkbox__container {
+      margin-bottom: 0;
+    }
+  }
+
+  &__footer {
+    padding: 1.5em 0;
+
+    &-actions {
+      justify-content: center;
+
+      button {
+        width: 300px;
+      }
+    }
+  }
+}

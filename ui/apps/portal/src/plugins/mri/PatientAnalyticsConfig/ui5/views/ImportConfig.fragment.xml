@@ -1,0 +1,16 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
+    <Dialog title="{i18n>MRI_PA_CFG_IMPORT_CONFIG_POPOVER_TITLE}">
+        <f:SimpleForm editable="true" layout="ResponsiveGridLayout">
+            <Label text="{i18n>MRI_PA_CFG_IMPORT_DETAILS_VERSION}" />
+            <Select selectedKey="{importModel>/selectedVersion}" width="100%" items="{importModel>/versions}">
+                <core:Item key="{importModel>version}" text="{importModel>version}" />
+            </Select>
+            <Label text="{i18n>MRI_PA_CFG_IMPORT_CONFIG_FILE}" />
+            <TextArea placeholder="{i18n>MRI_PA_CFG_IMPORT_CONFIG_FILE_PLACEHOLDER}" value="{importModel>/file}" width="100%" />
+        </f:SimpleForm>
+        <buttons>
+            <Button text="{i18n>MRI_PA_CFG_BUTTON_IMPORT}" press="onImportConfigVersion" />
+            <Button text="{i18n>MRI_PA_CFG_BUTTON_CANCEL}" press="onImportConfigurationCanceled" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

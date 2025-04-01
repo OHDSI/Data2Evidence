@@ -1,0 +1,35 @@
+.db {
+  padding: 2em 2.5em 2.5em;
+  max-width: 1000px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    width: 100%;
+    padding-bottom: 16px;
+
+    .alp-title {
+      margin: 0;
+      flex: 1;
+    }
+  }
+
+  &__add-button {
+    float: right;
+  }
+
+  &__list{
+    .MuiTable-root {
+      border: 1px solid #dad7d7;
+    }
+    .MuiTableRow-root {
+      border: 1px solid #dad7d7;
+    }
+  }
+
+  &__button-group {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+}

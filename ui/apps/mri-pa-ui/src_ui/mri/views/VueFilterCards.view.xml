@@ -1,0 +1,8 @@
+
+<mvc:View controllerName="sap.hc.mri.pa.ui.views.VueFilterCards" xmlns:mvc="sap.ui.core.mvc" xmlns:pa="sap.hc.mri.pa.ui.lib" xmlns:html="http://www.w3.org/1999/xhtml" xmlns="sap.m" xmlns:commons="sap.ui.commons" xmlns:appdata="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" height="100%">
+    <Page showHeader="false" showNavButton="false" enableScrolling="false" backgroundDesign="Transparent">
+        <content>
+            <pa:BoolContainer id="filterContainer" change=".onFilterChange" newCardAdded=".onNewCardAdded" />
+        </content>
+    </Page>
+</mvc:View>

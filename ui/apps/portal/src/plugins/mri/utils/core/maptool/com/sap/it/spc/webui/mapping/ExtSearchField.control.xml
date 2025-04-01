@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<control xmlns="http://www.sap.com/sap.ui.library.xsd" >
+
+	<name>ExtSearchField</name>
+	<author>Mouli Kalakota</author>
+	<documentation>Provides extra buttons which will fire events for navigation</documentation>
+
+	<baseType>sap.ui.commons/SearchField</baseType>
+	<properties>
+		<property group="Behavior" name="showNavigationButtons" type="sap.ui.core/boolean">
+			<documentation>To show nvaigation buttons along with the search field</documentation>
+		</property>
+		<property group="Appearance" name="infoText" type="sap.ui.core/string" defaultValue="null">
+			<documentation>Info text to show on the search field</documentation>
+		</property>
+	</properties>
+	<events>
+		<event name="next">
+			<documentation>fired when navigation button &quot;next&quot; is pressed</documentation>
+		</event>
+		<event name="prev">
+			<documentation>fired when navigation button &quot;prev&quot; is pressed</documentation>
+		</event>
+		<event name="clear">
+			<documentation>fired when button &quot;clear&quot; is pressed</documentation>
+		</event>
+	</events>
+</control>

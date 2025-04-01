@@ -7,7 +7,7 @@ export class PortalAPI {
   private readonly baseURL: string;
   private readonly token: string;
   private readonly logger = console;
-  private readonly httpsAgent: https.Agent;
+  // private readonly httpsAgent: https.Agent;
 
   constructor(token: string) {
     this.token = token;

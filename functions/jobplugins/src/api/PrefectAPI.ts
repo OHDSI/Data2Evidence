@@ -1,4 +1,5 @@
-import dayjs from "npm:dayjs";
+import dayjs from "dayjs";
+import { decode } from "jsonwebtoken";
 import { services } from "../env.ts";
 import { IFlowRunQueryDto, IPrefectFlowRunDto } from "../types.ts";
 
@@ -114,7 +115,7 @@ export class PrefectAPI {
       }
 
       const result = await response.json();
-      return result as IPrefectFlowRunDto[];
+      return result;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw error;
@@ -334,9 +335,17 @@ export class PrefectAPI {
   async createInputAuthToken(flowrunId: string) {
     const retries = 3;
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
+
+    const thirdPartyToken: string | undefined = decode(
+      this.token.replace(/bearer /i, ""),
+    )['thirdPartyToken'];
+
     const options = this.createOptions("POST", {
       key: key,
-      value: JSON.stringify({ token: this.token }), // 'value' must be a string always. Convert the json object to a string
+      value: JSON.stringify({ 
+        token: this.token,
+        thirdpartytoken: thirdPartyToken || ''
+      }), // 'value' must be a string always. Convert the json object to a string
     });
     const errorMessage =
       "Error occurred while passing user token to the flow run";
@@ -463,6 +472,29 @@ export class PrefectAPI {
         throw new Error(r.statusText);
       }
       return await r.json();
+    } catch (error) {
+      console.info(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
+  }
+
+  async getFlowRunsArtifactsByFlowRunId(flowRunId: string) {
+    const errorMessage = `Error while getting prefect flow run artifacts flow run id: ${flowRunId}`;
+    try {
+      const url = `${this.baseURL}/artifacts/filter`;
+      const data: Record<string, string | object> = {
+        flow_runs: {
+          id: {
+            any_: [flowRunId],
+          },
+        },
+      };
+      const options = await this.createOptions("POST", data);
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return await res.json();
     } catch (error) {
       console.info(`${errorMessage}: ${error}`);
       throw new Error(errorMessage);

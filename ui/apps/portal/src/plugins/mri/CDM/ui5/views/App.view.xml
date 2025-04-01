@@ -1,0 +1,5 @@
+<mvc:View xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" displayBlock="true" class="sapUiSizeCompact">
+    <App id="appControl">
+        <mvc:XMLView viewName="hc.hph.cdw.config.ui.views.MxConfigUI" />
+    </App>
+</mvc:View>

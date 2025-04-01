@@ -1,0 +1,47 @@
+@import './mri-variables';
+@import './filters.scss';
+
+.searchFilters {
+  @include filter-base;
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 10px;
+    color: $MriBrand;
+    font-size: medium;
+  }
+
+  .filters-content {
+    margin-bottom: 2rem;
+
+    .nav-item {
+      padding-top: 1rem;
+    }
+  }
+
+  .panel-footer {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    width: 100%;
+
+    .createFilterDropdown {
+      flex-grow: 1;
+      margin-bottom: 0.5rem;
+
+      .btn-link {
+        display: flex;
+        width: 100%;
+
+        &::after {
+          display: none;
+        }
+      }
+    }
+
+    .createFilterButton {
+      width: 100%;
+    }
+  }
+}

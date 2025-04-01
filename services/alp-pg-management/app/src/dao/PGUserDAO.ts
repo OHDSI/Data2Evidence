@@ -1,4 +1,4 @@
-import * as config from "../utils/config.js";
+import * as config from "../utils/config";
 
 export default class PGUserDAO {
   private logger = config.getLogger();
@@ -17,6 +17,24 @@ export default class PGUserDAO {
       this.logger.info(`${type} User ${username} successfully created.`);
     } else {
       this.logger.info(`${type} User ${username} already exists!`);
+    }
+  };
+
+  createUserWithCreateRolePrivilege = async (
+    client: any,
+    username: string,
+    password: string
+  ) => {
+    const ifUserExists = await this.verifyIfUserExists(client, username);
+    if (!ifUserExists) {
+      await client.query(
+        `CREATE ROLE ${username} NOSUPERUSER CREATEROLE LOGIN ENCRYPTED PASSWORD '${password}'`
+      );
+      this.logger.info(
+        `User ${username} with CREATEROLE Privilege successfully created.`
+      );
+    } else {
+      this.logger.info(`User ${username} already exists!`);
     }
   };
 
@@ -58,7 +76,9 @@ export default class PGUserDAO {
     databaseName: string,
     ownerUser: string
   ) => {
-    await client.query(`ALTER DATABASE ${databaseName} OWNER TO ${ownerUser}`);
+    await client.query(
+      `ALTER DATABASE ${databaseName} OWNER TO "${ownerUser}"`
+    );
     this.logger.info(
       `User ${ownerUser} successfully made Owner of ${databaseName} database`
     );
@@ -128,12 +148,15 @@ export default class PGUserDAO {
   grantManagePrivilegesForSchema = async (
     client: any,
     schemaName: string,
-    user: string
+    user: string,
+    withGrantOption: boolean
   ) => {
     try {
       //Access to schema and create objects within schema
       await client.query(
-        `GRANT CREATE, USAGE ON SCHEMA ${schemaName} to ${user}`
+        `GRANT CREATE, USAGE ON SCHEMA ${schemaName} to ${user} ${
+          withGrantOption ? "with grant option" : ""
+        }`
       );
 
       //Create/Write Access to current Objects
@@ -225,6 +248,16 @@ export default class PGUserDAO {
       this.logger.error(e.message);
     }
   };
+
+  grantRoleToUser = async (client: any, role: string, user: string) => {
+    try {
+      await client.query(`GRANT "${role}" TO "${user}"`);
+      this.logger.info(`Granted role ${role} to ${user}`);
+    } catch (e: any) {
+      this.logger.error(`Granted role ${role} to ${user}`);
+      this.logger.error(e.message);
+    }
+  }
 
   grantCreatePrivilegesForDatabase = async (
     client: any,

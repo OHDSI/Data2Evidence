@@ -1,0 +1,68 @@
+{
+  "name": "@data2evidence/fhir",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tbuild node_modules/@data2evidence/trex"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@data2evidence/trex": "latest",
+    "deno": "latest"
+  },
+  "trex": {
+    "functions": {
+      "init": [
+        {
+          "function": "/alp-fhir-init",
+          "imports": "/alp-fhir-init/import.json",
+          "env": "alp-fhir-init",
+          "waitfor": "http://fhir-server-1:8103/healthcheck"
+        }
+      ],
+      "api": [
+        {
+          "source": "/gateway/api/fhir",
+          "function": "/alp-fhir-svc",
+          "env": "alp-fhir-svc",
+          "imports": "/alp-fhir-svc/import.json"
+        }
+      ],
+      "roles": {
+        "ALP_SYSTEM_ADMIN": [
+          "gateway.fhir.create"
+        ],
+        "IDP_ALP_DATA_CLIENT_ID": [
+          "gateway.fhir.create"
+        ]
+      },
+      "scopes": [
+        {
+          "path": "^/gateway/api/fhir/createProject",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(.*)",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        }
+      ]
+    }
+  }
+}

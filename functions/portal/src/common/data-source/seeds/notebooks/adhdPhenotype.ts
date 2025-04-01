@@ -64,7 +64,7 @@ patient_count = await Result().get_patient_count(request)
 print(f'Total number of patients for ADHD Phenotype: {patient_count}')
 # %% [python]
 # Generate Request for Dataframe cohort
-request_df = total_patients_query.get_dataframe_cohort()
+request_df = await total_patients_query.get_dataframe_cohort()
 
 # Get Patient Dataframe. Select (1) Patient
 patient_dataframe = await Result().download_dataframe(request_df)
@@ -86,7 +86,7 @@ ax.title.set_size(25)
 ### Analyze Comorbidities of ADHD
 # %% [python]
 # Generate Request for Condition Occurrence Dataframe cohort
-request_co_df = total_patients_query.get_dataframe_cohort()
+request_co_df = await total_patients_query.get_dataframe_cohort()
 
 # Get Condition Occurrence Dataframe. Select (2) ConditionOccurrence
 condition_occurrence_dataframe = Result().download_dataframe(request_co_df)

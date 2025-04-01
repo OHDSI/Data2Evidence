@@ -1,0 +1,70 @@
+# This is the reference file for basic linting.
+# Last updated vor ESLint v2.10.2
+# For rule definitions see http://eslint.org/docs/rules/
+---
+  env:
+    amd:     true # defines require() and define() as global variables
+    browser: true # browser global variables
+    es6:     true # enable all ECMAScript 6 features except for modules
+    jasmine: true # adds all of the Jasmine testing global variables
+    jquery:  true # jQuery global variables
+    mocha:   true # adds all of the Mocha testing global variables
+    node:    true # Node.js global variables and Node.js scoping
+    qunit:   true # QUnit global variables
+
+  globals:
+    afterOnce:  false # used in services tests
+    beforeOnce: false # used in services tests
+    com:        false # temporarily enabled as it is used as namespace
+    d3:         false # used by d3.js
+    opaTest:    false # used in OPA tests
+    sap:        false # used by SAPUI5
+    sinon:      false # used in SAPUI5 tests
+
+  rules:
+    comma-dangle:               error # ✓ require or disallow trailing commas (🔧)
+    new-parens:                 error #   require parentheses when invoking a constructor with no arguments
+    no-array-constructor:       error #   disallow Array constructors
+    no-caller:                  error #   disallow the use of arguments.caller or arguments.callee
+    no-catch-shadow:            error #   disallow catch clause parameters from shadowing variables in the outer scope
+    no-cond-assign:             error # ✓ disallow assignment operators in conditional expressions
+    no-control-regex:           error # ✓ disallow control characters in regular expressions
+    no-debugger:                error # ✓ disallow the use of debugger
+    no-delete-var:              error # ✓ disallow deleting variables
+    no-dupe-args:               error # ✓ disallow duplicate arguments in function definitions
+    no-dupe-keys:               error # ✓ disallow duplicate keys in object literals
+    no-duplicate-case:          error # ✓ disallow duplicate case labels
+    no-empty:                   error # ✓ disallow empty block statements
+    no-empty-character-class:   error # ✓ disallow empty character classes in regular expressions
+    no-eq-null:                 error #   disallow null comparisons without type-checking operators
+    no-ex-assign:               error # ✓ disallow reassigning exceptions in catch clauses
+    no-extra-semi:              error # ✓ disallow unnecessary semicolons (🔧)
+    no-eval:                    error #   disallow the use of eval()
+    no-implied-eval:            error #   disallow the use of eval()-like methods
+    no-inner-declarations:      error # ✓ disallow function or var declarations in nested blocks
+    no-invalid-regexp:          error # ✓ disallow invalid regular expression strings in RegExp constructors
+    no-iterator:                error #   disallow the use of the __iterator__ property
+    no-label-var:               error #   disallow labels that share a name with a variable
+    no-labels:                  error #   disallow labeled statements
+    no-lone-blocks:             error #   disallow unnecessary nested blocks
+    no-native-reassign:         error #   disallow reassigning native objects
+    no-negated-in-lhs:          error # ✓ disallow negating the left operand in in expressions
+    no-new-func:                error #   disallow new operators with the Function object
+    no-obj-calls:               error # ✓ disallow calling global object properties as functions
+    no-octal:                   error # ✓ disallow octal literals
+    no-octal-escape:            error #   disallow octal escape sequences in string literals
+    no-process-exit:            error #   disallow the use of process.exit()
+    no-proto:                   error #   disallow the use of the __proto__ property
+    no-regex-spaces:            error # ✓ disallow multiple spaces in regular expression literals
+    no-return-assign:           error #   disallow assignment operators in return statements
+    no-script-url:              error #   disallow javascript: urls
+    no-self-compare:            error #   disallow comparisons where both sides are exactly the same
+    no-shadow-restricted-names: error #   disallow identifiers from shadowing restricted names
+    no-sparse-arrays:           error # ✓ disallow sparse arrays
+    no-undef:                   error # ✓ disallow the use of undeclared variables
+    no-unreachable:             error # ✓ disallow unreachable code
+    no-unused-expressions:      error #   disallow unused expressions
+    no-with:                    error #   disallow with statements
+    semi:                       error #   require or disallow semicolons instead of ASI (🔧)
+    use-isnan:                  error # ✓ require calls to isNaN() when checking for NaN
+    valid-typeof:               error # ✓ enforce comparing typeof expressions against valid strings

@@ -1,0 +1,22 @@
+.setup-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #ddd;
+  padding: 1em 2em;
+  margin-top: -1px;
+
+  &__info {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+
+  &__notes {
+    font-size: 0.85em;
+    color: #777;
+  }
+}

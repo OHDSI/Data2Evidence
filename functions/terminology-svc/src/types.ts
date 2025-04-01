@@ -2,7 +2,7 @@ import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 extendZodWithOpenApi(z);
 export type ConceptSet = {
-  id: string;
+  id: number;
   name: string;
   shared: boolean;
   concepts: ConceptSetConcept[];
@@ -29,6 +29,22 @@ export interface IConcept {
   invalid_reason: string;
   valid_start_date?: number;
   valid_end_date?: number;
+  score?: number;
+}
+
+export interface IHanaConcept {
+  CONCEPT_ID: string;
+  CONCEPT_NAME: string;
+  DOMAIN_ID: string;
+  VOCABULARY_ID: string;
+  CONCEPT_CLASS_ID: string;
+  STANDARD_CONCEPT: string;
+  CONCEPT_CODE: string;
+  INVALID_REASON: string | null;
+  VALID_START_DATE: string;
+  VALID_END_DATE: string;
+  system_valid_from: boolean;
+  system_valid_until: boolean;
 }
 
 export const IDuckdbFacetSchema = z.object({
@@ -52,13 +68,30 @@ export interface IConceptAncestor {
   min_levels_of_separation: number;
   max_levels_of_separation: number;
 }
+
+export interface IHanaConceptAncestor {
+  ANCESTOR_CONCEPT_ID: string;
+  DESCENDANT_CONCEPT_ID: string;
+  MIN_LEVELS_OF_SEPARATION: string;
+  MAX_LEVELS_OF_SEPARATION: string;
+}
+
 export interface IConceptRelationship {
   concept_id_1: number;
   concept_id_2: number;
   relationship_id: string;
   valid_start_date: number;
   valid_end_date: number;
-  invalid_reason: string;
+  invalid_reason: string | null;
+}
+
+export interface IHanaConceptRelationship {
+  CONCEPT_ID_1: string;
+  CONCEPT_ID_2: string;
+  RELATIONSHIP_ID: string;
+  VALID_START_DATE: string;
+  VALID_END_DATE: string;
+  INVALID_REASON: string | null;
 }
 
 export interface IConceptRecommended {
@@ -66,6 +99,13 @@ export interface IConceptRecommended {
   concept_id_2: number;
   relationship_id: string;
 }
+
+export interface IHanaConceptRecommended {
+  CONCEPT_ID_1: string;
+  CONCEPT_ID_2: string;
+  RELATIONSHIP_ID: string;
+}
+
 export interface FhirValueSet {
   resourceType: string;
   url?: string;
@@ -128,6 +168,7 @@ export type FhirValueSetExpansionContainsWithExt = {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
 };
 
 export const FhirResourceType = {
@@ -180,3 +221,9 @@ export type ConceptHierarchyNodeLevel = {
 export type ConceptHierarchyNode = ConceptHierarchyNodeLevel & {
   display: string;
 };
+
+export enum DatasetDialects {
+  HANA = "hana",
+  POSTGRES = "postgres",
+  DUCKDB = "duckdb",
+}

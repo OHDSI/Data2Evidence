@@ -1,0 +1,18 @@
+.save-attribute-dialog {
+  &__content {
+    padding: 1.5em 1.5em 0;
+  }
+
+  &__footer {
+    border-top: 1px solid #dad7d7;
+    padding: 1.5em;
+
+    &-actions {
+      justify-content: center;
+
+      button {
+        width: 200px;
+      }
+    }
+  }
+}

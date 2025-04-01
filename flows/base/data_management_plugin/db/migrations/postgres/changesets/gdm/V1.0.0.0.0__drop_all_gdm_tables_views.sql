@@ -1,0 +1,16 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.0.0__drop_all_gdm_tables_views
+
+
+DROP TABLE IF EXISTS
+    "GDM.ANSWER",
+    "GDM.CONSENT",
+    "GDM.CONSENT_DETAIL",
+    "GDM.CONSENT_VALUE",
+    "GDM.ITEM",
+    "GDM.ITEM_QUESTIONNAIRE",
+    "GDM.PARTICIPANT_TOKEN",
+    "GDM.QUESTIONNAIRE",
+    "GDM.QUESTIONNAIRE_RESPONSE",
+    "GDM.RESEARCH_SUBJECT"
+CASCADE;

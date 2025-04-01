@@ -1,0 +1,95 @@
+@import './mri-variables';
+.filters-footer {
+  height: 4rem;
+  background-color: $MriFooterContainerBG;
+  border-top: 1px solid lightgray;
+  bottom: 0px;
+  position: absolute;
+  width: 100%;
+  .unicode-icon {
+    button {
+      width: 39px;
+      height: 39px;
+      padding-left: 13px;
+      padding-top: 0px;
+    }
+    span {
+      font-size: 24px;
+      transform: rotate(-90deg);
+      margin-left: -3px;
+      margin-top: -2px;
+    }
+  }
+  .btn-link {
+    padding: 0px;
+    border: 0px;
+  }
+  .appButton {
+    margin-left: 1px;
+    margin-right: 1px;
+    color: $FooterButtonTextLight;
+    height: 2rem;
+    div.buttonContent {
+      font-size: 0.75rem;
+    }
+    div.buttonInner:hover {
+      background-color: $FooterHoverButtonBackgroundColor !important;
+      border-radius: 0.2rem;
+    }
+    div.buttonInner:active {
+      background-color: $FooterActiveButtonBackgroundColor !important;
+      color: $FooterActiveButtonTextColor;
+      text-shadow: none;
+      border-radius: 0.2rem;
+    }
+  }
+
+  .dropdown-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .save-bookmark {
+    box-sizing: border-box;
+
+    .label-error {
+      color: $MriTokenInvalidBG;
+    }
+    label {
+      color: $UiLightText;
+      font-size: 0.875rem;
+      font-weight: normal;
+    }
+    .body-container {
+      width: 100%;
+      min-height: 18px;
+    }
+    .body-container.label-for {
+      min-height: 20px;
+    }
+    .input-container input {
+      color: $UiDarkText;
+      background: $UiLightestBG;
+      border: 1px solid $UiMediumBorder;
+      font-size: 0.875rem;
+      line-height: normal;
+      height: 2.5rem;
+      padding: 0 0.75rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+    .form-group {
+      .row-checkbox {
+        padding-top: 1em;
+      }
+      .app-checkbox {
+       display: flex;
+       align-items: center;
+       margin-left: 0.8rem;
+      }
+    } 
+  }
+}

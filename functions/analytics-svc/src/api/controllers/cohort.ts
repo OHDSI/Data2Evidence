@@ -104,18 +104,19 @@ async function getStudyDetails(
 export async function getAllCohorts(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
-        let cohortEndpoint = new CohortEndpoint(
+        const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
             analyticsConnection.schemaName
         );
 
         const offset = req.query.offset;
         const limit = req.query.limit;
+        const excludePatientIds = req.query.excludePatientIds === 'true';
 
         // Send empty object to query all cohorts
-        let result = await cohortEndpoint.queryCohorts({}, offset, limit);
+        const result = await cohortEndpoint.queryCohorts({}, offset, limit, excludePatientIds);
         // Get count of all cohort definitions for pagination
-        let cohortDefinitionCount =
+        const cohortDefinitionCount =
             await cohortEndpoint.queryCohortDefinitionCount({});
 
         res.status(200).send({ data: result, cohortDefinitionCount });
@@ -221,7 +222,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 req,
                 datasetId
             );
-            const now = +new Date();
+            const now = new Date().toISOString().split("T")[0];
             await dataflowRequest(req, "POST", `cohort/flow-run`, {
                 options: {
                     token,
@@ -365,6 +366,26 @@ export async function generateCohortDefinition(
     }
 }
 
+export async function getCohortDefinition(req: IMRIRequest, res: Response) {
+    try {
+        const analyticsConnection = await getCohortAnalyticsConnection(req);
+
+        const cohortEndpoint = new CohortEndpoint(
+            analyticsConnection,
+            analyticsConnection.schemaName
+        );
+
+        const result = await cohortEndpoint.getCohortDefinition(
+            req.query.cohortDefinitionId
+        );
+
+        res.status(200).send(result);
+    } catch (err) {
+        logger.error(err);
+        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
 export async function createCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
@@ -377,7 +398,7 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
         const cohortDefiniton = <CohortDefinitionTableType>{
             name: req.body.name,
             description: req.body.description,
-            creationTimestamp: new Date(),
+            creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,
@@ -398,24 +419,49 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
     }
 }
 
-export async function renameCohortDefinition(req: IMRIRequest, res: Response) {
+export async function updateCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const cohortDefinitionId = req.body.cohortDefinitionId;
         const name = req.body.name;
+        const description = req.body.description;
+        const definitionTypeConceptId = req.body.definitionTypeConceptId;
+        const syntax = req.body.syntax;
+        const subjectConceptId = req.body.subjectConceptId;
 
         const analyticsConnection = await getCohortAnalyticsConnection(req);
 
-        let cohortEndpoint = new CohortEndpoint(
+        const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
             analyticsConnection.schemaName
         );
 
-        await cohortEndpoint.renameCohortDefinitionToDb(
-            cohortDefinitionId,
-            name
-        );
+        // Get existing cohort definition via cohort definition id
+        const { data: cohortDefinitions } =
+            await cohortEndpoint.getCohortDefinition(cohortDefinitionId);
+        if (cohortDefinitions.length < 0) {
+            throw `No cohort definition found for cohort definition id:${cohortDefinitionId}`;
+        }
+        const existingCohortDefinition = cohortDefinitions[0];
 
-        res.status(204).send();
+        // Create new cohort definition id object based on existing cohort definition and incoming parameters
+        const newCohortDefinition: CohortDefinitionTableType = {
+            id: cohortDefinitionId,
+            name: name ?? existingCohortDefinition.cohort_definition_name,
+            description:
+                description ??
+                existingCohortDefinition.cohort_definition_description,
+            creationTimestamp: existingCohortDefinition.cohort_initiation_date,
+            definitionTypeConceptId:
+                definitionTypeConceptId ??
+                existingCohortDefinition.definition_type_concept_id,
+            subjectConceptId:
+                subjectConceptId ?? existingCohortDefinition.subject_concept_id,
+            syntax: syntax ?? existingCohortDefinition.cohort_definition_syntax,
+        };
+
+        await cohortEndpoint.updateCohortDefinitionToDb(newCohortDefinition);
+
+        res.status(200).send(newCohortDefinition);
     } catch (err) {
         logger.error(err);
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
@@ -461,7 +507,7 @@ async function getCohortFromMriQuery(
             patientIds,
             name: cohortName,
             description: req.body.description,
-            creationTimestamp: new Date(),
+            creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,
             syntax: req.body.syntax,

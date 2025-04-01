@@ -1,0 +1,31 @@
+.table-to-table {
+  display: flex;
+  justify-content: center;
+  padding: 2em;
+  margin: 2em 0 0 0;
+  border-top: 1px solid #b1b1b7; /* Example border top style */
+  border-bottom: 1px solid #b1b1b7;
+  position: relative;
+
+  #table-chip {
+    position: absolute;
+    top: 4.3em;
+    top: -16px;
+    left: 52px;
+  }
+  #field-chip {
+    position: absolute;
+    bottom: -16px;
+    left: 52px;
+  }
+
+  .MuiChip-root {
+    background-color: #e5e6f2;
+    color: #000080;
+    min-width: 5em;
+  }
+
+  .mapping-handle {
+    width: 15%;
+  }
+}

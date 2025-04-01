@@ -1,0 +1,126 @@
+<mvc:View class="sapMriPaView sapThemePageBG sapMRISAC" controllerName="sap.hc.mri.pa.ui.views.SAC" displayBlock="true" height="100%" 
+    xmlns="sap.ui.commons" 
+    xmlns:cl="sap.ui.commons.layout" 
+    xmlns:l="sap.ui.layout" 
+    xmlns:m="sap.m" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:pa="sap.hc.mri.pa.ui.lib">
+    <l:Splitter id="splitterLayout" class="sapMriPaSplitter">
+        <m:NavContainer id="navFilterBmkContainer">
+            <m:layoutData>
+                <l:SplitterLayoutData size="{filterbar_data>/currentSize}" minSize="{filterbar_data>/currentMinSize}" />
+            </m:layoutData>
+            <cl:BorderLayout id="filtersPage">
+                <cl:top>
+                    <cl:BorderLayoutArea size="33px">
+                        <m:Toolbar id="filtersToolbar" class="sapMriPaToolbar">
+                            <m:ToolbarSpacer />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button id="addBookmarkBtn" icon="sap-icon://unfavorite" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_ADD_BOOKMARK_BUTTON}" press="onAddBookmarkButtonPressed" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button icon="sap-icon://favorite-list" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_LOAD_BOOKMARK}" press="onGoToBookmarksPage" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <Button icon="sap-icon://refresh" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_REFRESH_BUTTON}" press="onResetFilters" />
+                        </m:Toolbar>
+                    </cl:BorderLayoutArea>
+                </cl:top>
+                <cl:center>
+                    <cl:BorderLayoutArea class="sapMriPaLeftPanel">
+                        <pa:BoolContainer id="filterContainer" change=".onFilterChange" />
+                    </cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+            <cl:BorderLayout id="bookmarksPage">
+                <cl:top>
+                    <cl:BorderLayoutArea size="33px">
+                        <m:Toolbar id="bookmarksToolbar" class="sapMriPaToolbar">
+                            <Button icon="sap-icon://nav-back" styled="false" tooltip="{i18n>MRI_PA_TOOLTIP_BOOKMARK_BACK}" press="onGoToFiltersPage" />
+                            <Label class="sapMriPaFakeToolbarSeparator" />
+                            <m:ToolbarSpacer />
+                            <Label class="sapMriPaToolbarTitle" text="{i18n>MRI_PA_TITLE_SAVED_BOOKMARKS}" />
+                            <m:ToolbarSpacer />
+                        </m:Toolbar>
+                    </cl:BorderLayoutArea>
+                </cl:top>
+                <cl:center>
+                    <cl:BorderLayoutArea class="sapMriPaLeftPanel">
+                        <pa:BookmarkList id="bookmarks" restoreBmk="onRestoreBookmarkRequested" />
+                    </cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+        </m:NavContainer>
+        <cl:BorderLayout>
+            <cl:top>
+                <cl:BorderLayoutArea size="33px">
+                    <m:Toolbar id="tlbAnalytics" class="sapMriPaToolbar">
+                        <Button id="btnCollapse" icon="{filterbar_data>/buttonIcon}" styled="false" tooltip="{= ${filterbar_data>/collapsed} ? ${i18n>MRI_PA_TOOLTIP_EXPAND_FILTER_BAR} : ${i18n>MRI_PA_TOOLTIP_COLLAPSE_FILTER_BAR}}" press="._collapseOrExpandFilterBar" />
+                        <m:ToolbarSpacer />
+                        <!-- Chart Buttons to be inserted here -->
+                        <m:ToolbarSpacer />
+                        <Label id="patientCountLabel" class="sapMriPaPatientCount" icon="sap-icon://wounds-doc" text="{results>/total/size}" visible="{results>/total/visible}" />
+                    </m:Toolbar>
+                </cl:BorderLayoutArea>
+            </cl:top>
+            <cl:center>
+                <cl:BorderLayoutArea>
+                    <cl:BorderLayout id="layMain">
+                        <cl:begin>
+                            <cl:BorderLayoutArea size="195px" visible="{status>/beginVisible}">
+                                <!-- Axis menu selection are loaded here -->
+                                <cl:AbsoluteLayout id="layAttributesContainer" visible="{status>/beginVisible}" />
+                            </cl:BorderLayoutArea>
+                        </cl:begin>
+                        <cl:center>
+                            <cl:BorderLayoutArea></cl:BorderLayoutArea>
+                        </cl:center>
+                        <cl:bottom>
+                            <cl:BorderLayoutArea contentAlign="center"></cl:BorderLayoutArea>
+                        </cl:bottom>
+                    </cl:BorderLayout>
+                </cl:BorderLayoutArea>
+            </cl:center>
+        </cl:BorderLayout>
+        <m:NavContainer >
+            <m:layoutData>
+                <l:SplitterLayoutData size="300px" minSize="300px" />
+            </m:layoutData>
+            <cl:BorderLayout id="sacViewPage">
+                <cl:top>
+                    <cl:BorderLayoutArea size="33px">
+                        <m:Toolbar class="sapMriPaToolbar">
+                            <m:ToolbarSpacer />
+                            <Label class="sapMriPaToolbarTitle" text="Save Calculation View" />
+                            <m:ToolbarSpacer />
+                        </m:Toolbar>
+                    </cl:BorderLayoutArea>
+                </cl:top>
+                <cl:center>
+                    <cl:BorderLayoutArea>
+                        <l:VerticalLayout width="280px" class="sapUiTinyMargin">
+                            <l:content>
+                                <m:List >
+                                    <m:InputListItem label="Predefined Filters">
+                                        <m:Switch id="switchFilter" state="true" change="onHideFilter">
+                                            <m:layoutData>
+                                                <m:FlexItemData growFactor="1" />
+                                            </m:layoutData>
+                                        </m:Switch>
+                                    </m:InputListItem>
+                                </m:List>
+                                <l:HorizontalLayout width="100%">
+                                    <l:content>
+                                        <m:Input id="inputViewName" width="200px" type="Text" placeholder="Enter Name ..." />
+                                        <m:Button id="btnGenerate" width="80px" styled="false" tooltip="Generate" text="Generate" press="onGenerate" />
+                                    </l:content>
+                                </l:HorizontalLayout>
+                                <m:List id="viewList" mode="Delete" delete="onDeleteView" enableBusyIndicator="true" headerText="Views" growing="true" items="{path: '/result'}">
+                                    <m:StandardListItem title="{ViewId}" iconDensityAware="false" iconInset="false" />
+                                </m:List>
+                            </l:content>
+                        </l:VerticalLayout>
+                    </cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+        </m:NavContainer>
+    </l:Splitter>
+</mvc:View>

@@ -1,0 +1,22 @@
+@import "../../theme/variables";
+
+.select-dataset-dialog {
+  &__content {
+    margin: 2em;
+    color: var(--color-primary);
+    display: flex;
+    gap: 2em;
+    color: $primary-color;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 200px;
+    }
+  }
+}

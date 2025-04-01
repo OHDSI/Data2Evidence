@@ -7,28 +7,30 @@ type Database = {
   host: string;
   port: number;
   name: string;
-  code: string;
   dialect: string;
-  extra: {
+  db_extra: {
     value: object;
-  }[];
+  };
   credentials: {
     username: string;
     password: string;
     salt: string;
     userScope: string;
+    user_scope: string;
   }[];
+  vocab_schemas: string[];
+  authentication_mode: string;
 };
 
 export class DbCredentialsApi {
   private readonly baseUrl: string;
   private readonly httpsAgent: Agent;
   constructor() {
-    if (!process.env.DB_CREDENTIALS_MGR__API_URL) {
-      console.error("No baseUrl is set for DbCredentialsApi");
-      throw new Error("No baseUrl is set for DbCredentialsApi");
+    if (!process.env.URL__DATABASE_LIST__GET) {
+      console.error("No baseUrl found to fetch database credentials list");
+      throw new Error("No baseUrl found to fetch database credentials list");
     }
-    this.baseUrl = process.env.DB_CREDENTIALS_MGR__API_URL;
+    this.baseUrl = process.env.URL__DATABASE_LIST__GET;
     this.httpsAgent = new Agent({
       rejectUnauthorized: true,
       ca: process.env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),

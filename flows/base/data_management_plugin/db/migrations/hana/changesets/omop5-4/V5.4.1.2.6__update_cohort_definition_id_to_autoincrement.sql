@@ -1,0 +1,17 @@
+--liquibase formatted sql
+--changeset alp:V5.4.1.2.6__update_cohort_definition_id_to_autoincrement splitStatements:false
+CREATE
+OR REPLACE TRIGGER SET_COHORT_DEFINITION_ID BEFORE
+INSERT
+	ON COHORT_DEFINITION REFERENCING NEW ROW N_ROW FOR EACH ROW BEGIN DECLARE new_id INTEGER;
+
+SELECT
+	COHORT_DEFINITION_ID_SEQ.nextval INTO new_id
+FROM
+	DUMMY;
+
+N_ROW.COHORT_DEFINITION_ID = :new_id;
+
+END;
+
+--rollback DROP TRIGGER SET_COHORT_DEFINITION_ID;

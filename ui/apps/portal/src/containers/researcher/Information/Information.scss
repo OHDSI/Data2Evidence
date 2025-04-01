@@ -1,0 +1,137 @@
+.information__container {
+  height: calc(100% - 4rem);
+  margin: 2rem;
+
+  .alp-card__header {
+    justify-content: center;
+  }
+
+  .tab__content {
+    width: 100%;
+
+    &__container {
+      margin: 24px auto;
+      max-width: 1080px;
+      padding: 0 32px;
+    }
+
+    &__title {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      font-size: 24px;
+      font-weight: 500;
+    }
+
+    &__subtitle {
+      height: 24px;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--color-primary);
+      margin: 2em 0px 1em;
+    }
+  }
+}
+
+.dataset__info {
+  &__tab {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2px;
+    margin-top: 5px;
+  }
+
+  &__dropdown {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5em;
+    width: 100%;
+    border-bottom: solid 1px rgba(172, 171, 168, 0.5);
+    .alp-title {
+      margin: 1.2em 0 1.2em 0;
+    }
+    .alp-title--subtitle {
+      font-size: 16px;
+    }
+  }
+}
+
+.button__request {
+  button {
+    min-width: 300px;
+  }
+}
+
+.button__progress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: white;
+  margin-top: -16px;
+  margin-left: -16px;
+}
+
+.button-keygen__container {
+  width: 70em;
+  padding-bottom: 3em;
+  max-width: 40em;
+  padding-top: 36px;
+  .button-keygen__block {
+    float: right;
+    display: inline;
+    width: 30em;
+  }
+  .keygen__title {
+    margin: 0;
+    font-weight: 500;
+    color: var(--color-neutral);
+    line-height: 2em;
+    float: left;
+    display: inline;
+  }
+}
+
+.metadata_tags_files__container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .metadata_tags__container {
+    .tags__content {
+      width: 100%;
+      .tag__list {
+        display: flex;
+        margin-top: 0;
+        border: 1px solid #c1c3d2;
+        list-style: none;
+        padding: 13px;
+        .MuiChip-root {
+          color: white;
+          background-color: var(--color-primary);
+          border-radius: 0.5em;
+          font-weight: bold;
+          margin: 3px;
+        }
+      }
+    }
+
+    .metadata__content {
+      width: 100%;
+      .study-metadata {
+        .MuiTableHead-root .MuiTableCell-root {
+          background-color: #ebf1f8;
+        }
+        .MuiTableCell-root {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+  .MuiTable-root {
+    border: 1px solid #dad7d7;
+  }
+  .MuiTableRow-root {
+    border: 1px solid #dad7d7;
+  }
+}

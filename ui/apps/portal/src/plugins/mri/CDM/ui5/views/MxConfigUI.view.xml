@@ -1,0 +1,8 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.MxConfigUI" height="100%" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc">
+	<Page showNavButton="false" id="pageMxConfigUI" navButtonPress="handleNavButtonPress">
+		<NavContainer id="navMxConfigUI" class="sapMxConfigUi">
+			<mvc:XMLView id="configOverview" class="sapMxConfigOverview" viewName="hc.hph.cdw.config.ui.views.ConfigOverview" />
+			<mvc:XMLView id="configSectionPage" viewName="hc.hph.cdw.config.ui.views.ConfigSection" />
+		</NavContainer>
+	</Page>
+</mvc:View>

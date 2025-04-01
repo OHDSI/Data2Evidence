@@ -1,0 +1,20 @@
+.metadata-form-component{
+    .sc-d4l-input{
+        padding: 0.75em 0
+    }
+    .metadata-form{
+        width: 90%;
+    }
+    .select {
+        color: var(--color-primary);
+    }
+    .trash-btn{
+        position: absolute;
+        right: -60px;
+        top: 10px
+    }
+    .form-error {
+        color: var(--color-feedback-alarm);
+        margin-top: -10px;
+    }
+}

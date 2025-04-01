@@ -1,0 +1,55 @@
+vocabulary_id	vocabulary_name	vocabulary_reference	vocabulary_version	vocabulary_concept_id
+Metadata	Metadata	OMOP generated		32675
+Cost Type	OMOP Cost Type	OMOP generated		5029
+Note Type	OMOP Note Type	OMOP generated		44819146
+UB04 Pri Typ of Adm	UB04 Claim Inpatient Admission Type Code (CMS)	https://www.resdac.org/cms-data/variables/Claim-Inpatient-Admission-Type-Code		32046
+RxNorm Extension	RxNorm Extension (OMOP)	OMOP generated	RxNorm Extension 2019-07-15	252
+UCUM	Unified Code for Units of Measure (Regenstrief Institute)	http://aurora.regenstrief.org/~ucum/ucum.html#section-Alphabetic-Index	Version 1.8.2	44819107
+ATC	WHO Anatomic Therapeutic Chemical Classification	FDB UK distribution package	RXNORM 2018-08-12	44819117
+Cost	OMOP Cost	OMOP generated		581457
+Currency	International Currency Symbol (ISO 4217)	http://www.iso.org/iso/home/standards/currency_codes.htm	2008	44819153
+Vocabulary	OMOP Vocabulary	OMOP generated		44819232
+Race	Race and Ethnicity Code Set (USBC)	http://www.cdc.gov/nchs/data/dvs/Race_Ethnicity_CodeSet.pdf	Version 1.0	44819109
+Relationship	OMOP Relationship	OMOP generated		44819235
+Obs Period Type	OMOP Observation Period Type	OMOP generated		44819149
+OSM	OpenStreetMap	https://www.openstreetmap.org/copyright/en, https://wambachers-osm.website/boundaries/	OSM Release 2019-02-21	32541
+US Census	United States Census Bureau	https://www.census.gov/geo/maps-data/data/tiger-cart-boundary.html	US Census 2017 Release	32570
+RxNorm	RxNorm (NLM)	http://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html	RxNorm 20190701	44819104
+Episode	OMOP Episode	OMOP generated		32523
+Visit	OMOP Visit	OMOP generated		44819119
+ICD10CM	International Classification of Diseases, Tenth Revision, Clinical Modification (NCHS)	http://www.cdc.gov/nchs/icd/icd10cm.htm	ICD10CM FY2019 code descriptions	44819098
+Condition Type	OMOP Condition Occurrence Type	OMOP generated		44819127
+Procedure Type	OMOP Procedure Occurrence Type	OMOP generated		44819128
+Cohort Type	OMOP Cohort Type	OMOP generated		44819234
+Plan	Health Plan - contract to administer healthcare transactions by the payer, facilitated by the sponsor	OMOP generated		32471
+Medicare Specialty	Medicare provider/supplier specialty codes (CMS)	http://www.cms.gov/Medicare/Provider-Enrollment-and-Certification/MedicareProviderSupEnroll/Taxonomy.html	2018-06-26 Specialty	44819138
+PHDSC	Source of Payment Typology (PHDSC)	http://www.phdsc.org/standards/payer-typology-source.asp	Version 3.0	32473
+Drug Type	OMOP Drug Exposure Type	OMOP generated		44819126
+Sponsor	Sponsor - institution or individual financing healthcare transactions	OMOP generated		32472
+LOINC	Logical Observation Identifiers Names and Codes (Regenstrief Institute)	http://loinc.org/downloads/loinc	2.66	44819102
+SNOMED	Systematic Nomenclature of Medicine - Clinical Terms (IHTSDO)	http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html	Snomed Release 20190131	44819097
+Device Type	OMOP Device Type	OMOP generated		44819151
+Revenue Code	UB04/CMS1450 Revenue Codes (CMS)	http://www.mpca.net/?page=ERC_finance	2010 Release	44819133
+Death Type	OMOP Death Type	OMOP generated		44819135
+None	OMOP Standardized Vocabularies	OMOP generated	v5.0 12-SEP-19	44819096
+CPT4	Current Procedural Terminology version 4 (AMA)	http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html	2019 Release	44819100
+Meas Type	OMOP Measurement Type	OMOP generated		44819152
+Domain	OMOP Domain	OMOP generated		44819147
+Visit Type	OMOP Visit Type	OMOP generated		44819150
+Concept Class	OMOP Concept Class	OMOP generated		44819233
+Ethnicity	OMOP Ethnicity	OMOP generated		44819134
+ABMS	Provider Specialty (American Board of Medical Specialties)	http://www.abms.org/member-boards/specialty-subspecialty-certificates	2018-06-26 ABMS	45756746
+Plan Stop Reason	Plan Stop Reason - Reason for termination of the Health Plan	OMOP generated		32474
+CDM	OMOP Common DataModel	https://github.com/OHDSI/CommonDataModel	CDM v6.0.0	32485
+HCPCS	Healthcare Common Procedure Coding System (CMS)	http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html	20180101 Alpha Numeric HCPCS File	44819101
+UB04 Typ bill	UB04 Type of Bill - Institutional (USHIK)	https://ushik.ahrq.gov/ViewItemDetails?&system=apcd&itemKey=196987000		32044
+ICD9CM	International Classification of Diseases, Ninth Revision, Clinical Modification, Volume 1 and 2 (NCHS)	http://www.cms.gov/Medicare/Coding/ICD9ProviderDiagnosticCodes/codes.html	ICD9CM v32 master descriptions	5046
+ICD9Proc	International Classification of Diseases, Ninth Revision, Clinical Modification, Volume 3 (NCHS)	http://www.cms.gov/Medicare/Coding/ICD9ProviderDiagnosticCodes/codes.html	ICD9CM v32 master descriptions	44819099
+NUCC	National Uniform Claim Committee Health Care Provider Taxonomy Code Set (NUCC)	http://www.nucc.org/index.php?option=com_content&view=article&id=107&Itemid=132	2018-06-26 NUCC	44819137
+UB04 Point of Origin	UB04 Claim Source Inpatient Admission Code (CMS)	https://www.resdac.org/cms-data/variables/Claim-Source-Inpatient-Admission-Code		32045
+UB04 Pt dis status	UB04 Patient Discharge Status Code (CMS)	https://www.resdac.org/cms-data/variables/patient-discharge-status-code		32047
+CMS Place of Service	Place of Service Codes for Professional Claims (CMS)	http://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/PhysicianFeeSched/downloads//Website_POS_database.pdf	2009-01-11	44819110
+Observation Type	OMOP Observation Type	OMOP generated		44819129
+Gender	OMOP Gender	OMOP generated		44819108
+NDC	National Drug Code (FDA and manufacturers)	http://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html, http://www.fda.gov/downloads/Drugs/DevelopmentApprovalProcess/UCM070838.zip	NDC 20190908	44819105
+SPL	Structured Product Labeling (FDA)	http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm	NDC 20190908	44819140

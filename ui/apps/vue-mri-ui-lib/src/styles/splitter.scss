@@ -1,0 +1,58 @@
+@import './mri-variables';
+.pa-splitter {
+  #pane-left {
+    background-color: $UiLightestBG;
+    position: relative;
+    width: 100%;
+  }
+  .split {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    background-color: $UiLightestBG;
+  }
+  .gutter-horizontal {
+    font-family: 'app-icons';
+    cursor: col-resize;
+    background-color: $UiExtraLightBG;
+    background-repeat: no-repeat;
+    color: rgb(51, 51, 51);
+    display: inline-block;
+    user-select: none;
+    vertical-align: top;
+    white-space: nowrap;
+    .gripper {
+      display: block;
+      font-size: 16px;
+      height: 16px;
+      line-height: 16px;
+      position: relative;
+      text-align: center;
+      top: calc(50% - 12px);
+      user-select: none;
+      white-space: nowrap;
+    }
+  }
+  .gutter-horizontal:hover {
+    color: $UiExtraLightBG;
+    background-color: $UiDarkBG;
+  }
+  .gutter-horizontal:active {
+    color: $UiExtraLightBG;
+    background-color: $MriBrandHover;
+  }
+  .split,
+  .gutter-horizontal {
+    float: left;
+  }
+  .split,
+  .gutter-horizontal {
+    height: inherit;
+  }
+  .hideLeftPane .left-pane {
+    display: none;
+  }
+  .hideLeftPane .right-pane {
+    width: 100% !important;
+  }
+}

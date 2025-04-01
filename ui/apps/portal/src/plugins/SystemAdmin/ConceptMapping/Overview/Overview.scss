@@ -1,0 +1,18 @@
+.concept-mapping__overview {
+  height: 100%;
+
+ .overview-selection__buttons {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    justify-content: space-evenly;
+  }
+
+  .alp-card {
+    flex: 1;
+
+    &__header {
+      justify-content: center;
+    }
+  }
+}

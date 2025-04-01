@@ -1,4 +1,4 @@
-import { body } from "npm:express-validator";
+import { body } from "express-validator";
 
 export const validateDatamodelFlowRunDto = () => [
   body("flowRunName").isString().withMessage("flowRunName must be a string"),

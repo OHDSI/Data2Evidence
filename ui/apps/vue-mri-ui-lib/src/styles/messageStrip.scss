@@ -1,0 +1,80 @@
+@import './mri-variables';
+@import './mri-bootstrap-variables';
+
+.appMessageStrip {
+  border: 1px solid;
+  border-radius: 0.1875rem;
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  font-weight: normal;
+  padding: 0.4375rem 1rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  min-height: 2rem;
+  width: 100%;
+}
+.appMessageStripMessage {
+  max-height: 10rem;
+  overflow: auto;
+  margin-left: 1rem;
+}
+
+.app-message-strip-button {
+  font-family: app-icons !important;
+  line-height: 1.5rem;
+  border-radius: 0.2rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  width: 2rem;
+  height: 2rem;
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  box-sizing: border-box;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+// .app-message-strip-button:hover{
+//     background-color: #5e696e;
+//     opacity: .1;
+// }
+
+.message-strip-warning {
+  background-color: #fef0db;
+  border-color: #f9a429;
+  color: #333333;
+  .appMessageStripIcon {
+    color: #f9a429;
+    font-family: app-icons;
+  }
+}
+.message-strip-error {
+  background-color: #ffe4e4;
+  border-color: #ee0000;
+  color: #333333;
+  .appMessageStripIcon {
+    color: #ee0000;
+    font-family: app-icons;
+  }
+}
+.message-strip-success {
+  background-color: #e4f5e4;
+  border-color: #38a238;
+  color: #333333;
+  .appMessageStripIcon {
+    color: #38a238;
+    font-family: app-icons;
+  }
+}
+.message-strip-information {
+  background-color: #f4f5f6;
+  border-color: #5e696e;
+  color: #333333;
+  .appMessageStripIcon {
+    color: #5e696e;
+    font-family: app-icons;
+  }
+}

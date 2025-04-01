@@ -1,0 +1,11 @@
+.alp-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #e32900;
+  margin: 2em 0 1em;
+
+  &--subtitle {
+    color: var(--color-primary);
+    margin: 1em 0 0.5em;
+  }
+}

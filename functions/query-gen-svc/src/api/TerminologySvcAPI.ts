@@ -1,18 +1,15 @@
 import axios, { AxiosRequestConfig } from "axios";
-import https from "https";
+import http from "node:http";
 
 import { env } from "../env";
 export default class TerminologySvcAPI {
     private readonly baseUrl: string;
-    private readonly httpsAgent: any;
+    private readonly httpAgent: any;
 
     constructor() {
         if (env.SERVICE_ROUTES.terminology) {
             this.baseUrl = env.SERVICE_ROUTES.terminology;
-            this.httpsAgent = new https.Agent({
-                rejectUnauthorized: true,
-                ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
-            });
+            this.httpAgent = new http.Agent({ keepAlive: true })
         }
         if (!this.baseUrl) {
             throw new Error("Terminology Svc URL is not configured!");
@@ -20,7 +17,9 @@ export default class TerminologySvcAPI {
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = { httpsAgent: this.httpsAgent };
+        let options: AxiosRequestConfig = { 
+            httpAgent: this.httpAgent,
+        };
         if (token) {
             options = {
                 ...options,
@@ -37,6 +36,9 @@ export default class TerminologySvcAPI {
         datasetId: string,
         token: string
     ): Promise<number[]> {
+        const timestamp = (new Date()).valueOf();
+        console.time(`time-terminology-svc-getConceptIds-${timestamp}`)
+    
         const options = await this.getRequestConfig(token);
 
         const data = { conceptSetIds, datasetId };
@@ -45,6 +47,7 @@ export default class TerminologySvcAPI {
             data,
             options
         );
+        console.timeEnd(`time-terminology-svc-getConceptIds-${timestamp}`)
         return result.data as number[];
     }
 }

@@ -1,0 +1,541 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.Placeholders" 
+    width="100%" 
+    height="100%" 
+    xmlns:core="sap.ui.core" 
+    xmlns="sap.m" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:f="sap.ui.layout.form" 
+    xmlns:l="sap.ui.layout" 
+    xmlns:lib="hc.hph.config.global.ui.lib" 
+    xmlns:html="http://www.w3.org/1999/xhtml" 
+    xmlns:m="hc.hph.cdw.config.ui.lib">
+    <Page showHeader="false" 
+        showSubHeader="false" 
+        enableScrolling="true" 
+        class="sapUiUfdShellBackground sapUiContentPadding">
+        <content>
+
+            <FlexBox direction="Column" 
+                alignItems="Center" 
+                class="sapGlobalSettingFlexbox ">
+                <items>
+                    <!-- FACT TABLE -->
+                    <Panel expandable="true" 
+                        expanded="true" 
+                        headerText="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_FACT_TABLE_TITLE}" 
+                        width="auto" 
+                        class="sapUiNoMargin">
+                        <content>
+                            <List backgroundDesign="Transparent" 
+                                showSeparators="Inner" 
+                                items="{ path: 'configEditorModel>/tableTypePlaceholderMap/factTables'}">
+                                <CustomListItem>
+                                    <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                        tooltip="{configEditorModel>validity/message}" 
+                                        status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                    <f:SimpleForm editable="true" 
+                                        class="sapGlobalSettingFormGroup">
+                                        <Toolbar>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{configEditorModel>placeholder}" 
+                                                tooltip="{configEditorModel>placeholder}" />
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholderValue}" 
+                                                liveChange="getColumns" 
+                                                width="70%"/>
+                                        </Toolbar>
+                                        <f:content>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/PATIENT_ID}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOD_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOD_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/DOD}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOB_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_DOB_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/DOB}" 
+                                                width="70%"/>
+                                        </f:content>
+                                    </f:SimpleForm>
+
+
+                                    <!-- GUARDED PATIENT -->
+                                    <List backgroundDesign="Transparent" 
+                                        showSeparators="Inner" 
+                                        items="{ path: 'configEditorModel>/otherPlaceholders/guardedPlaceholder'}">
+                                        <CustomListItem>
+                                            <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                                tooltip="{configEditorModel>validity/message}" 
+                                                status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                            <f:SimpleForm editable="true" 
+                                                class="sapGlobalSettingFormGroup sapGlobalSettingFormSolo">
+                                                <Toolbar>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="Guarded {configEditorModel>placeholder}" 
+                                                        tooltip="{configEditorModel>placeholder}" />
+                                                    <Input class="sapMxConfigProp" 
+                                                        value="{configEditorModel>placeholderValue}" 
+                                                        width="70%"/>
+                                                </Toolbar>
+                                            </f:SimpleForm>
+                                        </CustomListItem>
+                                    </List>
+
+                                    <!-- FACT TABLE ATTRIBUTE TABLES -->
+                                    <List inset="true" 
+                                        showSeparators="Inner" 
+                                        items="{ path: 'configEditorModel>attributeTables'}"
+                                        class="sapGlobalSettingPlaceholderAttributeList">
+                                        <headerToolbar>
+                                            <Toolbar class="sapUiNoMargin">
+                                                <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_TITLE}">
+                                                    <layoutData>
+                                                        <ToolbarLayoutData shrinkable="true" 
+                                                            minWidth="100px"/>
+                                                    </layoutData>
+                                                </Label>
+                                                <ToolbarSpacer/>
+                                                <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_ADD_BUTTON}" 
+                                                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_ADD_BUTTON_TOOLTIP}" 
+                                                    press=".addBaseAttributeTable">
+                                                    <layoutData>
+                                                        <ToolbarLayoutData shrinkable="true" 
+                                                            maxWidth="400px"/>
+                                                    </layoutData>
+                                                </Button>
+                                            </Toolbar>
+                                        </headerToolbar>
+                                        <CustomListItem>
+                                            <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                                tooltip="{configEditorModel>validity/message}" 
+                                                status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                            <f:SimpleForm editable="true" 
+                                                class="sapGlobalSettingFormGroup">
+                                                <Toolbar>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_LABEL}"  />
+                                                    <Input class="sapMxConfigProp" 
+                                                        value="{configEditorModel>placeholder}" 
+                                                        liveChange="toUpper"
+                                                        width="35%"/>
+                                                    <Input class="sapMxConfigProp" 
+                                                        value="{configEditorModel>placeholderValue}" 
+                                                        liveChange="getColumns" 
+                                                        width="35%"/>
+                                                    <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_DELETE_BUTTON}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_DELETE_BUTTON_TOOLTIP}" 
+                                                        press=".deleteAttributeTable">
+                                                        <layoutData>
+                                                            <ToolbarLayoutData shrinkable="true" 
+                                                                maxWidth="400px"/>
+                                                        </layoutData>
+                                                    </Button>
+                                                </Toolbar>
+                                                <f:content>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/PATIENT_ID}" 
+                                                        items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                        width="70%"/>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBSERVATION_ID_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBSERVATION_ID_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/OBSERVATION_ID}" 
+                                                        items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                        width="70%"/>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBS_TYPE_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_OBS_TYPE_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/OBS_TYPE}" 
+                                                        items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                        width="70%"/>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CHAR_VAL_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CHAR_VAL_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/OBS_CHAR_VAL}" 
+                                                        items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                        width="70%"/>
+                                                </f:content>
+                                            </f:SimpleForm>
+                                        </CustomListItem>
+                                    </List>
+                                </CustomListItem>
+                            </List>
+                        </content>
+                    </Panel>
+                    <!-- DIMENSION TABLES -->
+                    <Panel expandable="true" 
+                        expanded="true" 
+                        width="auto" 
+                        class="sapUiNoMargin">
+                        <headerToolbar>
+                            <Toolbar>
+                                <Title text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_DIM_TABLE_TITLE}"/>
+                                <ToolbarSpacer/>
+                                <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_DIM_TABLE_ADD_BUTTON}" 
+                                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_DIM_TABLE_ADD_BUTTON_TOOLTIP}" 
+                                    press=".addDimTable">
+                                    <layoutData>
+                                        <ToolbarLayoutData shrinkable="true" 
+                                            maxWidth="400px"/>
+                                    </layoutData>
+                                </Button>
+                            </Toolbar>
+                        </headerToolbar>
+                        <content>
+                            <List backgroundDesign="Transparent" 
+                                showSeparators="Inner" 
+                                items="{ path: 'configEditorModel>/tableTypePlaceholderMap/dimTables'}">
+
+                                <CustomListItem>
+                                    <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                        tooltip="{configEditorModel>validity/message}" 
+                                        status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                    <f:SimpleForm editable="true" 
+                                        class="sapGlobalSettingFormGroup">
+                                        <Toolbar>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_LABEL}"  />
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholder}" 
+                                                liveChange="toUpper"
+                                                width="35%"/>
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholderValue}" 
+                                                liveChange="getColumns" 
+                                                width="35%"/>
+                                            <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_DELETE_BUTTON}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_ATTRIBUTE_TABLE_DELETE_BUTTON_TOOLTIP}" 
+                                                press=".deleteAttributeTable">
+                                                <layoutData>
+                                                    <ToolbarLayoutData shrinkable="true" 
+                                                        maxWidth="400px"/>
+                                                </layoutData>
+                                            </Button>
+                                        </Toolbar>
+                                        <f:content>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_HIERARCHY}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_HIERARCHY_TOOLTIP}"/>
+                                            <CheckBox selected="{configEditorModel>hierarchy}"/>
+
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_TIME}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_TIME_TOOLTIP}"/>
+                                            <CheckBox selected="{configEditorModel>time}"/>
+
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_MULTIPLE_ENTITY_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_MULTIPLE_ENTITY_TOOLTIP}"/>
+                                            <CheckBox selected="{configEditorModel>oneToN}"/>
+
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_CONDITION}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_PHOLDER_FEATURE_CONDITION_TOOLTIP}"/>
+                                            <CheckBox selected="{configEditorModel>condition}"/>
+
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PATIENT_ID_TOOLTIP}" />
+                                            <Select items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/PATIENT_ID}" 
+                                                width="70%" />
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/INTERACTION_ID}" 
+                                                width="70%" />
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_CONDITION_ID_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/CONDITION_ID}" 
+                                                width="70%" />
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_PARENT_INTERACT_ID_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/PARENT_INTERACT_ID}" 
+                                                width="70%" />
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_START_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_START_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/START}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_END_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_END_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/END}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TYPE_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TYPE_TOOLTIP}" />
+                                            <Select class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/INTERACTION_TYPE}" 
+                                                width="70%"/>
+                                        </f:content>
+                                    </f:SimpleForm>
+
+                                    <!-- DIMENSION TABLE ATTRIBUTE TABLES -->
+                                    <List inset="true" 
+                                        showSeparators="None" 
+                                        items="{ path: 'configEditorModel>attributeTables'}"
+                                        class="sapGlobalSettingPlaceholderAttributeList">
+                                        <headerToolbar>
+                                            <Toolbar class="sapUiNoMargin">
+                                                <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_INTERACTION_ATTRIBUTE_TABLE_TITLE}">
+                                                    <layoutData>
+                                                        <ToolbarLayoutData shrinkable="true" 
+                                                            minWidth="100px"/>
+                                                    </layoutData>
+                                                </Label>
+                                                <ToolbarSpacer/>
+                                                <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_INTERACTION_ATTRIBUTE_TABLE_ADD_BUTTON}" 
+                                                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_INTERACTION_ATTRIBUTE_TABLE_ADD_BUTTON_TOOLTIP}" 
+                                                    press=".addDimAttributeTable">
+                                                    <layoutData>
+                                                        <ToolbarLayoutData shrinkable="true" 
+                                                            maxWidth="400px"/>
+                                                    </layoutData>
+                                                </Button>
+                                            </Toolbar>
+                                        </headerToolbar>
+                                        <CustomListItem>
+
+                                            <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                                tooltip="{configEditorModel>validity/message}" 
+                                                status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                            <f:SimpleForm editable="true" 
+                                                class="sapGlobalSettingFormGroup">
+                                                <Toolbar>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_LABEL}"  />
+                                                    <Input class="sapMxConfigProp" 
+                                                        value="{configEditorModel>placeholder}" 
+                                                        liveChange="toUpper"
+                                                        width="35%"/>
+                                                    <Input class="sapMxConfigProp" 
+                                                        value="{configEditorModel>placeholderValue}" 
+                                                        liveChange="getColumns" 
+                                                        width="35%"/>
+                                                    <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_INTERACTION_ATTRIBUTE_TABLE_DELETE_BUTTON}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_INTERACTION_ATTRIBUTE_TABLE_DELETE_BUTTON_TOOLTIP}" 
+                                                        press=".deleteAttributeTable">
+                                                        <layoutData>
+                                                            <ToolbarLayoutData shrinkable="true" 
+                                                                maxWidth="400px"/>
+                                                        </layoutData>
+                                                    </Button>
+                                                </Toolbar>
+                                                <f:content>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/INTERACTION_ID}" 
+                                                        width="70%"/>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ATTRIBUTE_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/ATTRIBUTE}" 
+                                                        width="70%"/>
+                                                    <Label class="sapMxConfigProp" 
+                                                        text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_LABEL}" 
+                                                        tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_VALUE_TOOLTIP}" />
+                                                    <Select class="sapMxConfigProp" 
+                                                        items="{ path:'configEditorModel>columns', factory: '.columnFactory' }" 
+                                                        selectedKey="{configEditorModel>columnPlaceholders/VALUE}" 
+                                                        width="70%"/>
+                                                </f:content>
+                                            </f:SimpleForm>
+
+                                        </CustomListItem>
+                                    </List>
+
+
+                                </CustomListItem>
+                            </List>
+                        </content>
+                    </Panel>
+
+                    <!-- REF -->
+                    <Panel expandable="true" 
+                        expanded="true" 
+                        headerText="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_REF_TITLE}" 
+                        width="auto" 
+                        class="sapUiNoMargin">
+                        <content>
+                            <List backgroundDesign="Transparent" 
+                                showSeparators="Inner" 
+                                items="{ path: 'configEditorModel>/otherPlaceholders/refPlaceholder'}">
+                                <CustomListItem>
+                                    <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                        tooltip="{configEditorModel>validity/message}" 
+                                        status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                    <f:SimpleForm editable="true" 
+                                        class="sapGlobalSettingFormGroup">
+                                        <Toolbar>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{configEditorModel>placeholder}" 
+                                                tooltip="{configEditorModel>placeholderValue}" />
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholderValue}" 
+                                                liveChange="getColumns" 
+                                                width="70%"/>
+                                        </Toolbar>
+                                        <f:content>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_ID_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns' , factory: '.columnFactory' }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/VOCABULARY_ID}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_CODE_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_CODE_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/CODE}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_TEXT_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_VOCABULARY_TEXT_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/TEXT}" 
+                                                width="70%"/>
+                                        </f:content>
+                                    </f:SimpleForm>
+                                </CustomListItem>
+                            </List>
+                        </content>
+                    </Panel>
+
+                    <!-- TEXT -->
+                    <Panel expandable="true" 
+                        expanded="true" 
+                        headerText="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_TEXT_TITLE}" 
+                        width="auto" 
+                        class="sapUiNoMargin">
+                        <content>
+                            <List backgroundDesign="Transparent" 
+                                showSeparators="Inner" 
+                                items="{ path: 'configEditorModel>/otherPlaceholders/textPlaceholder'}">
+                                <CustomListItem>
+                                    <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                        tooltip="{configEditorModel>validity/message}" 
+                                        status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                    <f:SimpleForm editable="true" 
+                                        class="sapGlobalSettingFormGroup">
+                                        <Toolbar>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{configEditorModel>placeholder}" 
+                                                tooltip="{configEditorModel>placeholder}" />
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholderValue}" 
+                                                liveChange="getColumns" 
+                                                width="70%"/>
+                                        </Toolbar>
+                                        <f:content>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_ID_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/INTERACTION_ID}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TEXT_ID_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_INTERACTION_TEXT_ID_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/INTERACTION_TEXT_ID}" 
+                                                width="70%"/>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_TEXT_VALUE_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_COLUMN_MAPPING_TEXT_VALUE_TOOLTIP}" />
+                                            <Select enabled="{ path:'configEditorModel>columns', formatter: '.listEnabler' }" 
+                                                class="sapMxConfigProp" 
+                                                items="{ path:'configEditorModel>columns', factory: '.columnFactory'  }" 
+                                                selectedKey="{configEditorModel>columnPlaceholders/VALUE}" 
+                                                width="70%"/>
+                                        </f:content>
+                                    </f:SimpleForm>
+                                </CustomListItem>
+                            </List>
+                        </content>
+                    </Panel>
+
+                    <!-- OTS CODE TABLE -->
+                    <Panel expandable="true" 
+                        expanded="true" 
+                        headerText="{hc.hph.cdw.config.ui.i18n>HPH_CFG_PHOLDER_OTS_CODE_TITLE}" 
+                        width="auto" 
+                        class="sapUiNoMargin">
+                        <content>
+                            <List backgroundDesign="Transparent" 
+                                showSeparators="Inner" 
+                                items="{ path: 'configEditorModel>/otherPlaceholders/otsPlaceholder'}">
+                                <CustomListItem>
+                                    <m:ValidityVisualElement text="{configEditorModel>validity/message}" 
+                                        tooltip="{configEditorModel>validity/message}" 
+                                        status="{configEditorModel>validity/status}"></m:ValidityVisualElement>
+                                    <f:SimpleForm editable="true" 
+                                        class="sapGlobalSettingFormGroup sapGlobalSettingFormSolo">
+                                        <Toolbar>
+                                            <Label class="sapMxConfigProp" 
+                                                text="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_OTS_CODE_LABEL}" 
+                                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CFG_GLOBAL_OTS_CODE_TOOLTIP}" />
+                                            <Input class="sapMxConfigProp" 
+                                                value="{configEditorModel>placeholderValue}" 
+                                                width="70%"/>
+                                        </Toolbar>
+                                    </f:SimpleForm>
+                                </CustomListItem>
+                            </List>
+                        </content>
+                    </Panel>
+                </items>
+            </FlexBox>
+
+        </content>
+
+    </Page>
+</mvc:View>

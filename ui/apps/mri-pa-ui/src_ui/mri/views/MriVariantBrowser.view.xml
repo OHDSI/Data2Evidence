@@ -1,0 +1,52 @@
+<mvc:View
+    controllerName="sap.hc.mri.pa.ui.views.MriVariantBrowser"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:lib="sap.hc.hph.genomics.ui.lib"
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns="sap.m"
+    xmlns:commons="sap.ui.commons"
+    xmlns:table="sap.ui.table"
+    xmlns:controls="sap.hc.hph.genomics.ui.lib.genetables.genetable"
+    xmlns:appdata="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+    height="100%">
+    <Page
+        showHeader="false"
+        showNavButton="false"
+        enableScrolling="false"
+        backgroundDesign="Solid">
+        <content>
+        
+        <IconTabBar
+		id="idIconTabBarForGenomics"
+		expanded="true"
+		expandable="true"
+		select="onIconTabBarSelect"
+		class="sapUiResponsiveContentPadding classIconTabBarForGenomics" selectedKey="_VBTab" height="100%" stretchContentHeight="true">
+		<items>
+			
+			<IconTabFilter
+				text="{i18n.vb>geneSummary.copyNumberTooltip}"  key='_VBTab' id='_VBTab'>
+            <!--<lib:VariantBrowser id="mriVbCohorts"
+            preRequestPlugin="mri.SessionSamples.prepareCohorts"
+            validationPlugin="mri.SessionSamples"
+            parameters="{= {reference:${settingsModel>/referenceName} ,dataset:'session:*'} }"
+            karyotype="male"
+            autoResize="false"
+            application="sap.hc.mri.pa"
+            error="handleError" />-->
+            </IconTabFilter>
+            <IconTabFilter
+				text="{i18n.vb>geneSummary.geneSummary}" key='_GATab' id='_GATab'>
+			</IconTabFilter>
+			<IconTabFilter
+				text="{i18n.vb>geneSummary.geneAlterationMatrix}" key='_AMTab' id='_AMTab'>
+			</IconTabFilter>
+			<IconTabFilter
+				text="{i18n.vb>geneCorrelation.geneCorrelation}" key='_GCTab' id='_GCTab'>
+				<mvc:XMLView id="geneCorrelationView" viewName="sap.hc.hph.genomics.ui.lib.genetables.Correlation"></mvc:XMLView>
+			</IconTabFilter>
+           	</items>
+           	 </IconTabBar>
+        </content>
+    </Page>
+</mvc:View>

@@ -1,0 +1,114 @@
+@import './mri-variables';
+.expanded-filters {
+  width: 100%;
+  .expanded-filters-header {
+    display: flex;
+    position: sticky;
+    width: 100%;
+    top: 0px;
+    z-index: 1;
+    .separator {
+      padding-right: 10px;
+    }
+    .actionButton {
+      margin: 5px 0px;
+      color: $UiLightText;
+      outline: none;
+      background: none;
+      border: none;
+      padding-left: 8px;
+      padding-right: 8px;
+      height: 30px;
+      width: 33px;
+    }
+    .actionButton {
+      .icon .app-icon {
+        font-size: 16px;
+        margin-top: 1px;
+        font-weight: normal;
+        cursor: pointer;
+        text-align: center;
+        display: inline-block;
+        vertical-align: baseline;
+      }
+    }
+    .actionButton:hover {
+      background-color: $MriButtonHoverDark;
+      color: $MriLightestText;
+      border-radius: 3.1px;
+    }
+    ul {
+      flex: 1 0 auto;
+      padding: 0px 10%;
+    }
+  }
+  .expanded-filters-content {
+    overflow-y: auto;
+    top: 50px;
+    bottom: 50px;
+    position: absolute;
+    width: 100%;
+    .tabs {
+      margin: 0px 50px;
+      div.nav-fill {
+        flex: 1 1 auto;
+        margin: 0px 10px;
+        width: 45%;
+      }
+    }
+    .appBasicFilterCard {
+      .form-group {
+        width: calc(33% - 10px);
+        display: inline-block;
+        margin-right: 10px;
+      }
+    }
+    .form-group {
+      max-width: 450px;
+      vertical-align: top;
+    }
+  }
+  .nav {
+    height: 40px;
+    margin: 0px 20px;
+  }
+  .nav-sub {
+    height: 40px;
+  }
+  .nav-item {
+    padding-bottom: 0px;
+    a {
+      color: $MriHeaderTextDark;
+    }
+    border-bottom: 1px solid $MriNavTab;
+
+    .active {
+      font-weight: bold;
+      padding-bottom: 5px;
+      border-bottom: 6px solid $MriNavTab;
+    }
+  }
+
+  .horizontal-separator {
+    border-bottom: 1px solid $UiMediumBG;
+    width: 100%;
+    margin: 16px 0;
+  }
+
+  .boolContainer {
+    padding: 0.5rem 0rem;
+    background-color: $UiLightestBG;
+    min-height: 200px;
+  }
+  .modal-container {
+    position: relative;
+    margin: 0px 15px;
+    right: 0px;
+  }
+  .patientcount-wrapper {
+    padding-right: 15px;
+    .modal-container {
+      margin-right: 5px;
+    }
+  }
+}

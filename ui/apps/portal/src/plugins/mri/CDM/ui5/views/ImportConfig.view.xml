@@ -1,0 +1,21 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.ImportConfig" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:core="sap.ui.core" xmlns:u="sap.ui.unified">
+	<Dialog class="sapUiPopupWithPadding" id="ImportConfigPopover" title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIG_POPOVER_TITLE}" initialFocus="configurationNameInput">
+        <content>
+            <VBox>
+                <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE}" labelFor="configurationNameInput"/>
+                <Input id="configurationNameInput" placeholder="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE_PLACEHOLDER}" value="{dataModel>/newConfigName}" liveChange="onNewConfigNameChange" />
+                
+                <Label text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FILE_TO_IMPORT_LABEL}" labelFor="textarea"/>
+                <TextArea id = "textarea" placeholder="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_FILE_TO_IMPORT}" width="100%"/>
+                
+    <!--             <u:FileUploader id="fileUploader" name="myFileUpload" uploadUrl="upload/" 
+                	tooltip="Choose a .json file for Import..." uploadComplete="_handleUpladComplete"
+                	placeholder="Choose a .json file for Import..." fileType="json"/> -->
+            </VBox>
+        </content>
+        <buttons>
+            <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_IMPORT}" press="onImportConfigVersion" />    
+            <Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CANCEL}" press="onImportConfigurationCanceled" />    
+        </buttons>
+    </Dialog>
+</mvc:View>

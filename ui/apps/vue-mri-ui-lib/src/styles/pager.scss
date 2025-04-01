@@ -1,0 +1,43 @@
+.pager-container {
+  text-align: center;
+  $enabledY: 0px;
+  $disabledY: -60px;
+  button {
+    font-size: 12px;
+    min-width: 20px;
+    height: 20px;
+    border-style: none;
+    background-color: transparent;
+    cursor: pointer;
+  }
+  button.pager-nav {
+    background-position-y: $enabledY;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAAAAAD38O5VAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAACdFJOUwAAdpPNOAAAAAlwSFlzAAAOwwAADsMBx2+oZAAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjUuODc7gF0AAADmSURBVGje7ZZBDsMgDAR5La/Nfzi6h7pC8ppWhlS2op2DDyuHiSwIaY2Qh9L7rCa1IQaLFnc1m2qnDTuGGKx63OU88bY3ZEbxgTdiLiROG3Xe5ko5ToQQQuozxqwTkU+B9HviPug6xmitDROKiBZIf0Tuk0MlIN72hswoPvBGzIXEaaPO21wpx4kQQkh93h90vGTuvCRch3bKP69F8V5n2Xjnj4CGVnzgjZgLidNGnbe5Uo4TIYSQ+lzXrCa1IQaLFnc1m2qnDS8MMVj1uMt54m1vyIziA2/EXEicNuq8zZVynAh5EC9PRpS/Kg5kUgAAAABJRU5ErkJggg==');
+  }
+  button.pager-disabled {
+    background-position-y: $disabledY;
+  }
+  button.pager-ll {
+    background-position-x: 0px;
+  }
+  button.pager-l {
+    background-position-x: -40px;
+  }
+  button.pager-r {
+    background-position-x: -60px;
+  }
+  button.pager-rr {
+    background-position-x: -100px;
+  }
+  button.pager-nav:not(.pager-disabled):hover {
+    background-color: $MriButtonHover;
+    background-position-y: -20px;
+  }
+  button.current-page-button {
+    background-color: $MriDropDownListItemSelected;
+  }
+  button.page-button:hover {
+    color: $MriLightestText;
+    background-color: $MriButtonHover;
+  }
+}

@@ -12,7 +12,6 @@ COPY ./services/mri-pa-config services/app
 RUN yarn install --network-timeout 1000000
 RUN yarn workspace @alp/alp-base-utils run compile
 RUN yarn workspace @alp/alp-config-utils run compile
-RUN yarn workspace @alp/alp-metadata run compile
 
 FROM libs-install-from-${libs_install_type_arg} AS final-build
 

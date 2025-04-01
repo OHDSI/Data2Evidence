@@ -1,6 +1,7 @@
 import { env } from '../env'
-import https from 'https'
+import http from 'http'
 import axios, { AxiosRequestConfig } from 'axios'
+import { IAtlasCohortDefinition } from '../types'
 
 interface CreateBookmarkDto {
   serviceArtifact: any
@@ -10,7 +11,7 @@ export class PortalAPI {
   private readonly baseURL: string
   private readonly token: string
   private readonly logger = console
-  // private readonly httpsAgent: https.Agent
+  private readonly httpAgent: http.Agent
 
   constructor(token: string) {
     this.token = token
@@ -19,9 +20,7 @@ export class PortalAPI {
     }
     if (env.SERVICE_ROUTES.portalServer) {
       this.baseURL = env.SERVICE_ROUTES.portalServer
-      // this.httpsAgent = new https.Agent({
-      //   rejectUnauthorized: true,
-      // })
+      this.httpAgent = new http.Agent({keepAlive: true})
     } else {
       throw new Error('No url is set for PortalAPI')
     }
@@ -32,6 +31,7 @@ export class PortalAPI {
       headers: {
         Authorization: this.token,
       },
+      httpAgent: this.httpAgent,
     }
 
     return options
@@ -39,9 +39,12 @@ export class PortalAPI {
 
   async getBookmarks(datasetId: string): Promise<any> {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${datasetId}`
       const result = await axios.get(url, options)
+      console.timeEnd(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       return result.data
     } catch (error) {
       console.error(error)
@@ -52,9 +55,12 @@ export class PortalAPI {
 
   async getBookmarkById(bookmarkId: string, datasetId: string): Promise<any> {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
       const result = await axios.get(url, options)
+      console.timeEnd(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       return result.data
     } catch (error) {
       console.error(error)
@@ -99,6 +105,33 @@ export class PortalAPI {
       console.error(error)
       this.logger.error(`Error while deleting Bookmark`)
       throw new Error(`Error while deleting Bookmark`)
+    }
+  }
+
+  async getAtlasCohortDefinitions(datasetId: string): Promise<IAtlasCohortDefinition[]> {
+    try {
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/user-artifact/atlas_cohort_definitions/list?datasetId=${datasetId}`
+      const result = await axios.get(url, options)
+      return result.data
+    } catch (error) {
+      console.error(error)
+      this.logger.error(`Error while getting user artifacts for Atlas cohort definitions`)
+      throw new Error(`Error while getting user artifacts for Atlas cohort definitions`)
+    }
+  }
+
+  async getDatasetDialect(datasetId: string): Promise<string> {
+    try {
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/dataset`
+      options.params = { datasetId }
+      const result = await axios.get(url, options)
+      return result.data.dialect
+    } catch (error) {
+      console.error(error)
+      this.logger.error(`Error while dialect from datasetId:${datasetId}`)
+      throw new Error(`Error while dialect from datasetId:${datasetId}`)
     }
   }
 }

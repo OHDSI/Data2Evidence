@@ -1,0 +1,979 @@
+{
+    "patient": {
+        "conditions": {
+            "acme": {
+                "interactions": {
+                    "biobank": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Biobank"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Biobank"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Bio-Bank"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'BIOBANK'",
+                        "attributes": {
+                            "status": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Sample Status"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Sample Status"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Musterstatus"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'BIOBANK_STATUS'",
+                                "expression": "@CODE.VALUE"
+                            },
+                            "tType": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Tissue / Liquid Type"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Tissue / Liquid Type"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Gewebe-/Flüssigkeitstyp"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'BIOBANK_TYPE'",
+                                "expression": "@CODE.VALUE"
+                            }
+                        }
+                    },
+                    "chemo": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Chemotherapy"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Chemotherapy"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Chemotherapie"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M07_CHEMO'",
+                        "attributes": {
+                            "interactionCount": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Interaction Count"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Interaction Count"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Anzahl der Interaktionen"
+                                    }
+                                ],
+                                "type": "num",
+                                "measureExpression": "COUNT(DISTINCT(@INTERACTION.INTERACTION_ID))"
+                            },
+                            "chemo_ops": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "OPS-Code"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'CHEMO_OPS'",
+                                "expression": "@CODE.VALUE"
+                            },
+                            "chemo_prot": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Protocol"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Protocol"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Protokoll"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'CHEMO_PROT'",
+                                "expression": "@CODE.VALUE"
+                            },
+                            "interactionsPerPatient": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Interactions per Patient"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Interactions per Patient"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Interaktionen pro Patient"
+                                    }
+                                ],
+                                "type": "num",
+                                "measureExpression": "COUNT(DISTINCT(@INTERACTION.INTERACTION_ID)) / COUNT(DISTINCT(@PATIENT.PATIENT_ID))"
+                            }
+                        }
+                    },
+                    "priDiag": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Primary Tumor Diagnosis"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Primary Tumor Diagnosis"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Primärtumor-Diagnose"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M03'",
+                        "attributes": {
+                            "age": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Age at Diagnosis"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Age at Diagnosis"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Alter bei Diagnose"
+                                    }
+                                ],
+                                "type": "num",
+                                "defaultFilter": "@PATIENT.DOB <= @INTERACTION.\"END\"",
+                                "expression": "FLOOR(DAYS_BETWEEN(@PATIENT.DOB,@INTERACTION.\"END\") / 365)"
+                            },
+                            "icd": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "ICD Code"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "ICD Code"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "ICD-Code"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'ICD'",
+                                "referenceFilter": "@REF.CATALOG = 'ICDO3.1-TOPO-DIMDI' AND LENGTH(@REF.CODE)=3",
+                                "expression": "SUBSTR(@CODE.VALUE,0,3)",
+                                "refExpression": "@REF.CODE"
+                            },
+                            "nsclc": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Lung Cancer Subtype"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Lung Cancer Subtype"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Lungenkrebs Subtyp"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'LC_TYPE'",
+                                "expression": "@CODE.VALUE"
+                            },
+                           "freetextDiag": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Diagnosis Free Text"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Diagnosis Free Text"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Diagnose-Freitext"
+                                    }
+                                ],
+                                "type": "freetext",
+                                "defaultFilter": "@TEXT.ATTRIBUTE = 'INTERACTIONS_FREETEXT'",
+                                "expression": "@TEXT.VALUE",
+                                "fuzziness" : 0.8
+                            }
+                        }
+                    },
+                    "radio": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Radiotherapy"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Radiotherapy"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Röntgentherapie"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M07_RADIO'",
+                        "attributes": {
+                            "radio_dosage": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Radio Dosage"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Radio Dosage"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Dosierung des Medikaments"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@MEASURE.ATTRIBUTE = 'DOSAGE'",
+                                "expression": "TO_NVARCHAR(@MEASURE.VALUE) || ' ' || @MEASURE.UNIT"
+                            },
+                            "radio_ops": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "OPS-Code"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'RADIO_OPS'",
+                                "expression": "@CODE.VALUE"
+                            }
+                        }
+                    },
+                    "surgery": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Surgery"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Surgery"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Operation"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M07_SURGERY'",
+                        "attributes": {
+                            "exist": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "Exist"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "Exist"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "Existiert"
+                                    }
+                                ],
+                                "type": "text",
+                                "expression": "CASE WHEN @INTERACTION.INTERACTION_ID IS NULL THEN NULL ELSE 'YES' END"
+                            },
+                            "surgery_ops": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "OPS Code"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "OPS-Code"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'SURGERY_OPS'",
+                                "expression": "@CODE.VALUE"
+                            }
+                        }
+                    },
+                    "tnm": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "TNM Classification"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "TNM Classification"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "TNM-Klassification"
+                            }
+                        ],
+                        "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M03TS'",
+                        "attributes": {
+                            "tnmM": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "M-Component"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "M-Component"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "M-Kategorie"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'TNM_M'",
+                                "expression": "'M' || @CODE.VALUE"
+                            },
+                            "tnmN": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "N-Component"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "N-Component"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "N-Kategorie"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'TNM_N'",
+                                "expression": "'N' || @CODE.VALUE"
+                            },
+                            "tnmT": {
+                                "name": [
+                                    {
+                                        "lang": "",
+                                        "value": "T-Component"
+                                    },
+                                    {
+                                        "lang": "en",
+                                        "value": "T-Component"
+                                    },
+                                    {
+                                        "lang": "de",
+                                        "value": "T-Kategorie"
+                                    }
+                                ],
+                                "type": "text",
+                                "defaultFilter": "@CODE.ATTRIBUTE = 'TNM_T'",
+                                "expression": "'T' || @CODE.VALUE"
+                            }
+                        }
+                    }
+                },
+                "name": "Tumor Case"
+            }
+        },
+        "interactions": {
+            "vStatus": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Vital Status"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Vital Status"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Vitalstatus"
+                    }
+                ],
+                "defaultFilter": "@INTERACTION.INTERACTION_TYPE = 'ACME_M16'",
+                "attributes": {
+                    "age": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Age at Last Contact"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Age at Last Contact"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Alter beim letzten Kontakt"
+                            }
+                        ],
+                        "type": "num",
+                        "defaultFilter": "@PATIENT.DOB <= @INTERACTION.\"END\"",
+                        "expression": "DAYS_BETWEEN(@PATIENT.DOB,@INTERACTION.\"END\") / 365"
+                    },
+                    "status": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Vital Status"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Vital Status"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Vitalstatus"
+                            }
+                        ],
+                        "type": "text",
+                        "defaultFilter": "@CODE.ATTRIBUTE = 'VITALSTATUS'",
+                        "expression": "@CODE.VALUE"
+                    },
+                    "year": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Year of Last Contact"
+                            },
+                            {
+                                "lang": "en",
+                                "value": "Year of Last Contact"
+                            },
+                            {
+                                "lang": "de",
+                                "value": "Jahr beim letzten Kontakt"
+                            }
+                        ],
+                        "type": "num",
+                        "expression": "YEAR(@INTERACTION.\"START\")"
+                    }
+                }
+            }
+        },
+        "attributes": {
+            "pid": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Patient ID"
+              }
+            ],
+                "type": "text",
+                "expression": "@PATIENT.PATIENT_ID"
+            },
+            "smoker": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Smoker"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Smoker"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Raucher"
+                    }
+                ],
+                "type": "text",
+                "defaultFilter": "@OBS.OBS_TYPE = 'SMOKER'",
+                "expression": "@OBS.OBS_CHAR_VAL"
+            },
+            "pcount": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Patient Count"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Patient Count"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Patientenanzahl"
+                    }
+                ],
+                "type": "num",
+                "measureExpression": "COUNT(DISTINCT(@PATIENT.PATIENT_ID))"
+            },
+            "nationality": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Nationality"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Nationality"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Staatsangehörigkeit"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.NATIONALITY"
+            },
+            "cohort": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Cohort"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Cohort"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Kohorte"
+                    }
+                ],
+                "type": "text",
+                "defaultFilter": "@OBS.OBS_CHAR_VAL=@OBS.OBS_CHAR_VAL",
+                "expression": "@OBS.OBS_CHAR_VAL",
+                "from": {
+                    "@OBS": "\"SAP_HPH\".\"hc.mri.pa.db::SV_COLLECTIONS_AS_OBS\""
+                }
+            },
+            "lastName": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Last name"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Last Name"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Nachname"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.LASTNAME"
+            },
+            "street": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Street"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Street"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Strasse"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.STREET"
+            },
+            "city": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "City"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "City"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Stadt"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.CITY"
+            },
+            "zipcode": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "ZIP Code"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "ZIP Code"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "PLZ"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.POSTCODE"
+            },
+            "region": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Region"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Region"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Region"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.REGION"
+            },
+            "country": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Country"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Country"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Land"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.COUNTRY"
+            },
+            "validFrom": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Date From"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Date From"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Datum von"
+                    }
+                ],
+                "type": "time",
+                "expression": "@PATIENT.VALID_FROM"
+            },
+            "gender": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Gender"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Gender"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Geschlecht"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.GENDER"
+            },
+            "firstName": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "First name"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "First Name"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Vorname"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.FIRSTNAME"
+            },
+            "monthOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Month of Birth"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Month of Birth"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Geburtsmonat"
+                    }
+                ],
+                "type": "num",
+                "expression": "MONTH(@PATIENT.DOB)"
+            },
+            "yearOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Year of Birth"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Year of Birth"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Geburtsjahr"
+                    }
+                ],
+                "type": "num",
+                "expression": "YEAR(@PATIENT.DOB)"
+            },
+            "dateOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Date of Birth"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Date of Birth"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Geburtsdatum"
+                    }
+                ],
+                "type": "time",
+                "expression": "@PATIENT.DOB"
+            },
+            "dateOfDeath": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Date of Death"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Date of Death"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Todesdatum"
+                    }
+                ],
+                "type": "time",
+                "expression": "@PATIENT.DOD"
+            },
+            "maritalStatus": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Marital Status"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Marital Status"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Familienstand"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.MARITAL_STATUS"
+            },
+            "title": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Title"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Title"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Titel"
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.TITLE"
+            },
+            "biomarker": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Biomarker Type"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Biomarker Type"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Biomarkertyp"
+                    }
+                ],
+                "type": "text",
+                "defaultFilter": "@OBS.OBS_TYPE = 'BIOMARKER'",
+                "expression": "@OBS.OBS_CHAR_VAL"
+            },
+            "calYear": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Start Year"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Start Year"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Startjahr"
+                    }
+                ],
+                "type": "num",
+                "expression": "YEAR(@INTERACTION.\"START\")",
+                "isDefault": true
+            },
+            "calMonth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Start Month"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Start Month"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Startmonat"
+                    }
+                ],
+                "type": "num",
+                "expression": "MONTH(@INTERACTION.\"START\")",
+                "isDefault": true
+            },
+            "start": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Start Date"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "Start Date"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Startdatum"
+                    }
+              ],
+                "type": "time",
+                "expression": "@INTERACTION.\"START\"",
+                "isDefault": true
+            },
+            "end": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "End Date"
+                    },
+                    {
+                        "lang": "en",
+                        "value": "End Date"
+                    },
+                    {
+                        "lang": "de",
+                        "value": "Enddatum"
+                    }
+              ],
+                "type": "time",
+                "expression": "@INTERACTION.\"END\"",
+                "isDefault": true
+            }
+        }
+    }
+}

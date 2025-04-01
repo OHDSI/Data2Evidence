@@ -46,7 +46,7 @@ request = total_patients_query.get_patient_count_filter()
 patient_count = await Result().get_patient_count(request)
 print(f'Total number of patients for ADHD Phenotype: {patient_count}')
 # %% [python]
-dataframe_cohort = total_patients_query.get_dataframe_cohort([])
+dataframe_cohort = await total_patients_query.get_dataframe_cohort([])
 drug_exposure_dataframe = await Result().download_dataframe(dataframe_cohort) # Select Drug Exposure from the list
 print('Cohort Drug Exposure dataframe first 20 records:')
 drug_exposure_dataframe.head(20)`

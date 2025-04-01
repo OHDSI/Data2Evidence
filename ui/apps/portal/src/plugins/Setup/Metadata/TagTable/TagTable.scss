@@ -1,0 +1,12 @@
+.metadata-tag-table {
+  &__add-button {
+    float: right;
+    padding-bottom: 16px;
+  }
+
+  &__table {
+    .MuiTable-root {
+      border: 1px solid #dad7d7;
+    }
+  }
+}

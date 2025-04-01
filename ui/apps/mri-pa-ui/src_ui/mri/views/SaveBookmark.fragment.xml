@@ -1,0 +1,18 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
+    <ResponsivePopover contentWidth="16rem" placement="Bottom" showCloseButton="false" title="{i18n>MRI_PA_TITLE_SAVE_BOOKMARK}" initialFocus="bookmarkNameInput">
+        <content>
+            <f:SimpleForm>
+                <Text text="{i18n>MRI_PA_TXT_SAVE_BOOKMARK}" />
+                <Label text="{i18n>MRI_PA_BMK_NAME_LABEL}" />
+                <Input id="bookmarkNameInput" placeholder="{i18n>MRI_PA_BMK_NAME_PLACEHOLDER}" value="{name>/name}" valueLiveUpdate="true" 
+                    liveChange="validateBookmark" valueStateText="{i18n>MRI_PA_BMK_LIMIT_LABEL}"/>
+            </f:SimpleForm>
+        </content>
+        <beginButton>
+            <Button enabled="{= !!${name>/name} &amp;&amp; ${name>/name}.length &lt; 41 }" text="{i18n>MRI_PA_BUTTON_SAVE}" press=".onSaveBookmark" />
+        </beginButton>
+        <endButton>
+            <Button text="{i18n>MRI_PA_BUTTON_CANCEL}" press=".onSaveBookmarkCancel" />
+        </endButton>
+    </ResponsivePopover>
+</core:FragmentDefinition>

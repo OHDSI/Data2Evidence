@@ -1,0 +1,72 @@
+@font-face {
+  font-family: 'app-MRI-icons';
+  font-style: normal;
+  font-weight: normal;
+  src: local('app-MRI-icons'), url('../assets/fonts/app-MRI-icons.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'app-FFH-icons';
+  font-style: normal;
+  font-weight: normal;
+  src: local('app-FFH-icons'), url('../assets/fonts/app-FFH-icons.woff') format('woff'),
+    url('../assets/fonts/app-FFH-icons.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'app-more-icons';
+  font-style: normal;
+  font-weight: normal;
+  src: local('app-more-icons'), url('../assets/fonts/app-more-icons.woff2') format('woff2'),
+    url('../assets/fonts/app-more-icons.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: normal;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Regular.woff') format('woff');
+}
+@font-face {
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 300;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Light.woff') format('woff');
+}
+@font-face {
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Medium.woff') format('woff');
+}
+@font-face {
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: normal;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Regular-Italic.woff') format('woff');
+}
+@font-face {
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: bold;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Bold.woff') format('woff');
+}
+@font-face {
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: bold;
+  font-stretch: normal;
+  src: url('../assets/fonts/GT-America-Standard-Bold-Italic.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'app-icons';
+  font-style: normal;
+  font-weight: normal;
+  src: local('app-icons'), url('../assets/fonts/app-icons.woff2') format('woff2');
+}

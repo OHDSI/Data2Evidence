@@ -1,0 +1,16 @@
+.flow-layout {
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    height: 60px;
+    width: 100%;
+    padding: 10px;
+  }
+
+  &--empty {
+    align-items: center;
+    justify-content: center;
+  }
+}

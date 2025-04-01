@@ -4,16 +4,16 @@ import { env } from "../env";
 export default class PsConfigServerAPI {
     private readonly baseUrl: string;
     private readonly oauthUrl: string;
-    private readonly httpsAgent: any;
+    // private readonly httpsAgent: any;
 
     constructor() {
         if (env.SERVICE_ROUTES.psConfig) {
             this.baseUrl = env.SERVICE_ROUTES.psConfig;
             this.oauthUrl = env.ALP_GATEWAY_OAUTH__URL;
-            this.httpsAgent = new https.Agent({
-                rejectUnauthorized: true,
-                ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
-            });
+            // this.httpsAgent = new https.Agent({
+            //     rejectUnauthorized: true,
+            //     ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
+            // });
         }
         if (!this.baseUrl) {
             throw new Error("PS Config Server URL is not configured!");
@@ -21,7 +21,9 @@ export default class PsConfigServerAPI {
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = { httpsAgent: this.httpsAgent };
+        let options: AxiosRequestConfig = { 
+            //httpsAgent: this.httpsAgent 
+            };
         if (token) {
             options = {
                 ...options,

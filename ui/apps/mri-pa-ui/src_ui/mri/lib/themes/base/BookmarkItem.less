@@ -1,0 +1,174 @@
+.sapMriPaBmrkItemBtnHidden {
+    display: none;
+}
+
+.sapMriPaBmrkRenameBtnHidden {
+    visibility: hidden;
+}
+
+.sapMriPaBmkItemTable {
+    color: @sapUiLightText;
+    width: 100%;
+}
+
+.sapMriPaBmkItemTable label {
+    cursor: pointer;
+}
+
+.sapMriPaBmkDetails td {
+    padding-bottom: 8px;
+}
+
+.sapMriPaBmkName {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.sapMriPaBmkItem {
+    background-color: @sapUiLightestBG;
+    border: 1px solid @sapUiMediumBorder;
+    border-top: none;
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+.sapMriPaBmkItem:hover {
+    border: 2px solid @sapMriBrand;
+    color: @sapMriBrand;
+    padding: 0 3px 1px 3px;
+}
+
+.sapMriPaBmkItem.sapMriPaBmkItemActive {
+    background-color: @sapMriBrand !important;
+    color: @sapMriLightestText !important;
+}
+
+.sapMriPaBmkItem,
+.sapMriPaBmkItem .sapMriPaBmkDetails .sapUiTvDsbl,
+.sapMriPaBmkItem .sapMriPaBmkHdr {
+    cursor: pointer !important;
+}
+
+.sapMriPaBmkItem:hover .sapMriPaBmkDetails .sapUiTvDsbl,
+.sapMriPaBmkItem:hover .sapMriPaBmkDetails .sapUiFTV,
+.sapMriPaBmkItem:hover .sapMriPaBmkDetails .sapUiTv,
+.sapMriPaBmkItem:hover .sapMriPaBmkDetails .sapUiLbl,
+.sapMriPaBmkItem:hover .sapMriPaBmkDetails .sapUiIcon,
+.sapMriPaBmkItem:hover .sapMriPaBmkItemTable {
+    color: @sapMriBrand;
+}
+
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkDetails .sapUiFTV,
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkDetails .sapUiTv,
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkDetails .sapUiTvDsbl,
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkDetails .sapUiLbl,
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkDetails .sapUiIcon,
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaBmkItemTable {
+    color: @sapMriLightestText;
+}
+
+.sapMriPaBmkFooter {
+    background-color: transparent;
+    height: 36px;
+    position: relative;
+}
+
+.sapMriPaBmkFooterBtns {
+    float: right;
+    padding: 11px 0 0 0;
+}
+
+.sapMriPaBmkFooterBtns .sapUiBtn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: @sapMriExtraLightText;
+    cursor: pointer;
+}
+
+.sapMriPaBmkFooterBtns .sapUiBtn:hover {
+    border-color: @sapMriBrand;
+    color: @sapMriBrand;
+}
+
+.sapMriPaBmkFooterBtns .sapUiBtn:focus {
+    outline: 1px dotted @sapUiFocus;
+    outline-offset: -1px;
+}
+
+.sapMriPaBmkFooterBtns .sapUiBtn.sapUiBtnAct {
+    background-color: @sapMriBrand;
+    color: @sapMriExtraLightText;
+}
+
+.sapMriPaBmkFooterBtns .sapUiBtn > .sapUiBtnIco {
+    font-size: 12px;
+}
+
+.sapMriPaBmkDetails {
+    color: @sapUiLightText;
+    padding: 0 10px;
+}
+
+.sapMriPaBmkDetails .sapUiTvDsbl,
+.sapMriPaBmkDetails .sapUiFTV,
+.sapMriPaBmkDetails .sapUiTv {
+    color: @sapUiLightText;
+}
+
+.sapMriPaBmkHdr {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px;
+    position: relative;
+    top: 30%;
+}
+
+.sapMriPaBmkRrNoData {
+    color: @sapUiDarkText;
+    font-size: 14px;
+    font-weight: normal;
+    padding: 30px;
+    white-space: normal;
+}
+
+.sapMriPaBmkDescrElement {
+    float: left;
+    height: 1rem;
+    margin: 0.125rem;
+}
+
+.sapMriPaBmkDescrLine {
+    display: table;
+}
+
+.sapMriPaBmkDescrHead {
+    font-weight: bold;
+}
+
+.sapMriPaValidTagStyle {
+    background-color: @sapUiDarkBG;
+    border-radius : 0.125rem;
+    color: @sapMriLightestText;
+    font-weight: bold;
+    padding: 0 2px;
+}
+
+.sapMriPaBmkItem:hover .sapMriPaValidTagStyle {
+    background-color: @sapMriTokenValidBG;
+    border-color: @sapMriTokenValidBorder;
+    color: @sapMriLightestText;
+}
+
+.sapMriPaBmkItem.sapMriPaBmkItemActive .sapMriPaValidTagStyle {
+    background-color: @sapUiLightestBG;
+    border-color: @sapMriTokenValidBorder;
+    color: @sapMriTokenValidBG;
+}
+
+.mriPaBmkWarning
+{
+    color: @sapMriPaletteRed;
+    font-size: 1.5em;
+}

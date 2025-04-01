@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Unit Tests for hc.mri.pa</title>
+    <script id="sap-ui-bootstrap"
+            src="https://sapui5.hana.ondemand.com/1.28.42/resources/sap-ui-core.js"
+            data-sap-ui-libs="sap.m, sap.ushell"
+            data-sap-ui-theme="sap_bluecrystal"
+            data-sap-ui-compatVersion="edge"
+            data-sap-ui-preload="async"
+            data-sap-ui-resourceroots='{"sap.hc": "/sap/hc"}'>
+    </script>
+    <script>
+        jQuery.sap.require("sap.ui.qunit.qunit-css");
+        jQuery.sap.require("sap.ui.thirdparty.qunit");
+        jQuery.sap.require("sap.ui.qunit.qunit-junit");
+        jQuery.sap.require("sap.ui.thirdparty.sinon");
+        jQuery.sap.require("sap.ui.thirdparty.sinon-qunit");
+
+        // Add an option to implement skipped tests, as is available in newer QUnit
+        // FUTURE: Remove with QUnit 1.16 / SAPUI5 1.30
+        jQuery.sap.require("sap.hc.hph.tests.testutils.ui.qunit-skip");
+
+        // Add our custom coverage module to enable filtering by the tested library.
+        // FUTURE: Replace with standard jQuery.sap.require("sap.ui.qunit.qunit-coverage");
+        jQuery.sap.require("sap.hc.hph.tests.testutils.ui.coverage");
+
+
+        // Filter the code coverage by the tested library
+        if (window.blanket) {
+            window.blanket.options("sap-ui-cover-only", "sap/hc/mri/pa");
+        }
+
+        QUnit.config.autostart = false;
+
+        sap.ui.require([
+            "sap/hc/mri/tests/pa/ui/unit/lib/AttributeMenuButton",
+            "sap/hc/mri/tests/pa/ui/unit/lib/KaplanMeierChartControl",
+            "sap/hc/mri/tests/pa/ui/unit/lib/TagInput",
+            "sap/hc/mri/tests/pa/ui/unit/lib/bookmarks/AnnotateBM",
+            "sap/hc/mri/tests/pa/ui/unit/lib/bookmarks/BMv2Parser",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/ChartableCardsVisitor",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/IFR",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/IFR2Bookmark",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/IFR2Request",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/IFR2Text",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/IFRBuilder",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/KMVisitor",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/ParameterObjectValidator",
+            "sap/hc/mri/tests/pa/ui/unit/lib/ifr/SimpleVisitors",
+            "sap/hc/mri/tests/pa/ui/unit/lib/utils/DelayedExecutorTest",
+            "sap/hc/mri/tests/pa/ui/unit/lib/utils/KeyCounterTest",
+            "sap/hc/mri/tests/pa/ui/unit/lib/utils/SerializingExecutorTest",
+            "sap/hc/mri/tests/pa/ui/unit/lib/utils/UrlFilterParserTest",
+            "sap/hc/mri/tests/pa/ui/unit/views/PatientAnalyticsControllerTest"
+        ], function () {
+            // Re-initialize QUnit to get the module filter
+            QUnit.load();
+            // Start QUnit tests
+            QUnit.start();
+        });
+    </script>
+</head>
+
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+</body>
+
+</html>

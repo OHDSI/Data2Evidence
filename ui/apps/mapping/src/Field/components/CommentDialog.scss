@@ -1,0 +1,17 @@
+.comment-dialog {
+  &__content {
+    margin: 1em 1.5em 2em;
+    color: var(--color-primary);
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 120px;
+    }
+  }
+}

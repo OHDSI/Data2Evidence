@@ -1,10 +1,10 @@
-FROM medplum/medplum-server:3.2.18 AS builder
+FROM medplum/medplum-server:4.0.0 AS builder
 
 COPY config.json .
 
 COPY --chown=docker:docker --chmod=711 start.sh start.sh
 
-FROM node:18.20.4-slim
+FROM node:20.18.3-slim
 
 WORKDIR /home/docker/app
 

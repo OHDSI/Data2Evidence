@@ -2,6 +2,7 @@ import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
+  FLOW_RUN_STATE_TYPES,
   DATA_QUALITY_DOMAINS,
   PrefectDeploymentName,
   PrefectFlowName,
@@ -270,11 +271,14 @@ export class DqdService {
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       datasetId
     );
-    const flowRuns = await prefectApi.getFlowRunsByDataset(
+    const flowRuns = (await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
       PrefectTagNames.DATA_CHARACTERIZATION
+    )).filter( // filter for completed flowRuns
+      (flowRun) => flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED
     );
+
     const flowRunIds = flowRuns.map((run) => run.id);
     if (!flowRunIds.length) {
       return [];
@@ -312,11 +316,13 @@ export class DqdService {
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       datasetId
     );
-    const flowRuns = await prefectApi.getFlowRunsByDataset(
+    const flowRuns = (await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
       PrefectTagNames.DQD
-    );
+    )).filter( // filter for completed flowRuns
+      (flowRun) => flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED
+    );;
     const flowRunIds = flowRuns.map((run) => run.id);
     const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
 

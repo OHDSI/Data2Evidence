@@ -1,0 +1,27 @@
+@import './mri-variables';
+.apptextInput {
+  div[role='messagetab'] {
+    display: block;
+    color: $UiDarkestText;
+    font-style: italic;
+    padding: 8px;
+  }
+
+  &.control-error-state {
+    input {
+      border: 1px solid $MriErrorColor;
+    }
+    div[role='messagetab'] {
+      background-color: lighten($MriErrorColor, 60%);
+    }
+  }
+
+  &.control-warning-state {
+    input {
+      border: 1px solid $MriWarningColor;
+    }
+    div[role='messagetab'] {
+      background-color: lighten($MriWarningColor, 60%);
+    }
+  }
+}

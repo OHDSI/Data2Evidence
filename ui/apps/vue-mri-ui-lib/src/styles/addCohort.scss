@@ -1,0 +1,23 @@
+@import './mri-variables';
+
+.cohort-dialog {
+  margin: 16px;
+  width: 500px;
+
+  input.form-control {
+    border-radius: 5px;
+  }
+
+  .label-has-form {
+    label.form-check-label {
+      display: flex;
+
+      .label-part {
+        width: 180px;
+      }
+    }
+  }
+  div[role='radiogroup'] {
+    padding-left: 20px;
+  }
+}

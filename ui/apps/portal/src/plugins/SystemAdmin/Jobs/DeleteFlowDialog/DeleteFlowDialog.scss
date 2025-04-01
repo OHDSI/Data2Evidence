@@ -1,0 +1,34 @@
+.delete-flow-dialog {
+  .delete-flow-dialog__content {
+    min-height: 100px;
+    margin: 16px 32px 0;
+    color: var(--color-primary);
+
+    .delete-flow-dialog__content-text {
+      div {
+        margin-bottom: 32px;
+      }
+      :last-child {
+        margin-bottom: 24px;
+      }
+    }
+    .delete-flow-dialog__content-input {
+      margin-bottom: 32px;
+
+      .MuiFormHelperText-root {
+        color: var(--color-feedback-alarm);
+      }
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

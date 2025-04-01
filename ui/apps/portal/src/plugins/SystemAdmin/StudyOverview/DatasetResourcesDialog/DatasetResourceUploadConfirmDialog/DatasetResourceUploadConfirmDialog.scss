@@ -1,0 +1,32 @@
+.dataset-resource-upload-confirm-dialog {
+  &__content {
+    padding: 1.5em;
+  }
+
+  &__file {
+    border: 1px solid #979797;
+    border-radius: 0.5em;
+    margin-top: 0.5em;
+    margin-left: 0;
+    width: 100%;
+    padding: 1em;
+    display: flex;
+    align-items: center;
+
+    .MuiGrid-item {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

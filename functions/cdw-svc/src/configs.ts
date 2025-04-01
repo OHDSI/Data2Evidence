@@ -29,6 +29,9 @@ const Env = z
     TESTSCHEMA: z.string().optional(),
 
     PG__HOST: z.string(),
+    PG__SSL: z.string(),
+    PG__CA_ROOT_CERT: z.string().optional(),
+    PG__HOST: z.string(),
     PG__DB_NAME: z.string(),
     PG_USER: z.string(),
     PG_PASSWORD: z.string(),
@@ -50,6 +53,7 @@ const Env = z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
+    USE_HANA_JWT_AUTHC: z.string()
   })
   .superRefine(
     (

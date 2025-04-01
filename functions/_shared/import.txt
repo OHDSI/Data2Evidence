@@ -1,7 +1,6 @@
 {
   "@alp/alp-base-utils": "../shared/alp-base-utils/",
   "@alp/alp-config-utils": "../shared/alp-config-utils/",
-  "@alp/alp-metadata": "../shared/alp-metadata/",
   "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
   "@sap/xsenv": "npm:@sap/xsenv@^3.3.2",
   "@types/bcryptjs": "npm:@types/bcryptjs@^2.4.2",
@@ -9,7 +8,7 @@
   "@types/passport-azure-ad": "npm:@types/passport-azure-ad@^4.3.0",
   "axios": "npm:axios@^0.21.2",
   "bcryptjs": "npm:bcryptjs@^2.4.3",
-  "hdb": "npm:hdb@0.19.3",
+  "hdb": "npm:hdb@0.19.12",
   "pako": "npm:pako@1.0.11",
   "pg": "npm:pg@^8.4.2",
   "pg-query-stream": "npm:pg-query-stream@^4.2.4",
@@ -18,8 +17,6 @@
   "winston": "npm:winston@^3.7.2",
   "typescript": "npm:typescript@4.4.4",
   "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
-  "graphql": "npm:graphql@^15.3.0",
-  "graphql-request": "npm:graphql-request@^3.7.0",
   "node-fetch": "npm:node-fetch@^2.6",
   "../shared/alp-base-utils/src/PostgresConnection": "../shared/alp-base-utils/src/PostgresConnection.ts",
   "../shared/alp-base-utils/src/EnvVarUtils": "../shared/alp-base-utils/src/EnvVarUtils.ts",
@@ -52,13 +49,5 @@
   "../shared/alp-config-utils/src/utils/qe-formatter": "../shared/alp-config-utils/src/utils/qe-formatter.ts",
   "../shared/alp-config-utils/src/utils/validator": "../shared/alp-config-utils/src/utils/validator.ts",
   "../shared/alp-config-utils/src/types": "../shared/alp-config-utils/src/types.ts",
-  "../shared/alp-config-utils/src": "../shared/alp-config-utils/src/index.ts",
-  "../shared/alp-metadata/src/alpUserClient.test": "../shared/alp-metadata/src/alpUserClient.test.ts",
-  "../shared/alp-metadata/src/AlpClient": "../shared/alp-metadata/src/AlpClient.ts",
-  "../shared/alp-metadata/src/AlpUserClient": "../shared/alp-metadata/src/AlpUserClient.ts",
-  "../shared/alp-metadata/src/utils": "../shared/alp-metadata/src/utils.ts",
-  "../shared/alp-metadata/src/types": "../shared/alp-metadata/src/types.ts",
-  "../shared/alp-metadata/src/alpClient.test": "../shared/alp-metadata/src/alpClient.test.ts",
-  "../shared/alp-metadata/src": "../shared/alp-metadata/src/index.ts",
-  "../shared/alp-metadata/src/config": "../shared/alp-metadata/src/config.ts"
+  "../shared/alp-config-utils/src": "../shared/alp-config-utils/src/index.ts"
 }

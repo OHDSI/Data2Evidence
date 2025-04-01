@@ -1,0 +1,111 @@
+// THEME
+$MriBrand: #008fd3 !default;
+$MriBrandSelected: none !default;
+$MriBrandHover: #007eba !default;
+$UiDarkestText: #000000 !default;
+$UiDarkText: #333333 !default;
+$UiMediumText: #444444 !default;
+$UiLightText: #666666 !default;
+$MriExtraLightText: #bbbbbb !default;
+$MriDisabledText: #cdcdcd !default;
+$MriLightestText: #ffffff !default;
+$MriDarkerBorder: #333333 !default;
+$UiDarkestBorder: #000000 !default;
+$UiExtraDarkBorder: #999999 !default;
+$UiDarkBorder: #bfbfbf !default;
+$UiMediumBorder: #cccccc !default;
+$UiLightBorder: #dddddd !default;
+$UiLighterBorder: #dedede !default;
+$UiExtraLightBorder: #e5e5e5 !default;
+$UiLightestBorder: #ffffff !default;
+$UiDarkestBG: #000000 !default;
+$UiExtraDarkBG: #333333 !default;
+$UiDarkBG: #777777 !default;
+$UiMediumBG: #dddddd !default;
+$UiLightBG: #e5e5e5 !default;
+$UiExtraLightBG: #f7f7f7 !default;
+$UiLightestBG: #ffffff !default;
+$UiFocus: #005483 !default;
+$MriTokenValidBG: #007db7 !default;
+$MriSelectTokenNoDataBGLight: #d2e9f6 !default;
+$MriSelectTokenValidBGLight: #8fdbfe !default;
+$MriTokenValidSyntaxBorder: #0076ad !default;
+$MriValidSyntaxText: #ffffff !default;
+$MriSelectTokenValidTextLight: #006c9e !default;
+$MriSelectTokenValidTextDark: #005c87 !default;
+$MriTokenValidSyntaxBG: #1790ce !default;
+$MriTokenInvalidBG: #e23101 !default;
+$MriTokenPendingBG: #777777 !default;
+$MriTokenValidBorder: #223a80 !default;
+$MriTokenInvalidBorder: #333333 !default;
+$MriTokenPendingBorder: #494949 !default;
+$MriInfoColor: #007cc0 !default;
+$MriErrorColor: #c00000 !default;
+$MriWarningColor: #f9a429 !default;
+$MriContrast: #3f5161 !default;
+$MriSelectListItemHoverableLight: #f0f0f0 !default;
+$MriDropDownListItemSelected: #e6f2f9 !default;
+$MriDropDownLabelDarkText: #000000 !default;
+$MriDropDownBorderLight: #c0c0c0 !default;
+$MriBoxShadow: #000000 !default;
+$MriBoxShadowGlow: 0.85 !default;
+$UiHighlight: #f0f0f0 !default;
+$MriLightHoverBG: #bababa !default;
+$LinkText: #00679e !default;
+$Checkbox: #000080 !default;
+$SegmentedButtonText: #00679e !default;
+$SegmentedButtonSelectedText: #ffffff !default;
+$MriButtonBorder: none !default;
+$MriButtonHover: #007cc0 !default;
+$MriButtonHoverDark: #346187 !default;
+$TableColGripHover: #e6f2f9 !default;
+$MriChartButtonHover: #427cac !default;
+
+$MRICardHeaderBG: #eff4f9 !default;
+$MriCardHeaderBorder: #d9e6f0 !default;
+$MriHeaderTextDark: #346187 !default;
+$MriHeaderTextLight: #4d6f8c !default;
+$MriNavTab: #599bd1 !default;
+$MriFooterBG: #2f3c48 !default;
+$MriHeaderBG: #2f3c48 !default;
+$MriFooterContainerBG: #edf2fa !default;
+$FooterButtonTextLight: #cae4fb !default;
+$FooterHoverButtonBackgroundColor: rgba(99, 127, 153, 0.5) !default;
+$FooterActiveButtonBackgroundColor: #91c8f6 !default;
+$FooterActiveButtonTextColor: #2f3c48 !default;
+$FooterBorder: #ebebeb !default;
+
+$DialogBoxFooterBG: #2f3c48 !default;
+$DialogBoxFooterShadow: #4f667a !default;
+$DialogBoxFooterBtnEmphasizedBGColor: #5496cd !default;
+$DialogBoxFooterBtnTransparentBGColor: none !default;
+$DialogBoxFooterBtnAcceptBGColor: #96dc95 !default;
+$DialogBoxFooterBtnDeclineBGColor: #ff5350 !default;
+$DialogBoxFooterBtnTextLight: #ffffff !default;
+$DialogBoxFooterBtnTextDark: #2f3c48 !default;
+$DialogBoxFooterBorder: #418ac7 !default;
+
+$TableHeaderRowBG: #f2f2f2 !default;
+$TableRowBG: #fafafa !default;
+$TableRowBorder: #e7e7e7 !default;
+$TableBodyColor: #454545 !default;
+
+$TabBarHeaderBG: #ccdeee !default;
+$MriHeaderTextDark: #ccdeee !default;
+
+$ToggleButtonLightBG: #e78c07 !default;
+$ToggleButtonDarkBG: #457daa !default;
+$SelectedDateBorder: #ab218e !default;
+$DateHover: #d8d8d8 !default;
+
+$FiltercardNewState: #115693 !default;
+$DateErrorTextBG: #ffc0cb !default;
+
+$mriScreen: (
+  min-chart-width: 650px,
+  // chart area minimum width exclude the filters
+  min-height: 550px,
+  // application minimum height exclude the fiori launchpad header
+);
+
+$HoverBorder: #427cac !default;

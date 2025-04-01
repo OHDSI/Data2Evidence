@@ -1,0 +1,51 @@
+@import './mri-variables';
+.km-legend-container {
+  color: $MriHeaderTextDark;
+  margin-top: 45px;
+  width: 100%;
+  height: calc(100% - 45px);
+  position: relative;
+  overflow-x: auto;
+  overflow-y: auto;
+  .km-legend-title {
+    display: inline-block;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 100%;
+  }
+  .km-legend-entries {
+    position: absolute;
+    top: 30px;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    overflow: auto;
+    padding: 0;
+    list-style: none;
+    border-top: 2px solid $UiLightBorder;
+    border-bottom: 2px solid $UiLightBorder;
+    .km-legend-entry {
+      padding-right: 1rem;
+      white-space: nowrap;
+      .km-legend-entry-box {
+        border-radius: 2px;
+        display: inline-block;
+        height: 0.875rem;
+        margin-right: 0.25rem;
+        vertical-align: top;
+        width: 0.875rem;
+        vertical-align: middle;
+      }
+      .km-legend-entry-text {
+        font-size: 0.875rem;
+        color: $UiDarkestText;
+        vertical-align: middle;
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import pg from "npm:pg";
+import pg from "pg";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
 import {
@@ -17,6 +17,16 @@ export class DataModelFlowService {
     host: this.env.PG__HOST,
     port: parseInt(this.env.PG__PORT),
     database: this.env.PG__DB_NAME,
+    ssl: (() => {
+      let ssl = JSON.parse(this.env.PG__SSL.toLowerCase());
+      if (this.env.PG__CA_ROOT_CERT) {
+        ssl = {
+          rejectUnauthorized: true,
+          ca: this.env.PG__CA_ROOT_CERT,
+        };
+      }
+      return ssl;
+    })(),
   };
   private pgclient;
 
@@ -29,25 +39,42 @@ export class DataModelFlowService {
 
   public async getDataModels() {
     const plugins = await this.pgclient.query(
-      `SELECT payload::JSON FROM trex.plugins WHERE "name" = 'd2e-flows';`
+      `SELECT name, payload FROM trex.plugins;`
     );
 
     let datamodels: DataModel[] = [];
     for (const plugin of plugins.rows) {
-      if (plugin.payload.flow.flows) {
-        const datamodelFlows = plugin.payload.flow.flows
-          .filter((flow: PluginFlow) => flow.type === "datamodel")
-          .flatMap(
-            ({ name, datamodels }: { name: string; datamodels: string[] }) =>
-              (Array.isArray(datamodels) ? datamodels : []).map(
-                (datamodel) => ({
-                  flowName: name,
-                  datamodel: datamodel,
-                  flowId: "",
-                })
-              )
-          );
-        datamodels = datamodels.concat(datamodelFlows);
+      try {
+        const payload =
+          typeof plugin.payload === "string"
+            ? JSON.parse(plugin.payload)
+            : plugin.payload;
+
+        if (payload?.flow?.flows) {
+          const flows = payload.flow.flows;
+
+          const datamodelFlows = flows
+            .filter((flow: PluginFlow) => {
+              const flowType = flow.type?.toLowerCase();
+              return flowType === "datamodel";
+            })
+            .flatMap(
+              ({ name, datamodels }: { name: string; datamodels: string[] }) =>
+                (Array.isArray(datamodels) ? datamodels : []).map(
+                  (datamodel) => ({
+                    flowName: name,
+                    datamodel: datamodel,
+                    flowId: "",
+                  })
+                )
+            );
+
+          datamodels = datamodels.concat(datamodelFlows);
+        }
+      } catch (error) {
+        console.error(
+          `Error processing plugin ${plugin.name}: ${error.message}`
+        );
       }
     }
     return datamodels;
