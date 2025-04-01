@@ -9,7 +9,6 @@ const moduleNames = [
   "SystemAdmin/StudyOverview",
   "SystemAdmin/UserOverview",
   "SystemAdmin/NifiRegistry",
-  "SystemAdmin/Sqleditor",
   "SystemAdmin/DQD",
   "SystemAdmin/Jobs",
   "SystemAdmin/Terminology",
