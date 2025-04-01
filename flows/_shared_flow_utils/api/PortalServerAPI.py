@@ -7,7 +7,7 @@ class PortalServerAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("portalServer")
-        self.datasets_url = self.url + 'dataset/list?role=systemAdmin'
+        self.datasets_url = self.url + 'dataset/list/systemadmin'
         self.dataset_attributes_url = self.url + 'dataset/attribute'
         self.headers = self.get_options()
 

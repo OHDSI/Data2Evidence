@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=develop #default version
+version=0.6.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -12,6 +12,10 @@ elif [ -d "$script_full_path/../lib/node_modules/d2e/" ]; then
   node_modules_path=$script_full_path/../lib/node_modules/d2e/
 elif [ -d "$script_full_path/../d2e/" ]; then
   node_modules_path=$script_full_path/../d2e/
+elif [ -d "$script_full_path/../lib/node_modules/@ohdsi/d2e/" ]; then
+  node_modules_path=$script_full_path/../lib/node_modules/@ohdsi/d2e/
+elif [ -d "$script_full_path/../@ohdsi/d2e/" ]; then
+  node_modules_path=$script_full_path/../@ohdsi/d2e/
 elif [ -d "$script_full_path/../lib/node_modules/@data2evidence/cli/" ]; then
   node_modules_path=$script_full_path/../lib/node_modules/@data2evidence/cli/
 elif [ -d "$script_full_path/../@data2evidence/cli/" ]; then
@@ -75,11 +79,15 @@ if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
+  export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
+  export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $dev $compose $args"
@@ -143,8 +151,7 @@ case $cmd in
         ;;
     patchdemodb)
         database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm;"
-        docker exec $database_host psql -h localhost -U postgres -c "CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
+        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
@@ -183,7 +190,7 @@ case $cmd in
         echo LOGTO__ALP_SVC__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
         echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE; source $DOTENV_FILE
+        echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
         echo MINIO__SECRET_KEY=$(random-uuid) >> $DOTENV_FILE
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
@@ -193,7 +200,7 @@ case $cmd in
         echo STRATEGUS__KEYRING_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
 
-        echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
+        source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
         echo PG__LOGTO_MANAGER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 

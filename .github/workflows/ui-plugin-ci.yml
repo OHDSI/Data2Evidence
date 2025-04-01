@@ -33,9 +33,10 @@ on:
         artifacttype:
             type: choice
             required: true
-            default: "OSS"
+            default: "OSS-develop"
             options:
-              - "OSS"
+              - "OSS-develop"
+              - "OSS-release"
               - "Project"
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
@@ -46,7 +47,7 @@ on:
 env:
   GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
-  NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS'}}
+  NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop'}}
 
 jobs:
   check_file_changes:
@@ -81,10 +82,17 @@ jobs:
           submodules: recursive
       - name: Use Node.js - OSS
         uses: actions/setup-node@v4
-        if: env.NPM_ARTIFACT_TYPE == 'OSS'
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
         with:
           node-version: "18.x"
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+      - name: Use Node.js - OSS Release
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
           scope: "@data2evidence"
       - name: Use Node.js - Project
         uses: actions/setup-node@v4
@@ -122,21 +130,11 @@ jobs:
           else
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
           fi
-      - name: Prepare NPM_TOKEN env
-        run: |
-          if [[ ${{ env.NPM_ARTIFACT_TYPE }} == 'Project' ]]; then
-              echo "NPM_TOKEN=${NODE_PROJECT_AUTH_TOKEN}" >> $GITHUB_ENV
-          else
-              echo "NPM_TOKEN=${NODE_OSS_AUTH_TOKEN}" >> $GITHUB_ENV
-          fi
-        env:
-          NODE_OSS_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_PROJECT_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
       - name: Publish
         if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
         env:
           CI: false # For portal build to ignore warnings and not treat them as errors
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Ensuring Homebrew environment is available..."

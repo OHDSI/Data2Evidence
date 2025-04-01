@@ -416,7 +416,7 @@ export class CohortEndpoint {
         // Add description clause only if description is not null
         if (cohortDefinition.description !== null) {
             selectQueryString +=
-                " AND TO_VARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s";
+                " AND TO_NVARCHAR(COHORT_DEFINITION_DESCRIPTION)=%s";
             sqlParams.push(cohortDefinition.description);
         }
 

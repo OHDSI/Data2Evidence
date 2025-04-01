@@ -55,6 +55,8 @@
 	}
 }
 
+{$INSTANCE_SPECIFIC_CONFIG}
+
 https://{$CADDY__ALP__PUBLIC_FQDN} {
 	{$TLS__CADDY_DIRECTIVE}
 	redir / /portal

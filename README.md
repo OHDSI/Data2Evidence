@@ -1,4 +1,4 @@
-# Data2Evidence
+# [<img src="./internal/d2e2.svg?raw=true" alt="Data2eEvidence" width="400px"/>](#)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/m/data2evidence/d2e?logo=github&color=lightgreen)](https://github.com/data2evidence/d2e/graphs/contributors)
 [![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=d2e%20installer&logo=npm&color=blue)](https://www.npmjs.com/package/d2e) 
 [![D2E Release](https://img.shields.io/github/v/release/data2evidence/d2e?color=blue&label=latest%20release&logo=github)](https://github.com/data2evidence/d2e/releases/latest)
@@ -8,31 +8,40 @@
 
 <!--- [![GitHub Release](https://img.shields.io/github/v/release/data2evidence/d2e?label=notes&logo=github)](https://github.com/data2evidence/d2e/releases) --->
 
+:construction: **Data2Evidence is under development. There might be breaking changes.** :construction:
+
 
 ### Why the Data2Evidence platform?
 
+- **End-to-End Platform:**  
+Get started with our all-in-one platform that simplifies ingestion, integration, ongoing management, and analysis of your research data.
+
 - **Interactive Dataset Exploration:**  
-Discover datasets with interactive views of aggregates, demographics, and disease trends.
+Explore datasets with interactive views of the data to evaluate the utility of the dataset to your research question.
 
 - **Visual Cohort Creation:**  
-Easily create and manage cohorts using a visual interface without any coding.
+Easily create and manage cohorts using a visual interface without any coding knowledge.
 
-- **Integrated OHDSI Solutions:**  
-OHDSI solutions like **Achilles** for descriptive analytics and the **Data Quality Dashboard** for data quality analysis are integrated in the platform.
+- **Integrated OHDSI Solutions:**
+OHDSI solutions like **Achilles** for descriptive analytics, **Data Quality Dashboard** for data quality analysis and **ATLAS** for cohort building are integrated in the platform.
 
 - **Efficient Data Management:**  
 Organize, store, and secure your research datasets with robust governance and streamlined access.
 
-- **End-to-End Platform:**  
-Get started with our all-in-one platform that simplifies installation, integration, and ongoing management of your research data.
 
-#### Data2Evidence Cohort Functionality
-[![Data2Evidence](https://github.com/data2evidence/d2e/blob/develop/internal/pa.png?raw=true)](https://www.d2e.sg)
+#### Data2Evidence Screenshots
+
+[<img src="./internal/portal.png" alt="D2E Portal" width="48%"/>](https://d2e.sg) [<img src="./internal/pa.png" alt="D2E Analyze" width="48%"/>](https://d2e.sg)
+[<img src="./internal/atlas.png" alt="D2E Atlas" width="48%"/>](https://d2e.sg) [<img src="./internal/notebook.png" alt="D2E Notebook" width="48%"/>](https://d2e.sg)
+
 You can find a video of Data2Evidence Cohort Functionality [here](https://www.youtube.com/watch?v=PxkCutzJgkI)
 
 ### Data2Evidence Quick Start
 
 Data2Evidence requires **Docker** and **npm** to be installed. You can find more information [here](https://docs.d2e.sg)
+
+> [!IMPORTANT]  
+> On Windows [WSL/Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) is required to run D2E
 
 Install the Data2Evidence CLI by running:
 ```bash
@@ -71,7 +80,7 @@ Encounter an issue or have a feature request? Please help us improve by reportin
 
 #### Build / Tests
 | d2e services  | d2e  functions | d2e ui  |
-|---|---|---|
+|:-:|:-:|:-:|
 | [![d2e/cli build and publish](https://github.com/data2evidence/d2e/actions/workflows/cli-setup-npm.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/cli-setup-npm.yml) |  [![d2e-functions build plugin](https://github.com/data2evidence/d2e/actions/workflows/functions-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-plugin-ci.yml) | [![d2e-ui build plugin](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-plugin-ci.yml)  |  
 | [![d2e/services Docker Build](https://github.com/data2evidence/d2e/actions/workflows/services-docker-push.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-docker-push.yml)   | [![d2e-functions/pa Run HTTP tests](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/functions-http-tests.yml)  | [![d2e-ui/pa (vue)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-test-vue.yml)   |  
 | [![d2e/services Docker Compose Up](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/services-docker-compose-up.yml)| **d2e flows** | [![d2e-ui/portal unit tests (Frontend)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/data2evidence/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   

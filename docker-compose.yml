@@ -462,6 +462,8 @@ services:
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
+      PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
+      PROJECT_NAME: ${PROJECT_NAME:-d2e}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -632,6 +634,8 @@ services:
           }
         }
 
+        $INSTANCE_SPECIFIC_CONFIG
+
         https://$CADDY__ALP__PUBLIC_FQDN {
           $TLS__CADDY_DIRECTIVE
           redir / /portal
@@ -673,7 +677,7 @@ services:
         - -f
         - http://localhost:41120/api/health
       timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: dataflow-gen-1
     image: prefecthq/prefect:3.0.3-python3.11
     platform: linux/amd64
     logging:
@@ -1067,7 +1071,7 @@ services:
         - -O
         - fhir.status
         - http://localhost:8103/healthcheck
-    hostname: ${PROJECT_NAME:-d2e}-minerva-fhir-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: fhir-server-1
     image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
     logging:
       options:

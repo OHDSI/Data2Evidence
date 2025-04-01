@@ -43,7 +43,7 @@ export class AnalyticsSvcAPI {
 
   async getAllCohorts(datasetId: string) {
     const options = await this.getRequestConfig();
-    const url = `${this.baseURL}cohort?datasetId=${datasetId}`;
+    const url = `${this.baseURL}cohort?datasetId=${datasetId}&excludePatientIds=true`;
     const result = await get(url, options);
     return result.data;
   }

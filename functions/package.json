@@ -29,7 +29,7 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/import.json",
           "env": "alp-dataflow-gen-init",
-          "waitfor": "http://alp-dataflow-gen-1:41120/api/health"
+          "waitfor": "http://dataflow-gen-1:41120/api/health"
         },
         {
           "function": "/files-manager/src/init",
@@ -473,10 +473,9 @@
         ],
         "IDP_ALP_SVC_CLIENT_ID": [
           "gateway.db.datbase.credentials.list",
-          "portal.dataset.read"
+          "portal.dataset.systemAdmin.read"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
-          "portal.dataset.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
@@ -901,27 +900,18 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/list/systemadmin$",
+          "scopes": [
+            "portal.dataset.systemAdmin.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/list$",
           "scopes": [
             "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?(.*)role=researcher(&.*)?$",
-          "scopes": [
-            "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/dataset/list\\?role=systemAdmin$",
-          "scopes": [
-            "portal.dataset.systemAdmin.read"
           ],
           "httpMethods": [
             "GET"

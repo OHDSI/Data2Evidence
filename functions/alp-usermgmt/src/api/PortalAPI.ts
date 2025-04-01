@@ -70,7 +70,7 @@ export class PortalAPI {
   async getDatasets() {
     try {
       const options = await this.getRequestConfig()
-      const result = await axios.get(`${this.baseURL}/dataset/list?role=systemAdmin`, options)
+      const result = await axios.get(`${this.baseURL}/dataset/list/systemadmin`, options)
       return result.data
     } catch (error) {
       this.logger.error('Error getting studies', error?.response?.data || error?.code)

@@ -11,7 +11,7 @@ on:
         description: Select RepoName
         options:
           - data2evidence/d2e
-        required: true
+        default: data2evidence/d2e
         type: choice
       env:
         default: alp-dev-sg-3
@@ -73,28 +73,24 @@ jobs:
       - name: Generate dotenv
         env:
           DOTENV_FILE: .env.${{ env.ENV_TYPE }}
-          DOTENV_YML: .env.${{ env.ENV_NAME }}.yml
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OP_VAULT_NAME: ${{ secrets.OP_VAULT_NAME }}
-          OVERWRITE: true
+          ENV_YML: ${{ secrets.ENV_YML }}
         run: |
-          ACTIONS_STEP_DEBUG=false
-          ./internal/scripts/get-op-ratelimit.sh
+          # mask sensitive values
+          internal/scripts/gha-mask.sh
 
-          # get env yml from 1password
-          if [ ${{ env.DOTENV_BOOLEAN }} = true ]
-          then
-            yarn --cwd internal op:get:$ENV_TYPE
+          if [ ${{ env.DOTENV_BOOLEAN }} = true ]; then
+            echo "# ${DOTENV_FILE##*/} $ENV_NAME" > $DOTENV_FILE
+            echo "# https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> $DOTENV_FILE
+            echo "${ENV_YML}" | yq -o sh >> $DOTENV_FILE
+            source scripts/lib.sh
+            gen-tls-internal
+            set-cpu-limit
+            set-memory-limit
           else
             echo dotenv-boolean=false | tee -a $GITHUB_STEP_SUMMARY
           fi
 
-          # mask sensitive values
-          internal/scripts/gha-mask.sh
-
-          # generate dotenv
-          yarn --cwd internal gen:env
-          echo CADDY__ALP__PUBLIC_FQDN=$(yq '.CADDY__ALP__PUBLIC_FQDN' $DOTENV_YML) | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          wc -l $DOTENV_FILE
 
           cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
 
@@ -107,30 +103,7 @@ jobs:
           echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
           echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Load dotenv from 1password
-        uses: 1password/load-secrets-action@v2
-        id: op-load-secret
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          REGISTRY_USERNAME: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/username"
-          REGISTRY_PASSWORD: "op://${{ secrets.OP_VAULT_NAME }}/az-alpCR/password"
-
-      - name: 1password ratelimit end
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-        run: |
-          ./internal/scripts/get-op-ratelimit.sh
-
-      - name: Upload stats.yml artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: stats
-          retention-days: 30
-          path: |
-            ${{ github.job }}*.yml
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
       - name: Pull docker images
         uses: nick-fields/retry@v3

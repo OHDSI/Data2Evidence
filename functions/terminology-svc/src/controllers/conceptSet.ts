@@ -139,7 +139,7 @@ export const updateConceptSet = async (
       { id: params.conceptSetId, serviceArtifact: updatedConceptSet },
       query.datasetId
     );
-    res.send(updatedConceptSet.id);
+    res.send(params.conceptSetId);
   } catch (e) {
     next(e);
   }

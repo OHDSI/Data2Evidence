@@ -20,7 +20,7 @@
           "function": "/alp-fhir-init",
           "imports": "/alp-fhir-init/import.json",
           "env": "alp-fhir-init",
-          "waitfor": "http://alp-minerva-fhir-server-1:8103/healthcheck"
+          "waitfor": "http://fhir-server-1:8103/healthcheck"
         }
       ],
       "api": [

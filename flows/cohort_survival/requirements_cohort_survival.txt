@@ -1,7 +1,7 @@
 setuptools-rust==1.5.2
 psycopg2-binary==2.9.6
 rpy2==3.5.13
-pydantic>2.0.0
+pydantic==2.10.6
 python-dotenv==1.0.0
 hdbcli==2.15.19
 black==23.1.0

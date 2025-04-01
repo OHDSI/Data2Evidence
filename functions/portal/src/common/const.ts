@@ -1,4 +1,6 @@
-export const DATASET_QUERY_ROLES = ["researcher", "systemAdmin"];
+// export const DATASET_QUERY_ROLES = ["researcher", "systemAdmin"];
+export const DATASET_RESEARCHER_ROLE = "researcher";
+export const DATASET_SYSTEM_ADMIN_ROLE = "systemAdmin"
 export const VISIBILITY_STATUS = ["HIDDEN", "PUBLIC", "DEFAULT"];
 export const DATABASE_DIALECTS = ["postgres", "hana"];
 export const CDM_SCHEMA_OPTIONS = [
