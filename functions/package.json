@@ -60,9 +60,19 @@
           "function": "/white-rabbit/src/init",
           "imports": "/white-rabbit/import.json",
           "env": "white-rabbit"
+        },
+        {
+          "function": "/supabase/src/init",
+          "imports": "/supabase/import.json",
+          "env": "supabase-storage"
         }
       ],
       "api": [
+        {
+          "source": "/storage/v1",
+          "function": "/supabase/src/proxy",
+          "env": "supabase-storage"
+        },
         {
           "source": "/jobplugins",
           "function": "/jobplugins",
@@ -545,6 +555,12 @@
         },
         {
           "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
+          ]
+        },
+        {
+          "path": "^/storage(.*)",
           "scopes": [
             "jobplugins"
           ]

@@ -80,7 +80,8 @@ x-envs:
        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-       "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+       "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
+       "supabase-storage": "http://alp-supabase-storage-1:9000"
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -200,7 +201,8 @@ services:
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-              "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001"
+              "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
+              "supabase-storage": "http://alp-supabase-storage-1:9000"
             }
           },
           "analytics-svc": {
@@ -287,6 +289,13 @@ services:
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
             "PG_SCHEMA": "white_rabbit"
+          },
+          "supabase-storage": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "storage"
           },
           "bookmark-svc": {
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -424,7 +433,8 @@ services:
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir"
+        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+        "supabase-storage": "http://alp-supabase-storage-1:9000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -472,7 +482,8 @@ services:
       alp-minerva-postgres:
         condition: service_healthy
     hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
+    image: alp-minterva-pg-mgmt-init
+
     logging:
       options:
         tag: *c15
@@ -1061,6 +1072,8 @@ services:
     ports:
       - "9000:9000"
     depends_on:
+      trex:
+        condition: service_healthy
       alp-minerva-postgres:
         condition: service_healthy
       alp-minerva-pg-mgmt-init:
