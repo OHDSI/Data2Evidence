@@ -39,13 +39,14 @@ class WhiteRabbit:
                 ],
                 env=self.service_credentials.model_dump(mode='json')
             ).trigger()
-            
+
             self.process = process
         except Exception as e:
             self.logger.error(f"Failed to start service: {e}")
             raise Exception(e)
         else:
-            self.logger.info("Successfully run command to start white rabbit service")
+            self.logger.info(
+                "Successfully run command to start white rabbit service")
 
         while not self.health_check():
             time.sleep(10)

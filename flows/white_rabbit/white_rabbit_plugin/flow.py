@@ -14,15 +14,18 @@ import requests
 import time
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
+
 @dataclass
 class FileContent:
     fileName: str
     fileContent: List[Dict[str, Any]]
 
+
 @task(log_prints=True)
 def setup_plugin(white_rabbit: WhiteRabbit):
     white_rabbit.start()
     return white_rabbit
+
 
 def scan_report_files(logger, options: WhiteRabbitRequestType):
     settings = options.data.get('settings', {})
@@ -38,17 +41,17 @@ def scan_report_files(logger, options: WhiteRabbitRequestType):
         writer = csv.DictWriter(output, fieldnames=headers)
         writer.writeheader()
         writer.writerows(file_data['fileContent'])
-        
+
         csv_bytes = io.BytesIO(output.getvalue().encode('utf-8'))
         csv_bytes.name = file_data['fileName']
         files.append(('files', (file_data['fileName'], csv_bytes, 'text/csv')))
         output.close()
-    
+
     logger.info("Convert json to csv files completed")
-    
+
     settings_str = json.dumps(settings, ensure_ascii=False)
     files.append(('settings', (None, settings_str, 'application/json')))
-    
+
     # Make request to White Rabbit service
     options.headers.update(
         {
@@ -57,7 +60,7 @@ def scan_report_files(logger, options: WhiteRabbitRequestType):
     )
     if 'Content-Type' in options.headers:
         del options.headers['Content-Type']
-    
+
     response = requests.post(
         url=f"http://localhost:8000/white-rabbit/api/scan-report/files",
         files=files,
@@ -66,21 +69,21 @@ def scan_report_files(logger, options: WhiteRabbitRequestType):
     # enable logging when needed
     # with open("/tmp/java_log.txt", "r") as f:
     #     logger.info(f.read())
-    
+
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Response content: {response.text}")
-    
+
     if response.status_code != 200:
         raise Exception(f"Failed to process files: {response.text}")
-    
+
     result_j = {}
     if 'xml' in response.headers.get("content-type").lower():
         data_dict = xmltodict.parse(response.content)
         parsed_dict = json.dumps(data_dict, indent=2)
-        result_j =  parsed_dict
+        result_j = parsed_dict
     if 'json' in response.headers.get("content-type").lower():
         result_j = response.json()
-    
+
     if isinstance(result_j, str):
         result_j = json.loads(result_j)
     create_link_artifact(
@@ -89,6 +92,7 @@ def scan_report_files(logger, options: WhiteRabbitRequestType):
     )
     logger.info("Successfully save the artifacts")
     return
+
 
 def scan_report_db(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitRequestType):
     response = white_rabbit.handle_request(options)
@@ -99,7 +103,7 @@ def scan_report_db(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitReques
     if 'xml' in response.headers.get("content-type").lower():
         data_dict = xmltodict.parse(response.content)
         parsed_dict = json.dumps(data_dict, indent=2)
-        result =  parsed_dict
+        result = parsed_dict
     if 'json' in response.headers.get("content-type").lower():
         result = response.json()
     result_j = json.loads(result) if isinstance(result, str) else result
@@ -110,6 +114,7 @@ def scan_report_db(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitReques
     logger.info("Successfully save the artifacts")
     return
 
+
 def generate_etl_report(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitRequestType):
     try:
         response = white_rabbit.handle_request(options)
@@ -118,7 +123,7 @@ def generate_etl_report(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitR
     except Exception as e:
         logger.error(f"Error when sending post request: {str(e)}")
         raise Exception(f"Error when sending post request: {str(e)}")
-    
+
     try:
         encoded_word_file = base64.b64encode(response.content).decode("utf-8")
         # Store Base64-encoded Word file as an artifact
@@ -133,25 +138,28 @@ def generate_etl_report(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitR
         logger.error(f"Error printing response: {str(e)}")
     return
 
+
 @flow(log_prints=True)
 def white_rabbit_plugin(options: WhiteRabbitRequestType):
     logger = get_run_logger()
     logger.info("triggering white rabbit flow")
     white_rabbit = WhiteRabbit()
     white_rabbit = setup_plugin(white_rabbit)
-    
+
     try:
         if "scan-report/files" in options.url:
             scan_report_files(logger, options)
             # Wait for a 20 seconds to save scan report
             wait_time = 20
-            logger.info(f"Waiting {wait_time} seconds for processing to complete...")
+            logger.info(
+                f"Waiting {wait_time} seconds for processing to complete...")
             time.sleep(wait_time)
         elif "scan-report/db" in options.url:
             scan_report_db(white_rabbit, logger, options)
             # Wait for a 20 seconds to save scan report
             wait_time = 20
-            logger.info(f"Waiting {wait_time} seconds for processing to complete...")
+            logger.info(
+                f"Waiting {wait_time} seconds for processing to complete...")
             time.sleep(wait_time)
         elif "report/word" in options.url:
             generate_etl_report(white_rabbit, logger, options)
