@@ -1,17 +1,1 @@
-##### Instructions for version upgrade in Logto
-
-- Change the logto version in `services/alp-logto/Dockerfile` and `services/alp-logto/Dockerfile.local`
-```
-# in Dockerfile
-FROM ghcr.io/logto-io/logto:1.18
-
-# in Dockerfile.local
-RUN git clone --branch v1.18.0 https://github.com/logto-io/logto.git /etc/logto
-```
-
-- D2E has a custom version of `experience` package that should replace the original version at the path `/etc/logto/packages/experience`. Steps to generate the custom experience package are as follows:
-    - Go through `Dockerfile.local` and update it with any relevant changes according to the publicly available logto [Dockerfile](https://github.com/logto-io/logto/blob/master/Dockerfile)
-    - Build and run the image locally with the help of [docker-compose.yml](https://github.com/logto-io/logto/blob/master/docker-compose.yml)
-    - copy the experience package from the container (created in the previous step) to the D2E repo replacing the [experience.zip](services/alp-logto/experience.zip)
-
-- With these changes building the [Dockerfile](services/alp-logto/Dockerfile) will ensure Logto is upgraded to the required version as well as custom experience pacakge is available in it
+TODO: explain how d2e connector, experience package, jwt-customizer and Signin code are transferred to data2evidence/logto repo
