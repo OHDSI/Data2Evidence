@@ -64,7 +64,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(.*)",
+          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(?!ClientApplication)(.*)",
           "scopes": [
             "gateway.fhir.create"
           ],
