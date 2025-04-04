@@ -1,10 +1,7 @@
 import { execSync } from "node:child_process";
-import { Client } from "pg";
 import * as config from "../utils/config";
+import { Client } from "pg";
 
-type TableDefinition = {
-  columns: { [key: string]: string };
-};
 export default class PGDBRouter {
   private logger = config.getLogger();
   private properties = config.getProperties();
@@ -27,39 +24,6 @@ export default class PGDBRouter {
 				SELECT pubname FROM pg_publication WHERE lower(pubname) = '${publicationNameLowercase}'
 		   )`);
     return result.rows[0].exists;
-  };
-
-  createTable = async (
-    client: any,
-    databaseName: string,
-    schemaName: string,
-    tableName: string,
-    definition: TableDefinition
-  ) => {
-    let createTableSQL;
-
-    if (Object.keys(definition.columns).length === 0) {
-      // Create table with no columns (PostgreSQL requires at least an empty definition)
-      createTableSQL = `
-				CREATE TABLE IF NOT EXISTS ${schemaName}.${tableName} ();
-			`;
-    } else {
-      // Normal table creation with defined columns
-      const columnDefinitions = Object.entries(definition.columns)
-        .map(([name, type]) => `${name.replace(/^\+/, "")} ${type}`)
-        .join(", ");
-
-      createTableSQL = `
-				CREATE TABLE IF NOT EXISTS ${schemaName}.${tableName} (
-					${columnDefinitions}
-				);
-			`;
-    }
-
-    await client.query(createTableSQL);
-    this.logger.info(
-      `${tableName} table created successfully in ${databaseName}.${schemaName}`
-    );
   };
 
   createDatabase = async (client: any, databaseName: string) => {
