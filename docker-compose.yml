@@ -81,7 +81,7 @@ x-envs:
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "supabase-storage": "http://alp-supabase-storage-1:9000"
+       "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -202,7 +202,7 @@ services:
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-              "supabase-storage": "http://alp-supabase-storage-1:9000"
+              "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
             }
           },
           "analytics-svc": {
@@ -434,7 +434,7 @@ services:
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-        "supabase-storage": "http://alp-supabase-storage-1:9000"
+        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -1072,8 +1072,8 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      trex:
-        condition: service_healthy
+      trex-wait:
+        condition: service_completed_successfully
       alp-minerva-postgres:
         condition: service_healthy
       alp-minerva-pg-mgmt-init:
@@ -1090,7 +1090,8 @@ services:
         ]
       timeout: 5s
       interval: 5s
-      retries: 3
+      retries: 5
+      start_period: 15s
     image: supabase/storage-api:v1.14.5
     logging:
       options:
@@ -1122,6 +1123,42 @@ services:
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
       SKIP_MIGRATIONS: "true"
+
+  supabase-storage-post-init:
+    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-post-init-1
+    image: postgres:15-alpine
+    depends_on:
+      supabase-storage:
+        condition: service_healthy
+    networks:
+      alp:
+        priority: 20
+    restart: "no"
+    environment:
+      PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
+      PGPORT: ${PG_PORT:-5432}
+      PGDATABASE: ${PG_DB_NAME:-alp}
+      PGUSER: ${PG_SUPER_USER:-postgres}
+      PGPASSWORD: ${PG_SUPER_PASSWORD}
+    command: >
+      bash -c "
+        echo 'Waiting for 5 seconds to ensure Supabase Storage migrations are complete...' &&
+        sleep 5 &&
+        echo 'Updating public.objects view to include user_metadata column...' &&
+        psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
+        echo 'Granting permissions on updated view...' &&
+        psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
+        echo 'Supabase Storage post-initialization complete!'
+      "
+
+  trex-wait:
+    container_name: ${PROJECT_NAME:-d2e}-trex-wait-1
+    image: busybox
+    depends_on:
+      trex:
+        condition: service_healthy
+    command: sleep 30
+    restart: "no"
 
   fhir-server:
     container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1

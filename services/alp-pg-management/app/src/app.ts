@@ -238,9 +238,8 @@ export class App {
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
-        await client.query(`GRANT service_role TO "${superuser}"`);
         this.logger.info(
-          `Granted service_role to ${pgUsers.manager} and ${superuser}`
+          `Granted service_role to ${pgUsers.manager}`
         );
       }
 
@@ -255,50 +254,6 @@ export class App {
       }
     } catch (error: any) {
       this.logger.error(`Error in Supabase role creation: ${error.message}`);
-    }
-
-    await this.setupSupabaseStoragePermissions(client);
-  }
-
-  async setupSupabaseStoragePermissions(client: any) {
-    try {
-      this.logger.info("Setting up Supabase Storage permissions...");
-      
-      // Create views in the public schema
-      await client.query(`
-        CREATE OR REPLACE VIEW public.buckets AS SELECT * FROM storage.buckets;
-        CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;
-        CREATE OR REPLACE VIEW public.migrations AS SELECT * FROM storage.migrations;
-        CREATE OR REPLACE VIEW public.s3_multipart_uploads AS SELECT * FROM storage.s3_multipart_uploads;
-        CREATE OR REPLACE VIEW public.s3_multipart_uploads_parts AS SELECT * FROM storage.s3_multipart_uploads_parts;
-      `);
-      this.logger.info("Created views in public schema");
-      
-      // Grant permissions to service_role
-      await client.query(`
-        GRANT SELECT, INSERT, UPDATE, DELETE ON public.buckets TO service_role;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON public.migrations TO service_role;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON public.s3_multipart_uploads TO service_role;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON public.s3_multipart_uploads_parts TO service_role;
-      `);
-      this.logger.info("Granted permissions on views to service_role");
-      
-      await client.query(`
-        GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA storage TO service_role;
-      `);
-      this.logger.info("Granted permissions on sequences to service_role");
-      
-      // Grant permissions on storage schema
-      await client.query(`
-        GRANT USAGE ON SCHEMA storage TO service_role;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA storage TO service_role;
-      `);
-      this.logger.info("Granted permissions on storage schema to service_role");
-      
-      this.logger.info("Supabase Storage permissions set up successfully");
-    } catch (error) {
-      this.logger.error(`Error setting up Supabase Storage permissions`);
     }
   }
 

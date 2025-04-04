@@ -1,13 +1,10 @@
-import { serve } from "https://deno.land/std/http/server.ts";
+import { serve } from "server";
+import { env } from "../env.ts";
 
+const STORAGE_URL = env.SERVICE_ROUTES!.supabaseStorage;
 // TODO: get from env
-const STORAGE_URL = "http://alp-supabase-storage-1:9000";
-// TODO: get from env
-const SUPABASE_ANON_KEY =
+const SUPABASE_SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU";
-
-// The schema where your storage tables are located
-const STORAGE_SCHEMA = "storage";
 
 async function verifyUserHasStorageAccess(token: string): Promise<boolean> {
   try {
@@ -46,19 +43,10 @@ serve(async (req) => {
     targetPath = targetPath.replace("/storage/v1", "");
   }
 
-  // Add schema parameter to the URL
-  const searchParams = new URLSearchParams(url.search);
-  searchParams.set("schema", STORAGE_SCHEMA);
-
   const targetUrl = `${STORAGE_URL}${targetPath}`;
   const newHeaders = new Headers(req.headers);
 
-  // Replace the Authorization header with the Supabase token
-  newHeaders.set("Authorization", `Bearer ${SUPABASE_ANON_KEY}`);
-
-  console.log(`Received ${req.method} request to ${req.url}`);
-  console.log(`Forwarding to ${targetUrl} with method ${req.method}`);
-  console.log(`Request headers:`, Object.fromEntries(newHeaders.entries()));
+  newHeaders.set("Authorization", `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`);
 
   try {
     const response = await fetch(targetUrl, {
@@ -73,7 +61,6 @@ serve(async (req) => {
 
     console.log(`Response status: ${response.status}`);
 
-    // If we still get an error, let's log the response body for debugging
     if (response.status >= 400) {
       const responseText = await response.clone().text();
       console.error(`Error response: ${responseText}`);

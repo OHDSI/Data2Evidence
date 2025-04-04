@@ -71,6 +71,7 @@
         {
           "source": "/storage/v1",
           "function": "/supabase/src/proxy",
+          "imports": "/supabase/import.json",
           "env": "supabase-storage"
         },
         {
