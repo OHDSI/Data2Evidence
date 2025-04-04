@@ -1121,33 +1121,7 @@ services:
       SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU}
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
-
-  supabase-rest:
-    container_name: supabase-rest
-    ports:
-      - "3000:3000"
-    image: postgrest/postgrest:v12.2.0
-    restart: unless-stopped
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    environment:
-      PGRST_DB_URI: postgres://postgres:${PG_SUPER_PASSWORD}@alp-minerva-postgres-1:5432/${PG_DB_NAME}
-      PGRST_DB_SCHEMAS: public
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTYsImFsZyI6IkhTMjU2In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.irKBgArW0Qu0X9SqWSzsdoz_WoR3s1X72j71g2yutws
-      PGRST_DB_USE_LEGACY_GUCS: "false"
-      PGRST_APP_SETTINGS_JWT_SECRET: eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTYsImFsZyI6IkhTMjU2In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.irKBgArW0Qu0X9SqWSzsdoz_WoR3s1X72j71g2yutws
-      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
-    command:
-      [
-        "postgrest"
-      ]
+      SKIP_MIGRATIONS: "true"
 
   fhir-server:
     container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
