@@ -3,7 +3,8 @@ from prefect import flow, task, runtime
 from prefect.logging import get_run_logger
 from dataclasses import dataclass
 from .WhiteRabbit import WhiteRabbit
-from .types import WhiteRabbitRequestType
+from .types import WhiteRabbitRequestType, WhiteRabbitRunTypes, iniSettings
+from prefect_shell import ShellOperation
 from prefect.artifacts import create_link_artifact, create_markdown_artifact
 import json
 import csv
@@ -12,7 +13,9 @@ import io
 import xmltodict
 import requests
 import time
+from _shared_flow_utils.api.FilesManagerAPI import FilesManagerAPI
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
+import configparser
 
 
 @dataclass
@@ -136,6 +139,60 @@ def generate_etl_report(white_rabbit: WhiteRabbit, logger, options: WhiteRabbitR
         logger.info("Artifacts stored successfully")
     except Exception as e:
         logger.error(f"Error printing response: {str(e)}")
+    return
+
+
+WORKING_FOLDER_PATH = './'
+
+
+@task(log_prints=True)
+def create_white_rabbit_settings(settings) -> None:
+    logger = get_run_logger()
+    config = configparser.ConfigParser()
+
+    logger.info("Creating config.ini")
+    modelSettings = iniSettings(
+        WORKING_FOLDER=WORKING_FOLDER_PATH,
+        DATA_TYPE=settings.get("data_type", ""),
+        SERVER_LOCATION=settings.get("server_location", ""),
+        USER_NAME=settings.get("user_name", ""),
+        PASSWORD=settings.get("password", ""),
+        DATABASE_NAME=settings.get("database", ""),
+        DELIMITER=settings.get("delimiter", ""),
+        TABLES_TO_SCAN=settings.get("tables_to_scan", "*"),
+        SCAN_FIELD_VALUES=settings.get("scan_field_values", "yes"),
+        MIN_CELL_COUNT=settings.get("min_cell_count", "5"),
+        MAX_DISTINCT_VALUES=settings.get("max_distinct_values", "1000"),
+        ROWS_PER_TABLE=settings.get("rows_per_table", "100000"),
+        CALCULATE_NUMERIC_STATS=settings.get("calculate_numeric_stats", "yes"),
+        NUMERIC_STATS_SAMPLER_SIZE=settings.get(
+            "numeric_stats_sampler_size", "500"),
+    )
+
+    config["settings"] = modelSettings.model_dump()
+    with open("config.ini", "w") as configfile:
+        config.write(configfile)
+
+    logger.info("config.ini created")
+
+
+@task(log_prints=True)
+def start_awt_display():
+    ShellOperation(
+        commands=["Xvfb :1"]).trigger()
+
+
+@task(log_prints=True)
+def create_scan_report():
+    ShellOperation(
+        commands=["./dist/bin/whiteRabbit -ini config.ini 2>&1 | tee /tmp/java_log.txt"]).run()
+
+
+@task(log_prints=True)
+def save_report():
+    logger = get_run_logger()
+    logger.info("saving scan report to files manager")
+
     return
 
 
