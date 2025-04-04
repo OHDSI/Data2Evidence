@@ -1,6 +1,5 @@
-import crypto from "crypto";
-import PGUserDAO from "./dao/PGUserDAO";
 import PGDBDAO from "./dao/PGDBDAO";
+import PGUserDAO from "./dao/PGUserDAO";
 import * as config from "./utils/config";
 
 type pgUsers = {
@@ -170,11 +169,126 @@ export class App {
         );
       }
 
+      // Create Supabase roles directly with a separate function
+      await this.createSupabaseRoles(client);
+
       await this.dbDao.closeConnection(client);
     } catch (e: any) {
       this.logger.error(e.message);
       await this.dbDao.closeConnection(client);
       throw e;
+    }
+  }
+
+  async createSupabaseRoles(client: any) {
+    this.logger.info("Creating Supabase roles...");
+
+    try {
+      // Create anon role
+      try {
+        await client.query(`CREATE ROLE anon NOLOGIN INHERIT;`);
+        this.logger.info("Created anon role successfully");
+      } catch (err: any) {
+        if (err.code === "42710") {
+          // Role already exists error code
+          this.logger.info("anon role already exists");
+        } else {
+          this.logger.error(`Error creating anon role: ${err.message}`);
+        }
+      }
+
+      // Create service_role role
+      try {
+        await client.query(
+          `CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`
+        );
+        this.logger.info("Created service_role role successfully");
+      } catch (err: any) {
+        if (err.code === "42710") {
+          this.logger.info("service_role role already exists");
+        } else {
+          this.logger.error(`Error creating service_role role: ${err.message}`);
+        }
+      }
+
+      // Verify roles were created
+      const result = await client.query(`
+        SELECT rolname FROM pg_roles
+        WHERE rolname IN ('anon', 'service_role')
+      `);
+
+      const existingRoles = result.rows.map((row: any) => row.rolname);
+      this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
+
+      // Grant roles to users
+      const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
+      const superuser = config.getProperties()["postgres_superuser"];
+
+      if (existingRoles.includes("service_role")) {
+        await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
+        await client.query(`GRANT service_role TO "${superuser}"`);
+        this.logger.info(
+          `Granted service_role to ${pgUsers.manager} and ${superuser}`
+        );
+      }
+
+      if (existingRoles.includes("anon")) {
+        await client.query(`GRANT anon TO "${pgUsers.writer}"`);
+        await client.query(`GRANT anon TO "${superuser}"`);
+        // Also grant to admin user
+        await client.query(`GRANT anon TO "${pgUsers.manager}"`);
+        this.logger.info(
+          `Granted anon to ${pgUsers.writer}, ${pgUsers.manager}, and ${superuser}`
+        );
+      }
+
+      this.logger.info("Supabase roles setup completed");
+    } catch (error: any) {
+      this.logger.error(`Error in Supabase role creation: ${error.message}`);
+    }
+
+    await this.setupSupabaseStoragePermissions(client);
+  }
+
+  async setupSupabaseStoragePermissions(client: any) {
+    try {
+      this.logger.info("Setting up Supabase Storage permissions...");
+      
+      // Create views in the public schema
+      await client.query(`
+        CREATE OR REPLACE VIEW public.buckets AS SELECT * FROM storage.buckets;
+        CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;
+        CREATE OR REPLACE VIEW public.migrations AS SELECT * FROM storage.migrations;
+        CREATE OR REPLACE VIEW public.s3_multipart_uploads AS SELECT * FROM storage.s3_multipart_uploads;
+        CREATE OR REPLACE VIEW public.s3_multipart_uploads_parts AS SELECT * FROM storage.s3_multipart_uploads_parts;
+      `);
+      this.logger.info("Created views in public schema");
+      
+      // Grant permissions to service_role
+      await client.query(`
+        GRANT SELECT, INSERT, UPDATE, DELETE ON public.buckets TO service_role;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON public.migrations TO service_role;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON public.s3_multipart_uploads TO service_role;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON public.s3_multipart_uploads_parts TO service_role;
+      `);
+      this.logger.info("Granted permissions on views to service_role");
+      
+      await client.query(`
+        GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA storage TO service_role;
+      `);
+      this.logger.info("Granted permissions on sequences to service_role");
+      
+      // Grant permissions on storage schema
+      await client.query(`
+        GRANT USAGE ON SCHEMA storage TO service_role;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA storage TO service_role;
+      `);
+      this.logger.info("Granted permissions on storage schema to service_role");
+      
+      this.logger.info("Supabase Storage permissions set up successfully");
+    } catch (error) {
+      this.logger.error(`Error setting up Supabase Storage permissions`);
     }
   }
 
@@ -213,50 +327,6 @@ export class App {
       return true;
     } catch (e: any) {
       this.logger.error(e.message);
-      await this.dbDao.closeConnection(client);
-      return false;
-    }
-  }
-
-  async createStorageTables(databaseName: string) {
-    let client;
-    try {
-      const pg_owneruser_config =
-        config.getProperties()["postgres_connection_config"];
-
-      let client = await this.dbDao.openConnection({
-        ...pg_owneruser_config,
-        database: databaseName,
-      });
-      try {
-        await this.dbDao.createTable(client, databaseName, "storage", "migrations", {
-          columns: {
-            id: "serial PRIMARY KEY",
-            name: "varchar(100) NOT NULL",
-            hash: "varchar(40) NOT NULL",
-            executed_at: "timestamp DEFAULT current_timestamp"
-          }
-        });
-        await this.dbDao.createTable(client, databaseName, "storage", "buckets", {
-          columns: {
-            name: "text NOT NULL",
-            bucket_id: "text"
-          }
-        });
-        await this.dbDao.createTable(client, databaseName, "storage", "objects", {
-          columns: {
-            name: "text NOT NULL"
-          }
-        });
-        await this.dbDao.closeConnection(client);
-        return true;
-      } catch (e: any) {
-        this.logger.error(e.message);
-        await this.dbDao.closeConnection(client);
-        return false;
-      }
-    } catch (e: any) {
-      this.logger.error(e.message)
       await this.dbDao.closeConnection(client);
       return false;
     }
@@ -504,9 +574,6 @@ export class App {
             await this.createSchema(databaseName, this.getSchemaName(schema));
           }
         }
-        // TODO: Add check if storageTables exists
-        // Creat required table for supabase storage
-        await this.createStorageTables(databaseName);
       }
 
       // create publication if database in POSTGRES_PUBLICATION_CONFIG

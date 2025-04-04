@@ -50,7 +50,7 @@ serve(async (req) => {
   const searchParams = new URLSearchParams(url.search);
   searchParams.set("schema", STORAGE_SCHEMA);
 
-  const targetUrl = `${STORAGE_URL}${targetPath}?${searchParams.toString()}`;
+  const targetUrl = `${STORAGE_URL}${targetPath}`;
   const newHeaders = new Headers(req.headers);
 
   // Replace the Authorization header with the Supabase token
