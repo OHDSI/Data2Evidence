@@ -13,7 +13,6 @@ export async function up(knex: Knex): Promise<void> {
     table.specificType("path_tokens", "_text");
     table.text("version");
     table.text("owner_id");
-    // table.jsonb("user_metadata");
 
     // Foreign key to buckets table
     table.foreign("bucket_id").references("id").inTable("storage.buckets");

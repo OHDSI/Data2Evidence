@@ -12,7 +12,6 @@ export async function up(knex: Knex): Promise<void> {
       table.text("version").notNullable();
       table.text("owner_id");
       table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
-      // table.jsonb("user_metadata");
 
       // Foreign key to buckets table
       table.foreign("bucket_id").references("id").inTable("storage.buckets");
