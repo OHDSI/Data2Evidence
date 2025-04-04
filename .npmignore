@@ -5,6 +5,7 @@ tmp
 internal
 services
 tests
+plugins
 ui
 flows
 cache
