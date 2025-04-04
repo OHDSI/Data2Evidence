@@ -1,9 +1,10 @@
 import requests
 from prefect.logging import get_run_logger
+from _shared_flow_utils.api.BaseAPI import BaseAPI
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 
-class FilesManagerAPI:
+class FilesManagerAPI(BaseAPI):
     def __init__(self):
         self.url = self.get_service_route("filesManager")
         self.logger = get_run_logger()
@@ -25,3 +26,11 @@ class FilesManagerAPI:
         response.raise_for_status()
 
         return response.content
+
+    def save_file(self, username: str, datakey="scan-report", file_path: str = "./"):
+        url = f"{self.url}/"
+        # verify if file exists first
+        # https://stackoverflow.com/questions/22567306/how-to-upload-file-with-python-requests
+        headers = self.get_options()
+        # response = requests.post(url)
+        return
