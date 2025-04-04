@@ -16,7 +16,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHA_TRAFFIC_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/data2evidence/d2e/traffic/views\?per\=week) 
+            https://api.github.com/repos/OHDSI/D2E/traffic/views\?per\=week) 
           
           echo "traffic_views=$(echo $response | jq -rc '.views' ) " >> $GITHUB_OUTPUT
           traffic_count=$(echo $response | jq -rc '.count' )
@@ -43,7 +43,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHA_TRAFFIC_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/data2evidence/d2e/traffic/views) 
+            https://api.github.com/repos/OHDSI/D2E/traffic/views) 
           
           echo "traffic_views=$(echo $response | jq -rc '.views' ) " >> $GITHUB_OUTPUT
           traffic_count=$(echo $response | jq -rc '.count' )
@@ -70,7 +70,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHA_TRAFFIC_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/data2evidence/d2e/traffic/clones\?per\=week) 
+            https://api.github.com/repos/OHDSI/D2E/traffic/clones\?per\=week) 
           
           echo "clone_stats=$(echo $response | jq -rc '.clones' ) " >> $GITHUB_OUTPUT
           clone_count=$(echo $response | jq -rc '.count' )
@@ -97,7 +97,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHA_TRAFFIC_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/data2evidence/d2e/traffic/clones) 
+            https://api.github.com/repos/OHDSI/D2E/traffic/clones) 
           
           echo "clone_stats=$(echo $response | jq -rc '.clones' ) " >> $GITHUB_OUTPUT
           clone_count=$(echo $response | jq -rc '.count' )
