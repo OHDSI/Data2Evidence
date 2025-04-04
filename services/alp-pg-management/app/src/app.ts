@@ -197,6 +197,18 @@ export class App {
         }
       }
 
+      // Create authenticated role
+      try {
+        await client.query(`CREATE ROLE authenticated NOLOGIN INHERIT;`);
+        this.logger.info("Created authenticated role successfully");
+      } catch (err: any) {
+        if (err.code === "42710") {
+          this.logger.info("authenticated role already exists");
+        } else {
+          this.logger.error(`Error creating authenticated role: ${err.message}`);
+        }
+      }
+
       // Create service_role role
       try {
         await client.query(
@@ -214,7 +226,7 @@ export class App {
       // Verify roles were created
       const result = await client.query(`
         SELECT rolname FROM pg_roles
-        WHERE rolname IN ('anon', 'service_role')
+        WHERE rolname IN ('anon', 'authenticated', 'service_role')
       `);
 
       const existingRoles = result.rows.map((row: any) => row.rolname);
@@ -233,16 +245,14 @@ export class App {
       }
 
       if (existingRoles.includes("anon")) {
-        await client.query(`GRANT anon TO "${pgUsers.writer}"`);
-        await client.query(`GRANT anon TO "${superuser}"`);
-        // Also grant to admin user
-        await client.query(`GRANT anon TO "${pgUsers.manager}"`);
-        this.logger.info(
-          `Granted anon to ${pgUsers.writer}, ${pgUsers.manager}, and ${superuser}`
-        );
+        await client.query(`GRANT anon TO "${pgUsers.reader}"`);
+        this.logger.info(`Granted anon to ${pgUsers.reader}`);
       }
 
-      this.logger.info("Supabase roles setup completed");
+      if (existingRoles.includes("authenticated")) {
+        await client.query(`GRANT authenticated TO "${pgUsers.writer}"`);
+        this.logger.info(`Granted authenticated to ${pgUsers.writer}`);
+      }
     } catch (error: any) {
       this.logger.error(`Error in Supabase role creation: ${error.message}`);
     }
