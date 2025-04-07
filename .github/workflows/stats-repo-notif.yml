@@ -162,6 +162,6 @@ jobs:
       - name: Discord notification traffic metrics
         uses: tsickert/discord-webhook@v7.0.0
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
           username: ${{ github.actor }}
           content: "### NPM Package Daily Download Stats\n${{ steps.npm_metrics_daily.outputs.npm_stats_daily }}\n```${{ steps.npm_stats_table_daily.outputs.table }}```"
