@@ -1,71 +1,175 @@
 import { BadRequestException, InternalServerErrorException } from "@danet/core";
-import { SupabaseClient, createClient } from 'jsr:@supabase/supabase-js@2';
+import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2";
 import { contentType } from "npm:mime-types@2.1.35";
 import { env } from "../env.ts";
+import pg from "npm:pg";
 
 export class SupabaseStorageClient {
   private readonly client: SupabaseClient;
+  private readonly DEFAULT_BUCKET = "portal-datasets-resources";
+  private readonly baseUrl: string;
+  private readonly authToken: string;
+  private pgclient;
+  private pgOpt;
 
   constructor() {
-    // this.client = createClient(
-    //   env.SUPABASE_URL,
-    //   env.SUPABASE_ANON_KEY
-    // );
-    this.client = createClient(
-      "http://alp-supabase-storage-1:9000",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE3Mzg4OTA1MDgsImlhdCI6MTczODcxNzcwOH0.-Ba73atXCQR_tVwYfyQrVCbZuGTFF47uq_ZyQC0n4pA"
-    );
+    this.baseUrl = env.SUPABASE_URL || "http://alp-supabase-storage-1:9000";
+    // TODO: Get from env
+    this.authToken =
+      env.SUPABASE_SERVICE_ROLE_KEY ||
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU";
+
+    this.client = createClient(this.baseUrl, this.authToken);
+
+    const envObj = Deno.env.toObject();
+    this.pgOpt = {
+      user: envObj.PG_USER || "postgres",
+      password: envObj.PG_PASSWORD || "postgres",
+      host: envObj.PG__HOST || "alp-supabase-db-1",
+      port: parseInt(envObj.PG__PORT || "5432"),
+      database: envObj.PG__DB_NAME || "postgres",
+      ssl: (() => {
+        let ssl = false;
+        try {
+          if (envObj.PG__SSL) {
+            ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
+          }
+          if (envObj.PG__CA_ROOT_CERT) {
+            ssl = {
+              rejectUnauthorized: true,
+              ca: envObj.PG__CA_ROOT_CERT,
+            };
+          }
+        } catch (e) {
+          console.error(`Error parsing SSL config: ${e}`);
+        }
+        return ssl;
+      })(),
+    };
+    this.pgclient = new pg.Client(this.pgOpt);
+    this.initializeDb();
+
+    this.createDefaultBucket();
   }
 
+  private async initializeDb() {
+    try {
+      await this.pgclient.connect();
+      console.log("Successfully connected to PostgreSQL database");
+    } catch (e) {
+      console.error(`Error connecting to PostgreSQL: ${e}`);
+    }
+  }
+
+  private async createDefaultBucket() {
+    try {
+      console.info(`Creating default bucket ${this.DEFAULT_BUCKET}...`);
+      
+      const url = `${this.baseUrl}/bucket`;
+      console.log(`Making request to create bucket: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: this.DEFAULT_BUCKET,
+          public: false
+        })
+      });
+      
+      if (!response.ok && response.status !== 409) { // 409 means bucket already exists
+        const errorText = await response.text();
+        console.error(`Error creating bucket: ${response.status} - ${errorText}`);
+      } else {
+        console.info(`Bucket ${this.DEFAULT_BUCKET} created or already exists`);
+      }
+    } catch (e) {
+      console.error(`Error creating default bucket: ${e}`);
+    }
+  }
+
+  // Client sdk does not work for listing files, need further investigation.
+  // Directly query the database to get the files.
   async list(datasetId: string) {
     try {
-      const bucketName = this.getBucketName(datasetId);
-      await this.createBucket(bucketName);
+      if (!this.pgclient || this.pgclient.connectionParameters.state === 'closed') {
+        await this.initializeDb();
+      }
+      
+      const folderPath = this.getDatasetFolderPath(datasetId);
+      console.log(`Querying database for files in folder: ${folderPath}`);
 
-      const { data: files, error } = await this.client.storage
-        .from(bucketName)
-        .list();
-
-      if (error) throw error;
-
-      return files.map((file) => {
-        const nameArr = file.name.split(".");
-        const fileType = nameArr[nameArr.length - 1].toUpperCase();
+      // Query the storage.objects table directly
+      const query = `
+        SELECT name, metadata
+        FROM storage.objects
+        WHERE bucket_id = $1
+        AND name LIKE $2
+        AND name NOT LIKE $3
+      `;
+      
+      const result = await this.pgclient.query(query, [
+        this.DEFAULT_BUCKET,
+        `${folderPath}/%`,
+        `${folderPath}/%/%` // Exclude nested folders
+      ]);
+      
+      console.log(`Found ${result.rows.length} files in database for dataset ${datasetId}`);
+      
+      return result.rows.map(file => {
+        const fullPath = file.name;
+        const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+        const nameArr = fileName.split(".");
+        const fileType = nameArr.length > 1 ? nameArr[nameArr.length - 1].toUpperCase() : "UNKNOWN";
+        
         return {
-          name: file.name,
-          size: this.formatBytes(file.metadata.size),
+          name: fileName,
+          size: this.formatBytes(file.metadata?.size || 0),
           type: fileType,
         };
       });
     } catch (e) {
-      console.error(`${e}`);
-      throw new InternalServerErrorException(
-        `Error occurred in Supabase storage objects retrieval: ${datasetId}`
-      );
+      console.error(`Error in list method: ${e instanceof Error ? e.message : String(e)}`);
+      return [];
     }
   }
 
   async download(datasetId: string, fileName: string) {
     try {
-      const bucketName = this.getBucketName(datasetId);
-      await this.createBucket(bucketName);
+      const filePath = this.getFilePath(datasetId, fileName);
+      console.log(`Downloading file: ${filePath}`);
 
-      const { data, error } = await this.client.storage
-        .from(bucketName)
-        .download(fileName);
-
-      if (error) {
-        if (error.message === "The resource was not found") {
+      // Direct request to download file
+      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      console.log(`Making request to: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error downloading file: ${response.status} - ${errorText}`);
+        
+        if (response.status === 404) {
           throw new BadRequestException(`Invalid file name: ${fileName}`);
         }
-        throw error;
+        
+        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
       }
-
-      const fileExtension = fileName.substring(fileName.lastIndexOf("."));
-      const mimeType = contentType(fileExtension);
       
+      const blob = await response.blob();
+      const fileExtension = fileName.substring(fileName.lastIndexOf("."));
+      const mimeType = contentType(fileExtension) || 'application/octet-stream';
+
       return {
-        readStream: data,
+        readStream: blob.stream(),
         contentType: mimeType,
         contentDisposition: `attachment; filename="${fileName}"`,
       };
@@ -76,7 +180,8 @@ export class SupabaseStorageClient {
       ) {
         throw e;
       }
-      console.error(`${e}`);
+      console.error(`Error in download method: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object download: ${fileName}`
       );
@@ -86,24 +191,36 @@ export class SupabaseStorageClient {
   async upload(datasetId: string, file: Multer.File) {
     const fileName = file.originalname;
     try {
-      const bucketName = this.getBucketName(datasetId);
-      await this.createBucket(bucketName);
+      const filePath = this.getFilePath(datasetId, fileName);
+      console.log(`Uploading file: ${filePath}`);
 
-      const { error } = await this.client.storage
-        .from(bucketName)
-        .upload(fileName, file.buffer, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      console.info(`Supabase storage object ${fileName} successfully uploaded`);
+      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      console.log(`Making request to: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': file.mimetype || 'application/octet-stream',
+          'Cache-Control': '3600',
+          'x-upsert': 'true' // For overwriting existing files
+        },
+        body: file.buffer
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error uploading file: ${response.status} - ${errorText}`);
+        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
+      }
+      
+      console.info(`File ${fileName} successfully uploaded to ${filePath}`);
       return {
         status: "success",
       };
     } catch (e) {
-      console.error(`${e}`);
+      console.error(`Error in upload method: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object upload: ${fileName}`
       );
@@ -112,57 +229,44 @@ export class SupabaseStorageClient {
 
   async delete(datasetId: string, fileName: string) {
     try {
-      const bucketName = this.getBucketName(datasetId);
+      const filePath = this.getFilePath(datasetId, fileName);
+      console.log(`Deleting file: ${filePath}`);
 
-      const { error } = await this.client.storage
-        .from(bucketName)
-        .remove([fileName]);
-
-      if (error) throw error;
-
-      console.info(`Supabase storage object ${fileName} successfully deleted`);
+      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      console.log(`Making request to: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error deleting file: ${response.status} - ${errorText}`);
+        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
+      }
+      
+      console.info(`File ${filePath} successfully deleted`);
       return {
         status: "success",
       };
     } catch (e) {
-      console.error(`${e}`);
+      console.error(`Error in delete method: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object deletion: ${fileName}`
       );
     }
   }
 
-  private getBucketName(datasetId: string) {
-    return `portal-dataset-${datasetId}`;
+  private getDatasetFolderPath(datasetId: string) {
+    return `datasets/${datasetId}`;
   }
 
-  private async createBucket(bucketName: string) {
-    try {
-      const { data: bucket, error: getBucketError } = await this.client.storage
-        .getBucket(bucketName);
-
-      if (getBucketError || !bucket) {
-        console.info(
-          `Bucket is not created yet. Creating bucket ${bucketName}...`
-        );
-        
-        const { error: createBucketError } = await this.client.storage
-          .createBucket(bucketName, {
-            public: false,
-          });
-
-        if (createBucketError) throw createBucketError;
-        
-        console.info(`Bucket ${bucketName} created successfully`);
-      } else {
-        console.debug(`Bucket ${bucketName} is available`);
-      }
-    } catch (e) {
-      console.error(`Error in bucket creation/verification: ${e}`);
-      throw new InternalServerErrorException(
-        `Error occurred in bucket creation/verification: ${bucketName}`
-      );
-    }
+  private getFilePath(datasetId: string, fileName: string) {
+    return `${this.getDatasetFolderPath(datasetId)}/${fileName}`;
   }
 
   private formatBytes(bytes, decimals = 1) {

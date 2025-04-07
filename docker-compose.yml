@@ -1072,7 +1072,7 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      trex-wait:
+      supabase-storage-prerequisite:
         condition: service_completed_successfully
       alp-minerva-postgres:
         condition: service_healthy
@@ -1151,8 +1151,9 @@ services:
         echo 'Supabase Storage post-initialization complete!'
       "
 
-  trex-wait:
-    container_name: ${PROJECT_NAME:-d2e}-trex-wait-1
+  # Wait for trex to be finish migrations before starting supabase-storage
+  supabase-storage-prerequisite:
+    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-prerequisite-1
     image: busybox
     depends_on:
       trex:
