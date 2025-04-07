@@ -1,11 +1,8 @@
 import pandas as pd
-# from tqdm import tqdm
-import concurrent.futures
 import duckdb
 from prefect import flow
 from prefect.logging import get_run_logger
 from prefect.variables import Variable
-from tqdm import tqdm
 
 from .types import *
 from .utils import *
@@ -25,9 +22,10 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     
     duckdb_database_name = f"{database_code}_{schema_name}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"
+    vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension';
+
     with duckdb.connect(duckdb_file_path) as conn:
-        conn.execute("INSTALL vss;")
-        conn.execute("LOAD vss;")
+        conn.load_extension(vss_extension_path)
         if recreate:
             conn.execute("DROP TABLE IF EXISTS gte_embeddings")
         elif DBDao.check_table_exists():
@@ -36,12 +34,15 @@ def search_embedding_plugin(options: SearchEmbeddingType):
 
         concept = conn.execute('SELECT concept_id, concept_name FROM concept').fetchnumpy()
         logger.info("Start embedding")
-        for i in tqdm(range(0, len(concept), 100)):
+        length = len(concept['concept_name'])
+        for i in range(0, length, 100):
             concept_name = concept['concept_name'][i:i+100].tolist()
             concept_id = concept['concept_id'][i:i+100]
             embeddings = embedding_concept_table(concept_name).tolist()
             rst = pd.DataFrame({'concept_id':concept_id, 'gte-small_384': embeddings})
             conn.execute(f"""INSERT INTO gte_embeddings SELECT concept_id, "gte-small_384" FROM rst""")
+            percent = (i+1)/(int(length / 100) + (length % 100 > 0)) * 100
+            logger.info(f'{round(percent,2)} % completed')
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
         conn.execute("CREATE INDEX gte_cos_idx ON gte_embeddings USING HNSW (vec) WITH (metric = 'cosine')")
 
