@@ -23,11 +23,11 @@ export class SupabaseStorageClient {
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
-      user: envObj.PG_USER || "postgres",
-      password: envObj.PG_PASSWORD || "postgres",
-      host: envObj.PG__HOST || "alp-supabase-db-1",
-      port: parseInt(envObj.PG__PORT || "5432"),
-      database: envObj.PG__DB_NAME || "postgres",
+      user: envObj.PG_USER,
+      password: envObj.PG_PASSWORD,
+      host: envObj.PG__HOST,
+      port: parseInt(envObj.PG__PORT),
+      database: envObj.PG__DB_NAME,
       ssl: (() => {
         let ssl = false;
         try {
