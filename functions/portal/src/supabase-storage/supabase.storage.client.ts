@@ -1,11 +1,9 @@
 import { BadRequestException, InternalServerErrorException } from "@danet/core";
-import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2";
 import { contentType } from "npm:mime-types@2.1.35";
 import { env } from "../env.ts";
 import pg from "npm:pg";
 
 export class SupabaseStorageClient {
-  private readonly client: SupabaseClient;
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
@@ -13,13 +11,12 @@ export class SupabaseStorageClient {
   private pgOpt;
 
   constructor() {
+    // TODO: Get from env
     this.baseUrl = env.SUPABASE_URL || "http://alp-supabase-storage-1:9000";
     // TODO: Get from env
     this.authToken =
       env.SUPABASE_SERVICE_ROLE_KEY ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU";
-
-    this.client = createClient(this.baseUrl, this.authToken);
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
