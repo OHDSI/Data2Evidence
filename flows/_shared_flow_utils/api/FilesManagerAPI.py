@@ -19,7 +19,7 @@ class FilesManagerAPI(BaseAPI):
 
     def get_file(self, user_data_id: str) -> bytes:
         url = f"{self.url}/{user_data_id}"
-        headers = self.get_options()
+        headers = self._get_headers()
 
         self.logger.info(f"Getting file from {url}")
         response = requests.get(url, headers=headers)
@@ -27,10 +27,32 @@ class FilesManagerAPI(BaseAPI):
 
         return response.content
 
-    def save_file(self, username: str, datakey="scan-report", file_path: str = "./"):
+    # gets a filesave respone
+    def save_file(self, username: str, dataKey="scan-report", file_path: str = "./ScanReport.xlsx"):
         url = f"{self.url}/"
-        # verify if file exists first
-        # https://stackoverflow.com/questions/22567306/how-to-upload-file-with-python-requests
-        headers = self.get_options()
-        # response = requests.post(url)
-        return
+        headers = self._get_headers()
+        # Remove Content-Type header as requests will set it automatically with the correct boundary
+        headers.pop('Content-Type', None)
+
+        with open(file_path, 'rb') as file:
+
+            files = {
+                'file': (
+                    file_path,
+                    file,
+                    'application/octet-stream'
+                )
+            }
+
+            data = {
+                'username': username,
+                'dataKey': dataKey
+            }
+            result = requests.post(url, headers=headers,
+                                   data=data, files=files)
+
+        if ((result.status_code >= 400) and (result.status_code < 600)):
+            raise Exception(
+                f"Failed to save file, {result.content}")
+        else:
+            return result.json()
