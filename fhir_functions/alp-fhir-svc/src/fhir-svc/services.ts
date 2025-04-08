@@ -10,18 +10,18 @@ import {
 
 const getDatasetId = async (
   token: string,
-  studyCode: string
+  name: string
 ): Promise<string> => {
   // Get datasets from portal
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
 
-  const dataset = datasets.find((item) => item.tokenStudyCode === studyCode);
+  const dataset = datasets.find((item) => item.studyDetail.name === name);
 
   const datasetId = dataset ? dataset.id : null;
 
   if (datasetId === null) {
-    throw new Error(`No dataset id found for study code '${studyCode}'!`);
+    throw new Error(`No dataset id found with name '${name}'!`);
   }
   return datasetId;
 };
