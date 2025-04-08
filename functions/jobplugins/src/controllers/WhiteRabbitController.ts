@@ -11,25 +11,26 @@ export class WhiteRabbitController {
 
   constructor() {
     this.whiteRabbitService = new WhiteRabbitService();
-    this.router.use(express.json({ limit: '50mb' }));
-    this.router.use(express.urlencoded({ extended: true, limit: '50mb' }));
     this.registerRoutes();
   }
 
   private registerRoutes() {
     // Compress the uploaded csv files when scanning
     this.router.use(async (req, res, next) => {
-      if (req.body?.options?.url === "scan-report/files" && req.body?.options?.data) {
+      if (
+        req.body?.options?.url === "scan-report/files" &&
+        req.body?.options?.data
+      ) {
         try {
           // Convert base64 to buffer
-          const compressed = Buffer.from(req.body.options.data, 'base64');
+          const compressed = Buffer.from(req.body.options.data, "base64");
           // Use pako to decompress
-          const decompressed = pako.ungzip(compressed, { to: 'string' });
+          const decompressed = pako.ungzip(compressed, { to: "string" });
           // Parse the JSON string
           req.body.options.data = JSON.parse(decompressed);
         } catch (error) {
-          console.error('Error processing request:', error);
-          return res.status(400).send('Invalid compressed data');
+          console.error("Error processing request:", error);
+          return res.status(400).send("Invalid compressed data");
         }
       }
       next();
@@ -83,9 +84,9 @@ export class WhiteRabbitController {
         if (!errors.isEmpty()) {
           return res.status(400).json({ errors: errors.array() });
         }
-        await this.getETLReportFromArtifacts(req,res)
+        await this.getETLReportFromArtifacts(req, res);
       }
-    )
+    );
   }
 
   private async createWhiteRabbitFlowRun(req: Request, res: Response) {
@@ -111,15 +112,12 @@ export class WhiteRabbitController {
       const token = req.headers.authorization!;
       const flowRunId = req.params.flowRunId;
 
-      const result = await this.whiteRabbitService.getFlowRun(
-        flowRunId,
-        token
-      );
+      const result = await this.whiteRabbitService.getFlowRun(flowRunId, token);
       const stateInfo = {
         flow_id: result.flow_id,
         state_name: result.state_name,
-        state: result.state
-      }
+        state: result.state,
+      };
       res.send(stateInfo);
     } catch (error) {
       console.error(`Error getting white-rabbit results: ${error}`);
@@ -159,12 +157,15 @@ export class WhiteRabbitController {
       const encodedWordFile = result[0].data;
 
       // Decode the Base64 string stored in the artifacts
-      const buffer = Buffer.from(encodedWordFile, 'base64');
+      const buffer = Buffer.from(encodedWordFile, "base64");
 
       // Set the response headers for downloading a Word document
-      res.setHeader('Content-Disposition', 'attachment; filename=report.docx');
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Length', buffer.length);
+      res.setHeader("Content-Disposition", "attachment; filename=report.docx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      );
+      res.setHeader("Content-Length", buffer.length);
 
       res.end(buffer);
     } catch (error) {

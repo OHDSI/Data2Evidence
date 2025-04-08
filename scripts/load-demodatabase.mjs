@@ -9,6 +9,14 @@ if ( await $`[ -f .env ]` ) {
     console.log(chalk.red(`FATAL .env file not found`));
     await $`exit 1`
 }
+const args = process.argv.slice(2); 
+const vIndex_version = args.indexOf("-v");
+if (vIndex_version !== -1 && args[vIndex_version + 1]) {
+    version = (args[vIndex_version + 1]);
+} else {
+    version = "0.6.0"; //default version
+}
+console.log(`Version: ${version}`);
 
 // Database variables
 let project_name = process.env.PROJECT_NAME ? `${process.env.PROJECT_NAME}` : 'd2e';
@@ -168,9 +176,9 @@ if (resp_status_code == '200') {
     await $`exit 1`
 }
 
-console.log(chalk.blue(`Restarting services...`));
-await $`d2e -e stop`
-await $`d2e -e start`
+console.log(`Restarting services with d2e -e -v ${version} stop...`);
+await $`d2e -e -v ${version} stop`
+await $`d2e -e -v ${version} start`
 console.log(chalk.blue(`Patching demo database...`));
 await $`d2e patchdemodb`
 console.log(chalk.green(`Completed patching demo database.`));
