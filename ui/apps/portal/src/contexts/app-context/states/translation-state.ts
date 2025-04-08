@@ -577,8 +577,6 @@ export const i18nDefault = {
     HOME__DESCRIPTION:
       "Our vision is a world where health data is comprehensively, digitally, and securely available for research and directly impacts the prevention, diagnosis, and treatment of diseases.",
     HYBRID_SEARCH__CONFIGURATION: "Hybrid search configuration",
-    HYBRID_SEARCH__EMBEDDINGS_MODEL_ERROR: "Embeddings model cannot be empty",
-    HYBRID_SEARCH__EMBEDDINGS_MODEL: "Embeddings Model",
     HYBRID_SEARCH__ENABLE: "Enable Hybrid Search",
     HYBRID_SEARCH__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",

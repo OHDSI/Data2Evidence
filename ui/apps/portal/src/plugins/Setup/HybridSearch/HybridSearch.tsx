@@ -10,13 +10,11 @@ import "./HybridSearch.scss";
 interface FormData {
   isEnabled: boolean;
   semanticRatio: number;
-  model: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
   isEnabled: false,
   semanticRatio: 0.5,
-  model: "",
 };
 
 export const HybridSearch: FC = () => {
@@ -35,7 +33,6 @@ export const HybridSearch: FC = () => {
         const saved: FormData = {
           isEnabled: parsedConfig?.isEnabled || false,
           semanticRatio: parsedConfig?.semanticRatio || 0,
-          model: parsedConfig?.model || "",
         };
 
         setFormData(saved);
@@ -50,8 +47,6 @@ export const HybridSearch: FC = () => {
   const handleFormDataChange = useCallback((updates: { [field: string]: any }) => {
     setFormData((formData) => ({ ...formData, ...updates }));
   }, []);
-
-  const modelError = !formData.model;
 
   const semanticRatioError = formData.semanticRatio < 0 || formData.semanticRatio > 1 || isNaN(formData.semanticRatio);
 
@@ -108,17 +103,6 @@ export const HybridSearch: FC = () => {
                 onChange={(event) => handleFormDataChange({ semanticRatio: event.target?.value })}
                 error={semanticRatioError}
                 helperText={semanticRatioError && getText(i18nKeys.HYBRID_SEARCH__SEMANTIC_RATIO_ERROR)}
-              />
-            </Box>
-            <Box mb={4}>
-              <TextField
-                label={getText(i18nKeys.HYBRID_SEARCH__EMBEDDINGS_MODEL)}
-                variant="standard"
-                sx={{ width: "100%" }}
-                value={formData.model}
-                onChange={(event) => handleFormDataChange({ model: event.target?.value })}
-                error={modelError}
-                helperText={modelError && getText(i18nKeys.HYBRID_SEARCH__EMBEDDINGS_MODEL_ERROR)}
               />
             </Box>
           </div>
