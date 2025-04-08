@@ -16,7 +16,7 @@ export class SupabaseStorageClient {
     // TODO: Get from env
     this.authToken =
       env.SUPABASE_SERVICE_ROLE_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU";
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3NDQwNDE2MDAsCiAgImV4cCI6IDE5MDE4MDgwMDAKfQ.RzRgCyQ4VIvscxvJA5lJy8XZnpWbcA8OxhE0u1WXrwI";
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {

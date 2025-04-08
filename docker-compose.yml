@@ -1116,9 +1116,9 @@ services:
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
-      PGRST_JWT_SECRET: ${JWT_SECRET:-rg8zfniIeHnL7wRtNIKiMmrDQRCK776qgpYbi30j}
+      PGRST_JWT_SECRET: ${JWT_SECRET:-d3eL5ndkSY4BW4Dmj39HaBmQ1xpy0mdK83ATLOUs}
       # ANON_KEY: ${SUPABASE_ANON_KEY}
-      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3NDQwNDE2MDAsCiAgImV4cCI6IDE5MDE4MDgwMDAKfQ.RzRgCyQ4VIvscxvJA5lJy8XZnpWbcA8OxhE0u1WXrwI}
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
       SKIP_MIGRATIONS: "true"
@@ -1142,6 +1142,7 @@ services:
     command: >
       bash -c "
         echo 'Updating public.objects view to include user_metadata column...' &&
+        psql -c 'ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;' &&
         psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
         echo 'Granting permissions on updated view...' &&
         psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
