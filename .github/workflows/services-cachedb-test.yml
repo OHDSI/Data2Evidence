@@ -57,7 +57,7 @@ jobs:
       # Create folder to store duckdb extensions for offline plugins
       - name: Install duckdb extensions for offline use if files have changed
         env:
-          DUCKDB_VERSION: 1.1.1 # version must match duckdb in requirements.txt
+          DUCKDB_VERSION: 1.2.1 # version must match duckdb in requirements.txt
         if: env.WF_RUN == 'true'
         working-directory: ./services/cachedb/duckdb_extensions
         run: |
