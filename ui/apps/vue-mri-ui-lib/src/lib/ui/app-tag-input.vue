@@ -32,7 +32,7 @@
       @select="openControl"
       :preserveSearch="true"
       ref="multiselect"
-      :clear-on-select="false"
+      :clear-on-select="true"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
