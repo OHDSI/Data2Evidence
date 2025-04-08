@@ -17,6 +17,9 @@ export async function up(knex: Knex): Promise<void> {
     // Foreign key to buckets table
     table.foreign("bucket_id").references("id").inTable("storage.buckets");
   });
+
+  // Disable Row Level Security for the objects table
+  await knex.raw(`ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;`);
 }
 
 export async function down(knex: Knex): Promise<void> {

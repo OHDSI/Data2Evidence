@@ -1109,7 +1109,6 @@ services:
         - *x-tls
       PROJECT_REF: ${PROJECT_REF:-default}
       PORT: 9000
-      POSTGREST_URL: ${POSTGREST_URL:-http://supabase-rest:3000}
       REGION: ${REGION:-us-east-1}
       GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET:-storage}
       TENANT_ID: ${TENANT_ID:-tenant-id}
@@ -1118,7 +1117,7 @@ services:
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${JWT_SECRET:-rg8zfniIeHnL7wRtNIKiMmrDQRCK776qgpYbi30j}
-      ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFscF9wZ193cml0ZV91c2VyIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.sCirNiZURyYHzs9Dx9u2BuiY6o615l4ZhMCkw-p9AG8}
+      # ANON_KEY: ${SUPABASE_ANON_KEY}
       SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInBvc3RncmVzIiwKICAiaXNzIjogInN1cGFiYXNlIiwKICAiaWF0IjogMTczOTExNjgwMCwKICAiZXhwIjogMTg5Njg4MzIwMAp9.1nxBnV9cvss5HsM3VlrRnGM2eGuSo3RXu4mU2PBXdSU}
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
@@ -1142,8 +1141,6 @@ services:
       PGPASSWORD: ${PG_SUPER_PASSWORD}
     command: >
       bash -c "
-        echo 'Waiting for 5 seconds to ensure Supabase Storage migrations are complete...' &&
-        sleep 5 &&
         echo 'Updating public.objects view to include user_metadata column...' &&
         psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
         echo 'Granting permissions on updated view...' &&
