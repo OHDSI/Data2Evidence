@@ -615,16 +615,12 @@ export class HanaHDBDao {
           host: datasetDatabaseCredential.host,
           port: datasetDatabaseCredential.port,
           databaseName: datasetDatabaseCredential.databaseName,
-          validate_certificate: datasetDatabaseCredential.validateCertificate,
-          sslTrustStore: datasetDatabaseCredential.sslTrustStore,
-          pooling: datasetDatabaseCredential.pooling,
-          autoCommit: datasetDatabaseCredential.autoCommit,
-          encrypt: datasetDatabaseCredential.encrypt,
-          useTLS: datasetDatabaseCredential.useTLS,
-          rejectUnauthorized: datasetDatabaseCredential.rejectUnauthorized,
+          validate_certificate: datasetDatabaseCredential.db_extra.validateCertificate,
+          pooling: datasetDatabaseCredential.db_extra.pooling,
+          autoCommit: datasetDatabaseCredential.db_extra.autoCommit,
+          useTLS: datasetDatabaseCredential.db_extra.useTLS,
           hostname_in_certificate:
-            datasetDatabaseCredential.hostnameInCertificate,
-          sslCryptoProvider: datasetDatabaseCredential.sslCryptoProvider,
+            datasetDatabaseCredential.db_extra.hostnameInCertificate,
           dialect: datasetDatabaseCredential.dialect,
         };
 
