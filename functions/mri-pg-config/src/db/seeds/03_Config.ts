@@ -18341,7 +18341,7 @@ export const cdwConfigDuckdb = {
                             }
                         ],
                         "type": "conceptSet",
-                        "expression": "@PROC.\"PROCEDURE_OCCURRENCE_ID\"",
+                        "expression": "@PROC.\"PROCEDURE_CONCEPT_ID\"",
                         "order": 3,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
