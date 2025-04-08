@@ -11,9 +11,10 @@ const EMPTY_CONFIGS = {
   [ConfigTypes.PRIVACY_POLICY_DISPLAY]: "0",
   [ConfigTypes.IMPRINT]: "",
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
+  [ConfigTypes.HYBRID_SEARCH]: "{}",
 };
 
-export const usePortalDescriptionConfigs = (
+export const useConfigsByTypes = (
   types: ConfigTypes[] = [],
   refetch = 0
 ): [{ [key: string]: string }, boolean, AppError | undefined] => {
