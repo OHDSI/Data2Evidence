@@ -193,95 +193,40 @@ export const getConceptHierarchy = async (
     const {
       query: { datasetId, conceptId, depth },
     } = schemas.getConceptHierarchy.parse(req);
-    const edges: ConceptHierarchyEdge[] = [];
-    const nodeLevels: ConceptHierarchyNodeLevel[] = [];
-    const conceptIds: Set<number> = new Set<number>().add(conceptId);
-    nodeLevels.push({ conceptId: conceptId, level: 0 });
-
     const cachedbService = new CachedbService(req);
-    const conceptDescendants = await cachedbService.getDescendants(
-      [conceptId],
-      datasetId
-    );
-    conceptDescendants.forEach((concept_ancestor) => {
-      if (concept_ancestor.descendant_concept_id !== conceptId) {
-        edges.push({
-          source: conceptId,
-          target: concept_ancestor.descendant_concept_id,
-        });
-        conceptIds.add(concept_ancestor.descendant_concept_id);
-        nodeLevels.push({
-          conceptId: concept_ancestor.descendant_concept_id,
-          level: -1,
+    // Get first level descendants of concept
+    const conceptHierarchyDescendants =
+      await cachedbService.getHierarchyDescendants(conceptId, datasetId);
+    // Recursively get ancestors of concept depending on depth
+    const conceptHierarchyAncestors =
+      await cachedbService.getHierarchyAncestors(conceptId, datasetId, depth);
+
+    // Combine both descendants and ancestors results
+    const conceptHierarchy = [
+      ...conceptHierarchyDescendants,
+      ...conceptHierarchyAncestors,
+    ];
+
+    // Map conceptHierarchy to nodes and edges
+    const edges: ConceptHierarchyEdge[] = [];
+    const nodes: ConceptHierarchyNode[] = [];
+    conceptHierarchy.map((e) => {
+      edges.push({
+        source: e.ancestor_concept_id,
+        target: e.descendant_concept_id,
+      });
+
+      // Only push into nodes if it does not contain an object with the same conceptId as the incoming object's conceptId
+      if (
+        !nodes.find((node_element) => node_element.conceptId === e.concept_id)
+      ) {
+        nodes.push({
+          conceptId: e.concept_id,
+          display: e.concept_name,
+          level: e.depth,
         });
       }
     });
-
-    // recursively get the ancestors of the specified conceptId
-    const getAllAncestors = async (
-      conceptId: number,
-      depth: number,
-      maxDepth: number
-    ) => {
-      const conceptAncestors = await cachedbService.getAncestors(
-        [conceptId],
-        datasetId,
-        1
-      );
-
-      if (conceptAncestors.length == 0 || depth <= 0) {
-        return;
-      }
-      for (const concept_ancestor of conceptAncestors) {
-        if (concept_ancestor.ancestor_concept_id !== conceptId) {
-          edges.push({
-            source: concept_ancestor.ancestor_concept_id,
-            target: conceptId,
-          });
-          conceptIds.add(concept_ancestor.ancestor_concept_id);
-
-          // Only push into nodeLevels if it does not contain an object with the same conceptId as the incoming object's conceptId
-          if (
-            !nodeLevels.find(
-              (e) => e.conceptId === concept_ancestor.ancestor_concept_id
-            )
-          ) {
-            nodeLevels.push({
-              conceptId: concept_ancestor.ancestor_concept_id,
-              level: maxDepth - depth + 1,
-            });
-          }
-
-          await getAllAncestors(
-            concept_ancestor.ancestor_concept_id,
-            depth - 1,
-            maxDepth
-          );
-        }
-      }
-    };
-
-    await getAllAncestors(conceptId, depth, depth);
-
-    const concepts = await cachedbService.getConceptsByIds(
-      Array.from(conceptIds),
-      datasetId
-    );
-
-    const nodes: ConceptHierarchyNode[] = nodeLevels.reduce(
-      (acc: ConceptHierarchyNode[], current: ConceptHierarchyNodeLevel) => {
-        const conceptNode = concepts.find(
-          (concept) => concept.conceptId === current.conceptId
-        );
-        acc.push({
-          conceptId: current.conceptId,
-          display: conceptNode?.display ?? "",
-          level: current.level,
-        });
-        return acc;
-      },
-      []
-    );
 
     res.send({ edges, nodes });
   } catch (e) {
