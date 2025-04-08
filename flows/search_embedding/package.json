@@ -1,10 +1,10 @@
 {
-  "name": "@data2evidence/search-embedding",
+  "name": "@data2evidence/search-embedding-flow",
   "version": "0.0.99",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-search-embedding --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/data2evidence/d2e/flow-search-embedding:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
     "type": "git",
@@ -24,8 +24,6 @@
           "name": "search_embedding_plugin",
           "type": "search",
           "entrypoint": "flows.search_embedding_plugin.flow.search_embedding_plugin",
-          "image": "ghcr.io/data2evidence/d2e/flow-search-embedding:develop",
-          "image_pull_policy": "IfNotPresent",
           "tags": ["search_embedding"],
           "parameter_openapi_schema": {
             "type": "object",
