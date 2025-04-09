@@ -1161,9 +1161,6 @@ services:
       EG_BASE_URL: /jupyter
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      # It's often helpful to mount the kernelspec files from the host into the container.
-      # Since this could be a deployed to a swarm cluster, it is recommended in this case that these be mounted on an
-      # NFS volume available to all nodes of the cluster, or a volume plugin is used instead of a bind mount.
     labels:
       app: "enterprise-gateway"
       component: "enterprise-gateway"
