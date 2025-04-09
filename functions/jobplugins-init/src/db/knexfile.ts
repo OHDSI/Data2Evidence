@@ -31,6 +31,7 @@ const config: Knex.Config = {
   migrations: {
     extension: ".ts",
     schemaName: _env.PG_SCHEMA,
+    tableName: "knex_migrations", // table name used for storing the migration state
     directory: `${path
       .dirname(path.fromFileUrl(import.meta.url))
       .replace(/\/usr\/src/, ".")}/migrations`,
