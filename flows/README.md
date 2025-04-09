@@ -21,8 +21,8 @@
 
 ## Developing a new flow
 ### Develop a new flow with a new folder
-1. Create a folder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
-2. After developing flow, cd to `flows` and run script to generate a package.json in folder. Package name and entrypoint are compulsory arguments.
+1. Create a subfolder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
+2. After developing flow, cd to `flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
     - package_name: package.json name e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -36,14 +36,15 @@
     volumes:
         - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
     ```
-4. Restart trex
-5. Build local image in flows folder with `yarn build`
-6. In jobs portal, edit deployment and change image name.
-7. Run flow from jobs portal.
-8. Add flow to GHA
+4. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag. 
+5. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+6. To run the flow locally, edit the deployment and change the image to the local image.
+7. Add Dockerfile to Github Actions to test build.
+    - .github/workflows/flows-docker-build-push.yaml
+    - .github/workflows/flows-plugin-ci.yml
 
 ### Develop a new flow in an existing folder
-1. After developing flow, cd to `flows` and modify existing `package.json` in folder by running script. Package name and entrypoint are compulsory arguments. If there is an existing `package.json`, the name will not be overwritten.
+1. After developing flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
     - package_name: package.json name e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -57,14 +58,13 @@
     volumes:
         - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
     ```
-3. Restart trex
-4. Build local image in flows folder with `yarn build`. Image should have the local tag.
-5. In jobs portal, edit deployment and change image name.
-6. Run flow from jobs portal.
+3. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag. 
+4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+5. To run the flow locally, edit the deployment and change the image to the local image.
 
 ## Modifying an existing flow
 ### Modify flow parameters
-1. After developing flow, cd to `flows` and modify existing `package.json` in folder by running script. Package name and entrypoint are compulsory arguments. If there is an existing `package.json`, the name will not be overwritten.
+1. After modifying flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
     - package_name: package.json name e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -78,15 +78,15 @@
     volumes:
         - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
     ```
-3. Restart trex
-4. Build local image in flows folder with `yarn build`. Image should have the local tag.
-5. In jobs portal, edit deployment and change image name.
-6. Run flow from jobs portal.
+3. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag.
+4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name. Check the updated parameters in Run > Quick Run.
+5. To run the flow locally, edit the deployment and change the image to the local image.
+
 
 ### Modify code
-1. Build local image in flows folder with `yarn build`. Image should have the local tag.
-2. In jobs portal, edit deployment and change image name.
-3. Run flow from jobs portal.
+1. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag.
+2. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+3. To run the flow locally, edit the deployment and change the image to the local image.
 
 
 ## Pointing to the Prefect server on local
