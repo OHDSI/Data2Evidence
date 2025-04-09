@@ -1,4 +1,4 @@
-duckdb==1.1.1
+duckdb==1.2.1
 fastapi[all]==0.99.1
 pyarrow==17.0.0
 pydantic>=1.2.0,<2.0.0
