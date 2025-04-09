@@ -4,72 +4,74 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-white-rabbit --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+      "build": "docker build ../ -f ./Dockerfile -t d2e/flow-white-rabbit:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
-    "type": "git",
-    "url": "https://github.com/data2evidence/d2e-flows.git"
+      "type": "git",
+      "url": "https://github.com/OHDSI/d2e.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/data2evidence/d2e-flows/issues"
+      "url": "https://github.com/OHDSI/d2e/issues"
   },
-  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
-    "flow": {
-      "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit",
-      "flows": [
-        {
-          "name": "white_rabbit_plugin",
-          "type": "white_rabbit",
-          "entrypoint": "flows.white_rabbit_plugin.flow.white_rabbit_plugin",
-          "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit:develop",
-          "image_pull_policy": "Never",
-          "tags": [
-            "white_rabbit"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/WhiteRabbitRequestType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "WhiteRabbitRequestType": {
-                "properties": {
-                  "url": {
-                    "title": "Url",
-                    "type": "string"
+      "flow": {
+          "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit",
+          "flows": [
+              {
+                  "name": "white_rabbit_plugin",
+                  "entrypoint": "flows.white_rabbit_plugin.flow.white_rabbit_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/WhiteRabbitRequestType",
+                              "position": 0,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "WhiteRabbitRequestType": {
+                              "properties": {
+                                  "url": {
+                                      "title": "Url",
+                                      "type": "string"
+                                  },
+                                  "headers": {
+                                      "title": "Headers",
+                                      "type": "object"
+                                  },
+                                  "data": {
+                                      "anyOf": [
+                                          {
+                                              "type": "object"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Data"
+                                  }
+                              },
+                              "required": [
+                                  "url",
+                                  "headers"
+                              ],
+                              "title": "WhiteRabbitRequestType",
+                              "type": "object"
+                          }
+                      }
                   },
-                  "headers": {
-                    "title": "Headers",
-                    "type": "object"
-                  },
-                  "data": {
-                    "title": "Data",
-                    "type": "object"
-                  }
-                },
-                "required": [
-                  "url",
-                  "headers",
-                  "data"
-                ],
-                "title": "WhiteRabbitRequestType",
-                "type": "object"
+                  "type": "white_rabbit"
               }
-            }
-          }
-        }
-      ]
-    }
+          ]
+      }
   }
 }

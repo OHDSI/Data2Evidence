@@ -4,34 +4,25 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-dicom-etl --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+        "build": "docker build ../ -f ./Dockerfile -t d2e/flow-dicom-etl:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/data2evidence/d2e-flows.git"
+        "url": "https://github.com/OHDSI/d2e.git"
     },
     "author": "",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/data2evidence/d2e-flows/issues"
+        "url": "https://github.com/OHDSI/d2e/issues"
     },
-    "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+    "homepage": "https://github.com/OHDSI/d2e/flows#readme",
     "trex": {
         "flow": {
             "image": "ghcr.io/data2evidence/d2e/flow-dicom-etl",
             "flows": [
                 {
                     "name": "dicom_etl_plugin",
-                    "type": "dicom_etl",
                     "entrypoint": "flows.dicom_etl_plugin.flow.dicom_etl_plugin",
-                    "tags": [
-                        "data",
-                        "data_load",
-                        "dicom",
-                        "medical_imaging",
-                        "imaging",
-                        "radiology"
-                    ],
                     "parameter_openapi_schema": {
                         "title": "Parameters",
                         "type": "object",
@@ -112,7 +103,7 @@
                                                 "type": "null"
                                             }
                                         ],
-                                        "default": true
+                                        "default": null
                                     },
                                     "ingest_eav_table": {
                                         "anyOf": [
@@ -174,7 +165,8 @@
                                 "type": "object"
                             }
                         }
-                    }
+                    },
+                    "type": "dicom_etl"
                 }
             ]
         }
