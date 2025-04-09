@@ -417,6 +417,7 @@ export const i18n = {
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_TITLE: 'Unsaved changes',
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_TEXT: 'There are unsaved changes to the current cohort.',
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT: 'Do you want to save or discard changes?',
+    MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE: 'Import ATLAS Cohort Definition',
     MRI_PA_TOOLTIP_RENAME_BOOKMARK: 'Rename Saved Filter',
     MRI_PA_ATTRIBUTE_MENU_BUTTON_PLACEHOLDER: 'Select Attribute',
     MRI_PA_DISAGGR_MISSING_LIMIT_OFFSET:
@@ -811,6 +812,7 @@ export const i18n = {
     MRI_PA_CREATE_D2E_COHORT_TEXT: 'D2E',
     MRI_PA_CREATE_ATLAS_COHORT_TEXT: 'Atlas',
     MRI_PA_COMPARE_D2E_COHORT_TEXT: 'Compare',
+    MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Import',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',

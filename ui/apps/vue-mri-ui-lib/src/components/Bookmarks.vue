@@ -78,6 +78,34 @@
       </template>
     </messageBox>
 
+
+    <messageBox dim="true" dialogWidth="1000px" v-if="showImportAtlasCohortDefinition" @close="closeImportAtlasCohortDefinition">
+      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE') }}</template>
+      <template v-slot:body>
+        <div>
+          <div class="div-bookmark-dialog">
+            <!-- <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span> -->
+            <span>Hello</span>
+            <!-- <div class="input-container">
+              <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
+            </div> -->
+
+            <!-- <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
+              Filter name must not exceed 40 characters
+            </div> -->
+          </div>
+        </div>
+      </template>
+      <template v-slot:footer>
+        <div class="flex-spacer"></div>
+        <appButton
+          :click="confirmRenameBookmark"
+          :text="getText('MRI_PA_BUTTON_SAVE')"
+        ></appButton>
+        <appButton :click="closeImportAtlasCohortDefinition" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
+      </template>
+    </messageBox>
+
     <div class="bookmark-content">
       <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
         <div style="flex: 1; border-bottom: 0px lightgrey solid; display: flex; justify-content: start; color: navy">
@@ -97,6 +125,13 @@
           <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
             <template #icon-left>
               <GlobeIcon style="margin-right: 10px" fill="white" />
+            </template>
+          </Button>
+        </div>
+        <div style="flex: 3; margin-left: 10px">
+          <Button :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')" :onClick="openImportAtlasCohortDefinition">
+            <template #icon-left>
+              <UploadIcon style="margin-right: 10px" fill="white" />
             </template>
           </Button>
         </div>
@@ -206,6 +241,7 @@ import { getBookmarkType } from '../utils/BookmarkUtils'
 import PatientsActiveIcon from './icons/PatientsActiveIcon.vue'
 import Button from './Button.vue'
 import GlobeIcon from './icons/GlobeIcon.vue'
+import UploadIcon from './icons/UploadIcon.vue'
 import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
 
 export default {
@@ -244,6 +280,7 @@ export default {
       },
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
+      showImportAtlasCohortDefinition: false,
     }
   },
   watch: {
@@ -558,6 +595,12 @@ export default {
     openAtlasLink() {
       getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
     },
+    openImportAtlasCohortDefinition() {
+      this.showImportAtlasCohortDefinition = true
+    },
+    closeImportAtlasCohortDefinition() {
+      this.showImportAtlasCohortDefinition = false
+    },
   },
   components: {
     messageBox,
@@ -573,6 +616,7 @@ export default {
     Button,
     GlobeIcon,
     LeftRightArrowIcon,
+    UploadIcon,
   },
 }
 </script>
