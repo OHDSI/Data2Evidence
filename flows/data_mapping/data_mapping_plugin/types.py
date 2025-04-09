@@ -12,7 +12,6 @@ class ServiceCredentials(BaseModel):
     
 
 class PerseusRequestType(BaseModel):
-    url: str = Field(..., strict = True)
+    url: Optional[str] = None
     headers: dict = Field(..., strict = True) # object type
-    data: Optional[dict] = None
-    
+    data: dict = Field(..., strict = True)

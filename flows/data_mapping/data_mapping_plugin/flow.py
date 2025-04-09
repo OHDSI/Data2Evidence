@@ -7,6 +7,8 @@ from prefect.artifacts import create_markdown_artifact
 from prefect.variables import Variable
 from pathlib import Path
 import json
+
+from .types import PerseusRequestType
 from .files_manager_client import FilesManagerClient
 
 POSTGRES_TYPES_MAPPING = {
@@ -151,12 +153,12 @@ def process_scan_report(scan_report_path: Path) -> List[Dict]:
         raise
 
 @flow(log_prints=True)
-def data_mapping_plugin(options: Dict) -> str:
+def data_mapping_plugin(options: PerseusRequestType) -> str:
     logger = get_run_logger()
 
-    username = options["headers"]["username"]
-    data_id = options["data"]["dataId"]
-    file_name = options["data"]["fileName"]
+    username = options.headers["username"]
+    data_id = options.data["dataId"]
+    file_name = options.data["fileName"]
     
     logger.info(f"Creating source schema for user {username}")
     
