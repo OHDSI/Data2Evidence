@@ -27,8 +27,7 @@ export class FhirRouter {
         if (!errors.isEmpty()) {
           res.status(400).json({ errors: errors.array() });
         }
-        let incomingDataStr = JSON.stringify(req.body)
-        const { name, description } = JSON.parse(incomingDataStr);
+        const { name, description } = req.body;
         try {
           const projectId = await createProject(name, description);
           return res.status(200).json(projectId);
