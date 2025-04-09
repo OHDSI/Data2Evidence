@@ -78,30 +78,29 @@
       </template>
     </messageBox>
 
-
-    <messageBox dim="true" dialogWidth="1000px" v-if="showImportAtlasCohortDefinition" @close="closeImportAtlasCohortDefinition">
+    <messageBox
+      dim="true"
+      dialogWidth="500px"
+      messageType="custom"
+      v-if="showImportAtlasCohortDefinition"
+      @close="closeImportAtlasCohortDefinition"
+    >
       <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE') }}</template>
       <template v-slot:body>
         <div>
-          <div class="div-bookmark-dialog">
-            <!-- <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span> -->
-            <span>Hello</span>
-            <!-- <div class="input-container">
-              <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
-            </div> -->
-
-            <!-- <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              Filter name must not exceed 40 characters
-            </div> -->
+          <div>
+            <textarea
+              class="import-json-textarea"
+              v-model="importJSONInput"
+              rows="20"
+              placeholder="Paste Atlas Cohort Definition JSON here.."
+            />
           </div>
         </div>
       </template>
       <template v-slot:footer>
         <div class="flex-spacer"></div>
-        <appButton
-          :click="confirmRenameBookmark"
-          :text="getText('MRI_PA_BUTTON_SAVE')"
-        ></appButton>
+        <appButton :click="confirmRenameBookmark" :text="getText('MRI_PA_BUTTON_SAVE')"></appButton>
         <appButton :click="closeImportAtlasCohortDefinition" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
       </template>
     </messageBox>
@@ -129,7 +128,10 @@
           </Button>
         </div>
         <div style="flex: 3; margin-left: 10px">
-          <Button :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')" :onClick="openImportAtlasCohortDefinition">
+          <Button
+            :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
+            :onClick="openImportAtlasCohortDefinition"
+          >
             <template #icon-left>
               <UploadIcon style="margin-right: 10px" fill="white" />
             </template>
@@ -281,6 +283,7 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
+      importJSONInput: '',
     }
   },
   watch: {
