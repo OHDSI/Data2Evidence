@@ -582,6 +582,15 @@ export const i18nDefault = {
     HISTORY_TABLE__VIEW_DETAIL: "View detail",
     HOME__DESCRIPTION:
       "Our vision is a world where health data is comprehensively, digitally, and securely available for research and directly impacts the prevention, diagnosis, and treatment of diseases.",
+    HYBRID_SEARCH__CONFIGURATION: "Hybrid search configuration",
+    HYBRID_SEARCH__ENABLE: "Enable Hybrid Search",
+    HYBRID_SEARCH__ERROR_DESCRIPTION:
+      "Please try again. To report the error, please send an email to help@data4life.care.",
+    HYBRID_SEARCH__ERROR: "An error has occurred.",
+    HYBRID_SEARCH__SAVE: "Save",
+    HYBRID_SEARCH__SEMANTIC_RATIO_ERROR: "Semantic ratio must have a value between 0 and 1",
+    HYBRID_SEARCH__SEMANTIC_RATIO: "Semantic Ratio",
+    HYBRID_SEARCH__SUCCESS: "Changes saved",
     IMPORT_DIALOG__ADDITIONAL_INFO_COLUMN: "Additional info column",
     IMPORT_DIALOG__CANCEL: "Cancel",
     IMPORT_DIALOG__COLUMN_MAPPING: "Column Mapping",
