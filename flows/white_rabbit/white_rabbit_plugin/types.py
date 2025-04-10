@@ -40,3 +40,10 @@ class iniSettings(BaseModel):
     ROWS_PER_TABLE: str
     CALCULATE_NUMERIC_STATS: str
     NUMERIC_STATS_SAMPLER_SIZE: str
+
+
+class FileSaveResponse(BaseModel):
+    id: int
+    username: str
+    dataKey: str
+    fileName: str

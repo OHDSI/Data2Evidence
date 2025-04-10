@@ -8,7 +8,8 @@ import json
 import csv
 import os
 from _shared_flow_utils.api.FilesManagerAPI import FilesManagerAPI
-from .types import iniSettings
+from _shared_flow_utils.api.WhiteRabbitAPI import WhiteRabbitAPI
+from .types import iniSettings, FileSaveResponse
 
 
 WORKING_FOLDER_PATH = './'
@@ -120,13 +121,23 @@ def generate_csv_files_from_json(file_contents=[]):
 
 
 @task(log_prints=True)
-def save_conversion(username: str):
+def save_scan_report_conversion(username: str):
     logger = get_run_logger()
     logger.info("saving scan report conversion to files manager")
 
     if not os.path.exists("ScanReport.xlsx"):
         raise FileNotFoundError("Scan report does not exist")
 
-    fileSaveReponse = FilesManagerAPI().save_file(username=username)
-
-    # TODO: save conversion to scan_data_conversion
+    try:
+        fileSaveResponse: FileSaveResponse = FilesManagerAPI().save_file(username=username)
+        logger.info("Successfully saved scan report file")
+        saveConversionResponse = WhiteRabbitAPI().save_conversion(
+            runtime.flow_run.id, username, fileSaveResponse['fileName'], fileSaveResponse['id'])
+        logger.info("Successfully saved scan conversion")
+        logger.info(saveConversionResponse)
+    except Exception as e:
+        logger.error(f"Failed to save scan conversion")
+        raise e
+    else:
+        logger.info("Successfully saved scan conversion")
+        return saveConversionResponse['rows'][0]['id']
