@@ -11,7 +11,7 @@
     ```
 2. Install development packages from `requirements-dev.txt`. These are required to generate the `pacakge.json` for each flow plugin and the openapi spec for the flows.
     ```
-    pip install --upgrade requirements-dev.txt
+    pip install --upgrade -r requirements-dev.txt
     ```
 
 3. (Optional) If working with flow plugins in base folder, create a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with **no scopes** to avoid rate limiting with downloading the OHDSI packages https://ohdsi.github.io/Hades/rSetup.html | section GitHub Personal Access Token. Export PAT as env 
