@@ -91,16 +91,18 @@
           <div>
             <textarea
               class="import-json-textarea"
-              v-model="importJSONInput"
+              :class="['import-json-textarea', atasjsoninputerror && 'import-json-textarea__error']"
+              v-model="importAtlasJsonInput"
               rows="20"
               placeholder="Paste Atlas Cohort Definition JSON here.."
             />
+            <div v-if="atasjsoninputerror" class="import-json-error"><strong>Error:</strong> {{ atasjsoninputerror }}</div>
           </div>
         </div>
       </template>
       <template v-slot:footer>
         <div class="flex-spacer"></div>
-        <appButton :click="confirmRenameBookmark" :text="getText('MRI_PA_BUTTON_SAVE')"></appButton>
+        <appButton :click="handleClick" :text="getText('MRI_PA_BUTTON_SAVE')" :disabled="isImportSaveDisabled"></appButton>
         <appButton :click="closeImportAtlasCohortDefinition" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
       </template>
     </messageBox>
@@ -245,6 +247,7 @@ import Button from './Button.vue'
 import GlobeIcon from './icons/GlobeIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
 import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
+import { validateAtlasJson } from '../utils/AtlasJSONValidator'
 
 export default {
   compatConfig: {
@@ -283,7 +286,8 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
-      importJSONInput: '',
+      importAtlasJsonInput: '',
+      atasjsoninputerror: '',
     }
   },
   watch: {
@@ -292,6 +296,16 @@ export default {
         this.loadBookmark(this.initBookmarkId, null)
       }
     },
+    importAtlasJsonInput: {
+      handler(newVal: string) {
+        if (newVal === '') {
+          this.atasjsoninputerror = ''
+          return
+        }
+        const result = validateAtlasJson(newVal);
+        this.atasjsoninputerror = result.error;
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -321,6 +335,9 @@ export default {
     },
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
+    },
+    isImportSaveDisabled() {
+      return this.atasjsoninputerror || this.importAtlasJsonInput === '';
     },
   },
   methods: {
@@ -603,7 +620,12 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
+      this.atasjsoninputerror = ''
+      this.importAtlasJsonInput = ''
     },
+    handleClick(){
+      alert('clicked')
+    }
   },
   components: {
     messageBox,

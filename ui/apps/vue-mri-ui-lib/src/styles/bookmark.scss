@@ -87,6 +87,19 @@
   }
   .import-json-textarea {
     width: 100%;
+    transition: border-color 0.2s ease;
+  }
+  .import-json-textarea__error {
+    border-color: $MriErrorColor;
+  
+    &:focus-visible {
+      border-color: $MriErrorColor;
+      outline: none;
+    }
+  }
+  .import-json-error {
+    color: $MriErrorColor;
+    padding-top: 0.5rem;
   }
   .div-bookmark-dialog {
     padding: 1.5rem;
