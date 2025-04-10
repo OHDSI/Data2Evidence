@@ -19,10 +19,9 @@ class WhiteRabbitRunTypes(str, Enum):
 
 
 class WhiteRabbitRequestType(BaseModel):
-    url: str = Field(..., strict=True)
-    headers: dict = Field(..., strict=True)  # object type
     run_type: WhiteRabbitRunTypes
     data: Optional[dict] = None
+    username: str = Field(..., strict=True)
 
 
 class iniSettings(BaseModel):

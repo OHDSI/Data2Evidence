@@ -27,11 +27,10 @@ class FilesManagerAPI(BaseAPI):
 
         return response.content
 
-    # gets a filesave respone
     def save_file(self, username: str, dataKey="scan-report", file_path: str = "./ScanReport.xlsx"):
         url = f"{self.url}/"
         headers = self._get_headers()
-        # Remove Content-Type header as requests will set it automatically with the correct boundary
+        # Remove Content-Type header - requests will set it automatically with the correct boundary
         headers.pop('Content-Type', None)
 
         with open(file_path, 'rb') as file:

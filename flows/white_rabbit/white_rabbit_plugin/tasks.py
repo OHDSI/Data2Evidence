@@ -132,9 +132,8 @@ def save_scan_report_conversion(username: str):
         fileSaveResponse: FileSaveResponse = FilesManagerAPI().save_file(username=username)
         logger.info("Successfully saved scan report file")
         saveConversionResponse = WhiteRabbitAPI().save_conversion(
-            runtime.flow_run.id, username, fileSaveResponse['fileName'], fileSaveResponse['id'])
+            runtime.flow_run.id, fileSaveResponse['fileName'], fileSaveResponse['id'])
         logger.info("Successfully saved scan conversion")
-        logger.info(saveConversionResponse)
     except Exception as e:
         logger.error(f"Failed to save scan conversion")
         raise e
