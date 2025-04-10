@@ -21,7 +21,6 @@ const env = Deno.env.toObject();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-app.use(express.json());
 app.use(extractUsernameFromJwt);
 app.use("/jobplugins/dqd/data-quality", new DqdController().router);
 app.use("/jobplugins/cohort", new CohortController().router);
