@@ -2,7 +2,6 @@
   "name": "@data2evidence/kaplan-meier-flow",
   "version": "0.0.99",
   "description": "",
-  "main": "index.js",
   "scripts": {
       "build": "docker build ../ -f ./Dockerfile -t d2e/flow-cohort-survival:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },

@@ -84,7 +84,6 @@ def get_template(package_json_name: str, plugin_parent_folder: str) -> dict:
         "name": PACKAGE_PREFIX + package_json_name,
         "version": PLUGIN_VERSION,
         "description": "",
-        "main": "index.js",
         "scripts": {
                 "build": f"docker build ../ -f ./Dockerfile -t {local_image_name} --build-arg GITHUB_PAT=${{GITHUB_PAT}} --platform=linux/amd64"
         },
