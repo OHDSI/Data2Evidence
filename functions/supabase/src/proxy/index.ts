@@ -1,6 +1,8 @@
 import { serve } from "server";
 import { env } from "../env.ts";
 
+
+// TEST FILE: TO BE REMOVED
 const STORAGE_URL = env.SERVICE_ROUTES!.supabaseStorage;
 // TODO: get from env
 const SUPABASE_SERVICE_ROLE_KEY =

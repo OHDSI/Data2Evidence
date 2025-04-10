@@ -1109,12 +1109,11 @@ services:
         - *x-tls
       PROJECT_REF: ${PROJECT_REF:-default}
       PORT: 9000
-      REGION: ${REGION:-us-east-1}
-      GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET:-storage}
-      TENANT_ID: ${TENANT_ID:-tenant-id}
+      # REGION: ${REGION:-us-east-1}
+      # TENANT_ID: ${TENANT_ID:-tenant-id}
       FILE_SIZE_LIMIT: 52428800
-      STORAGE_BACKEND: file
-      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      # STORAGE_BACKEND: file
+      # FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${JWT_SECRET:-d3eL5ndkSY4BW4Dmj39HaBmQ1xpy0mdK83ATLOUs}
       # ANON_KEY: ${SUPABASE_ANON_KEY}
@@ -1122,6 +1121,21 @@ services:
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
       SKIP_MIGRATIONS: "true"
+      STORAGE_BACKEND: s3
+      GLOBAL_S3_BUCKET: stub
+      # GLOBAL_S3_ENDPOINT: http://${MINIO__ENDPOINT}:${MINIO__PORT}
+      GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
+      GLOBAL_S3_PROTOCOL: "http"
+      GLOBAL_S3_FORCE_PATH_STYLE: true
+      # AWS_ACCESS_KEY_ID: ${MINIO__ACCESS_KEY:-root}
+      # AWS_SECRET_ACCESS_KEY: ${MINIO__SECRET_KEY}
+      # AWS_DEFAULT_REGION: ${MINIO__REGION:-ap-southeast-1}
+      AWS_ACCESS_KEY_ID: supa-storage
+      AWS_SECRET_ACCESS_KEY: secret1234
+      AWS_DEFAULT_REGION: stub
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
 
   supabase-storage-post-init:
     container_name: ${PROJECT_NAME:-d2e}-supabase-storage-post-init-1

@@ -4,7 +4,7 @@ import { SupabaseStorageModule } from '../../supabase-storage/supabase.storage.m
 import { ResourceController } from './resource.controller.ts'
 import { ResourceService } from './resource.service.ts'
 
-const imports = [SupabaseStorageModule]
+const imports = [SupabaseStorageModule, MinioModule]
 @Module({
   imports,
   controllers: [ResourceController],

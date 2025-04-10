@@ -8,12 +8,23 @@ export class MinioClient {
   private readonly client: Minio.Client;
 
   constructor() {
+    // this.client = new Minio.Client({
+    //   endPoint: env.MINIO_ENDPOINT,
+    //   port: Number(env.MINIO_PORT),
+    //   useSSL: env.MINIO_SSL == "true" ? true : false,
+    //   accessKey: env.MINIO_ACCESS_KEY,
+    //   secretKey: env.MINIO_SECRET_KEY,
+    // });
+    const endpointUrl = new URL(`http://${env.MINIO_ENDPOINT}:${env.MINIO_PORT}`);
+    // const endpointUrl = new URL(`http://supabase-storage:9000/`);
     this.client = new Minio.Client({
-      endPoint: env.MINIO_ENDPOINT,
-      port: Number(env.MINIO_PORT),
-      useSSL: env.MINIO_SSL == "true" ? true : false,
-      accessKey: env.MINIO_ACCESS_KEY,
-      secretKey: env.MINIO_SECRET_KEY,
+      endPoint: endpointUrl.hostname, // Use MINIO__ENDPOINT
+      port: Number(endpointUrl.port), // Use MINIO__PORT
+      useSSL: env.MINIO_SSL == "true" ? true : false, // Use MINIO__SSL
+      accessKey: env.MINIO_ACCESS_KEY || "root", // Use MINIO__ACCESS_KEY
+      secretKey: env.MINIO_SECRET_KEY, // Use MINIO__SECRET_KEY
+      // region: env.MINIO_REGION, // Use MINIO__REGION
+      // pathStyle: true,
     });
   }
 
@@ -181,16 +192,21 @@ export class MinioClient {
   }
 
   private async createBucket(bucketName: string) {
-    const hasBucket = await this.client.bucketExists(bucketName);
-
-    if (!hasBucket) {
-      console.info(
-        `Bucket is not created yet. Creating bucket ${bucketName}...`
-      );
-      await this.client.makeBucket(bucketName, env.MINIO_REGION);
-      console.info(`Bucket ${bucketName} created successfully`);
-    } else {
-      console.debug(`Bucket ${bucketName} is available`);
+    try {
+      const exists = await this.client.bucketExists(bucketName);
+      if (!exists) {
+        console.info(`Bucket is not created yet. Creating bucket ${bucketName}...`);
+        await this.client.makeBucket(bucketName, env.MINIO_REGION);
+        console.info(`Bucket ${bucketName} created successfully`);
+      } else {
+        console.debug(`Bucket ${bucketName} already exists`);
+      }
+    } catch (err) {
+      console.error(`Error creating bucket ${bucketName}:`, err);
+      if (err.name === "S3Error") {
+        console.error(`S3Error details: ${JSON.stringify(err)}`);
+      }
+      throw new InternalServerErrorException(`Failed to create bucket: ${bucketName}`);
     }
   }
 
