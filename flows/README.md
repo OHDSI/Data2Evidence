@@ -18,15 +18,15 @@
     ```
     export GITHUB_PAT=<GITHUB_PAT>
     ```
-
+ Its the flow/package name that will be added to the 'name' attribute of generated package.json file. 
 ## Developing a new flow
 ### Develop a new flow with a new folder
 1. Create a subfolder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
 2. After developing flow, cd to `flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
-    - package_name: Any package.json name of choice e.g.`d2e-flows`
-    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`. 
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
-    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
     ```
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
@@ -47,10 +47,10 @@
 
 ### Develop a new flow in an existing folder
 1. After developing flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
-    - package_name: Any package.json name of choice e.g.`d2e-flows`
-    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`.  This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
-    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
     ```
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
@@ -69,10 +69,10 @@
 ## Modifying an existing flow
 ### Modify flow parameters
 1. After modifying flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
-    - package_name: Any package.json name of choice e.g.`d2e-flows`
-    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
-    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
     ```
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
