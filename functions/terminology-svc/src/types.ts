@@ -103,6 +103,15 @@ export interface IConceptHierarchy {
   vocabulary_id: string;
   concept_class_: string;
 }
+export interface IHanaConceptHierarchy {
+  ANCESTOR_CONCEPT_ID: string;
+  DESCENDANT_CONCEPT_ID: string;
+  DEPTH: string;
+  CONCEPT_ID: string;
+  CONCEPT_NAME: string;
+  VOCABULARY_ID: string;
+  CONCEPT_CLASS_: string;
+}
 
 export interface IConceptRecommended {
   concept_id_1: number;
