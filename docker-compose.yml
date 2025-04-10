@@ -3,7 +3,6 @@ networks:
   alp:
   data:
   enterprise-gateway:
-    driver: overlay
     attachable: true
 
 volumes:
@@ -1159,6 +1158,8 @@ services:
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
+      KERNEL_USERNAME: jovyan
+      EG_DOCKER_MODE: docker
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:
