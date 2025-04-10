@@ -10,8 +10,8 @@ import {
 
 const getDatasetId = async (
   token: string,
-  name: string
-): Promise<string> => {
+  studyCode: string
+): Promise<string|null> => {
   // Get datasets from portal
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
@@ -20,9 +20,6 @@ const getDatasetId = async (
 
   const datasetId = dataset ? dataset.id : null;
 
-  if (datasetId === null) {
-    throw new Error(`No dataset id found with name '${name}'!`);
-  }
   return datasetId;
 };
 
@@ -157,13 +154,17 @@ export const forwardRequest = async (
     throw new Error(`Project '${projectName}' does not exist in fhir server!`);
   }
 
+  //Get dataset information
+  const datasetId = await getDatasetId(token, projectName);
+
+  if(datasetId == null){
+    throw new Error(`No dataset id found for project '${projectName}'`);
+  }
   // Get client ID and secret for project
   const projClientCredentials = await getClientCredentials(
     fhirApi,
     projectName
   );
-
-  const datasetId = await getDatasetId(token, projectName);
 
   // Add dataset metadata to req body
   let resourceDetails = body;

@@ -6,8 +6,7 @@
       "alp-minerva-db-mgmt-svc",
       "analytics",
       "config2",
-      "cdw",
-      "alp-sqleditor"
+      "cdw"
     ],
     "name": "ALPDEV",
     "key": "mridb",
@@ -67,7 +66,7 @@
   },
   {
     "type": "POSTGRES",
-    "tags": ["alp-minerva-db-mgmt-svc", "dbsvc", "alp-sqleditor"],
+    "tags": ["alp-minerva-db-mgmt-svc", "dbsvc"],
     "name": "postgres-mri-minerva",
     "key": "mridb",
     "description": "",
