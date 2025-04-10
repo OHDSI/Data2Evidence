@@ -267,6 +267,14 @@
             "route": "overview-description"
           },
           {
+            "description": "Configure hybrid search for concepts",
+            "enabled": true,
+            "name": "Hybrid Search",
+            "notes": "",
+            "pluginPath": "plugins/Setup/HybridSearch/module",
+            "route": "hybrid-search"
+          },
+          {
             "description": "Manage plugins",
             "enabled": true,
             "name": "Plugins",

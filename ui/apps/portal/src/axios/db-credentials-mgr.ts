@@ -6,10 +6,13 @@ import {
   IDatabaseDetailsUpdate,
   IDatabaseResponse,
   SERVICE_SCOPE_TYPES,
+  ITestConnection,
+  ITestConnectionResult,
 } from "../types";
 import omit from "lodash/omit";
 
 const TREX_BASE_URL = "trex/";
+const DB_BASE_URL = "gateway/api/db/";
 
 export class DbCredentialsMgr {
   public async getDbList(): Promise<IDatabase[]> {
@@ -59,6 +62,14 @@ export class DbCredentialsMgr {
       baseURL: TREX_BASE_URL,
       url: `db/${id}`,
       method: "DELETE",
+    });
+  }
+  public async testConnection(params: ITestConnection): Promise<ITestConnectionResult> {
+    return await request<ITestConnectionResult>({
+      baseURL: DB_BASE_URL,
+      url: "test",
+      method: "GET",
+      params,
     });
   }
 }

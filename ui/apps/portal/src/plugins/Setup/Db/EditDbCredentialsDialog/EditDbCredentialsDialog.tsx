@@ -1,7 +1,9 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
-import { Box, Button, Dialog, InputLabel, MenuItem, Select, TextField } from "@portal/components";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import WarningIcon from "@mui/icons-material/Warning";
+import { Box, Button, Dialog, InputLabel, MenuItem, Select, TextField, Tooltip } from "@portal/components";
 import {
   AUTHENTICATION_MODES,
   AuthenticationMode,
@@ -12,6 +14,7 @@ import {
   IDatabase,
   IDbCredential,
   IDbCredentialAdd,
+  ITestConnection,
   SERVICE_SCOPE_TYPES,
   USER_SCOPE_TYPES,
 } from "../../../../types";
@@ -61,12 +64,19 @@ const EMPTY_FORM_DATA: FormData = {
   credentials: EMPTY_CREDENTIALS,
 };
 
+interface ITestingResult {
+  [key: string]: boolean;
+}
+
 export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open, onClose, db }) => {
   const { getText, i18nKeys } = useTranslation();
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const dbCredentialProcessor = new DbCredentialProcessor();
+
+  const [testing, setTesting] = useState(false);
+  const [testingResult, setTestingResult] = useState<ITestingResult>({});
 
   useEffect(() => {
     if (open) {
@@ -78,6 +88,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
   }, [open, db]);
 
   const handleFormDataChange = useCallback((updates: { [field: string]: any }) => {
+    setTestingResult({});
     setFormData((formData) => ({ ...formData, ...updates }));
   }, []);
 
@@ -98,6 +109,57 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
     },
     [onClose]
   );
+
+  const handleTestConnection = useCallback(async () => {
+    try {
+      setTesting(true);
+      setFeedback({});
+
+      const credentials = formData.credentials.filter((x) => Boolean(x.username));
+      if (credentials.length === 0) {
+        setFeedback({ type: "error", message: getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__TEST_CONNECTION_VALIDATE) });
+        return;
+      }
+
+      const testResult: ITestingResult = {};
+      for (const cred of credentials) {
+        try {
+          const params: ITestConnection = {
+            host: db.host,
+            port: db.port,
+            database: db.name,
+            user: cred.username,
+            password: cred.password,
+          };
+          const result = await api.dbCredentialsMgr.testConnection(params);
+
+          testResult[cred.username] = result.success;
+          setTestingResult((x) => ({ ...x, [cred.username]: result.success }));
+        } catch (err: any) {
+          testResult[cred.username] = false;
+          setTestingResult((x) => ({ ...x, [cred.username]: false }));
+        }
+      }
+
+      if (Object.keys(testResult).length > 0) {
+        if (Object.values(testResult).every((x) => x)) {
+          setFeedback({
+            type: "success",
+            message: getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_VERIFIED),
+            autoClose: 5000,
+          });
+        } else {
+          setFeedback({
+            type: "error",
+            message: getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_FAILED),
+            autoClose: 5000,
+          });
+        }
+      }
+    } finally {
+      setTesting(false);
+    }
+  }, [db, formData]);
 
   const handleUpdate = useCallback(async () => {
     try {
@@ -162,7 +224,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
         <Box mb={4} sx={{ width: "250px" }} hidden={db.dialect !== "hana"}>
           <FormControl fullWidth variant="standard">
             <InputLabel id="authentication-mode-select-label">
-              {getText(i18nKeys.SAVE_DB_DIALOG__AUTHENTICATION_MODE)}
+              {getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__AUTHENTICATION_MODE)}
             </InputLabel>
             <Select
               labelId="authentication-mode-select-label"
@@ -309,6 +371,24 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                   </Select>
                 </FormControl>
               </Box>
+              <Box sx={{ width: "50px", alignSelf: "flex-end" }}>
+                {Object.keys(testingResult).includes(cred.username) && (
+                  <Tooltip
+                    title={
+                      testingResult[cred.username]
+                        ? getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_VERIFIED)
+                        : getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_FAILED)
+                    }
+                    placement="top"
+                  >
+                    {testingResult[cred.username] ? (
+                      <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} />
+                    ) : (
+                      <WarningIcon sx={{ width: 28, height: 28, color: "red" }} />
+                    )}
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
           ))}
         </Box>
@@ -317,6 +397,15 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
 
       <div className="edit-db-dialog__footer">
         <Box display="flex" gap={1} className="edit-db-dialog__footer-actions">
+          <Button
+            text={getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION)}
+            variant="outlined"
+            loading={testing}
+            onClick={handleTestConnection}
+            {...(!testing && Object.values(testingResult).length > 0 && Object.values(testingResult).every((x) => x)
+              ? { startIcon: <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} /> }
+              : {})}
+          />
           <Button
             text={getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CANCEL)}
             variant="outlined"
