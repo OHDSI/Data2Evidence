@@ -43,24 +43,32 @@
               "options"
             ],
             "definitions": {
+              "WhiteRabbitRunType": {
+                "enum": [
+                    "SCAN_REPORT_FILES",
+                    "SCAN_REPORT_DB",
+                    "GENERATE_ETL_REPORT"
+                  ],
+                  "title": "WhiteRabbitRunType",
+                  "type": "string"
+              },
               "WhiteRabbitRequestType": {
                 "properties": {
-                  "url": {
-                    "title": "Url",
-                    "type": "string"
-                  },
-                  "headers": {
-                    "title": "Headers",
-                    "type": "object"
+                  "run_type": {
+                    "$ref": "#/definitions/WhiteRabbitRunType"
                   },
                   "data": {
                     "title": "Data",
                     "type": "object"
-                  }
+                  },
+                  "database_code": {
+                      "default": "",
+                      "title": "Database Code",
+                      "type": "string"
+                    }
                 },
                 "required": [
-                  "url",
-                  "headers",
+                  "run_type",
                   "data"
                 ],
                 "title": "WhiteRabbitRequestType",

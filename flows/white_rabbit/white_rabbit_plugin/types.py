@@ -12,14 +12,14 @@ class ServiceCredentials(BaseModel):
     PG_ADMIN_PASSWORD: str = Field(..., strict=True)
 
 
-class WhiteRabbitRunTypes(str, Enum):
+class WhiteRabbitRunType(str, Enum):
     SCAN_REPORT_FILES = 'SCAN_REPORT_FILES'  # can be by files or db
     SCAN_REPORT_DB = 'SCAN_REPORT_DB'
     GENERATE_ETL_REPORT = 'GENERATE_ETL_REPORT'
 
 
 class WhiteRabbitRequestType(BaseModel):
-    run_type: WhiteRabbitRunTypes
+    run_type: WhiteRabbitRunType
     data: Optional[dict] = None
     username: str = Field(..., strict=True)
 
