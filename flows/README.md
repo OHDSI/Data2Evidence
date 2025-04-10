@@ -23,7 +23,7 @@
 ### Develop a new flow with a new folder
 1. Create a subfolder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
 2. After developing flow, cd to `flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
-    - package_name: package.json name e.g.`d2e-flows`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
     - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
@@ -31,10 +31,12 @@
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
     ```
-3. Mount flow folder to `trex` in `docker-compose-local.yml`
+3. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
+        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
     ```
 4. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag. 
 5. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
@@ -45,7 +47,7 @@
 
 ### Develop a new flow in an existing folder
 1. After developing flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
-    - package_name: package.json name e.g.`d2e-flows`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
     - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
@@ -53,19 +55,21 @@
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
     ```
-2. Mount flow folder to `trex` in `docker-compose-local.yml`
+2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
+        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
     ```
-3. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag. 
+3. Navigate to subfolder   and run `yarn build` to build the image locally. The image will have the local tag. 
 4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
 5. To run the flow locally, edit the deployment and change the image to the local image.
 
 ## Modifying an existing flow
 ### Modify flow parameters
 1. After modifying flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
-    - package_name: package.json name e.g.`d2e-flows`
+    - package_name: Any package.json name of choice e.g.`d2e-flows`
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
     - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`
@@ -73,10 +77,12 @@
     python flowinit.py --help
     python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
     ```
-2. Mount flow folder to `trex` in `docker-compose-local.yml`
+2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/testflow:/usr/src/plugins/d2e-flows/testflow
+        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
     ```
 3. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag.
 4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name. Check the updated parameters in Run > Quick Run.
