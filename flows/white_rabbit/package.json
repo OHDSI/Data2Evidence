@@ -61,9 +61,9 @@
                     "title": "Data",
                     "type": "object"
                   },
-                  "database_code": {
+                  "username": {
                       "default": "",
-                      "title": "Database Code",
+                      "title": "username",
                       "type": "string"
                     }
                 },

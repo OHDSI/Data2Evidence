@@ -21,7 +21,7 @@ class WhiteRabbitRunType(str, Enum):
 class WhiteRabbitRequestType(BaseModel):
     run_type: WhiteRabbitRunType
     data: Optional[dict] = None
-    username: str = Field(..., strict=True)
+    username: Optional[str] = None
 
 
 class iniSettings(BaseModel):

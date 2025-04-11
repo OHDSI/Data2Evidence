@@ -79,13 +79,11 @@ def generateETLWordDocument(inputPath: str = "../../data.json", outputPath: str 
     ShellOperation(commands=[
                    f"./dist/bin/rabbitInAHat --generateWordReport {inputPath} {outputPath}"]).run()
 
-    # finally generate markdown
     try:
         with open(outputPath, 'rb') as file:
             file_content = file.read()
             encoded_word_file = base64.b64encode(file_content).decode("utf-8")
 
-        # Store Base64-encoded Word file as an artifact
         logger.info("Storing Base64-encoded Word file as artifact")
         create_markdown_artifact(
             key=f"{runtime.flow_run.id}-word-report",
@@ -101,8 +99,9 @@ def generateETLWordDocument(inputPath: str = "../../data.json", outputPath: str 
 
 
 @task(log_prints=True)
-def generate_csv_files_from_json(file_contents=[]):
-    logger = get_run_logger("generating csv files from json")
+def generate_csv_files_from_json(file_contents: list = None):
+    logger = get_run_logger()
+    logger.info("generating csv files from json")
     logger.info(f"Number of files to process: {len(file_contents)}")
 
     for file_data in file_contents:
@@ -138,5 +137,5 @@ def save_scan_report_conversion(username: str):
         logger.error(f"Failed to save scan conversion")
         raise e
     else:
-        logger.info("Successfully saved scan conversion")
+        logger.info("Successfully saved scan report and conversion")
         return saveConversionResponse['rows'][0]['id']

@@ -479,7 +479,8 @@
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
-          "filesmanager.delete"
+          "filesmanager.delete",
+          "whiteRabbit.post"
         ]
       },
       "scopes": [
