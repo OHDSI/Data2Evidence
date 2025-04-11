@@ -15,7 +15,7 @@ interface ScanProgressDialogProps {
   onBack: () => void;
   onClose?: (type: CloseDialogType) => void;
   nodeId: string;
-  scanId: number;
+  scanId: string;
 }
 
 export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, onClose, nodeId, scanId }) => {
@@ -107,15 +107,17 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   const fetchScanProgress = useCallback(async () => {
     try {
-      const response = await api.whiteRabbit.getScanReportProgress(scanId);
-      setLog(response.logs.map((log: ScanDataProgressLogs) => log.message));
-      setProgress(response.logs[response.logs.length - 1].percent);
-      if (response.statusName === "COMPLETED") {
+      console.log("here here here");
+      const status = await api.whiteRabbit.getFlowRunStatus(scanId);
+      if (status.state_name === "Completed") {
         setScanCompleted(true);
-      } else if (response.statusName === "FAILED") {
+      } else if (status.state_name === "Failed" || status.state_name === "Crashed") {
         setScanCompleted(true);
         setScanFailed(true);
       }
+
+      // setLog(response.logs.map((log: ScanDataProgressLogs) => log.message));
+      // setProgress(response.logs[response.logs.length - 1].percent);
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
     }
@@ -136,13 +138,13 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   }, []);
 
   useEffect(() => {
-    if (open && scanId !== -1 && !scanCompleted) {
+    if (open && scanId !== "" && !scanCompleted) {
       intervalRef.current = setInterval(() => {
         fetchScanProgress();
         if (scanCompleted) {
           clearInterval(intervalRef.current!);
         }
-      }, 1000);
+      }, 3000);
       // Clear the interval when unmount
       return () => {
         if (intervalRef.current) {
@@ -178,7 +180,12 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         <Button onClick={handleSaveReport} variant="contained" color="primary" disabled={!scanCompleted || scanFailed}>
           Save report
         </Button>
-        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted || loading || scanFailed}>
+        <Button
+          onClick={handleLinkTables}
+          variant="contained"
+          color="primary"
+          disabled={!scanCompleted || loading || scanFailed}
+        >
           Link tables
         </Button>
       </div>

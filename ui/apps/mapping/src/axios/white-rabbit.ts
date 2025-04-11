@@ -47,34 +47,20 @@ export class WhiteRabbit {
       }))
     );
 
-    // Compress the data
     const jsonString = JSON.stringify({
       files: fileContents,
       settings: {
-        fileType: "CSV files",
         delimiter,
-        scanDataParams: {
-          sampleSize: 100000,
-          scanValues: true,
-          minCellCount: 5,
-          maxValues: 1000,
-          calculateNumericStats: false,
-          numericStatsSamplerSize: 100000,
-        },
       },
     });
     const compressed = pako.gzip(jsonString);
-    const base64Compressed = Buffer.from(compressed).toString('base64');
-
+    const base64Compressed = Buffer.from(compressed).toString("base64");
 
     const data = {
       options: {
-        url: "scan-report/files",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        username: "admin",
         data: base64Compressed,
+        run_type: "SCAN_REPORT_FILES",
       },
     };
 
@@ -88,14 +74,7 @@ export class WhiteRabbit {
     });
   }
 
-  public getScanReportProgress(id: number) {
-    return request({
-      url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/conversion/${id}`,
-      method: "GET",
-    });
-  }
-
-  public getScanReport(id: number) {
+  public getScanReport(id: string) {
     return request({
       url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/result-as-resource/${id}`,
       method: "GET",
@@ -103,7 +82,7 @@ export class WhiteRabbit {
     });
   }
 
-  public async getScanResult(id: number): Promise<{ fileId: number; fileName: string }> {
+  public async getScanResult(id: string): Promise<{ fileId: number; fileName: string }> {
     return request({
       url: `${WHITE_RABBIT_BASE_ENDPOINT}scan-report/result/${id}`,
       method: "GET",
@@ -118,37 +97,22 @@ export class WhiteRabbit {
     });
   }
 
-  public generateEtlReport(formatType: "word", etlModel: EtlModel) {
-    return request({
-      url: `${WHITE_RABBIT_BASE_ENDPOINT}report/${formatType}`,
-      method: "POST",
-      responseType: "blob",
-      data: etlModel,
-    });
-  }
-
   public createDBScanReport(postgresqlForm: ScanDataDBConnectionForm, tablesToScan: string[]) {
+    const iniSettings = {
+      ...postgresqlForm,
+      server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
+      tables_to_scan: tablesToScan.join(","),
+      database: postgresqlForm.schema, //
+    };
+
     const data = {
       options: {
-        url: "scan-report/db",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: {
-          ...postgresqlForm,
-          scanDataParams: {
-            sampleSize: 100000,
-            scanValues: true,
-            minCellCount: 5,
-            maxValues: 1000,
-            calculateNumericStats: false,
-            numericStatsSamplerSize: 100000,
-          },
-          tablesToScan: tablesToScan.join(","),
-        },
+        username: "admin",
+        data: iniSettings,
+        run_type: "SCAN_REPORT_DB",
       },
     };
+
     return request({
       url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
       method: "POST",
@@ -166,25 +130,14 @@ export class WhiteRabbit {
     });
   }
 
-  public getScanIdByFlowRunId(flowRunId: string) {
-    return request({
-      url: `${JOBPLUGINS_BASE_ENDPOINT}artifacts/${flowRunId}`,
-      method: "GET",
-    });
-  }
-
   public createEtlReport(etlModel: EtlModel) {
     const data = {
       options: {
-        url: "report/word",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        run_type: "GENERATE_ETL_REPORT",
         data: etlModel,
       },
     };
-  
+
     return request({
       url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
       method: "POST",
@@ -194,7 +147,7 @@ export class WhiteRabbit {
       },
     });
   }
-  
+
   public getEtlReportFromArtifacts(flowRunId: string) {
     return request({
       url: `${JOBPLUGINS_BASE_ENDPOINT}etl-report/${flowRunId}`,
