@@ -26,7 +26,7 @@ class IbisDao(SqlAlchemyDao):
     def create_schema(self) -> None:
         self.validate_schema_name(self.schema_name)
         with self.ibis_connect() as con:
-            con.create_database(name=self.schema_name)
+            con.create_database(self.schema_name)
 
     # Fallback to sqlalchemy because ibis cannot set length for str types
     # def create_table(self, table_name: str, columns: dict):
