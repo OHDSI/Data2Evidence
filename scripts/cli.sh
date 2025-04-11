@@ -197,7 +197,6 @@ case $cmd in
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo STRATEGUS__KEYRING_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE

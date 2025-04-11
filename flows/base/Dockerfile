@@ -133,7 +133,7 @@ RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' |
 # OHDSI packages and versions - after D2E
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v0.2.1", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 
 # D2E packages
@@ -169,7 +169,6 @@ WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
-COPY --chown=docker:docker ./base/init.R .
 
 # Grant docker ownership to create properties file
 RUN chown -R docker:docker ./liquibase/
