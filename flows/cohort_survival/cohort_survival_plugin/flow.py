@@ -4,8 +4,7 @@ from rpy2 import robjects
 from prefect import flow, task
 from prefect.variables import Variable
 from prefect.logging import get_run_logger
-from prefect.serializers import JSONSerializer
-from prefect.filesystems import RemoteFileSystem as RFS
+from prefect.artifacts import create_markdown_artifact
 
 from .types import CohortSurvivalOptionsType
 
@@ -34,12 +33,7 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     )
 
 
-@task(
-    result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-    result_storage_key="{flow_run.id}_km.json",
-    result_serializer=JSONSerializer(),
-    persist_result=True,
-)
+@task(persist_result=True)
 def generate_cohort_survival_data(
     dbdao,
     target_cohort_definition_id: int,
@@ -127,4 +121,11 @@ def generate_cohort_survival_data(
         # Parsing the json from R and returning to prevent double serialization
         # of the string
         result_dict = json.loads(str(result[0]))
+
+        # Create an artifact to store the result
+        create_markdown_artifact(
+            key="cohort_survival_result",
+            markdown=json.dumps(result_dict)
+        )
+
         return result_dict
