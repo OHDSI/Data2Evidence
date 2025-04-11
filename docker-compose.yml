@@ -3,7 +3,6 @@ networks:
   alp:
   data:
   enterprise-gateway:
-    attachable: true
 
 volumes:
   caddy:
@@ -1171,6 +1170,7 @@ services:
       labels:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
+    profiles: [jupyter]
     
   enterprise-gateway-proxy:
     image: haproxy:alpine
@@ -1239,3 +1239,4 @@ services:
           server-template enterprise-gateway 2 enterprise-gateway:8888 check resolvers docker
         EOF
         docker-entrypoint.sh haproxy -f ~/haproxy.cfg
+    profiles: [jupyter]
