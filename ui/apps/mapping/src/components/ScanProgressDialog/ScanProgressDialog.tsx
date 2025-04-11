@@ -18,12 +18,19 @@ interface ScanProgressDialogProps {
   scanId: string;
 }
 
+const FLOW_STATE_MAP = {
+  Scheduled: 0,
+  Pending: 25,
+  Running: 50,
+  Completed: 100,
+};
+
 export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, onClose, nodeId, scanId }) => {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [scanCompleted, setScanCompleted] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
   const { setTableSourceHandles } = useTable();
@@ -107,7 +114,6 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   const fetchScanProgress = useCallback(async () => {
     try {
-      console.log("here here here");
       const status = await api.whiteRabbit.getFlowRunStatus(scanId);
       if (status.state_name === "Completed") {
         setScanCompleted(true);
@@ -115,9 +121,10 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         setScanCompleted(true);
         setScanFailed(true);
       }
-
-      // setLog(response.logs.map((log: ScanDataProgressLogs) => log.message));
-      // setProgress(response.logs[response.logs.length - 1].percent);
+      setLog(status.state_name);
+      if (status.state_name in FLOW_STATE_MAP) {
+        setProgress(FLOW_STATE_MAP[status.state_name as keyof typeof FLOW_STATE_MAP]);
+      }
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
     }
@@ -167,11 +174,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
       <div className="scan-progress-dialog__content">
         <div className="scan-progress-dialog__status">Scanning... Estimated time depends on selected database</div>
         <LinearProgress variant="determinate" value={progress} />
-        <div className="scan-progress-dialog__log">
-          {log.map((entry, index) => (
-            <div key={index}>{entry}</div>
-          ))}
-        </div>
+        <div className="scan-progress-dialog__log">{log}</div>
       </div>
       <div className="scan-progress-dialog__actions">
         <Button onClick={handleBack} variant="outlined" disabled={!scanCompleted || loading}>
