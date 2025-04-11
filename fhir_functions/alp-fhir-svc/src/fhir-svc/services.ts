@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "npm:uuid";
+import { v4 as uuidv4 } from "uuid";
 import { FhirAPI } from "../api/FhirAPI";
 import { PortalAPI } from "../api/PortalAPI";
 import {
@@ -8,18 +8,6 @@ import {
   Headers,
 } from "../utils/types";
 
-// Todo: Remove as part of bots and subscriptions
-// import {
-//   getCachedbDbConnections,
-//   getClientCredentialsToken,
-// } from "../utils/dbUtils";
-// import {
-//   getFhirJsonSchema,
-//   ingestResourceInFhir,
-// } from "../utils/fhirDataModelUtil";
-// import { Bundle } from "@medplum/fhirtypes";
-// import { env } from "../env";
-
 const getDatasetId = async (
   token: string,
   studyCode: string
@@ -28,7 +16,7 @@ const getDatasetId = async (
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
 
-  const dataset = datasets.find((item) => item.tokenStudyCode === studyCode);
+  const dataset = datasets.find((item) => item.studyDetail.name === name);
 
   const datasetId = dataset ? dataset.id : null;
 
@@ -37,12 +25,12 @@ const getDatasetId = async (
 
 const checkProjectNameExists = async (
   fhirApi: FhirAPI,
-  studyCode: string
+  datasetName: string
 ): Promise<boolean> => {
   // check project with same name already exists
   const existingProject = await fhirApi.getOneResource(
     "Project",
-    `name=${studyCode}`
+    `name=${datasetName}`
   );
 
   if (existingProject !== undefined) {
@@ -88,7 +76,6 @@ export const createProject = async (name: string, description: string) => {
     resourceType: "Project",
     name: name,
     strictMode: true, // whether this project uses strict FHIR validation
-    //features: ["bots"], //Todo: Remove bots code
     description: description,
   };
   const projectResult = await fhirApi.post("Project", projectDetails);
@@ -140,8 +127,6 @@ export const createProject = async (name: string, description: string) => {
     },
   };
   await fhirApi.post("ProjectMembership", projectMembershipDetails);
-  // Todo: remove subscription code
-  // await createSubscriptionInFhirServer(fhirApi, clientId, projectId);
   return {
     projectName: name,
     projectId: projectId,
@@ -162,7 +147,7 @@ export const forwardRequest = async (
   // authenticate with superadmin credentials
   await fhirApi.clientCredentialsLogin();
 
-  // Check project exists which has unique studyCode
+  // Check project exists which has unique name
   const projectExists = await checkProjectNameExists(fhirApi, projectName);
 
   if (projectExists === false) {
@@ -200,211 +185,3 @@ export const forwardRequest = async (
     fhirHeaders
   );
 };
-
-// export const createResourceInProject = async (
-//   token: string,
-//   fhirResouce: string,
-//   resourceDetails: any,
-//   projectName: string
-// ) => {
-//   try {
-//     let fhirApi = new FhirAPI();
-//     let datasetId = "",
-//       clientId = "",
-//       clientSecret = "";
-//     await fhirApi.clientCredentialsLogin();
-//     const searchResult = await fhirApi.getOneResource(
-//       "ClientApplication",
-//       `name=${projectName}`
-//     );
-//     const errorMsg = `Client application with project name '${projectName}' not found!`;
-//     if (searchResult) {
-//       clientId = searchResult.id;
-//       clientSecret = searchResult.secret;
-//     } else {
-//       console.error(errorMsg);
-//       throw new Error(errorMsg);
-//     }
-
-//     // Todo: Remove subscription code
-//     // let getSubscription = await fhirApi.getOneResource(
-//     //   "Subscription",
-//     //   `criteria=${fhirResouce}&author=ClientApplication/${clientId}`
-//     // );
-//     // Update Subscription resource with Authorization header
-//     // getSubscription.channel.header = [`Authorization: ${token}`];
-//     // await fhirApi.updateResource(getSubscription);
-
-//     // Get datasets
-//     const portalAPI = new PortalAPI(token);
-//     const datasets: Dataset[] = await portalAPI.getDatasets();
-
-//     const resourceDataset = datasets.filter((dataset) => {
-//       if (dataset.studyDetail.name == projectName) return dataset;
-//     });
-
-//     // Get dataset Id of incoming resource
-//     if (resourceDataset.length > 0) {
-//       datasetId = resourceDataset[0].id;
-//     } else {
-//       console.error(errorMsg);
-//       throw new Error(errorMsg);
-//     }
-
-//     // Set datasetId in the metadata of the resource
-//     const metaInfo = {
-//       author: {
-//         reference: "ClientApplication/" + clientId,
-//       },
-//       id: datasetId,
-//     };
-//     resourceDetails.meta = metaInfo;
-//     await fhirApi.clientCredentialsLogin(clientId, clientSecret);
-//     const response = await fhirApi.post(fhirResouce, resourceDetails);
-//     return {
-//       resourceType: fhirResouce,
-//       projectName: projectName,
-//       datasetId: datasetId,
-//       resourceId: response.id,
-//     };
-//   } catch (error) {
-//     console.error(JSON.stringify(error));
-//     throw new Error(
-//       `Failed to create resource '${fhirResouce}' for project '${projectName}' - ${error.message}`
-//     );
-//   }
-// };
-
-// Todo: remove as part of bot and subscriptions code
-// export const ingestResourceInCacheDB = async (fhirResouce: string) => {
-//   console.info(`Received request to ingest resources in CacheDb`);
-//   let bundle: Bundle = fhirResouce;
-//   if (bundle.entry === undefined) {
-//     console.info("No entries in the bundle");
-//     return;
-//   }
-//   console.info(`Incoming DatasetId: ${bundle.meta.id}`);
-//   let token = await getClientCredentialsToken();
-//   //Get dataset details to connect to cachedb
-//   let portalApi = new PortalAPI(token);
-//   let datasetDetails = await portalApi.getDatasetById(bundle.meta.id);
-//   //Connect to cachedb of the incoming dataset
-//   let conn = await getCachedbDbConnections(
-//     token,
-//     datasetDetails.databaseCode,
-//     datasetDetails.schemaName,
-//     datasetDetails.vocabSchemaName
-//   );
-//   try {
-//     //Get fhir.schema.json
-//     const jsonSchema = await getFhirJsonSchema(conn);
-//     let results: any = [];
-//     console.info("Create resource for each of the entry in the bundle");
-//     for (const entry of bundle.entry) {
-//       let result = await ingestResourceInFhir(
-//         conn,
-//         datasetDetails.schemaName,
-//         jsonSchema,
-//         entry.resource,
-//         entry.request
-//       );
-//       if (result !== true) results.push(result);
-//     }
-//     return results;
-//   } catch (err) {
-//     console.error(`Error ingesting resource: ${err}`);
-//     throw err;
-//   } finally {
-//     conn.close();
-//   }
-// };
-
-// Todo: Remove subscription code
-//Create subscription for each dataset to trigger endpoint
-// export async function createSubscriptionInFhirServer(
-//   fhirApi: FhirAPI,
-//   clientId: string,
-//   projectId: string
-// ) {
-//   //Get all subscription thats configured for Super Admin - db6b2304-f236-45ec-b10c-a852681e7129
-//   let superAdminClientId = env.FHIR__CLIENT_ID;
-//   let getSubscriptions = await fhirApi.searchResource(
-//     "Subscription",
-//     `author=ClientApplication/${superAdminClientId}`
-//   );
-//   if (getSubscriptions && getSubscriptions.entry.length > 0) {
-//     for (const item of getSubscriptions.entry) {
-//       let endpoint = item.resource.channel.endpoint;
-//       let criteria = item.resource.criteria;
-//       const subscriptionDetails = {
-//         resourceType: "Subscription",
-//         status: "active",
-//         reason: `Rest hook subscription for ${criteria}`,
-//         channel: {
-//           type: "rest-hook",
-//           endpoint: `${endpoint}`,
-//         },
-//         criteria: `${criteria}`,
-//         meta: {
-//           author: {
-//             reference: `ClientApplication/${clientId}`,
-//             display: "d2eClient",
-//           },
-//           project: `${projectId}`,
-//           compartment: [
-//             {
-//               reference: `Project/${projectId}`,
-//             },
-//           ],
-//         },
-//       };
-//       console.info(subscriptionDetails);
-//       await fhirApi.post("Subscription", subscriptionDetails);
-//     }
-//   } else {
-//     console.info("No bots configured for project");
-//   }
-//   return true;
-// }
-
-//Need the following for testing
-//Test
-// export async function getResource(fhirResource: string, datasetId: string){
-//     let token = await getClientCredentialsToken()
-//     //Get dataset details to connect to cachedb
-//     let portalApi = new PortalAPI(token)
-//     let datasetDetails = await portalApi.getDatasetById(datasetId)
-//     //Connect to cachedb of the incoming dataset
-//     let conn = await getCachedbDbConnections(token, datasetDetails.databaseCode, datasetDetails.schemaName, datasetDetails.vocabSchemaName)
-//     return await getFhirData(conn, fhirResource)
-// }
-
-// //Test
-// export const updateResource = async(clientId, projectId, botId) => {
-//     let fhirAPi = new FhirAPI()
-//     let getSubscription = await fhirAPi.getOneResource('Subscription', `criteria=Bundle&author=ClientApplication/${clientId}`)
-//     getSubscription.channel.endpoint = `Bot/${botId}`
-//     // const subscriptionDetails = {
-//     //     "resourceType": "Subscription",
-//     //     "status": "active",
-//     //     "reason": "Rest hook subscription for Bundle",
-//     //     "channel": {
-//     //       "type": "rest-hook",
-//     //       "endpoint": `Bot/${botId}`
-//     //     },
-//     //     "criteria": "Bundle",
-//     //     "meta": {
-//     //       "author": {
-//     //         "reference": `ClientApplication/${clientId}`,
-//     //         "display": "d2eClient"
-//     //       },
-//     //       "project": `${projectId}`,
-//     //       "compartment": [
-//     //         {
-//     //           "reference": `Project/${projectId}`
-//     //         }
-//     //       ]
-//     //     }
-//     // }
-//     return await fhirAPi.updateResource(getSubscription)
-// }

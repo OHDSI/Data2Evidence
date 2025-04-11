@@ -48,10 +48,7 @@ export const seed = async () => {
 
   console.log("Seeding tables");
 
-  //console.log("Enable bots for Super Admin")
-
   let jsonParsedProjectContent = JSON.parse(projectContent);
-  //jsonParsedProjectContent.features = ["bots"]; //Todo: Remove bots code
   jsonParsedProjectContent.meta.versionId =
     "2c8b0331-863a-432e-a5d1-ef0619acc3d2";
   jsonParsedProjectContent.secret = [
