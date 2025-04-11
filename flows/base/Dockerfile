@@ -157,12 +157,6 @@ FROM base-build as dbsvc-build
 # Required for RPostgres R package
 RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 
-
-ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
-RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-
-
 FROM dbsvc-build AS final-build
 
 WORKDIR /app
@@ -170,20 +164,6 @@ WORKDIR /app
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
 COPY --chown=docker:docker ./base/init.R .
-
-# Grant docker ownership to create properties file
-RUN chown -R docker:docker ./liquibase/
-
-RUN mkdir /output
-RUN chown -R docker:docker /output
-
-# Create folder to store synpuf1k CSVs
-RUN mkdir -p /app/synpuf1k
-RUN chown -R docker:docker /app/synpuf1k
-
-# Create folder to store vocab CSVs
-RUN mkdir -p /app/vocab
-RUN chown -R docker:docker /app/vocab
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
