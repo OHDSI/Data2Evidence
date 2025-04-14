@@ -221,6 +221,29 @@
     &__list {
       flex: 1;
     }
+    .bookmark-content__header {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.5rem;
+
+      .bookmark-content__header-title {
+        color: $UiDarkText;
+      }
+
+      .bookmark-content__header-button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        .shared-toggle-container {
+          display: flex;
+          gap: 0.3rem;
+          align-items: center;
+          justify-content: center;
+          color: $UiDarkText;
+        }
+      }
+    }
     .bookmark-noContent {
       color: $UiDarkText;
       font-size: 14px;

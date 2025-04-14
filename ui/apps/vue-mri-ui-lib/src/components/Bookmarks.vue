@@ -78,58 +78,30 @@
       </template>
     </messageBox>
 
-    <messageBox
-      dim="true"
-      dialogWidth="500px"
-      messageType="custom"
+    <importAtlasCohortDefinitionDialog
       v-if="showImportAtlasCohortDefinition"
-      @close="closeImportAtlasCohortDefinition"
-    >
-      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div>
-            <textarea
-              class="import-json-textarea"
-              :class="['import-json-textarea', atasjsoninputerror && 'import-json-textarea__error']"
-              v-model="importAtlasJsonInput"
-              rows="20"
-              placeholder="Paste Atlas Cohort Definition JSON here.."
-            />
-            <div v-if="atasjsoninputerror" class="import-json-error"><strong>Error:</strong> {{ atasjsoninputerror }}</div>
-          </div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton :click="handleClick" :text="getText('MRI_PA_BUTTON_SAVE')" :disabled="isImportSaveDisabled"></appButton>
-        <appButton :click="closeImportAtlasCohortDefinition" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
-      </template>
-    </messageBox>
+      @closeEv="closeImportAtlasCohortDefinition"
+      @createdEv="loadBookmarks"
+    />
 
     <div class="bookmark-content">
-      <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
-        <div style="flex: 1; border-bottom: 0px lightgrey solid; display: flex; justify-content: start; color: navy">
-          Create Cohort:
-        </div>
-        <div style="flex: 1; margin-left: 10px"></div>
-      </div>
-      <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
-        <div style="flex: 3">
+      <div class="bookmark-content__header">
+        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort">
             <template #icon-left>
               <PatientsActiveIcon style="margin-right: 10px" fill="white" />
             </template>
           </Button>
-        </div>
-        <div v-if="enableAtlasCohortDefinition" style="flex: 3; margin-left: 10px">
-          <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
+          <Button
+            v-if="enableAtlasCohortDefinition"
+            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :onClick="openAtlasLink"
+          >
             <template #icon-left>
               <GlobeIcon style="margin-right: 10px" fill="white" />
             </template>
           </Button>
-        </div>
-        <div style="flex: 3; margin-left: 10px">
           <Button
             :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
@@ -138,8 +110,6 @@
               <UploadIcon style="margin-right: 10px" fill="white" />
             </template>
           </Button>
-        </div>
-        <div style="flex: 3; margin-left: 10px">
           <Button
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
@@ -149,14 +119,13 @@
               <LeftRightArrowIcon style="margin-right: 10px" fill="white" />
             </template>
           </Button>
-        </div>
-        <div style="flex: 1; margin-left: 10px; display: flex; align-items: center; justify-content: center">
-          <div style="font-size: 15px; color: navy; margin-right: 5px">
+          <div class="shared-toggle-container">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
+            <SlideToggle v-model="showSharedBookmarks" />
           </div>
-          <SlideToggle v-model="showSharedBookmarks" />
         </div>
       </div>
+
       <div class="bookmark-content__break" />
 
       <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
@@ -247,7 +216,7 @@ import Button from './Button.vue'
 import GlobeIcon from './icons/GlobeIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
 import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
-import { validateAtlasJson } from '../utils/AtlasJSONValidator'
+import importAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 
 export default {
   compatConfig: {
@@ -286,8 +255,6 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
-      importAtlasJsonInput: '',
-      atasjsoninputerror: '',
     }
   },
   watch: {
@@ -296,16 +263,6 @@ export default {
         this.loadBookmark(this.initBookmarkId, null)
       }
     },
-    importAtlasJsonInput: {
-      handler(newVal: string) {
-        if (newVal === '') {
-          this.atasjsoninputerror = ''
-          return
-        }
-        const result = validateAtlasJson(newVal);
-        this.atasjsoninputerror = result.error;
-      }
-    }
   },
   computed: {
     ...mapGetters([
@@ -335,9 +292,6 @@ export default {
     },
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
-    },
-    isImportSaveDisabled() {
-      return this.atasjsoninputerror || this.importAtlasJsonInput === '';
     },
   },
   methods: {
@@ -620,12 +574,11 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
-      this.atasjsoninputerror = ''
-      this.importAtlasJsonInput = ''
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
     },
-    handleClick(){
-      alert('clicked')
-    }
+    loadBookmarks() {
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+    },
   },
   components: {
     messageBox,
@@ -642,6 +595,7 @@ export default {
     GlobeIcon,
     LeftRightArrowIcon,
     UploadIcon,
+    importAtlasCohortDefinitionDialog,
   },
 }
 </script>

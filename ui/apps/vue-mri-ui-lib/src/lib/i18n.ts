@@ -863,6 +863,7 @@ export const i18n = {
     MRI_PA_FILTERCARD_CLEAR_ALL_BTN: 'Clear All',
     MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_SUCCESS: 'ATLAS cohort definition created successfully and added to Cohorts.',
     MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_ERROR: 'An error occurred while creating the ATLAS cohort definition.',
+    MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_JSON_TEXT: 'Paste Atlas Cohort Definition JSON here..',
     MRI_PA_BMK_COMPATIBLE_ERROR: 'Saved filter incompatible',
     MRI_PA_BMK_CONVERSION_ERROR: "Bookmark couldn't be converted",
     MRI_PA_DATE_PLACEHOLDER: 'Select or Enter Date (YYYY-MM-DD)',
