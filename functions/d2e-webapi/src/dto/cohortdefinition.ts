@@ -67,7 +67,7 @@ export const CohortDefinitionSqlDto = z.object({
 });
 
 export const CohortDefinitionSqlResponseDto = z.object({
-  tempplateSql: z.string(),
+  templateSql: z.string(),
 });
 
 export const CohortDefinitionIdVersionResponseDto = z.array(
