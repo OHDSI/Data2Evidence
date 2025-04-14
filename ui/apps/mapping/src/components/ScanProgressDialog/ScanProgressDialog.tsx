@@ -19,7 +19,7 @@ interface ScanProgressDialogProps {
 }
 
 const FLOW_STATE_MAP = {
-  Scheduled: 0,
+  Scheduled: 10,
   Pending: 25,
   Running: 50,
   Completed: 100,
@@ -139,7 +139,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    setLog([]);
+    setLog("");
     setProgress(0);
     setScanCompleted(false);
   }, []);
@@ -165,7 +165,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
     <Dialog className="scan-progress-dialog" open={open} maxWidth="sm" fullWidth>
       <DialogTitle>
         Scan Data
-        {(loading || !scanCompleted) && (
+        {loading && (
           <div className="scan-progress-dialog__loader">
             <Loader />
           </div>
