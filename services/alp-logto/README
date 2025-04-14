@@ -1,1 +1,10 @@
-TODO: explain how d2e connector, experience package, jwt-customizer and Signin code are transferred to data2evidence/logto repo
+Following changes are made to the `data2evidence/logto/Dockerfile` (a slightly modified version of logto/logto Dockerfile).
+```
+- download the source code of d2e
+- replace the to-replace/SignIn/Main.tsx in the path /logto/packages/experience/src/pages/SignIn/Main.tsx
+- copy the folder services/alp-logto/connector-alp-azuread
+- install and build D2E connector
+- link the connector to Logto
+```
+
+D2E connector is available alongside other connectors for usage in the admin console. 
