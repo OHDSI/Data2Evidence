@@ -13,16 +13,31 @@ export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {}
 
 // Transform the data for step plot and confidence intervals
 type GraphData = { timeX: number[]; survivalY: number[] };
-const getKaplanMeierGraphOption = (data: GraphData | null) => {
+const getKaplanMeierGraphOption = (
+  data: GraphData | null,
+  outcomeCohort: CohortMapping,
+  competingOutcomeCohort?: CohortMapping | null
+) => {
   const _data = data || { timeX: [], survivalY: [] };
-  const times = [];
-  const survivals: number[] = [];
+  const outcomeTimes = [];
+  const outcomeSurvivals: number[] = [];
+  const competingOutcomeTimes = [];
+  const competingOutcomeSurvivals: number[] = [];
   for (let i = 0; i < _data.survivalY.length; i++) {
-    times.push(_data.timeX[i]);
-    survivals.push(_data.survivalY[i]);
-    if (i < _data.survivalY.length - 1) {
-      times.push(_data.timeX[i + 1]);
-      survivals.push(_data.survivalY[i]);
+    if (i % 2 === 0) {
+      outcomeTimes.push(_data.timeX[i]);
+      outcomeSurvivals.push(_data.survivalY[i]);
+      if (i < _data.survivalY.length - 1) {
+        outcomeTimes.push(_data.timeX[i + 1]);
+        outcomeSurvivals.push(_data.survivalY[i]);
+      }
+    } else {
+      competingOutcomeTimes.push(_data.timeX[i]);
+      competingOutcomeSurvivals.push(_data.survivalY[i]);
+      if (i < _data.survivalY.length - 1) {
+        competingOutcomeTimes.push(_data.timeX[i + 1]);
+        competingOutcomeSurvivals.push(_data.survivalY[i]);
+      }
     }
   }
   const option = {
@@ -36,7 +51,7 @@ const getKaplanMeierGraphOption = (data: GraphData | null) => {
       },
     },
     title: {
-      text: "Kaplan-Meier Survival Curve",
+      text: !competingOutcomeCohort ? "Cohort Survival" : "Cumulative Incidence Functions",
     },
     xAxis: {
       type: "value",
@@ -44,39 +59,52 @@ const getKaplanMeierGraphOption = (data: GraphData | null) => {
     },
     yAxis: {
       type: "value",
-      name: "Survival Probability",
+      name: !competingOutcomeCohort ? "Survival Probability" : "Cumulative Failure Probability",
     },
     tooltip: {
       trigger: "axis",
       formatter: function (params: any) {
-        let result = "Days: " + Math.floor(params[0].axisValueLabel) + "<br>";
-        let probability = 1;
-        let marker = "";
-        let seriesName = "";
+        let result = "Days: " + Math.floor(params[0].axisValue) + "<br>";
+        let outcomeProbability = 1;
+        let competingOutcomeProbability = 1;
+        let outcomeMarker = "";
+        let competingOutcomeMarker = "";
         params.forEach(function (item: any) {
-          if (item.seriesName === "Survival Probability") {
-            if (item.data[1] < probability) {
-              probability = item.data[1];
-            }
-            marker = item.marker;
-            seriesName = item.seriesName;
+          if (item.seriesName === outcomeCohort.name) {
+            outcomeProbability = item.data[1];
+            outcomeMarker = item.marker;
+          }
+          if (item.seriesName === competingOutcomeCohort?.name) {
+            competingOutcomeProbability = item.data[1];
+            competingOutcomeMarker = item.marker;
           }
         });
-        result += marker + seriesName + ": " + probability;
+        result += outcomeMarker + outcomeCohort.name + ": " + outcomeProbability;
+        if (competingOutcomeCohort) {
+          result += "<br>" + competingOutcomeMarker + competingOutcomeCohort.name + ": " + competingOutcomeProbability;
+        }
         return result;
       },
     },
     series: [
       {
-        name: "Survival Probability",
-        data: times.map((time, index) => [time, survivals[index]]),
+        name: outcomeCohort.name,
+        data: outcomeTimes.map((time, index) => [time, outcomeSurvivals[index]]),
         type: "line",
         step: "end",
         smooth: true,
-        lineStyle: {
-          color: "black",
-        },
       },
+      ...(competingOutcomeCohort
+        ? [
+            {
+              name: competingOutcomeCohort.name,
+              data: competingOutcomeTimes.map((time, index) => [time, competingOutcomeSurvivals[index]]),
+              type: "line",
+              step: "end",
+              smooth: true,
+            },
+          ]
+        : []),
     ],
   };
   return option;
@@ -213,8 +241,13 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
   }, [cohortMgmtClient, setFeedback, getText, targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType]);
 
   const option = useMemo(() => {
-    return getKaplanMeierGraphOption(graphData);
-  }, [graphData]);
+    if (!graphData) {
+      return null;
+    }
+    const outcomeCohort = cohortList.find((cohort) => Number(cohort.id) == outcomeCohortId);
+    const competingOutcomeCohort = cohortList.find((cohort) => Number(cohort.id) == competingOutcomeCohortId);
+    return getKaplanMeierGraphOption(graphData, outcomeCohort!, competingOutcomeCohort);
+  }, [cohortList, graphData, outcomeCohortId, competingOutcomeCohortId]);
 
   return (
     <Card className="kaplan_meier__container">
