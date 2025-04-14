@@ -54,8 +54,7 @@ class IbisDao(SqlAlchemyDao):
     def copy_table_as_dataframe(self, source_table_name: str, columns_to_copy: list[str], 
                             filter_conditions: dict = None) -> pd.DataFrame:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                name=source_table_name)
+            table_obj = con.table(source_table_name, database=self.schema_name)
             query = table_obj.select(columns_to_copy)
             
             if "patient_filter" in filter_conditions:            
@@ -103,7 +102,7 @@ class IbisDao(SqlAlchemyDao):
     
     def get_cdm_version_concept_id(self, cdm_concept_code: str):
         with self.ibis_connect() as con:
-            table_obj = con.table(name="concept", 
+            table_obj = con.table("concept", 
                                   database=self.vocab_schema_name)
             
             expr = table_obj.filter(
@@ -116,7 +115,7 @@ class IbisDao(SqlAlchemyDao):
     
     def get_vocabulary_version(self):
         with self.ibis_connect() as con:
-            table_obj = con.table(name="vocabulary", 
+            table_obj = con.table("vocabulary", 
                                   database=self.vocab_schema_name)
             
             expr = table_obj.filter(table_obj.vocabulary_id == "None").select(table_obj.vocabulary_version).order_by(ibis.desc(table_obj.vocabulary_version))
@@ -125,23 +124,20 @@ class IbisDao(SqlAlchemyDao):
 
     def get_columns(self, table: str) -> list[str]:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name=table)
+            table_obj = con.table(table, database=self.schema_name)
         return table_obj.columns
     
 
     def get_table_row_count(self, table_name: str) -> int:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name=table_name)
+            table_obj = con.table(table_name, database=self.schema_name)
             row_count = table_obj.count().execute()
         return int(row_count)
 
 
     def get_distinct_count(self, table_name: str, column_name: str) -> int:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name=table_name)
+            table_obj = con.table(table_name, database=self.schema_name)
             row_count = table_obj.group_by(column_name).count().count().execute()
         return int(row_count)
     
@@ -150,16 +146,14 @@ class IbisDao(SqlAlchemyDao):
         Fetch the first column of the first row, and close the result set.
         """
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name=table_name)
+            table_obj = con.table(table_name, database=self.schema_name)
             value = table_obj.select(column_name).execute()
             return value.iloc[0,0]
 
 
     def get_next_record_id(self, table_name: str, id_column_name: int) -> int:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name=table_name)
+            table_obj = con.table(table_name, database=self.schema_name)
             last_record_id = getattr(table_obj, id_column_name).max().execute()
             if last_record_id is None:
                 return 1
@@ -167,8 +161,7 @@ class IbisDao(SqlAlchemyDao):
 
     def get_last_executed_changeset(self) -> str:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name="databasechangelog")
+            table_obj = con.table("databasechangelog", database=self.schema_name)
             latest_record = table_obj.order_by([table_obj.dateexecuted.desc()]).limit(1)
             latest_changeset = latest_record.select("filename").execute()
             return latest_changeset.iloc[0,0]
@@ -177,8 +170,7 @@ class IbisDao(SqlAlchemyDao):
     
     def get_datamodel_created_date(self) -> datetime:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name="databasechangelog")
+            table_obj = con.table("databasechangelog", database=self.schema_name)
             first_record = getattr(table_obj, "dateexecuted").min().execute()
             return first_record.to_pydatetime()
 
@@ -186,8 +178,7 @@ class IbisDao(SqlAlchemyDao):
 
     def get_datamodel_updated_date(self) -> datetime:
         with self.ibis_connect() as con:
-            table_obj = con.table(database=self.schema_name,
-                                  name="databasechangelog")
+            table_obj = con.table("databasechangelog", database=self.schema_name)
             last_record = getattr(table_obj, "dateexecuted").max().execute()
             return last_record.to_pydatetime()
         
@@ -397,5 +388,3 @@ class IbisDao(SqlAlchemyDao):
             else:
                 print(
                     f"Granted cohort and cohort definition Write privileges Successfully")
-                
-

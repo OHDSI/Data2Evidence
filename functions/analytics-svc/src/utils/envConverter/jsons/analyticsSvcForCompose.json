@@ -6,8 +6,7 @@
       "alp-minerva-db-mgmt-svc",
       "analytics",
       "config2",
-      "cdw",
-      "alp-sqleditor"
+      "cdw"
     ],
     "name": "ALPDEV",
     "key": "mridb",
