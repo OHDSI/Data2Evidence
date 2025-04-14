@@ -7,8 +7,7 @@
         "alp-minerva-db-mgmt-svc",
         "analytics",
         "config2",
-        "cdw",
-        "alp-sqleditor"
+        "cdw"
       ],
       "credentials": {
         "host": "dummy-hostname.com",
@@ -36,7 +35,7 @@
     },
     {
       "name": "postgres-mri-minerva",
-      "tags": ["alp-minerva-db-mgmt-svc", "dbsvc", "alp-sqleditor"],
+      "tags": ["alp-minerva-db-mgmt-svc", "dbsvc"],
       "credentials": {
         "host": "alp-minerva-postgres-1",
         "port": 5432,

@@ -11,7 +11,6 @@ import {
   Roles,
   ALP_ROLES,
   ALP_SYSTEM_ADMIN,
-  ALP_SQLEDITOR_ADMIN,
   ALP_USER_ADMIN,
   DATA_ADMIN_ROLES,
   TENANT_ROLES,
@@ -151,10 +150,6 @@ export const UserOverview: FC<UserOverviewProps> = () => {
 
     if (roles.includes(ALP_SYSTEM_ADMIN)) {
       roleList.push(DATA_ADMIN_ROLES[ALP_SYSTEM_ADMIN]);
-    }
-
-    if (roles.includes(ALP_SQLEDITOR_ADMIN)) {
-      roleList.push(DATA_ADMIN_ROLES[ALP_SQLEDITOR_ADMIN]);
     }
 
     if (roles.includes(ALP_USER_ADMIN)) {
