@@ -1,144 +1,20 @@
 name: d2e DC Deploy AzureDev
-run-name: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }} ${{ github.event.inputs.repo_full_name || 'data2evidence/d2e' }}
+run-name: 'OHDSI/d2e'
 
 on:
   push:
     branches:
       - develop
-  workflow_dispatch:
-    inputs:
-      repo_full_name:
-        description: Select RepoName
-        options:
-          - data2evidence/d2e
-        default: data2evidence/d2e
-        type: choice
-      env:
-        default: alp-dev-sg-3
-        description: Select the environment
-        required: true
-        type: environment
-      force-cleanup-containers:
-        description: Force cleanup all containers
-        type: boolean
-        default: false
-      docker-tag-develop:
-        description: tag:*:develop
-        type: boolean
-      docker-tag-textbox:
-        description: tag:fromTextbox (precedence)
-        type: string
-        required: false
-      dotenv-boolean:
-        description: boolean:dotenv
-        type: boolean
-        default: true
-
-env:
-  DOCKER_TAG_NAME: ${{ github.event.inputs.docker-tag-textbox || 'develop' }}
-  ENV_NAME: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
-  ENV_TYPE: remote
-  DOTENV_BOOLEAN: ${{ github.event.inputs.dotenv-boolean || 'true'}}
-  REPO_FULL_NAME: ${{ github.event.inputs.repo_full_name || 'data2evidence/d2e' }}
-  FORCE_CLEANUP_CONTAINERS: ${{ github.event.inputs.force-cleanup-containers || 'false'}}
-  DOCKER_TAG_DEVELOP: ${{ github.event.inputs.docker-tag-develop || 'false' }}
-
-concurrency:
-  group: az-dc-deploy-${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
-  cancel-in-progress: true
-
+  
 jobs:
   deploy:
-    environment: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
-    name: ${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}
-    runs-on:
-      [
-        "${{ github.event.inputs.env || vars.ENVIRONMENT_NAME_DEPLOY }}",
-        self-hosted,
-        Linux,
-        X64,
-      ]
+    runs-on: ubuntu-latest
+    name: Deploy to dev
     steps:
-      - uses: actions/checkout@v4.1.1
-        name: checkout d2e repo
-        with:
-          clean: false
-          repository: ${{ env.REPO_FULL_NAME }}
-
-      - name: Force cleanup containers
-        if: ${{ env.FORCE_CLEANUP_CONTAINERS }}
-        continue-on-error: true
-        run: docker rm -v -f $(docker ps -qa)
-
-      - name: Generate dotenv
+      - uses: actions/checkout@v4.1.1 
+      - name: deploy
         env:
-          DOTENV_FILE: .env.${{ env.ENV_TYPE }}
-          ENV_YML: ${{ secrets.ENV_YML }}
+          GHA_DEPLOY_TOKEN: ${{ secrets.GHA_DEPLOY_TOKEN }}
         run: |
-          # mask sensitive values
-          internal/scripts/gha-mask.sh
-
-          if [ ${{ env.DOTENV_BOOLEAN }} = true ]; then
-            echo "# ${DOTENV_FILE##*/} $ENV_NAME" > $DOTENV_FILE
-            echo "# https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> $DOTENV_FILE
-            echo "${ENV_YML}" | yq -o sh >> $DOTENV_FILE
-            source scripts/lib.sh
-            gen-tls-internal
-            set-cpu-limit
-            set-memory-limit
-          else
-            echo dotenv-boolean=false | tee -a $GITHUB_STEP_SUMMARY
-          fi
-
-          wc -l $DOTENV_FILE
-
-          cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
-
-          if [[ $DOCKER_TAG_NAME = */* ]]; then
-            DOCKER_TAG_NAME=$(printf "%s" "$DOCKER_TAG_NAME" | awk -F '/' '{print $2}')
-          fi
-          [ "${{ env.DOCKER_TAG_DEVELOP }}" = true ] && DOCKER_TAG_NAME=develop
-
-          echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-          echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
-          echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
-
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-
-      - name: Pull docker images
-        uses: nick-fields/retry@v3
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 60
-          max_attempts: 10
-          retry_on: any
-          command: |
-            # customize dc.yml
-            yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
-            yarn remote:minerva pull
-            docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME} # To handle if not present
-
-      - name: docker compose up
-        env:
-          GATEWAY_NAME: alp-minerva-gateway-1
-        run: |
-          yarn remote:minerva start
-          DC_EXIT_CODE=$?
-          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
-
-          DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
-          docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-
-          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
-          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-          [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
-      - name: Logs minerva
-        if: success() || failure()
-        run: |
-          yarn deploy:logs:minerva
-
-      - name: Post cleanup
-        if: always()
-        run: |
-          docker rm -f alp-caddy-certs-mgmt || true # Cleanup cert mgmt container if job aborted
+            curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GHA_DEPLOY_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/data2evidence/d2e-deploy/dispatches -d '{"event_type":"deploy","client_payload":{"unit":false,"integration":true}}'
+      

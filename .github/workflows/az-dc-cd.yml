@@ -1,120 +1,120 @@
-name: d2e DC Deploy AzureTest CD
-run-name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+# name: d2e DC Deploy AzureTest CD
+# run-name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
 
-on:
-  schedule:
-    - cron: "0 22 * * *" # UTC timing
+# on:
+#   schedule:
+#     - cron: "0 22 * * *" # UTC timing
 
-  workflow_dispatch:
-    inputs:
-      docker_tag_name:
-        default: develop
-        description: Enter BranchName / Release Tag Name
-        required: true
-        type: string
-      env:
-        type: environment
-        description: Select the environment
-        required: true
-        default: alp-dev-sg-2
-      force-cleanup-containers:
-        description: Force cleanup all containers
-        type: boolean
-        default: true
+#   workflow_dispatch:
+#     inputs:
+#       docker_tag_name:
+#         default: develop
+#         description: Enter BranchName / Release Tag Name
+#         required: true
+#         type: string
+#       env:
+#         type: environment
+#         description: Select the environment
+#         required: true
+#         default: alp-dev-sg-2
+#       force-cleanup-containers:
+#         description: Force cleanup all containers
+#         type: boolean
+#         default: true
 
-env:
-  DOCKER_TAG_NAME: ${{ github.event.inputs.docker_tag_name || 'develop' }}
-  ENV_NAME: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
-  ENV_TYPE: remote
+# env:
+#   DOCKER_TAG_NAME: ${{ github.event.inputs.docker_tag_name || 'develop' }}
+#   ENV_NAME: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+#   ENV_TYPE: remote
 
-concurrency:
-  group: az-dc-cd-${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
-  cancel-in-progress: true
+# concurrency:
+#   group: az-dc-cd-${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+#   cancel-in-progress: true
 
-jobs:
-  deploy:
-    environment: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
-    name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
-    runs-on:
-      [
-        "${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}",
-        self-hosted,
-        Linux,
-        X64,
-      ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          clean: false
+# jobs:
+#   deploy:
+#     environment: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+#     name: ${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}
+#     runs-on:
+#       [
+#         "${{ github.event_name == 'schedule' && vars.ENVIRONMENT_NAME_CD || github.event.inputs.env }}",
+#         self-hosted,
+#         Linux,
+#         X64,
+#       ]
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           clean: false
 
-      - name: Generate dotenv
-        env:
-          DOTENV_FILE: .env.${{ env.ENV_TYPE }}
-          ENV_YML: ${{ secrets.ENV_YML }}
-        run: |
-          # mask sensitive values
-          internal/scripts/gha-mask.sh
+#       - name: Generate dotenv
+#         env:
+#           DOTENV_FILE: .env.${{ env.ENV_TYPE }}
+#           ENV_YML: ${{ secrets.ENV_YML }}
+#         run: |
+#           # mask sensitive values
+#           internal/scripts/gha-mask.sh
 
-          echo "# ${DOTENV_FILE##*/} $ENV_NAME" > $DOTENV_FILE
-          echo "# https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> $DOTENV_FILE
-          echo "${ENV_YML}" | yq -o sh >> $DOTENV_FILE
-          source scripts/lib.sh
-          gen-tls-internal
-          set-cpu-limit
-          set-memory-limit
-          wc -l $DOTENV_FILE
+#           echo "# ${DOTENV_FILE##*/} $ENV_NAME" > $DOTENV_FILE
+#           echo "# https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> $DOTENV_FILE
+#           echo "${ENV_YML}" | yq -o sh >> $DOTENV_FILE
+#           source scripts/lib.sh
+#           gen-tls-internal
+#           set-cpu-limit
+#           set-memory-limit
+#           wc -l $DOTENV_FILE
 
-          cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
+#           cp $DOTENV_FILE ../$DOTENV_FILE-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S')
 
-          echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_STEP_SUMMARY
-          echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
-          echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
+#           echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME | tee -a $DOTENV_FILE | tee -a $GITHUB_STEP_SUMMARY
+#           echo HEAD_COMMIT_MESSAGE=$(git show -s --format=%s) | tee -a "$GITHUB_STEP_SUMMARY"
+#           echo GITHUB_SHA_SHORT=$(git rev-parse --short HEAD) | tee -a "$GITHUB_STEP_SUMMARY"
 
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+#           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-      - name: Force cleanup containers
-        if: github.event.inputs.force-cleanup-containers
-        continue-on-error: true
-        run: docker rm -v -f $(docker ps -qa)
+#       - name: Force cleanup containers
+#         if: github.event.inputs.force-cleanup-containers
+#         continue-on-error: true
+#         run: docker rm -v -f $(docker ps -qa)
 
-      - shell: bash
-        if: github.event_name == 'schedule'
-        id: enable_delay_for_docker_build_to_complete
-        run: |
-          sleep 240 # Temporary solution
+#       - shell: bash
+#         if: github.event_name == 'schedule'
+#         id: enable_delay_for_docker_build_to_complete
+#         run: |
+#           sleep 240 # Temporary solution
 
-      - name: Pull docker images
-        uses: nick-fields/retry@v3
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 60
-          max_attempts: 10
-          retry_on: any
-          command: |
-            # customize dc.yml
-            yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
-            yarn remote:minerva pull
-            docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME} # To handle if not present
+#       - name: Pull docker images
+#         uses: nick-fields/retry@v3
+#         with:
+#           timeout_seconds: 1800
+#           retry_wait_seconds: 60
+#           max_attempts: 10
+#           retry_on: any
+#           command: |
+#             # customize dc.yml
+#             yq -i '.services.alp-minerva-postgres.ports=["41190:5432"]' docker-compose.yml # expose PG port
+#             yarn remote:minerva pull
+#             docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME} # To handle if not present
 
-      - name: docker compose up
-        run: |
-          yarn remote:minerva start
-          DC_EXIT_CODE=$?
-          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+#       - name: docker compose up
+#         run: |
+#           yarn remote:minerva start
+#           DC_EXIT_CODE=$?
+#           echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
 
-          DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
-          docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+#           DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
+#           docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
 
-          DC_FAIL_COUNT=$( grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true )
-          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-          [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+#           DC_FAIL_COUNT=$( grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true )
+#           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+#           [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Logs minerva
-        if: success() || failure()
-        run: |
-          yarn deploy:logs:minerva
+#       - name: Logs minerva
+#         if: success() || failure()
+#         run: |
+#           yarn deploy:logs:minerva
 
-      - name: Post cleanup
-        if: always()
-        run: |
-          docker rm -f alp-caddy-certs-mgmt || true # Cleanup cert mgmt container if job aborted
+#       - name: Post cleanup
+#         if: always()
+#         run: |
+#           docker rm -f alp-caddy-certs-mgmt || true # Cleanup cert mgmt container if job aborted
