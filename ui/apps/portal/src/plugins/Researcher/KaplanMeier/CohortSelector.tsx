@@ -17,7 +17,7 @@ interface CohortSelectorProps {
 
 const styles: SxProps = {
   color: "#000080",
-  minWidth: 220,
+  minWidth: 270,
   ".MuiInputLabel-root": {
     color: "#000080",
     "&.MuiInputLabel-shrink, &.Mui-focused": {
@@ -58,7 +58,7 @@ const CohortSelector: FC<CohortSelectorProps> = ({ cohortTableName, cohortList, 
       >
         {cohortList.map((cohort: CohortMapping) => (
           <MenuItem value={cohort.id} key={cohort.id} sx={styles} disableRipple>
-            {cohort.name}
+            #{cohort.id} - {cohort.name} ({cohort.patientCount})
           </MenuItem>
         ))}
       </Select>

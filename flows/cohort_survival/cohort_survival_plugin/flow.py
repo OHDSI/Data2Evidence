@@ -16,21 +16,25 @@ from _shared_flow_utils.dao.DBDao import DBDao
 def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     logger = get_run_logger()
     logger.info("Running Cohort Survival")
-    
+
     database_code = options.databaseCode
     schema_name = options.schemaName
     use_cache_db = options.use_cache_db
     target_cohort_definition_id = options.targetCohortDefinitionId
     outcome_cohort_definition_id = options.outcomeCohortDefinitionId
-    
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema_name)    
-    
+    analysis_type = options.analysisType
+    competing_outcome_cohort_definition_id = options.competingOutcomeCohortDefinitionId
+
+    dbdao = DBDao(
+        use_cache_db=use_cache_db, database_code=database_code, schema_name=schema_name
+    )
+
     generate_cohort_survival_data(
         dbdao,
         target_cohort_definition_id,
-        outcome_cohort_definition_id
+        outcome_cohort_definition_id,
+        analysis_type,
+        competing_outcome_cohort_definition_id,
     )
 
 
@@ -44,7 +48,17 @@ def generate_cohort_survival_data(
     dbdao,
     target_cohort_definition_id: int,
     outcome_cohort_definition_id: int,
+    analysis_type: str = "single_event",
+    competing_outcome_cohort_definition_id: int = None,
 ):
+    # Validate parameters
+    if (
+        analysis_type == "competing_risk"
+        and competing_outcome_cohort_definition_id is None
+    ):
+        raise ValueError(
+            "competing_outcome_cohort_definition_id is required for competing_risk analysis"
+        )
     # Get credentials for database code
     db_credentials = dbdao.tenant_configs
 
@@ -63,6 +77,8 @@ def generate_cohort_survival_data(
             # VARIABLES
             target_cohort_definition_id <- {target_cohort_definition_id}
             outcome_cohort_definition_id <- {outcome_cohort_definition_id}
+            analysis_type <- "{analysis_type}"
+            competing_outcome_cohort_definition_id <- {competing_outcome_cohort_definition_id if competing_outcome_cohort_definition_id is not None else 'NULL'}
             pg_host <- "{db_credentials.host}"
             pg_port <- "{db_credentials.port}"
             pg_dbname <- "{db_credentials.databaseName}"
@@ -72,7 +88,7 @@ def generate_cohort_survival_data(
 
             con <- NULL
             tryCatch(
-                {{ 
+                {{
                     pg_con <- DBI::dbConnect(RPostgres::Postgres(),
                         dbname = pg_dbname,
                         host = pg_host,
@@ -92,18 +108,33 @@ def generate_cohort_survival_data(
                         .soft_validation = TRUE
                     )
 
-                    death_survival <- estimateSingleEventSurvival(cdm,
-                        targetCohortId = target_cohort_definition_id,
-                        outcomeCohortId = outcome_cohort_definition_id,
-                        targetCohortTable = "cohort",
-                        outcomeCohortTable = "cohort",
-                        estimateGap = 30
-                    )
+                    # Choose the appropriate survival analysis method based on analysis_type
+                    if (analysis_type == "competing_risk") {{
+                        survival <- estimateCompetingRiskSurvival(cdm,
+                            targetCohortId = target_cohort_definition_id,
+                            outcomeCohortId = outcome_cohort_definition_id,
+                            targetCohortTable = "cohort",
+                            outcomeCohortTable = "cohort",
+                            competingOutcomeCohortTable = "cohort",
+                            competingOutcomeCohortId = competing_outcome_cohort_definition_id,
+                            estimateGap = 30
+                        )
+                        plot <- plotSurvival(survival, cumulativeFailure = TRUE)
+                    }} else {{
+                        survival <- estimateSingleEventSurvival(cdm,
+                            targetCohortId = target_cohort_definition_id,
+                            outcomeCohortId = outcome_cohort_definition_id,
+                            targetCohortTable = "cohort",
+                            outcomeCohortTable = "cohort",
+                            estimateGap = 30
+                        )
+                        plot <- plotSurvival(survival)
+                    }}
                     
                     # Rollback queries done above after cohort survival is done
                     DBI::dbRollback(pg_con)
 
-                    plot <- plotSurvival(death_survival)
+                    
                     plot_data <- ggplot_build(plot)$data[[1]]
                     # Convert data to a list if not already
                     plot_data <- as.list(plot_data)

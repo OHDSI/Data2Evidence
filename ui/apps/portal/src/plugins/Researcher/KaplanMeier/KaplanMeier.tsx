@@ -92,7 +92,8 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
   const [cohortList, setCohortList] = useState<CohortMapping[]>([]);
   const [targetCohortId, setTargetCohortId] = useState<number | null>(null);
   const [outcomeCohortId, setOutcomeCohortId] = useState<number | null>(null);
-  // const [competingOutcomeCohortId, setCompetingOutcomeCohortId] = useState<number | null>(null);
+  const [competingOutcomeCohortId, setCompetingOutcomeCohortId] = useState<number | null>(null);
+  const [analysisType, setAnalysisType] = useState<"single_event" | "competing_risk">("single_event");
   const { setFeedback } = useFeedback();
 
   const cohortMgmtClient = useMemo(() => new CohortSurvival(activeDataset.id), [activeDataset.id]);
@@ -104,6 +105,9 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         const result = await cohortMgmtClient.getCohorts({ excludePatientIds: true });
         const cohortsForDataset = result.data.filter((res) => {
           try {
+            if (!res.patientCount) {
+              return false;
+            }
             const cohortSyntax = JSON.parse(res.syntax);
             if (cohortSyntax.datasetId === activeDataset.id) {
               return true;
@@ -127,11 +131,34 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
     fetchData();
   }, [cohortMgmtClient, setFeedback, getText]);
 
-  const onClickRunAnalysis = useCallback(() => {
+  // Check if form is valid for submission
+  const isFormValid = useMemo(() => {
     if (targetCohortId === null || outcomeCohortId === null) {
-      console.log(":(");
+      return false;
+    }
+
+    if (analysisType === "competing_risk" && competingOutcomeCohortId === null) {
+      return false;
+    }
+
+    return true;
+  }, [targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType]);
+
+  const onClickRunAnalysis = useCallback(() => {
+    if (!isFormValid) {
       return;
     }
+
+    // If competing risk analysis is selected but no competing outcome cohort is selected
+    if (analysisType === "competing_risk" && competingOutcomeCohortId === null) {
+      setFeedback({
+        type: "error",
+        message: "Competing outcome cohort is required",
+        description: "Please select a competing outcome cohort for competing risk analysis",
+      });
+      return;
+    }
+
     setIsGraphLoading(true);
 
     const fetchGraphData = async (flowRunId: string) => {
@@ -161,7 +188,16 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
     };
     const fetchData = async () => {
       try {
-        const result: { flowRunId: string } = await cohortMgmtClient.startKmAnalysis(targetCohortId, outcomeCohortId);
+        // We can safely use non-null assertion (!) here because isFormValid ensures these values are not null
+        const result: { flowRunId: string } = await cohortMgmtClient.startKmAnalysis({
+          targetCohortId: targetCohortId!,
+          outcomeCohortId: outcomeCohortId!,
+          competingOutcomeCohortId:
+            analysisType === "competing_risk" && competingOutcomeCohortId !== null
+              ? competingOutcomeCohortId
+              : undefined,
+          analysisType,
+        });
         const graphData = await fetchGraphData(result.flowRunId);
         console.log(graphData);
       } catch (err) {
@@ -174,7 +210,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
       }
     };
     fetchData();
-  }, [cohortMgmtClient, setFeedback, getText, targetCohortId, outcomeCohortId]);
+  }, [cohortMgmtClient, setFeedback, getText, targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType]);
 
   const option = useMemo(() => {
     return getKaplanMeierGraphOption(graphData);
@@ -202,7 +238,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         </div>
         <div>
           <div className="kaplan_meier__cohort_selector">
-            <div className="kaplan_meier__cohort_selector_label">
+            <div className="kaplan_meier__cohort_selector_label" style={{ marginLeft: "10px" }}>
               {getText(i18nKeys.COHORT_SURVIVAL__SELECT_OUTCOME_COHORT)}:{" "}
             </div>
             <CohortSelector
@@ -214,12 +250,58 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             />
           </div>
         </div>
+        <div>
+          <div className="kaplan_meier__cohort_selector">
+            <div className="kaplan_meier__cohort_selector_label" style={{ marginLeft: "10px" }}>
+              {getText(i18nKeys.COHORT_SURVIVAL__SELECT_COMPETING_OUTCOME_COHORT)}:{" "}
+            </div>
+            <CohortSelector
+              cohortTableName="Competing Outcome cohort"
+              setCohortId={setCompetingOutcomeCohortId}
+              cohortId={competingOutcomeCohortId}
+              cohortList={cohortList}
+              disabled={isLoading || isGraphLoading || analysisType === "single_event"}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", marginTop: "15px", alignItems: "center" }}>
+        <div style={{ marginRight: "20px" }}>
+          <label>
+            <input
+              type="radio"
+              name="analysisType"
+              value="single_event"
+              checked={analysisType === "single_event"}
+              onChange={() => {
+                setAnalysisType("single_event");
+                setCompetingOutcomeCohortId(null);
+              }}
+              disabled={isLoading || isGraphLoading}
+            />
+            {" Single Event Analysis"}
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="radio"
+              name="analysisType"
+              value="competing_risk"
+              checked={analysisType === "competing_risk"}
+              onChange={() => setAnalysisType("competing_risk")}
+              disabled={isLoading || isGraphLoading}
+            />
+            {" Competing Risk Analysis"}
+          </label>
+        </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "10px" }}>
         <Button
           text={getText(i18nKeys.COHORT_SURVIVAL__RUN_SURVIVAL_ANALYSIS)}
           onClick={onClickRunAnalysis}
-          disabled={isGraphLoading}
+          disabled={isGraphLoading || !isFormValid}
         />
       </div>
       <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>

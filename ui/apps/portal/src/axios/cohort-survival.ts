@@ -23,12 +23,22 @@ export class CohortSurvival {
     });
   }
 
-  public startKmAnalysis(targetCohortId: number, outcomeCohortId: number): Promise<{ flowRunId: string }> {
+  public startKmAnalysis({
+    targetCohortId,
+    outcomeCohortId,
+    competingOutcomeCohortId,
+    analysisType,
+  }: {
+    targetCohortId: number;
+    outcomeCohortId: number;
+    competingOutcomeCohortId?: number;
+    analysisType?: "single_event" | "competing_risk";
+  }): Promise<{ flowRunId: string }> {
     return request({
       baseURL: MRI_BASE_URL,
       url: `/api/services/kaplan-meier`,
       method: "POST",
-      data: { targetCohortId, outcomeCohortId },
+      data: { targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType },
       params: { datasetId: this.datasetId },
     });
   }

@@ -154,6 +154,8 @@ export async function analyzeCohortsKm(req: IMRIRequest, res) {
                 databaseCode,
                 targetCohortDefinitionId: req.body.targetCohortId,
                 outcomeCohortDefinitionId: req.body.outcomeCohortId,
+                competingOutcomeCohortDefinitionId: req.body.competingOutcomeCohortId,
+                analysisType: req.body.analysisType,
                 datasetId: datasetId,
             },
         }
