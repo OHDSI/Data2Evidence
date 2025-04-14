@@ -39,6 +39,9 @@ export const CohortDefinitionListResponseDto = z.array(
     tags: z.array(z.string()),
   })
 );
+export type ICohortDefinitionListResponseDto = z.infer<
+  typeof CohortDefinitionListResponseDto
+>;
 
 export const CohortDefinitionResponseDto = z.object({
   id: z.number(),
