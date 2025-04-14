@@ -73,8 +73,7 @@ def generateETLWordDocument(inputPath: str = "../../data.json", outputPath: str 
     if not os.path.exists(inputPath):
         raise FileNotFoundError(f"file {inputPath} does not exist.")
 
-    ShellOperation(
-        commands=["Xvfb :1"]).trigger()
+    start_awt_display()
 
     ShellOperation(commands=[
                    f"./dist/bin/rabbitInAHat --generateWordReport {inputPath} {outputPath}"]).run()
