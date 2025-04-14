@@ -165,6 +165,14 @@ COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/dri
 COPY --chown=docker:docker  ./__init__.py .
 COPY --chown=docker:docker ./base/init.R .
 
+# Create folder to store synpuf1k CSVs
+RUN mkdir -p /app/synpuf1k
+RUN chown -R docker:docker /app/synpuf1k
+
+# Create folder to store vocab CSVs
+RUN mkdir -p /app/vocab
+RUN chown -R docker:docker /app/vocab
+
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
 ENV duckdb_version 1.2.1

@@ -39,14 +39,6 @@ RUN chown -R docker:docker ./liquibase/
 RUN mkdir /output
 RUN chown -R docker:docker /output
 
-# Create folder to store synpuf1k CSVs
-RUN mkdir -p /app/synpuf1k
-RUN chown -R docker:docker /app/synpuf1k
-
-# Create folder to store vocab CSVs
-RUN mkdir -p /app/vocab
-RUN chown -R docker:docker /app/vocab
-
 COPY --chown=docker:docker --chmod=711 ./data_management/requirements_data_management.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
