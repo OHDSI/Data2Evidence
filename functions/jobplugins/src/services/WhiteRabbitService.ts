@@ -18,10 +18,7 @@ export class WhiteRabbitService {
     const parameters = {
       options: {
         ...createWhiteRabbitFlowRunDto.options,
-        headers: {
-          username,
-          ...createWhiteRabbitFlowRunDto.options.headers,
-        },
+        username: username,
       },
     };
 

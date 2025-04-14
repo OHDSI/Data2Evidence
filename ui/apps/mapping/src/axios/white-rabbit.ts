@@ -58,7 +58,6 @@ export class WhiteRabbit {
 
     const data = {
       options: {
-        username: "admin",
         data: base64Compressed,
         run_type: "SCAN_REPORT_FILES",
       },
@@ -107,7 +106,6 @@ export class WhiteRabbit {
 
     const data = {
       options: {
-        username: "admin",
         data: iniSettings,
         run_type: "SCAN_REPORT_DB",
       },

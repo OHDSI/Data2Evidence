@@ -341,9 +341,8 @@ export interface ICreatePerseusFlowRunDto {
 }
 
 interface ICreateWhiteRabbitFlowRunOptions {
-  url: string;
-  headers?: object;
   data?: object;
+  run_type: string;
 }
 
 export interface IPrefectArtifact {
