@@ -1,4 +1,4 @@
-import express, { Application } from "npm:express";
+import express, { Application } from "express";
 import { FhirRouter } from "./src/fhir-svc/routes.ts";
 import { binaryUploadLimitSize } from "./src/env.ts";
 
