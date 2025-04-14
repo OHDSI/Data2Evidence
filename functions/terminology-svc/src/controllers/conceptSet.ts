@@ -328,6 +328,6 @@ const _getConceptSetConceptIds = async (
     includedConceptIds.push(concept.concept_id_1);
   });
 
-  const uniqueConceptIds = Array.from(new Set(includedConceptIds)).sort();
+  const uniqueConceptIds = Array.from(new Set(includedConceptIds.concat(conceptIds))).sort();
   return uniqueConceptIds;
 };
