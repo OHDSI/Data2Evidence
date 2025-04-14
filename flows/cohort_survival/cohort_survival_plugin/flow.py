@@ -82,8 +82,8 @@ def generate_cohort_survival_data(
             pg_host <- "{db_credentials.host}"
             pg_port <- "{db_credentials.port}"
             pg_dbname <- "{db_credentials.databaseName}"
-            pg_user <- "{db_credentials.adminUser}"
-            pg_password <- "{db_credentials.adminPassword.get_secret_value()}"
+            pg_user <- "{db_credentials.readUser}"
+            pg_password <- "{db_credentials.readPassword.get_secret_value()}"
             pg_schema <- "{dbdao.schema_name}"
 
             con <- NULL
