@@ -574,7 +574,6 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
-      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
     },
     loadBookmarks() {
       this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
