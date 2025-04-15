@@ -479,7 +479,7 @@ services:
       alp-minerva-postgres:
         condition: service_healthy
     hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c15
@@ -774,7 +774,7 @@ services:
     depends_on:
       alp-logto:
         condition: service_healthy
-    image: ghcr.io/data2evidence/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
     networks:
       alp:
         priority: 20
@@ -820,7 +820,7 @@ services:
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c8
@@ -855,7 +855,7 @@ services:
 
   alp-logto-seed:
     container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     entrypoint:
       - sh
@@ -974,7 +974,7 @@ services:
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
     hostname: ${PROJECT_NAME:-d2e}-cachedb.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     depends_on:
       trex:
@@ -1083,7 +1083,7 @@ services:
         - fhir.status
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
-    image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c6
@@ -1250,3 +1250,17 @@ services:
         EOF
         docker-entrypoint.sh haproxy -f ~/haproxy.cfg
     profiles: [jupyter]
+
+  fhir-fe-server:
+      container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+      image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+      logging:
+        options:
+          tag: *c29
+      depends_on:
+        fhir-server:
+          condition: service_started
+      networks:
+        alp:
+      restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+      profiles: [fhir]
