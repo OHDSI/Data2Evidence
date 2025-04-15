@@ -23,7 +23,9 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
   const { pathname } = useLocation();
   const [searchParameters] = useSearchParams();
   const isPreview = searchParameters.has("preview");
+  const isLogout = sessionStorage.getItem('is_logout') === '1'
   const isRedirecting =
+    !isLogout &&
     pathname === "/sign-in" &&
     !isPreview &&
     signInMethods.length === 0 &&
@@ -33,7 +35,10 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
     if (isRedirecting) {
       socialConnectors[0] && invokeSocialSignIn(socialConnectors[0]);
     }
-  }, [isRedirecting]);
+    if (isLogout) {
+      sessionStorage.removeItem('is_logout')
+    }
+  }, [isRedirecting, isLogout]);
 
   if (isRedirecting) {
     return <LoadingLayer />;
