@@ -1,12 +1,13 @@
 from rpy2 import robjects
 from functools import partial
+import json
+import os
 
 from prefect import flow, task
 from prefect.variables import Variable
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
-from prefect.serializers import JSONSerializer
-from prefect.filesystems import RemoteFileSystem as RFS
+from prefect.artifacts import create_markdown_artifact
 
 from .hooks import *
 from .types import *
@@ -16,8 +17,7 @@ from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, LiquibaseAction
 
 
-@flow(log_prints=True, 
-      persist_result=True,
+@flow(log_prints=True,
       timeout_seconds=3600
       )
 def data_characterization_plugin(options: DCOptionsType):
@@ -147,11 +147,7 @@ def create_data_characterization_schema(vocab_schema_name: str,
         return True
 
 
-@task(log_prints=True,
-      result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-      result_storage_key="{flow_run.id}_persist_data_characterization.json",
-      result_serializer=JSONSerializer(),
-      persist_result=True)
+@task(log_prints=True)
 def execute_data_characterization(schema_name: str,
                                   cdm_version_number: str,
                                   vocab_schema_name: str,
@@ -196,21 +192,22 @@ def execute_data_characterization(schema_name: str,
             "error": True,
             "error_message": error_message
         }
+
+        # Create an artifact to store the error result
+        create_markdown_artifact(
+            key="data_characterization_error",
+            markdown=json.dumps(error_result)
+        )
+
         return error_result
-        
-        
-        
-    
-@task(result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-      result_storage_key="{flow_run.id}_export_to_ares.json",
-      result_serializer=JSONSerializer(),
-      persist_result=True)
+
+
+@task()
 def execute_export_to_ares(schema_name: str,
-                                 vocab_schema_name: str,
-                                 results_schema_dao,
-                                 output_folder: str,
-                                 set_connection_string: str
-                                 ):
+                           vocab_schema_name: str,
+                           results_schema_dao,
+                           output_folder: str,
+                           set_connection_string: str):
     try:
         logger = get_run_logger()
         logger.info('Running exportToAres')
@@ -242,6 +239,13 @@ def execute_export_to_ares(schema_name: str,
                         reports = c()
                     )
             ''')
+
+            # Create an artifact to store the export result
+            create_markdown_artifact(
+                key="export_to_ares_result",
+                markdown=f"Export to Ares completed successfully for schema: {schema_name}"
+            )
+
             return get_export_to_ares_results_from_file(ares_path)
     except Exception as e:
         logger.error(f"execute_export_to_ares task failed")
