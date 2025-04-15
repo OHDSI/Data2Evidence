@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/jobplugins-init",
+          "imports": "/jobplugins-init/import.json",
+          "env": "jobplugins-init"
+        },
+        {
           "function": "/mri-pg-config",
           "imports": "/mri-pg-config/import.json",
           "env": "mri-pg-config"
