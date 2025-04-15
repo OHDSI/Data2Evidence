@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/whiterabbit:master AS base
+FROM ghcr.io/ohdsi/whiterabbit:master AS base
 COPY --chown=docker:docker --chmod=711 ./white_rabbit/requirements_perseus.txt .
 
 ENV DISPLAY=:1

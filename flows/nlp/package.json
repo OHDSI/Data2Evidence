@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e-flow/nlp",
+      "image": "ghcr.io/ohdsi/d2e-flow/nlp",
       "flows": [
         {
           "name": "ner_extract_plugin",
           "type": "NLP",
           "entrypoint": "flows.ner_extract_plugin.flow.ner_extract_plugin",
-          "image": "ghcr.io/data2evidence/d2e-flow/nlp:develop",
+          "image": "ghcr.io/ohdsi/d2e-flow/nlp:develop",
           "image_pull_policy": "IfNotPresent",
           "tags": [],
           "parameter_openapi_schema": {
