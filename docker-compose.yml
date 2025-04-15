@@ -2,6 +2,7 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
+  enterprise-gateway:
 
 volumes:
   caddy:
@@ -309,6 +310,13 @@ services:
             "DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb",
             "BUILT_IN_DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb"
           },
+          "jobplugins-init": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "jobplugins",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+          },
           "jobplugins": {
             "PREFECT_API_URL": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -471,7 +479,7 @@ services:
       alp-minerva-postgres:
         condition: service_healthy
     hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c15
@@ -503,8 +511,7 @@ services:
           "+${PG_DB_NAME:-alp}": {
            "schemas": {
             "+cdw_config": {},
-            "+dataflow": {},
-            "+db_credentials_mgr": {},
+            "+jobplugins": {},
             "+logto": {},
             "+portal": {},
             "+public": {},
@@ -767,7 +774,7 @@ services:
     depends_on:
       alp-logto:
         condition: service_healthy
-    image: ghcr.io/data2evidence/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
     networks:
       alp:
         priority: 20
@@ -813,7 +820,7 @@ services:
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c8
@@ -848,7 +855,7 @@ services:
 
   alp-logto-seed:
     container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     entrypoint:
       - sh
@@ -967,7 +974,7 @@ services:
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
     hostname: ${PROJECT_NAME:-d2e}-cachedb.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     depends_on:
       trex:
@@ -1017,6 +1024,10 @@ services:
     image: ohdsi/broadsea-atlasdb:2.0.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
     environment:
       - POSTGRES_PASSWORD=mypass
     networks:
@@ -1072,7 +1083,7 @@ services:
         - fhir.status
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
-    image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c6
@@ -1135,3 +1146,121 @@ services:
     volumes:
       - dicom-sqlite-storage:/var/lib/orthanc/db
     profiles: [dicom]
+
+  enterprise-gateway:
+    image: elyra/enterprise-gateway:dev
+    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    logging:
+      options:
+        tag: *c28
+    networks:
+      enterprise-gateway:
+    user: root # Run as root
+    environment:
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
+      EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+      EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
+      EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
+      # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
+      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_docker','python_docker','python_tf_docker','python_tf_gpu_docker','scala_docker'}}
+      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
+      EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
+      KG_PORT: ${KG_PORT:-8888}
+      EG_BASE_URL: /jupyter
+      KERNEL_USERNAME: jovyan
+      EG_DOCKER_MODE: docker
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      app: "enterprise-gateway"
+      component: "enterprise-gateway"
+    deploy:
+      replicas: 1
+      endpoint_mode: dnsrr
+      labels:
+        app: "enterprise-gateway"
+        component: "enterprise-gateway"
+    profiles: [jupyter]
+    
+  enterprise-gateway-proxy:
+    image: haproxy:alpine
+    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-proxy
+    logging:
+      options:
+        tag: *c29
+    networks:
+      enterprise-gateway:
+    ports:
+      - ${KG_PORT:-8888}:8888
+      - 9088:9088
+    entrypoint: ""
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cat <<EOF > ~/haproxy.cfg
+        global
+          maxconn 4096
+          daemon
+          log stdout format raw local0
+
+        defaults
+          log global
+          option httplog
+          mode http
+          option  http-server-close
+          option  dontlognull
+          option  redispatch
+          option  contstats
+          retries 3
+          backlog 10000
+          timeout client          25s
+          timeout connect         300s
+          timeout server          25s
+          timeout tunnel        3600s
+          timeout http-keep-alive  1s
+          timeout http-request    15s
+          timeout queue           30s
+          timeout tarpit          60s
+          default-server inter 3s rise 2 fall 3
+          option forwardfor
+
+        listen stats
+          bind :9088
+          mode http
+          stats enable
+          stats refresh 10s
+          stats realm Haproxy\ Statistics
+          stats show-node
+          stats uri /
+
+        resolvers docker
+          nameserver dns 127.0.0.11:53
+          hold valid 1s
+
+        frontend proxy
+          bind 0.0.0.0:8888 maxconn 10000
+          option forwardfor
+          default_backend enterprise-gateway
+
+        backend enterprise-gateway
+          dynamic-cookie-key ENTERPRISE_KEY
+          cookie SRVID insert dynamic
+          server-template enterprise-gateway 2 enterprise-gateway:8888 check resolvers docker
+        EOF
+        docker-entrypoint.sh haproxy -f ~/haproxy.cfg
+    profiles: [jupyter]
+
+  fhir-fe-server:
+      container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+      image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+      logging:
+        options:
+          tag: *c29
+      depends_on:
+        fhir-server:
+          condition: service_started
+      networks:
+        alp:
+      restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+      profiles: [fhir]

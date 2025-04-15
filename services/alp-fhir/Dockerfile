@@ -9,7 +9,6 @@ FROM node:20.18.3-slim
 WORKDIR /home/docker/app
 
 COPY --from=builder /usr/src/medplum ./medplum
-COPY ./src/duckdb .
 COPY package-server.json ./package.json
 
 RUN yarn install
