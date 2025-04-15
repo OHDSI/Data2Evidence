@@ -11,7 +11,7 @@ from .types import CohortSurvivalOptionsType
 from _shared_flow_utils.dao.DBDao import DBDao
 
 
-@flow(log_prints=True, persist_result=True)
+@flow(log_prints=True)
 def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     logger = get_run_logger()
     logger.info("Running Cohort Survival")
@@ -33,7 +33,7 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     )
 
 
-@task(persist_result=True)
+@task()
 def generate_cohort_survival_data(
     dbdao,
     target_cohort_definition_id: int,

@@ -112,8 +112,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
     return nodes
 
 
-@task(task_run_name="execute-nodes-taskrun-{nodename}",
-      persist_result=True)
+@task(task_run_name="execute-nodes-taskrun-{nodename}")
 def execute_node_task(nodename, node_type, node, input, test):
     # Get task run context
     task_run_context = TaskRunContext.get().task_run.dict()

@@ -17,8 +17,7 @@ from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, LiquibaseAction
 
 
-@flow(log_prints=True, 
-      persist_result=True,
+@flow(log_prints=True,
       timeout_seconds=3600
       )
 def data_characterization_plugin(options: DCOptionsType):
@@ -148,7 +147,7 @@ def create_data_characterization_schema(vocab_schema_name: str,
         return True
 
 
-@task(log_prints=True, persist_result=True)
+@task(log_prints=True)
 def execute_data_characterization(schema_name: str,
                                   cdm_version_number: str,
                                   vocab_schema_name: str,
@@ -203,7 +202,7 @@ def execute_data_characterization(schema_name: str,
         return error_result
 
 
-@task(persist_result=True)
+@task()
 def execute_export_to_ares(schema_name: str,
                            vocab_schema_name: str,
                            results_schema_dao,

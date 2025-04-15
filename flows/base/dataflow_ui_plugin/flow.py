@@ -192,8 +192,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
 
 
 @task(task_run_name="execute-nodes-taskrun-{nodename}",
-      result_serializer=JSONSerializer(object_encoder="flows.dataflow_ui_plugin.nodes.serialize_result_to_json"), log_prints=True,
-      persist_result=True)
+      log_prints=True)
 def execute_node_task(nodename, node_type, node, input, test):
     # Get task run context
     task_run_context = TaskRunContext.get().task_run.model_dump()

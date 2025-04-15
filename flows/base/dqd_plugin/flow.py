@@ -6,7 +6,6 @@ from prefect import flow, task
 from prefect_shell import ShellOperation
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
-from prefect.serializers import JSONSerializer
 from prefect.artifacts import create_markdown_artifact
 
 from .types import DqdOptionsType, DQD_THREAD_COUNT
@@ -64,8 +63,7 @@ def dqd_plugin(options: DqdOptionsType):
                 use_cache_db)
 
 
-@task(result_serializer=JSONSerializer(),
-      persist_result=True)
+@task()
 def execute_dqd(
     schema_name: str,
     database_code: str,
