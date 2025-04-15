@@ -114,7 +114,6 @@ jobs:
             ${{ env.DOCKER_BUILD_ARG1 }}
       - name: delete-untagged-images
         uses: actions/delete-package-versions@v5
-        if: false
         with:
           package-name: ${{ env.AZ_REG_REPOSITORY }}
           package-type: "container"
