@@ -5,6 +5,7 @@ export default `# %% [markdown]
 
 # %%
 from pyqe import *
+import pandas as pd
 
 # %% [markdown]
 # Always start with creating a query object.
@@ -29,10 +30,14 @@ total_patients_query.set_study('1fe550a9-115e-4c91-bb26-9d4505b93d88')
 # %%
 patients = Person.Patient()
 
-constraint_age_lesser_than_70_years = Constraint()
-constraint_age_lesser_than_70_years.add(Expression(ComparisonOperator.LESS_THAN_EQUAL, 70))
+constraint_age_greater_than_60_years = Constraint()
+constraint_age_greater_than_60_years.add(Expression(ComparisonOperator.MORE_THAN_EQUAL, 60))
 
-patients.add_age([constraint_age_lesser_than_70_years])
+constraint_age_lesser_than_90_years = Constraint()
+constraint_age_lesser_than_90_years.add(Expression(ComparisonOperator.LESS_THAN_EQUAL, 90))
+
+patients.add_age([constraint_age_greater_than_60_years])
+patients.add_age([constraint_age_lesser_than_90_years])
 
 # %%
 exclude_death = Interactions.Death("Death", CardType.EXCLUDED)
@@ -99,11 +104,36 @@ patient_df.head(3)
 # selective_patient_df.head(10)
 
 # %%
-# Generate Request for Dataframe cohort
-cond_occ_request_df = await total_patients_query.get_dataframe_cohort([],'ConditionOccurrence')
+import gc
 
-# Get Patient Dataframe. Select (1) Patient
-cond_occ_df = await Result().download_dataframe(cond_occ_request_df)
+# Wrapper method to fetch the dataframes in chunks
+async def fetchDataframesInChunks(entityName, chunk_size=15, query=total_patients_query):
+  chunk_size = chunk_size
+  limit_size = round(len(patient_df) / chunk_size)
+  offset = 0
+  total_records = 0
+  
+  final_entity_df = pd.DataFrame()
+  cohort_defn_entity = await query.get_dataframe_cohort([],entityName)
+  print(f"Fetching dataframes for entity {entityName}..")
+
+  for n in range(1,chunk_size+1):
+    entity_df = await Result().download_dataframe(cohort_defn_entity, f"{entityName}_{n}.csv", limit = limit_size, offset = offset)
+    print(f"{len(entity_df)} Records fetched for entity {entityName} in chunk {n}, offset size {offset}, limit size {limit_size}")
+    final_entity_df = pd.concat([final_entity_df, entity_df], axis=0)
+    offset += limit_size
+    total_records += len(entity_df)
+    # break
+  print(f"Total records fetched entity {entityName}: {total_records}")
+  gc.collect()
+  final_entity_df.reset_index(inplace=True)
+  return final_entity_df
+
+
+
+# %%
+# Generate Request for Dataframe cohort and get condition occurences
+cond_occ_df = await fetchDataframesInChunks('ConditionOccurrence')
 cond_occ_df.head(10)
 
 # %%
