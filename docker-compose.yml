@@ -2,6 +2,7 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
+  enterprise-gateway:
 
 volumes:
   caddy:
@@ -1145,3 +1146,107 @@ services:
     volumes:
       - dicom-sqlite-storage:/var/lib/orthanc/db
     profiles: [dicom]
+
+  enterprise-gateway:
+    image: elyra/enterprise-gateway:dev
+    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    logging:
+      options:
+        tag: *c28
+    networks:
+      enterprise-gateway:
+    user: root # Run as root
+    environment:
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
+      EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+      EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
+      EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
+      # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
+      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_docker','python_docker','python_tf_docker','python_tf_gpu_docker','scala_docker'}}
+      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
+      EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
+      KG_PORT: ${KG_PORT:-8888}
+      EG_BASE_URL: /jupyter
+      KERNEL_USERNAME: jovyan
+      EG_DOCKER_MODE: docker
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      app: "enterprise-gateway"
+      component: "enterprise-gateway"
+    deploy:
+      replicas: 1
+      endpoint_mode: dnsrr
+      labels:
+        app: "enterprise-gateway"
+        component: "enterprise-gateway"
+    profiles: [jupyter]
+    
+  enterprise-gateway-proxy:
+    image: haproxy:alpine
+    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-proxy
+    logging:
+      options:
+        tag: *c29
+    networks:
+      enterprise-gateway:
+    ports:
+      - ${KG_PORT:-8888}:8888
+      - 9088:9088
+    entrypoint: ""
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cat <<EOF > ~/haproxy.cfg
+        global
+          maxconn 4096
+          daemon
+          log stdout format raw local0
+
+        defaults
+          log global
+          option httplog
+          mode http
+          option  http-server-close
+          option  dontlognull
+          option  redispatch
+          option  contstats
+          retries 3
+          backlog 10000
+          timeout client          25s
+          timeout connect         300s
+          timeout server          25s
+          timeout tunnel        3600s
+          timeout http-keep-alive  1s
+          timeout http-request    15s
+          timeout queue           30s
+          timeout tarpit          60s
+          default-server inter 3s rise 2 fall 3
+          option forwardfor
+
+        listen stats
+          bind :9088
+          mode http
+          stats enable
+          stats refresh 10s
+          stats realm Haproxy\ Statistics
+          stats show-node
+          stats uri /
+
+        resolvers docker
+          nameserver dns 127.0.0.11:53
+          hold valid 1s
+
+        frontend proxy
+          bind 0.0.0.0:8888 maxconn 10000
+          option forwardfor
+          default_backend enterprise-gateway
+
+        backend enterprise-gateway
+          dynamic-cookie-key ENTERPRISE_KEY
+          cookie SRVID insert dynamic
+          server-template enterprise-gateway 2 enterprise-gateway:8888 check resolvers docker
+        EOF
+        docker-entrypoint.sh haproxy -f ~/haproxy.cfg
+    profiles: [jupyter]
