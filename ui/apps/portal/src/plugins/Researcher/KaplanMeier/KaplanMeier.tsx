@@ -301,33 +301,29 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
 
       <div style={{ display: "flex", marginTop: "15px", alignItems: "center" }}>
         <div style={{ marginRight: "20px" }}>
-          <label>
-            <input
-              type="radio"
-              name="analysisType"
-              value="single_event"
-              checked={analysisType === "single_event"}
-              onChange={() => {
-                setAnalysisType("single_event");
-                setCompetingOutcomeCohortId(null);
-              }}
-              disabled={isLoading || isGraphLoading}
-            />
-            {" Single Event Analysis"}
-          </label>
+          <input
+            type="radio"
+            name="analysisType"
+            value="single_event"
+            checked={analysisType === "single_event"}
+            onChange={() => {
+              setAnalysisType("single_event");
+              setCompetingOutcomeCohortId(null);
+            }}
+            disabled={isLoading || isGraphLoading}
+          />
+          {" Single Event Analysis"}
         </div>
         <div>
-          <label>
-            <input
-              type="radio"
-              name="analysisType"
-              value="competing_risk"
-              checked={analysisType === "competing_risk"}
-              onChange={() => setAnalysisType("competing_risk")}
-              disabled={isLoading || isGraphLoading}
-            />
-            {" Competing Risk Analysis"}
-          </label>
+          <input
+            type="radio"
+            name="analysisType"
+            value="competing_risk"
+            checked={analysisType === "competing_risk"}
+            onChange={() => setAnalysisType("competing_risk")}
+            disabled={isLoading || isGraphLoading}
+          />
+          {" Competing Risk Analysis"}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "10px" }}>
