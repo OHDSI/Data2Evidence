@@ -255,51 +255,45 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         <div>{getText(i18nKeys.COHORT_SURVIVAL__TITLE)}</div>
       </div>
       <div style={{ display: "flex", marginTop: "30px" }}>
-        <div>
-          <div className="kaplan_meier__cohort_selector">
-            <div className="kaplan_meier__cohort_selector_label">
-              {getText(i18nKeys.COHORT_SURVIVAL__SELECT_TARGET_COHORT)}:{" "}
-            </div>
-            <CohortSelector
-              cohortTableName="Target cohort"
-              setCohortId={setTargetCohortId}
-              cohortId={targetCohortId}
-              cohortList={cohortList}
-              disabled={isLoading || isGraphLoading}
-            />
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">
+            {getText(i18nKeys.COHORT_SURVIVAL__SELECT_TARGET_COHORT)}:{" "}
           </div>
+          <CohortSelector
+            cohortTableName="Target cohort"
+            setCohortId={setTargetCohortId}
+            cohortId={targetCohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading}
+          />
         </div>
-        <div>
-          <div className="kaplan_meier__cohort_selector">
-            <div className="kaplan_meier__cohort_selector_label" style={{ marginLeft: "10px" }}>
-              {getText(i18nKeys.COHORT_SURVIVAL__SELECT_OUTCOME_COHORT)}:{" "}
-            </div>
-            <CohortSelector
-              cohortTableName="Outcome cohort"
-              setCohortId={setOutcomeCohortId}
-              cohortId={outcomeCohortId}
-              cohortList={cohortList}
-              disabled={isLoading || isGraphLoading}
-            />
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">
+            {getText(i18nKeys.COHORT_SURVIVAL__SELECT_OUTCOME_COHORT)}:{" "}
           </div>
+          <CohortSelector
+            cohortTableName="Outcome cohort"
+            setCohortId={setOutcomeCohortId}
+            cohortId={outcomeCohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading}
+          />
         </div>
-        <div>
-          <div className="kaplan_meier__cohort_selector">
-            <div className="kaplan_meier__cohort_selector_label" style={{ marginLeft: "10px" }}>
-              {getText(i18nKeys.COHORT_SURVIVAL__SELECT_COMPETING_OUTCOME_COHORT)}:{" "}
-            </div>
-            <CohortSelector
-              cohortTableName="Competing Outcome cohort"
-              setCohortId={setCompetingOutcomeCohortId}
-              cohortId={competingOutcomeCohortId}
-              cohortList={cohortList}
-              disabled={isLoading || isGraphLoading || analysisType === "single_event"}
-            />
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">
+            {getText(i18nKeys.COHORT_SURVIVAL__SELECT_COMPETING_OUTCOME_COHORT)}:{" "}
           </div>
+          <CohortSelector
+            cohortTableName="Competing Outcome cohort"
+            setCohortId={setCompetingOutcomeCohortId}
+            cohortId={competingOutcomeCohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading || analysisType === "single_event"}
+          />
         </div>
       </div>
 
-      <div style={{ display: "flex", marginTop: "15px", alignItems: "center" }}>
+      <div className="kaplan_meier__analysis_type">
         <div style={{ marginRight: "20px" }}>
           <input
             type="radio"
