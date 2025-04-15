@@ -1,6 +1,7 @@
-import express from "express";
+import express, { Request } from "express";
 import { JobpluginsAPI } from "./api/JobpluginsAPI.ts";
 import TrexDao from "./dao/trex.ts";
+import pg from "pg";
 
 export class DBRouter {
   public router = express.Router();
@@ -82,5 +83,37 @@ export class DBRouter {
         }
       }
     );
+
+    this.router.get("/test", async (req: Request, res: Response) => {
+      try {
+        const { user, password, host, database, port } = req.query;
+        if (!user || !password || !host || !database || !port) {
+          return res
+            .status(400)
+            .send({ error: "Missing required database credentials" });
+        }
+
+        const client = new pg.Client({
+          user,
+          password,
+          host,
+          database,
+          port,
+          connectionTimeoutMillis: 5000,
+        });
+
+        await client.connect();
+        await client.end();
+
+        return res
+          .status(200)
+          .send({ success: true, message: "Connection successful" });
+      } catch (error) {
+        this.logger.error(
+          `Error when testing connection: ${JSON.stringify(error)}`
+        );
+        return res.status(500).send({ success: false, error: error.message });
+      }
+    });
   }
 }

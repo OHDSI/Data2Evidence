@@ -88,6 +88,7 @@ jobs:
           - PKGPATH: ./nlp/
           - PKGPATH: ./white_rabbit/
           - PKGPATH: ./i2b2/
+          - PKGPATH: ./search_embedding/
 
     steps:
       - uses: actions/checkout@v4

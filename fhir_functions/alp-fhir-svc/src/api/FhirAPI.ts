@@ -4,7 +4,6 @@ import axios, { AxiosRequestConfig } from "axios";
 import { MedplumClient } from "@medplum/core";
 
 import { env, services } from "../env.ts";
-import { createLogger } from "../logger.ts";
 import { ClientCredentials, HTTPMethod, Headers } from "../utils/types";
 
 export class FhirAPI {
