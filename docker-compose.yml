@@ -1082,7 +1082,7 @@ services:
         - fhir.status
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
-    image: ghcr.io/ohdsi/fhir-server:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c6
@@ -1145,3 +1145,17 @@ services:
     volumes:
       - dicom-sqlite-storage:/var/lib/orthanc/db
     profiles: [dicom]
+
+  fhir-fe-server:
+    container_name: &c28 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+    image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+    logging:
+      options:
+        tag: *c28
+    depends_on:
+      fhir-server:
+        condition: service_started
+    networks:
+      alp:
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    profiles: [fhir]

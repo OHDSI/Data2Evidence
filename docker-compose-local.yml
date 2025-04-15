@@ -134,8 +134,6 @@ services:
       dockerfile: Dockerfile
 
   fhir-fe-server:
-    container_name: &c28 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
-    image: ghcr.io/ohdsi/fhir-fe-server:${DOCKER_TAG_NAME:-develop}
     build:
       context: ./services/alp-fhir/
       dockerfile: Dockerfile.frontend
@@ -143,15 +141,3 @@ services:
       - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
     ports:
       - 41130:3000
-    logging:
-      options:
-        tag: *c28
-    depends_on:
-      fhir-server:
-        condition: service_started
-      # alp-fhir-server-post-init:
-      #   condition: service_completed_successfully
-    networks:
-      alp:
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    profiles: [fhir]
