@@ -24,7 +24,7 @@
           "name": "ner_extract_plugin",
           "type": "NLP",
           "entrypoint": "flows.ner_extract_plugin.flow.ner_extract_plugin",
-          "image": "ghcr.io/ohdsi/d2e-flow/nlp:develop",
+          "image": "ghcr.io/ohdsi/d2e/flow-nlp:develop",
           "image_pull_policy": "IfNotPresent",
           "tags": [],
           "parameter_openapi_schema": {

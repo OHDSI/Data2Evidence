@@ -24,6 +24,8 @@
                     "name": "dicom_etl_plugin",
                     "type": "dicom_etl",
                     "entrypoint": "flows.dicom_etl_plugin.flow.dicom_etl_plugin",
+                    "image": "ghcr.io/ohdsi/d2e/flow-dicom-etl:develop",
+                    "image_pull_policy": "IfNotPresent",
                     "tags": [
                         "data",
                         "data_load",
