@@ -1,23 +1,19 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { useLocation, useSearchParams } from "react-router-dom";
-import {
-  type SignIn,
-  type ExperienceSocialConnector,
-  AgreeToTermsPolicy,
-} from "@logto/schemas";
+import { type SignIn, type ExperienceSocialConnector, AgreeToTermsPolicy } from '@logto/schemas';
 
-import LoadingLayer from "@/components/LoadingLayer";
-import IdentifierSignInForm from "@/components/IdentifierSignInForm";
-import PasswordSignInForm from "@/components/PasswordSignInForm";
-import SocialSignInList from "@/containers/SocialSignInList";
-import TermsAndPrivacyCheckbox from "@/containers/TermsAndPrivacyCheckbox";
-import useSocial from "@/containers/SocialSignInList/use-social";
-import useTerms from "@/hooks/use-terms";
+import LoadingLayer from '@/components/LoadingLayer';
+import IdentifierSignInForm from '@/components/IdentifierSignInForm';
+import PasswordSignInForm from '@/components/PasswordSignInForm';
+import SocialSignInList from '@/containers/SocialSignInList';
+import TermsAndPrivacyCheckbox from '@/containers/TermsAndPrivacyCheckbox';
+import useSocial from '@/containers/SocialSignInList/use-social';
+import useTerms from '@/hooks/use-terms';
 
-import styles from "./index.module.scss";
+import styles from './index.module.scss';
 
 type Props = {
-  readonly signInMethods: SignIn["methods"];
+  readonly signInMethods: SignIn['methods'];
   readonly socialConnectors: ExperienceSocialConnector[];
 };
 
@@ -46,10 +42,7 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
   if (signInMethods.length === 0 && socialConnectors.length > 0) {
     return (
       <>
-        <SocialSignInList
-          className={styles.main}
-          socialConnectors={socialConnectors}
-        />
+        <SocialSignInList className={styles.main} socialConnectors={socialConnectors} />
         {
           /**
            * Display agreement checkbox when only social sign-in methods are available
@@ -65,9 +58,7 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
 
   const isPasswordOnly =
     signInMethods.length > 0 &&
-    signInMethods.every(
-      ({ password, verificationCode }) => password && !verificationCode
-    );
+    signInMethods.every(({ password, verificationCode }) => password && !verificationCode);
 
   if (isPasswordOnly) {
     return (
@@ -79,12 +70,7 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
   }
 
   if (signInMethods.length > 0) {
-    return (
-      <IdentifierSignInForm
-        className={styles.main}
-        signInMethods={signInMethods}
-      />
-    );
+    return <IdentifierSignInForm className={styles.main} signInMethods={signInMethods} />;
   }
 
   return null;
