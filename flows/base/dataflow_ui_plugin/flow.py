@@ -2,13 +2,13 @@ import traceback
 from functools import partial
 from collections import OrderedDict
 from prefect_dask import DaskTaskRunner
+import json
 
 from prefect import flow, task
-from prefect.variables import Variable
 from prefect.logging import get_run_logger
 from prefect.serializers import JSONSerializer
-from prefect.filesystems import RemoteFileSystem as RFS
 from prefect.context import TaskRunContext, FlowRunContext
+from prefect.artifacts import create_markdown_artifact
 
 from .hooks import *
 from .flowutils import *
@@ -56,9 +56,24 @@ def dataflow_ui_plugin(json_graph, options):
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
-            nodes_out[k] = n[k]
-    # return json.dumps(nodes_out) # use return if persisting prefect flow results
-    
+            nodes_out[k] = serialize_result(n[k])
+
+    # Create a markdown artifact instead of persisting as a JSON file
+    artifact_key = f"{FlowRunContext.get().flow_run.id}-nodes-output"
+    create_markdown_artifact(
+        key=artifact_key,
+        markdown=json.dumps(nodes_out),
+        description="Nodes output stored as JSON"
+    )
+
+def serialize_result(result):
+    return {
+        "result": serialize_to_json(result.result),
+        "error": result.error,
+        "errorMessage": result.result if result.error else None,
+        "nodeName": result.node.name
+    }
+
 def execute_subflow_cluster(node_graph, input, test):
     scheduler_address = get_scheduler_address(node_graph)
     executor_type = node_graph["nodeobj"].executor_type
@@ -177,10 +192,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
 
 
 @task(task_run_name="execute-nodes-taskrun-{nodename}",
-      result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-      result_storage_key="{flow_run.parent_flow_run_id}_{parameters[nodename]}.json",
-      result_serializer=JSONSerializer(object_encoder="flows.dataflow_ui_plugin.nodes.serialize_result_to_json"), log_prints=True,
-      persist_result=True)
+      log_prints=True)
 def execute_node_task(nodename, node_type, node, input, test):
     # Get task run context
     task_run_context = TaskRunContext.get().task_run.model_dump()
