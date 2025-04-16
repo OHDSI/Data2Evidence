@@ -155,7 +155,7 @@ def generate_cohort_survival_data(
 
         # Create an artifact to store the result
         create_markdown_artifact(
-            key="cohort_survival_result",
+            key="cohort-survival-result",
             markdown=json.dumps(result_dict)
         )
 
