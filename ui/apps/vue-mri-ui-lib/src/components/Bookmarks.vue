@@ -78,7 +78,7 @@
       </template>
     </messageBox>
 
-    <importAtlasCohortDefinitionDialog
+    <ImportAtlasCohortDefinitionDialog
       v-if="showImportAtlasCohortDefinition"
       @closeEv="closeImportAtlasCohortDefinition"
       @createdEv="loadBookmarks"
@@ -216,7 +216,8 @@ import Button from './Button.vue'
 import GlobeIcon from './icons/GlobeIcon.vue'
 import UploadIcon from './icons/UploadIcon.vue'
 import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
-import importAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+
 
 export default {
   compatConfig: {
@@ -594,7 +595,7 @@ export default {
     GlobeIcon,
     LeftRightArrowIcon,
     UploadIcon,
-    importAtlasCohortDefinitionDialog,
+    ImportAtlasCohortDefinitionDialog,
   },
 }
 </script>
