@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e/flow-data-mapping",
+      "image": "ghcr.io/ohdsi/d2e/flow-data-mapping",
       "flows": [
         {
           "name": "data_mapping_plugin",
           "type": "perseus",
           "entrypoint": "flows.data_mapping_plugin.flow.data_mapping_plugin",
-          "image": "ghcr.io/data2evidence/d2e/flow-data-mapping:develop",
+          "image": "ghcr.io/ohdsi/d2e/flow-data-mapping:develop",
           "image_pull_policy": "Never",
           "tags": [
             "data_mapping"
