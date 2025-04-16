@@ -513,8 +513,8 @@ export class HanaHDBDao {
           c.vocabulary_id,
           c.concept_class_id
         from
-          concept_ancestor ca
-        join concept c on
+          ${this.vocabSchemaName}.concept_ancestor ca
+        join ${this.vocabSchemaName}.concept c on
           c.concept_id = ca.ancestor_concept_id
         where
           ca.min_levels_of_separation = 1
