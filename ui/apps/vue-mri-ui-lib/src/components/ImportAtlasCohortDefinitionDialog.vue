@@ -29,88 +29,103 @@
 </template>
 
 <script lang="ts">
+import { ref, computed, watch } from 'vue'
+import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import messageBox from './MessageBox.vue'
-import { mapActions, mapGetters } from 'vuex'
 import { getPortalAPI } from '../utils/PortalUtils'
 import { validateAtlasJson } from '../utils/AtlasJSONValidator'
 
 export default {
-  compatConfig: {
-    MODE: 3,
+  name: 'ImportAtlasCohortDefinitionDialog',
+  components: {
+    messageBox,
+    appButton,
   },
-  name: 'importAtlasCohortDefinitionDialog',
-  props: ['closeEv', 'createdEv'],
-  data() {
-    return {
-      input: '',
-      error: '',
-      name: '',
-      description: '',
-      loading: false,
+  props: {
+    closeEv: {
+      type: String,
+      required: false,
+    },
+    createdEv: {
+      type: String,
+      required: false,
+    },
+  },
+  setup(_, { emit }) {
+    const store = useStore()
+
+    const input = ref('')
+    const error = ref('')
+    const name = ref('')
+    const description = ref('')
+    const loading = ref(false)
+
+    const getText = computed(() => store.getters.getText)
+    const isButtonDisabled = computed(() => {
+      return Boolean(error.value || input.value === '' || loading.value)
+    })
+
+    watch(input, newVal => {
+      if (newVal === '') {
+        error.value = ''
+        return
+      }
+      const result = validateAtlasJson(newVal)
+      error.value = result.error
+    })
+
+    const cancel = () => {
+      emit('closeEv')
     }
-  },
-  computed: {
-    ...mapGetters(['getText']),
-    isButtonDisabled() {
-      return this.error || this.input === '' || this.loading
-    },
-  },
-  watch: {
-    input: {
-      handler(newVal: string) {
-        if (newVal === '') {
-          this.error = ''
-          return
-        }
-        const result = validateAtlasJson(newVal)
-        this.error = result.error
-      },
-    },
-  },
-  methods: {
-    ...mapActions(['fireCreateAtlasCohortDefinitionQuery']),
-    cancel() {
-      this.$emit('closeEv')
-    },
-    clearInputs() {
-      this.input = ''
-      this.error = ''
-      this.name = ''
-      this.description = ''
-    },
-    async onClickCreateCohortDefinition() {
+
+    const clearInputs = () => {
+      input.value = ''
+      error.value = ''
+      name.value = ''
+      description.value = ''
+    }
+
+    const onClickCreateCohortDefinition = async () => {
       try {
         const now = +new Date()
         const content = {
           id: 0,
-          name: this.name || 'Imported Atlas Cohort Definition',
+          name: name.value || 'Imported Atlas Cohort Definition',
           tags: [],
           createdBy: getPortalAPI().username,
-          expression: this.input,
+          expression: input.value,
           modifiedBy: getPortalAPI().username,
           createdDate: now,
-          description: this.description || '',
+          description: description.value || '',
           modifiedDate: now,
           expressionType: 'SIMPLE_EXPRESSION',
         }
-        this.loading = true
-        await this.fireCreateAtlasCohortDefinitionQuery({
-          content,
-        })
-        this.clearInputs()
-        this.$emit(['closeEv', 'createdEv'])
+        loading.value = true
+        await store.dispatch('fireCreateAtlasCohortDefinitionQuery', { content })
+        clearInputs()
+        emit('closeEv')
+        emit('createdEv')
       } catch (e) {
-        this.error = 'Invalid JSON format'
+        error.value = 'Invalid JSON format'
         return
       } finally {
-        this.loading = false
+        loading.value = false
       }
-    },
-  },
-  components: {
-    messageBox,
-    appButton,
+    }
+
+    return {
+      input,
+      error,
+      name,
+      description,
+      loading,
+      getText,
+      isButtonDisabled,
+      cancel,
+      clearInputs,
+      onClickCreateCohortDefinition,
+    }
   },
 }
 </script>
