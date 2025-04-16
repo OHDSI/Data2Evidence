@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/jobplugins-init",
+          "imports": "/jobplugins-init/import.json",
+          "env": "jobplugins-init"
+        },
+        {
           "function": "/mri-pg-config",
           "imports": "/mri-pg-config/import.json",
           "env": "mri-pg-config"
@@ -374,6 +379,7 @@
           "gateway.db.vocabSchemas.read",
           "gateway.db.dataset.versionInfo.read",
           "gateway.db.schema.update",
+          "gateway.db.database.test",
           "gateway.terminology.concept.getStandardConcepts.read",
           "gateway.terminology.concept.searchByName.read",
           "gateway.terminology.concept.searchById.read",
@@ -2147,6 +2153,15 @@
           ],
           "httpMethods": [
             "PUT"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/test",
+          "scopes": [
+            "gateway.db.database.test"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

@@ -25,4 +25,4 @@ export * from "./dataflow/useDataQualityOverviewFromId";
 export * from "./dataflow/useDatasetLatestFlowRun";
 export * from "./useDatasetReleases";
 export * from "./useOverviewDescription";
-export * from "./usePortalDescriptionConfigs";
+export * from "./useConfigsByTypes";

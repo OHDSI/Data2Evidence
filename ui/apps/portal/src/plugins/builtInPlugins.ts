@@ -9,7 +9,6 @@ const moduleNames = [
   "SystemAdmin/StudyOverview",
   "SystemAdmin/UserOverview",
   "SystemAdmin/NifiRegistry",
-  "SystemAdmin/Sqleditor",
   "SystemAdmin/DQD",
   "SystemAdmin/Jobs",
   "SystemAdmin/Terminology",
@@ -28,6 +27,7 @@ const moduleNames = [
   "Setup/OverviewDescription",
   "Setup/TrexPlugins",
   "Setup/DemoSetup",
+  "Setup/HybridSearch",
 ];
 
 const modulePaths = moduleNames.reduce(
