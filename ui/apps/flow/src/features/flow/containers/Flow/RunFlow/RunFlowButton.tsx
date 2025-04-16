@@ -35,7 +35,7 @@ export const RunFlowButton: FC = () => {
     skip: !dataflowId,
   });
 
-  const flowRunId = dataflow?.lastFlowRunId || "";
+  const flowRunId = dataflow?.canvas?.lastFlowRunId || "";
   const { flowRunState, isStoppedState } = useFlowRunState(flowRunId);
 
   const [runDataflow, { isLoading: isRunning }] = useRunDataflowMutation();

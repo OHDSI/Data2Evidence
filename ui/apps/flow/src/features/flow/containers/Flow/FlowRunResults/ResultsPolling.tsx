@@ -19,7 +19,8 @@ export const ResultsPolling: FC = () => {
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
   });
-  const { isStoppedState } = useFlowRunState(dataflow?.lastFlowRunId || "");
+  const flowRunId = dataflow?.canvas?.lastFlowRunId || "";
+  const { isStoppedState } = useFlowRunState(flowRunId);
   const [_, setIsCompleted] = useState(isStoppedState);
 
   useEffect(() => {
