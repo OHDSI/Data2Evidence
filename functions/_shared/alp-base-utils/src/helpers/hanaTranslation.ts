@@ -211,6 +211,9 @@ export const translateHanaToDuckdb = (
   );
 
   temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName);
+
+  // Cast left comparator to varchar which is required by duckdb
+  temp = temp.replace(/LIKE_REGEXPR/gi, "::VARCHAR ILIKE");
   
   temp = temp.replace(/\$\$SCHEMA_DIRECT_CONN\$\$./g, `direct_db_conn.${schemaName}.`); // Used when using cachedb connection connecting to duckdb, but additionally requires direct connection to database schema
 
