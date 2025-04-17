@@ -1,5 +1,6 @@
-import { buildErrorResponse, runScriptFunctionInLocalVm } from '@logto/core-kit/custom-jwt';
 import {
+  type CustomJwtErrorBody,
+  CustomJwtErrorCode,
   LogtoJwtTokenKeyType,
   jwtCustomizerUserContextGuard,
   userInfoSelectFields,
@@ -7,6 +8,8 @@ import {
   type JwtCustomizerType,
   type JwtCustomizerUserContext,
   type LogtoJwtTokenKey,
+  type CustomJwtApiContext,
+  type CustomJwtScriptPayload,
 } from '@logto/schemas';
 import { type ConsoleLog } from '@logto/shared';
 import { assert, deduplicate, pick, pickState } from '@silverhand/essentials';
@@ -22,29 +25,55 @@ import type Queries from '#src/tenants/Queries.js';
 import {
   LocalVmError,
   getJwtCustomizerScripts,
+  runScriptFunctionInLocalVm,
+  buildLocalVmErrorBody,
   type CustomJwtDeployRequestBody,
 } from '#src/utils/custom-jwt/index.js';
 
 import { type CloudConnectionLibrary } from './cloud-connection.js';
+
+const apiContext: CustomJwtApiContext = Object.freeze({
+  denyAccess: (message = 'Access denied') => {
+    const error: CustomJwtErrorBody = {
+      code: CustomJwtErrorCode.AccessDenied,
+      message,
+    };
+
+    throw new LocalVmError(
+      {
+        message,
+        error,
+      },
+      403
+    );
+  },
+});
 
 export class JwtCustomizerLibrary {
   // Convert errors to WithTyped client response error to share the error handling logic.
   static async runScriptInLocalVm(data: CustomJwtFetcher) {
     try {
       const mapId = (data as any).context["user"].primaryEmail;
-      const payload =
-        data.tokenType === LogtoJwtTokenKeyType.AccessToken
+      const payload: CustomJwtScriptPayload = {
+        ...(data.tokenType === LogtoJwtTokenKeyType.AccessToken
           ? {
               ...pick(data, 'token', 'context', 'environmentVariables'),
               extra: {
                 // @ts-ignore
-                entraToken: globalThis.tokenMap
+                thirdPartyToken: globalThis.tokenMap
                   ? // @ts-ignore
                     globalThis.tokenMap[mapId]
                   : undefined,
+                // @ts-ignore
+                thirdPartyRefreshToken: globalThis.refreshTokenMap
+                  ? // @ts-ignore
+                    globalThis.refreshTokenMap[mapId]
+                  : undefined,
               },
             }
-          : pick(data, 'token', 'environmentVariables');
+          : pick(data, 'token', 'environmentVariables')),
+        api: apiContext,
+      };
       const result = await runScriptFunctionInLocalVm(data.script, 'getCustomJwtClaims', payload);
 
       // @ts-ignore
@@ -53,6 +82,10 @@ export class JwtCustomizerLibrary {
       // If the `result` is not a record, we cannot merge it to the existing token payload.
       return z.record(z.unknown()).parse(result);
     } catch (error: unknown) {
+      if (error instanceof LocalVmError) {
+        throw error;
+      }
+
       // Assuming we only use zod for request body validation
       if (error instanceof ZodError) {
         const { errors } = error;
@@ -66,7 +99,7 @@ export class JwtCustomizerLibrary {
       }
 
       throw new LocalVmError(
-        buildErrorResponse(error),
+        buildLocalVmErrorBody(error),
         error instanceof SyntaxError || error instanceof TypeError ? 422 : 500
       );
     }
