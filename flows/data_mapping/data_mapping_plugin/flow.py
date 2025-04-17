@@ -7,7 +7,7 @@ from prefect.artifacts import create_markdown_artifact
 from prefect.variables import Variable
 from pathlib import Path
 import json
-from .files_manager_client import FilesManagerClient
+from _shared_flow_utils.api.FilesManagerAPI import FilesManagerAPI
 
 POSTGRES_TYPES_MAPPING = {
     'BINARY': 'BYTEA',
@@ -38,12 +38,10 @@ TYPES_WITH_MAX_LENGTH = {
 }
 
 @task(name="initialize_files_manager")
-def initialize_files_manager() -> FilesManagerClient:
+def initialize_files_manager() -> FilesManagerAPI:
     logger = get_run_logger()
     try:
-        perseus_host = Variable.get("perseus_host")
-        logger.info(f"Initializing FilesManager with perseus_host: {perseus_host}")
-        return FilesManagerClient(perseus_host=perseus_host)
+        return FilesManagerAPI()
     except Exception as e:
         logger.error(f"Failed to initialize FilesManager: {str(e)}")
         raise
@@ -53,7 +51,7 @@ def get_scan_report(
     data_id: str,
     file_name: str,
     username: str,
-    files_manager: FilesManagerClient
+    files_manager: FilesManagerAPI
 ) -> Path:
     logger = get_run_logger()
     logger.info(f"Starting to get scan report. ID: {data_id}, File: {file_name}, User: {username}")
