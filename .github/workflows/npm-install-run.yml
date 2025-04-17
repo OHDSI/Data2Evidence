@@ -80,4 +80,4 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
           username: ${{ github.actor }}
-          content: "### Status of v0.6 Installation\ninstall:${{ steps.install.outcome }}\ninit:${{ steps.init.outcome }}\npull:${{ steps.pull.outcome }}\nstart::${{ steps.start.outcome }}\nstop:${{ steps.stop.outcome }}"
+          content: "### Status of ${{ env.VERSION }} Installation\ninstall:${{ steps.install.outcome }}\ninit:${{ steps.init.outcome }}\npull:${{ steps.pull.outcome }}\nstart::${{ steps.start.outcome }}\nstop:${{ steps.stop.outcome }}"
