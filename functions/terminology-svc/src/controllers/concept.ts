@@ -194,18 +194,17 @@ export const getConceptHierarchy = async (
       query: { datasetId, conceptId, depth },
     } = schemas.getConceptHierarchy.parse(req);
     const cachedbService = new CachedbService(req);
-    // Get first level descendants of concept
-    const conceptHierarchyDescendants =
-      await cachedbService.getHierarchyDescendants(conceptId, datasetId);
-    // Recursively get ancestors of concept depending on depth
-    const conceptHierarchyAncestors =
-      await cachedbService.getHierarchyAncestors(conceptId, datasetId, depth);
+
+    const promises = [
+      // Get first level descendants of concept
+      cachedbService.getHierarchyDescendants(conceptId, datasetId),
+      // Recursively get ancestors of concept depending on depth
+      cachedbService.getHierarchyAncestors(conceptId, datasetId, depth),
+    ];
+    const promiseResults = await Promise.all(promises);
 
     // Combine both descendants and ancestors results
-    const conceptHierarchy = [
-      ...conceptHierarchyDescendants,
-      ...conceptHierarchyAncestors,
-    ];
+    const conceptHierarchy = [...promiseResults[0], ...promiseResults[1]];
 
     // Map conceptHierarchy to nodes and edges
     const edges: ConceptHierarchyEdge[] = [];
