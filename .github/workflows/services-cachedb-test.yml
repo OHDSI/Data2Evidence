@@ -35,7 +35,7 @@ jobs:
 
       - name: Determine condition to run
         env:
-          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.cachedb_changed == 'True' }}
+          SHOULD_WF_RUN: 'true' # for testing
         run: |
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
