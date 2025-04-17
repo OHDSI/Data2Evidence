@@ -5,7 +5,7 @@ import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
 import { Loader } from "@portal/components";
 import { api } from "../../axios/api";
 import { ScannedSchemaState, TableSourceHandleData, useField, useScannedSchema, useTable } from "../../contexts";
-import { ScanDataProgressLogs, ScanDataSourceTable } from "../../types/scanDataDialog";
+import { ScanDataSourceTable } from "../../types/scanDataDialog";
 import { buildFieldHandle, getColumns, saveBlobAs, sleep } from "../../utils/utils";
 import { CloseDialogType } from "../ScanDataDialog/ScanDataDialog";
 import "./ScanProgressDialog.scss";
