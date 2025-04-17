@@ -357,3 +357,10 @@ export interface IPrefectArtifact {
   flow_run_id: string;
   task_run_id: string;
 }
+
+export interface NodeData {
+  result: string;
+  error: boolean;
+  errorMessage: string | null;
+  nodeName: string;
+}

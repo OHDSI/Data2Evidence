@@ -1,129 +1,129 @@
 {
-    "name": "@data2evidence/i2b2",
-    "version": "0.0.99",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-      "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-i2b2 --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
-    },
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/data2evidence/d2e-flows.git"
-    },
-    "author": "",
-    "license": "Apache-2.0",
-    "bugs": {
-      "url": "https://github.com/data2evidence/d2e-flows/issues"
-    },
-    "homepage": "https://github.com/data2evidence/d2e-flows#readme",
-    "trex": {
-      "flow": {
-        "image": "ghcr.io/data2evidence/d2e/flow-i2b2",
-        "flows": [
-          {
-            "name": "i2b2_plugin",
-            "type": "datamodel",
-            "datamodels": [
-              "v1.8.1"
+  "name": "@data2evidence/i2b2",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-i2b2 --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/ohdsi/d2e/flow-i2b2",
+      "flows": [
+        {
+          "name": "i2b2_plugin",
+          "type": "datamodel",
+          "datamodels": [
+            "v1.8.1"
+          ],
+          "entrypoint": "flows.i2b2_plugin.flow.i2b2_plugin",
+          "image": "ghcr.io/ohdsi/d2e/flow-i2b2:develop",
+          "image_pull_policy": "IfNotPresent",
+          "tags": [
+            "i2b2"
+          ],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/i2b2PluginType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
             ],
-            "entrypoint": "flows.i2b2_plugin.flow.i2b2_plugin",
-            "image": "ghcr.io/data2evidence/d2e/flow-i2b2:develop",
-            "image_pull_policy": "IfNotPresent",
-            "tags": [
-              "i2b2"
-            ],
-            "parameter_openapi_schema": {
-              "title": "Parameters",
-              "type": "object",
-              "properties": {
-                "options": {
-                  "$ref": "#/definitions/i2b2PluginType",
-                  "position": 0,
-                  "title": "options"
-                }
+            "definitions": {
+              "FlowActionType": {
+                "enum": [
+                  "create_datamodel",
+                  "get_version_info"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
               },
-              "required": [
-                "options"
-              ],
-              "definitions": {
-                "FlowActionType": {
-                  "enum": [
-                    "create_datamodel",
-                    "get_version_info"
-                  ],
-                  "title": "FlowActionType",
-                  "type": "string"
-                },
-                "i2b2PluginType": {
-                  "properties": {
-                    "flow_action_type": {
-                      "$ref": "#/definitions/FlowActionType"
-                    },
-                    "database_code": {
-                      "default": "",
-                      "title": "Database Code",
-                      "type": "string"
-                    },
-                    "schema_name": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": null,
-                      "title": "Schema Name"
-                    },
-                    "data_model": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": null,
-                      "title": "Data Model"
-                    },
-                    "load_demo_data": {
-                      "anyOf": [
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": false,
-                      "title": "Load Demo Data"
-                    },
-                    "datasets": {
-                      "anyOf": [
-                        {
-                          "items": {},
-                          "type": "array"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": null,
-                      "title": "Datasets"
-                    }
+              "i2b2PluginType": {
+                "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
                   },
-                  "required": [
-                    "flow_action_type"
-                  ],
-                  "title": "i2b2PluginType",
-                  "type": "object"
-                }
+                  "database_code": {
+                    "default": "",
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Schema Name"
+                  },
+                  "data_model": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Model"
+                  },
+                  "load_demo_data": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Load Demo Data"
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      {
+                        "items": {},
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
+                  }
+                },
+                "required": [
+                  "flow_action_type"
+                ],
+                "title": "i2b2PluginType",
+                "type": "object"
               }
             }
           }
-        ]
-      }
+        }
+      ]
     }
   }
+}
