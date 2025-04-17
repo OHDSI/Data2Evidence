@@ -104,6 +104,7 @@ export class PrefectAPI {
           operator: "and_",
           name: { any_: [`${databaseCode}.${dataset}`] },
           tags: { operator: "and_", all_: tags },
+          state: { type: { not_any_: ["CANCELLED", "CANCELLING"] } },
         },
       };
 
