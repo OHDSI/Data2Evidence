@@ -18,7 +18,7 @@ export class WhiteRabbitController {
     // Compress the uploaded csv files when scanning
     this.router.use(async (req, res, next) => {
       if (
-        req.body?.options?.url === "scan-report/files" &&
+        req.body?.options?.run_type === "SCAN_REPORT_FILES" &&
         req.body?.options?.data
       ) {
         try {
