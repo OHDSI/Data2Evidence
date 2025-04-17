@@ -46,11 +46,9 @@ export const ALP_ROLES: { [key: string]: string } = {
 };
 
 export const ALP_SYSTEM_ADMIN = "ALP_SYSTEM_ADMIN";
-export const ALP_SQLEDITOR_ADMIN = "ALP_SQLEDITOR_ADMIN";
 
 export const DATA_ADMIN_ROLES: { [key: string]: string } = {
   [ALP_SYSTEM_ADMIN]: "Admin",
-  [ALP_SQLEDITOR_ADMIN]: "Sqleditor Admin",
 };
 
 export const FEATURE_DATAFLOW = "dataflow";

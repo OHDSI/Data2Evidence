@@ -2,8 +2,8 @@ import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
-  FLOW_RUN_STATE_TYPES,
   DATA_QUALITY_DOMAINS,
+  FLOW_RUN_STATE_TYPES,
   PrefectDeploymentName,
   PrefectFlowName,
   PrefectTagNames,
@@ -20,21 +20,32 @@ export class DqdService {
   private dataQualityOverviewParser = new DataQualityOverviewParser();
 
   public async getDataQualityResult(flowRunId: string, token: string) {
-    const portalServerApi = new PortalServerAPI(token);
-    const dqdResult = await this.getDqdResults(portalServerApi, [flowRunId]);
-    if (this.isDataQualityResult(dqdResult[0])) {
-      return dqdResult[0].CheckResults;
-    }
-    return null;
-  }
-
-  public async getDataQualityOverview(flowRunId: string, token: string) {
-    const result = await this.getDataQualityResult(flowRunId, token);
-    if (!result) {
+    const prefectApi = new PrefectAPI(token);
+    const artifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
+      flowRunId
+    );
+    if (artifacts.length === 0) {
       return null;
     }
 
-    return this.dataQualityOverviewParser.parse(result);
+    const artifactData = JSON.parse(artifacts[0].data);
+    return artifactData.CheckResults;
+  }
+
+  public async getDataQualityOverview(flowRunId: string, token: string) {
+    const prefectApi = new PrefectAPI(token);
+    const artifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
+      flowRunId
+    );
+    if (artifacts.length === 0) {
+      return null;
+    }
+
+    const artifactData = JSON.parse(artifacts[0].data);
+    const checkResults = artifactData.CheckResults;
+    const derivedResults = this.dataQualityOverviewParser.parse(checkResults);
+
+    return derivedResults;
   }
 
   public async getLatestFlowRunWithoutCohort(datasetId: string, token: string) {
@@ -271,11 +282,14 @@ export class DqdService {
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       datasetId
     );
-    const flowRuns = (await prefectApi.getFlowRunsByDataset(
-      databaseCode,
-      schemaName,
-      PrefectTagNames.DATA_CHARACTERIZATION
-    )).filter( // filter for completed flowRuns
+    const flowRuns = (
+      await prefectApi.getFlowRunsByDataset(
+        databaseCode,
+        schemaName,
+        PrefectTagNames.DATA_CHARACTERIZATION
+      )
+    ).filter(
+      // filter for completed flowRuns
       (flowRun) => flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED
     );
 
@@ -316,13 +330,16 @@ export class DqdService {
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       datasetId
     );
-    const flowRuns = (await prefectApi.getFlowRunsByDataset(
-      databaseCode,
-      schemaName,
-      PrefectTagNames.DQD
-    )).filter( // filter for completed flowRuns
+    const flowRuns = (
+      await prefectApi.getFlowRunsByDataset(
+        databaseCode,
+        schemaName,
+        PrefectTagNames.DQD
+      )
+    ).filter(
+      // filter for completed flowRuns
       (flowRun) => flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED
-    );;
+    );
     const flowRunIds = flowRuns.map((run) => run.id);
     const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
 

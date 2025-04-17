@@ -98,3 +98,16 @@ export interface IDatabaseDetailsUpdate
   vocabSchemas: string[];
   extra: { [key: string]: string | number | boolean };
 }
+
+export interface ITestConnection {
+  user: string;
+  password: string;
+  host: string;
+  database: string;
+  port: number;
+}
+
+export interface ITestConnectionResult {
+  success: boolean;
+  message: string;
+}

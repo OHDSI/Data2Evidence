@@ -19,7 +19,7 @@ export class TestConnectionService {
       host: dbSettings.server,
       port: dbSettings.port,
       database: dbSettings.database,
-      user: dbSettings.user,
+      user: dbSettings.user_name,
       password: dbSettings.password,
       schema: dbSettings.schema,
     });
