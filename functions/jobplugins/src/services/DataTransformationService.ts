@@ -24,6 +24,7 @@ export class TransformationService {
       .select([
         "dataflow.id",
         "dataflow.name",
+        "dataflow.lastFlowRunId",
         "revision.id",
         "revision.flow",
         "revision.comment",
