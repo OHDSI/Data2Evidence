@@ -3,12 +3,10 @@ import json
 from rpy2 import robjects
 
 from prefect import flow, task
-from prefect.variables import Variable
 from prefect_shell import ShellOperation
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
-from prefect.serializers import JSONSerializer
-from prefect.filesystems import RemoteFileSystem as RFS
+from prefect.artifacts import create_markdown_artifact
 
 from .types import DqdOptionsType, DQD_THREAD_COUNT
 
@@ -65,10 +63,7 @@ def dqd_plugin(options: DqdOptionsType):
                 use_cache_db)
 
 
-@task(result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-      result_storage_key="{flow_run.id}_dqd.json",
-      result_serializer=JSONSerializer(),
-      persist_result=True)
+@task()
 def execute_dqd(
     schema_name: str,
     database_code: str,
@@ -133,8 +128,20 @@ def execute_dqd(
                 # Run executeDqChecks
                 DataQualityDashboard::executeDqChecks(connectionDetails = connectionDetails,cdmDatabaseSchema = cdmDatabaseSchema,resultsDatabaseSchema = resultsDatabaseSchema,cdmSourceName = cdmSourceName,numThreads = numThreads,sqlOnly = sqlOnly,outputFolder = outputFolder,outputFile = outputFile,verboseMode = verboseMode,writeToTable = writeToTable,checkLevels = checkLevels,checkNames = checkNames,cdmVersion = cdmVersion, cohortDefinitionId = cohortDefinitionId, cohortDatabaseSchema = cohortDatabaseSchema, cohortTableName = cohortTableName)
         ''')
+
+    # Read the result from the output file
     with open(f'{output_folder}/{schema_name}.json', 'rt') as f:
-        return json.loads(f.read())
+        result_data = json.loads(f.read())
+
+    # Create a markdown artifact with the result data
+    artifact_key = f"{FlowRunContext.get().flow_run.id}-dqd-output"
+    create_markdown_artifact(
+        key=artifact_key,
+        markdown=json.dumps(result_data),
+        description="DQD output stored as JSON"
+    )
+
+    return result_data
 
 
 if __name__ == "__main__":
