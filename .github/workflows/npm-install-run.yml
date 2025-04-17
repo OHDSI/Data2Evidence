@@ -1,11 +1,8 @@
 name: d2e/npm-install-d2e-run
 
 on:
-  # schedule:
-    # - cron: "0 22 * * *" # UTC timing
-  push: 
-    branches:
-      - mwaiyee/1875-npm-package-install
+  schedule:
+    - cron: "0 22 * * *" # UTC timing
   workflow_dispatch:
     inputs:
       version:
@@ -15,7 +12,7 @@ on:
         type: string
 
 env:
-  VERSION: ${{ github.event.inputs.version ||  'develop' }}
+  VERSION: ${{ github.event.inputs.version ||  '0.6.0' }}
 
 jobs:
   npm-install-run:
@@ -78,9 +75,9 @@ jobs:
         run: |
           echo "y" | d2e clean  
 
-      # - name: Discord notification on status
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### Status of v0.6 Installation\ninstall:${{ steps.install.outcome }}\ninit:${{ steps.init.outcome }}\npull:${{ steps.pull.outcome }}\nstart::${{ steps.start.outcome }}\nstop:${{ steps.stop.outcome }}"
+      - name: Discord notification on status
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
+          username: ${{ github.actor }}
+          content: "### Status of v0.6 Installation\ninstall:${{ steps.install.outcome }}\ninit:${{ steps.init.outcome }}\npull:${{ steps.pull.outcome }}\nstart::${{ steps.start.outcome }}\nstop:${{ steps.stop.outcome }}"
