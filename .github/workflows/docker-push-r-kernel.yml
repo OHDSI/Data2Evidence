@@ -45,8 +45,7 @@ jobs:
 
   bld:
     needs: setup
-    env: 
-      DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -56,13 +55,10 @@ jobs:
             context: ./services/R-kernel
             fileName: Dockerfile
           - name: d2e-r-ohdsi-kernel
-            directory: ./services/R-kernel/kernels
+            directory: ./services/R-kernel/kernels/R_ohdsi_docker
             context: .
             fileName: Dockerfile
-            build_arg1: ${{ env.DOCKER_BUILD_ARG1 }}
-
-    uses: ./.github/workflows/services-docker-push-called.yml
-    with:
+    env:
       AZ_REG_REPOSITORY: ${{ matrix.name }}
       DOCKER_BUILD_CONTEXT_PATH: ${{ matrix.context }}
       DOCKER_BUILD_FILE_PATH: ${{ matrix.directory }}/${{ matrix.fileName }}
@@ -70,5 +66,32 @@ jobs:
       DOCKER_IMG_TAG_NAME: ${{ needs.setup.outputs.DOCKER_IMG_TAG_NAME }}
       GIT_BRANCH_NAME: ${{ needs.setup.outputs.GIT_BRANCH_NAME }}
       GIT_REPO_FULL_NAME: ${{ needs.setup.outputs.GIT_REPO_FULL_NAME }}
-      DOCKER_BUILD_ARG1: ${{ matrix.build_arg1 || '' }}
-    secrets: inherit
+      DOCKER_BUILD_ARG1: GITHUB_PAT=${{secrets.GITHUB_TOKEN}}
+    
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
+          submodules: recursive
+
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Build and Push
+        id: build-push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
+          file: ${{ env.DOCKER_BUILD_FILE_PATH }}
+          platforms: "linux/amd64"
+          push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          tags: ghcr.io/ohdsi/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          build-args: |
+            BUILD_TYPE=OSS
+            ${{ env.DOCKER_BUILD_ARG1 }}

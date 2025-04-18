@@ -51,7 +51,7 @@ RUN java -version && R CMD javareconf
 
 # Install Dependencies
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
+RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), repos="https://cran.r-project.org")'
 
 # HADES Dependencies
 # https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
@@ -69,5 +69,8 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.8.1", quiet=FA
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v3.3.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v0.2.1", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+
+# OHDSI packages and versions - final
+RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 USER jovyan

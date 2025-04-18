@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-conda install --yes --quiet -c r r-essentials r-irkernel r-argparse
+conda install -n base conda-libmamba-solver
+# conda config --set solver libmamba
+conda install --yes -c r r-essentials r-irkernel r-argparse
+# conda create -c https://repo.anaconda.com/pkgs/r r-essentials r-irkernel r-argparse --solver=libmamba
 
 # Create an R-script to run and install packages and update IRkernel
 cat <<'EOF' > install_packages.R
