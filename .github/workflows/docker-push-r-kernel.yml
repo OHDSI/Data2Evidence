@@ -45,6 +45,8 @@ jobs:
 
   bld:
     needs: setup
+    env: 
+      DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -57,7 +59,7 @@ jobs:
             directory: ./services/R-kernel/kernels
             context: .
             fileName: Dockerfile
-            build_arg1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+            build_arg1: ${{ env.DOCKER_BUILD_ARG1 }}
 
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
