@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - SantanM/internal-1827_r-kernel
+    workflow_dispatch:
 
 concurrency:
   group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push-prune
@@ -56,6 +57,7 @@ jobs:
             directory: ./services/R-kernel/kernels
             context: .
             fileName: Dockerfile
+            build_arg1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
 
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
