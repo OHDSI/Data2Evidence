@@ -215,6 +215,7 @@ services:
             "LOCAL_DEBUG": "false",
             "USE_DUCKDB": "${USE_DUCKDB:-true}",
             "USE_CACHEDB": "${USE_CACHEDB:-true}",
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-false}",
             "USE_EXTENSION_FOR_COHORT_CREATION": "false",
             "isTestEnv": "${isTestEnv}",
             "local": "${local}",
@@ -1183,7 +1184,7 @@ services:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
     profiles: [jupyter]
-    
+
   enterprise-gateway-proxy:
     image: haproxy:alpine
     container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-proxy
@@ -1254,16 +1255,16 @@ services:
     profiles: [jupyter]
 
   fhir-fe-server:
-      container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
-      image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
-      platform: linux/amd64
-      logging:
-        options:
-          tag: *c29
-      depends_on:
-        fhir-server:
-          condition: service_started
-      networks:
-        alp:
-      restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-      profiles: [fhir]
+    container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+    image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+    platform: linux/amd64
+    logging:
+      options:
+        tag: *c29
+    depends_on:
+      fhir-server:
+        condition: service_started
+    networks:
+      alp:
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    profiles: [fhir]

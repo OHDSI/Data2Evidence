@@ -10,6 +10,7 @@ import {
     User,
     utils,
     Connection,
+    translateHanaToDuckdb,
 } from "@alp/alp-base-utils";
 import * as pathx from "https://deno.land/std@0.188.0/path/mod.ts";
 
@@ -96,10 +97,7 @@ const initRoutes = async (app: express.Application) => {
             }
             const timeToLiveInMilliseconds: number =
                 alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
-            return (
-                studiesDb.cachedAt + timeToLiveInMilliseconds <
-                Date.now()
-            );
+            return studiesDb.cachedAt + timeToLiveInMilliseconds < Date.now();
         };
 
         try {
@@ -109,8 +107,13 @@ const initRoutes = async (app: express.Application) => {
                 // Checks if its public
                 if (req.originalUrl.startsWith(publicEndpoint)) {
                     log.info("getting public studies metadata");
-                    if (hasExpiredStudiesDbMetadataCache(publicStudiesDbMetadata)) {
-                        studies = await new PortalServerAPI().getPublicStudies();
+                    if (
+                        hasExpiredStudiesDbMetadataCache(
+                            publicStudiesDbMetadata
+                        )
+                    ) {
+                        studies =
+                            await new PortalServerAPI().getPublicStudies();
                         publicStudiesDbMetadata = {
                             studies,
                             cachedAt: Date.now(),
@@ -119,23 +122,26 @@ const initRoutes = async (app: express.Application) => {
                     req.studiesDbMetadata = publicStudiesDbMetadata;
                 } else {
                     if (hasExpiredStudiesDbMetadataCache(studiesDbMetadata)) {
-                            // Get Analytics Credential for study based on selected study
-                            const timestamp = (new Date()).valueOf();
-                            console.time(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
-                            const portalServerAPI = new PortalServerAPI();
-                            const accessToken = await portalServerAPI.getClientCredentialsToken();
-                            studies = await portalServerAPI.getStudies(accessToken);
-                            console.timeEnd(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
-                            studiesDbMetadata = {
-                                studies,
-                                cachedAt: Date.now(),
-                            };
-                            // console.log(`studiesDbMetadata ${JSON.stringify(studiesDbMetadata)}`)
+                        // Get Analytics Credential for study based on selected study
+                        const timestamp = new Date().valueOf();
+                        console.time(
+                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                        );
+                        const portalServerAPI = new PortalServerAPI();
+                        const accessToken =
+                            await portalServerAPI.getClientCredentialsToken();
+                        studies = await portalServerAPI.getStudies(accessToken);
+                        console.timeEnd(
+                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                        );
+                        studiesDbMetadata = {
+                            studies,
+                            cachedAt: Date.now(),
+                        };
+                        // console.log(`studiesDbMetadata ${JSON.stringify(studiesDbMetadata)}`)
                     }
                     req.studiesDbMetadata = studiesDbMetadata; //Because this is cached
                 }
-
-                
             }
 
             req.dbCredentials = {
@@ -191,8 +197,28 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
+                // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
+                    env.USE_TREX_DB_CONN === "true" &&
+                    credentials.dialect != DB.HANA
+                ) {
+                    try {
+                        const dbm = Trex.databaseManager();
+                        const conn = dbm.getConnection(
+                            credentials.code,
+                            credentials.schema,
+                            credentials.vocabSchema,
+                            { duckdb: translateHanaToDuckdb }
+                        );
+
+                        req.dbConnections = { analyticsConnection: conn };
+                    } catch (error) {
+                        console.log("Error getting trex connection, ", error);
+                        throw error;
+                    }
+                }
+                // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
+                else if (
                     env.USE_CACHEDB === "true" &&
                     credentials.dialect != DB.HANA
                 ) {
@@ -397,7 +423,7 @@ const initRoutes = async (app: express.Application) => {
                         const configId = configData.configId;
                         const configVersion = configData.configVersion;
                         const datasetId = req.body.datasetId;
-    
+
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
                                 {

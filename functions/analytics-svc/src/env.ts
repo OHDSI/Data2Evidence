@@ -23,6 +23,7 @@ function initEnv(__env) {
 
         USE_DUCKDB: z.string(),
         USE_CACHEDB: z.string(),
+        USE_TREX_DB_CONN: z.string(),
         USE_HANA_JWT_AUTHC: z.string(),
 
         PG__IDLE_TIMEOUT_IN_MS: z
