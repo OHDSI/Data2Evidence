@@ -1,6 +1,6 @@
 import { ThunkResult } from "~/store";
 import { NodeDataState, NodeResultDto, NodeState } from "../types";
-import { setNode } from "../reducers";
+import { setHasUnmappedFlowRunResult, setNode } from "../reducers";
 
 export const processFlowRunResults = (
   results: NodeResultDto[]
@@ -8,6 +8,7 @@ export const processFlowRunResults = (
   return async (dispatch, getState) => {
     if (!results || results.length === 0) return;
 
+    let hasUnmappedFlowRunResult = false;
     for (const result of results) {
       const name = result.nodeName;
       const nodes = getState().flow.nodes.entities;
@@ -18,6 +19,7 @@ export const processFlowRunResults = (
         return n.data.name === name;
       });
       if (currentId == null) {
+        hasUnmappedFlowRunResult = true;
         continue;
       }
 
@@ -33,5 +35,7 @@ export const processFlowRunResults = (
       };
       dispatch(setNode(node));
     }
+
+    dispatch(setHasUnmappedFlowRunResult(hasUnmappedFlowRunResult));
   };
 };
