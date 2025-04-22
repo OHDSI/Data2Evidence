@@ -64,8 +64,36 @@ jobs:
       
       - name: Logs 
         run: |
-          d2e -v ${{ env.VERSION }} logs 
+          d2e -v ${{ env.VERSION }} logs
 
+      - name: Setupdemo
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            d2e -e -v ${{ env.VERSION }} setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Patchdemodb
+        uses: nick-fields/retry@v3
+        id: patchdemodb
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            d2e patchdemodb
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+  
       - name: Stop d2e services
         id: stop
         run: |
@@ -80,4 +108,11 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
           username: ${{ github.actor }}
-          content: "### Status of ${{ env.VERSION }} Installation\ninstall:${{ steps.install.outcome }}\ninit:${{ steps.init.outcome }}\npull:${{ steps.pull.outcome }}\nstart::${{ steps.start.outcome }}\nstop:${{ steps.stop.outcome }}"
+          content: "### Status of ${{ env.VERSION }} Installation\n
+            install: ${{ steps.install.outcome }}\n
+            init: ${{ steps.init.outcome }}\n
+            pull: ${{ steps.pull.outcome }}\n
+            start: ${{ steps.start.outcome }}\n
+            setupdemo: ${{ steps.setupdemo.outcome }}\n
+            patchdemodb: ${{ steps.patchdemodb.outcome }}\n
+            stop: ${{ steps.stop.outcome }}"
