@@ -170,16 +170,24 @@ export const getIncludedConcepts = async (
   try {
     const { body } = schemas.getIncludedConcepts.parse(req);
     const { conceptSetIds, datasetId } = body;
-    
     const systemPortalApi = new SystemPortalAPI(req);
-    const datasetDB = { ...(await systemPortalApi.getDatasetDetails(datasetId)), datasetId }
-    const cachedbService = new CachedbService(req, datasetDB);
 
-    const promises = conceptSetIds.map(async (conceptSetId) => {
+    const getCachedbservice = async () => {
+      const datasetDB = { ...(await systemPortalApi.getDatasetDetails(datasetId)), datasetId }
+      const cachedbService = new CachedbService(req, datasetDB);
+      return cachedbService
+    }
+
+    const conceptsSetsDb = conceptSetIds.map(async (conceptSetId) => {
       const conceptSet = await systemPortalApi.getConceptSetById(
         conceptSetId,
         datasetId
       );
+      return conceptSet
+    })
+
+    const [cachedbService, ...rawConceptSets] = await Promise.all([getCachedbservice(), ...conceptsSetsDb])
+    const promises = rawConceptSets.map(async (conceptSet) => {
       const conceptIds = conceptSet.concepts.map((c) => c.id);
       const concepts = await cachedbService.getConceptsByIds(
         conceptIds,
@@ -204,7 +212,6 @@ export const getIncludedConcepts = async (
     });
 
     const conceptSets = await Promise.all(promises);
-
     const conceptIds: number[] = [];
     const conceptIdsToIncludeDescendant: number[] = [];
     const conceptIdsToIncludeMapped: number[] = [];
@@ -316,12 +323,12 @@ const _getConceptSetConceptIds = async (
 ): Promise<number[]> => {
 
   const [includedConceptIds, mappedConceptIds] = await Promise.all([
-    await cachedbService.getConceptsAndDescendantIds(
+    cachedbService.getConceptsAndDescendantIds(
     conceptIds,
     conceptIdsToIncludeDescendant,
     datasetId
     ),
-    await (async () => {
+    (async () => {
       const mappedConceptsAndDescendantIds =
       await cachedbService.getConceptsAndDescendantIds(
         conceptIdsToIncludeMapped,
