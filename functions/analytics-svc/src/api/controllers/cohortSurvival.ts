@@ -2,23 +2,14 @@ import { IMRIRequest } from "../../types";
 import { Logger } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
 let logger = CreateLogger("analytics-log");
-import * as Minio from "minio";
 
-import { env } from "../../env";
 import { dataflowRequest } from "../../utils/DataflowMgmtProxy";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import PortalServerAPI from "../PortalServerAPI";
+import { PrefectAPI } from "../../utils/PrefectAPI.ts";
 
 const language = "en";
-
-const minioClient = new Minio.Client({
-    endPoint: env.MINIO__ENDPOINT,
-    port: env.MINIO__PORT,
-    useSSL: env.MINIO__SSL === "true",
-    accessKey: env.MINIO__ACCESS_KEY,
-    secretKey: env.MINIO__SECRET_KEY,
-});
-
+ 
 async function getStudyDetails(
     datasetId: string,
     res
@@ -99,42 +90,14 @@ export async function getKmData(req: IMRIRequest, res) {
     };
     await checkFlowRunState();
 
-    const bucketName = "flows";
-    const objectKey = `results/${req.query.flowRunId}_km.json`;
     try {
         console.info("Checking for Kapler-Meier Data");
-        minioClient.getObject(
-            bucketName,
-            objectKey,
-            async (err, dataStream) => {
-                if (err) {
-                    // if (typeof error === )
-                    console.error("Error fetching object:", err);
-                    return res
-                        .status(500)
-                        .send("Error fetching object from MinIO");
-                }
 
-                // Set appropriate headers
-                res.setHeader(
-                    "Content-Disposition",
-                    `attachment; filename="${objectKey}"`
-                );
-                res.setHeader("Content-Type", "application/json"); // Adjust based on your file type
-
-                // Pipe the object data directly to the response
-                dataStream.pipe(res);
-
-                dataStream.on("end", () => {
-                    console.log("Object successfully streamed to response");
-                });
-
-                dataStream.on("error", (err) => {
-                    console.error("Stream error:", err);
-                    res.status(500).send("Error streaming object data");
-                });
-            }
+        const prefectApi = new PrefectAPI(req.headers.authorization);
+        const flowRunArtifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
+            req.query.flowRunId
         );
+        return res.json(flowRunArtifacts[0]);
     } catch (error) {
         console.error("Error in handling request:", error);
         res.status(500).send("Internal Server Error");
@@ -154,6 +117,8 @@ export async function analyzeCohortsKm(req: IMRIRequest, res) {
                 databaseCode,
                 targetCohortDefinitionId: req.body.targetCohortId,
                 outcomeCohortDefinitionId: req.body.outcomeCohortId,
+                competingOutcomeCohortDefinitionId: req.body.competingOutcomeCohortId,
+                analysisType: req.body.analysisType,
                 datasetId: datasetId,
             },
         }
