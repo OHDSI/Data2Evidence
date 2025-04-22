@@ -72,4 +72,6 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
+COPY --chown=docker:docker ./flows/_shared_flow_utils/postgresql-42.3.1.jar /app/inst/drivers/postgresql-42.3.1.jar
+
 USER jovyan

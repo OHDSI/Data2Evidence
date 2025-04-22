@@ -10,7 +10,6 @@ RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 # Install R packages
 RUN R -e "install.packages(c('IRkernel', 'argparse'), repos='https://cran.r-project.org')"
 
-# For r-essentials, you might want to use an MRAN snapshot or install specific packages
 RUN R -e "install.packages('remotes', repos='https://cran.r-project.org')"
 RUN R -e "remotes::install_github('IRkernel/repr'); \
           install.packages(c('repr', 'pbdZMQ', 'crayon', 'digest', 'stringr', 'ggplot2', 'dplyr', 'tidyr', 'readr', 'tibble'), repos='https://cran.r-project.org')"
