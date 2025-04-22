@@ -66,6 +66,19 @@ jobs:
         run: |
           d2e -v ${{ env.VERSION }} logs
 
+      - name: Patchdemodb
+        uses: nick-fields/retry@v3
+        id: patchdemodb
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            d2e patchdemodb
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+            
       - name: Setupdemo
         uses: nick-fields/retry@v3
         id: setupdemo
@@ -79,19 +92,6 @@ jobs:
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
-      - name: Patchdemodb
-        uses: nick-fields/retry@v3
-        id: patchdemodb
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 3
-          retry_on: any
-          command: |
-            d2e patchdemodb
-            DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
   
       - name: Stop d2e services
