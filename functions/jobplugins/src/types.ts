@@ -78,6 +78,8 @@ interface CohortSurvivalFlowRunOptions {
   datasetId: string;
   targetCohortDefinitionId: number;
   outcomeCohortDefinitionId: number;
+  analysisType?: string; // Optional, defaults to "single_event"
+  competingOutcomeCohortDefinitionId?: number; // Optional, required for competing_risk analysis
 }
 
 export interface CohortGeneratorFlowRunDto {
@@ -341,9 +343,8 @@ export interface ICreatePerseusFlowRunDto {
 }
 
 interface ICreateWhiteRabbitFlowRunOptions {
-  url: string;
-  headers?: object;
   data?: object;
+  run_type: string;
 }
 
 export interface IPrefectArtifact {

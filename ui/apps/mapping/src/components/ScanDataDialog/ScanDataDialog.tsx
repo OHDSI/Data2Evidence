@@ -15,7 +15,7 @@ export type CloseDialogType = "success" | "cancelled";
 interface ScanDataDialogProps {
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
-  setScanId: (id: number) => void;
+  setScanId: (id: string) => void;
 }
 
 const DEFAULT_PORTS = {
@@ -29,11 +29,11 @@ const DEFAULT_PORTS = {
 };
 
 const EMPTY_DBCONNECTION_FORM_DATA = {
-  dbType: "",
+  data_type: "",
   server: "",
   port: 0,
   database: "",
-  user: "",
+  user_name: "",
   password: "",
   schema: "",
 };
@@ -51,7 +51,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
   const [connectionErrorMessage, setConnectionErrorMesssage] = useState<string>("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
-  const [isScanning, setIsScanning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -82,9 +81,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     try {
       setLoading(true);
       if (dataType === "csv") {
-        scanData();
+        await scanData();
       } else {
-        scanDBData();
+        await scanDBData();
       }
       handleClose("success");
     } catch (err: any) {
@@ -98,7 +97,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     (event: SelectChangeEvent<string>) => {
       handleClear();
       setDataType(event.target.value);
-      setDbConnectionForm({ ...dbConnectionForm, dbType: event.target.value });
+      setDbConnectionForm({ ...dbConnectionForm, data_type: event.target.value });
     },
     [dataType]
   );
@@ -194,80 +193,44 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const scanData = useCallback(async () => {
     try {
       setLoading(true);
-      setIsScanning(true);
       if (uploadedFiles) {
         const response = await api.whiteRabbit.createScanReport(uploadedFiles, delimiter);
         const flowRunId = response.flowRunId;
-
-        intervalRef.current = setInterval(async () => {
-          try {
-            const status = await api.whiteRabbit.getFlowRunStatus(flowRunId);
-            if (status.state_name === "Completed") {
-              if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-              }
-              setIsScanning(false);
-              const scanArtifacts = await api.whiteRabbit.getScanIdByFlowRunId(flowRunId);
-              setScanId(scanArtifacts.scan_id);
-              handleClose("success");
-            }
-          } catch (error) {
-            console.error("Failed to check job status", error);
-          }
-        }, 10000);
+        setScanId(flowRunId);
       } else {
         console.error("No file was uploaded");
       }
     } catch (error) {
       console.error("Failed to create scan report from CSV", error);
       setLoading(false);
-      setIsScanning(false);
     }
   }, [uploadedFiles, delimiter]);
 
   const scanDBData = useCallback(async () => {
     try {
       setLoading(true);
-      setIsScanning(true);
       if (canConnect) {
         const response = await api.whiteRabbit.createDBScanReport(dbConnectionForm, selectedTables);
         const flowRunId = response.flowRunId;
-
-        intervalRef.current = setInterval(async () => {
-          try {
-            const status = await api.whiteRabbit.getFlowRunStatus(flowRunId);
-            if (status.state_name === "Completed") {
-              if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-              }
-              setIsScanning(false);
-              const scanArtifacts = await api.whiteRabbit.getScanIdByFlowRunId(flowRunId);
-              setScanId(scanArtifacts.scan_id);
-              handleClose("success");
-            }
-          } catch (error) {
-            console.error("Failed to check job status", error);
-          }
-        }, 10000);
+        setScanId(flowRunId);
       } else {
         console.error("No connection to the database was established");
       }
     } catch (error) {
       console.error("Failed to create scan report from DB", error);
       setLoading(false);
-      setIsScanning(false);
     }
   }, [dbConnectionForm, selectedTables, canConnect]);
 
   const fileNames = useMemo(() => uploadedFiles.map((file) => file.name).join(", "), [uploadedFiles]);
 
   const isFormValid = (formData: ScanDataDBConnectionForm) => {
-    const optionalSchemaDbType = ["mysql", "ms access"];
+    const optionalSchemadata_type = ["mysql", "ms access"];
     return Object.entries(formData)
       .filter(([key]) => key !== "httppath") // Exclude 'httppath'
       .every(([key, value]) => {
-        // If dbType is 'mysql', allow 'schema' to be empty
-        if (optionalSchemaDbType.includes(formData.dbType) && key === "schema") {
+        // If data_type is 'mysql', allow 'schema' to be empty
+        if (optionalSchemadata_type.includes(formData.data_type) && key === "schema") {
           return true;
         }
         return value !== "" && value !== null && value !== undefined;
@@ -275,14 +238,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   };
 
   return (
-    <Dialog
-      className="scan-data-dialog"
-      title="Scan Data"
-      open={open}
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle>Scan Data</DialogTitle>
+    <Dialog className="scan-data-dialog" title="Scan Data" open={open} maxWidth="md" fullWidth>
+      <DialogTitle>Scan Data dialog</DialogTitle>
       <Divider />
       <div className="scan-data-dialog__content">
         <div className="scan-data-dialog__container">
@@ -365,9 +322,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
                   </FormControl>
                   <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
                     <TextField
-                      name="user"
+                      name="user_name"
                       label="User Name"
-                      value={dbConnectionForm.user}
+                      value={dbConnectionForm.user_name}
                       onChange={handlePostgresFormChange}
                       variant="standard"
                     />
@@ -457,10 +414,10 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
         <Button
           onClick={handleApply}
           variant="contained"
-          disabled={selectedTables.length === 0 || isScanning}
+          disabled={selectedTables.length === 0}
           style={{ marginLeft: "20px" }}
         >
-          {isScanning ? "Scanning..." : loading ? "Loading..." : "Apply"}
+          {loading ? "Loading..." : "Apply"}
         </Button>
       </div>
       {connectionErrorDialogVisible && (
