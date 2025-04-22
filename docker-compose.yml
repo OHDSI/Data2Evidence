@@ -1085,6 +1085,7 @@ services:
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
     image: ghcr.io/ohdsi/d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
+    platform: linux/amd64
     logging:
       options:
         tag: *c6
@@ -1255,6 +1256,7 @@ services:
   fhir-fe-server:
       container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
       image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+      platform: linux/amd64
       logging:
         options:
           tag: *c29
