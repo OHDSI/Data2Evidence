@@ -343,10 +343,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
-      - name: print logs for alp-logto-seed
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-seed -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
