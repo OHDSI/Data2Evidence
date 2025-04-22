@@ -169,9 +169,8 @@ export const getIncludedConcepts = async (
 ) => {
   try {
     const { body } = schemas.getIncludedConcepts.parse(req);
-
     const { conceptSetIds, datasetId } = body;
-
+    
     const systemPortalApi = new SystemPortalAPI(req);
     const datasetDB = { ...(await systemPortalApi.getDatasetDetails(datasetId)), datasetId }
     const cachedbService = new CachedbService(req, datasetDB);
@@ -316,22 +315,27 @@ const _getConceptSetConceptIds = async (
   cachedbService: CachedbDAO | HanaHDBDao
 ): Promise<number[]> => {
 
-  const includedConceptIds = await cachedbService.getConceptsAndDescendantIds(
+  const [includedConceptIds, mappedConceptIds] = await Promise.all([
+    await cachedbService.getConceptsAndDescendantIds(
     conceptIds,
     conceptIdsToIncludeDescendant,
     datasetId
-  );
-  const mappedConceptsAndDescendantIds =
-    await cachedbService.getConceptsAndDescendantIds(
-      conceptIdsToIncludeMapped,
-      conceptIdsToIncludeMappedAndDescendant,
-      datasetId
-    );
+    ),
+    await (async () => {
+      const mappedConceptsAndDescendantIds =
+      await cachedbService.getConceptsAndDescendantIds(
+        conceptIdsToIncludeMapped,
+        conceptIdsToIncludeMappedAndDescendant,
+        datasetId
+      );
 
-  const mappedConceptIds = await cachedbService.getConceptRelationshipMapsTo(
-    mappedConceptsAndDescendantIds,
-    datasetId
-  );
+      const mappedConceptIds = await cachedbService.getConceptRelationshipMapsTo(
+        mappedConceptsAndDescendantIds,
+        datasetId
+      );
+      return mappedConceptIds
+    })()
+  ])
   
   mappedConceptIds.forEach((concept) => {
     includedConceptIds.push(concept.concept_id_1);
