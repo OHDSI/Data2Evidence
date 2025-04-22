@@ -819,6 +819,7 @@ services:
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
+    pull_policy: missing
     image: ghcr.io/data2evidence/logto-with-logto-schema:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
