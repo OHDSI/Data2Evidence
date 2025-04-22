@@ -93,17 +93,19 @@ const updateIfrWithConcepts = async (
 ): Promise<Ifr> => {
     const updatedIfr = JSON.parse(JSON.stringify(ifr));
     const conceptSets = findConceptSetsInIfr(config, updatedIfr);
-    const conceptSetsWithConceptIds = await getConceptsFromConceptSets(
-        conceptSets,
-        datasetId,
-        bearerToken
-    );
-    conceptSetsWithConceptIds.forEach((set) => {
-        const conceptSetAttributes = getObjectByPath(updatedIfr, set.path);
-        conceptSetAttributes._constraints = generateConceptConstraints(
-            set.conceptIds
+    if (conceptSets && conceptSets.length > 0) {
+        const conceptSetsWithConceptIds = await getConceptsFromConceptSets(
+            conceptSets,
+            datasetId,
+            bearerToken
         );
-    });
+        conceptSetsWithConceptIds.forEach((set) => {
+            const conceptSetAttributes = getObjectByPath(updatedIfr, set.path);
+            conceptSetAttributes._constraints = generateConceptConstraints(
+                set.conceptIds
+            );
+        });
+    }
     return updatedIfr;
 };
 
@@ -156,7 +158,7 @@ const findConceptSetsInIfr = (config: Config, ifr: Ifr): IfrConceptSet[] => {
             instanceId: obj._instanceID,
             conceptSetIds: obj._constraints.content.map((c) => c._value),
         };
-    });
+    }).filter((el) => el.conceptSetIds.length > 0);
 
     return conceptSetIds;
 };
