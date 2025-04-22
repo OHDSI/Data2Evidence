@@ -19,7 +19,7 @@ export const OidcLoginSilent: FC = () => {
     async (idpUserId: string | undefined) => {
       if (idpUserId) {
         try {
-          const userGroups = await api.userMgmt.getUserGroupList(idpUserId);
+          const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
           setUserGroup(idpUserId, userGroups);
         } catch (err: any) {
           console.error("Error when getting user info", err);
