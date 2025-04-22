@@ -6,6 +6,7 @@ export const createConceptSetBody = z.object({
       id: z.number(),
       useDescendants: z.boolean(),
       useMapped: z.boolean(),
+      isExcluded: z.boolean(),
     })
   ),
   name: z.string(),
@@ -39,6 +40,7 @@ export const updateConceptSetBody = z
         id: z.number(),
         useDescendants: z.boolean(),
         useMapped: z.boolean(),
+        isExcluded: z.boolean(),
       })
     ),
     name: z.string(),
@@ -77,8 +79,9 @@ export const resolveConceptSetExpressionBody = z.object({
   concepts: z.array(
     z.object({
       id: z.number(),
-      useMapped: z.boolean(),
       useDescendants: z.boolean(),
+      useMapped: z.boolean(),
+      isExcluded: z.boolean(),
     })
   ),
 });
