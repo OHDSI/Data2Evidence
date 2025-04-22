@@ -172,14 +172,16 @@ export const getIncludedConcepts = async (
 
     const { conceptSetIds, datasetId } = body;
 
+    const systemPortalApi = new SystemPortalAPI(req);
+    const datasetDB = { ...(await systemPortalApi.getDatasetDetails(datasetId)), datasetId }
+    const cachedbService = new CachedbService(req, datasetDB);
+
     const promises = conceptSetIds.map(async (conceptSetId) => {
-      const systemPortalApi = new SystemPortalAPI(req);
       const conceptSet = await systemPortalApi.getConceptSetById(
         conceptSetId,
         datasetId
       );
       const conceptIds = conceptSet.concepts.map((c) => c.id);
-      const cachedbService = new CachedbService(req);
       const concepts = await cachedbService.getConceptsByIds(
         conceptIds,
         datasetId
@@ -238,7 +240,8 @@ export const getIncludedConcepts = async (
       conceptIds,
       conceptIdsToIncludeDescendant,
       conceptIdsToIncludeMapped,
-      conceptIdsToIncludeMappedAndDescendant
+      conceptIdsToIncludeMappedAndDescendant,
+      cachedbService
     );
     res.send(uniqueConceptIds);
   } catch (e) {
@@ -256,6 +259,10 @@ export const resolveConceptSetExpression = async (
     const { body } = schemas.resolveConceptSetExpression.parse(req);
 
     const { concepts, datasetId } = body;
+
+    const systemPortalApi = new SystemPortalAPI(req);
+    const datasetDB = { ...(await systemPortalApi.getDatasetDetails(datasetId)), datasetId }
+    const cachedbService = new CachedbService(req, datasetDB);
 
     const conceptIds: number[] = [];
     const conceptIdsToIncludeDescendant: number[] = [];
@@ -289,7 +296,8 @@ export const resolveConceptSetExpression = async (
       conceptIds,
       conceptIdsToIncludeDescendant,
       conceptIdsToIncludeMapped,
-      conceptIdsToIncludeMappedAndDescendant
+      conceptIdsToIncludeMappedAndDescendant,
+      cachedbService
     );
     res.send(uniqueConceptIds);
   } catch (e) {
@@ -304,9 +312,9 @@ const _getConceptSetConceptIds = async (
   conceptIds: number[],
   conceptIdsToIncludeDescendant: number[],
   conceptIdsToIncludeMapped: number[],
-  conceptIdsToIncludeMappedAndDescendant: number[]
+  conceptIdsToIncludeMappedAndDescendant: number[],
+  cachedbService: CachedbDAO | HanaHDBDao
 ): Promise<number[]> => {
-  const cachedbService = new CachedbService(req);
 
   const includedConceptIds = await cachedbService.getConceptsAndDescendantIds(
     conceptIds,
@@ -324,6 +332,7 @@ const _getConceptSetConceptIds = async (
     mappedConceptsAndDescendantIds,
     datasetId
   );
+  
   mappedConceptIds.forEach((concept) => {
     includedConceptIds.push(concept.concept_id_1);
   });
