@@ -48,7 +48,7 @@ export class PerseusController {
         if (!errors.isEmpty()) {
           return res.status(400).json({ errors: errors.array() });
         }
-        const { flowRunId } = req.param;
+        const { flowRunId } = req.params;
         const result = await this.getPerseusFlowRunArtifacts(req, res);
 
         if (result) {
@@ -86,15 +86,12 @@ export class PerseusController {
     try {
       const token = req.headers.authorization!;
       const flowRunId = req.params.flowRunId;
-      const result = await this.perseusService.getFlowRun(
-        flowRunId,
-        token
-      );
+      const result = await this.perseusService.getFlowRun(flowRunId, token);
       const stateInfo = {
         flow_id: result.flow_id,
         state_name: result.state_name,
-        state: result.state
-      }
+        state: result.state,
+      };
       res.send(stateInfo);
     } catch (error) {
       console.error(`Error getting white-rabbit results: ${error}`);

@@ -17,33 +17,10 @@ export class ScanDataRouter {
 
   private registerRoutes() {
     this.router.get(
-      "/conversion/:conversionId",
-      async (req: Request, res: Response, next: NextFunction) => {
-        try {
-          const conversionId = parseInt(req.params.conversionId);
-          const username = req.username;
-          this.logger.info(`userName: ${username}`);
-          this.logger.info(
-            "REST request to get Scan Data Conversion info and logs by Conversion id",
-            conversionId
-          );
-
-          const result = await this.scanDataService.conversionInfoWithLogs(
-            conversionId,
-            username
-          );
-          res.status(200).json(result);
-        } catch (error) {
-          next(error);
-        }
-      }
-    );
-
-    this.router.get(
       "/result/:conversionId",
       async (req: Request, res: Response, next: NextFunction) => {
         try {
-          const conversionId = parseInt(req.params.conversionId);
+          const conversionId = req.params.conversionId;
           const username = req.username;
 
           this.logger.info(
@@ -69,7 +46,7 @@ export class ScanDataRouter {
       "/result-as-resource/:conversionId",
       async (req: Request, res: Response, next: NextFunction) => {
         try {
-          const conversionId = parseInt(req.params.conversionId);
+          const conversionId = req.params.conversionId;
           const token = req.headers.authorization!;
 
           this.logger.info(
@@ -83,9 +60,31 @@ export class ScanDataRouter {
           );
           res.setHeader("Content-Type", "application/octet-stream");
           res.status(200).send(result);
+        } catch (error) {}
+      }
+    );
+
+    this.router.post(
+      "/conversion",
+      async (req: Request, res: Response, next: NextFunction) => {
+        try {
+          this.logger.info(
+            "REST request to save scan report conversion results"
+          );
+
+          const { flow_run_id, file_id, file_name } = req.body;
+          const username = req.username;
+          const result = await this.scanDataService.saveConversion(
+            flow_run_id,
+            username,
+            file_name,
+            file_id
+          );
+
+          res.status(200).send(result);
         } catch (error) {
           this.logger.error(
-            `Error when downloading report: ${JSON.stringify(error)}`
+            `Error when saving conversion: ${JSON.stringify(error)}`
           );
           next(error);
         }
