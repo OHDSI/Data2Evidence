@@ -86,7 +86,6 @@
   "./src/services/roles/index": "./src/services/roles/index.ts",
   "./src/services/roles/SystemAdminService": "./src/services/roles/SystemAdminService.ts",
   "./src/services/roles/DashboardViewerService": "./src/services/roles/DashboardViewerService.ts",
-  "./src/services/roles/SqleditorAdminService": "./src/services/roles/SqleditorAdminService.ts",
   "./src/services/UserGroupService": "./src/services/UserGroupService.ts",
   "./src/services/UserService": "./src/services/UserService.ts",
   "./src/services/ConfigService": "./src/services/ConfigService.ts",
