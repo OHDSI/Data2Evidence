@@ -25,6 +25,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
+    const isSync = Boolean(req.body.sync)
     const userService = Container.get(UserService)
 
     const { scope, email } = token as { scope: string; email: string }
@@ -81,7 +82,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
-    if (env.IDP_RELYING_PARTY === 'azure') {
+    if (isSync && env.IDP_RELYING_PARTY === 'azure') {
       const tenantId = env.APP_TENANT_ID
       if (!tenantId) {
         logger.error(`Tenant not found`)
