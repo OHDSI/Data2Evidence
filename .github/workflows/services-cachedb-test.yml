@@ -40,7 +40,7 @@ jobs:
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Setup python if files have changed
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         if: env.WF_RUN == 'true'
         with:
           python-version: 3.11.1
