@@ -993,6 +993,7 @@ export const i18nDefault = {
     TERMINOLOGY_LIST__ERROR: "An error has occurred",
     TERMINOLOGY_LIST__ID: "ID",
     TERMINOLOGY_LIST__MAPPED: "Mapped",
+    TERMINOLOGY_LIST__EXCLUDE: "Exclude",
     TERMINOLOGY_LIST__NAME: "Name",
     TERMINOLOGY_LIST__SCORE: "Score",
     TERMINOLOGY_LIST__VALIDITY: "Validity",
