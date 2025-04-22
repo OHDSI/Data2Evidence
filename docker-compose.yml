@@ -1150,8 +1150,10 @@ services:
     profiles: [dicom]
 
   enterprise-gateway:
-    image: elyra/enterprise-gateway:dev
+    # TODO: change docker image tag
+    image: ghcr.io/ohdsi/d2e-enterprise-gateway:local
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    platform: linux/amd64
     logging:
       options:
         tag: *c28
@@ -1164,10 +1166,11 @@ services:
       EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
       EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
       # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_docker','python_docker','python_tf_docker','python_tf_gpu_docker','scala_docker'}}
+      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}}
       EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
+      # TODO: check whether following are required?
       EG_BASE_URL: /jupyter
       KERNEL_USERNAME: jovyan
       EG_DOCKER_MODE: docker
@@ -1187,6 +1190,10 @@ services:
   enterprise-gateway-proxy:
     image: haproxy:alpine
     container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-proxy
+    platform: linux/amd64
+    depends_on:
+      enterprise-gateway:
+        condition: service_started
     logging:
       options:
         tag: *c29
