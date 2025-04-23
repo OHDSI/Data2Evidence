@@ -16,7 +16,7 @@ const getDatasetId = async (
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
 
-  const dataset = datasets.find((item) => item.studyDetail.name === name);
+  const dataset = datasets.find((item) => item.studyDetail.name === studyCode);
 
   const datasetId = dataset ? dataset.id : null;
 
