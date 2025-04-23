@@ -26,7 +26,6 @@ export const processFlowRunResults = (
         data: {
           ...nodes[currentId].data,
           result: JSON.stringify(result.taskRunResult.result, null, 2),
-          resultDate: result.createdDate,
           error: result.error,
           errorMessage: result.errorMessage,
         },
