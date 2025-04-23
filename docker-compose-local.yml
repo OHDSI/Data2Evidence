@@ -1,9 +1,8 @@
 services:
   trex:
-    command: npm run startdev
+    command: npm run start
     ports:
       - 9229:9229
-      - 25432:5432
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
@@ -35,6 +34,7 @@ services:
           "concept-mapping": false,
           "terminology-svc": false,
           "code-suggestion": false,
+          "data-mapping": true,
           "portal": false,
           "files-manager": false,
           "demo": false,
@@ -50,7 +50,7 @@ services:
       - 41000:41000
       - 41130:41130
     volumes:
-      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config
+      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config 
     environment:
       CADDY__FHIR_SERVER__PUBLIC_FQDN: ${CADDY__FHIR_SERVER__PUBLIC_FQDN:-localhost}
       CADDY__CORS_LOCAL_UI: "import cors"
@@ -60,6 +60,7 @@ services:
       - 41120:41120
     environment:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
+
 
   alp-logto:
     build:
@@ -90,7 +91,7 @@ services:
       - 9090:9090
 
   dicom-server:
-    # uses 8042 port on the container
+  # uses 8042 port on the container
     ports:
       - 8042:8042
 
@@ -133,8 +134,10 @@ services:
     build:
       context: ./services/alp-fhir
       dockerfile: Dockerfile
-
+  
   fhir-fe-server:
+    container_name: &c28 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+    image: ghcr.io/data2evidence/fhir-fe-server:${DOCKER_TAG_NAME:-develop}
     build:
       context: ./services/alp-fhir/
       dockerfile: Dockerfile.frontend
@@ -142,3 +145,16 @@ services:
       - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
     ports:
       - 41130:3000
+    logging:
+      options:
+        tag: *c28
+    depends_on:
+      fhir-server:
+        condition: service_started
+      # alp-fhir-server-post-init:
+      #   condition: service_completed_successfully
+    networks:
+      alp:
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    profiles: [fhir]
+

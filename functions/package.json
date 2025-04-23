@@ -21,11 +21,6 @@
     "functions": {
       "init": [
         {
-          "function": "/jobplugins-init",
-          "imports": "/jobplugins-init/import.json",
-          "env": "jobplugins-init"
-        },
-        {
           "function": "/mri-pg-config",
           "imports": "/mri-pg-config/import.json",
           "env": "mri-pg-config"
@@ -120,6 +115,12 @@
           "function": "/code-suggestion",
           "imports": "/code-suggestion/import.json",
           "env": "code-suggestion"
+        },
+        {
+          "source": "/data-mapping",
+          "function": "/data-mapping",
+          "imports": "/data-mapping/import.json",
+          "env": "data-mapping"
         },
         {
           "source": "/analytics-svc/api/services/bookmark",
@@ -379,7 +380,6 @@
           "gateway.db.vocabSchemas.read",
           "gateway.db.dataset.versionInfo.read",
           "gateway.db.schema.update",
-          "gateway.db.database.test",
           "gateway.terminology.concept.getStandardConcepts.read",
           "gateway.terminology.concept.searchByName.read",
           "gateway.terminology.concept.searchById.read",
@@ -394,6 +394,8 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
+          "datamapping.read",
+          "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
@@ -427,7 +429,8 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.tenantview.read"
+          "codesuggestion.tenantview.read",
+          "datamapping.tenantview.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -485,8 +488,7 @@
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
-          "filesmanager.delete",
-          "whiteRabbit.post"
+          "filesmanager.delete"
         ]
       },
       "scopes": [
@@ -2157,15 +2159,6 @@
           ]
         },
         {
-          "path": "^/gateway/api/db/test",
-          "scopes": [
-            "gateway.db.database.test"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
           "path": "^/prefect",
           "scopes": [
             "prefect.read"
@@ -2207,6 +2200,17 @@
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/data-mapping",
+          "scopes": [
+            "datamapping.read",
+            "datamapping.post",
+            "datamapping.tenantview.read"
           ],
           "httpMethods": [
             "POST"
