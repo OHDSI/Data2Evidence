@@ -111,6 +111,10 @@ jobs:
             directory: ./services/cachedb
             context: .
             fileName: Dockerfile
+          - name: d2e-trex
+            directory: ./services/trex
+            context: .
+            fileName: Dockerfile
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
       AZ_REG_REPOSITORY: ${{ matrix.name }}
