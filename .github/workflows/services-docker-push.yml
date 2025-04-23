@@ -113,7 +113,7 @@ jobs:
             fileName: Dockerfile
           - name: d2e-trex
             directory: ./services/trex
-            context: .
+            context: ./services/trex
             fileName: Dockerfile
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
