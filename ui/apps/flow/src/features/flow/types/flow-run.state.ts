@@ -9,15 +9,12 @@ export interface FlowRunDto {
 }
 
 export interface NodeResultDto {
-  id: string;
-  taskRunId: string;
   taskRunResult: {
-    result: string;
+    result: object;
   };
   error: boolean;
   errorMessage: string;
   nodeName: string;
-  createdDate: string;
 }
 
 export interface FlowRunState {
