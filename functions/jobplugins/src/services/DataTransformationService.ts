@@ -3,23 +3,18 @@ import { v4 as uuidv4 } from "uuid";
 import dataSource from "../db/datasource.ts";
 import { Canvas } from "../entities/canvas.ts";
 import { Graph } from "../entities/graph.ts";
-import { UtilsService } from "../utils/DataflowParser.ts";
-import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
-import { IDataflowDto, IDataflowDuplicateDto } from "../types.ts";
+import { IDataflowDto, IDataflowDuplicateDto, NodeData } from "../types.ts";
 
 export class TransformationService {
   private readonly logger = console;
   private canvasRepo;
   private graphRepo;
-  private utilsService;
-  private portalServerApi;
   private prefectApi;
 
   constructor() {
     this.canvasRepo = dataSource.getRepository(Canvas);
     this.graphRepo = dataSource.getRepository(Graph);
-    this.utilsService = new UtilsService();
   }
 
   async getLatestGraphByCanvasId(id: string) {
@@ -29,6 +24,7 @@ export class TransformationService {
       .select([
         "dataflow.id",
         "dataflow.name",
+        "dataflow.lastFlowRunId",
         "revision.id",
         "revision.flow",
         "revision.comment",
@@ -53,28 +49,27 @@ export class TransformationService {
       return [];
     }
     this.prefectApi = new PrefectAPI(token);
-    const graph = await this.getLatestGraphByCanvasId(dataflowId);
-    const nodes = graph.flow.nodes;
-    // file name pattern is as defined below (created by d2e-plugins/dataflow_ui)
-    const filePath = nodes.map(
-      (n) => `results/${lastFlowRunId}_${n.data.name}.json`
-    );
     try {
-      this.portalServerApi = new PortalServerAPI(token);
-      const res = await this.portalServerApi.getFlowRunResults(filePath);
-
-      const transformedRes = res.map((result, index) => ({
-        nodeName: result.nodeName,
-        taskRunResult: {
-          result,
-        },
-        error: false,
-        errorMessage: null,
-      }));
+      const res = await this.prefectApi.getFlowRunsArtifactsByFlowRunId(lastFlowRunId);
+      const transformedRes = res.map((artifact) => {
+        const parsedData = JSON.parse(artifact.data);
+      
+        return Object.entries(parsedData).map(([nodeName, nodeData]) => {
+          const data = nodeData as NodeData;
+          return {
+            nodeName,
+            taskRunResult: {
+              result: data,
+            },
+            error: data.error,
+            errorMessage: data.error ? data.errorMessage : null,
+          };
+        });
+      }).flat();
       return transformedRes;
     } catch (error) {
-      console.log(`Files not found: ${error.message}`);
-      throw new Error("Files not found");
+      console.log(`Data transformation result not found: ${error.message}`);
+      throw new Error("Data transformation result not found");
     }
   }
 

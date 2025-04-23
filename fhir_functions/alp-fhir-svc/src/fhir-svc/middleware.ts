@@ -1,4 +1,4 @@
-import { body, param } from "npm:express-validator";
+import { body, param } from "express-validator";
 
 // Validation rules for createProject
 export const validateCreateFhirProjectDto = () => [

@@ -94,6 +94,25 @@ export interface IHanaConceptRelationship {
   INVALID_REASON: string | null;
 }
 
+export interface IConceptHierarchy {
+  ancestor_concept_id: number;
+  descendant_concept_id: number;
+  depth: number;
+  concept_id: number;
+  concept_name: string;
+  vocabulary_id: string;
+  concept_class_: string;
+}
+export interface IHanaConceptHierarchy {
+  ANCESTOR_CONCEPT_ID: string;
+  DESCENDANT_CONCEPT_ID: string;
+  DEPTH: string;
+  CONCEPT_ID: string;
+  CONCEPT_NAME: string;
+  VOCABULARY_ID: string;
+  CONCEPT_CLASS_: string;
+}
+
 export interface IConceptRecommended {
   concept_id_1: number;
   concept_id_2: number;

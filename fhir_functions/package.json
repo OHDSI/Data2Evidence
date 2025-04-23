@@ -50,7 +50,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(.*)",
+          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(?!Project|ProjectMembership|ClientApplication|User|Login|PasswordChangeRequest|JsonWebKey|Bot|AccessPolicy|UserConfiguration|BulkDataExport|SmartAppLaunch|DomainConfiguration|AsyncJob|Agent|IdentityProvider|UserSecurityRequest|ViewDefinition)(.*)",
           "scopes": [
             "gateway.fhir.create"
           ],

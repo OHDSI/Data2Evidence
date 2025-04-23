@@ -1,13 +1,14 @@
 import React, { FC, useCallback, useEffect, useMemo, useState, ChangeEvent } from "react";
 import { Button, Title, Checkbox, Loader } from "@portal/components";
 import SimpleMdeReact from "react-simplemde-editor";
-import { usePortalDescriptionConfigs } from "../../../hooks";
+import { useConfigsByTypes } from "../../../hooks";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
 import { isEqual } from "lodash";
-import "./OverviewDescription.scss";
 import { ConfigTypes } from "../../../constant";
+import "./OverviewDescription.scss";
+
 const mdeOptions = {
   hideIcons: ["side-by-side", "fullscreen"],
   maxHeight: "150px",
@@ -35,7 +36,7 @@ const EMPTY_FORM_DATA: FormData = {
 
 export const OverviewDescription: FC = () => {
   const [refetch, setRefetch] = useState(0);
-  const [configs, configsLoading] = usePortalDescriptionConfigs(
+  const [configs, configsLoading] = useConfigsByTypes(
     [
       ConfigTypes.OVERVIEW_DESCRIPTION,
       ConfigTypes.IMPRINT,
@@ -71,7 +72,7 @@ export const OverviewDescription: FC = () => {
     try {
       setLoading(true);
       const parsedData = Object.keys(formData).map((key) => ({
-        type: key,
+        type: key as ConfigTypes,
         value: String(formData[key as keyof FormData]),
       }));
       await api.systemPortal.insertOrUpdateConfigs(parsedData);
