@@ -8,7 +8,7 @@ export default (app: fastify.FastifyInstance) => {
   // Add hook to pull datasetId from req header
   app.addHook("preHandler", (req, res, done) => {
     if (!req.headers.datasetid) {
-      res.status(400).send("datasetid missing in request header");
+      return res.status(400).send("datasetid missing in request header");
     }
 
     req.datasetId = req.headers.datasetid as string;

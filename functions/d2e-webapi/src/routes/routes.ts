@@ -11,7 +11,7 @@ export default (app: fastify.FastifyInstance) => {
   // Add hook to pull token from req header
   app.addHook("preHandler", (req, res, done) => {
     if (!req.headers.authorization) {
-      res.status(400).send("Bearer token missing in request header");
+      return res.status(400).send("Bearer token missing in request header");
     }
 
     req.token = req.headers.authorization as string;
