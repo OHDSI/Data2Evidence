@@ -90,7 +90,7 @@ export class CachedbDAO {
 
       const invalidReasonWhereClause = includeInvalid
         ? ""
-        : `AND invalid_reason = '' `;
+        : `AND invalid_reason IS NULL `;
 
       const sql = `
         select *
