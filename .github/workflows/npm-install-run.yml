@@ -123,6 +123,6 @@ jobs:
             init: ${{ steps.init.outcome }}\n
             pull: ${{ steps.pull.outcome }}\n
             start: ${{ steps.start.outcome }}\n
-            setupdemo: ${{ steps.setupdemo.outcome }}\n
             patchdemodb: ${{ steps.patchdemodb.outcome }}\n
+            setupdemo: ${{ steps.setupdemo.outcome }}\n
             stop: ${{ steps.stop.outcome }}"
