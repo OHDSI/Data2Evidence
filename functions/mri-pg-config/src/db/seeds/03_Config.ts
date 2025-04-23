@@ -13883,7 +13883,7 @@ export const cdwConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "num",
                         "expression": "@COND.\"CONDITION_OCCURRENCE_ID\"",
                         "order": 9,
                         "domainFilter": "",

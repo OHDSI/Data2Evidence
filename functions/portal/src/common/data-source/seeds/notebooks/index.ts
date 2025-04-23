@@ -3,6 +3,7 @@ import drugExposureDemo from './drugExposureDemo.ts'
 import synpuf1kDemo from './synpuf1kDemo.ts'
 import synpuf1kKMV3 from './synpuf1kKMV3.ts'
 import synpuf1kKMByCohortsV3 from './synpuf1kKMByCohortsV3.ts'
+import synpuf5pctDemo from './synpuf5pctDemo.ts'
 
 export const notebookContents = {
   'ADHD Phenotype': {
@@ -24,5 +25,9 @@ export const notebookContents = {
   'Synpuf1k KM By Cohorts v3': {
     id: '62fa844a-b132-4050-9b8f-2a4589eef598',
     content: synpuf1kKMByCohortsV3
+  },
+  'Synpuf5pct Demo': {
+    id: 'c8e07bd4-6c67-4b92-a2e8-1cec46319ed2',
+    content: synpuf5pctDemo
   }
 }
