@@ -49,6 +49,11 @@ addRoute("put:/concept-set/{conceptSetId}", csc.updateConceptSet);
 addRoute("delete:/concept-set/{conceptSetId}", csc.removeConceptSet);
 addRoute("post:/concept-set/included-concepts", csc.getIncludedConcepts);
 
+addRoute(
+  "post:/concept-set/resolveConceptSetExpression",
+  csc.resolveConceptSetExpression
+);
+
 addRoute(`get:/fhir/4_0_0/valueset/$expand`, cc.getConcepts);
 addRoute(
   `get:/fhir/4_0_0/conceptmap/$translate`,

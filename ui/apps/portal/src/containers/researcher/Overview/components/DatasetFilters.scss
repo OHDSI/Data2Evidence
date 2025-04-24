@@ -1,0 +1,39 @@
+.dataset-filters {
+  height: 100%;
+  background-color: #faf8f8;
+  border-right: 1px solid #dedcda;
+}
+
+.dataset-filter {
+  border-bottom: 1px solid #dedcda;
+
+  &__header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #ebf2fa;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  &__body {
+    padding: 24px;
+  }
+
+  &__description {
+    color: var(--color-neutral);
+  }
+
+  .alp-checkbox__container {
+    margin-top: 18px;
+    margin-bottom: 0;
+    font-weight: 500;
+  }
+
+  .filter-number-range,
+  .filter-number-slider {
+    margin: 0 -15px;
+  }
+}

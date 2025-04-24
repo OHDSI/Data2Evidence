@@ -1,0 +1,38 @@
+.cohort__list {
+    &-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-primary);
+      line-height: 25px;
+      display: block;
+    }
+  
+    &-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+  
+      .checkbox-container {
+        flex: 1;
+      }
+    }
+  
+    .MuiTable-root{
+      border: 1px solid #acabab;
+    }
+    .MuiTableHead-root .MuiTableCell-root{
+      background-color: #edf2f7;
+    }
+    .MuiTableRow-root {
+      border: 1px solid #acabab;
+    }
+    .table-button-container{
+      display: flex;
+      justify-content: center;
+    }
+    .status_cell {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }

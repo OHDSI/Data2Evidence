@@ -1,0 +1,10 @@
+-r requirements.txt
+mypy==0.942
+tox==3.25.0
+liccheck==0.6.5
+autopep8==1.6.0
+pycodestyle==2.8.0
+pytest-mock==3.7.0
+pytest==7.1.1
+ipykernel==6.13.0
+wheel==0.37.1

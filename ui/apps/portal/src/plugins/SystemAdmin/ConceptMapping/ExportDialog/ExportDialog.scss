@@ -1,0 +1,31 @@
+.export-dialog {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 10px;
+    width: 100%;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
+    min-height: 200px;
+    .u-padding-vertical--normal {
+      padding-right: 20px;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 220px;
+    }
+  }
+}

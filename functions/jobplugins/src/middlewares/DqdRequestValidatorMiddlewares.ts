@@ -1,4 +1,4 @@
-import { body, query } from "npm:express-validator";
+import { body, query } from "express-validator";
 
 // Define validation rules for DataQualityFlowRunDto
 export const validateDataQualityFlowRunDto = () => [

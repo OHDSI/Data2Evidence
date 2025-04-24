@@ -1,0 +1,49 @@
+[
+  {
+    "type": "HANA",
+    "tags": [
+      "alp-minerva-analytics-svc",
+      "alp-minerva-db-mgmt-svc",
+      "analytics",
+      "config2",
+      "cdw"
+    ],
+    "name": "ALPDEV",
+    "key": "mridb",
+    "description": "",
+    "values": {
+      "credentials": {
+        "user": "TENANT_WRITE_USER",
+        "password": "",
+        "adminUser": "TENANT_ADMIN_USER",
+        "adminPassword": "",
+        "readUser": "TENANT_READ_USER",
+        "readPassword": "",
+        "writeUser": "TENANT_WRITE_USER",
+        "writePassword": "",
+        "cohortWritePassword": ""
+      },
+      "host": "dummy-hostname.com",
+      "port": "39013",
+      "code": "ALPDEV",
+      "databaseName": "ALPDEV",
+      "validateCertificate": true,
+      "sslTrustStore": "SSL_TRUST_STORE",
+      "probeSchema": "CDMDEFAULT",
+      "vocabSchema": "CDMVOCAB",
+      "configSchema": "MRI",
+      "cdwSchema": "CDMDEFAULT",
+      "schema": "CDMDEFAULT",
+      "dialect": "hana",
+      "encrypt": true,
+      "sslCryptoProvider": "sapcrypto",
+      "pooling": true,
+      "hostnameInCertificate": "dummy-hostname.com",
+      "ca": "",
+      "useTLS": false,
+      "rejectUnauthorized": false,
+      "autoCommit": false,
+      "enableAuditPolicies": false
+    }
+  }
+]

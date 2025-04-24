@@ -1,0 +1,71 @@
+.permissions-dialog {
+  .permissions-dialog__content {
+    min-height: 200px;
+    margin: 0 20px 0 25px;
+    overflow: auto;
+  }
+
+  .request-panel {
+    margin: 16px 0;
+    &__title {
+      color: #000e7e;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+  }
+
+  .access-panel {
+    margin: 16px 0;
+
+    &__header {
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    &__title {
+      color: #000e7e;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .col-action {
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .col-action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .checkbox-container {
+    margin-right: 8px;
+    .alp-checkbox__container {
+      margin-bottom: 40px;
+    }
+  }
+
+  .description-container {
+    margin-bottom: 16px;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+
+  .MuiTabs-indicator {
+    height: 4px;
+  }
+  .MuiTabs-flexContainer {
+    border-bottom: 2px #dedcda solid;
+  }
+}

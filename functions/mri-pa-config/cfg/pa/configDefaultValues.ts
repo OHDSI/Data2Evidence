@@ -88,7 +88,8 @@ export const configDefaultValues = {
         "domainValuesLimit": 200,
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
-        "cohortEntryExit": false
+        "cohortEntryExit": false,
+        "atlasCohortDefinition": false
     },
     "configInformations": {
         "note": ""

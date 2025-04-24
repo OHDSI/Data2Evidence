@@ -1,0 +1,52 @@
+--liquibase formatted sql
+--changeset alp:V1.0.0.1.1__drop_omop_tables_views
+
+-- does not drop concept_recommended table
+DROP TABLE IF EXISTS
+    "ATTRIBUTE_DEFINITION",
+    "CARE_SITE",
+    "CDM_SOURCE",
+    "COHORT",
+    "COHORT_ATTRIBUTE",
+    "COHORT_DEFINITION",
+    "CONCEPT",
+    "CONCEPT_ANCESTOR",
+    "CONCEPT_CLASS",
+    "CONCEPT_HIERARCHY",
+    "CONCEPT_RELATIONSHIP",
+    "CONCEPT_SYNONYM",
+    "CONDITION_ERA",
+    "CONDITION_OCCURRENCE",
+    "COST",
+    "DEVICE_EXPOSURE",
+    "DOMAIN",
+    "DOSE_ERA",
+    "DRUG_ERA",
+    "DRUG_EXPOSURE",
+    "DRUG_STRENGTH",
+    "EPISODE",
+    "EPISODE_EVENT",
+    "FACT_RELATIONSHIP",
+    "LOCATION",
+    "MEASUREMENT",
+    "METADATA",
+    "NOTE",
+    "NOTE_NLP",
+    "OBSERVATION",
+    "OBSERVATION_PERIOD",
+    "PAYER_PLAN_PERIOD",
+    "PROCEDURE_OCCURRENCE",
+    "PROVIDER",
+    "RELATIONSHIP",
+    "SOURCE_TO_CONCEPT_MAP",
+    "SPECIMEN",
+    "SURVEY_CONDUCT",
+    "VISIT_DETAIL",
+    "VISIT_OCCURRENCE",
+    "VOCABULARY",
+    "PERSON", 
+    "DEATH"
+CASCADE;
+
+
+DROP VIEW IF EXISTS "VIEW::OMOP.CONCEPT";

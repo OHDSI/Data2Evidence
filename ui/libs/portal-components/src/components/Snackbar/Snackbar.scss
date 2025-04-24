@@ -1,0 +1,27 @@
+d4l-snack-bar {
+  z-index: 2;
+  position: absolute;
+  left: 0;
+  right: 0;
+  font-size: 16px;
+  .snack-bar__controls {
+    height: 24px;
+  }
+}
+.snack-bar-msg {
+  padding-left: 10px;
+}
+.snack-bar--success {
+  background-color: var(--color-primary-extra-lightest);
+  color: var(--color-primary);
+  .icon {
+    fill: var(--color-primary);
+  }
+}
+.snack-bar--error {
+  background-color: var(--color-feedback-alarm);
+  color: white;
+  .icon {
+    fill: white;
+  }
+}

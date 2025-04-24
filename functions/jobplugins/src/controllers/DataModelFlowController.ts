@@ -1,5 +1,5 @@
-import { Request, Response, Router } from "npm:express";
-import { validationResult } from "npm:express-validator";
+import { Request, Response, Router } from "express";
+import { validationResult } from "express-validator";
 import { validateDatamodelFlowRunDto } from "../middlewares/DataModelValidatorMiddlewares.ts";
 import { DataModelFlowService } from "../services/DataModelFlowService.ts";
 import {

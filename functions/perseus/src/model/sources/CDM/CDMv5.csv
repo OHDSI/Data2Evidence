@@ -1,0 +1,298 @@
+TABLE_NAME,COLUMN_NAME,IS_NULLABLE,DATA_TYPE,DESCRIPTION
+location,LOCATION_ID,NO,INTEGER,A unique identifier for each geographic location.
+location,ADDRESS_1,YES,CHARACTER VARYING,"The address field 1, typically used for the street address, as it appears in the source data."
+location,ADDRESS_2,YES,CHARACTER VARYING,"The address field 2, typically used for additional detail such as buildings, suites, floors, as it appears in the source data."
+location,CITY,YES,CHARACTER VARYING,The city field as it appears in the source data.
+location,STATE,YES,CHARACTER VARYING,The state field as it appears in the source data.
+location,ZIP,YES,CHARACTER VARYING,The zip or postal code.
+location,COUNTY,YES,CHARACTER VARYING,The county.
+location,LOCATION_SOURCE_VALUE,YES,CHARACTER VARYING,The verbatim information that is used to uniquely identify the location as it appears in the source data.
+person,PERSON_ID,NO,INTEGER,A unique identifier for each person.
+person,GENDER_CONCEPT_ID,NO,INTEGER,A foreign key that refers to an identifier in the CONCEPT table for the unique gender of the person.
+person,YEAR_OF_BIRTH,NO,INTEGER,"The year of birth of the person. For data sources with date of birth, the year is extracted. For data sources where the year of birth is not available, the approximate year of birth is derived based on any age group categorization available."
+person,MONTH_OF_BIRTH,YES,INTEGER,"The month of birth of the person. For data sources that provide the precise date of birth, the month is extracted and stored in this field."
+person,DAY_OF_BIRTH,YES,INTEGER,"The day of the month of birth of the person. For data sources that provide the precise date of birth, the day is extracted and stored in this field."
+person,TIME_OF_BIRTH,YES,CHARACTER VARYING,The time of birth at the birth day
+person,RACE_CONCEPT_ID,NO,INTEGER,A foreign key that refers to an identifier in the CONCEPT table for the unique race of the person.
+person,ETHNICITY_CONCEPT_ID,NO,INTEGER,A foreign key that refers to the standard concept identifier in the Standardized Vocabularies for the ethnicity of the person.
+person,LOCATION_ID,YES,INTEGER,"A foreign key to the place of residency for the person in the location table, where the detailed address information is stored."
+person,PROVIDER_ID,YES,INTEGER,A foreign key to the primary care provider the person is seeing in the provider table.
+person,CARE_SITE_ID,YES,INTEGER,"A foreign key to the site of primary care in the care_site table, where the details of the care site are stored."
+person,PERSON_SOURCE_VALUE,YES,CHARACTER VARYING,An (encrypted) key derived from the person identifier in the source data. This is necessary when a use case requires a link back to the person data at the source dataset.
+person,GENDER_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the gender of the person as it appears in the source data. The person�s gender is mapped to a standard gender concept in the Standardized Vocabularies; the original value is stored here for reference.
+person,GENDER_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to the gender concept that refers to the code used in the source.
+person,RACE_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the race of the person as it appears in the source data. The person race is mapped to a standard race concept in the Standardized Vocabularies and the original value is stored here for reference.
+person,RACE_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to the race concept that refers to the code used in the source.
+person,ETHNICITY_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the ethnicity of the person as it appears in the source data. The person ethnicity is mapped to a standard ethnicity concept in the Standardized Vocabularies and the original code is, stored here for reference."
+person,ETHNICITY_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to the ethnicity concept that refers to the code used in the source.
+observation_period,OBSERVATION_PERIOD_ID,NO,INTEGER,A unique identifier for each observation period.
+observation_period,PERSON_ID,NO,INTEGER,A foreign key identifier to the person for whom the observation period is defined. The demographic details of that person are stored in the person table.
+observation_period,OBSERVATION_PERIOD_START_DATE,NO,DATE,The start date of the observation period for which data are available from the data source.
+observation_period,OBSERVATION_PERIOD_END_DATE,NO,DATE,The end date of the observation period for which data are available from the data source.
+observation_period,PERIOD_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key identifier to the predefined concept in the Standardized Vocabularies reflecting the source of the observation period information
+care_site,CARE_SITE_ID,NO,INTEGER,A unique identifier for each Care Site.
+care_site,CARE_SITE_NAME,YES,CHARACTER VARYING,The description or name of the Care Site
+care_site,PLACE_OF_SERVICE_CONCEPT_ID,YES,INTEGER,A foreign key that refers to a Place of Service Concept ID in the Standardized Vocabularies.
+care_site,LOCATION_ID,YES,INTEGER,"A foreign key to the geographic Location of the Care Site in the LOCATION table, where the detailed address information is stored."
+care_site,CARE_SITE_SOURCE_VALUE,YES,CHARACTER VARYING,"The identifier for the Care Site in the source data, stored here for reference."
+care_site,PLACE_OF_SERVICE_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the Place of Service as it appears in the source data, stored here for reference."
+visit_occurrence,VISIT_OCCURRENCE_ID,NO,INTEGER,A unique identifier for each Person's visit or encounter at a healthcare provider.
+visit_occurrence,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person for whom the visit is recorded. The demographic details of that Person are stored in the PERSON table.
+visit_occurrence,VISIT_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a visit Concept identifier in the Standardized Vocabularies.
+visit_occurrence,VISIT_START_DATE,NO,DATE,The start date of the visit.
+visit_occurrence,VISIT_START_TIME,YES,CHARACTER VARYING,The time the visit started.
+visit_occurrence,VISIT_END_DATE,NO,DATE,The end date of the visit. If this is a one-day visit the end date should match the start date.
+visit_occurrence,VISIT_END_TIME,YES,CHARACTER VARYING,The time the visit ended.
+visit_occurrence,VISIT_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the type of source data from which the visit record is derived.
+visit_occurrence,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the provider table who was associated with the visit.
+visit_occurrence,CARE_SITE_ID,YES,INTEGER,A foreign key to the care site in the care site table that was visited.
+visit_occurrence,VISIT_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the visit as it appears in the source data.
+visit_occurrence,VISIT_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Concept that refers to the code used in the source.
+provider,PROVIDER_ID,NO,INTEGER,A unique identifier for each Provider.
+provider,PROVIDER_NAME,YES,CHARACTER VARYING,A description of the Provider.
+provider,NPI,YES,CHARACTER VARYING,The National Provider Identifier (NPI) of the provider.
+provider,DEA,YES,CHARACTER VARYING,The Drug Enforcement Administration (DEA) number of the provider.
+provider,SPECIALTY_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Specialty Concept ID in the Standardized Vocabularies.
+provider,CARE_SITE_ID,YES,INTEGER,A foreign key to the main Care Site where the provider is practicing.
+provider,YEAR_OF_BIRTH,YES,INTEGER,The year of birth of the Provider.
+provider,GENDER_CONCEPT_ID,YES,INTEGER,The gender of the Provider.
+provider,PROVIDER_SOURCE_VALUE,YES,CHARACTER VARYING,"The identifier used for the Provider in the source data, stored here for reference."
+provider,SPECIALTY_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the Provider specialty as it appears in the source data, stored here for reference."
+provider,SPECIALTY_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Concept that refers to the code used in the source.
+provider,GENDER_SOURCE_VALUE,YES,CHARACTER VARYING,"The gender code for the Provider as it appears in the source data, stored here for reference."
+provider,GENDER_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Concept that refers to the code used in the source.
+condition_occurrence,CONDITION_OCCURRENCE_ID,NO,INTEGER,A unique identifier for each Condition Occurrence event.
+condition_occurrence,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is experiencing the condition. The demographic details of that Person are stored in the PERSON table.
+condition_occurrence,CONDITION_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Condition Concept identifier in the Standardized Vocabularies.
+condition_occurrence,CONDITION_START_DATE,NO,DATE,The date when the instance of the Condition is recorded.
+condition_occurrence,CONDITION_END_DATE,YES,DATE,The date when the instance of the Condition is considered to have ended.
+condition_occurrence,CONDITION_TYPE_CONCEPT_ID,NO,INTEGER,"A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the source data from which the condition was recorded, the level of standardization, and the type of occurrence."
+condition_occurrence,STOP_REASON,YES,CHARACTER VARYING,"The reason that the condition was no longer present, as indicated in the source data."
+condition_occurrence,PROVIDER_ID,YES,INTEGER,A foreign key to the Provider in the PROVIDER table who was responsible for capturing (diagnosing) the Condition.
+condition_occurrence,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the visit in the VISIT table during which the Condition was determined (diagnosed).
+condition_occurrence,CONDITION_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the condition as it appears in the source data. This code is mapped to a standard condition concept in the Standardized Vocabularies and the original code is stored here for reference.
+condition_occurrence,CONDITION_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Condition Concept that refers to the code used in the source.
+death,PERSON_ID,NO,INTEGER,A foreign key identifier to the deceased person. The demographic details of that person are stored in the person table.
+death,DEATH_DATE,NO,DATE,"The date the person was deceased. If the precise date including day or month is not known or not allowed, December is used as the default month, and the last day of the month the default day."
+death,DEATH_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key referring to the predefined concept identifier in the Standardized Vocabularies reflecting how the death was represented in the source data.
+death,CAUSE_CONCEPT_ID,YES,INTEGER,A foreign key referring to a standard concept identifier in the Standardized Vocabularies for conditions.
+death,CAUSE_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the cause of death as it appears in the source data. This code is mapped to a standard concept in the Standardized Vocabularies and the original code is, stored here for reference."
+death,CAUSE_SOURCE_CONCEPT_ID,YES,INTEGER,"A foreign key to the concept that refers to the code used in the source. Note, this variable name is abbreviated to ensure it will be allowable across database platforms."
+drug_exposure,DRUG_EXPOSURE_ID,NO,INTEGER,A system-generated unique identifier for each Drug utilization event.
+drug_exposure,PERSON_ID,NO,INTEGER,A foreign key identifier to the person who is subjected to the Drug. The demographic details of that person are stored in the person table.
+drug_exposure,DRUG_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Concept identifier in the Standardized Vocabularies for the Drug concept.
+drug_exposure,DRUG_EXPOSURE_START_DATE,NO,DATE,"The start date for the current instance of Drug utilization. Valid entries include a start date of a prescription, the date a prescription was filled, or the date on which a Drug administration procedure was recorded."
+drug_exposure,DRUG_EXPOSURE_END_DATE,YES,DATE,The end date for the current instance of Drug utilization. It is not available from all sources.
+drug_exposure,DRUG_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the type of Drug Exposure recorded. It indicates how the Drug Exposure was represented in the source data.
+drug_exposure,STOP_REASON,YES,CHARACTER VARYING,"The reason the Drug was stopped. Reasons include regimen completed, changed, removed, etc."
+drug_exposure,REFILLS,YES,INTEGER,"The number of refills after the initial prescription. The initial prescription is not counted, values start with 0."
+drug_exposure,QUANTITY,YES,NUMERIC,The quantity of drug as recorded in the original prescription or dispensing record.
+drug_exposure,DAYS_SUPPLY,YES,INTEGER,The number of days of supply of the medication as recorded in the original prescription or dispensing record.
+drug_exposure,SIG,YES,TEXT,The directions (�signetur�) on the Drug prescription as recorded in the original prescription (and printed on the container) or dispensing record.
+drug_exposure,ROUTE_CONCEPT_ID,YES,INTEGER,A foreign key to a predefined concept in the Standardized Vocabularies reflecting the route of administration.
+drug_exposure,EFFECTIVE_DRUG_DOSE,YES,NUMERIC,Numerical value of Drug dose for this Drug Exposure record.
+drug_exposure,DOSE_UNIT_CONCEPT_ID,YES,INTEGER,A foreign key to a predefined concept in the Standardized Vocabularies reflecting the unit the effective_drug_dose value is expressed.
+drug_exposure,LOT_NUMBER,YES,CHARACTER VARYING,An identifier assigned to a particular quantity or lot of Drug product from the manufacturer.
+drug_exposure,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the provider table who initiated (prescribed or administered) the Drug Exposure.
+drug_exposure,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the visit in the visit table during which the Drug Exposure was initiated.
+drug_exposure,DRUG_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the Drug as it appears in the source data. This code is mapped to a Standard Drug concept in the Standardized Vocabularies and the original code is, stored here for reference."
+drug_exposure,DRUG_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Drug Concept that refers to the code used in the source.
+drug_exposure,ROUTE_SOURCE_VALUE,YES,CHARACTER VARYING,The information about the route of administration as detailed in the source.
+drug_exposure,DOSE_UNIT_SOURCE_VALUE,YES,CHARACTER VARYING,The information about the dose unit as detailed in the source.
+device_exposure,DEVICE_EXPOSURE_ID,NO,INTEGER,A system-generated unique identifier for each Device Exposure.
+device_exposure,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is subjected to the Device. The demographic details of that person are stored in the Person table.
+device_exposure,DEVICE_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Concept identifier in the Standardized Vocabularies for the Device concept.
+device_exposure,DEVICE_EXPOSURE_START_DATE,NO,DATE,The date the Device or supply was applied or used.
+device_exposure,DEVICE_EXPOSURE_END_DATE,YES,DATE,The date the Device or supply was removed from use.
+device_exposure,DEVICE_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the type of Device Exposure recorded. It indicates how the Device Exposure was represented in the source data.
+device_exposure,UNIQUE_DEVICE_ID,YES,CHARACTER VARYING,A UDI or equivalent identifying the instance of the Device used in the Person.
+device_exposure,QUANTITY,YES,INTEGER,The number of individual Devices used for the exposure.
+device_exposure,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the PROVIDER table who initiated of administered the Device.
+device_exposure,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the visit in the VISIT table during which the device was used.
+device_exposure,DEVICE_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the Device as it appears in the source data. This code is mapped to a standard Device Concept in the Standardized Vocabularies and the original code is stored here for reference.
+device_exposure,DEVICE_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Device Concept that refers to the code used in the source.
+procedure_occurrence,PROCEDURE_OCCURRENCE_ID,NO,INTEGER,A system-generated unique identifier for each Procedure Occurrence.
+procedure_occurrence,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is subjected to the Procedure. The demographic details of that Person are stored in the PERSON table.
+procedure_occurrence,PROCEDURE_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a standard procedure Concept identifier in the Standardized Vocabularies.
+procedure_occurrence,PROCEDURE_DATE,NO,DATE,The date on which the Procedure was performed.
+procedure_occurrence,PROCEDURE_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the type of source data from which the procedure record is derived.
+procedure_occurrence,MODIFIER_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept identifier for a modifier to the Procedure (e.g. bilateral)
+procedure_occurrence,QUANTITY,YES,INTEGER,The quantity of procedures ordered or administered.
+procedure_occurrence,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the provider table who was responsible for carrying out the procedure.
+procedure_occurrence,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the visit in the visit table during which the Procedure was carried out.
+procedure_occurrence,PROCEDURE_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the Procedure as it appears in the source data. This code is mapped to a standard procedure Concept in the Standardized Vocabularies and the original code is, stored here for reference. Procedure source codes are typically ICD-9-Proc, CPT-4, HCPCS or OPCS-4 codes."
+procedure_occurrence,PROCEDURE_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Procedure Concept that refers to the code used in the source.
+procedure_occurrence,QUALIFIER_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the qualifier as it appears in the source data.
+measurement,MEASUREMENT_ID,NO,INTEGER,A unique identifier for each Measurement.
+measurement,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person about whom the measurement was recorded. The demographic details of that Person are stored in the PERSON table.
+measurement,MEASUREMENT_CONCEPT_ID,NO,INTEGER,A foreign key to the standard measurement concept identifier in the Standardized Vocabularies.
+measurement,MEASUREMENT_DATE,NO,DATE,The date of the Measurement.
+measurement,MEASUREMENT_TIME,YES,CHARACTER VARYING,"The time of the Measurement. (Some database systems don't have a datatype of time. To accomodate all temporal analyses, datatype datetime can be used (combining measurement_date and measurement_time)Relevant Forum Discussion"
+measurement,MEASUREMENT_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined Concept in the Standardized Vocabularies reflecting the provenance from where the Measurement record was recorded.
+measurement,OPERATOR_CONCEPT_ID,YES,INTEGER,"A foreign key identifier to the predefined Concept in the Standardized Vocabularies reflecting the mathematical operator that is applied to the value_as_number. Operators are <, ?, =, ?, >."
+measurement,VALUE_AS_NUMBER,YES,NUMERIC,A Measurement result where the result is expressed as a numeric value.
+measurement,VALUE_AS_CONCEPT_ID,YES,INTEGER,"A foreign key to a Measurement result represented as a Concept from the Standardized Vocabularies (e.g., positive/negative, present/absent, low/high, etc.)."
+measurement,UNIT_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept ID of Measurement Units in the Standardized Vocabularies.
+measurement,RANGE_LOW,YES,NUMERIC,The lower limit of the normal range of the Measurement result. The lower range is assumed to be of the same unit of measure as the Measurement value.
+measurement,RANGE_HIGH,YES,NUMERIC,The upper limit of the normal range of the Measurement. The upper range is assumed to be of the same unit of measure as the Measurement value.
+measurement,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the PROVIDER table who was responsible for initiating or obtaining the measurement.
+measurement,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the Visit in the VISIT_OCCURRENCE table during which the Measurement was recorded.
+measurement,MEASUREMENT_SOURCE_VALUE,YES,CHARACTER VARYING,The Measurement name as it appears in the source data. This code is mapped to a Standard Concept in the Standardized Vocabularies and the original code is stored here for reference.
+measurement,MEASUREMENT_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Concept in the Standard Vocabularies that refers to the code used in the source.
+measurement,UNIT_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the unit as it appears in the source data. This code is mapped to a standard unit concept in the Standardized Vocabularies and the original code is stored here for reference.
+measurement,VALUE_SOURCE_VALUE,YES,CHARACTER VARYING,The source value associated with the content of the value_as_number or value_as_concept as stored in the source data.
+observation,OBSERVATION_ID,NO,INTEGER,A unique identifier for each observation.
+observation,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person about whom the observation was recorded. The demographic details of that Person are stored in the PERSON table.
+observation,OBSERVATION_CONCEPT_ID,NO,INTEGER,A foreign key to the standard observation concept identifier in the Standardized Vocabularies.
+observation,OBSERVATION_DATE,NO,DATE,The date of the observation.
+observation,OBSERVATION_TIME,YES,CHARACTER VARYING,The time of the observation.
+observation,OBSERVATION_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key to the predefined concept identifier in the Standardized Vocabularies reflecting the type of the observation.
+observation,VALUE_AS_NUMBER,YES,NUMERIC,The observation result stored as a number. This is applicable to observations where the result is expressed as a numeric value.
+observation,VALUE_AS_STRING,YES,CHARACTER VARYING,The observation result stored as a string. This is applicable to observations where the result is expressed as verbatim text.
+observation,VALUE_AS_CONCEPT_ID,YES,INTEGER,"A foreign key to an observation result stored as a Concept ID. This is applicable to observations where the result can be expressed as a Standard Concept from the Standardized Vocabularies (e.g., positive/negative, present/absent, low/high, etc.)."
+observation,QUALIFIER_CONCEPT_ID,YES,INTEGER,"A foreign key to a Standard Concept ID for a qualifier (e.g., severity of drug-drug interaction alert)"
+observation,UNIT_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept ID of measurement units in the Standardized Vocabularies.
+observation,PROVIDER_ID,YES,INTEGER,A foreign key to the provider in the PROVIDER table who was responsible for making the observation.
+observation,VISIT_OCCURRENCE_ID,YES,INTEGER,A foreign key to the visit in the VISIT_OCCURRENCE table during which the observation was recorded.
+observation,OBSERVATION_SOURCE_VALUE,YES,CHARACTER VARYING,"The observation code as it appears in the source data. This code is mapped to a Standard Concept in the Standardized Vocabularies and the original code is, stored here for reference."
+observation,OBSERVATION_SOURCE_CONCEPT_ID,YES,INTEGER,A foreign key to a Concept that refers to the code used in the source.
+observation,UNIT_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the unit as it appears in the source data. This code is mapped to a standard unit concept in the Standardized Vocabularies and the original code is, stored here for reference."
+observation,QUALIFIER_SOURCE_VALUE,YES,CHARACTER VARYING,The source value associated with a qualifier to characterize the observation
+note,NOTE_ID,NO,INTEGER,A unique identifier for each note.
+note,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person about whom the Note was recorded. The demographic details of that Person are stored in the PERSON table.
+note,NOTE_DATE,NO,DATE,The date the note was recorded.
+note,NOTE_TIME,YES,CHARACTER VARYING,The time the note was recorded.
+note,NOTE_TYPE_CONCEPT_ID,NO,INTEGER,"A foreign key to the predefined Concept in the Standardized Vocabularies reflecting the type, origin or provenance of the Note."
+note,NOTE_TEXT,NO,TEXT,The content of the Note.
+note,PROVIDER_ID,YES,INTEGER,A foreign key to the Provider in the PROVIDER table who took the Note.
+note,VISIT_OCCURRENCE_ID,YES,INTEGER,Foreign key to the Visit in the VISIT_OCCURRENCE table when the Note was taken.
+note,NOTE_SOURCE_VALUE,YES,CHARACTER VARYING,"The source value associated with the origin of the Note, as standardized using the note_tyype_concept_id"
+specimen,SPECIMEN_ID,NO,INTEGER,A unique identifier for each specimen.
+specimen,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person for whom the Specimen is recorded.
+specimen,SPECIMEN_CONCEPT_ID,NO,INTEGER,A foreign key referring to a Standard Concept identifier in the Standardized Vocabularies for the Specimen.
+specimen,SPECIMEN_TYPE_CONCEPT_ID,NO,INTEGER,A foreign key referring to the Concept identifier in the Standardized Vocabularies reflecting the system of record from which the Specimen was represented in the source data.
+specimen,SPECIMEN_DATE,NO,DATE,The date the specimen was obtained from the Person.
+specimen,SPECIMEN_TIME,YES,CHARACTER VARYING,The time on the date when the Specimen was obtained from the person.
+specimen,QUANTITY,YES,NUMERIC,The amount of specimen collection from the person during the sampling procedure.
+specimen,UNIT_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept identifier for the Unit associated with the numeric quantity of the Specimen collection.
+specimen,ANATOMIC_SITE_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept identifier for the anatomic location of specimen collection.
+specimen,DISEASE_STATUS_CONCEPT_ID,YES,INTEGER,A foreign key to a Standard Concept identifier for the Disease Status of specimen collection.
+specimen,SPECIMEN_SOURCE_ID,YES,CHARACTER VARYING,The Specimen identifier as it appears in the source data.
+specimen,SPECIMEN_SOURCE_VALUE,YES,CHARACTER VARYING,"The Specimen value as it appears in the source data. This value is mapped to a Standard Concept in the Standardized Vocabularies and the original code is, stored here for reference."
+specimen,UNIT_SOURCE_VALUE,YES,CHARACTER VARYING,The information about the Unit as detailed in the source.
+specimen,ANATOMIC_SITE_SOURCE_VALUE,YES,CHARACTER VARYING,The information about the anatomic site as detailed in the source.
+specimen,DISEASE_STATUS_SOURCE_VALUE,YES,CHARACTER VARYING,The information about the disease status as detailed in the source.
+fact_relationship,DOMAIN_CONCEPT_ID_1,NO,INTEGER,"The concept representing the domain of fact one, from which the corresponding table can be inferred."
+fact_relationship,FACT_ID_1,NO,INTEGER,The unique identifier in the table corresponding to the domain of fact one.
+fact_relationship,DOMAIN_CONCEPT_ID_2,NO,INTEGER,"The concept representing the domain of fact two, from which the corresponding table can be inferred."
+fact_relationship,FACT_ID_2,NO,INTEGER,The unique identifier in the table corresponding to the domain of fact two.
+fact_relationship,RELATIONSHIP_CONCEPT_ID,NO,INTEGER,A foreign key to a Standard Concept ID of relationship in the Standardized Vocabularies.
+procedure_cost,PROCEDURE_COST_ID,NO,INTEGER,A unique identifier for each procedure cost record.
+procedure_cost,PROCEDURE_OCCURRENCE_ID,NO,INTEGER,A foreign key identifier to the procedure record for which cost data are recorded.
+procedure_cost,CURRENCY_CONCEPT_ID,YES,INTEGER,"A concept representing the 3-letter code used to delineate international currencies, such as USD for US Dollar."
+procedure_cost,PAID_COPAY,YES,NUMERIC,The amount paid by the Person as a fixed contribution to the expenses. Copay does not contribute to the out_of_pocket expenses.
+procedure_cost,PAID_COINSURANCE,YES,NUMERIC,"The amount paid by the Person as a joint assumption of risk. Typically, this is a percentage of the expenses defined by the health benefit Plan after the Person's deductible is exceeded."
+procedure_cost,PAID_TOWARD_DEDUCTIBLE,YES,NUMERIC,The amount paid by the Person that is counted toward the deductible defined by the health benefit Plan.
+procedure_cost,PAID_BY_PAYER,YES,NUMERIC,"The amount paid by the Payer. If there is more than one Payer, several PROCEDURE_COST records indicate that fact."
+procedure_cost,PAID_BY_COORDINATION_BENEFITS,YES,NUMERIC,The amount paid by a secondary Payer through the coordination of benefits.
+procedure_cost,TOTAL_OUT_OF_POCKET,YES,NUMERIC,The total amount paid by the Person as a share of the expenses
+procedure_cost,TOTAL_PAID,YES,NUMERIC,The total amount paid for the expenses of the Procedure.
+procedure_cost,REVENUE_CODE_CONCEPT_ID,YES,INTEGER,A foreign key referring to a Standard Concept ID in the Standardized Vocabularies for Revenue codes.
+procedure_cost,PAYER_PLAN_PERIOD_ID,YES,INTEGER,"A foreign key to the PAYER_PLAN_PERIOD table, where the details of the payer, plan and family are stored."
+procedure_cost,REVENUE_CODE_SOURCE_VALUE,YES,CHARACTER VARYING,"The source code for the Revenue code as it appears in the source data, stored here for reference."
+visit_cost,VISIT_COST_ID,NO,INTEGER,A unique identifier for each procedure cost record.
+visit_cost,VISIT_OCCURRENCE_ID,NO,INTEGER,A foreign key identifier to the procedure record for which cost data are recorded.
+visit_cost,CURRENCY_CONCEPT_ID,YES,INTEGER,"A concept representing the 3-letter code used to delineate international currencies, such as USD for US Dollar."
+visit_cost,PAID_COPAY,YES,NUMERIC,The amount paid by the Person as a fixed contribution to the expenses. Copay does not contribute to the out_of_pocket expenses.
+visit_cost,PAID_COINSURANCE,YES,NUMERIC,"The amount paid by the Person as a joint assumption of risk. Typically, this is a percentage of the expenses defined by the Health benefit Plan after the person's deductible is exceeded."
+visit_cost,PAID_TOWARD_DEDUCTIBLE,YES,NUMERIC,The amount paid by the Person that is counted toward the deductible defined by the health benefit Plan.
+visit_cost,PAID_BY_PAYER,YES,NUMERIC,"The amount paid by the Payer (insurer). If there is more than one Payer, several VISIT_COST records indicate that fact."
+visit_cost,PAID_BY_COORDINATION_BENEFITS,YES,NUMERIC,The amount paid by a secondary Payer through the coordination of benefits.
+visit_cost,TOTAL_OUT_OF_POCKET,YES,NUMERIC,"The total amount paid by the Person as a share of the expenses, excluding the copay."
+visit_cost,TOTAL_PAID,YES,NUMERIC,The total amount paid for the expenses of the procedure.
+visit_cost,PAYER_PLAN_PERIOD_ID,YES,INTEGER,"A foreign key to the PAYER_PLAN_PERIOD table, where the details of the Payer, Plan and Family are stored."
+drug_cost,DRUG_COST_ID,NO,INTEGER,A unique identifier for each DRUG_COST record.
+drug_cost,DRUG_EXPOSURE_ID,NO,INTEGER,A foreign key identifier to the Drug record for which cost data are recorded.
+drug_cost,CURRENCY_CONCEPT_ID,YES,INTEGER,"A concept representing the 3-letter code used to delineate international currencies, such as USD for US Dollar."
+drug_cost,PAID_COPAY,YES,NUMERIC,The amount paid by the Person as a fixed contribution to the expenses. Copay does not contribute to the out of pocket expenses.
+drug_cost,PAID_COINSURANCE,YES,NUMERIC,"The amount paid by the Person as a joint assumption of risk. Typically, this is a percentage of the expenses defined by the Payer Plan after the Person's deductible is exceeded."
+drug_cost,PAID_TOWARD_DEDUCTIBLE,YES,NUMERIC,The amount paid by the Person that is counted toward the deductible defined by the Payer Plan.
+drug_cost,PAID_BY_PAYER,YES,NUMERIC,"The amount paid by the Payer. If there is more than one Payer, several DRUG_COST records indicate that fact."
+drug_cost,PAID_BY_COORDINATION_BENEFITS,YES,NUMERIC,The amount paid by a secondary Payer through the coordination of benefits.
+drug_cost,TOTAL_OUT_OF_POCKET,YES,NUMERIC,The total amount paid by the Person as a share of the expenses.
+drug_cost,TOTAL_PAID,YES,NUMERIC,The total amount paid for the expenses of drug exposure.
+drug_cost,INGREDIENT_COST,YES,NUMERIC,"The portion of the drug expenses due to the cost charged by the manufacturer for the drug, typically a percentage of the Average Wholesale Price."
+drug_cost,DISPENSING_FEE,YES,NUMERIC,"The portion of the drug expenses due to the dispensing fee charged by the pharmacy, typically a fixed amount."
+drug_cost,AVERAGE_WHOLESALE_PRICE,YES,NUMERIC,List price of a Drug set by the manufacturer.
+drug_cost,PAYER_PLAN_PERIOD_ID,YES,INTEGER,"A foreign key to the PAYER_PLAN_PERIOD table, where the details of the Payer, Plan and Family are stored."
+payer_plan_period,PAYER_PLAN_PERIOD_ID,NO,INTEGER,"A identifier for each unique combination of payer, plan, family code and time span."
+payer_plan_period,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person covered by the payer. The demographic details of that Person are stored in the PERSON table.
+payer_plan_period,PAYER_PLAN_PERIOD_START_DATE,NO,DATE,The start date of the payer plan period.
+payer_plan_period,PAYER_PLAN_PERIOD_END_DATE,NO,DATE,The end date of the payer plan period.
+payer_plan_period,PAYER_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the payer as it appears in the source data.
+payer_plan_period,PLAN_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the Person's health benefit plan as it appears in the source data.
+payer_plan_period,FAMILY_SOURCE_VALUE,YES,CHARACTER VARYING,The source code for the Person's family as it appears in the source data.
+device_cost,DEVICE_COST_ID,NO,INTEGER,A unique identifier for each DEVICE_COST record.
+device_cost,DEVICE_EXPOSURE_ID,NO,INTEGER,A foreign key identifier to the DEVICE_EXPOSURE record for which cost data are recorded.
+device_cost,CURRENCY_CONCEPT_ID,YES,INTEGER,"A concept representing the 3-letter code used to delineate international currencies, such as USD for US Dollar."
+device_cost,PAID_COPAY,YES,NUMERIC,The amount paid by the Person as a fixed contribution to the expenses. Copay does not contribute to the out_of_pocket expenses.
+device_cost,PAID_COINSURANCE,YES,NUMERIC,"The amount paid by the Person as a joint assumption of risk. Typically, this is a percentage of the expenses defined by the Payer Plan after the person's deductible is exceeded."
+device_cost,PAID_TOWARD_DEDUCTIBLE,YES,NUMERIC,The amount paid by the Person that is counted toward the deductible defined by the Payer Plan.
+device_cost,PAID_BY_PAYER,YES,NUMERIC,"The amount paid by the Payer. If there is more than one payer, several procedure_cost records indicate that fact."
+device_cost,PAID_BY_COORDINATION_BENEFITS,YES,NUMERIC,The amount paid by a secondary payer through the coordination of benefits.
+device_cost,TOTAL_OUT_OF_POCKET,YES,NUMERIC,"The total amount paid by the Person as a share of the expenses, excluding the copay."
+device_cost,TOTAL_PAID,YES,NUMERIC,The total amount paid for the expenses of the procedure.
+device_cost,PAYER_PLAN_PERIOD_ID,YES,INTEGER,"A foreign key to the payer_plan_period table, where the details of the payer, plan and family are stored."
+drug_era,DRUG_ERA_ID,NO,INTEGER,A unique identifier for each Drug Era.
+drug_era,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is subjected to the Drug during the fDrug Era. The demographic details of that Person are stored in the PERSON table.
+drug_era,DRUG_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Concept identifier in the Standardized Vocabularies for the Ingredient Concept.
+drug_era,DRUG_ERA_START_DATE,NO,DATE,The start date for the Drug Era constructed from the individual instances of Drug Exposures. It is the start date of the very first chronologically recorded instance of conutilization of a Drug.
+drug_era,DRUG_ERA_END_DATE,NO,DATE,The end date for the drug era constructed from the individual instance of drug exposures. It is the end date of the final continuously recorded instance of utilization of a drug.
+drug_era,DRUG_EXPOSURE_COUNT,YES,INTEGER,The number of individual Drug Exposure occurrences used to construct the Drug Era.
+drug_era,GAP_DAYS,YES,INTEGER,The number of observed days of gap between Drug Exposure records which was tolerated in the building of the Drug Era record.
+dose_era,DOSE_ERA_ID,NO,INTEGER,A unique identifier for each Dose Era.
+dose_era,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is subjected to the drug during the drug era. The demographic details of that Person are stored in the PERSON table.
+dose_era,DRUG_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Concept identifier in the Standardized Vocabularies for the active Ingredient Concept.
+dose_era,UNIT_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a Standard Concept identifier in the Standardized Vocabularies for the unit concept.
+dose_era,DOSE_VALUE,NO,NUMERIC,The numeric value of the dose.
+dose_era,DOSE_ERA_START_DATE,NO,DATE,The start date for the drug era constructed from the individual instances of drug exposures. It is the start date of the very first chronologically recorded instance of utilization of a drug.
+dose_era,DOSE_ERA_END_DATE,NO,DATE,The end date for the drug era constructed from the individual instance of drug exposures. It is the end date of the final continuously recorded instance of utilization of a drug.
+condition_era,CONDITION_ERA_ID,NO,INTEGER,A unique identifier for each Condition Era.
+condition_era,PERSON_ID,NO,INTEGER,A foreign key identifier to the Person who is experiencing the Condition during the Condition Era. The demographic details of that Person are stored in the PERSON table.
+condition_era,CONDITION_CONCEPT_ID,NO,INTEGER,A foreign key that refers to a standard Condition Concept identifier in the Standardized Vocabularies.
+condition_era,CONDITION_ERA_START_DATE,NO,DATE,The start date for the Condition Era constructed from the individual instances of Condition Occurrences. It is the start date of the very first chronologically recorded instance of the condition.
+condition_era,CONDITION_ERA_END_DATE,NO,DATE,The end date for the Condition Era constructed from the individual instances of Condition Occurrences. It is the end date of the final continuously recorded instance of the Condition.
+condition_era,CONDITION_OCCURRENCE_COUNT,YES,INTEGER,The number of individual Condition Occurrences used to construct the condition era.
+cdm_source,CDM_SOURCE_NAME,NO,CHARACTER VARYING,The full name of the source
+cdm_source,CDM_SOURCE_ABBREVIATION,YES,CHARACTER VARYING,An abbreviation of the name
+cdm_source,CDM_HOLDER,YES,CHARACTER VARYING,The name of the organization responsible for the development of the CDM instance
+cdm_source,SOURCE_DESCRIPTION,YES,TEXT,A description of the source data origin and purpose for collection. The description may contain a summary of the period of time that is expected to be covered by this dataset.
+cdm_source,SOURCE_DOCUMENTATION_REFERENCE,YES,CHARACTER VARYING,URL�or other external reference to location of source documentation
+cdm_source,CDM_ETL_REFERENCE,YES,CHARACTER VARYING,URL�or other external reference to location of ETL specification documentation and ETL source code
+cdm_source,SOURCE_RELEASE_DATE,YES,DATE,"The date for which the source data are most current, such as the last day of data capture"
+cdm_source,CDM_RELEASE_DATE,YES,DATE,The date when the CDM was instantiated
+cdm_source,CDM_VERSION,YES,CHARACTER VARYING,The version of CDM used
+cdm_source,VOCABULARY_VERSION,YES,CHARACTER VARYING,The version of the vocabulary used
+cohort,COHORT_DEFINITION_ID,NO,INTEGER,A foreign key to a record in the COHORT_DEFINITION table containing relevant Cohort Definition information.
+cohort,SUBJECT_ID,NO,INTEGER,"A foreign key to the subject in the cohort. These could be referring to records in the PERSON, PROVIDER, VISIT_OCCURRENCE table."
+cohort,COHORT_START_DATE,NO,DATE,"The date when the Cohort Definition criteria for the Person, Provider or Visit first match."
+cohort,COHORT_END_DATE,NO,DATE,"The date when the Cohort Definition criteria for the Person, Provider or Visit no longer match or the Cohort membership was terminated."
+cohort_definition,COHORT_DEFINITION_ID,NO,INTEGER,A unique identifier for each Cohort.
+cohort_definition,COHORT_DEFINITION_NAME,NO,CHARACTER VARYING,A short description of the Cohort.
+cohort_definition,COHORT_DEFINITION_DESCRIPTION,YES,TEXT,A complete description of the Cohort definition
+cohort_definition,DEFINITION_TYPE_CONCEPT_ID,NO,INTEGER,Type defining what kind of Cohort Definition the record represents and how the syntax may be executed
+cohort_definition,COHORT_DEFINITION_SYNTAX,YES,TEXT,Syntax or code to operationalize the Cohort definition
+cohort_definition,SUBJECT_CONCEPT_ID,NO,INTEGER,"A foreign key to the Concept to which defines the domain of subjects that are members of the cohort (e.g., Person, Provider, Visit)."
+cohort_definition,COHORT_INSTANTIATION_DATE,YES,DATE,A date to indicate when the Cohort was instantiated in the COHORT table
+cohort_attribute,COHORT_DEFINITION_ID,NO,INTEGER,A foreign key to a record in the�COHORT_DEFINITION�table containing relevant Cohort Definition information.
+cohort_attribute,COHORT_START_DATE,NO,DATE,"The date when the Cohort Definition criteria for the Person, Provider or Visit first match."
+cohort_attribute,COHORT_END_DATE,NO,DATE,"The date when the Cohort Definition criteria for the Person, Provider or Visit no longer match or the Cohort membership was terminated."
+cohort_attribute,SUBJECT_ID,NO,INTEGER,"A foreign key to the subject in the Cohort. These could be referring to records in the PERSON, PROVIDER, VISIT_OCCURRENCE table."
+cohort_attribute,ATTRIBUTE_DEFINITION_ID,NO,INTEGER,A foreign key to a record in the�ATTRIBUTE_DEFINITIONtable containing relevant Attribute Definition information.
+cohort_attribute,VALUE_AS_NUMBER,YES,NUMERIC,The attribute result stored as a number. This is applicable to attributes where the result is expressed as a numeric value.
+cohort_attribute,VALUE_AS_CONCEPT_ID,YES,INTEGER,The attribute result stored as a Concept ID. This is applicable to attributes where the result is expressed as a categorical value.
+attribute_definition,ATTRIBUTE_DEFINITION_ID,NO,INTEGER,A unique identifier for each Attribute.
+attribute_definition,ATTRIBUTE_NAME,NO,CHARACTER VARYING,A short description of the Attribute.
+attribute_definition,ATTRIBUTE_DESCRIPTION,YES,TEXT,A complete description of the Attribute definition
+attribute_definition,ATTRIBUTE_TYPE_CONCEPT_ID,NO,INTEGER,Type defining what kind of Attribute Definition the record represents and how the syntax may be executed
+attribute_definition,ATTRIBUTE_SYNTAX,YES,TEXT,Syntax or code to operationalize the Attribute definition

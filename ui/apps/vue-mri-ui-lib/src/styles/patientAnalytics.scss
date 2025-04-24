@@ -1,0 +1,76 @@
+@import './mri-variables';
+@mixin wrapper-components {
+  .fullHeight {
+    height: calc(100vh - 80px);
+    display: flex;
+  }
+  .hidden {
+    display: none;
+  }
+  .relative {
+    position: relative;
+  }
+  .panel-header {
+    background-color: $UiLightestBG;
+    top: 0px;
+    position: sticky;
+    z-index: 1;
+    display: flex;
+    height: 40px;
+    width: 100%;
+    overflow: hidden;
+  }
+  .nav-container {
+    overflow: hidden;
+  }
+  .nav {
+    border-bottom: 1px solid $MriNavTab;
+    flex-wrap: nowrap;
+    .nav-item {
+      overflow: hidden;
+      a {
+        color: $MriHeaderTextDark;
+        display: inline-block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .active {
+        font-weight: 500;
+        padding-bottom: 5px;
+        border-bottom: 6px solid $MriNavTab;
+      }
+    }
+  }
+  #pane-right {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+
+    .pane-right-content {
+      position: inherit;
+      flex: 1;
+      min-width: map-get($mriScreen, min-chart-width);
+      min-height: 0;
+    }
+  }
+  &.hideFilterCard {
+    #pane-left {
+      display: none !important;
+    }
+    .gutter {
+      display: none !important;
+    }
+  }
+}
+
+.pa-component-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  box-sizing: border-box;
+  height: 100%;
+
+  @include wrapper-components;
+}

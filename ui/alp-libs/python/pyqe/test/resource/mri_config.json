@@ -1,0 +1,364 @@
+{
+  "filtercards": [
+    {
+      "source": "patient",
+      "visible": true,
+      "order": 1,
+      "initial": true,
+      "attributes": [
+        {
+          "source": "patient.attributes.County",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 1
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "County"
+        },
+        {
+          "source": "patient.attributes.State",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 2
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "State"
+        },
+        {
+          "source": "patient.attributes.Ethnicity",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 3
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Ethnicity"
+        },
+        {
+          "source": "patient.attributes.Gender",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 4
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Gender"
+        },
+        {
+          "source": "patient.attributes.Race",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 5
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Race"
+        },
+        {
+          "source": "patient.attributes.pid",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 6
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Patient ID"
+        },
+        {
+          "source": "patient.attributes.pcount",
+          "ordered": true,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": false,
+          "measure": true,
+          "filtercard": {
+            "initial": false,
+            "visible": false,
+            "order": 7
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": false,
+            "linkColumn": false
+          },
+          "modelName": "Patient Count"
+        },
+        {
+          "source": "patient.attributes.monthOfBirth",
+          "ordered": true,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": true,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 8
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Month of Birth"
+        },
+        {
+          "source": "patient.attributes.yearOfBirth",
+          "ordered": true,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": true,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 9
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Year of Birth"
+        },
+        {
+          "source": "patient.attributes.dateOfBirth",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 10
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Date of Birth"
+        },
+        {
+          "source": "patient.attributes.dateOfDeath",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 11
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Date of Death"
+        }
+      ],
+      "initialPatientlistColumn": true,
+      "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
+    },
+    {
+      "source": "patient.interactions.visit",
+      "visible": true,
+      "order": 2,
+      "initial": true,
+      "attributes": [
+        {
+          "source": "patient.interactions.visit.attributes.visitid",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 1
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Visit occurrence Id"
+        },
+        {
+          "source": "patient.interactions.visit.attributes.visitname",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 2
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Visit name"
+        },
+        {
+          "source": "patient.interactions.visit.attributes.visittype",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 3
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Visit type"
+        },
+        {
+          "source": "patient.interactions.visit.attributes.pid",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": false,
+            "visible": true,
+            "order": 4
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Patient Id"
+        },
+        {
+          "source": "patient.interactions.visit.attributes.startdate",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 5
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "Start Date"
+        },
+        {
+          "source": "patient.interactions.visit.attributes.enddate",
+          "ordered": false,
+          "cached": true,
+          "useRefText": false,
+          "useRefValue": false,
+          "category": true,
+          "measure": false,
+          "filtercard": {
+            "initial": true,
+            "visible": true,
+            "order": 6
+          },
+          "patientlist": {
+            "initial": false,
+            "visible": true,
+            "linkColumn": false
+          },
+          "modelName": "End Date"
+        }
+      ],
+      "initialPatientlistColumn": false,
+      "modelName": "Visit"
+    }
+  ]
+}

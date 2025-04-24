@@ -1,0 +1,53 @@
+.hue-btn.hue-btn-primary:not([disabled]) {
+    border-radius: var(--border-radius-button);
+    /* border: var(--border-width-m) solid; */
+    border-color: var(--color-border-button-primary-default);
+    background-color: var(--color-background-button-primary-default);
+    color: var(--color-text-button-primary-default);
+    font: var(--typography-mobile-button);
+    cursor: pointer;
+}
+
+.hue-btn.hue-btn-alert[disabled], .hue-btn.hue-btn-primary[disabled] {
+    cursor: not-allowed;
+    background-color: var(--color-background-button-primary-disabled);
+    border-color: var(--color-border-button-primary-disabled);
+    color: var(--color-text-button-primary-disabled);
+    border-radius: var(--border-radius-button);
+    /* border: var(--border-width-m) solid; */
+    font: var(--typography-mobile-button);
+}
+
+.hue-btn.hue-btn-small {
+    border-radius: var(--border-radius-button);
+    border: var(--border-width-m) solid;
+    border-color: var(--color-border-button-primary-default);
+    background-color: var(--color-background-button-primary-default);
+    color: var(--color-text-button-primary-default);
+    font: var(--typography-mobile-button);
+    cursor: pointer;
+    height: 32px;
+}
+
+.hue-btn:hover, .hue-btn.hue-btn-primary:hover:not([disabled]) {
+    border-color: var(--color-border-button-primary-hover);
+    background-color: var(--color-background-button-primary-hover);
+    color: var(--color-text-button-primary-hover);
+}
+
+input.limit-input {
+    font-family: inherit;
+    font-size: 16px;
+    color: currentColor;
+    width: 100%;
+    border: 0;
+    margin: 0;
+    display: block;
+    padding: 6px 0 8px;
+    background: none;
+    border-bottom: 2px solid var(--color-neutral-lighter);
+    transition: border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    outline: none;
+    box-sizing: content-box;
+    border-radius: 0;
+}

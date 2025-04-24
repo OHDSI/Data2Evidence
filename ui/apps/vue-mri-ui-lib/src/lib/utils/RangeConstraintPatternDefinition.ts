@@ -1,0 +1,87 @@
+import RangeConstraintTokenDefinition from './RangeConstraintTokenDefinition'
+
+function _buildFilterObject(sOperation, value) {
+  return {
+    value,
+    op: sOperation,
+  }
+}
+
+function _returnRangeFilterBuilder(sLowerBoundOperation, iIndexOfLowerToken, sUpperBoundOperation, iIndexOfUpperToken) {
+  return aTokenList => {
+    return {
+      and: [
+        _buildFilterObject(sLowerBoundOperation, parseFloat(aTokenList[iIndexOfLowerToken].value)),
+        _buildFilterObject(sUpperBoundOperation, parseFloat(aTokenList[iIndexOfUpperToken].value)),
+      ],
+    }
+  }
+}
+
+function _returnSingleFilterBuilder(sOperation, iIndexOfValueToken) {
+  return aTokenList => {
+    return _buildFilterObject(sOperation, parseFloat(aTokenList[iIndexOfValueToken].value))
+  }
+}
+
+function _returnSingleFilterNoValueBuilder(sOperation, iIndexOfValueToken) {
+  return aTokenList => {
+    return _buildFilterObject(sOperation, aTokenList[iIndexOfValueToken].value)
+  }
+}
+
+const tokens = RangeConstraintTokenDefinition.tokens
+
+/**
+ * List of pattern definitions for the RangeConstraint.
+ * @namespace
+ * @alias hc.mri.pa.ui.lib.RangeConstraintPatternDefinition
+ */
+const rangeConstraintPatternDefinition = {
+  acceptedPatterns: [],
+}
+
+rangeConstraintPatternDefinition.acceptedPatterns = [
+  {
+    sequence: [tokens.OPENING_BRACKET, tokens.NUMBER, tokens.DASH, tokens.NUMBER, tokens.OPENING_BRACKET],
+    action: _returnRangeFilterBuilder('>=', 1, '<', 3),
+  },
+  {
+    sequence: [tokens.OPENING_BRACKET, tokens.NUMBER, tokens.DASH, tokens.NUMBER, tokens.CLOSING_BRACKET],
+    action: _returnRangeFilterBuilder('>=', 1, '<=', 3),
+  },
+  {
+    sequence: [tokens.CLOSING_BRACKET, tokens.NUMBER, tokens.DASH, tokens.NUMBER, tokens.OPENING_BRACKET],
+    action: _returnRangeFilterBuilder('>', 1, '<', 3),
+  },
+  {
+    sequence: [tokens.CLOSING_BRACKET, tokens.NUMBER, tokens.DASH, tokens.NUMBER, tokens.CLOSING_BRACKET],
+    action: _returnRangeFilterBuilder('>', 1, '<=', 3),
+  },
+  {
+    sequence: [tokens.GEQ, tokens.NUMBER],
+    action: _returnSingleFilterBuilder('>=', 1),
+  },
+  {
+    sequence: [tokens.GT, tokens.NUMBER],
+    action: _returnSingleFilterBuilder('>', 1),
+  },
+  {
+    sequence: [tokens.LEQ, tokens.NUMBER],
+    action: _returnSingleFilterBuilder('<=', 1),
+  },
+  {
+    sequence: [tokens.LT, tokens.NUMBER],
+    action: _returnSingleFilterBuilder('<', 1),
+  },
+  {
+    sequence: [tokens.NUMBER],
+    action: _returnSingleFilterBuilder('=', 0),
+  },
+  {
+    sequence: [tokens.NOVALUE],
+    action: _returnSingleFilterNoValueBuilder('=', 0),
+  },
+]
+
+export default rangeConstraintPatternDefinition

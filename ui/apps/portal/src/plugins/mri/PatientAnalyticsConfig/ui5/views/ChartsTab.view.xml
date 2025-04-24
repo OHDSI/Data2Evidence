@@ -1,0 +1,157 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.ChartsTab" 
+	xmlns="sap.m" 
+	xmlns:mvc="sap.ui.core.mvc" 
+	xmlns:c="sap.ui.commons" 
+	xmlns:l="sap.ui.layout" 
+	xmlns:core="sap.ui.core" 
+	xmlns:t="sap.ui.table" 
+	xmlns:u="sap.ui.unified" 
+	xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1">
+	<l:VerticalLayout width="100%">
+		<Label text="{i18n>MRI_PA_CFG_CHARTS_INITIAL_CATEGORIES}" />
+		<Toolbar>
+			<content>
+				<core:Icon src="sap-icon://MRI/x1-axis"></core:Icon>
+				<c:MenuButton id="mnuButton1Id">
+					<u:Menu id="menu1" 
+						items="{analyticsModel>config/filtercards}">
+						<u:MenuItem text="{parts:['analyticsModel>modelName'], formatter: '.formatter.interactionDropdown'}">
+							<u:Menu id="subMenu1"></u:Menu>
+						</u:MenuItem>
+					</u:Menu>
+				</c:MenuButton>
+				<core:Icon src="sap-icon://MRI/x2-axis"></core:Icon>
+				<c:MenuButton id="mnuButton2Id">
+					<u:Menu id="menu2" 
+						items="{analyticsModel>config/filtercards}">
+						<u:MenuItem text="{parts:['analyticsModel>modelName'], formatter: '.formatter.interactionDropdown'}">
+							<u:Menu id="subMenu2"></u:Menu>
+						</u:MenuItem>
+					</u:Menu>
+				</c:MenuButton>
+				<core:Icon src="sap-icon://MRI/x3-axis"></core:Icon>
+				<c:MenuButton id="mnuButton3Id">
+					<u:Menu id="menu3" 
+						items="{analyticsModel>config/filtercards}">
+						<u:MenuItem text="{parts:['analyticsModel>modelName'], formatter: '.formatter.interactionDropdown'}">
+							<u:Menu id="subMenu3"></u:Menu>
+						</u:MenuItem>
+					</u:Menu>
+				</c:MenuButton>
+				<c:Button icon="sap-icon://eraser" 
+					text="{i18n>MRI_PA_CFG_CLEAR_SELECTION}" 
+					press="onClearInitialXAxisAttributeSelection" />
+			</content>
+		</Toolbar>
+		<Label text="{i18n>MRI_PA_CFG_CHARTS_INITIAL_MEASURES}" />
+		<Toolbar>
+			<content>
+				<core:Icon src="sap-icon://MRI/y-axis"></core:Icon>
+				<c:MenuButton id="mnuButton4Id">
+					<u:Menu id="menu4" 
+						items="{analyticsModel>config/filtercards}">
+						<u:MenuItem text="{parts:['analyticsModel>modelName'], formatter: '.formatter.interactionDropdown'}">
+							<u:Menu id="subMenu4"></u:Menu>
+						</u:MenuItem>
+					</u:Menu>
+				</c:MenuButton>
+				<c:Button icon="sap-icon://eraser" 
+					text="{i18n>MRI_PA_CFG_CLEAR_SELECTION}" 
+					press="onClearInitialYAxisAttributeSelection" />
+			</content>
+		</Toolbar>
+		<Toolbar>
+			<Label text="{i18n>MRI_PA_CFG_TITLE_INITIAL_CHART}" 
+				width="20%" 
+				class="sapUiResponsiveMargin"/>
+			<Select id="initialChartId" 
+				width="15%" 
+				selectedKey="{analyticsModel>config/chartOptions/initialChart}"></Select>
+		</Toolbar>
+		<Toolbar>
+			<Label text="{i18n>MRI_PA_CFG_TITLE_MIN_COHORT_SIZE}" 
+				width="20%" 
+				class="sapUiResponsiveMargin"/>
+			<Input id="generalCohortSizeId" 
+				type="Number" 
+				width="15%" />
+		</Toolbar>
+	</l:VerticalLayout>
+	<List id="chartsListId">
+		<headerToolbar>
+			<Toolbar>
+				<Title text="{i18n>MRI_PA_CFG_TITLE_CHART_TYPES}" 
+					level="H2" />
+			</Toolbar>
+		</headerToolbar>
+		<CustomListItem id="stackedId" 
+			app:myName="{i18n>MRI_PA_CFG_TITLE_CHART_TYPES_BAR_CHART}">
+			<Panel expandable="true" 
+				expanded="false">
+				<headerToolbar>
+					<Toolbar active="true" 
+						press="onHeaderToolbarPress">
+						<content>
+							<core:Icon src="sap-icon://vertical-bar-chart" 
+								class="size2"></core:Icon>
+							<Label text="{i18n>MRI_PA_CFG_TITLE_CHART_TYPES_BAR_CHART}"></Label>
+							<ToolbarSpacer />
+							<Switch state="{analyticsModel>config/chartOptions/stacked/visible}" 
+								tooltip="{i18n>MRI_PA_CFG_BAR_CHART_VISIBLE_TOOLTIP}" 
+								change="_updateInitialChartList"></Switch>
+						</content>
+					</Toolbar>
+				</headerToolbar>
+				<l:VerticalLayout >
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD}" 
+						selected="{analyticsModel>config/chartOptions/stacked/downloadEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD_PDF}" 
+						selected="{analyticsModel>config/chartOptions/stacked/pdfDownloadEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD_IMAGE}" 
+						selected="{analyticsModel>config/chartOptions/stacked/imageDownloadEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_COLLECTION}" 
+						selected="{analyticsModel>config/chartOptions/stacked/collectionEnabled}" visible="false" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_FILL_MISSING_VALUES}" 
+						selected="{analyticsModel>config/chartOptions/stacked/fillMissingValuesEnabled}" />
+				</l:VerticalLayout>
+			</Panel>
+		</CustomListItem>
+		<CustomListItem id="patientListId" 
+			app:myName="{i18n>MRI_PA_CFG_TITLE_CHART_TYPES_PATIENT_LIST}">
+			<Panel expandable="true" 
+				expanded="false">
+				<headerToolbar>
+					<Toolbar active="true" 
+						press="onHeaderToolbarPress">
+						<content>
+							<core:Icon src="sap-icon://list" 
+								class="size2"></core:Icon>
+							<Label text="{i18n>MRI_PA_CFG_TITLE_CHART_TYPES_PATIENT_LIST}"></Label>
+							<ToolbarSpacer />
+							<Switch state="{analyticsModel>config/chartOptions/list/visible}" 
+								tooltip="{i18n>MRI_PA_CFG_LIST_CHART_VISIBLE_TOOLTIP}" 
+								change="_updateInitialChartList"></Switch>
+						</content>
+					</Toolbar>
+				</headerToolbar>
+				<l:VerticalLayout >
+					<l:layoutData>
+						<l:SplitterLayoutData size="auto" />
+					</l:layoutData>
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD}" 
+						selected="{analyticsModel>config/chartOptions/list/downloadEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD_ZIP}" 
+						selected="{analyticsModel>config/chartOptions/list/zipDownloadEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_COLLECTION}" 
+						selected="{analyticsModel>config/chartOptions/list/collectionEnabled}" visible="false" />
+					<l:HorizontalLayout >
+						<Label text="{i18n>MRI_PA_CFG_TITLE_PAGE_SIZE}" 
+							class="sapUiResponsiveMargin" />
+						<Input id="pageSizeId" 
+							type="Number" />
+					</l:HorizontalLayout>
+				</l:VerticalLayout>
+			</Panel>
+		</CustomListItem>
+	</List>
+</mvc:View>

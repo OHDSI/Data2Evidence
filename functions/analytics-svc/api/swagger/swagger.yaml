@@ -744,8 +744,8 @@ paths:
           schema:
             $ref: "#/definitions/Error"
     put:
-      description: Renames a cohort definition
-      operationId: renameCohortDefinition
+      description: Updates a cohort definition
+      operationId: updateCohortDefinition
       produces:
         - application/json
       consumes:
@@ -758,7 +758,6 @@ paths:
             required:
               - datasetId
               - cohortDefinitionId
-              - name
             properties:
               datasetId:
                 type: string
@@ -768,7 +767,19 @@ paths:
                 description: Cohort Definition Id
               name:
                 type: string
-                description: Cohort Name
+                description: Cohort Definition Name
+              description:
+                type: string
+                description: Cohort Definition Description
+              definitionTypeConceptId:
+                type: number
+                description: Cohort Definition Definition Type Concept Id
+              syntax:
+                type: string
+                description: Cohort Definition Syntax
+              subjectConceptId:
+                type: number
+                description: Cohort Definition Subject Concept Id
       responses:
         "200":
           description: Success
@@ -993,6 +1004,38 @@ paths:
           description: success
           schema:
             $ref: "#/definitions/CDMVersion"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /alpdb/{databaseType}/database/{tenant}/schema/{schemaName}/exists:
+    x-swagger-router-controller: dbsvc
+    get:
+      description: Check if schema exists
+      operationId: checkIfSchemaExists
+      produces:
+        - application/json
+      parameters:
+        - name: databaseType
+          in: path
+          description: Dialect of database (Hana or Postgres)
+          required: true
+          type: string
+        - name: tenant
+          in: path
+          description: Tenant database name
+          required: true
+          type: string
+        - name: schemaName
+          in: path
+          description: Name of schema to check for
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema: 
+            type: boolean
         default:
           description: Error
           schema:

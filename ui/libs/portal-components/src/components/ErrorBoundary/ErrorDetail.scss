@@ -1,0 +1,13 @@
+.error-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 150px;
+  color: var(--color-primary);
+
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}

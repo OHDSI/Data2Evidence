@@ -31,18 +31,32 @@ api
   .getDatabases()
   .then((encryptedDatabases) => {
     const databaseCredentials = encryptedDatabases.map((db) => {
-      const { credentials, extra: extraArr, dialect, name, port, ...rest } = db;
-      const extra = extraArr?.[0]?.value || {};
+      const {
+        credentials,
+        db_extra: dbExtra,
+        dialect,
+        name,
+        port,
+        id,
+        ...rest
+      } = db;
       const decryptedCreds = credentials.reduce<{ [key: string]: string }>(
         (acc, c) => {
-          const { username, password: encryptedPassword, salt, userScope } = c;
+          const {
+            username,
+            password: encryptedPassword,
+            salt,
+            userScope,
+            user_scope
+          } = c;
           const decrypted = decrypt(encryptedPassword);
           const password = decrypted.replace(salt, "");
-          switch (userScope) {
+          const scope = (userScope || user_scope); // required: db-credentials-mgr used user_scope
+          switch (scope) {
             case USER_SCOPE.ADMIN:
             case USER_SCOPE.READ:
-              acc[userScope.toLowerCase() + "User"] = username;
-              acc[userScope.toLowerCase() + "Password"] = password;
+              acc[scope.toLowerCase() + "User"] = username;
+              acc[scope.toLowerCase() + "Password"] = password;
             default:
               acc["user"] = username;
               acc["password"] = password;
@@ -54,14 +68,15 @@ api
 
       return {
         ...dbCredentialsTemplate,
-        name: rest.code,
+        name: name,
         type: getType(dialect),
         values: {
           ...rest,
           ...getDbName(dialect, name),
+          ...dbExtra,          
+          code: id,
           dialect: getDialect(dialect),
           port: port.toString(),
-          ...extra,
           credentials: decryptedCreds,
         },
       };

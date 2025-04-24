@@ -1,0 +1,29 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.DuplicateConfiguration"
+	xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:c="sap.ui.commons"
+	xmlns:l="sap.ui.layout" xmlns:core="sap.ui.core">
+	<Dialog id="duplicateConfigPopover" class="sapUiPopupWithPadding"
+		title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_DUPLICATE_CONFIG_POPOVER_TITLE}"
+		initialFocus="configurationNameInput">
+		<VBox>
+			<Label
+				text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE}" labelFor="configurationNameInput"/>
+			<Input id="configurationNameInput"
+				placeholder="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE_PLACEHOLDER}"
+				value="{dataModel>/newConfigName}" liveChange="onNewConfigNameChange" />
+			<Label
+				text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_CONFIG_TO_DUPLICATE}" labelFor="configurationsCombo" visible="false"/>
+			<!-- <Input id="configurationName" value="{dataModel>/baseConfiguration/name}" 
+				editable="{dataModel>/baseConfiguration/isEditable}"/> -->
+			<ComboBox id="configurationsCombo" editable="{dataModel>/baseConfiguration/isIdEditable}"
+				selectedKey="{dataModel>/baseConfiguration/id}" visible="false" />
+			<Label
+				text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_CONFIG_VERSION_TO_DUPLICATE}" labelFor="configurationsVersionCombo"/>
+			<ComboBox id="configurationsVersionCombo" editable="{dataModel>/baseConfiguration/isIdEditable}"
+				selectedKey="{dataModel>/baseConfiguration/version}" />
+		</VBox>
+		<buttons>
+			<Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE}" press="onDuplicateConfigVersion" />
+			<Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CANCEL}" press="onDuplicateConfigurationCanceled" />			
+		</buttons>
+	</Dialog>
+</mvc:View>

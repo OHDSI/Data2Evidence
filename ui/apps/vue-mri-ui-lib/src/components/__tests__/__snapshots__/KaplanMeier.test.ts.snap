@@ -1,0 +1,54 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`KaplanMeier.vue sets the correct default data 1`] = `
+Object {
+  "allCurves": Object {},
+  "cachedRangeSliderValue": Array [
+    0,
+    0,
+  ],
+  "chartData": Object {},
+  "errorMessage": "",
+  "globalPValue": "",
+  "kmChartStyle": Object {},
+  "kmInterval": "",
+  "kmLogRankHelpArrowPosition": Object {
+    "left": "270px",
+  },
+  "kmLogRankHelpPopoverPosition": Object {
+    "right": "8px",
+  },
+  "kmUnit": "years",
+  "maxDataday": 0,
+  "maxDay": 0,
+  "minDay": 0,
+  "minProb": 0,
+  "rangeSliderValue": Array [
+    0,
+    0,
+  ],
+  "selection": Array [],
+  "series": Array [],
+  "showCensoring": false,
+  "showErrorLines": false,
+  "showKMLogRankHelpPopOver": false,
+  "showKMLogRankHelpPopOverHover": false,
+  "showKMLogRankHelpPopOverIcon": false,
+  "showKMStatisticsErrPopupForMoreCurves": false,
+  "showKMStatisticsErrPopupForOneCurve": false,
+  "showKMStatisticsPopup": false,
+  "showSubComponents": false,
+  "showTooltip": false,
+  "sliderFocus": false,
+  "sliderHoverState": false,
+  "sliderWidth": 0,
+  "tooltipCategories": Array [],
+  "tooltipFocusLeft": false,
+  "tooltipFocusRight": false,
+  "tooltipHoverState": false,
+  "tooltipMeasures": Array [],
+  "tooltipPosition": Object {},
+  "xScale": 0,
+  "yScale": 0,
+}
+`;

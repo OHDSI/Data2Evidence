@@ -1,0 +1,40 @@
+{
+  "name": "@portal/plugin",
+  "version": "1.0.0",
+  "description": "Plugin Library",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build:dev": "webpack --config webpack.config.js --mode=development",
+    "build": "webpack --config webpack.config.js --mode=production",
+    "dev": "webpack --config webpack.config.js --mode=development --watch ",
+    "test": "jest --watch",
+    "test:once": "jest",
+    "clean": "rimraf ./dist",
+    "lint": "tsc --noEmit && prettier --check . && eslint '*/**/*.{ts,tsx}' --quiet --fix"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "eslint": "^7.4.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "prettier": "^2.0.5",
+    "terser-webpack-plugin": "^5.3.1",
+    "ts-loader": "^8.0.11",
+    "typescript": "^4.4.2",
+    "webpack": "^5.76.0",
+    "webpack-bundle-analyzer": "^4.6.1",
+    "webpack-cli": "^4.10.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "resolutions": {
+    "tar": "^6.1.11",
+    "strip-ansi": "^6.0.0",
+    "ansi-regex": "^5.0.1",
+    "glob-parent": "^5.1.2",
+    "express": "^4.17.3"
+  }
+}

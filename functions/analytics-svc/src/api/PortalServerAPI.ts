@@ -2,14 +2,17 @@ import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env";
 import { Logger } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
+import http from "node:http";
 let logger = CreateLogger("analytics-log");
 export default class PortalServerAPI {
     private readonly baseUrl: string;
     private readonly oauthUrl: string;
+    private agent: any;
 
     constructor() {
         this.baseUrl = env.SERVICE_ROUTES.portalServer;
         this.oauthUrl = env.ALP_GATEWAY_OAUTH__URL;
+        this.agent = new http.Agent({ keepAlive: true });
         if (!this.baseUrl) {
             throw new Error("Portal Server URL is not configured!");
         }
@@ -22,6 +25,7 @@ export default class PortalServerAPI {
                 headers: {
                     Authorization: token,
                 },
+                httpAgent: this.agent,
             };
         }
         return options;
@@ -38,6 +42,7 @@ export default class PortalServerAPI {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
+            httpAgent: this.agent,
         };
 
         const data = Object.keys(params)
@@ -55,7 +60,7 @@ export default class PortalServerAPI {
     }
 
     async getPublicStudies() {
-        const result = await axios.get(`${this.baseUrl}/dataset/public/list`);
+        const result = await axios.get(`${this.baseUrl}/dataset/public/list`, {httpAgent: this.agent});
         return result.data;
     }
 
@@ -70,7 +75,7 @@ export default class PortalServerAPI {
 
     async getStudies(token: string) {
         const options = await this.getRequestConfig(token);
-        const result = await axios.get(`${this.baseUrl}/dataset/list`, options);
+        const result = await axios.get(`${this.baseUrl}/dataset/list/systemadmin`, options);
         return result.data;
     }
 

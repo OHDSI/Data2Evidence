@@ -1,0 +1,19 @@
+.terminology_detail {
+  &__container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1px;
+    margin-top: 11px;
+  }
+
+  &__related-concepts {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}

@@ -1,0 +1,71 @@
+@import './mri-variables';
+ul.config-selection-list {
+  display: block;
+  font-size: 16px;
+  list-style-type: none;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 0px;
+  li {
+    align-items: center;
+    background-attachment: scroll;
+    background-clip: border-box;
+    background-color: $UiLightestBG;
+    border-bottom-color: $UiLightBorder;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    font-size: 2rem;
+    list-style-type: none;
+    padding-bottom: 0px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 0px;
+    text-align: left;
+    div.config-selection-item-select {
+      height: 32px;
+      width: 32px;
+      display: inline-block;
+      align-content: center;
+    }
+    div.config-selection-item-wrapper {
+      padding: 5px;
+      flex-basis: 0%;
+      flex-grow: 1;
+      flex-shrink: 1;
+      div.config-selection-item-content {
+        display: flex;
+        flex-direction: column;
+        div {
+          position: relative;
+        }
+        span {
+          padding-top: 6px;
+          flex-basis: auto;
+          flex-grow: 1;
+          flex-shrink: 1;
+          display: inline-block;
+        }
+        div.config-selection-item-title {
+          font-size: 0.875rem;
+        }
+        div.config-selection-item-description {
+          font-size: 0.875rem;
+        }
+        div.config-selection-item-subdescription {
+          font-size: 0.675rem;
+        }
+      }
+    }
+  }
+  li.config-selection-item-selected {
+    background-color: none;
+  }
+}

@@ -1,0 +1,8 @@
+msal==1.31.0
+pandas==2.2.3
+PyJWT==2.9.0
+python-dotenv==1.0.1
+PyYAML==6.0.2
+requests==2.32.3
+six==1.16.0
+pyarrow==17.0.0

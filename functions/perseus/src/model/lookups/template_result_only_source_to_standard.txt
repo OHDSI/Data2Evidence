@@ -1,0 +1,15 @@
+{base},
+Standard AS
+(
+    {source_to_standard}
+)
+
+SELECT DISTINCT
+    Standard.*,
+    NULL AS SOURCE_VOCABULARY_ID,
+    NULL AS SOURCE_TARGET_CONCEPT_ID,
+    NULL AS SOURCE_VALID_START_DATE,
+    NULL AS SOURCE_VALID_END_DATE,
+    ingredient_level.ingredient_concept_id
+FROM Standard
+LEFT JOIN ingredient_level ON ingredient_level.concept_id=Standard.TARGET_CONCEPT_ID

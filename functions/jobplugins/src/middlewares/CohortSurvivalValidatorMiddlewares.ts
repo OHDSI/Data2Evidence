@@ -1,4 +1,4 @@
-import { body } from "npm:express-validator";
+import { body } from "express-validator";
 
 // Validation rules for CohortSurvivalFlowRunOptions
 export const validateCohortSurvivalFlowRunDto = () => [
@@ -17,4 +17,25 @@ export const validateCohortSurvivalFlowRunDto = () => [
   body("options.outcomeCohortDefinitionId")
     .isNumeric()
     .withMessage("outcomeCohortDefinitionId must be a number"),
+  body("options.analysisType")
+    .optional()
+    .isString()
+    .withMessage("analysisType must be a string")
+    .isIn(["single_event", "competing_risk"])
+    .withMessage(
+      "analysisType must be either 'single_event' or 'competing_risk'"
+    ),
+  body("options.competingOutcomeCohortDefinitionId")
+    .optional()
+    .isNumeric()
+    .withMessage("competingOutcomeCohortDefinitionId must be a number")
+    .custom((value, { req }) => {
+      // If analysis type is competing_risk, competingOutcomeCohortDefinitionId is required
+      if (req.body.options.analysisType === "competing_risk" && !value) {
+        throw new Error(
+          "competingOutcomeCohortDefinitionId is required for competing_risk analysis"
+        );
+      }
+      return true;
+    }),
 ];

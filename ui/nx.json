@@ -1,0 +1,35 @@
+{
+  "extends": "nx/presets/npm.json",
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "build-mri",
+          "build-mri-css",
+          "lint",
+          "test",
+          "eject",
+          "analyze",
+          "watch",
+          "build:dev",
+          "dev",
+          "test:once",
+          "clean"
+        ]
+      }
+    }
+  },
+  "targetDependencies": {
+    "build": [
+      {
+        "target": "build",
+        "projects": "dependencies"
+      }
+    ]
+  },
+  "affected": {
+    "defaultBase": "develop"
+  }
+}

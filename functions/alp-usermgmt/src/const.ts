@@ -39,8 +39,8 @@ export const CONFIG_KEY = {
 }
 
 export const IDP_SCOPE_ROLE = {
-  TENANT_VIEWER: 'role.tenantviewer',
   SYSTEM_ADMIN: 'role.systemadmin',
   USER_ADMIN: 'role.useradmin',
-  DASHBOARD_VIEWER: 'role.dashboardviewer'
+  DASHBOARD_VIEWER: 'role.dashboardviewer',
+  DATASET_RESEARCHER_PREFIX: 'role.researcher.'
 }

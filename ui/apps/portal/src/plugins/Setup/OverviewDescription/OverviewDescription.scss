@@ -1,0 +1,26 @@
+.overview_description {
+    padding: 2em;
+    max-width: 1000px;
+    margin: 0 auto;
+
+    &__header {
+        display: flex;
+        width: 100%;
+        padding-bottom: 16px;
+    
+        .alp-title {
+          margin: 0;
+          flex: 1;
+        }
+      }
+
+    &__buttons {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1em;
+
+        .alp-button__container{
+            margin-left: 1em;
+        }
+    }
+}

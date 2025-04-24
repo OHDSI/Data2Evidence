@@ -1,0 +1,29 @@
+@import './mri-variables';
+.chart-error-placeholder {
+  color: $UiLightText;
+  font-size: 12px;
+  height: 100%;
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  .error-wrapper {
+    background-color: $UiLightestBG;
+    border-top: 1px solid $UiExtraLightBorder;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
+    padding: 6px;
+  }
+  .error-message {
+    text-align: left;
+    margin-bottom: 0px;
+  }
+  .icon {
+    font-size: 16px;
+    margin-top: 0;
+    line-height: 18px;
+  }
+}

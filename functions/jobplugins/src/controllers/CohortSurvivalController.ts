@@ -1,5 +1,5 @@
-import { Request, Response, Router } from "npm:express";
-import { param, validationResult } from "npm:express-validator";
+import { Request, Response, Router } from "express";
+import { param, validationResult } from "express-validator";
 import { validateCohortSurvivalFlowRunDto } from "../middlewares/CohortSurvivalValidatorMiddlewares.ts";
 import { CohortSurvivalService } from "../services/CohortSurvivalService.ts";
 

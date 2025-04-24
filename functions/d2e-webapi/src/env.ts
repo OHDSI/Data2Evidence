@@ -12,6 +12,8 @@ const Env = z.object({
         return z.never();
       }
     }),
+  CACHEDB__HOST: z.string(),
+  CACHEDB__PORT: z.string().transform(Number),
 });
 
 export const env = Env.parse(_env);

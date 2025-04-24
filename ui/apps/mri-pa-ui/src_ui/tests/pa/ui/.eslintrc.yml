@@ -1,0 +1,4 @@
+extends: ../../../../../../../.eslint/strict_ui_tests.eslintrc.yml
+rules:
+  no-undefined: 0
+  no-use-before-define: [2, "nofunc"]

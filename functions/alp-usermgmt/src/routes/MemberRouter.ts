@@ -30,6 +30,13 @@ export class MemberRouter {
         return res.status(400).send({ message: `Param 'username' is required` })
       }
 
+      const usernameRegex = /^\w+$/;
+
+      if (!usernameRegex.test(username)) {
+        this.logger.warn(`username should only contain letters, numbers, or underscore.`)
+        return res.status(400).send({ message: `username should only contain letters, numbers, or underscore.` })
+      }
+
       const tenants = await this.portalAPI.getTenants()
       if (!tenantId) {
         this.logger.info(`Param 'tenantId' is empty, get tenant from portal`)

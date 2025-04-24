@@ -30,6 +30,16 @@ export class UserArtifactController {
     return this.userArtifactService.getUserServiceArtifact(userId, serviceName)
   }
 
+  @Get(':serviceName/sequence/nextval')
+  getServiceArtifactSequenceNextval(
+    @Param('serviceName') serviceName: ServiceName
+  ) {
+    if (!(Object.values(ServiceName).includes(serviceName))) {
+      throw new BadRequestException(`Invalid service name: ${serviceName}`)
+    }
+    return this.userArtifactService.getServiceArtifactSequenceNextval(serviceName)
+  }
+
   @Get(':userId/:serviceName/shared/list')
   getAllUserServiceArtifacts(
     @Param('userId') userId: string,

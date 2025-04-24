@@ -95,7 +95,7 @@ Get Dataframe for Patient entity alone
 
 # %% [python]
 # Generate Request for Dataframe cohort
-request_df = total_patients_query.get_dataframe_cohort([],'Patient')
+request_df = await total_patients_query.get_dataframe_cohort([],'Patient')
 
 # Get Patient Dataframe. Select (1) Patient
 patient_df = Result().download_dataframe(request_df)

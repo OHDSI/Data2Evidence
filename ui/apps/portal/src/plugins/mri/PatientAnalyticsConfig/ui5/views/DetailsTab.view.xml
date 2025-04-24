@@ -1,0 +1,22 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.DetailsTab" 
+    xmlns="sap.m" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:core="sap.ui.core" 
+    xmlns:f="sap.ui.layout.form" 
+    xmlns:l="sap.ui.layout" 
+    xmlns:c="sap.ui.commons">
+    <Text class="sapMriPaConfigWarning" text="{i18n>MRI_PA_CFG_WARNING_NEWER_VERSION}" textAlign="Center" visible = "{parts:['analyticsModel>meta/dependentConfig/configVersion', 'versionsModel>/versions'], formatter: '.formatter.warningVisFormatter'}" width="100%" />
+    <f:SimpleForm editable="true" labelSpanM="3" layout="ResponsiveGridLayout">
+        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_NAME_COL}" />
+        <Input placeholder="{i18n>MRI_PA_CFG_TITLE_ENTER_CONFIG_NAME}" value="{analyticsModel>meta/configName}" />
+        <Label text="{i18n>MRI_PA_CFG_DETAILS_VERSION}" />
+        <ComboBox id="dataModelVersionCombo" selectionChange="onDataModelVersionChanged" selectedKey="{analyticsModel>meta/dependentConfig/configVersion}" items="{path: 'versionsModel>/versions'}">
+            <core:Item key="{versionsModel>version}" text="{parts:['versionsModel>version', 'versionsModel>status',  'i18n>MRI_PA_CFG_TITLE_ACTIVE_VERSION'], formatter: '.formatter.versionTextFormatter'}" />
+        </ComboBox>
+        <CheckBox id="disableInactiveCheckBox" text="{i18n>MRI_PA_CFG_ACTIVE_FILTER}" selected="{/hideInactive}" select="onFilterInactive" />
+        <Label text="{i18n>MRI_PA_CFG_OVERVIEW_CREATOR}" />
+        <Text text="{analyticsModel>meta/creator}" />
+        <Label text="{i18n>MRI_PA_CFG_DETAILS_NOTES}" />
+        <TextArea rows="8" value="{analyticsModel>config/configInformations/note}" width="100%" />
+    </f:SimpleForm>
+</mvc:View>

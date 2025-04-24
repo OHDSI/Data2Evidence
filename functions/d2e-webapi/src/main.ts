@@ -44,10 +44,16 @@ const main = () => {
       ],
       components: {
         securitySchemes: {
-          BearerAuth: {
+          bearerAuth: {
             description: 'Authorization header token, sample: "Bearer #TOKEN#"',
             type: "http",
             scheme: "Bearer",
+          },
+          datasetid: {
+            description: "Dataset id",
+            type: "apiKey",
+            name: "datasetid",
+            in: "header",
           },
         },
       },

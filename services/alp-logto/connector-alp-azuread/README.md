@@ -12,8 +12,16 @@
 - Update env values
   - IDP__RELYING_PARTY: `azure`
   - LOGTO_ROLES_AZ_GROUPS_MAPPING - Update `Object ID from Groups` from target Azure
-  - LOGTO__SCOPE: `openid offline_access profile email role.systemadmin role.useradmin role.tenantviewer role.dashboardviewer`
-  - Uncomment `LOGTO__CUSTOM_JWT`
+  - LOGTO__SCOPE: `openid offline_access profile email role.systemadmin role.useradmin role.dashboardviewer`
+  - Add new env: `ENTRA__TENANT_ID`, `ENTRA__CLIENT_ID` and `ENTRA__CLIENT_SECRET`
+  - Uncomment `LOGTO__CUSTOM_JWT`, `LOGTO__CONNECTOR_CONFIG` (which uses the new env above)
+  - Uncomment `LOGTO__DISABLE_BASIC_AUTH` and set `true` / `false` accordingly
+  - Restart services
+  - **Note**: redirect url will now always be `https://<fqdn>/callback/y9nq6f91yeg19kwt1x6xz`
+
+- Add dataset researcher role
+  - Add `role.researcher.<token_dataset_code>` to `LOGTO__ROLES`, `LOGTO__SCOPES` and `LOGTO__SCOPE`
+  - Update the mapping between `role.researcher.<token_dataset_code>` to Entra Group ID in `LOGTO_ROLES_AZ_GROUPS_MAPPING`
   - Restart services
 
 # Microsoft Azure AD connector

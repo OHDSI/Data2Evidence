@@ -1,0 +1,7 @@
+build/*
+public/*
+
+*.scss
+*.json
+
+**/ui5

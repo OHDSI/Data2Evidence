@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<control xmlns="http://www.sap.com/sap.ui.library.xsd" >
+
+	<name>MappingControl</name>
+	<author>Mouli Kalakota</author>
+	<documentation>This is used for representing a mapping in a graphical format and informational format</documentation>
+
+	<baseType>sap.ui.core/Control</baseType>
+	<properties>
+		<property group="Appearance" name="sourceMessageTitle" type="sap.ui.core/string">
+		</property>
+		<property group="Appearance" name="targetMessageTitle" type="sap.ui.core/string">
+		</property>
+		<property group="Data" name="transformation" type="sap.ui.core/object">
+			<documentation>The data that needs to be set on this control. This should be an instance of the model object &quot;com.sap.it.spc.webui.models.Transformation&quot;</documentation>
+		</property>
+		<property group="Appearance" name="showMappingInfo" type="sap.ui.core/boolean" defaultValue="true">
+			<documentation>To show/hide the mapping information from the information section</documentation>
+		</property>
+		<property group="Appearance" name="showInfoSection" type="sap.ui.core/boolean" defaultValue="true">
+			<documentation>To show/hide the information (lower) section</documentation>
+		</property>
+		<property group="Appearance" name="infoSectionSize" type="sap.ui.core/CSSSize" defaultValue="45%">
+			<documentation>The size of the information section to occupy the visible area</documentation>
+		</property>
+		<property group="Appearance" name="width" type="sap.ui.core/CSSSize" defaultValue="100%">
+			<documentation>Width of the control</documentation>
+		</property>
+		<property group="Appearance" name="height" type="sap.ui.core/CSSSize" defaultValue="100%">
+			<documentation>Height of the control</documentation>
+		</property>
+	</properties>
+	<aggregations>
+		<aggregation cardinality="0..n" name="sourceMessageColumns" type="sap.ui.table/Column">
+			<documentation>The columns for the source message</documentation>
+		</aggregation>
+		<aggregation cardinality="0..n" name="targetMessageColumns" type="sap.ui.table/Column">
+			<documentation>The columns for target message</documentation>
+		</aggregation>
+	</aggregations>
+</control>

@@ -1,0 +1,47 @@
+@import './mri-variables';
+.appMriPaChartPopoverBoxplot {
+  font-size: 12px;
+  .appMriPaChartPopoverContentDimensions {
+    margin: 8px 16px 8px;
+    border-bottom: solid 1px $UiLightBorder;
+    padding-bottom: 8px;
+  }
+  .appMriPaChartPopoverContentDimension {
+    font-size: 13.85px;
+  }
+  .appMriPaChartPopoverContentDimensionAxis {
+    font-family: 'app-MRI-icons';
+    font-size: 18px;
+    padding-right: 5px;
+    text-align: left;
+    vertical-align: bottom;
+  }
+  .appMriPaChartPopoverContentDimensionValue {
+    font-weight: bold;
+  }
+  .appMriPaChartPopoverContentMeasureName {
+    text-align: left;
+    width: 85%;
+  }
+  .appMriPaChartPopoverContentMeasureValue,
+  .appMriPaChartPopoverContentPatientsValue {
+    text-align: right;
+    width: 10%;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+  }
+  .appMriPaChartPopoverContentMeasures {
+    font-size: 12px;
+    margin: 0px 16px 8px 16px;
+    border-bottom: solid 1px $UiLightBorder;
+    padding-bottom: 8px;
+    white-space: normal;
+  }
+  .appMriPaChartPopoverContentPatients {
+    margin: 0px 16px 8px 16px;
+  }
+  .appMriPaChartPopoverContentPatientsLabel {
+    text-align: left;
+    width: 75%;
+  }
+}

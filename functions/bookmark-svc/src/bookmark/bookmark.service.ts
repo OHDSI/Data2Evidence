@@ -8,10 +8,12 @@ import CallBackInterface = connLib.CallBackInterface
 import * as utils from '@alp/alp-base-utils'
 import {
   BookmarkDto,
-  IcohortDefinition,
+  IMaterializedCohort,
   IFormattedBookmark,
-  IFormattedcohortDefinition,
+  IFormattedMaterializedCohort,
   IFrontendBookmark,
+  IAtlasCohortDefinition,
+  IFormattedAtlasCohortDefinition,
 } from '../types'
 import { PortalAPI } from '../api/PortalAPI'
 import { AnalyticsSvcAPI } from '../api/AnalyticsAPI'
@@ -99,17 +101,37 @@ export async function _loadAllBookmarks(
 ) {
   try {
     const portalAPI = new PortalAPI(token)
+
+    // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
 
+    // Get and format atlas cohort definitions
+    const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
+    const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
+      _formatAtlasCohortDefinition(atlasCohortDefinition)
+    )
+
+    // Get and format materialized cohorts
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
-    const cohortDefinitions = await analyticsSvcAPI.getAllCohorts(datasetId)
-    const formattedCohortDefinitions = cohortDefinitions.map(cohort => _formatCohortDefinitions(cohort))
+    const materializedCohorts = await analyticsSvcAPI.getAllCohorts(datasetId)
+    let formattedMaterializedCohorts = materializedCohorts.map(cohort => _formatMaterializedCohort(cohort))
+
+    const dialect = await portalAPI.getDatasetDialect(datasetId)
+    if (dialect !== 'hana') {
+      // Filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
+      formattedMaterializedCohorts = _filterUntaggedMaterializedCohorts(
+        formattedBookmarks,
+        formattedAtlasCohortDefinitions,
+        formattedMaterializedCohorts
+      )
+    }
 
     const returnValue: IFrontendBookmark = {
       schemaName: connection.schemaName,
       bookmarks: formattedBookmarks,
-      cohortDefinitions: formattedCohortDefinitions,
+      atlasCohortDefinitions: formattedAtlasCohortDefinitions,
+      materializedCohorts: formattedMaterializedCohorts,
     }
     callback(null, _convertBookmarkIFR(returnValue))
   } catch (error) {
@@ -537,9 +559,62 @@ function _convertBookmarkIFR(result) {
   return result
 }
 
-const _formatCohortDefinitions = (cohortDefinition: IcohortDefinition): IFormattedcohortDefinition => ({
+const _formatMaterializedCohort = (cohortDefinition: IMaterializedCohort): IFormattedMaterializedCohort => ({
   id: cohortDefinition.id,
-  patientCount: cohortDefinition.patientIds.length,
+  patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp,
+  description: cohortDefinition.description,
 })
+
+const _formatAtlasCohortDefinition = (
+  atlasCohortDefinition: IAtlasCohortDefinition
+): IFormattedAtlasCohortDefinition => ({
+  id: atlasCohortDefinition.id,
+  name: atlasCohortDefinition.name,
+  username: atlasCohortDefinition.createdBy,
+  createdOn: new Date(atlasCohortDefinition.createdDate).toISOString(),
+  updatedOn: new Date(atlasCohortDefinition.modifiedDate).toISOString(),
+
+  // Only add key cohortDefinitionId if materializedCohortDefinitionIds array is not empty. If array is not empty, get last value of array, which is the latest materialized cohort
+  ...(atlasCohortDefinition.materializedCohortDefinitionIds.length > 0 && {
+    cohortDefinitionId:
+      atlasCohortDefinition.materializedCohortDefinitionIds[
+        atlasCohortDefinition.materializedCohortDefinitionIds.length - 1
+      ],
+  }),
+})
+
+/*
+Function to filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
+*/
+const _filterUntaggedMaterializedCohorts = (
+  formattedBookmarks: IFormattedBookmark[],
+  formattedAtlasCohortDefinitions: IFormattedAtlasCohortDefinition[],
+  formattedMaterializedCohorts: IFormattedMaterializedCohort[]
+): IFormattedMaterializedCohort[] => {
+  // Create a list of cohort definitions ids which are tagged to either a bookmark or atlas cohort definition
+  const cohortDefinitionIds: number[] = []
+
+  // Get cohort definition ids from formattedBookmarks
+  formattedBookmarks.reduce((acc, bookmark) => {
+    if (bookmark.cohortDefinitionId) {
+      acc.push(bookmark.cohortDefinitionId)
+    }
+    return acc
+  }, cohortDefinitionIds)
+
+  // Get cohort definition ids from formattedAtlasCohortDefinitions
+  formattedAtlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
+    if (atlasCohortDefinition.cohortDefinitionId) {
+      acc.push(atlasCohortDefinition.cohortDefinitionId)
+    }
+    return acc
+  }, cohortDefinitionIds)
+
+  const filteredMaterializedCohorts = formattedMaterializedCohorts.filter(materializedCohorts => {
+    return cohortDefinitionIds.includes(materializedCohorts.id)
+  })
+
+  return filteredMaterializedCohorts
+}

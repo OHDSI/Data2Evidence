@@ -1,0 +1,37 @@
+.home-header {
+  width: 100%;
+  height: 56px;
+  background-color: #fbfbfd;
+  padding: 27px 48px 27px 33px;
+  box-shadow: 0 0.5px 8px 0 #acaba8;
+  position: fixed;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  z-index: -1;
+
+  transition: opacity 0.3s;
+  opacity: 0;
+
+  &--scrolled {
+    opacity: 1;
+    z-index: 1;
+  }
+
+  svg {
+    fill: navy;
+  }
+
+  .account-button {
+    flex: 1;
+    text-align: right;
+  }
+
+  .logo {
+    display: block;
+    padding: 8px 0;
+    margin-left: 2rem;
+    cursor: pointer;
+  }
+}

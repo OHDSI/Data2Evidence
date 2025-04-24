@@ -1,0 +1,395 @@
+@import "AdvancedTimeFilter.less";
+@import "AttributeMenuButton.less";
+@import "BinningButton.less";
+@import "BookmarkItem.less";
+@import "BoolFilterContainer.less";
+@import "Boxplot.less";
+@import "ChartPopoverContent.less";
+@import "Constraint.less";
+@import "HelpText.less";
+@import "KaplanMeierChart.less";
+@import "KaplanMeierChartLegend.less";
+@import "MenuButton.less";
+@import "PatientListChart.less";
+@import "TimePicker.less";
+@import "DateTimePicker.less";
+.sapMriPaChart {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+.sapMriChartNoDataPholder .sapMFlexItem {
+    background-color: @sapUiLightestBG;
+    border-top: 1px solid @sapUiExtraLightBorder;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
+    padding: 6px;
+}
+
+
+/* Restyle the sliding bar */
+
+.sapUiSliHori .sapUiSliBar {
+    background-color: @sapMriLightestText;
+}
+
+.sapUiSliHori .sapUiSliBar,
+.sapUiSliHori .sapUiSliHiLi {
+    border-bottom: 0;
+    border-top: 0;
+    cursor: pointer;
+    height: 12px;
+    top: -5px;
+}
+
+.sapUiSliStd .sapUiSliHiLi {
+    background-color: @sapUiExtraDarkBorder;
+}
+
+.sapUiSliStd .sapUiSliGrip {
+    background-color: @sapUiExtraDarkBorder;
+    border-color: @sapUiExtraDarkBorder;
+    cursor: ew-resize;
+}
+
+.sapUiSliHori .sapUiSliGrip {
+    border-radius: 8px;
+    height: 8px;
+    top: -5px;
+    width: 8px;
+}
+
+.sapUiSliStd .sapUiSliGrip:focus,
+.sapUiSliStd .sapUiSliGrip:active,
+.sapUiSliStd .sapUiSliGrip:hover {
+    background-color: @sapUiExtraDarkBorder;
+    border-color: @sapUiExtraDarkBorder;
+}
+
+
+/* Tag Input */
+
+.sapMriPaTagInputField {
+    display: block;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 1px 0 !important;
+}
+
+.tagInput {
+    cursor: text;
+    min-height: 26px;
+}
+
+.tag {
+    background-color: @sapUiBrand;
+    border: 1px lightgrey solid;
+    border-radius: 3px;
+    color: @sapMriLightestText;
+    float: left;
+    margin: 2px 1px 1px 1px;
+}
+
+.tag button:hover {
+    background-color: inherit !important;
+}
+
+.tag.valid,
+.tag.valid:hover {
+    background-color: @sapMriTokenValidBG;
+    border-color: @sapMriTokenValidBorder;
+    color: @sapMriLightestText;
+}
+
+.tag.beingValidated,
+.tag.beingValidated:hover {
+    background-color: @sapMriTokenPendingBG;
+    border-color: @sapMriDarkerBorder;
+    color: @sapMriLightestText;
+}
+
+.tag.invalid,
+.tag.invalid:hover {
+    background-color: @sapMriTokenInvalidBG;
+    border-color: @sapMriDarkerBorder;
+    color: @sapMriLightestText;
+}
+
+.tag.validNoData,
+.tag.validNoData:hover {
+    background-color: @sapMriTokenValidNoDataBG;
+    border-color: @sapMriTokenValidNoDataBorder;
+    color: @sapMriTokenValidNoDataBorder;
+}
+
+.tagElement {
+    background-color: @sapUiBrand;
+    border: 1px lightgrey solid;
+    border-radius: 0.125rem;
+    color: @sapMriLightestText;
+    float: left;
+    margin: 0.125rem 0.125rem 0.25rem 0;
+    opacity: 1;
+    padding: 2px;
+}
+
+.tagElement table {
+    color: inherit !important;
+}
+
+.tagElement td {
+    padding: 0 !important;
+}
+
+.tagElement button:hover {
+    background-color: inherit !important;
+}
+
+.tagElement .sapMriPaTagCloseBtn:hover {
+    opacity: 0.7 !important;
+}
+
+.tagElement button {
+    padding: 0 2px !important;
+    height: 16px;
+    font-size: 12px;
+    color: inherit !important;
+    opacity: 1 !important;
+    white-space: normal;
+    height: auto;
+}
+
+.tagElement button .sapUiBtnIco {
+    color: inherit !important;
+    font-size: 8px !important;
+    height: 8px !important;
+    line-height: 8px !important;
+}
+
+.tagElement.sapMriPaTagElementValid {
+    background-color: @sapMriTokenValidSyntaxBG;
+    border-color: @sapMriTokenValidSyntaxBorder;
+    color: @sapMriValidSyntaxText;
+}
+
+.tagElement.sapMriPaTagElementBeingValidated {
+    background-color: @sapMriTokenPendingBG;
+    border-color: @sapMriDarkerBorder;
+    color: @sapMriLightestText;
+}
+
+.tagElement.sapMriPaTagElementInvalid {
+    background-color: @sapMriTokenInvalidBG;
+    border-color: @sapMriDarkerBorder;
+    color: @sapMriLightestText;
+}
+
+.tagElement.sapMriPaTagElementValidWithData {
+    background-color: @sapMriTokenValidBG;
+    border-color: @sapMriTokenValidBorder;
+    color: @sapMriLightestText;
+}
+
+.tagElement.sapMriPaTagElementValidNoData {
+    background-color: @sapMriTokenValidNoDataBG;
+    border-color: @sapMriTokenValidNoDataBorder;
+    color: @sapMriTokenValidNoDataBorder;
+}
+
+.sapUiTfBrd.sapUiTfCombo.tagInput {
+    height: auto;
+    width: auto;
+}
+
+.tagText {
+    padding-left: 2px;
+}
+
+.tagRemoveHandle {
+    background-image: url(img/closeTag.png);
+    background-position: 0 4px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    display: inline-block;
+    height: 100%;
+    margin: 0 2px;
+    width: 8px;
+}
+
+.tagInvalidHandle {
+    background-position: 0 4px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    display: inline-block;
+    height: 100%;
+    margin: 0 2px;
+    width: 8px;
+}
+
+.tagRemoveHandle:hover {
+    background-position: -8px 4px;
+}
+
+
+/* styles for FilterCard */
+
+.sapMriPaFilterCardTitle {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.sapMriPaFilterCardTitleLayout .sapUiMenuButton .sapUiBtnIco {
+    font-size: 10px;
+}
+
+.sapMriPaFilterCardTitleLayout .sapUiMenuButton {
+    padding: 0 7px 1px 7px !important;
+}
+
+.sapMriPaFilterCardTitleLayout {
+    border-bottom: 1px solid @sapUiExtraLightBorder;
+}
+
+.sapMriPaFilterCard {
+    background-color: @sapUiLightestBG;
+    border: 1px @sapUiMediumBorder solid;
+    margin-top: 0.25rem;
+    padding: 4px 0;
+}
+
+.sapMriPaFilterCard>.sapMVBox>.sapMFlexItem,
+.sapMriPaFilterCard>.sapMVBox>.sapMVBox>.sapMFlexItem {
+    padding: 4px 8px;
+}
+
+.sapMriPaFilterCard>.sapMVBox>.sapMFlexItem.sapMVBox {
+    padding: 0;
+}
+
+.sapMriPaFilterCardWithSuccessor .sapMriPaTimeConstraintLayout {
+    background-color: @sapUiMediumBG;
+}
+
+.sapMriPaFilterCard.sapMriPaFilterCardWithPredecessor {
+    border-top: none;
+    margin-top: 0;
+}
+
+.sapMriPaFilterCard.sapMriPaFilterCardWithSuccessor {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.sapMriPaFilterCardHelpButton {
+    color: @sapMriBrand !important;
+    margin-left: 10px;
+}
+
+
+/* Disabled filter cards */
+
+.sapMriPaFilterCardDisabled {
+    background-color: @sapUiExtraLightBG !important;
+}
+
+.sapMriPaView .sapMriPaFilterCardDisabled .sapUiLbl {
+    color: #999999;
+}
+
+
+/* BookMark... */
+
+.sapMriPaFreetextTagListBox.sapUiLbxDis,
+.sapMriPaFreetextTagListBox.sapUiLbxStd>ul>.sapUiLbxIDis,
+.sapMriPaFreetextTagListBox.sapUiLbxDis>ul>.sapUiLbxI:hover,
+.sapMriPaFreetextTagListBox.sapUiLbxDis>ul>.sapUiLbxI:focus {
+    color: #0076CB;
+}
+
+.sapMriPaTokenValid,
+.sapMriPaTokenValid:hover {
+    background-color: @sapMriTokenValidBG;
+    border-color: @sapMriTokenValidBorder;
+    color: @sapMriLightestText;
+}
+
+.sapMriPaTokenInvalid,
+.sapMriPaTokenInvalid:hover {
+    background-color: @sapMriTokenInvalidBG;
+    border-color: @sapMriDarkerBorder;
+    color: @sapMriLightestText;
+}
+
+
+/* Unify the sapUi5 multi input controls and the MRI custom tag inputs */
+
+.sapMriPaFilterCard .sapMInputBase {
+    height: auto;
+    padding: 0;
+}
+
+.sapMriPaFilterCard .sapUiSizeCompact .sapMMultiInputInputContainer>input {
+    height: 24px;
+}
+
+.sapMriPaFilterCard .sapUiTfBrd.sapUiTfCombo {
+    min-height: 24px;
+    padding-left: 0.25rem;
+}
+
+.sapMriPaFilterCard .sapUiSizeCompact .sapMTokenizer .sapMToken {
+    font-size: 12px;
+    font-weight: bold;
+    height: 20px;
+    line-height: 12px;
+    padding-bottom: 0;
+}
+
+.sapMriPaFilterCard .sapMToken .sapUiIcon {
+    min-width: 0;
+}
+
+.sapMriPaFilterCard .sapMTokenIcon.sapUiIcon:before {
+    content: '\00E03E';
+    /* the "x" icon instead of the "x inside O" icon */
+    font-size: 8px;
+}
+
+.sapMriPaFilterCard .sapUiTfComboIcon {
+    height: 24px;
+}
+
+.sapMriPaFilterCard .sapMInputBaseInner {
+    font-size: 12px;
+}
+
+.sapUiSizeCompact .sapMriPaConstraint .sapMInputValHelp {
+    top: 0rem;
+}
+
+.sapMriPaFilterCardNew:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-top: 15px solid @sapUiBrand;
+    border-right: 15px solid @sapUiLightestBG;
+    width: 0;
+    margin: 4px 0;
+}
+
+.sapMriPaFilterCardExclude {
+    padding-top: 10px;
+    border-left: 8px solid @sapUiBrand;
+    margin: 4px 0;
+}
+
+.sapMriPaFilterCardExcludeText {
+    position: absolute;
+    top: 8px;
+    left: 17.5px;
+    margin: 4px 0;
+    color: @sapUiBrand !important; 
+    font-weight: bold !important;
+    font-size: 11px !important;
+}

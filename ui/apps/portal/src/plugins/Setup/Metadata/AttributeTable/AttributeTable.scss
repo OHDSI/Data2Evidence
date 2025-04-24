@@ -1,0 +1,21 @@
+.metadata-attribute-table {
+  &__header {
+    display: flex;
+
+    .alp-title {
+      margin: 0;
+      flex: 1;
+    }
+  }
+
+  &__add-button {
+    float: right;
+    padding-bottom: 16px;
+  }
+
+  &__table {
+    .MuiTable-root {
+      border: 1px solid #dad7d7;
+    }
+  }
+}

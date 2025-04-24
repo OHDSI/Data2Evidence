@@ -1,0 +1,97 @@
+@import './mri-variables';
+.filtercard-summary {
+  margin-left: 5px;
+  box-shadow: -2px -0px 5px 0px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  width: 20%;
+  height: 100%;
+  right: 0px;
+  position: relative;
+  .header {
+    height: 40px;
+    background-color: $MriChartButtonHover;
+    color: $UiDarkText;
+    font-weight: bold;
+
+    .summary-title {
+      padding: 10px;
+    }
+    .btn {
+      padding-right: 15px;
+      color: $UiDarkText;
+      background-color: transparent;
+    }
+  }
+
+  .download-sql {
+    height: 4rem;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .download-cohort-definition {
+    height: 4rem;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+
+  .bookmark-content {
+    font-size: 12px;
+    padding: 10px;
+    ul.bookmark-list {
+      li {
+        width: 100%;
+      }
+    }
+    .summary-desc {
+      margin-bottom: 5px;
+      color: $UiDarkText;
+    }
+    .bookmark-filter-container {
+      border-radius: 2px;
+      border: 1px solid $UiExtraLightBorder;
+      padding: 7px;
+    }
+    .bookmark-headelement {
+      font-size: 13px;
+      line-height: 19px;
+      font-weight: bold;
+      color: $MriHeaderTextDark;
+    }
+    .bookmark-filtercard {
+      .bookmark-attribute {
+        display: flex;
+        flex-wrap: wrap;
+        padding-top: 4px;
+      }
+      .bookmark-element {
+        padding-right: 5px;
+        color: $UiLightText;
+      }
+      .bookmark-constraint {
+        color: $MriHeaderTextLight;
+        font-weight: normal;
+      }
+    }
+    .condition-container {
+      display: inline-block;
+      font-size: 12px;
+      line-height: 13px;
+      padding-left: 13px;
+      padding-right: 13px;
+      padding-top: 4px;
+      padding-bottom: 4px;
+      border-radius: 4px;
+      margin-top: 7px;
+      margin-bottom: 7px;
+      color: $MriLightestText;
+    }
+    .and-label {
+      background-color: $ToggleButtonDarkBG;
+    }
+    .or-label {
+      background-color: $ToggleButtonLightBG;
+      color: $UiDarkestText;
+    }
+  }
+}

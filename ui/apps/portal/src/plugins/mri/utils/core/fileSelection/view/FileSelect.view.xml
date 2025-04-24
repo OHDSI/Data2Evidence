@@ -1,0 +1,75 @@
+<mvc:View
+	height="100%"
+	controllerName="hc.hph.core.ui.fileSelection.view.FileSelect"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:u="sap.ui.unified"
+	xmlns:l="sap.ui.layout"
+	xmlns:core="sap.ui.core"
+	xmlns="sap.m">
+	<Page showHeader="true">
+		<content>
+        	<Page id="FileSelectorContent" showHeader="false" busyIndicatorDelay="200">
+        		<content>
+        			<Toolbar class = "sapHcHphUi-TransparentToolbar">
+        				<SearchField id ="searchF" liveChange="handleFilter" width="75%" search="handleFilter" value="{filter>/query}" />
+        				<ToggleButton id="filter" icon= "sap-icon://add-filter"
+        				pressed= "{path:'filter>/',formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.setFilter'}"
+        				press="handleOpenFilterDialog" tooltip= "{i18n>FILTER}"/>
+        				<Button id = "clearAll" icon= "sap-icon://sys-cancel-2"
+        				press="handleClearFilter" tooltip= "{i18n>CLEAR_ALL_FILTERS}"/>
+        			</Toolbar>
+        			<Table
+        			    class = "sapHcHphUi-Table"
+        			    includeItemInSelection="true" 
+        				selectionChange="handleSelectionChange"
+        				mode="SingleSelectMaster"
+        				growingScrollToLoad="true"
+        				growing="true"
+        				inset="false"
+        				items="{fileModel>/Hierarchy/Folders}"
+        				id="filesTable">
+        				<headerToolbar>
+        				<Toolbar 
+        						id="idCrumbToolbar">
+        						<content>
+        						<ToolbarSpacer/>
+        					<Button id = "preview" class = "sapHcHphUi-TaggedBtn"
+        				icon= "sap-icon://inspection"
+        				tooltip= "{i18n>SELECTED_FILES}"
+        			text= "{initialModel>/Hierarchy/SelectedCount}"
+        						press="onApproveDialog"/>
+        				</content>
+        				</Toolbar>
+        				</headerToolbar>
+        				<columns>
+        					<Column id = "files" width="1rem"> 
+        					<CheckBox id="selectAll" selected="false" visible="true" enabled="true" select="handleSelectAll" tooltip= "{i18n>SELECT_ALL}" class = "sapHcHphUi-SelectAll" />
+        				        </Column>
+        					<Column>
+        						<Text text="{i18n>FILE_NAME}" />
+        					</Column >
+        					<Column>
+        						<Text text="{i18n>NUMBER_OF_FILES}" />
+        					</Column>
+        					<Column hAlign="Right">
+        						<Text text="{i18n>FILES_SIZE}" />
+        					</Column>
+        					<Column hAlign="Left" >
+        						<Text text = "{i18n>LAST_UPDATED}"/>
+        					</Column>
+        					<Column>
+        						<Text text="{i18n>FILES_STATUS}" />
+        					</Column>
+        					<Column hAlign="Left">
+        						<Text text = "{i18n>LAST_IMPORTED}"/>
+        					</Column>
+        				</columns>
+        				<items>
+        					<ColumnListItem/>
+        				</items>
+        			</Table>
+        		</content>
+        	</Page>
+		</content>
+	</Page>
+</mvc:View>

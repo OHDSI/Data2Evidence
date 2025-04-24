@@ -1,9 +1,14 @@
-import { ConflictException, Injectable, NotFoundException, SCOPE } from '@danet/core'
+import { ConflictException, Injectable, NotFoundException, BadRequestException, SCOPE } from '@danet/core'
 import { RequestContextService } from '../common/request-context.service.ts'
 import { CreateArtifactDto, UpdateArtifactDto } from './dto/index.ts'
 import { UserArtifact } from './entity/user-artifact.entity.ts'
 import { ServiceName } from './enums/index.ts'
 import { UserArtifactRepository } from './repository/user-artifact.repository.ts'
+
+export const ArtifactSequenceMapping = {
+  [ServiceName.CONCEPT_SETS]: "concept_set_id_seq",
+  [ServiceName.ATLAS_COHORT_DEFINITIONS]: "atlas_cohort_definition_id_seq"
+}
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class UserArtifactService {
@@ -27,7 +32,8 @@ export class UserArtifactService {
     [ServiceName.PA_CONFIG]: [],
     [ServiceName.CDW_CONFIG]: [],
     [ServiceName.BOOKMARKS]: [],
-    [ServiceName.CONCEPT_SETS]: []
+    [ServiceName.CONCEPT_SETS]: [],
+    [ServiceName.ATLAS_COHORT_DEFINITIONS]: []
   }
 
   private readonly sharedConditionMap = {
@@ -45,7 +51,7 @@ export class UserArtifactService {
 
   async getUserServiceArtifactById(userId: string, serviceName: ServiceName, id: string): Promise<any> {
     const artifact = await this.userArtifactRepository.findOne(userId)
-    const result = artifact?.artifacts[serviceName]?.find(art => art.id === id)
+    const result = artifact?.artifacts[serviceName]?.find(art => art.id === this.parseUserArtifactId(id))
     if (!result) {
       throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`)
     }
@@ -53,10 +59,13 @@ export class UserArtifactService {
   }
 
   async getServiceArtifactById(serviceName: string, id: string): Promise<UserArtifact[]> {
-    const userArtifacts = await this.userArtifactRepository.findByServiceArtifactId(serviceName, id);
+    const parsedId = this.parseUserArtifactId(id);
+
+    const userArtifacts = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId);
+
 
     for (const artifact of userArtifacts) {
-      const matchedEntity = artifact.artifacts[serviceName].find(item => item.id === id);
+      const matchedEntity = artifact.artifacts[serviceName].find(item => item.id === parsedId);
       if (matchedEntity) {
         return [matchedEntity];
       }
@@ -112,7 +121,7 @@ export class UserArtifactService {
     const artifact = await this.userArtifactRepository.findOne(this.userId)
 
     if (artifact?.artifacts[serviceName]) {
-      const index = artifact.artifacts[serviceName].findIndex(item => item.id === id)
+      const index = artifact.artifacts[serviceName].findIndex(item => item.id === this.parseUserArtifactId(id))
       if (index === -1) {
         throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`)
       }
@@ -180,7 +189,7 @@ export class UserArtifactService {
 
     if (artifact?.artifacts[serviceName]) {
       artifact.artifacts[serviceName] = artifact.artifacts[serviceName]
-        .filter(item => item.id !== id)
+        .filter(item => item.id !== this.parseUserArtifactId(id))
       await this.userArtifactRepository.update(artifact)
     } else {
       throw new NotFoundException(`Artifact with id ${id} for user ${userId} not found in ${serviceName}`)
@@ -198,7 +207,7 @@ export class UserArtifactService {
       const artifacts = userArtifact.artifacts[serviceName];
 
       if (artifacts) {
-        const artifactIndex = artifacts.findIndex(artifact => artifact.id === entityId);
+        const artifactIndex = artifacts.findIndex(artifact => artifact.id === this.parseUserArtifactId(entityId));
 
         if (artifactIndex !== -1) {
           artifacts.splice(artifactIndex, 1);
@@ -210,6 +219,19 @@ export class UserArtifactService {
     }
 
     throw new NotFoundException('Service artifact not found');
+  }
+
+  async getServiceArtifactSequenceNextval(
+    serviceName: ServiceName
+  ): Promise<number> {
+
+    if (!Object.keys(ArtifactSequenceMapping).includes(serviceName)) {
+      throw new BadRequestException(
+        `Service name:${serviceName} does not have a sequence`
+      );
+    }
+
+    return this.userArtifactRepository.getUserArtifactSequenceNextval(serviceName);
   }
 
   private async getAllSharedServiceArtifacts(serviceName: ServiceName, userId: string): Promise<any[]> {
@@ -241,5 +263,11 @@ export class UserArtifactService {
       ...object,
       modifiedBy: this.userId
     }
+  }
+
+  private parseUserArtifactId(id: string): number | string {
+    // Try to parse id as number.
+    // This is required because concept_sets and atlas_cohort_definitions ids are stored as int, but other artifact ids are stored as UUID.
+    return Number.isNaN(Number(id)) ? id : Number(id);
   }
 }

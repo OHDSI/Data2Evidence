@@ -1,0 +1,371 @@
+@import '../styles/mri-variables';
+.ui-lightest-bg {
+  background: $UiLightestBG;
+}
+.ui-light-text {
+  color: $UiLightText;
+}
+.ui-darkest-text {
+  color: $UiDarkestText;
+}
+.ui-dark-text {
+  color: $UiDarkText;
+}
+
+// TODO: remove filtercard-summary below, as the style guide is under progress
+.bookmark-container,
+.filtercard-summary {
+  width: 100%;
+  height: calc(100% - 20px);
+  position: static !important;
+  background-color: #f2f0f1;
+  display: flex;
+  flex-direction: column;
+  input.mri-bookmark-id {
+    width: 1px;
+    height: 0px;
+    border: none;
+    outline-color: $UiLightestBG;
+  }
+  input.mri-bookmark-id::selection {
+    background: $UiLightestBG;
+  }
+  input.mri-bookmark-id::-moz-selection {
+    background: $UiLightestBG;
+  }
+  .bookmark-button {
+    font-size: 18px;
+    width: 100%;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: $MriDisabledText;
+    cursor: pointer;
+  }
+  .bookmark-button:hover {
+    border-color: $MriButtonHoverDark;
+    color: $MriButtonHoverDark;
+  }
+  .button-radius {
+    border-radius: 6px;
+  }
+  .bookmark-extension-container {
+    display: flex;
+    justify-content: flex-start;
+    div:last-of-type {
+      margin-left: auto;
+    }
+  }
+  table.extension-pcount-table {
+    margin-bottom: 10px;
+    width: 100%;
+    border-collapse: collapse;
+    tr {
+      height: 32px;
+    }
+    thead {
+      height: 32px;
+      th {
+        padding: 5px;
+        box-sizing: border-box;
+        border: 1px solid $UiDarkBorder;
+        background-color: $UiMediumBG;
+        text-align: center;
+      }
+    }
+    td {
+      padding: 5px;
+      box-sizing: border-box;
+      border-right: 1px solid $UiDarkBorder;
+      border-left: 1px solid $UiDarkBorder;
+      border-bottom: 1px solid $UiDarkBorder;
+    }
+  }
+  .moreInfoText {
+    color: $MriInfoColor;
+    margin-bottom: 0;
+  }
+  .div-bookmark-dialog {
+    padding: 1.5rem;
+    .bookmark-ext-cont {
+      width: 700px;
+      height: 100%;
+      padding-bottom: 1rem;
+    }
+    .bookmark-ext-url {
+      display: block;
+    }
+    .bookmark-ext-button {
+      font-size: 0.875rem;
+      width: auto;
+      background: none;
+      border: 1px solid $MriDropDownBorderLight;
+      border-radius: 3px;
+      color: #00679e;
+      cursor: pointer;
+      text-align: left;
+      height: 1.7rem;
+      padding: 0px;
+      .buttonIcon {
+        font-family: app-icons;
+        padding: 0.5rem;
+        font-size: smaller;
+      }
+      .buttonInner:hover {
+        background-color: rgba(234, 234, 234, 0.1);
+      }
+      .buttonInner:active {
+        background-color: #00679e;
+        color: $MriLightestText;
+      }
+    }
+    .input-container {
+      width: 100%;
+      padding: 0.1875rem 0;
+      height: 30%;
+      .mri-bookmark-id {
+        width: 84%;
+        height: 1.625rem;
+        padding: 0 0.5rem;
+        color: $UiDarkestText;
+        background: $UiLightestBG;
+        border: 1px solid $MriDropDownBorderLight;
+        font-size: 0.875rem;
+        line-height: normal;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+        box-sizing: border-box;
+      }
+    }
+  }
+  .bookmark-title {
+    display: flex;
+    align-items: center;
+    background-color: $UiLightBG;
+    border-bottom: 2px solid $UiMediumBorder;
+    height: 33px;
+    .actionButton {
+      color: $UiLightText;
+      outline: none;
+      background: none;
+      border: none;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .actionButton:hover {
+      background-color: $MriBrandHover;
+      color: $MriLightestText;
+    }
+    .actionButton .icon {
+      font-size: 16px;
+      margin-top: 1px;
+      font-weight: normal;
+      line-height: 18px;
+      height: 18px;
+      cursor: pointer;
+      text-align: center;
+      display: inline-block;
+      vertical-align: baseline;
+    }
+    .spacer {
+      flex-basis: auto;
+      flex-grow: 1;
+      flex-shrink: 1;
+    }
+    .separator {
+      background-color: $UiMediumBG;
+      border-right: 1px solid $UiLightestBorder;
+      height: 23px;
+      width: 1px;
+    }
+  }
+  .bookmark-content {
+    position: relative;
+    right: 0;
+    left: 0;
+    height: inherit;
+    overflow-x: hidden;
+    overflow-y: auto;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    &__break {
+      opacity: 0.5;
+      margin: 10px -1rem 0 -1rem;
+      border-bottom: solid 1px #acaba8;
+    }
+    &__spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+    }
+    &__list {
+      flex: 1;
+    }
+    .bookmark-noContent {
+      color: $UiDarkText;
+      font-size: 14px;
+      font-weight: normal;
+      margin: 10px;
+      padding: 30px;
+      white-space: normal;
+    }
+    .bookmark-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      .bookmark-list-header {
+        padding: 1em;
+      }
+      .bookmark-list-content {
+        display: grid;
+        grid-template-rows: 0fr;
+        grid-auto-rows: 0fr;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 1em;
+        width: 100%;
+        justify-items: center;
+        padding: 1em;
+
+        .bookmark-item-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-sizing: border-box;
+          background-color: $UiLightestBG;
+          border: 1px solid $UiMediumBorder;
+          border-radius: 18px;
+          box-shadow: 0 3px 12px 0 rgba(0, 0, 0, 0.08);
+          font-size: 12px;
+          padding: 10px;
+          width: 290px;
+          height: 100%;
+          overflow-wrap: anywhere;
+          cursor: pointer;
+          .bookmark-item-table {
+            color: $UiLightText;
+            width: 100%;
+            .bookmark-item-cards {
+              width: 100%;
+              margin-bottom: 20px;
+              td.bookmark-item-cards-icon {
+                vertical-align: top;
+              }
+              td.bookmark-item-cards-items {
+                vertical-align: middle;
+              }
+            }
+            .bookmark-item-info {
+              display: flex;
+              column-gap: 32px;
+              align-items: baseline;
+              margin-bottom: 20px;
+            }
+            .bookmark-item-header {
+              position: relative;
+              color: #ff5e59;
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: space-between;
+              span.selectable {
+                user-select: all;
+                font-weight: normal;
+              }
+              &__status-icons {
+                display: flex;
+                gap: 5px;
+              }
+            }
+            .bookmark-item-content {
+              padding-left: 9px;
+              padding-right: 9px;
+            }
+            .bookmark-item-no-content {
+              display: flex;
+              justify-content: center;
+              color: #acaba8;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .bookmark-filtercard {
+              display: inline-block;
+              .bookmark-element {
+                margin: 0.125rem 0.25rem 0 0;
+                color: #585757;
+              }
+              .bookmark-headelement {
+                font-weight: bold;
+                color: $UiDarkText;
+              }
+              .bookmark-constraint {
+                border-radius: 0.125rem;
+                color: $UiLightText;
+                font-weight: normal;
+                padding: 0 2px;
+              }
+            }
+            .bookmark-item-axes {
+              label {
+                margin: 0;
+              }
+            }
+            .bookmark-row-separator {
+              padding: 3px;
+            }
+          }
+          .bookmark-item-footer {
+            bottom: 5px;
+            &__break {
+              opacity: 0.5;
+              margin: 5px -5px;
+              border-bottom: solid 1px #acaba8;
+            }
+            .bookmark-item-buttons {
+              width: 100%;
+              td {
+                vertical-align: middle;
+                .icon {
+                  font-family: app-icons;
+                  font-size: 12px;
+                  margin-top: 1px;
+                  font-weight: normal;
+                  line-height: 18px;
+                  height: 18px;
+                  cursor: pointer;
+                  text-align: center;
+                  display: inline-block;
+                }
+              }
+            }
+          }
+        }
+        .bookmark-item-container:hover {
+          border: 1px solid $MriButtonHoverDark;
+          .bookmark-item-table {
+            .bookmark-filtercard {
+              .bookmark-constraint {
+                border-color: $MriTokenValidBorder;
+                color: $UiLightText;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  .icon {
+    font-size: 16px;
+    margin-top: 1px;
+    margin-right: 5px;
+    font-weight: normal;
+    line-height: 18px;
+    height: 18px;
+    cursor: pointer;
+    text-align: center;
+    display: inline-block;
+  }
+}

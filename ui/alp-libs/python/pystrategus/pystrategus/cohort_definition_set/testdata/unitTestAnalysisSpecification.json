@@ -1,0 +1,12 @@
+{
+  "sharedResources": [],
+  "moduleSpecifications": [
+    {
+      "module": "TestModule1",
+      "version": "0.0.1",
+      "settings": [],
+      "attr_class": ["TestModule1Specifications", "ModuleSpecifications"]
+    }
+  ],
+  "attr_class": "AnalysisSpecifications"
+}

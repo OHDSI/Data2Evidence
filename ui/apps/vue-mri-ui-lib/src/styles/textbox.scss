@@ -1,0 +1,54 @@
+@import './mri-variables';
+@mixin placeholderStyle {
+  color: $UiLightText;
+  font-style: italic;
+}
+
+@mixin placeholderStyleDisabled {
+  color: $MriDisabledText;
+  font-style: italic;
+}
+
+::-webkit-input-placeholder {
+  /* Chrome/Opera/Safari */
+  @include placeholderStyle;
+}
+
+::-moz-placeholder {
+  /* Firefox 19+ */
+  @include placeholderStyle;
+}
+
+:-ms-input-placeholder {
+  /* IE 10+ */
+  @include placeholderStyle;
+}
+
+:-moz-placeholder {
+  /* Firefox 18- */
+  @include placeholderStyle;
+}
+
+:disabled::-webkit-input-placeholder {
+  /* Chrome/Opera/Safari */
+  @include placeholderStyleDisabled;
+}
+
+:disabled::-moz-placeholder {
+  /* Firefox 19+ */
+  @include placeholderStyleDisabled;
+}
+
+:disabled:-ms-input-placeholder {
+  /* IE 10+ */
+  @include placeholderStyleDisabled;
+}
+
+:disabled:-moz-placeholder {
+  /* Firefox 18- */
+  @include placeholderStyleDisabled;
+}
+
+::-ms-clear {
+  display: none;
+}

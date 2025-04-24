@@ -420,7 +420,8 @@ export type CohortDefinitionTableType = {
 };
 
 export type CohortType = CohortDefinitionTableType & {
-    patientIds: string[];
+    patientIds?: string[];
+    patientCount?: number;
 };
 
 export type StackedBarchartQueryResultType = {

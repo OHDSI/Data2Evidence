@@ -1,0 +1,40 @@
+<core:FragmentDefinition
+	xmlns:core="sap.ui.core"
+	xmlns="sap.m">
+	<ColumnListItem
+		type="{
+			path: 'Folders',
+			formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.listItemType'
+		}">
+		<cells>
+			<core:Icon src="{ parts: [ { path: 'OriginalEntry/Selected' }, { path: 'OriginalEntry/Folders' } ], formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.getCheckmark' }" />
+		</cells>
+		<cells>
+			<Text text= "{Name}"/>
+		</cells>
+		<cells>
+			<Text text= "{parts:[{path:'OriginalEntry/FilteredSelectedCount'},{path:'OriginalEntry/FilteredCount'}],formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.getCount'}" class="sapHcHphUi-FileCount" />
+		</cells>
+		<cells>
+			<Text text="{Size}"/>
+		</cells>
+		<cells>
+			<Text text="{ path: 'LastUpdated', formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.formatDate', 
+                        formatOptions: {
+					       style: 'long'
+				        } }" 
+						/>
+		</cells>
+		 
+	<cells>
+        <Text text="{path:'Status', formatter:'hc.hph.core.ui.fileSelection.util.Formatter.messageText'}"/>
+		</cells>
+		<cells>
+			<Text text="{ path: 'LastImported', formatter: 'hc.hph.core.ui.fileSelection.util.Formatter.formatDate', 
+                        formatOptions: {
+					       style: 'long'
+				        } }" 
+						/>
+		</cells>
+	</ColumnListItem>
+</core:FragmentDefinition> 

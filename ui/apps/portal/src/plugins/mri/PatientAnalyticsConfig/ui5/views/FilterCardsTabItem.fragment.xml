@@ -1,0 +1,93 @@
+<core:FragmentDefinition 
+    xmlns="sap.m" 
+    xmlns:core="sap.ui.core" 
+    xmlns:l="sap.ui.layout">
+    <l:VerticalLayout>
+        <CheckBox text="{i18n>MRI_PA_CFG_TITLE_INITIAL_FILTER_CARD}" tooltip="{i18n>MRI_PA_CFG_TITLE_INITIAL_FILTER_CARD}" selected="{analyticsModel>initial}" visible="{parts:['analyticsModel>modelName'], formatter: '.formatter.hideInitialControls'}"/>
+        <Table id="filterCardsTableId" mode="SingleSelectMaster" items="{path: 'analyticsModel>attributes',
+							sorter: {
+								path: 'analyticsModel>filtercard/order'
+								}
+							}" updateFinished=".listUpdateFinished">
+            <headerToolbar>
+                <Toolbar>
+                    <Text text="{i18n>MRI_PA_CFG_FILTER_CARDS_ATTRIBUTES_TITEL}" tooltip="{i18n>MRI_PA_CFG_FILTER_CARDS_ATTRIBUTES_TITEL}" />
+                    <Button icon="sap-icon://arrow-top" press="onMoveUp" />
+                    <Button icon="sap-icon://arrow-bottom" press="onMoveDown" />
+                </Toolbar>
+            </headerToolbar>
+            <columns>
+                <Column>
+                    <Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDER_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDER_COL}" />
+                </Column>
+                <Column>
+                    <Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_NAME_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_NAME_COL}" />
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_IN_FILTER_TOOLTIP}" />
+                        <Switch state="false" change="onAllVisiblePressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_INITIAL_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_INITIAL_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllInitialPressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_TEXT_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_TEXT_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllRefTextPressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_VALUE_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_VALUE_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllRefValuePressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_CATEGORY_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_CATEGORY_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllCategoryPressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_MEASURE_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_MEASURE_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllMeassurePressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDERED_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDERED_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllOrderedPressed"/>
+                    </VBox>
+                </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_CACHED_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_CACHED_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllCachePressed"/>
+                    </VBox>
+                </Column>
+                <Column>
+                    <Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_IN_FILTER_TOOLTIP}" />
+                </Column>
+            </columns>
+            <ColumnListItem vAlign="Middle">
+                <Text text="{analyticsModel>filtercard/order}" />
+                <Text text="{analyticsModel>modelName}" />
+                <Switch state="{analyticsModel>filtercard/visible}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_VISIBLE_IN_FILTER_TOOLTIP}" change="onVisiblePressed" />
+                <CheckBox selected="{analyticsModel>filtercard/initial}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_INITIAL_IN_FILTER_TOOLTIP}" enabled="{analyticsModel>filtercard/visible}" />
+                <CheckBox selected="{analyticsModel>useRefText}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_TEXT_IN_FILTER_TOOLTIP}" />
+                <CheckBox selected="{analyticsModel>useRefValue}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_REFERENCE_VALUE_IN_FILTER_TOOLTIP}"/>
+                <CheckBox selected="{analyticsModel>category}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_CATEGORY_IN_FILTER_TOOLTIP}" />
+                <CheckBox selected="{analyticsModel>measure}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_MEASURE_IN_FILTER_TOOLTIP}" />
+                <CheckBox selected="{analyticsModel>ordered}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDERED_IN_FILTER_TOOLTIP}" />
+                <CheckBox selected="{analyticsModel>cached}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_CACHED_IN_FILTER_TOOLTIP}" />
+                <Input class="defaultBinSizeInput" value="{analyticsModel>defaultBinSize}" type="Number" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_IN_FILTER_TOOLTIP}" />
+            </ColumnListItem>
+        </Table>
+    </l:VerticalLayout>
+</core:FragmentDefinition>

@@ -1,0 +1,31 @@
+.kaplan_meier__container {
+  display: flex;
+  flex-direction: column;
+
+  height: calc(100% - 4rem);
+  margin: 2rem;
+  padding: 24px;
+}
+
+.kaplan_meier__cohort_selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+
+  &:not(:first-child) {
+    .kaplan_meier__cohort_selector_label {
+      margin-left: 10px;
+    }
+  }
+}
+
+.kaplan_meier__cohort_selector_label {
+  text-align: right;
+  margin-right: 5px;
+}
+
+.kaplan_meier__analysis_type {
+  display: flex;
+  margin-top: 15px;
+  align-items: center;
+}

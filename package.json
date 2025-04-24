@@ -1,8 +1,14 @@
 {
-  "name": "@data2evidence/cli",
-  "version": "0.5.0",
-  "description": "D2E setup script",
+  "name": "@ohdsi/d2e",
+  "version": "0.6.0",
+  "description": "Data2Evidence Installer",
   "license": "Apache-2.0",
+  "homepage": "https://d2e.sg",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ohdsi/d2e.git"
+  },
+  "bugs": "https://github.com/ohdsi/d2e/issues",
   "bin": {
     "d2e": "scripts/cli.sh"
   },
@@ -11,27 +17,22 @@
     "env_names_dev": "local remote base-all base-local base-remote alp-dev-sg-3"
   },
   "scripts": {
-    "gen:dotenv": "scripts/gen-dotenv.sh && yarn gen:tls && yarn gen:resource-limits",
-    "gen:tls": "scripts/gen-tls.sh",
-    "gen:resource-limits": "scripts/gen-resource-limits.sh",
-    "init": "ENV_TYPE=${ENV_TYPE:-local} scripts/gen-dotenv.sh && scripts/gen-tls.sh && scripts/gen-resource-limits.sh",
-    "start": "PORT=40000 ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. bash ./scripts/cli.sh -e start",
-    "start:dev": "ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. bash ./scripts/cli.sh -e -d ./functions start",
-    "stop:dev": "ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. bash ./scripts/cli.sh -e -d ./functions stop",
-    "build:dev": "ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. bash ./scripts/cli.sh -e -d ./functions build",
-    "start:ci": "ENV_TYPE=local DOCKER_TREX_TAG_NAME=develop CADDY__CONFIG=./deploy/caddy-config D2ECLI_NODE_MODULES_PATH=. bash ./scripts/cli.sh -d ./functions start",
-    "base:minerva": "BASE_PORT=1 docker compose --file docker-compose.yml --profile demodb",
-    "remote:minerva": "PROJECT_NAME=alp ENV_TYPE=remote yarn base:minerva --env-file .env.remote --profile perseus",
-    "local:minerva": "PROJECT_NAME=alp PORT=41100 ENV_TYPE=local yarn base:minerva --file docker-compose-local.yml ${ADDITIONAL_DC_FILES} --env-file .env.local",
-    "build:minerva": "yarn local:minerva build --build-arg GIT_COMMIT_ARG=$(git rev-parse HEAD)",
-    "init:logto": "ENV_TYPE=${ENV_TYPE:-local} && yarn $ENV_TYPE:minerva up alp-minerva-postgres alp-logto --wait && sleep 10 && yarn $ENV_TYPE:minerva up alp-logto-post-init",
-    "start:minerva": "yarn local:minerva up --renew-anon-volumes --wait",
-    "stop:minerva": "yarn local:minerva stop",
-    "clean:minerva": "yarn local:minerva down --volumes --remove-orphans",
-    "config:minerva": "yarn local:minerva config",
-    "ps:minerva": "yarn local:minerva ps",
-    "ci:logs:minerva": "yarn base:minerva logs -t --until 1s",
-    "logs:minerva": "yarn base:minerva logs -f -t",
+    "gen:dotenv": "npm run init",
+    "init": "ENV_TYPE=remote npx d2e -v develop -n .env.remote init",
+    "init:minerva": "PROJECT_NAME=alp ENV_TYPE=local npx d2e -v develop -n .env.local init",
+    "start": "ENV_TYPE=remote npx d2e -v develop -e -n .env.remote -p 3000 start",
+    "start:ci": "DOCKER_TREX_TAG_NAME=develop npm run start:minerva",
+    "remote:minerva": "ENV_TYPE=remote npx d2e -v develop  -e -n .env.remote -f",
+    "local:minerva": "PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config npx d2e -v develop -e -n .env.local -f -d ./functions -p 41100",
+    "build:minerva": "npm run local:minerva -- build",
+    "start:minerva": "npm run local:minerva -- start",
+    "stop:minerva": "npm run local:minerva -- stop",
+    "clean:minerva": "npm run local:minerva -- cleanci",
+    "config:minerva": "npm run local:minerva -- config",
+    "ps:minerva": "npm run local:minerva -- ps",
+    "ci:logs:minerva": "npm run local:minerva -- logs",
+    "deploy:logs:minerva": "ENV_TYPE=remote npx d2e -v develop -e -n .env.remote logs",
+    "logs:minerva": "npm run local:minerva -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
     "build": "ts-node internal/build/buildservices.ts build",
     "tsc": "ts-node internal/build/buildservices.ts build --only-tsc",
@@ -46,5 +47,9 @@
     "@types/node": "^18",
     "ts-node": "10.9.2",
     "yarn": "1.22.10"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "zx": "^8.3.2"
   }
 }

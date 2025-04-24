@@ -1,0 +1,114 @@
+.sapHcMriPaBoxplotChart {
+    position: relative;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.sapHcMriPaBoxplotChart text {
+    cursor: default;
+}
+
+.sapHcMriPaBoxplotChartBackground {
+    fill: @sapUiLightestBG;
+}
+
+.sapHcMriPaBoxplotChartxAxis line,
+.sapHcMriPaBoxplotChartyAxis line {
+    stroke: @sapMriDarkerBorder;
+}
+
+.sapHcMriPaBoxplotChartLabelBackground {
+    fill: transparent;
+}
+
+.sapHcMriPaBoxplotChartLabel:hover .sapHcMriPaBoxplotChartLabelBackground {
+    fill: @sapUiExtraLightBG;
+}
+
+.sapHcMriPaBoxplotChartLabel:hover text {
+    display: block;
+}
+
+.sapHcMriPaBoxplotChartLabel text {
+    fill: @sapUiDarkText;
+    font-size: 12px;
+    text-anchor: middle;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.sapHcMriPaBoxplotChartLabelTextHidden {
+    display: none;
+}
+
+.sapHcMriPaBoxplotChartyAxis .domain {
+    display: none;
+}
+
+.sapHcMriPaBoxplotChartyAxis .sapHcMriPaBoxplotChartGridline {
+    stroke: @sapUiExtraLightBorder;
+}
+
+.sapHcMriPaBoxplotChartyAxis text {
+    fill: @sapUiDarkText;
+    font-size: 12px;
+}
+
+.sapHcMriPaBoxplotChartWhisker {
+    stroke: @sapUiExtraDarkBorder;
+}
+
+.sapHcMriPaBoxplotChartMedian {
+    stroke: #ffffff;
+}
+
+.sapHcMriPaBoxplotChartBox {
+    fill: #eb7300;
+}
+
+.sapHcMriPaBoxplotChartOverlay {
+    fill: transparent;
+}
+
+.sapHcMriPaBoxplotChartBoxplot:hover > .sapHcMriPaBoxplotChartBox {
+    stroke: #e35500;
+    stroke-width: 2px;
+}
+
+.sapHcMriPaBoxplotChartBoxplot:hover > .sapHcMriPaBoxplotChartWhisker {
+    stroke-width: 2px;
+}
+
+.sapHcMriPaBoxplotChartSelection .sapHcMriPaBoxplotChartBoxplot {
+    fill-opacity: 0.4;
+    stroke-opacity: 0.4;
+}
+
+.sapHcMriPaBoxplotChartSelection .sapHcMriPaBoxplotChartBoxplot:hover {
+    fill-opacity: 1;
+    stroke-opacity: 1;
+}
+
+.sapHcMriPaBoxplotChartBoxplot.sapHcMriPaBoxplotChartSelected {
+    fill-opacity: 1;
+    stroke-opacity: 1;
+}
+
+.sapHcMriPaBoxplotChartBoxplot.sapHcMriPaBoxplotChartSelected .sapHcMriPaBoxplotChartBox {
+    stroke: #e35500;
+    stroke-width: 1px;
+}
+
+.sapHcMriPaBoxplotChartTooltip {
+    background-color: @sapUiLightestBG;
+    border: solid 1px @sapUiDarkBorder;
+    border-radius: 2px;
+    display: none;
+    position: absolute;
+    white-space: normal;
+    width: 11rem;
+}

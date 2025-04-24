@@ -1,0 +1,15 @@
+{
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
+  "rules": {
+    "no-string-throw": false,
+    "jsdoc-format": false,
+    "object-literal-sort-keys": false,
+    "prefer-for-of": false,
+    "function-name": false,
+    "import-name": false,
+    "prefer-array-literal": [false],
+    "no-submodule-imports": [false],
+    "ordered-imports": false,
+    "no-bitwise": false
+  }
+}

@@ -10,12 +10,11 @@
     "rootDir": ".",
     "target": "ES2019",
     "esModuleInterop": true,
-    "types": ["jest","node"],
+    "types": ["jest", "node"],
     "noErrorTruncation": true,
     "strict": false,
-    "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
-    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true /* Enable experimental support for legacy experimental decorators. */,
+    "emitDecoratorMetadata": true
   },
-  "include": ["src", "spec", "typings"],
-  "exclude": ["envConverter"]
+  "include": ["src", "spec", "typings"]
 }

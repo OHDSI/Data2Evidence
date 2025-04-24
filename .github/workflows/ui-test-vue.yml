@@ -1,0 +1,66 @@
+name: d2e-ui/pa tests
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+jobs:
+  test-mri-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: check if vue files has changed
+      shell: bash
+      # Give an id to the step, so we can reference it later
+      id: check_vue_files_changed
+      run: |
+        # Fetch develop & get file changes from feature branch
+        git fetch origin develop
+
+        # Diff HEAD with the last commit of develop & filter for 'apps/vue-mri-ui-lib'
+        diff=$(git diff --name-only origin/develop HEAD | grep '^apps/vue-mri-ui-lib' || :)
+
+        # Check if a file under apps/vue-mri-ui-lib has changed (added, modified, deleted)
+        hasDiff=$(if [ ${#diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
+
+        # Set the output named "vue_mri_ui_lib_changed"
+        echo "vue_mri_ui_lib_changed=$hasDiff" >> $GITHUB_OUTPUT
+        echo "Files changed: $diff"
+        echo "vue-mri-ui-lib changed: $hasDiff"
+
+    - name: Setup node if vue files have changed
+      uses: actions/setup-node@v4
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      with:
+        node-version: '18.14.0'
+
+    - name: Get yarn cache directory path
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      id: yarn-cache-dir-path
+      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('./yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+
+    - name: Build Project
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      run: |
+        cd apps/vue-mri-ui-lib
+        yarn
+        yarn test:ci
+        cd -

@@ -26,6 +26,16 @@ export async function seed(knex: Knex): Promise<void> {
         Modifier: "ALICE",
         Modified: "2017-09-18 08:24:07",
       },
+      {
+        Id: "0dcbe37c-199e-4884-89f9-42f7386e4f54",
+        Name: "DEFAULT-ASSIGNMENT",
+        EntityType: "U",
+        EntityValue: "DEFAULT_CONFIG_ASSIGNMENT",
+        Creator: "ALICE",
+        Created: "2025-03-13 06:58:03",
+        Modifier: "ALICE",
+        Modified: "2025-03-17 08:24:07",
+      },
     ])    
     .onConflict(["Id"])
     .ignore();

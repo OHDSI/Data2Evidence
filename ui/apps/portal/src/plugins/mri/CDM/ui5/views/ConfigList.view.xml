@@ -1,0 +1,110 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.ConfigList"
+	xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout">
+	<List noDataText="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_NO_CONFIGS_MSG}"
+		items="{configOverviewModel>/configurations}" growing="true">
+		<CustomListItem class="sapMxConfigCardItem sapMxConfigOverviewListItem">
+			<l:VerticalLayout width="100%">
+				<Label class="sapMeConfigOverviewNameLabel"
+					text="{parts:['configOverviewModel>name', 'configOverviewModel>active',  'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_ACTIVE'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configNameFormatter'}" />
+				<l:HorizontalLayout>
+					<Label class="sapMxConfigOverviewTextItem"
+						text="{hc.hph.patient.config.i18n>HPH_PAT_CFG_CONFIG_OVERVIEW_CREATOR}" />
+					<Label class="sapMxConfigOverviewTextItem" text="{configOverviewModel>creator}" />
+				</l:HorizontalLayout>
+				<l:HorizontalLayout visible="{configOverviewModel>active}">
+					<Label class="sapMxConfigOverviewTextItem"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ACTIVE_VERSION}" />
+					<Label class="sapMxConfigOverviewTextItem" text="{configOverviewModel>activeVersion}" />
+				</l:HorizontalLayout>
+				<l:HorizontalLayout>
+					<Label class="sapMxConfigOverviewTextItem"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_MODIFIED}" />
+					<Label class="sapMxConfigOverviewTextItem"
+						text="{path: 'configOverviewModel>modified', type: 'sap.ui.model.type.DateTime', formatOptions: {source: {pattern: 'yyyy-MM-dd\'T\'HH:mm:ss.ZZZ\'Z\''}}}" />
+				</l:HorizontalLayout>
+				<l:HorizontalLayout>
+					<Button class="sapMxBtnLite sapMxBtnSuperLite"
+						enabled="{path: 'configOverviewModel>versions/0/active', formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configActivationFormatter'}"
+						icon="sap-icon://sys-enter"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ACTIVATE}"
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_ACTIVATE_CONFIG_LAST_VERSION}"
+						press="onActivateConfig" type="Transparent"/>
+					<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://delete"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE}"
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_CONFIG}"
+						press="onDeleteConfig" type="Transparent"/>
+					<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://duplicate"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE}"
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE_CONFIG_VERSION}"
+						press="onDuplicateConfiguration" type="Transparent"/>
+					<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://cause"
+						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIGURATION}"
+						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_IMPORT_CONFIGURATION_TOOLTIP}"
+						press="onImportConfiguration" type="Transparent"/>
+				</l:HorizontalLayout>
+				<Panel class="sapMxConfigVersionPanel" expandable="true"
+					expanded="{configOverviewModel>panelExpanded}" expand="onPanelExpand">
+					<headerToolbar>
+						<Toolbar class="sapMxConfigVersionPanel" active="true"
+							press="onHeaderToolbarPress">
+							<Text class="sapMxConfigCardHeader"
+								text="{parts: ['hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_SHOW_VERSIONS', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_HIDE_VERSIONS', 'configOverviewModel>panelExpanded', 'configOverviewModel>numVersions'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configVersionPanelHeaderFormatter'}" />
+						</Toolbar>
+					</headerToolbar>
+					<List showNoData="false" items="{configOverviewModel>versions}"
+						itemPress="onEditConfigVersion">
+						<CustomListItem class="sapMxConfigVersionItem"
+							type="Active">
+							<l:VerticalLayout>
+								<l:HorizontalLayout>
+									<Label class="sapMxConfigOverviewTextItem"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB}" />
+									<Label class="sapMxConfigOverviewTextItem sapMxConfigVersionNumber"
+										text="{configOverviewModel>version}" />
+								</l:HorizontalLayout>
+								<l:HorizontalLayout>
+									<Label class="sapMxConfigOverviewTextItem"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_STATUS}" />
+									<Label class="sapMxConfigOverviewTextItem"
+										text="{parts: ['configOverviewModel>active', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ACTIVE', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_INACTIVE', 'hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DRAFT'], formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configVersionStatusFormatter'}" />
+								</l:HorizontalLayout>
+								<l:HorizontalLayout>
+									<Label class="sapMxConfigOverviewTextItem"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_CREATED}" />
+									<Label class="sapMxConfigOverviewTextItem"
+										text="{path: 'configOverviewModel>versionCreated', type: 'sap.ui.model.type.DateTime', formatOptions: {source: {pattern: 'yyyy-MM-dd\'T\'HH:mm:ss.ZZZ\'Z\''}}}" />
+								</l:HorizontalLayout>
+								<l:HorizontalLayout>
+									<Button class="sapMxBtnLite sapMxBtnSuperLite sapMxBtnEditVersion"
+										icon="sap-icon://edit"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EDIT}"
+										tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EDIT_CONFIG_VERSION}"
+										press="onEditConfigVersion" type="Transparent"/>
+									<Button class="sapMxBtnLite sapMxBtnSuperLite"
+										enabled="{path: 'configOverviewModel>active', formatter: 'hc.hph.cdw.config.ui.lib.Formatter.configActivationFormatter'}"
+										icon="sap-icon://sys-enter"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ACTIVATE}"
+										tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_ACTIVATE_CONFIG_VERSION}"
+										press="onActivateConfigVersion" type="Transparent"/>
+									<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://delete"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE}"
+										tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_CONFIG_VERSION}"
+										press="onDeleteConfigVersion" type="Transparent"/>
+									<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://duplicate"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE}"
+										tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE_CONFIG_VERSION}"
+										press="onDuplicateConfigVersion" type="Transparent"/>
+									<Button class="sapMxBtnLite sapMxBtnSuperLite" icon="sap-icon://download"
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EXPORT}"
+										tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_EXPORT_CONFIG_VERSION}"
+										press="onExportConfigVersion" type="Transparent"/>
+								</l:HorizontalLayout>
+							</l:VerticalLayout>
+						</CustomListItem>
+					</List>
+				</Panel>
+			</l:VerticalLayout>
+		</CustomListItem>
+	</List>
+</mvc:View>

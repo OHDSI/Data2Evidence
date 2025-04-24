@@ -352,6 +352,8 @@ async function main() {
     "*********************************** SIGN-IN EXPERIENCES **********************************************"
   );
   let signinExperience = {
+    tenantId: "default",
+    id: "default",
     branding: {
       favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/favicon.ico`,
       logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/d2e.svg`,
@@ -361,7 +363,8 @@ async function main() {
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: 'a[aria-label="Powered By Logto"] { display: none; }',
+    customCss: `a[aria-label="Powered By Logto"] { display: none; }
+img[alt="app logo"] { height: 80px; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
   };
   await update("sign-in-exp", headers, signinExperience);
@@ -382,6 +385,68 @@ async function main() {
     console.log(
       "*********************************************************************************\n"
     );
+  }
+
+  if (process.env.LOGTO__CONNECTOR_CONFIG){
+    console.log(
+      "*********************************** SOCIAL CONNECTOR **********************************************"
+    );
+    const connectorEnvConfig = JSON.parse(process.env.LOGTO__CONNECTOR_CONFIG);
+
+    //Verify if existing connector exist
+    const connectorDBConfig: any = await fetchExisting(`connectors/${connectorEnvConfig.id}`, headers)
+    // console.log(`connectorDBConfig ${Object.keys(connectorDBConfig).length}`)
+    if(connectorDBConfig && Object.keys(connectorDBConfig).length > 0) {
+      //update
+      const connectorCallbackId = connectorEnvConfig.id
+      delete connectorEnvConfig.id
+      delete connectorEnvConfig.connectorId
+      await logto.patch(`connectors/${connectorCallbackId}`, headers, connectorEnvConfig)
+      console.log("Social connector updated..")
+    } else {
+      // create
+      await logto.post("connectors", headers, connectorEnvConfig)
+      console.log("Social connector created..")
+    }
+    // Update Sign-in Experiences
+    console.log(
+      "*********************************** SIGN-IN EXPERIENCES **********************************************"
+    );
+    const signinExperienceSocialConnector: {
+      branding: Object;
+      color: Object;
+      customCss: string;
+      tenantId: string;
+      id: string;
+      signInMode: string;
+      signUp: Object;
+      signIn: Object;
+      socialSignInConnectorTargets: string[];
+    } = {
+      ...signinExperience,
+      signUp : { verify: false, password: true, identifiers: ["username"] },
+      signIn: { methods: [{
+                      "password": true, "identifier": "username",
+                      "verificationCode": false, "isPasswordPrimary": true
+                    }]
+               },
+      socialSignInConnectorTargets: ["azuread-alp"]
+    };
+
+    if (process.env.LOGTO__DISABLE_BASIC_AUTH === "true") {
+      signinExperienceSocialConnector["signIn"] = { methods: [] }
+      signinExperienceSocialConnector["signUp"] = { verify: false, password: false, identifiers: [] }
+    } 
+
+    await update("sign-in-exp", headers, signinExperienceSocialConnector);
+    // console.log(`signinExperienceSocialConnector ${JSON.stringify(signinExperienceSocialConnector)}`)
+    console.log(
+      "*********************************************************************************\n"
+    );
+    console.log(
+      "*********************************************************************************\n"
+    );
+
   }
 
   console.log(
@@ -510,6 +575,7 @@ async function seeding_alp_admin() {
 
   const client = await getDBClient();
 
+  const pg_schema = process.env.PG__SCHEMA
   let LOGTO__ADMIN_ROLE__ID = "jrmtgmb34iznwqdu5dhl1";
   let LOGTO__ADMIN_APP__ID = alpAdminApp.id;
   let LOGTO__ADMIN_APP_ROLE__ID = "34vzakbak1tp830d0s30o";
@@ -524,9 +590,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
+    `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) \
     VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) \
-    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata",
+    DO UPDATE SET secret = EXCLUDED.secret, oidc_client_metadata = EXCLUDED.oidc_client_metadata, custom_client_metadata = EXCLUDED.custom_client_metadata`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP__ID,
@@ -544,9 +610,9 @@ async function seeding_alp_admin() {
   console.log(`Inserting ${alpAdminRole.name} role to roles table`);
   await queryPostgres(
     client,
-    "INSERT INTO roles(tenant_id, id, name, description, type) \
-    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles(tenant_id, id, name, description, type) 
+    VALUES ($1, $2, $3, $4, $5) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE__ID,
@@ -564,9 +630,9 @@ async function seeding_alp_admin() {
   );
   await queryPostgres(
     client,
-    "INSERT INTO applications_roles(tenant_id, id, application_id, role_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.applications_roles(tenant_id, id, application_id, role_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_APP_ROLE__ID,
@@ -581,9 +647,9 @@ async function seeding_alp_admin() {
   console.log(`Adding scope "management-api-all" to role ${alpAdminRole.name}`);
   await queryPostgres(
     client,
-    "INSERT INTO roles_scopes(tenant_id, id, role_id, scope_id) \
-    VALUES ($1, $2, $3, $4) ON CONFLICT(id) \
-    DO NOTHING;",
+    `INSERT INTO ${pg_schema}.roles_scopes(tenant_id, id, role_id, scope_id) 
+    VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+    DO NOTHING;`,
     [
       LOGTO__TENANT_ID,
       LOGTO__ADMIN_ROLE_SCOPE__ID,
@@ -600,6 +666,7 @@ async function seeding_apps() {
     "****************************SEEDING LOGTO APPS*****************************************************\n"
   );
   const client = await getDBClient();
+  const pg_schema = process.env.PG__SCHEMA
   let envApps: Array<{
     name: string;
     id: string;
@@ -613,7 +680,7 @@ async function seeding_apps() {
     console.log(`Seeding app ${envapp.name} | id ${envapp.id}`);
     await queryPostgres(
       client,
-      `INSERT INTO applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
+      `INSERT INTO ${pg_schema}.applications(tenant_id, id, name, secret, description, type, oidc_client_metadata) 
       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) 
       DO UPDATE SET secret = EXCLUDED.secret`,
       [

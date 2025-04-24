@@ -1,0 +1,23 @@
+.delete-cohort-dialog {
+  .delete-cohort-dialog__content {
+    min-height: 100px;
+    margin: 40px 25px 0;
+    text-align: center;
+    color: var(--color-primary);
+  }
+
+  .MuiIconButton-root:hover {
+    background-color: transparent;
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import pg from "pg";
-import { DataSource, DataSourceOptions, LogLevel } from "npm:typeorm";
+import { DataSource, DataSourceOptions, LogLevel } from "typeorm";
 
 import { env } from "../env.ts";
 import { Canvas } from "../entities/canvas.ts";

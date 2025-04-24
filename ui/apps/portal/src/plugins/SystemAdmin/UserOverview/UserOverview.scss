@@ -1,0 +1,109 @@
+
+.users__container {
+  margin: 24px 41px;
+}
+
+.users__list {
+  .MuiTable-root{
+    border: 1px solid #dad7d7;
+  }
+
+  //table header
+  .MuiTableHead-root{
+    .MuiTableCell-root{
+      width:50px;
+      height: 41px;
+      line-height:1;
+      padding: 0 1% 0 23px;
+    }
+  } 
+
+  // Table Body
+  .MuiTableBody-root{
+    .MuiTableRow-root {
+      margin: 63px 1px 0 0;
+      border: 1px solid #dad7d7;
+    }
+    .MuiTableCell-root {
+      //width: 15%;
+      overflow-wrap: break-word;
+      color: #000080;
+      padding-left: 23px;
+    }
+    .MuiButton-text{
+      padding: 7px 8px;
+    }
+
+    .table-button-container{
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+  .roles {
+    .MuiChip-root {
+      margin: 2px;
+      border-radius: 16px;
+      border: solid 1px #000080;
+      background-color: #fff;
+      .MuiChip-label{
+        line-height: normal;
+        letter-spacing: normal;
+        text-align: center;
+        color: #000080;
+      }
+    }
+  }
+
+  .wrapped-text{
+    display: block;
+    width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.users__header {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 24px 0 15px;
+}
+
+.users {
+  &__actions {
+    display: flex;
+    align-items: center;
+
+    .alp-button__container {
+      padding-left: 0.5em
+    }
+    
+    .users__actions-title {
+      flex: 1;
+      font-size: 20px;
+      font-weight: 500;
+    }
+  } 
+
+  &__content {
+    margin-bottom: 24px;
+  }
+
+  .col-action {
+    button {
+      margin-right: 8px;
+    }
+  } 
+  .title {
+    font-size: 24px;
+    margin-top: 40px;
+  }
+}
+
+
+@media (max-width: 600px) {
+  .users__container {
+    max-width: none;
+  }
+}

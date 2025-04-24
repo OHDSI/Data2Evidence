@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@alp/alp-dbcli": "file:../../cache/drivers/alp-dbcli-v1.0.0.tgz",
-    "hdb": "0.19.3"
+    "hdb": "0.19.12"
   },
   "scripts": {
     "deploy": ". ./deploy.sh",

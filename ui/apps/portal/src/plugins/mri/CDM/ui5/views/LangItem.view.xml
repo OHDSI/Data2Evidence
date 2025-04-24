@@ -1,0 +1,12 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.LangItem"
+	width="100%" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:html="http://www.w3.org/1999/xhtml">
+
+<html:div width="100%" class="sapMxConfigListItem">
+	<Select class="sapMxConfigLangKey" enabled="{path:'editableModel>/editable',mode:'oneWay'}" selectedKey="{configEditorModel>lang}" id="langDD" width="28%"/>
+	<Input class="sapMxConfigLangValue" enabled="{path:'editableModel>/editable',mode:'oneWay'}" value="{configEditorModel>value}" width="60%" valueLiveUpdate="true"/>
+	<Button class="sapMxConfigLangButton" icon="sap-icon://delete" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REMOVE}" enabled="{path:'editableModel>/editable',mode:'oneWay'}"
+	 press="onRemovePressed" type="Transparent"/>
+</html:div>
+
+</mvc:View>
+

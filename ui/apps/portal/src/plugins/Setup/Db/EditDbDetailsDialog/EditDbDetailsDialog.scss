@@ -1,0 +1,30 @@
+.edit-db-dialog {
+    &__content {
+      min-height: 200px;
+      padding: 10px 25px 0px;
+      overflow: auto;
+      scrollbar-color: #C7C7C7 transparent;
+  
+      .database-code__label {
+        color:rgba(0, 0, 0, 0.6);
+      }
+      .database-code-value__label {
+        padding-top: 5px;
+        display: block
+      }
+    }
+  
+    &__footer {
+      border-top: 1px solid #dad7d7;
+      padding: 1.5em;
+  
+      &-actions {
+        justify-content: center;
+  
+        button {
+          width: 200px;
+        }
+      }
+    }
+  }
+  

@@ -1,0 +1,37 @@
+cohort_id,cohort_name,outcome_concept_id
+1001,Acute pancreatitis,199074
+1002,Alcohol abuse,433753
+1003,Allergic rhinitis,257007
+1004,Amenorrhea,443800
+1005,Bipolar disorder,436665
+1006,Candida infection of genital region,4084966
+1007,Candidiasis of mouth,29735
+1008,Cardiomegaly,314658
+1009,Carotid artery obstruction,4288310
+1010,Carpal tunnel syndrome,380094
+1011,Chronic obstructive lung disease,255573
+1012,Conduct disorder,443617
+1013,Dysplasia of cervix,192367
+1014,Gastrointestinal hemorrhage,192671
+1015,Hirsutism,134718
+1016,Hydronephrosis,433811
+1017,Hypersomnia,438134
+1018,Hypoglycemia,24609
+1019,Infectious mononucleosis,437784
+1020,Ingrowing nail,139099
+1021,Injury of hand,80004
+1022,Lipoma (clinical),440358
+1023,Lymphadenitis,316084
+1024,Metabolic syndrome X,436940
+1025,Mitral valve disorder,319843
+1026,Obsessive-compulsive disorder,440374
+1027,Ovarian failure,193739
+1028,Perforation of tympanic membrane,375292
+1029,Peripheral venous insufficiency,321596
+1030,Posttraumatic stress disorder,436676
+1031,Prostatitis,194997
+1032,Restless legs,73754
+1033,Senile hyperkeratosis,141932
+1034,Sensorineural hearing loss,374366
+1035,Sleep apnea,313459
+1036,Uterine leiomyoma,197236

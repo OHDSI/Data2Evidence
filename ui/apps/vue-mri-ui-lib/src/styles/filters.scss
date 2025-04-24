@@ -1,0 +1,50 @@
+@import './mri-variables';
+
+@mixin filter-base {
+  .filters-content {
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .nav-bool {
+    display: flex;
+    align-items: flex-end;
+    background-color: $UiLightestBG;
+    border-bottom: 1px solid $MriNavTab;
+
+    .nav-item {
+      margin: 0 8px;
+      a {
+        padding: 1rem 0;
+        color: $MriHeaderTextLight;
+        font-size: small;
+      }
+
+      .active {
+        padding-bottom: 1rem;
+        border-bottom: 2px solid $MriNavTab;
+        color: $MriHeaderTextDark;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  :focus-visible {
+    outline: $MriHeaderBG auto 1px;
+  }
+}
+
+.filters {
+  @include filter-base;
+
+  // Non-search filter styling
+  .appBasicFilterCard .card {
+    margin: 0;
+    border: none;
+  }
+}

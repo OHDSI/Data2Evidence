@@ -59,7 +59,7 @@ selective_patient_df.head(10)
 cohort_measurement_query = Query('Measurement')
 diabetes_Measurement = Interactions.Measurement("Type 1/2 Diabetes condition")
 cohort_measurement_query.add_filters([diabetes_Measurement])
-measurement_data_request = cohort_measurement_query.get_dataframe_cohort()
+measurement_data_request = await cohort_measurement_query.get_dataframe_cohort()
 measurement_df = await Result().download_dataframe(measurement_data_request, "measurement.csv", 1)
 selective_measurement_df = measurement_df[['pid','measurementdate']]
 selective_measurement_df.head(2)
@@ -68,7 +68,7 @@ selective_measurement_df.head(2)
 cohort_Device_exposure_query = Query('Device_Exposure')
 diabetes_Device_Exposure = Interactions.DeviceExposure("Type 1/2 Diabetes condition")
 cohort_Device_exposure_query.add_filters([diabetes_Device_Exposure])
-Device_Exposure_data_request = cohort_Device_exposure_query.get_dataframe_cohort()
+Device_Exposure_data_request = await cohort_Device_exposure_query.get_dataframe_cohort()
 
 
 # Get Device_Exposure Dataframe. Select (1) Patient
@@ -80,7 +80,7 @@ selective_Device_exposure_df.head(2)
 cohort_cond_occ_query = Query('Condition Occurrence')
 diabetes_cond_occ = Interactions.ConditionOccurrence("Type 1/2 Diabetes condition")
 cohort_cond_occ_query.add_filters([diabetes_cond_occ])
-cond_occ_data_request = cohort_cond_occ_query.get_dataframe_cohort()
+cond_occ_data_request = await cohort_cond_occ_query.get_dataframe_cohort()
 
 
 # Get Device_Exposure Dataframe. Select (1) Patient
@@ -92,7 +92,7 @@ selective_cond_occ_df.head(2)
 cohort_visit_occ_query = Query('Visit Occurrence')
 diabetes_visit_occ = Interactions.Visit("Type 1/2 Diabetes condition")
 cohort_visit_occ_query.add_filters([diabetes_visit_occ])
-visit_occ_data_request = cohort_visit_occ_query.get_dataframe_cohort()
+visit_occ_data_request = await cohort_visit_occ_query.get_dataframe_cohort()
 
 
 # Get Visit Occurrence Dataframe. Select (1) Patient
@@ -104,7 +104,7 @@ selective_visit_occ_df.head(2)
 cohort_proc_occ_query = Query('Procedure Occurrence')
 diabetes_proc_occ = Interactions.ProcedureOccurrence("Type 1/2 Diabetes condition")
 cohort_proc_occ_query.add_filters([diabetes_proc_occ])
-proc_occ_data_request = cohort_proc_occ_query.get_dataframe_cohort()
+proc_occ_data_request = await cohort_proc_occ_query.get_dataframe_cohort()
 
 
 # Get Visit Occurrence Dataframe. Select (1) Patient
@@ -116,7 +116,7 @@ selective_proc_occ_df.head(2)
 cohort_death_query = Query('Death')
 diabetes_death_occ = Interactions.Death("Type 1/2 Diabetes condition")
 cohort_death_query.add_filters([diabetes_death_occ])
-death_request = cohort_death_query.get_dataframe_cohort()
+death_request = await cohort_death_query.get_dataframe_cohort()
 
 
 # Get Death Dataframe. Select (1) Patient
@@ -128,7 +128,7 @@ selective_death_df.head(2)
 cohort_obs_query = Query('Observation')
 diabetes_obs_occ = Interactions.Observation("Type 1/2 Diabetes condition")
 cohort_obs_query.add_filters([diabetes_obs_occ])
-obs_request = cohort_obs_query.get_dataframe_cohort()
+obs_request = await cohort_obs_query.get_dataframe_cohort()
 
 
 # Get Visit Occurrence Dataframe. Select (1) Patient
@@ -140,7 +140,7 @@ selective_obs_df.head(2)
 cohort_de_query = Query('Drug Exposure')
 diabetes_de_occ = Interactions.DrugExposure("Type 1/2 Diabetes condition")
 cohort_de_query.add_filters([diabetes_de_occ])
-de_request = cohort_de_query.get_dataframe_cohort()
+de_request = await cohort_de_query.get_dataframe_cohort()
 
 
 # Get Visit Occurrence Dataframe. Select (1) Patient

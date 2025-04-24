@@ -1,0 +1,48 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.AllTabs"
+	xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc">
+	<IconTabBar class="sapUiResponsiveContentPadding"
+		expandable="false" stretchContentHeight="true">
+		<items>
+			<IconTabFilter icon="sap-icon://hint" text="{i18n>MRI_PA_CFG_DETAILS_TITLE}"
+				tooltip="{i18n>MRI_PA_CFG_DETAILS_TITLE}" key="details">
+				<ScrollContainer height="100%" horizontal="false"
+					vertical="true">
+					<mvc:XMLView viewName="hc.mri.pa.config.ui.views.DetailsTab" />
+				</ScrollContainer>
+			</IconTabFilter>
+			<IconTabFilter icon="sap-icon://sys-monitor" text="{i18n>MRI_PA_CFG_APP_SETTINGS_TITLE}"
+				tooltip="{i18n>MRI_PA_CFG_APP_SETTINGS_TITLE}" key="appSettings">
+				<ScrollContainer height="100%" horizontal="false"
+					vertical="true">
+					<mvc:XMLView viewName="hc.mri.pa.config.ui.views.AppSettingsTab" />
+				</ScrollContainer>
+			</IconTabFilter>
+			<IconTabFilter icon="sap-icon://filter" text="{i18n>MRI_PA_CFG_FILTER_CARDS_TITLE}"
+				tooltip="{i18n>MRI_PA_CFG_FILTER_CARDS_TITLE}" key="filterCards"
+				enabled="{=!!${analyticsModel>meta/dependentConfig/configVersion}}">
+				<ScrollContainer height="100%" horizontal="false"
+					vertical="true">
+					<mvc:XMLView
+						viewName="hc.mri.pa.config.ui.views.FilterCardsTab" />
+				</ScrollContainer>
+			</IconTabFilter>
+			<IconTabFilter icon="sap-icon://vertical-bar-chart"
+				text="{i18n>MRI_PA_CFG_CHARTS_TITLE}" tooltip="{i18n>MRI_PA_CFG_CHARTS_TITLE}" key="charts"
+				enabled="{=!!${analyticsModel>meta/dependentConfig/configVersion}}">
+				<ScrollContainer height="100%" horizontal="false"
+					vertical="true">
+					<mvc:XMLView viewName="hc.mri.pa.config.ui.views.ChartsTab" />
+				</ScrollContainer>
+			</IconTabFilter>
+			<IconTabFilter icon="sap-icon://list" text="{i18n>MRI_PA_CFG_PATIENT_LIST_TITLE}"
+				tooltip="{i18n>MRI_PA_CFG_PATIENT_LIST_TITLE}" key="patientList"
+				enabled="{=!!${analyticsModel>meta/dependentConfig/configVersion}}">
+				<ScrollContainer height="100%" horizontal="false"
+					vertical="true">
+					<mvc:XMLView
+						viewName="hc.mri.pa.config.ui.views.PatientListTab" />
+				</ScrollContainer>
+			</IconTabFilter>
+		</items>
+	</IconTabBar>
+</mvc:View>

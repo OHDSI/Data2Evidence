@@ -1,0 +1,35 @@
+.dqd__container {
+  margin: 24px 41px;
+  width: auto;
+  display: grid;
+}
+
+.dqd_tab__container {
+  width: 100%;
+  margin: 16px 0px 16px 0px;
+  padding-top: 8px;
+  border-bottom: 1px #acabab solid;
+  border-top: 1px #acabab solid;
+}
+
+.selector__button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 0px;
+  margin-left: 16px;
+  z-index: 2;
+
+  .button-container {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+  }
+}
+
+.info__section {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}

@@ -47,6 +47,8 @@ const envVarUtils = new EnvVarUtils(Deno.env.toObject());
  */
 let alpPortalStudiesDbMetadataCacheTTLSeconds: number;
 let studiesDbMetadata: StudiesDbMetadata;
+let publicStudiesDbMetadata: StudiesDbMetadata;
+
 /**
  * Declare Startup Functions
  */
@@ -88,14 +90,14 @@ const initRoutes = async (app: express.Application) => {
         //         2
         //     )}`
         // );
-        const hasExpiredStudiesDbMetadataCache = (): boolean => {
-            if (!studiesDbMetadata) {
+        const hasExpiredStudiesDbMetadataCache = (studiesDb): boolean => {
+            if (!studiesDb?.studies) {
                 return true;
             }
             const timeToLiveInMilliseconds: number =
                 alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
             return (
-                studiesDbMetadata.cachedAt + timeToLiveInMilliseconds <
+                studiesDb.cachedAt + timeToLiveInMilliseconds <
                 Date.now()
             );
         };
@@ -107,23 +109,33 @@ const initRoutes = async (app: express.Application) => {
                 // Checks if its public
                 if (req.originalUrl.startsWith(publicEndpoint)) {
                     log.info("getting public studies metadata");
-                    studies = await new PortalServerAPI().getPublicStudies();
-                    studiesDbMetadata = {
-                        studies,
-                        cachedAt: Date.now(),
-                    };
+                    if (hasExpiredStudiesDbMetadataCache(publicStudiesDbMetadata)) {
+                        studies = await new PortalServerAPI().getPublicStudies();
+                        publicStudiesDbMetadata = {
+                            studies,
+                            cachedAt: Date.now(),
+                        };
+                    }
+                    req.studiesDbMetadata = publicStudiesDbMetadata;
                 } else {
-                    // Get Analytics Credential for study based on selected study
-                    studies = await new PortalServerAPI().getStudies(
-                        req.headers.authorization
-                    );
-                    studiesDbMetadata = {
-                        studies,
-                        cachedAt: Date.now(),
-                    };
+                    if (hasExpiredStudiesDbMetadataCache(studiesDbMetadata)) {
+                            // Get Analytics Credential for study based on selected study
+                            const timestamp = (new Date()).valueOf();
+                            console.time(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
+                            const portalServerAPI = new PortalServerAPI();
+                            const accessToken = await portalServerAPI.getClientCredentialsToken();
+                            studies = await portalServerAPI.getStudies(accessToken);
+                            console.timeEnd(`timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`)
+                            studiesDbMetadata = {
+                                studies,
+                                cachedAt: Date.now(),
+                            };
+                            // console.log(`studiesDbMetadata ${JSON.stringify(studiesDbMetadata)}`)
+                    }
+                    req.studiesDbMetadata = studiesDbMetadata; //Because this is cached
                 }
 
-                req.studiesDbMetadata = studiesDbMetadata;
+                
             }
 
             req.dbCredentials = {
@@ -179,9 +191,11 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
-                if (env.USE_CACHEDB === "true" && credentials.dialect != DB.HANA) {
+                if (
+                    env.USE_CACHEDB === "true" &&
+                    credentials.dialect != DB.HANA
+                ) {
                     req.dbConnections = await getCachedbDbConnections({
                         analyticsCredentials: credentials,
                         userObj: userObj,
@@ -221,20 +235,6 @@ const initRoutes = async (app: express.Application) => {
     });
 
     app.use("/check-readiness", healthCheckMiddleware);
-
-    app.use((req: IMRIRequest, res, next) => {
-        if (utils.isClientCredReq(req)) {
-            return next();
-        }
-        try {
-            const user = getUser(req);
-            //After getting DB Connection, set it to auditlog
-            AuditLogger.getAuditLogger({}).setUser(user.getUser());
-            next();
-        } catch (err) {
-            return next(err);
-        }
-    });
 
     app.use(
         "/analytics-svc/pa/services/sessionVars",
@@ -397,6 +397,7 @@ const initRoutes = async (app: express.Application) => {
                         const configId = configData.configId;
                         const configVersion = configData.configVersion;
                         const datasetId = req.body.datasetId;
+    
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
                                 {
@@ -409,7 +410,6 @@ const initRoutes = async (app: express.Application) => {
                                 },
                                 true
                             );
-
                         let userSpecificSettings =
                             new Settings().initAdvancedSettings(
                                 mriConfig.config.advancedSettings
@@ -611,7 +611,6 @@ const getDBConnections = async ({
 }> => {
     // Define defaults for both analytics & Vocab connections
     let analyticsConnectionPromise;
-
     if (env.USE_DUCKDB === "true" && analyticsCredentials.dialect !== DB.HANA) {
         // Use duckdb as analyticsConnection if USE_DUCKDB flag is set to true
         const duckdbSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.schema}`;
@@ -676,13 +675,18 @@ const getDBConnections = async ({
             delete analyticsCredentials.pfx;
         }
 
-        if (analyticsCredentials.dialect === DB.HANA && env.USE_HANA_JWT_AUTHC === "true") {
-            delete analyticsCredentials.user
-            delete analyticsCredentials.password
+        if (
+            analyticsCredentials.dialect === DB.HANA &&
+            env.USE_HANA_JWT_AUTHC === "true"
+        ) {
+            delete analyticsCredentials.user;
+            delete analyticsCredentials.password;
             if (userObj.thirdPartyToken) {
                 analyticsCredentials["token"] = userObj.thirdPartyToken;
             } else {
-                throw new Error("Intermediary IDP token doesnt exist for HANA JWT Authentication!");
+                throw new Error(
+                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                );
             }
         }
 

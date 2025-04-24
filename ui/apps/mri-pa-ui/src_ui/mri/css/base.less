@@ -1,0 +1,223 @@
+.sapMriPaView {
+    box-sizing: border-box;
+    padding-top: 0.25rem;
+}
+
+/* Add blue bar on top of sapMShellBrandingBar */
+.sapMriPaView:before {
+    border-top: 0.25rem solid @sapMriBrand;
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 3;
+}
+
+/* Re-color all Labels */
+.sapMriPaView .sapUiLbl {
+    color: @sapUiLightText;
+}
+
+// Make SplitterBar background darker to distinguish from the (also) white contentAreas
+.sapMriPaSplitter > .sapUiLoSplitterBar {
+    background-color: @sapUiExtraLightBG;
+
+    // Re-add the default hover color as it gets overriden from the previous declaration
+    &:hover {
+        background-color: @sapUiDarkBG;
+    }
+}
+
+// show splitter bar also if it is not resizable
+.sapMriPaSplitter > .sapUiLoSplitterBar.sapUiLoSplitterNoResize {
+    background-color: @sapUiExtraLightBG;
+    cursor: default;
+    visibility: visible;
+}
+
+/* MRI-PA Toolbar */
+.sapMriPaToolbar {
+    background-color: @sapUiLightBG;
+    border-bottom: 2px solid @sapUiMediumBorder;
+    height: 33px;
+}
+
+.sapMriPaToolbar .sapMriPaFakeToolbarSeparator {
+    background-color: @sapUiMediumBG;
+    border-right: 1px solid @sapUiLightestBorder;
+    height: 23px;
+    margin: 0;
+    width: 1px;
+}
+
+.sapMriPaToolbar .sapUiBtn {
+    background: none;
+    border: none;
+    margin: 0 1px;
+    min-width: 32px;
+    padding: 0 8px;
+}
+
+.sapMriPaToolbar .sapUiBtnDsbl {
+    color: @sapMriDisabledText;
+    outline: none;
+}
+
+.sapMriPaToolbar .sapUiBtnStd {
+    color: @sapUiLightText;
+    cursor: pointer;
+}
+
+.sapMriPaToolbar .sapUiToggleBtnPressed {
+    color: @sapMriBrand;
+    background: @sapMriBrandSelected;
+}
+
+.sapMriPaToolbar .sapUiBtnStd:hover {
+    background-color: @sapMriBrandHover;
+    color: @sapMriLightestText;
+}
+
+.sapMriPaToolbar .sapUiBtnStd:focus {
+    outline: 1px dotted @sapUiFocus;
+    outline-offset: -1px;
+}
+
+.sapMriPaToolbar .sapUiBtnAct {
+    color: @sapMriLightestText;
+    cursor: pointer;
+    outline: none;
+}
+
+.sapMriPaToolbar .sapUiMenuButton {
+    font-size: 14px;
+    padding-right: 15px;
+}
+
+.sapMriPaToolbar .sapUiMenuButton > .sapUiBtnTxt {
+    display: inline-block;
+    margin-top: 3px;
+    vertical-align: top;
+}
+
+
+/* MRI-PA Left Panel */
+.sapMriPaLeftPanel {
+    background-color: @sapUiLightBG;
+}
+
+.sapMriPaToolbarTitle {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+/* MRI-PA Center Panel */
+.sapUiLbl.sapMriPaPatientCount {
+    color: @sapMriBrand;
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 6px;
+}
+
+.sapUiLbl.sapMriPaPatientCount > .sapUiLblIco {
+    vertical-align: initial;
+}
+
+.sapMriPaCensorDisclaimer {
+    margin-top: 20px;
+}
+
+.sapMriPaAxisIcon {
+    margin-left: 18px;
+    width: 22px;
+}
+
+.sapMriPaAxisIconSort span.sapUiLblIco{
+  padding-top: 2px;
+  font-size:14px;
+}
+
+.sapMriPaFilterCard .sapMHBox > .sapMFlexItem:last-child {
+    overflow: hidden;
+}
+
+.sapMriPaFailToken,
+.sapMriPaFilterCard .sapMToken.sapMriPaFailToken:hover{
+    color: @sapMriLightestText;
+    background-color: @sapMriTokenInvalidBG;
+    border-color: @sapMriTokenInvalidBorder;
+    cursor: default;
+}
+
+.sapMriPaValidToken,
+.sapMriPaFilterCard .sapMToken.sapMriPaValidToken:hover{
+    color: @sapMriValidSyntaxText;
+    background-color: @sapMriTokenValidSyntaxBG;
+    border-color: @sapMriTokenValidSyntaxBorder;
+    cursor: default;
+}
+
+.sapMriPaUnknownToken,
+.sapMriPaFilterCard .sapMToken.sapMriPaUnknownToken:hover{
+    color: @sapMriLightestText;
+    background-color: @sapMriTokenPendingBG;
+    border-color: @sapMriTokenPendingBorder;
+    cursor: default;
+}
+
+.sapMriPaValidToken .sapMTokenIcon[style],
+.sapMriPaFailToken .sapMTokenIcon[style],
+.sapMriPaUnknownToken .sapMTokenIcon[style]{
+    cursor: pointer !important;
+}
+
+.sapMriPaValidToken .sapMTokenIcon[style]{
+    color: #006797;
+}
+
+.sapMriPaFailToken .sapMTokenIcon:hover,
+.sapMriPaValidToken .sapMTokenIcon:hover,
+.sapMriPaUnknownToken .sapMTokenIcon:hover{
+    opacity: 0.7;
+}
+
+.sapMriPaFailToken span.sapMTokenIcon,
+.sapMriPaValidToken span.sapMTokenIcon,
+.sapMriPaUnknownToken span.sapMTokenIcon {
+    color: @sapMriLightestText;
+    cursor: pointer;
+}
+
+.sapMriPaFailToken .sapMTokenText:after{
+    content: ' !';
+}
+
+.sapMriPaUnknownToken .sapMTokenText:after{
+    content: ' ?';
+}
+
+.checkBoxDialogMargin {
+    margin-top: -8px;
+    margin-bottom: -8px;
+}
+
+.patientCountPopover h1.sapMTitle {
+    line-height: 40px;
+}
+.patientCountPopover div.sapMPopoverCont {
+    padding: 1rem;
+    font-size:12px;
+}
+.opaqueBusyIndicator > .sapUiLocalBusyIndicator {
+    background-color: rgba(255, 255, 255, 1);
+}
+.opaqueBusyIndicator > .sapUiLocalBusyIndicator > .sapUiLocalBusyIndicatorAnimation {
+    display: none;
+}
+
+.sapTagSelected, .sapMTokenSelected {
+-webkit-box-shadow: inset 0px 0px 0px 2px #001a60;
+-moz-box-shadow: inset 0px 0px 0px 2px #001a60;
+box-shadow: inset 0px 0px 0px 2px #001a60;
+}

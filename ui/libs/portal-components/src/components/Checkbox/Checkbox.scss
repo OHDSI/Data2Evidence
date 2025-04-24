@@ -1,0 +1,28 @@
+.alp-checkbox {
+  &__container {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+
+  input[type='checkbox'].sc-d4l-checkbox {
+    &:focus+label.sc-d4l-checkbox::before {
+      box-shadow: none;
+    }
+    &+label.sc-d4l-checkbox::before {
+      margin-right: 0.68rem;
+    }
+  }
+
+   &--primary {
+    @extend .alp-checkbox;
+
+    input[type='checkbox'].sc-d4l-checkbox {
+      &:disabled+label.sc-d4l-checkbox {
+        color: var(--color-neutral-light);
+      }
+      &+label.sc-d4l-checkbox {
+        color: var(--color-primary);
+      }
+    }
+  }
+}

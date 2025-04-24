@@ -1,0 +1,23 @@
+.chart__container {
+  margin-top: 15px;
+
+  .chart__card {
+    border: 1px solid #dedcda;
+    height: 100%;
+    box-shadow: none;
+  }
+
+  .no_data_text {
+    text-align: center;
+    margin-top: 18px;
+  }
+
+  /* override base style */
+  .alp-card__header {
+    border-bottom: 0;
+  }
+  .alp-card__content {
+    padding: 16px 24px 16px 24px;
+  }
+  /* end of override base style */
+}

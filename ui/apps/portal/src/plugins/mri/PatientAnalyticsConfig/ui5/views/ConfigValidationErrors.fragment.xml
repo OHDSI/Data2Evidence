@@ -1,0 +1,48 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog
+        class="sapUiContentPadding"
+        contentWidth="600px"
+        title="{= ${errorModel>/errors/length} > 0 ? ${i18n>MRI_PA_CFG_VALIDATION_ERRORS_DIALOG_TITLE} : ${i18n>MRI_PA_CFG_VALIDATION_WARNINGS_DIALOG_TITLE}}"
+        initialFocus="configtext"
+        state="{errorModel>/state}">
+        <Text
+            text="{i18n>MRI_PA_CFG_VALIDATION_ERRORS_DIALOG_DESC}"
+            visible="{= ${errorModel>/errors/length} > 0}"/>
+        <List
+            headerText="{i18n>MRI_PA_CFG_ADMIN_ERRORS_FOUND}"
+            items="{path: 'errorModel>/errors'}"
+            class="sapMRIPAConfigErrorList"
+            visible="{= ${errorModel>/errors/length} > 0}">
+            <CustomListItem>
+                <HBox class="sapMRIPAConfigErrorMsgBox" >
+                    <Text text="{errorModel>index}" class="sapMRIPAConfigNumberedListIndex"/>
+                    <VBox>
+                        <Text text="{errorModel>location}" class="sapMRIPAConfigErrorLocation"/>
+                        <Text text="{errorModel>message}"/>
+                    </VBox>
+                </HBox>
+            </CustomListItem>
+        </List>
+        <Text
+            text="{i18n>MRI_PA_CFG_VALIDATION_WARNINGS_DIALOG_DESC}"
+            visible="{= ${errorModel>/warnings/length} > 0}"/>
+        <List
+            headerText="{i18n>MRI_PA_CFG_ADMIN_WARNINGS_FOUND}"
+            items="{path: 'errorModel>/warnings'}"
+            class="sapMRIPAConfigErrorList"
+            visible="{= ${errorModel>/warnings/length} > 0}">
+            <CustomListItem>
+                <HBox class="sapMRIPAConfigErrorMsgBox" >
+                    <Text text="{errorModel>index}" class="sapMRIPAConfigNumberedListIndex"/>
+                    <VBox>
+                        <Text text="{errorModel>location}" class="sapMRIPAConfigErrorLocation"/>
+                        <Text text="{errorModel>message}"/>
+                    </VBox>
+                </HBox>
+            </CustomListItem>
+        </List>
+        <buttons>
+            <Button text="{i18n>MRI_PA_CFG_VALIDATION_ERRORS_DIALOG_CLOSE}" press="onConfigValidationErrorDialogClose" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

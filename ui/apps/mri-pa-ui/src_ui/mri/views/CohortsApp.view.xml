@@ -1,0 +1,29 @@
+<mvc:View controllerName="sap.hc.mri.pa.ui.views.CohortsApp" 
+    xmlns="sap.m" 
+    xmlns:core="sap.ui.core" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns:ffh="sap.hc.hph.core.ui" 
+    xmlns:hph="sap.hc.hph.core.ui">
+    <Dialog id="contentDialog" 
+        contentHeight="100%" 
+        contentWidth="100%" 
+        afterClose=".onClosePressed">
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button type="Back" 
+                        press="onClosePressed" />
+                </contentLeft>
+                <contentMiddle>
+                    <Title text="{i18n>MRI_PA_VIEW_COHORT_TITLE}" />
+                </contentMiddle>
+            </Bar>
+        </customHeader>
+        <core:ComponentContainer id="contentContainer"/>
+        <buttons>
+            <Button text="{i18n>MRI_PA_CLOSE_BUTTON}" 
+                press="onClosePressed">
+            </Button>
+        </buttons>
+    </Dialog>
+</mvc:View>

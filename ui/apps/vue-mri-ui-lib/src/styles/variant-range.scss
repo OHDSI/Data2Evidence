@@ -1,0 +1,49 @@
+@import './mri-variables';
+@import './mri-bootstrap-variables';
+
+div.app-variant-range.form-control.form-control-sm {
+  padding: 0px;
+  .input-wrapper {
+    margin: 0.1rem 0.35rem;
+  }
+}
+
+div.app-variant-range.form-control.form-control-sm:focus {
+  border-color: $UiFocus;
+  box-shadow: none;
+}
+
+.MPopoverScroll {
+  background-color: $UiLightestBG;
+  border: 1px solid $UiMediumBorder;
+  overflow: auto;
+  max-height: 400px;
+  display: block;
+  z-index: 5;
+  .MListUl {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    position: relative;
+    .MLIB {
+      display: block;
+      padding: 12px;
+      min-height: 40px;
+      line-height: 16px;
+      text-decoration: none;
+      text-transform: none;
+      position: relative;
+      cursor: pointer;
+      white-space: nowrap;
+      border: none;
+      font-family: $font-family-base;
+      font-size: 12.25px;
+    }
+    .MLIB:hover {
+      background-color: $UiHighlight;
+    }
+    .MLIBCursor {
+      cursor: pointer;
+    }
+  }
+}

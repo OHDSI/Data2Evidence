@@ -1,0 +1,31 @@
+<mvc:View controllerName="hc.mri.pa.config.ui.views.MainEditor" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:core="sap.ui.core" displayBlock="true" class="sapUiSizeCompact">
+    <App>
+        <Page title="{i18n>MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG}" navButtonPress="handleNavButtonPress">
+            <SplitContainer class="sapMriPaConfigApp" mode="StretchCompressMode">
+                <masterPages>
+                    <Page showHeader="false">
+                        <subHeader>
+                            <Toolbar>
+                                <Label text="{i18n>MRI_PA_CFG_DATA_MODEL_CONFIG_TEXT}" />
+                                <ToolbarSpacer />
+                                <ComboBox id="dataModelConfigurationsCombo" selectionChange="onDataModelChanged" width="200px" items="{analyticsModel>/dmConfigList}">
+                                    <core:Item key="{analyticsModel>configId}" text="{analyticsModel>configName}" />
+                                </ComboBox>
+                            </Toolbar>
+                        </subHeader>
+                        <Toolbar>
+                            <Button id="addConfigurationButton" icon="sap-icon://add" text="{i18n>MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION}" tooltip="{i18n>MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION_TOOLTIP}" width="50%" press="onAddConfiguration" />
+                            <Button id="importConfigurationButton" icon="sap-icon://cause" text="{i18n>MRI_PA_CFG_BUTTON_IMPORT_CONFIGURATION}" tooltip="{i18n>MRI_PA_CFG_IMPORT_CONFIGURATION_TOOLTIP}" width="50%" press="onImportConfiguration" />
+                        </Toolbar>
+                        <mvc:XMLView id="anConfigList" viewName="hc.mri.pa.config.ui.views.ConfigList" />
+                    </Page>
+                </masterPages>
+                <detailPages>
+                    <Page id="anConfigAll" visible="false" showHeader="false">
+                        <mvc:XMLView viewName="hc.mri.pa.config.ui.views.AllTabs" />
+                    </Page>
+                </detailPages>
+            </SplitContainer>
+        </Page>
+    </App>
+</mvc:View>

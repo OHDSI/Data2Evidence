@@ -1,0 +1,125 @@
+@import './mri-variables';
+div.patientlist-control {
+  $cellpadding: 17px;
+
+  .divColResizeGripper {
+    position: absolute;
+    outline: 1px solid $TableColGripHover;
+    top: 0px;
+    width: 1px;
+    height: 100%;
+  }
+
+  table {
+    table-layout: fixed;
+    display: inline;
+    box-sizing: border-box;
+    border-collapse: collapse;
+
+    .leftborder {
+      border-left: 1px solid $TableRowBorder;
+    }
+    .rightborder {
+      border-right: 1px solid $TableRowBorder;
+    }
+
+    div.cellContainer:nth-child(even) {
+      border-top: 1px solid $TableRowBorder;
+    }
+    div.cellContainer {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      div.textContent {
+        width: auto;
+        flex: 2 2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    thead {
+      font-size: 12px;
+      color: $UiDarkText;
+      .app-icon {
+        font-size: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      tr {
+        th {
+          background-color: $TableHeaderRowBG;
+          height: 32px;
+          border-top: 1px solid $TableRowBorder;
+          border-bottom: 1px solid $TableRowBorder;
+          border-right: 1px solid $TableRowBorder;
+          box-sizing: border-box;
+          font-weight: normal;
+
+          &:hover .headerAttributeCloseIcon {
+            display: inline;
+          }
+
+          .headerAttributeCloseIcon {
+            position: absolute;
+            display: none;
+            margin-left: 5px;
+          }
+
+          div.headerContainer {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+          }
+          div.headerTextContent {
+            margin-left: $cellpadding;
+            margin-right: $cellpadding;
+            text-align: center;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 0px;
+          }
+          div.headerAttributeTextContent {
+            margin-left: 17px;
+            margin-right: 17px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 0px;
+          }
+          div.headerGrip {
+            height: 100%;
+            width: 10px;
+            margin-right: -5px;
+            left: 100%;
+            top: 0px;
+            cursor: w-resize;
+            z-index: 10;
+            box-sizing: border-box;
+          }
+        }
+      }
+    }
+    tbody {
+      font-size: 12px;
+      color: $TableBodyColor;
+      tr {
+        background-color: $UiLightestBG;
+      }
+      tr:nth-child(odd) {
+        background-color: $TableRowBG;
+      }
+      td {
+        box-sizing: border-box;
+        div.row-item {
+          padding-left: $cellpadding;
+          padding-right: $cellpadding;
+        }
+        border-bottom: 1px solid $TableRowBorder;
+      }
+    }
+  }
+}

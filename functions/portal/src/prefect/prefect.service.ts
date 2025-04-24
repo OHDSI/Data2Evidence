@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@danet/core'
+import { Injectable } from '@danet/core'
 import { MinioClient } from '../minio/minio.client.ts'
 import { PrefectFlowRunResultDto } from './dto/index.ts'
 
@@ -8,11 +8,14 @@ export class PrefectService {
 
   // Get flow run result
   async getFlowRunResults(prefectFlowRunResultDto: PrefectFlowRunResultDto) {
-    if (prefectFlowRunResultDto.filePath) {
-      return this.minioClient.getFlowRunResults(prefectFlowRunResultDto.filePath)
-    } else if (prefectFlowRunResultDto.filePaths) {
-      return this.minioClient.getMultipleFlowRunResults(prefectFlowRunResultDto.filePaths)
+    try {
+      if (prefectFlowRunResultDto.filePath) {
+        return await this.minioClient.getFlowRunResults(prefectFlowRunResultDto.filePath)
+      } else if (prefectFlowRunResultDto.filePaths) {
+        return await this.minioClient.getMultipleFlowRunResults(prefectFlowRunResultDto.filePaths)
+      }        
+    } catch (error) {
+      throw error
     }
-    throw new InternalServerErrorException('File path is not defined for DQD flow run results')
   }
 }

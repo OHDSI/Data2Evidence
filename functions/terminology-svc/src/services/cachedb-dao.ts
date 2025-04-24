@@ -7,6 +7,8 @@ import {
   IConceptRecommended,
   IConceptAncestor,
   IConcept,
+  DatasetDialects,
+  IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
 
@@ -51,10 +53,7 @@ export class CachedbDAO {
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
-        client.query<IConcept & { count: number }>(
-          conceptsSql,
-          conceptsSqlParams
-        ),
+        client.query<IConcept>(conceptsSql, conceptsSqlParams),
         client.query<{ count: string }>(countSql, countSqlParams),
       ] as const;
       const results = await Promise.all(sqlPromises);
@@ -66,7 +65,7 @@ export class CachedbDAO {
       return data;
     } catch (error) {
       console.error(error);
-      throw new Error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -75,10 +74,16 @@ export class CachedbDAO {
   async getMultipleExactConcepts(
     searchTexts: number[],
     includeInvalid = true
-  ): Promise<IDuckdbConcept | null> {
+  ): Promise<IDuckdbConcept> {
+    if (!searchTexts.length) {
+      return {
+        hits: [],
+        totalHits: 0,
+      };
+    }
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
-      const searchTextWhereclause =
+      const searchTextWhereClause =
         searchTexts.reduce((accumulator, _searchText, index: number) => {
           accumulator += `$${index + 1},`;
           return accumulator;
@@ -92,23 +97,22 @@ export class CachedbDAO {
         select *
         from ${this.vocabSchemaName}.concept
         WHERE
-        ${searchTextWhereclause}
+        ${searchTextWhereClause}
         ${invalidReasonWhereClause}
         `;
 
-      const result = await client.query<IConcept>(sql, [...searchTexts]);
-      if (result) {
-        const data = {
-          hits: result.rows,
-          totalHits: result.rowCount ?? 0,
-        };
-        return data;
-      } else {
-        return null;
-      }
+      const result: { rows: IConcept[]; rowCount: number } = await client.query(
+        sql,
+        [...searchTexts]
+      );
+      const data = {
+        hits: result.rows,
+        totalHits: result.rowCount ?? 0,
+      };
+      return data;
     } catch (error) {
       console.error(error);
-      throw new Error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -280,7 +284,7 @@ export class CachedbDAO {
     }
   };
 
-  private generateFilterWhereClause(filters: Filters): string {
+  public generateFilterWhereClause(filters: Filters): string {
     const conceptClassIdFilter = filters.conceptClassId.map((filterValue) => {
       return `concept_class_id = '${filterValue}'`;
     });
@@ -320,7 +324,14 @@ export class CachedbDAO {
     }
   }
 
-  async getConceptRelationships(conceptId: number): Promise<any> {
+  async getConceptRelationships(conceptId: number): Promise<{
+    hits: {
+      relationship_id: string;
+      concept_id_1: number;
+      concept_id_2: number;
+    }[];
+    totalHits: number;
+  }> {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
       const sql = `
@@ -337,20 +348,40 @@ export class CachedbDAO {
       return data;
     } catch (error) {
       console.error(error);
+      throw error;
     } finally {
       await client.end();
     }
   }
 
-  async getRelationships(relationshipId: number): Promise<any> {
+  async getRelationships(relationshipIds: string[]): Promise<{
+    hits: {
+      relationship_id: string;
+      relationship_name: string;
+      is_hierarchical: string;
+      defines_ancestry: string;
+      reverse_relationship_id: string;
+      relationship_concept_id: number;
+    }[];
+    totalHits: number;
+  }> {
+    if (!relationshipIds.length) {
+      return {
+        hits: [],
+        totalHits: 0,
+      };
+    }
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
+      const placeholders = relationshipIds
+        .map((_, index) => `$${index + 1}`)
+        .join(", ");
       const sql = `
       select *
           from ${this.vocabSchemaName}.relationship
-          WHERE relationship_id=$1
+          WHERE relationship_id in (${placeholders})
           `;
-      const result = await client.query(sql, [relationshipId]);
+      const result = await client.query(sql, relationshipIds);
       const data = {
         hits: result.rows,
         totalHits: result.rowCount,
@@ -358,6 +389,7 @@ export class CachedbDAO {
       return data;
     } catch (error) {
       console.error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -400,7 +432,7 @@ export class CachedbDAO {
       return result.rows ?? [];
     } catch (error) {
       console.error(error);
-      throw new Error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -425,33 +457,7 @@ export class CachedbDAO {
       return result.rows ?? [];
     } catch (error) {
       console.error(error);
-      throw new Error(error);
-    } finally {
-      await client.end();
-    }
-  }
-
-  async getExactConceptAncestors(
-    searchConceptIds: number[],
-    level: number
-  ): Promise<IConceptAncestor[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
-    try {
-      // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
-      const sql = `
-        select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
-          this.vocabSchemaName
-        }.concept_ancestor WHERE descendant_concept_id IN (${searchConceptIds.join(
-        ", "
-      )}) AND min_levels_of_separation = (?);
-            `;
-      const result = await client.query(sql, [level]);
-      return result.rows;
-    } catch (error) {
-      console.error(error);
-      throw new Error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -471,13 +477,98 @@ export class CachedbDAO {
           this.vocabSchemaName
         }.concept_relationship WHERE concept_id_2 IN (${searchConceptIds.join(
         ", "
-      )}) AND relationship_id = ? AND invalid_reason IS NOT NULL;
+      )}) AND relationship_id = ? AND invalid_reason IS NULL;
             `;
       const result = await client.query(sql, [conceptRelationshipType]);
       return result.rows;
     } catch (error) {
       console.error(error);
-      throw new Error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyDescendants(
+    searchConceptId: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    try {
+      const sql = `
+        select
+          ca.ancestor_concept_id,
+          ca.descendant_concept_id,
+          -1 as depth,
+          c.concept_id,
+          c.concept_name,
+          c.vocabulary_id,
+          c.concept_class_id
+        from
+          ${this.vocabSchemaName}.concept_ancestor ca
+        join ${this.vocabSchemaName}.concept c on
+          c.concept_id = ca.descendant_concept_id
+        where
+          ca.min_levels_of_separation = 1
+          and ca.ancestor_concept_id = ?;
+            `;
+      const result = await client.query(sql, [searchConceptId]);
+      return result.rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyAncestors(
+    searchConceptId: number,
+    maxDepth: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    try {
+      // Recursive SQL statement taken with reference from OHDSI Athena
+      // src/main/java/com/odysseusinc/athena/repositories/v5/ConceptAncestorRelationV5Repository.java
+      const sql = `
+        WITH RECURSIVE
+          r (depth) AS (
+            SELECT
+              0 AS depth,
+              ca.ancestor_concept_id,
+              ca.descendant_concept_id,
+            FROM
+            ${this.vocabSchemaName}.concept_ancestor ca
+            WHERE
+              ca.descendant_concept_id = ?
+              AND ca.min_levels_of_separation = 0
+            UNION
+            SELECT
+              depth + 1 AS depth,
+              ca.ancestor_concept_id,
+              ca.descendant_concept_id,
+            FROM
+              ${this.vocabSchemaName}.concept_ancestor ca
+              JOIN r ON ca.descendant_concept_id = r.ancestor_concept_id
+            WHERE
+              ca.min_levels_of_separation = 1
+              AND depth < ?::INT
+          )
+        SELECT
+          r.*,
+          c.concept_id,
+          c.concept_name,
+          c.vocabulary_id,
+          c.concept_class_id
+        FROM
+          r
+          JOIN ${this.vocabSchemaName}.concept c ON c.concept_id = r.ancestor_concept_id
+          ORDER BY concept_id, ancestor_concept_id, descendant_concept_id;
+            `;
+      const result = await client.query(sql, [searchConceptId, maxDepth]);
+      return result.rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -489,7 +580,7 @@ export class CachedbDAO {
         host: env.CACHEDB__HOST,
         port: env.CACHEDB__PORT,
         user: jwt,
-        database: `A|duckdb|read|${datasetId}`,
+        database: `A|${DatasetDialects.DUCKDB}|read|${datasetId}`,
         connectionTimeoutMillis: 30000,
       });
       client.connect();

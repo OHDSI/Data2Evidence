@@ -52,12 +52,16 @@ export class NodeHDBConnection implements ConnectionInterface {
       logger.debug(
         `Before execute, DB connection state: ${this.conn.readyState}`,
       );
-      sql = this.getSqlStatementWithSchemaName(schemaName, sql);
+      const timestamp = (new Date()).valueOf();
+      // console.time(`time-NodeHDBConnection--connected-${timestamp}`)
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
 
       if (this.conn.readyState === "connected") {
         this.prepareStatementAndExecute(sql, parameters, callback);
       } else {
+        console.time(`time-NodeHDBConnection--beforeconnect-${timestamp}`)
         this.conn.connect(err => {
+          console.timeEnd(`time-NodeHDBConnection--beforeconnect-${timestamp}`)
           if (err) {
             logger.error(`Execute error: ${JSON.stringify(err)}`);
             callback(new DBError(logger.error(err), err.message), null);
@@ -74,7 +78,7 @@ export class NodeHDBConnection implements ConnectionInterface {
   }
 
   public getTranslatedSql(sql: string, schemaName: string, parameters: ParameterInterface[]): string {
-    return this.getSqlStatementWithSchemaName(schemaName, sql);
+    return this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
   }
 
   private prepareStatementAndExecute(
@@ -82,13 +86,18 @@ export class NodeHDBConnection implements ConnectionInterface {
     parameters: ParameterInterface[],
     callback: CallBackInterface,
   ) {
+    const timestamp = (new Date()).valueOf();
+    console.time(`time-analytics-svc-nodehdb-prepare-${timestamp}`)
+    console.time(`time-analytics-svc-nodehdb-prepareStatementAndExecute-${timestamp}`)
     this.conn.prepare(sql, (err, statement) => {
+      console.timeEnd(`time-analytics-svc-nodehdb-prepare-${timestamp}`)
       if (err) {
         logger.error(`Execute error: ${JSON.stringify(err)}
                 =>sql: ${sql}
                 =>parameters: ${JSON.stringify(parameters)}`);
         callback(new DBError(logger.error(err), err.message), null);
       } else {
+        console.timeEnd(`time-analytics-svc-nodehdb-prepareStatementAndExecute-${timestamp}`);
         statement.exec(flattenParameter(parameters), callback);
       }
     });
@@ -101,16 +110,21 @@ export class NodeHDBConnection implements ConnectionInterface {
     schemaName: string = "",
   ) {
     try {
+      const timestamp = (new Date()).valueOf();
+      console.time(`time-analytics-svc-nodehdb-executequery-beforeparseresults-${timestamp}`)
+      console.time(`time-analytics-svc-nodehdb-executequery-afterparseresults-${timestamp}`)
       this.execute(
         sql,
         parameters,
         (err, resultSet) => {
+          console.timeEnd(`time-analytics-svc-nodehdb-executequery-beforeparseresults-${timestamp}`)
           if (err) {
             console.error(err);
             callback(err, null);
           } else {
-            logger.debug(`${JSON.stringify(resultSet, null, 2)}`);
+            // logger.debug(`${JSON.stringify(resultSet, null, 2)}`);
             const result = this.parseResults(resultSet, resultSet.metadata);
+            console.timeEnd(`time-analytics-svc-nodehdb-executequery-afterparseresults-${timestamp}`)
             callback(null, result);
           }
         },
@@ -128,7 +142,7 @@ export class NodeHDBConnection implements ConnectionInterface {
     schemaName: string = "",
   ) {
     try {
-      sql = this.getSqlStatementWithSchemaName(schemaName, sql);
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
       this.conn.prepare(sql, (err, statement) => {
         if (err) {
           logger.error(`Execute error: ${JSON.stringify(err)}
@@ -365,11 +379,11 @@ export class NodeHDBConnection implements ConnectionInterface {
                 const rowsInserted = Array.isArray(affectedRows)
                   ? affectedRows.length
                   : affectedRows;
-                logger.info(
-                  `Inserted ${rowsInserted} rows for chunk ${
-                    j + 1
-                  }/${chunkCount}`,
-                );
+                // logger.info(
+                //   `Inserted ${rowsInserted} rows for chunk ${
+                //     j + 1
+                //   }/${chunkCount}`,
+                // );
 
                 // After successfully loading all chunks
                 if (j + 1 === chunkCount) {
@@ -420,9 +434,12 @@ export class NodeHDBConnection implements ConnectionInterface {
 
   private getSqlStatementWithSchemaName(
     schemaName: string,
+    vocabSchemaName: string,
     sql: string,
   ): string {
     const replacement = schemaName === "" ? "" : `${schemaName}.`;
-    return sql.replace(/\$\$SCHEMA\$\$./g, replacement);
+    sql = sql.replace(/\$\$SCHEMA\$\$./g, replacement);
+    sql = sql.replace(/\$\$VOCAB_SCHEMA\$\$./g, `${vocabSchemaName}.`);
+    return sql;
   }
 }

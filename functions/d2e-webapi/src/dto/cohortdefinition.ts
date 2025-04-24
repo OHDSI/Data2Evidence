@@ -1,49 +1,68 @@
 import { z } from "zod";
 import { CohortExpression, CohortExpressionQueryOptions } from "../types.ts";
 
-export const CohortDefinitionDto = z.object({
+export const AtlasCohortDefinitionDto = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
-  createdBy: z.number().nullable(),
-  createdDate: z.number(),
-  modifiedBy: z.number().nullable(),
+  createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+  createdDate: z.number().nullable(),
+  modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
   modifiedDate: z.number().nullable(),
   tags: z.array(z.string()),
 });
+export type IAtlasCohortDefinitionDto = z.infer<
+  typeof AtlasCohortDefinitionDto
+>;
 
-export const CohortDefinitionResponseDto = z.array(
+export const UserArtifactAtlasCohortDefinitionDto =
+  AtlasCohortDefinitionDto.extend({
+    materializedCohortDefinitionIds: z.array(z.number()),
+  });
+export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
+  typeof UserArtifactAtlasCohortDefinitionDto
+>;
+
+export const CohortDefinitionListResponseDto = z.array(
   z.object({
     id: z.number(),
     name: z.string(),
-    createdDate: z.number(),
+    description: z.string().nullable(),
+    createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+    createdDate: z.number().nullable(),
+    modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+    modifiedDate: z.number().nullable(),
     hasWriteAccess: z.boolean(),
     hasReadAccess: z.boolean(),
     tags: z.array(z.string()),
   })
 );
+export type ICohortDefinitionListResponseDto = z.infer<
+  typeof CohortDefinitionListResponseDto
+>;
 
-export const CohortDefinitionCreateResponseDto = z.object({
+export const CohortDefinitionResponseDto = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
   expressionType: z.string(),
   expression: CohortExpression,
-  createdDate: z.number(),
+  createdBy: z.string().nullable().optional(),
+  createdDate: z.number().nullable(),
+  modifiedBy: z.string().nullable().optional(),
+  modifiedDate: z.number().nullable(),
+  tags: z.array(z.string()),
   hasWriteAccess: z.boolean(),
   hasReadAccess: z.boolean(),
 });
 
+export const CohortDefinitionCreateResponseDto =
+  CohortDefinitionResponseDto.omit({ modifiedDate: true, tags: true });
+
 export const CohortDefinitionCopyResponseDto =
   CohortDefinitionCreateResponseDto.omit({ description: true });
-
-export const CohortDefinitionPutResponseDto =
-  CohortDefinitionCreateResponseDto.omit({ description: true }).extend({
-    modifiedDate: z.number(),
-    tags: z.array(z.string()),
-  });
 
 export const CohortDefinitionSqlDto = z.object({
   expression: CohortExpression,
@@ -51,7 +70,7 @@ export const CohortDefinitionSqlDto = z.object({
 });
 
 export const CohortDefinitionSqlResponseDto = z.object({
-  tempplateSql: z.string(),
+  templateSql: z.string(),
 });
 
 export const CohortDefinitionIdVersionResponseDto = z.array(

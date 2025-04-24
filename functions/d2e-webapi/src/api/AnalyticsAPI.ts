@@ -70,23 +70,25 @@ export class AnalyticsSvcAPI {
     }
   }
 
-  async renameCohortDefinition(
+  async updateCohortDefinition(
     datasetId: string,
     cohortDefinitionId: number,
-    name: string
+    cohortDefinition: ICohortDefinition
   ) {
     try {
       const url = `${this.baseURL}/cohort-definition`;
-      console.log(`Calling ${url} to rename cohort definition`);
+      console.log(`Calling ${url} to update cohort definition`);
       const options = this.getRequestConfig();
       const data = {
         datasetId,
         cohortDefinitionId,
-        name,
+        name: cohortDefinition.name,
+        description: cohortDefinition.description,
+        syntax: cohortDefinition.syntax,
       };
       await axios.put(url, data, options);
     } catch (error) {
-      console.error(`Error while renaming cohort definition: ${error}`);
+      console.error(`Error while updating cohort definition: ${error}`);
       throw error;
     }
   }
@@ -102,6 +104,21 @@ export class AnalyticsSvcAPI {
       await axios.delete(url, { ...options, params });
     } catch (error) {
       console.error(`Error while deleting cohort: ${error}`);
+      throw error;
+    }
+  }
+
+  async getCdmVersion(datasetId: string): Promise<string> {
+    try {
+      const url = `${this.baseURL}/alpdb/cdmversion`;
+      console.log(`Calling ${url} to get cdm version`);
+      const options = this.getRequestConfig();
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+      const result = await axios.get(url, { ...options, params });
+      return result.data;
+    } catch (error) {
+      console.error(`Error while getting cdm version: ${error}`);
       throw error;
     }
   }

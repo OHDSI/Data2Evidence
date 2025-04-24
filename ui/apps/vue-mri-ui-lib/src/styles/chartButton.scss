@@ -1,0 +1,65 @@
+@import './mri-variables';
+.chartButton {
+  color: $MriHeaderTextDark;
+  outline: none;
+  background: none;
+  border: none;
+  height: 31px;
+  width: 33px;
+}
+
+.chartButton:hover {
+  background-color: $MriButtonHoverDark;
+  color: $MriLightestText;
+  height: 30px;
+  width: 33px;
+  border-radius: 3.1px;
+}
+
+.chartButton .icon {
+  font-size: 18px;
+  font-weight: normal;
+  cursor: pointer;
+  text-align: center;
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+.chartButtonContainer .chartButton {
+  outline: none;
+  background: none;
+  border: none;
+  min-width: 32px;
+  padding: 0 8px;
+  align-items: flex-start;
+  text-align: center;
+}
+
+.chartButtonContainer :hover {
+  outline: none;
+  background-color: $MriButtonHoverDark;
+  .icon {
+    color: $MriLightestText;
+  }
+}
+
+.icon {
+  font-size: 17px;
+  margin-top: 1px;
+  font-weight: normal;
+  line-height: 18px;
+  height: 18px;
+  width: auto;
+  cursor: pointer;
+  text-align: center;
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+.chartButton.active {
+  background-color: $MriButtonHoverDark;
+  border-radius: 3.1px;
+  .icon {
+    color: $MriLightestText;
+  }
+}

@@ -1,16 +1,8 @@
-import { assert, conditional } from "@silverhand/essentials";
+import { conditional } from "@silverhand/essentials";
 import { got, HTTPError } from "got";
 import { jwtDecode } from "jwt-decode";
 import path from "node:path";
 
-import type {
-  AuthorizationCodeRequest,
-  AuthorizationUrlRequest,
-} from "@azure/msal-node";
-import {
-  ConfidentialClientApplication,
-  CryptoProvider,
-} from "@azure/msal-node";
 import type {
   GetAuthorizationUri,
   GetUserInfo,
@@ -35,17 +27,9 @@ import {
 import type { AzureADConfig } from "./types.js";
 import {
   azureADConfigGuard,
-  accessTokenResponseGuard,
   userInfoResponseGuard,
   authResponseGuard,
 } from "./types.js";
-
-// eslint-disable-next-line @silverhand/fp/no-let
-let authCodeRequest: AuthorizationCodeRequest;
-
-// This `cryptoProvider` seems not used.
-// Temporarily keep this as this is a refactor, which should not change the logics.
-const cryptoProvider = new CryptoProvider();
 
 const ENDPOINT = `http://localhost:${process.env.PORT}`;
 
@@ -53,33 +37,23 @@ const getAuthorizationUri =
   (getConfig: GetConnectorConfig): GetAuthorizationUri =>
   async ({ state, redirectUri }) => {
     const config = await getConfig(defaultMetadata.id);
-
     validateConfig(config, azureADConfigGuard);
-    const { clientId, clientSecret, cloudInstance, tenantId } = config;
+    const { clientId, cloudInstance, tenantId } = config;
 
-    const defaultAuthCodeUrlParameters: AuthorizationUrlRequest = {
-      scopes,
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: "code",
+      redirect_uri: redirectUri,
+      response_mode: "query",
+      scope: scopes.join(" "),
       state,
-      redirectUri,
-    };
-
-    const clientApplication = new ConfidentialClientApplication({
-      auth: {
-        clientId,
-        clientSecret,
-        authority: new URL(path.join(cloudInstance, tenantId)).toString(),
-      },
     });
 
-    const authCodeUrlParameters = {
-      ...defaultAuthCodeUrlParameters,
-    };
+    const authorityUri = new URL(
+      path.join(cloudInstance, tenantId, "oauth2/authorize")
+    ).toString();
 
-    const authCodeUrl = await clientApplication.getAuthCodeUrl(
-      authCodeUrlParameters
-    );
-
-    return authCodeUrl;
+    return `${authorityUri}?${params.toString()}`;
   };
 
 const getAccessToken = async (
@@ -87,44 +61,47 @@ const getAccessToken = async (
   code: string,
   redirectUri: string
 ) => {
-  const codeRequest: AuthorizationCodeRequest = {
-    redirectUri,
-    scopes: ["User.Read"],
-    code,
-  };
-
   const { clientId, clientSecret, cloudInstance, tenantId } = config;
+  try {
+    const tokenUri = new URL(
+      path.join(cloudInstance, tenantId, "oauth2/v2.0/token")
+    ).toString();
+    const response = await fetch(tokenUri, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        scope: scopes.join(" "),
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
 
-  const clientApplication = new ConfidentialClientApplication({
-    auth: {
-      clientId,
-      clientSecret,
-      authority: new URL(path.join(cloudInstance, tenantId)).toString(),
-    },
-  });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Token exchange failed: ${JSON.stringify(errorData)}`);
+    }
 
-  const authResult = await clientApplication.acquireTokenByCode(codeRequest);
-  const idToken = authResult.idToken
+    const authResult = await response.json();
 
-  await assignLogtoRolesByAzureGroups(
-    authResult.idToken,
-    authResult.accessToken
-  );
+    await assignLogtoRolesByAzureGroups(
+      authResult.id_token,
+      authResult.access_token
+    );
 
-  const result = accessTokenResponseGuard.safeParse(authResult);
-
-  if (!result.success) {
-    throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, result.error);
+    return {
+      accessToken: authResult.access_token,
+      idToken: authResult.id_token,
+      refreshToken: authResult.refresh_token,
+    };
+  } catch (error: any) {
+    console.error("Error exchanging authorization code for token:", error);
+    throw error;
   }
-
-  const { accessToken } = result.data;
-
-  assert(
-    accessToken,
-    new ConnectorError(ConnectorErrorCodes.SocialAuthCodeInvalid)
-  );
-
-  return { accessToken, idToken };
 };
 
 const assignLogtoRolesByAzureGroups = async (
@@ -405,7 +382,11 @@ const getUserInfo =
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, azureADConfigGuard);
 
-    const { accessToken, idToken } = await getAccessToken(config, code, redirectUri);
+    const { accessToken, idToken, refreshToken } = await getAccessToken(
+      config,
+      code,
+      redirectUri
+    );
 
     // throw new Error("asdfasdfasdfasdfsd")
 
@@ -431,10 +412,14 @@ const getUserInfo =
       const { id, mail, displayName } = result.data;
 
       // @ts-ignore
-      globalThis.tokenMap = globalThis.tokenMap || {}
-      const mapId = mail
+      globalThis.tokenMap = globalThis.tokenMap || {};
       // @ts-ignore
-      globalThis.tokenMap[mapId] = idToken
+      globalThis.refreshTokenMap = globalThis.refreshTokenMap || {};
+      const mapId = mail;
+      // @ts-ignore
+      globalThis.tokenMap[mapId] = idToken;
+      // @ts-ignore
+      globalThis.refreshTokenMap[mapId] = refreshToken;
 
       return {
         id,

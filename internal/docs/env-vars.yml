@@ -1,0 +1,196 @@
+ALP__SYSTEM_ID:
+  comment: System ID
+  publish: false
+  type: string
+ALP__SYSTEM_NAME:
+  comment: System Name
+  publish: false
+  type: string
+APP__TENANT_ID:
+  comment: null
+  publish: false
+  type: string
+APP__TENANT_NAME:
+  comment: Tenant Name
+  publish: false
+  type: string
+CADDY__ALP__ALIAS_PUBLIC_FQDN:
+  comment: Public FQDN Alias
+  publish: false
+  type: string
+CADDY__ALP__PUBLIC_FQDN:
+  comment: Public FQDN
+  publish: true
+  type: string
+D2E_CPU_LIMIT:
+  comment: Dynamically Calculated Limit
+  publish: true
+  type: string
+D2E_MEMORY_LIMIT:
+  comment: Dynamically Calculated Limit
+  publish: true
+  type: string
+D2E_SWAP_LIMIT:
+  comment: Docker Swap Limit
+  publish: true
+DATABASE_CREDENTIALS:
+  comment: database connection configuration (credentials, tags, schema ...)
+  type: object
+DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY:
+  comment: To Encrypt Dbcredentials Entered In Admin>Setup>Databases>Configure (No Passphrase)
+  publish: true
+  type: rsaPrivateKey
+DB_CREDENTIALS__INTERNAL__PUBLIC_KEY:
+  comment: To Encrypt Database Credentials String
+  publish: true
+  type: x509publicKey
+DEMO__DB_PASSWORD:
+  comment: null
+  publish: false
+  type: string
+DEMO__DB_USER:
+  comment: null
+  publish: false
+  type: string
+DICOM__HEALTH_CHECK_PASSWORD:
+  comment: deprecated
+  publish: true
+  type: string
+DOCKER_TAG_NAME:
+  comment: default tag
+  publish: true
+  type: string
+DOCKER_TREX_TAG_NAME:
+  publish: true
+DOCKER__RESTART_POLICY:
+  comment: auto restart on issue. logging debug simpler if off
+  publish: false
+  type: string
+ENV_TYPE:
+  comment: local or remote ; also refers to .env.${ENV_TYPE}
+  publish: true
+  type: string
+FHIR__CLIENT_ID:
+  comment: FHIR Client Id
+  publish: true
+FHIR__CLIENT_SECRET:
+  comment: FHIR Client Secret
+  publish: true
+  type: string
+GH_TOKEN:
+  comment: GitHub Token Passed To Trex
+  publish: true
+  type: string
+INSTANCE_SPECIFIC_CONFIG:
+  comment: null
+  publish: false
+  type: string
+LOGTO_API_M2M_CLIENT_ID:
+  comment: Logto Api M2m Client Id
+  publish: true
+  type: password
+LOGTO_API_M2M_CLIENT_SECRET:
+  comment: Logto Api M2m Client Secret
+  publish: true
+  type: password
+LOGTO__ALP_APP__CLIENT_ID:
+  comment: Logto Alp App Client Id
+  publish: true
+  type: string
+LOGTO__ALP_APP__CLIENT_SECRET:
+  comment: Logto Alp App Client Secret
+  publish: true
+  type: password
+LOGTO__ALP_DATA__CLIENT_ID:
+  comment: Logto Alp Data Client Id
+  publish: true
+  type: string
+LOGTO__ALP_DATA__CLIENT_SECRET:
+  comment: Logto Alp Data Client Secret
+  publish: true
+  type: password
+LOGTO__ALP_SVC__CLIENT_ID:
+  comment: Logto Alp Svc Client Id
+  publish: true
+  type: string
+LOGTO__ALP_SVC__CLIENT_SECRET:
+  comment: Logto Alp Svc Client Secret
+  publish: true
+  type: password
+LOGTO__CLIENTID_PASSWORD__BASIC_AUTH:
+  comment: From `LOGTO_API_M2M_CLIENT_ID` & `LOGTO_API_M2M_CLIENT_SECRET`
+  publish: true
+  type: base64 encoded
+MINIO__SECRET_KEY:
+  comment: Meilisearch Secret_Key
+  publish: true
+  type: password
+NOT_EQ_CHECK_FILTERCARDS:
+  comment: null
+  publish: false
+  type: string
+PG_ADMIN_PASSWORD:
+  comment: Admin Permissions
+  publish: true
+  type: password
+PG_SUPER_PASSWORD:
+  comment: All Permissions
+  publish: true
+  type: password
+PG_WRITE_PASSWORD:
+  comment: Write Permissions Only
+  publish: true
+  type: password
+PG__LOGTO_MANAGER_PASSWORD:
+  comment: null
+  publish: true
+  type: string
+PLUGINS_SEED_UPDATE:
+  comment: boolean
+  publish: false
+  type: string
+PROJECT_NAME:
+  comment: null
+  publish: false
+  type: string
+REDIS_PASSWORD:
+  comment: Redis Password
+  publish: true
+  type: string
+SQL_RETURN_ON:
+  comment: null
+  publish: false
+  type: string
+STRATEGUS__KEYRING_PASSWORD:
+  comment: Strategus Keyring Password
+  publish: true
+  type: string
+TLS__CADDY_DIRECTIVE:
+  comment: Generate self-signed or public x509 certificate
+  publish: true
+  type: string
+TLS__INTERNAL__CA_CRT:
+  comment: Internal Microservice TLS Communication Certificate Authority
+  publish: true
+TLS__INTERNAL__CRT:
+  comment: Internal Microservice TLS Communication Public Key
+  publish: true
+TLS__INTERNAL__KEY:
+  comment: Internal Microservice TLS Communication Private
+  publish: true
+TREX_PULL_POLICY:
+  comment: null
+  publish: false
+  type: string
+USE_CACHEDB:
+  comment: boolean
+  publish: false
+  type: string
+USE_DUCKDB:
+  comment: USE_DUCKDB boolean
+  publish: false
+  type: string
+USE_DUCKDB_FTS:
+  comment: USE_DUCKDB_FTS boolean
+  publish: false
+  type: string

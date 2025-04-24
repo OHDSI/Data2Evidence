@@ -1,11 +1,11 @@
 import https from 'https'
 import axios, { AxiosRequestConfig } from 'axios'
-import { ICohort } from '../types'
+import { IMaterializedCohort } from '../types'
 import { env } from '../env'
 
 export class AnalyticsSvcAPI {
   private readonly baseURL: string
-  private readonly httpsAgent: any
+  // private readonly httpsAgent: any
   private readonly token: string
   private readonly endpoint: string = '/analytics-svc/api/services'
 
@@ -17,10 +17,10 @@ export class AnalyticsSvcAPI {
 
     if (env.SERVICE_ROUTES.analytics) {
       this.baseURL = env.SERVICE_ROUTES.analytics + this.endpoint
-      this.httpsAgent = new https.Agent({
-        rejectUnauthorized: true,
-        ca: env.GATEWAY_CA_CERT,
-      })
+      // this.httpsAgent = new https.Agent({
+      //   rejectUnauthorized: true,
+      //   ca: env.TLS__INTERNAL__CA_CRT,
+      // })
     } else {
       console.error('No url is set for AnalyticsSvcAPI')
       throw new Error('No url is set for AnalyticsAPI')
@@ -33,13 +33,14 @@ export class AnalyticsSvcAPI {
       : true
   }
 
-  async getAllCohorts(datasetId: string): Promise<ICohort[]> {
+  async getAllCohorts(datasetId: string): Promise<IMaterializedCohort[]> {
     try {
       const url = `${this.baseURL}/cohort`
       console.log(`Calling ${url} to get all cohorts`)
       const options = this.getRequestConfig()
       const params = new URLSearchParams()
       params.append('datasetId', datasetId)
+      params.append('excludePatientIds', 'true')
       const result = await axios.get(url, { ...options, params })
       return result.data.data
     } catch (error) {
@@ -87,8 +88,8 @@ export class AnalyticsSvcAPI {
       headers: {
         Authorization: this.token,
       },
-      httpsAgent: this.httpsAgent,
-      timeout: 20000,
+      // httpsAgent: this.httpsAgent,
+      timeout: 100000,
     }
 
     return options

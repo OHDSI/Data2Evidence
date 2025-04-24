@@ -1,0 +1,56 @@
+@import './mri-variables';
+.loading-animation-component {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-color: transparentize($UiExtraLightBG, 0.1);
+  z-index: 9;
+  .animation-wrapper {
+    position: absolute;
+    width: 50px;
+    top: 50%;
+    left: 50%;
+    margin: -4px 0 0 -20px;
+  }
+  .UiLocalBusyIndicatorBox {
+    width: 8px;
+    height: 8px;
+    float: left;
+    display: block;
+    margin-left: 8px;
+    -moz-border-radius: 1px;
+    -webkit-border-radius: 1px;
+    border-radius: 1px;
+    animation-timing-function: ease-in;
+    animation-name: colorChange;
+    animation-duration: 1140ms;
+    animation-iteration-count: infinite;
+  }
+  .UiLocalBusyIndicatorBox.firstBox {
+    margin-left: 0px;
+  }
+  .UiLocalBusyIndicatorBox.secondBox {
+    animation-delay: 380ms;
+  }
+  .UiLocalBusyIndicatorBox.thirdBox {
+    animation-delay: 760ms;
+  }
+  @keyframes colorChange {
+    0% {
+      background-color: #dddddd;
+    }
+    50% {
+      background-color: #000000;
+    }
+    100% {
+      background-color: #dddddd;
+    }
+  }
+}
+
+.loading-animation-component.dialog-loading-body {
+  top: 40px;
+  bottom: 40px;
+}

@@ -3,14 +3,16 @@ import * as http from "http";
 import * as qs from "querystring";
 import { URL } from "url";
 import { StudyMriConfigMetaDataType } from "../types";
-import * as https from "https";
+// import * as https from "https";
 const log = Logger.CreateLogger("config-util-log");
 
 export default class MriConfigConnection {
     private portalServerUrl: string;
+    private agent: any;
 
     constructor(portalServerUrl: string) {
         this.portalServerUrl = portalServerUrl;
+        this.agent = new http.Agent({ keepAlive: true })
     }
 
     public async getMriConfig(req, payload) {
@@ -19,36 +21,44 @@ export default class MriConfigConnection {
                 this.portalServerUrl,
             );
 
+            const timestamp = (new Date()).valueOf();
+            console.time(`time-mriconfigconnection-${timestamp}`)
+      
             let authorizationValue = req.headers.authorization;
             const { action, datasetId } = payload;
             log.debug(`payload: ${qs.stringify(payload)}`);
             const sourceOrigin = req.headers["x-source-origin"];
 
             let urlPath: string;
+            const options = {
+              headers: {
+                authorization: authorizationValue, // Replace user JWT (req.headers.authorization)
+              },
+              agent: this.agent
+            };
+
+            let result;
+            let getReq;
             switch (action) {
               case "getBackendConfig":
                 urlPath = "backend";
+                getReq = await fetch(`${this.portalServerUrl}/dataset/pa-config/${urlPath}?datasetId=${datasetId}`, options);
+                result = await getReq.json();
+                // console.log(`backend ${JSON.stringify(result)}`)
                 break;
               case "getMyConfig":
-                urlPath = "me";
+                  urlPath = "me";
+                  getReq = await fetch(`${this.portalServerUrl}/dataset/pa-config/${urlPath}?datasetId=${datasetId}`, options);
+                  result = await getReq.json();
                 break;
               default:
                 urlPath = "me";
             }
 
-            const options = {
-              headers: {
-                authorization: authorizationValue, // Replace user JWT (req.headers.authorization) with CCF
-                "user-agent": "ALP Service",
-                "x-source-origin": sourceOrigin,                
-              },
-              "rejectUnauthorized": false,
-              "ca": Deno.env.get("TLS__INTERNAL__CA_CRT")?.replace(/\\n/g, '\n'),
-              "params": { "datasetId":datasetId }
-            };
+          // console.log(`urlpath-${timestamp} ${urlPath}`)
+          console.timeEnd(`time-mriconfigconnection-${timestamp}`)
 
-            const getReq = await fetch(`${this.portalServerUrl}/dataset/pa-config/${urlPath}?datasetId=${datasetId}`, options);
-            resolve(await getReq.json());
+          resolve(result);
         });
     }
 

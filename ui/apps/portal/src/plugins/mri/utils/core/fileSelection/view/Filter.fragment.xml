@@ -1,0 +1,63 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:l="sap.ui.layout"
+	xmlns:f="sap.ui.layout.form"
+	xmlns:core="sap.ui.core">
+<Dialog title="{i18n>ADD_NEW_FILTER}" 
+        contentWidth="80%" contentHeight="50%" stretchOnPhone="true">
+        <content>
+        <HBox>
+        	<Label text= "{i18n>FILTER_BY_STATUS}"  class = "sapUiSmallMargin" design="Bold" />
+     </HBox>
+    <MultiComboBox  selectionChange="handleStatusFilter" selectionFinish="handleSelectionFinish" width="95%" class="sapUiSmallMargin" 
+		items="{/status}" selectedKeys="{/selectedStatus}">
+		<core:Item key="{key}" text="{text}" />
+	</MultiComboBox>
+        <Label text = "{i18n>SET_LAST_IMPORT_TIMESPAN}" class = "sapUiSmallMargin" design="Bold" />
+        <VBox class="sapUiSmallMargin">
+    		<Label text="{i18n>FROM_DATE}" />
+            <l:HorizontalLayout>
+    			<DateTimeInput id ="lastImportedFrom"
+    			    dateValue="{/lastImported/begin/date}"
+    			    enabled="{/lastImported/begin/enabled}"
+     		        type="DateTime" />
+                <Switch state="{/lastImported/begin/enabled}" class="sapUiSmallMarginBegin"><layoutData><FlexItemData growFactor="1"/></layoutData></Switch>
+        	</l:HorizontalLayout>
+			<Label text="{i18n>TO_DATE}" />
+            <l:HorizontalLayout>
+    			<DateTimeInput id = "lastImportedTo"
+    			    dateValue="{/lastImported/end/date}"
+    			    enabled="{/lastImported/end/enabled}"
+    		    	type="DateTime" />
+                <Switch state="{/lastImported/end/enabled}" class="sapUiSmallMarginBegin"><layoutData><FlexItemData growFactor="1"/></layoutData></Switch>
+        	</l:HorizontalLayout>
+        </VBox>  
+        <Label text= "{i18n>SET_LAST_UPDATED_TIMESPAN}" class = "sapUiSmallMargin" design="Bold"  />
+        <VBox class="sapUiSmallMargin">
+    		<Label text="{i18n>FROM_DATE}" />
+            <l:HorizontalLayout>
+            	<DateTimeInput id="lastUpdatedFrom"
+    			    dateValue="{/lastModified/begin/date}"
+    			    enabled="{/lastModified/begin/enabled}"
+    			    type="DateTime" />
+                <Switch state="{/lastModified/begin/enabled}" class="sapUiSmallMarginBegin"><layoutData><FlexItemData growFactor="1"/></layoutData></Switch>
+        	</l:HorizontalLayout>
+		    <Label text="{i18n>TO_DATE}" />
+            <l:HorizontalLayout>
+    			<DateTimeInput id = "lastUpdatedTo"
+    			    dateValue="{/lastModified/end/date}"
+    			    enabled="{/lastModified/end/enabled}"
+    		    	type="DateTime"
+    		    	width="100%" />
+                <Switch state="{/lastModified/end/enabled}" class="sapUiSmallMarginBegin"><layoutData><FlexItemData growFactor="1"/></layoutData></Switch>
+        	</l:HorizontalLayout>
+    	 </VBox>  
+        </content>
+        <beginButton>
+            <Button text="{i18n>ACCEPT}" icon="sap-icon://accept" press="handleConfirmFilterDialog" />
+        </beginButton>
+        <endButton>
+            <Button text="{i18n>CANCEL}"  icon="sap-icon://sys-cancel" press="handleCancelFilterDialog" />
+        </endButton>
+    </Dialog>
+	</core:FragmentDefinition> 

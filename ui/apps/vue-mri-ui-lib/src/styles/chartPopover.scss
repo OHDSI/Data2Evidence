@@ -1,0 +1,35 @@
+@import './mri-variables';
+.chartPopover {
+  position: fixed;
+  z-index: 950;
+  display: block;
+  overflow: visible;
+  background-color: $UiLightestBG;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  font-family: Helvetica, Arial, sans-serif;
+  width: 190px;
+  border: 1px solid $UiMediumBorder;
+  .popover-header-container {
+    padding: 4px;
+    box-sizing: border-box;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: $UiExtraLightBG;
+    filter: none;
+    background-image: none;
+  }
+  .arrowDown {
+    display: block;
+    border-style: solid;
+    border-width: 8px;
+    position: absolute;
+    width: 0;
+    height: 0;
+    bottom: -17px;
+    left: 50%;
+    margin-left: -0.5rem;
+    border-color: transparent;
+    border-top-color: rgba(154, 154, 154, 0.6);
+  }
+}

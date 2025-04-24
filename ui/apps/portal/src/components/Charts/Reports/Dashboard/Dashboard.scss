@@ -1,0 +1,11 @@
+.summary__container {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr 3fr;
+}
+
+.info__section {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}

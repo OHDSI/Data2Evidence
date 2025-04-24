@@ -1,0 +1,42 @@
+<mvc:View
+    controllerName="sap.hc.mri.pa.ui.views.VueVariantBrowserContainer"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:cl="sap.ui.commons.layout"
+    xmlns:core="sap.ui.core"
+    xmlns:commons="sap.ui.commons"
+    xmlns:appdata="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+    height="100%">
+    <Page
+        showHeader="false"
+        showNavButton="false"
+        enableScrolling="false"
+        backgroundDesign="Solid">
+        <content>
+            <cl:BorderLayout>
+                <cl:begin>
+                    <cl:BorderLayoutArea size="195px" visible="{status>/beginVisible}">
+                    <l:VerticalLayout class="top_container" >
+                        <Label text="{i18n.vb_vue>geneSummary.applyVariantAttributes}" class="top_label"/>
+                        <l:HorizontalLayout id="idGenomicsDD" >
+                        	<core:Icon src="sap-icon://FFH/dna"	class="top_space" ></core:Icon>
+                        <l:VerticalLayout id="idGenomicsVL">
+                       </l:VerticalLayout >        
+                        <Select id="variantSelection" visible="false" items="{variantFilterCardModel>/filterCards}" change="handleGeneticFilterSelect" class='top_select' >
+                            <core:Item key="{variantFilterCardModel>key}" text="{variantFilterCardModel>text}" />
+                        </Select> 
+                       <commons:Button icon="sap-icon://group-2" id="btnGenomicsCategory" visible="false"></commons:Button>
+                        </l:HorizontalLayout>
+                          
+                       </l:VerticalLayout > 
+                    </cl:BorderLayoutArea>
+                </cl:begin>
+                <cl:center>
+                    <cl:BorderLayoutArea id="genomicsComponent"></cl:BorderLayoutArea>
+                </cl:center>
+            </cl:BorderLayout>
+        </content>
+    </Page>
+</mvc:View>

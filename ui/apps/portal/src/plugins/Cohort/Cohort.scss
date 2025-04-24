@@ -1,0 +1,20 @@
+.cohort__container {
+  padding: 32px;
+  background-color: #f2f0f1;
+  height: 100%;
+}
+
+.cohort__content {
+  height: inherit;
+  border-radius: 18px;
+  padding: 10px 20px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--color-primary);
+  }
+}

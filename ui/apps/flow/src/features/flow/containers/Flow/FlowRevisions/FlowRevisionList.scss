@@ -1,0 +1,74 @@
+@import '../../../../../theme/variables.scss';
+
+.flow-revision-list {
+  .flow-revision-item {
+    &__version {
+      color: $primary-color;
+    }
+
+    &__audit {
+      color: $neutral-light-color;
+      font-size: 0.8em;
+    }
+
+    &__comment {
+      color: $primary-color;
+      font-style: italic;
+      font-size: 0.9em;
+      color: $primary-color;
+      font-style: italic;
+      font-size: 0.9em;
+
+      blockquote {
+        text-indent: -0.45em;
+        margin-inline-start: 15px;
+        margin-inline-end: 15px;
+        margin-block-start: 0.5em;
+        margin-block-end: 0.2em;
+      }
+
+      @supports (hanging-punctuation: first) {
+        blockquote {
+          text-indent: 0;
+          hanging-punctuation: first;
+        }
+      }
+
+      blockquote::before {
+        content: open-quote;
+      }
+
+      blockquote::after {
+        content: close-quote;
+      }
+
+      blockquote {
+        quotes: "“" "”" "‘" "’";
+      }
+    }
+
+    &__actions {
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    &:hover {
+      .flow-revision-item__actions {
+        opacity: 1;
+      }
+    }
+  }
+
+  .MuiList-root {
+    padding: 0;
+  }
+
+  .MuiListItem-root {
+    border-bottom: 1px solid $border-color;
+    padding: 16px 0;
+
+    &:last-child {
+      border-bottom-width: 0;
+    }
+  }
+}

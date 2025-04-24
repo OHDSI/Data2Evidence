@@ -1,0 +1,18 @@
+<core:FragmentDefinition xmlns="sap.m"
+	xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout">
+	<Dialog id="addConfigPopover" class="sapUiPopupWithPadding"
+		title="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_TITLE}"
+		initialFocus="configurationNameInput" >
+		<VBox>
+			<Label
+				text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE}" labelFor="configurationNameInput"/>
+			<Input id="configurationNameInput"
+				placeholder="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_ADD_CONFIG_POPOVER_CONFIG_TITLE_PLACEHOLDER}"
+				liveChange="onNewConfigNameChange" />
+		</VBox>
+		<buttons>
+			<Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CREATE}" press="onAddConfigurationConfirmed" />
+			<Button text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CANCEL}" press="onAddConfigurationCanceled" />			
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

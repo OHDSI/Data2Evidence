@@ -5,7 +5,7 @@ import {
 } from "@logto/connector-kit";
 
 export const graphAPIEndpoint = "https://graph.microsoft.com/v1.0/me";
-export const scopes = ["User.Read"];
+export const scopes = ["openid", "profile", "email", "offline_access"];
 
 export const defaultMetadata: ConnectorMetadata = {
   id: "azuread-alp",

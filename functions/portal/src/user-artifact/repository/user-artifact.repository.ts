@@ -1,12 +1,15 @@
 import { Inject, Injectable } from '@danet/core'
-import { Repository } from 'npm:typeorm'
+import { Repository, DataSource } from 'npm:typeorm'
 import { DATABASE } from '../../database/module.ts'
 import { PostgresService } from '../../database/postgres.service.ts'
 import { UserArtifact } from '../entity/user-artifact.entity.ts'
 import { ServiceName } from '../enums/index.ts'
+import { ArtifactSequenceMapping } from '../user-artifact.service.ts'
+
 @Injectable()
 export class UserArtifactRepository {
   private repository: Repository<UserArtifact> | null = null;
+  private dataSource: DataSource | null = null;
   constructor(@Inject(DATABASE) private dbService: PostgresService) {
   }
   private async getRepository() {
@@ -15,6 +18,12 @@ export class UserArtifactRepository {
       this.repository = dataSource.getRepository(UserArtifact);
     }
     return this.repository;
+  }
+  private async getDatasource() {
+    if (!this.dataSource) {
+      this.dataSource = await this.dbService.getDataSourceAsync();
+    }
+    return this.dataSource;
   }
 
   async findOne(userId: string): Promise<UserArtifact | null> {
@@ -75,7 +84,7 @@ export class UserArtifactRepository {
       .getMany()
   }
 
-  async findByServiceArtifactId(serviceName: string, id: string): Promise<UserArtifact[]> {
+  async findByServiceArtifactId(serviceName: string, id: string | number): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
     return repository
       .createQueryBuilder('user_artifact')
@@ -83,6 +92,19 @@ export class UserArtifactRepository {
         serviceName,
         jsonValue: JSON.stringify([{ id }])
       })
-      .getMany()
+      .getMany()  
+  }
+
+  async getUserArtifactSequenceNextval(sequenceName: ServiceName): Promise<number> {
+    const dataSource = await this.getDatasource();
+    const queryRunner = await dataSource.createQueryRunner();
+    const result = await queryRunner.manager.query<{ id: number }[]>(
+      `SELECT nextval('portal.${ArtifactSequenceMapping[sequenceName as keyof typeof ArtifactSequenceMapping]}') as id;`,
+    );
+
+    if (result.length !== 1) {
+      throw new Error("Error getting concept_set_id_seq sequence nextval");
+    }
+    return result[0].id;
   }
 }

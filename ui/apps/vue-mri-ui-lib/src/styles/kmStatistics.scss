@@ -1,0 +1,37 @@
+@import './mri-variables';
+.km-statistics-table-container {
+  .km-curveAnalysis-table {
+    border: thin solid $UiMediumBorder;
+    border-collapse: collapse;
+  }
+  .km-curveAnalysis-th {
+    background-color: $UiExtraLightBG;
+    color: $UiLightText;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+    width: 200px;
+    height: 25px;
+    line-height: 20px;
+    border: thin solid $UiMediumBorder;
+    border-collapse: collapse;
+  }
+  .km-curveAnalysis-td {
+    text-align: center;
+    font-size: 0.875rem;
+    width: 200px;
+    height: 25px;
+    line-height: 20px;
+    border: thin solid $UiMediumBorder;
+    border-collapse: collapse;
+  }
+  .km-curveAnalysis-td-label {
+    color: $UiLightText;
+    font-size: 0.875rem;
+
+    font-weight: normal;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}

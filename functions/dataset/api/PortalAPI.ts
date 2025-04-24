@@ -114,7 +114,7 @@ export class PortalAPI {
   async getStudiesAsSystemAdmin() {
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/dataset/list?role=systemAdmin`;
+      const url = `${this.baseURL}/dataset/list/systemadmin`;
       const result = await axios.get(url, options);
       return result.data;
     } catch (error) {

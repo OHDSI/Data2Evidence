@@ -36,6 +36,10 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
     let filterBase64: string = req.query.mriquery;
     let releaseDate: string = req.query.releaseDate;
 
+    const timestamp = (new Date()).valueOf();
+    console.log(`time-analytics-svc-populationStudyQuery-${timestamp}`)
+    console.time(`time-analytics-svc-populationStudyQuery-${timestamp}`)
+
     try {
         let body = filterBase64
             ? convertZlibBase64ToJson(filterBase64)
@@ -82,6 +86,7 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
                                         })
                                     );
                                 }
+                                console.timeEnd(`time-analytics-svc-populationStudyQuery-${timestamp}`)
                                 res.status(200).send(result);
                             }
 
@@ -107,6 +112,7 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
                                     .catch((err) => _sendResult(err, null));
                             }
                         } catch (err) {
+                            console.timeEnd(`time-query-svc-populationStudyQuery-${timestamp}`)
                             return res
                                 .status(500)
                                 .send(
@@ -136,6 +142,9 @@ export async function populationQuery(req: IMRIRequest, res, next) {
     let dataFormat: string = req.params.dataFormat;
     let filterBase64: string = req.query.mriquery;
     let releaseDate: string = req.query.releaseDate;
+
+    const timestamp = (new Date()).valueOf();
+    console.log(`time-analytics-svc-populationQuery-${timestamp}`)
 
     try {
         let body = filterBase64
@@ -196,6 +205,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                         })
                                     );
                                 }
+                                console.timeEnd(`time-analytics-svc-populationQuery-${timestamp}`)
                                 res.status(200).send(result);
                             }
                             function _sendResultCSV(err, result) {
@@ -219,7 +229,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                     _sendResult(err, _processResult(result));
                                 }
                             }
-
+                            console.time(`time-analytics-svc-populationQuery-${timestamp}`)
                             switch (dataFormat) {
                                 case "csv":
                                     switch (chartType) {
@@ -352,6 +362,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                     break;
                             }
                         } catch (err) {
+                            console.timeEnd(`time-analytics-svc-populationQuery-${timestamp}`)
                             return res
                                 .status(500)
                                 .send(

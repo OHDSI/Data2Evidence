@@ -56,17 +56,17 @@ export class FeatureService {
       const systemadminPlugins = JSON.parse(plugins).systemadmin || [];
 
       this.featurePlugins = [
-        ...researcherPlugins.filter(p => Boolean(p.featureFlag)),
+        ...researcherPlugins.filter(p => Boolean(p.featureFlag)  || "children" in p),
         ...systemadminPlugins.filter(p => Boolean(p.featureFlag))
       ];
 
       const pluginFeatureFlags: string[] = [];
       this.featurePlugins.forEach(f => {
-        if (f.enabled) {
+        if (f.enabled && f.featureFlag) {
           pluginFeatureFlags.push(f.featureFlag);
         }
         f.children?.forEach(childPlugin => {
-          if (childPlugin.enabled) {
+          if (childPlugin.enabled && childPlugin.featureFlag) {
             pluginFeatureFlags.push(childPlugin.featureFlag);
           }
         });

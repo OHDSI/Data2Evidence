@@ -1,6 +1,7 @@
-import express, { Request, Response } from "express";
+import express, { Request } from "express";
 import { JobpluginsAPI } from "./api/JobpluginsAPI.ts";
-import { DBDAO } from "../analytics-svc/src/dao/DBDAO";
+import TrexDao from "./dao/trex.ts";
+import pg from "pg";
 
 export class DBRouter {
   public router = express.Router();
@@ -65,33 +66,54 @@ export class DBRouter {
     });
 
     this.router.get(
-      "/:databaseType/database/:tenant/schema/:schemaName/exists",
+      "/database-creds/list",
       async (req: Request, res: Response) => {
-        const { databaseType, tenant, schemaName } = req.params;
-
         try {
-          let dbDao = new DBDAO(databaseType, tenant);
-
-          const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            tenant,
-            req,
-            res
-          );
-          const schemaExists = await dbDao.checkIfSchemaExists(
-            dbConnection,
-            schemaName
-          );
-          res.status(200).send(schemaExists);
+          const dbDao = new TrexDao();
+          const dbs = await dbDao.getDbs();
+          return res.status(200).json(dbs);
         } catch (error) {
-          this.logger.error(`Error checking if schema exists: ${error}`);
+          this.logger.error(`Error fetching database credentials: ${error}`);
           const httpResponse = {
             status: 500,
-            message: "Something went wrong when checking if schema exists",
+            message: "Something went wrong when fetching database credentials",
             data: [],
           };
           res.status(500).json(httpResponse);
         }
       }
     );
+
+    this.router.get("/test", async (req: Request, res: Response) => {
+      try {
+        const { user, password, host, database, port } = req.query;
+        if (!user || !password || !host || !database || !port) {
+          return res
+            .status(400)
+            .send({ error: "Missing required database credentials" });
+        }
+
+        const client = new pg.Client({
+          user,
+          password,
+          host,
+          database,
+          port,
+          connectionTimeoutMillis: 5000,
+        });
+
+        await client.connect();
+        await client.end();
+
+        return res
+          .status(200)
+          .send({ success: true, message: "Connection successful" });
+      } catch (error) {
+        this.logger.error(
+          `Error when testing connection: ${JSON.stringify(error)}`
+        );
+        return res.status(500).send({ success: false, error: error.message });
+      }
+    });
   }
 }

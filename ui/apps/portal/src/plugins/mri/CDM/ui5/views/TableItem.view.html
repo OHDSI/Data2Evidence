@@ -1,0 +1,30 @@
+<template
+	data-controller-name="hc.hph.cdw.config.ui.views.TableItem"
+	data-width="100%" data-height="100%">
+
+<div data-sap-ui-type="sap.ui.commons.layout.MatrixLayout"
+	class="sapMxConfigListItem" id="itemMatrixLayout">
+	<div data-sap-ui-type="sap.ui.commons.layout.MatrixLayoutRow">
+		<div data-sap-ui-type="sap.ui.commons.layout.MatrixLayoutCell">
+			<div data-sap-ui-type="sap.m.Select" class="sapTriggerSave" data-width="100%"
+				data-enabled="{path:'editableModel>/editable',mode:'oneWay'}"
+				data-selected-key="{configEditorModel>placeholder}" id="tableDD"></div>
+		</div>
+		<div data-sap-ui-type="sap.ui.commons.layout.MatrixLayoutCell">
+			<div data-sap-ui-type="sap.m.Input" class="sapTriggerSave" data-width="100%"
+				data-tooltip = "{configEditorModel>table}"
+				data-enabled="{path:'editableModel>/editable',mode:'oneWay'}"
+				data-value="{configEditorModel>table}"></div>
+		</div>
+		<div data-sap-ui-type="sap.ui.commons.layout.MatrixLayoutCell">
+			<div data-sap-ui-type="sap.m.Button"
+				class="sapTriggerSave"
+				data-icon="sap-icon://delete" data-lite="true"
+				data-tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_REMOVE}"
+				data-enabled="{path:'editableModel>/editable',mode:'oneWay'}"
+				data-press="onRemovePressed" data-type="Transparent"></div>
+		</div>
+	</div>
+</div>
+
+</template>

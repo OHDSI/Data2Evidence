@@ -1,0 +1,34 @@
+@import "styles/variables";
+@import "styles/fonts";
+@import "styles/utils";
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+a {
+  text-decoration: none;
+}
+
+button.button--disabled {
+  background-color: var(--color-primary-extra-lightest) !important;
+  border-color: var(--color-primary-extra-lightest) !important;
+}
+
+input[type="checkbox"].sc-d4l-checkbox {
+  bottom: 0;
+}
+
+#root {
+  height: 100vh;
+}
+
+d4l-snack-bar {
+  z-index: 4;
+}

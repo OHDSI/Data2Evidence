@@ -1,0 +1,70 @@
+@import './mri-variables';
+.axis-menu-button-wrapper {
+  position: relative;
+  vertical-align: middle;
+}
+
+.icon {
+  font-family: app-icons;
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 18px;
+  height: 18px;
+  text-align: center;
+  display: inline-block;
+  vertical-align: baseline;
+  margin-top: 1px;
+}
+
+.binningButton {
+  background-color: $UiExtraLightBG;
+  border: 1px solid $UiLighterBorder;
+  border-radius: 2px;
+  color: $MriHeaderTextDark;
+  cursor: pointer;
+  height: 34px;
+  margin-left: 10px;
+  outline: none;
+  padding: 0 7px 1px;
+  position: relative;
+  bottom: 17px;
+}
+
+.binningButton:hover {
+  background-color: $MriLightHoverBG;
+  color: $MriLightestText;
+}
+
+.binning-dialog {
+  box-sizing: border-box;
+  .body-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .content-container {
+      position: relative;
+      .input-container {
+        width: 3rem;
+        padding: 0.1875rem 0;
+        background: transparent;
+        position: relative;
+        display: inline-block;
+        vertical-align: top;
+      }
+      .input-container > input {
+        height: 1.625rem;
+        padding: 0 0.5rem;
+        color: $UiDarkestText;
+        background: $UiLightestBG;
+        border: 1px solid $UiMediumBorder;
+        font-size: 0.875rem;
+        line-height: normal;
+        box-sizing: border-box;
+        width: 100%;
+      }
+    }
+    .content-container > label {
+      margin-right: 1rem !important;
+    }
+  }
+}

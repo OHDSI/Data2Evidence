@@ -28,8 +28,11 @@ export default (
             urlToCheck.length === 0
         ) {
             let start = Date.now();
+            const timestamp = (new Date()).valueOf();
+            console.time(`timer-analytics-svc-request-${timestamp}`)
             res.on("finish", () => {
                 let duration = Date.now() - start;
+                console.timeEnd(`timer-analytics-svc-request-${timestamp}`)
                 log.info(`${req.originalUrl} : ${duration}ms`);
             });
         }

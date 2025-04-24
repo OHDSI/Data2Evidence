@@ -7,7 +7,7 @@ import { createLogger } from '../Logger'
 import { B2cGroupService, UserGroupService, UserService } from '../services'
 import { env } from '../env'
 import { LogtoAPI } from '../api'
-import { ITokenUser } from '../types'
+import { IDataset, ITokenUser } from '../types'
 import { UserField } from '../repositories'
 
 const logger = createLogger('GrantRolesByScopes')
@@ -25,9 +25,10 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
+    const isSync = Boolean(req.body.sync)
     const userService = Container.get(UserService)
 
-    const { scope, email } = token as { scope: string[]; email: string }
+    const { scope, email } = token as { scope: string; email: string }
     const sub = token[subProp]
     let user = await userService.getUserByIdpUserId(sub)
     let userId = user?.id
@@ -81,17 +82,26 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
-    if (env.IDP_RELYING_PARTY === 'azure') {
+    if (isSync && env.IDP_RELYING_PARTY === 'azure') {
       const tenantId = env.APP_TENANT_ID
       if (!tenantId) {
         logger.error(`Tenant not found`)
         return res.status(500).send({ message: `Tenant not found` })
       }
 
-      grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, scope.includes(IDP_SCOPE_ROLE.TENANT_VIEWER))
-      grantOrRevokeSystemRole(userId, ROLES.ALP_SYSTEM_ADMIN, scope.includes(IDP_SCOPE_ROLE.SYSTEM_ADMIN))
-      grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scope.includes(IDP_SCOPE_ROLE.USER_ADMIN))
-      grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scope.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
+      const scopes = scope?.split(" ") || []
+      await grantOrRevokeSystemRole(userId, ROLES.ALP_SYSTEM_ADMIN, scopes.includes(IDP_SCOPE_ROLE.SYSTEM_ADMIN))
+      await grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scopes.includes(IDP_SCOPE_ROLE.USER_ADMIN))
+      await grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scopes.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
+      
+      const datasets = await getDatasets()
+      if (datasets.length > 0) {
+        const grantDatasetCodes = scopes
+          .filter(x => x.startsWith(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX))
+          .map(x => x.replace(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX, ''))
+          
+        await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
+      }
     }
 
     next()
@@ -130,18 +140,62 @@ const grantOrRevokeSystemRole = async (userId: string, role: string, isGrant: bo
   }
 }
 
+const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, role: string, datasets: IDataset[], grantDatasetCodes: string[]) => {
+  const groupService = Container.get(B2cGroupService)
+
+  let isResearcher = false
+  for (const dataset of datasets) {
+    let group = await groupService.getGroupByStudyRole(dataset.id, role)
+    if (!group?.id) {
+      await groupService.createGroup({ role, tenantId, studyId: dataset.id })
+      group = await groupService.getGroupByStudyRole(dataset.id, role)
+    }
+
+    if (!group?.id) {
+      continue;
+    }
+
+    const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)
+    if (isGrant) {
+      isResearcher = true
+      await addUserToGroup(userId, group!.id)
+    } else {
+      await removeUserFromGroup(userId, group!.id)
+    }
+  }
+
+  // Automatically grant viewer role when is researcher
+  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+}
+
 const addUserToGroup = async (userId: string, groupId: string) => {
-  logger.info(`Grant ${userId} to ${groupId}`)
   const userGroupService = Container.get(UserGroupService)
 
   const member = await userGroupService.getUserGroup(userId, groupId)
   if (!member?.id) {
+    logger.info(`Grant ${userId} to ${groupId}`)
     await userGroupService.addUserToGroup(userId, groupId)
   }
 }
 
 const removeUserFromGroup = async (userId: string, groupId: string) => {
-  logger.info(`Revoke ${userId} from ${groupId}`)
   const userGroupService = Container.get(UserGroupService)
-  await userGroupService.withdrawUserFromGroup(userId, groupId)
+  
+  const member = await userGroupService.getUserGroup(userId, groupId)
+  if (member?.id) {
+    logger.info(`Revoke ${userId} from ${groupId}`)
+    await userGroupService.withdrawUserFromGroup(userId, groupId)
+  }
+}
+
+const getDatasets = async () => {
+  const db = Container.get(CONTAINER_KEY.DB_CONNECTION);
+
+  try {
+    const datasets: { rows: IDataset[] } = await db.raw('SELECT * FROM portal.dataset')
+    return datasets?.rows || []
+  } catch (error) {
+    console.error('An error when getting datasets', error)
+    return []
+  }
 }

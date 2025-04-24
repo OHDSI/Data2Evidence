@@ -1,0 +1,43 @@
+.history__list {
+  padding-top: 20px;
+  .MuiTable-root {
+    border: 1px solid #dad7d7;
+  }
+
+  //table header
+  .MuiTableHead-root {
+    .MuiTableCell-root {
+      background-color: #ebf1f8;
+      width: 100px;
+      color: #000080;
+      height: 50px;
+      line-height: 1;
+      padding: 0 1% 0 23px;
+      border-right-width: 0;
+      border-left-width: 0;
+      border-bottom: none;
+    }
+  }
+
+  // Table Body
+  .MuiTableBody-root {
+    .MuiTableRow-root {
+      margin: 63px 1px 0 0;
+    }
+    .MuiTableCell-root {
+      border-bottom: none;
+      max-width: 250px;
+      overflow-wrap: break-word;
+      border-right-width: 0;
+      border-left-width: 0;
+      padding-left: 23px;
+      align-content: flex-start;
+    }
+  }
+}
+
+.info__section {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}

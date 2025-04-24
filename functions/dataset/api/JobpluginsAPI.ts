@@ -6,7 +6,7 @@ import { get, post } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
-  private readonly httpsAgent: any;
+  // private readonly httpsAgent: any;
   private readonly logger = console; //createLogger(this.constructor.name)
   private readonly token: string;
   private readonly endpoint: string = "/jobplugins";
@@ -34,7 +34,7 @@ export class JobPluginsAPI {
       headers: {
         Authorization: this.token,
       },
-      httpsAgent: this.httpsAgent,
+      // httpsAgent: this.httpsAgent,
     };
 
     return options;

@@ -1,0 +1,30 @@
+{base},
+Standard AS
+(
+    {source_to_standard}
+),
+Source AS (
+    {source_to_source}
+),
+S_S AS
+(
+    SELECT SOURCE_CODE FROM Standard
+    UNION
+    SELECT SOURCE_CODE FROM Source
+)
+
+SELECT DISTINCT
+    S_S.SOURCE_CODE,
+    Standard.TARGET_CONCEPT_ID,
+    Standard.TARGET_DOMAIN_ID,
+    Standard.VALID_START_DATE,
+    Standard.VALID_END_DATE,
+    Standard.SOURCE_VOCABULARY_ID,
+    Source.TARGET_CONCEPT_ID AS SOURCE_TARGET_CONCEPT_ID,
+    Source.SOURCE_VALID_START_DATE AS SOURCE_VALID_START_DATE,
+    Source.SOURCE_VALID_END_DATE,
+    ingredient_level.ingredient_concept_id
+FROM S_S
+LEFT JOIN Standard ON Standard.SOURCE_CODE=S_S.SOURCE_CODE
+LEFT JOIN Source ON Source.SOURCE_CODE=S_S.SOURCE_CODE
+LEFT JOIN ingredient_level ON ingredient_level.concept_id=Standard.TARGET_CONCEPT_ID

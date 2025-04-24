@@ -1,0 +1,69 @@
+<!-- For local development only -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <script nonce="__NONCE__">
+      window.ENV_DATA = __ENV_DATA__
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
+    <script type="text/javascript" src="authenticate.js"></script>
+
+    <% for (key in htmlWebpackPlugin.files.css) { %>
+    <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
+    <% } %>
+  </head>
+  <body style="margin: 0px">
+    <button
+      id="mriBtnLogout"
+      onclick="logoutfn()"
+      style="float: left; position: absolute; top: 0; right: 0; z-index: 100"
+    >
+      logout
+    </button>
+    <div
+      style="
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 0.5px 8px 0 #acaba8;
+      "
+    >
+      <div>PORTAL HEADER</div>
+    </div>
+    <div class="vue-main" style="height: calc(100vh - 80px)"></div>
+    <span class="plugin-container"></span>
+
+    <script>
+      document.querySelector('.plugin-container').portalAPI = {
+        qeSvcUrl: 'https://localhost:8081',
+        studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
+        releaseId: '',
+        async getToken() {
+          return localStorage.getItem('msaltoken')
+        },
+        isLocal: true,
+        username: 'admin', // Change to your logto username
+      }
+    </script>
+
+    <script
+      id="sap-ui-bootstrap"
+      src="/ui/sap-ui-core.js"
+      data-sap-ui-theme="sap_belize"
+      data-sap-ui-libs="sap.m"
+      data-sap-ui-compatVersion="edge"
+      data-sap-ui-preload="async"
+      data-sap-ui-resourceroots='{"sap.hc": "/sap/hc","hc.mri":"/hc/mri","hc.hph":"hc/hph"}'
+    ></script>
+
+    <% for (key in htmlWebpackPlugin.files.js) { %>
+    <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
+    <% } %>
+  </body>
+</html>

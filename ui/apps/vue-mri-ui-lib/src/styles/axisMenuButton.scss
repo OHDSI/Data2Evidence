@@ -1,0 +1,99 @@
+@import './mri-variables';
+.axis-menu-button-wrapper {
+  position: absolute;
+  display: inline-block;
+  white-space: nowrap;
+
+  .iconWrapper,
+  .buttonWrapper,
+  .binningWrapper {
+    display: inline-block;
+    white-space: nowrap;
+    vertical-align: middle;
+    margin-left: 0.2rem;
+  }
+  .binningWrapper.hidden {
+    display: none;
+  }
+  .iconLabel {
+    direction: inherit;
+    text-align: left;
+    vertical-align: middle;
+    margin-left: 13px;
+    margin-bottom: 0px;
+    width: 22px;
+    color: $MriHeaderTextDark;
+  }
+  .icon {
+    font-size: 16px;
+    margin-top: 0;
+    line-height: 18px;
+    text-align: center;
+  }
+  .axisMenuButton {
+    position: relative;
+    width: 133px;
+    background-color: $UiExtraLightBG;
+    border: 1px solid $UiLighterBorder;
+    color: $UiLightText;
+    border-radius: 2px;
+    font-size: 11px;
+    overflow: hidden;
+    vertical-align: top;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0 7px 1px;
+    height: 34px;
+    display: grid;
+    display: -ms-grid;
+    grid-row: 2;
+    grid-column: 1;
+    -ms-grid-columns: 120px 120px;
+    grid-template-columns: 120px 120px;
+  }
+  .axisMenuText {
+    width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    line-height: 1.27;
+    display: inline-block;
+    height: auto;
+    white-space: nowrap;
+    color: $MriHeaderTextDark;
+  }
+  .axisTextPlaceholder {
+    display: inline-block;
+    font-style: italic;
+  }
+
+  .axisMenuSubText {
+    width: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    line-height: 1.27;
+    display: inline-block;
+    height: auto;
+    white-space: nowrap;
+    color: $MriHeaderTextDark;
+    font-weight: bold;
+    grid-row: 2;
+    grid-column: 1;
+    -ms-grid-row: 2;
+    -ms-grid-column: 1;
+    //margin-top: 12px;
+  }
+  .axisMenuButtonIcon::before {
+    margin-left: 6px;
+    bottom: 0.5px;
+    right: 3px;
+    position: absolute;
+    display: inline-block;
+    font-size: 8px;
+    vertical-align: bottom;
+    content: '\25E2';
+    color: $MriHeaderTextDark;
+  }
+}

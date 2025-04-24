@@ -1,3 +1,4 @@
 export interface IUICodeSnippet {
-    code: string;
-  }
+  code: string;
+  model: string;
+}
