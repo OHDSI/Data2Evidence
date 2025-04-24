@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <div
         style={{
-          minHeight: 80,
+          minHeight: 56,
           background: "#fbfbfd",
           boxShadow: "0 .5px 8px 0 #acaba8",
           fontSize: 24,

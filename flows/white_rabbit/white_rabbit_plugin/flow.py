@@ -2,6 +2,7 @@ from prefect import flow
 from prefect.logging import get_run_logger
 from .types import WhiteRabbitRequestType, WhiteRabbitRunType
 from .tasks import *
+from .data_mapping_tasks import *
 
 
 @flow(log_prints=True)
@@ -25,7 +26,10 @@ def scan_report_db_flow(options: WhiteRabbitRequestType):
     start_awt_display()
     create_white_rabbit_settings(options.data)
     create_scan_report()
-    save_scan_report_conversion(options.username)
+    save_response: FileSaveResponse = save_scan_report_conversion(
+        options.username)
+    process_scan_report(
+        save_response['id'], save_response['fileName'], options.username)
 
 
 def scan_report_file_flow(options: WhiteRabbitRequestType):
@@ -34,9 +38,13 @@ def scan_report_file_flow(options: WhiteRabbitRequestType):
     generate_csv_files_from_json(file_contents)
     create_white_rabbit_settings({'data_type': "Delimited text files"})
     create_scan_report()
-    save_scan_report_conversion(options.username)
+    save_response: FileSaveResponse = save_scan_report_conversion(
+        options.username)
+    process_scan_report(
+        save_response['id'], save_response['fileName'], options.username)
 
 
 def generate_etl_report_flow(options: WhiteRabbitRequestType):
+    start_awt_display()
     generateDataJson(options.data)
     generateETLWordDocument()

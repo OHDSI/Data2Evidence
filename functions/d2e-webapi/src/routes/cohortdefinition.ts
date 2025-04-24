@@ -92,7 +92,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
     },
     (_req, res) => {
       // TODO: ADD  LOGIC
-      res.send({ tempplateSql: "dummy response" });
+      res.send({ templateSql: "dummy response" });
     }
   );
 
