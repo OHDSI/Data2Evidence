@@ -1,19 +1,16 @@
 import { env } from "../env";
 
 export const getModels = async (llm) => {
-  console.log("[amit_log] LLM : ", llm);
-  // if (env.AZURE_OPENAI_API_KEY === null) {
-  //   return ["local", "201"];
-  // }
-
-  // else{
-  //   return ["azure: ", ""]
-  // }
-
   const pattern = {
-    gpt: () =>
+    openai: () =>
       import("@langchain/openai").then(
-        ({ ChatOpenAI }) => new ChatOpenAI({ model: llm })
+        ({ ChatOpenAI }) => 
+          new ChatOpenAI(
+            { 
+              model: llm.replace("openai:", ""),
+              api_key: env.OPENAI_API_KEY
+            }
+          )
       ),
     azure: () =>
       import("@langchain/openai").then(
@@ -31,6 +28,5 @@ export const getModels = async (llm) => {
       ),
   };
   const key = Object.keys(pattern).find((k) => llm.startsWith(k));
-  console.log("[amit_log] Key :", key);
   return key ? [await pattern[key](), "200"] : [`Selected LLM model name '${llm}' is not supported`, "501"];
 };

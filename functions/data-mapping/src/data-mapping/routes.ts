@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 import { env } from "../env";
 
 const AI_MODEL = env.AI_MODEL;
-// console.log("[amit_log] AI_MODEL: ", AI_MODEL);
 export class DataMappingRouter {
   public router = express.Router();
 
@@ -14,9 +13,6 @@ export class DataMappingRouter {
   private registerRoutes() {
     this.router.post("/", async (req: Request, res: Response) => {
       req.body.model = AI_MODEL;
-
-      console.log("[amit_log] Request body - ", req.body)
-      
       let [rst, status] = await getDataMapping(req.body);
       // LLM model
       if (status === "200") {

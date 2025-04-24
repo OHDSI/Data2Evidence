@@ -11,8 +11,12 @@ if (model.includes("azure")) {
     AZURE_OPENAI_API_VERSION: _env.AZURE_OPENAI_API_VERSION
   };
 }
+else if (model.includes("openai")) {
+  extraConfig = {
+    OPENAI_API_KEY: _env.OPENAI_API_KEY,
+  };
+}
 export const env = {
   AI_MODEL: model,
-  OPENAI_API_KEY: _env.OPENAI_API_KEY,
   ...extraConfig
 };
