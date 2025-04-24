@@ -338,10 +338,6 @@ export interface ICreateWhiteRabbitFlowRunDto {
   options: ICreateWhiteRabbitFlowRunOptions;
 }
 
-export interface ICreatePerseusFlowRunDto {
-  options: ICreateWhiteRabbitFlowRunOptions;
-}
-
 interface ICreateWhiteRabbitFlowRunOptions {
   data?: object;
   run_type: string;
