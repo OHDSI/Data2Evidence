@@ -134,11 +134,11 @@ services:
       context: ./services/alp-fhir
       dockerfile: Dockerfile
 
-  fhir-fe-server:
-    build:
-      context: ./services/alp-fhir/
-      dockerfile: Dockerfile.frontend
-    volumes:
-      - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
-    ports:
-      - 41130:3000
+  # fhir-fe-server:
+  #   build:
+  #     context: ./services/alp-fhir/
+  #     dockerfile: Dockerfile.frontend
+  #   volumes:
+  #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
+  #   ports:
+  #     - 41130:3000
