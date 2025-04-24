@@ -58,29 +58,8 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const handleLinkTables = useCallback(async () => {
     try {
       setLoading(true);
-      const scanResultResponse = await api.whiteRabbit.getScanResult(scanId);
-      const fileId = scanResultResponse.fileId;
-      const fileName = scanResultResponse.fileName;
 
-      const flowRunResponse = await api.backend.createSourceSchemaByScanReportFlowRun(fileId, fileName);
-      const flowRunId = flowRunResponse.flowRunId;
-
-      let fetchedStatus = false;
-
-      while (!fetchedStatus) {
-        sleep(5000);
-        try {
-          const status = await api.backend.getFlowRunStatus(flowRunId);
-          if (status.state_name === "Completed") {
-            fetchedStatus = true;
-          }
-        } catch (error) {
-          console.error("Failed to check job status", error);
-          setLoading(false);
-          return;
-        }
-      }
-      const scannedResult: ScannedSchemaState = await api.backend.getSourceSchemaByFlowRunId(flowRunId);
+      const scannedResult: ScannedSchemaState = await api.backend.getSourceSchemaByFlowRunId(scanId);
 
       let sourceHandles: Partial<NodeProps<TableSourceHandleData>>[];
       sourceHandles = scannedResult.source_tables.map((table: ScanDataSourceTable, index: number) => ({
@@ -163,14 +142,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   return (
     <Dialog className="scan-progress-dialog" open={open} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Scan Data
-        {loading && (
-          <div className="scan-progress-dialog__loader">
-            <Loader />
-          </div>
-        )}
-      </DialogTitle>
+      <DialogTitle>Scan Data</DialogTitle>
       <div className="scan-progress-dialog__content">
         <div className="scan-progress-dialog__status">Scanning... Estimated time depends on selected database</div>
         <LinearProgress variant="determinate" value={progress} />
