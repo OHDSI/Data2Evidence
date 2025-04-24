@@ -82,7 +82,6 @@ jobs:
         include:
           - PKGPATH: ./base/
           - PKGPATH: ./cohort_survival/
-          - PKGPATH: ./data_mapping/
           - PKGPATH: ./dicom_etl/
           - PKGPATH: ./mimic_omop_conversion/
           - PKGPATH: ./nlp/

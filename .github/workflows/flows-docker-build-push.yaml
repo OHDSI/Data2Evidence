@@ -74,9 +74,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-data-mapping
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_mapping/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-white-rabbit
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/white_rabbit/Dockerfile
