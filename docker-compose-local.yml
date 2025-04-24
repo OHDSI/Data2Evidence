@@ -61,6 +61,10 @@ services:
     environment:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
 
+  alp-logto:
+    build:
+      context: ./services/alp-logto
+      dockerfile: Dockerfile
 
   alp-minerva-pg-mgmt-init:
     ports:

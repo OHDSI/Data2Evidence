@@ -91,6 +91,10 @@ jobs:
             directory: ./services/alp-pg-management
             context: ./services/alp-pg-management
             fileName: Dockerfile
+          - name: d2e-logto
+            directory: ./services/alp-logto
+            context: ./services/alp-logto
+            fileName: Dockerfile
           - name: d2e-logto-post-init
             directory: ./services/alp-logto/post-init
             context: ./services/alp-logto/post-init

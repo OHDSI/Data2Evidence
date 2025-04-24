@@ -1,0 +1,1 @@
+FROM ghcr.io/data2evidence/logto-with-logto-schema:develop
