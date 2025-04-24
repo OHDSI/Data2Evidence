@@ -111,6 +111,15 @@ jobs:
             directory: ./services/cachedb
             context: .
             fileName: Dockerfile
+          - name: d2e-enterprise-gateway
+            directory: ./services/enterprise-gateway
+            context: ./services/enterprise-gateway
+            fileName: Dockerfile
+          - name: d2e-r-ohdsi-kernel
+            directory: ./services/enterprise-gateway/kernels/R_ohdsi_docker
+            context: .
+            fileName: Dockerfile
+
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
       AZ_REG_REPOSITORY: ${{ matrix.name }}
