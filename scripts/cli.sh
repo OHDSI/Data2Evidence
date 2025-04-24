@@ -218,7 +218,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull ghcr.io/ohdsi/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -226,7 +226,7 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         ;;
     *)
@@ -244,7 +244,7 @@ Commands:
   start       Starts d2e services. Requires d2e init and d2e setup to be run.
   stop        Stops d2e services
   clean       Removes d2e docker containers and volumes
-  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run.
+  setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
 
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions

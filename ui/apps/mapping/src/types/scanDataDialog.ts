@@ -16,10 +16,10 @@ export interface ScanDataSourceTable {
 }
 
 export interface ScanDataDBConnectionForm {
-  dbType: string;
+  data_type: string;
   server: string;
   port: number;
-  user: string;
+  user_name: string;
   httppath?: string;
   password: string;
   database: string;

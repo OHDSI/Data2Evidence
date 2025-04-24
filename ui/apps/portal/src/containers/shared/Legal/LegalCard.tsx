@@ -1,13 +1,13 @@
 import React, { FC, useState, useEffect, useCallback } from "react";
 import { Card, Tab, Tabs, Loader } from "@portal/components";
 import { useTranslation } from "../../../contexts";
-import { usePortalDescriptionConfigs } from "../../../hooks";
+import { useConfigsByTypes } from "../../../hooks";
 import { ConfigTypes } from "../../../constant";
 import ReactMarkdown from "react-markdown";
 
 export const LegalCard: FC = () => {
   const { getText, i18nKeys } = useTranslation();
-  const [configs, loading] = usePortalDescriptionConfigs([
+  const [configs, loading] = useConfigsByTypes([
     ConfigTypes.TERMS_OF_USE,
     ConfigTypes.TERMS_OF_USE_DISPLAY,
     ConfigTypes.PRIVACY_POLICY,

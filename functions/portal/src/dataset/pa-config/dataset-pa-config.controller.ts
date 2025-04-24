@@ -1,6 +1,8 @@
-import { BadRequestException, Controller, Get, Query } from "@danet/core";
+import { BadRequestException, Controller, Get, Middleware, Query } from "@danet/core";
 import { DatasetPaConfigService } from "./dataset-pa-config.service.ts";
+import { RequestContextMiddleware } from '../../common/request-context.middleware.ts';
 
+@Middleware(RequestContextMiddleware)
 @Controller("system-portal/dataset/pa-config")
 export class DatasetPaConfigController {
   constructor(

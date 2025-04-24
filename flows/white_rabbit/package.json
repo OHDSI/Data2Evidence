@@ -18,13 +18,13 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit",
+      "image": "ghcr.io/ohdsi/d2e/flow-white-rabbit",
       "flows": [
         {
           "name": "white_rabbit_plugin",
           "type": "white_rabbit",
           "entrypoint": "flows.white_rabbit_plugin.flow.white_rabbit_plugin",
-          "image": "ghcr.io/data2evidence/d2e/flow-white-rabbit:develop",
+          "image": "ghcr.io/ohdsi/d2e/flow-white-rabbit:develop",
           "image_pull_policy": "Never",
           "tags": [
             "white_rabbit"
@@ -43,24 +43,32 @@
               "options"
             ],
             "definitions": {
+              "WhiteRabbitRunType": {
+                "enum": [
+                    "SCAN_REPORT_FILES",
+                    "SCAN_REPORT_DB",
+                    "GENERATE_ETL_REPORT"
+                  ],
+                  "title": "WhiteRabbitRunType",
+                  "type": "string"
+              },
               "WhiteRabbitRequestType": {
                 "properties": {
-                  "url": {
-                    "title": "Url",
-                    "type": "string"
-                  },
-                  "headers": {
-                    "title": "Headers",
-                    "type": "object"
+                  "run_type": {
+                    "$ref": "#/definitions/WhiteRabbitRunType"
                   },
                   "data": {
                     "title": "Data",
                     "type": "object"
-                  }
+                  },
+                  "username": {
+                      "default": "",
+                      "title": "username",
+                      "type": "string"
+                    }
                 },
                 "required": [
-                  "url",
-                  "headers",
+                  "run_type",
                   "data"
                 ],
                 "title": "WhiteRabbitRequestType",

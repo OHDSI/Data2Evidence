@@ -1,4 +1,6 @@
+import { ConfigTypes } from "../constant";
+
 export interface Config {
-  type: string;
+  type: ConfigTypes;
   value: string;
 }
