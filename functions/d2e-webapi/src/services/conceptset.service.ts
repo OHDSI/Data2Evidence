@@ -2,7 +2,7 @@ import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
   IConceptSetListResponseDto,
   IConceptSetResponseDto,
-  ICreateSetCheckDto,
+  IConceptSetCreateDto,
   IConceptSetItemListDto,
   IConceptSetItemsResponseDto,
 } from "../dto/conceptset.ts";
@@ -43,7 +43,7 @@ export const getConceptSets = async (
 export const createConceptSet = async (
   token: string,
   datasetId: string,
-  conceptSetDto: ICreateSetCheckDto
+  conceptSetDto: IConceptSetCreateDto
 ): Promise<IConceptSetResponseDto> => {
   // Get username
   const userMgmtAPI = new UserMgmtAPI(token);

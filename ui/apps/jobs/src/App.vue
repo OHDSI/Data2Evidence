@@ -16,7 +16,7 @@ setTheme('light')
 
 <style scoped>
 .app {
-  @apply h-[calc(100vh-80px)];
+  @apply h-[calc(100vh-56px)];
   /* background-color: var(--color-neutral-lightest); */
 }
 </style>

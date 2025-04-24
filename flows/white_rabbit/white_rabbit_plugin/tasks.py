@@ -73,8 +73,6 @@ def generateETLWordDocument(inputPath: str = "../../data.json", outputPath: str 
     if not os.path.exists(inputPath):
         raise FileNotFoundError(f"file {inputPath} does not exist.")
 
-    start_awt_display()
-
     ShellOperation(commands=[
                    f"./dist/bin/rabbitInAHat --generateWordReport {inputPath} {outputPath}"]).run()
 
@@ -119,7 +117,7 @@ def generate_csv_files_from_json(file_contents: list = None):
 
 
 @task(log_prints=True)
-def save_scan_report_conversion(username: str):
+def save_scan_report_conversion(username: str) -> FileSaveResponse:
     logger = get_run_logger()
     logger.info("saving scan report conversion to files manager")
 
@@ -131,10 +129,11 @@ def save_scan_report_conversion(username: str):
         logger.info("Successfully saved scan report file")
         saveConversionResponse = WhiteRabbitAPI().save_conversion(
             runtime.flow_run.id, fileSaveResponse['fileName'], fileSaveResponse['id'])
-        logger.info("Successfully saved scan conversion")
+        logger.info("Successfully saved scan conversion: ",
+                    saveConversionResponse['rows'][0])
     except Exception as e:
         logger.error(f"Failed to save scan conversion")
         raise e
     else:
         logger.info("Successfully saved scan report and conversion")
-        return saveConversionResponse['rows'][0]['id']
+        return fileSaveResponse
