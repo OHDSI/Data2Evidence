@@ -78,6 +78,8 @@ interface CohortSurvivalFlowRunOptions {
   datasetId: string;
   targetCohortDefinitionId: number;
   outcomeCohortDefinitionId: number;
+  analysisType?: string; // Optional, defaults to "single_event"
+  competingOutcomeCohortDefinitionId?: number; // Optional, required for competing_risk analysis
 }
 
 export interface CohortGeneratorFlowRunDto {
@@ -333,10 +335,6 @@ export interface ICreateCachedbFileFlowRunDto {
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
-  options: ICreateWhiteRabbitFlowRunOptions;
-}
-
-export interface ICreatePerseusFlowRunDto {
   options: ICreateWhiteRabbitFlowRunOptions;
 }
 
