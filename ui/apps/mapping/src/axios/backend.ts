@@ -12,30 +12,6 @@ export class Backend {
     });
   }
 
-  public async createSourceSchemaByScanReportFlowRun(id: number, fileName: string): Promise<{ flowRunId: string }> {
-    const data = {
-      options: {
-        url: "create_source_schema_by_scan_report",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: {
-          dataId: id,
-          fileName,
-        },
-        method: "POST",
-      },
-    };
-    return request({
-      url: `${JOBPLUGINS_BASE_ENDPOINT}flow-run`,
-      method: "POST",
-      data: data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
   public getCDMSchema(cdmVersion: string) {
     return request<TableSchemaState[]>({
       url: `${PERSEUS_BACKEND_BASE_ENDPOINT}get_cdm_schema`,

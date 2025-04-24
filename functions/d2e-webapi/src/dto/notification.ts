@@ -26,3 +26,4 @@ export const NotificationResponseDto = z.array(
     ownerType: z.string(),
   })
 );
+export type INotificationResponseDto = z.infer<typeof NotificationResponseDto>;
