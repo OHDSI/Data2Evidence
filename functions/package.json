@@ -220,6 +220,8 @@
         "MRI_SUPER_USER": [
           "PA.svc",
           "PAConfig.i18n",
+          "PAConfig.svc/read",
+          "CDWConfig.svc/read",
           "PAConfig.ui",
           "PAConfig.i18n",
           "PAConfig.svc",
@@ -403,7 +405,7 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.read"
+          "codesuggestion.tenantview.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -560,16 +562,8 @@
         {
           "path": "^/pa-config-svc/enduser(.*)",
           "scopes": [
+            "PAConfig.svc",
             "PAConfig.svc/read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/pa-config-svc/enduser(.*)",
-          "scopes": [
-            "PAConfig.svc"
           ]
         },
         {
@@ -587,7 +581,8 @@
         {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
-            "CDWConfig.svc/read"
+            "CDWConfig.svc/read",
+            "CDWConfig.svc"
           ],
           "httpMethods": [
             "GET"
@@ -2166,7 +2161,8 @@
         {
           "path": "^/code-suggestion",
           "scopes": [
-            "codesuggestion.read"
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
           ],
           "httpMethods": [
             "POST"
