@@ -12,7 +12,7 @@ on:
         type: string
 
 env:
-  VERSION: ${{ github.event.inputs.version ||  '0.6.0' }}
+  VERSION: ${{ github.event.inputs.version ||  vars.NPM_INSTALL_D2E_VER  }}
 
 jobs:
   npm-install-run:
