@@ -1,6 +1,9 @@
 services:
   trex:
     command: npm run startdev
+    build:
+      context: ./services/trex
+      dockerfile: Dockerfile
     ports:
       - 9229:9229
       - 25432:5432
@@ -12,6 +15,8 @@ services:
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
+      RUST_LOG: info
+      RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas"]'
