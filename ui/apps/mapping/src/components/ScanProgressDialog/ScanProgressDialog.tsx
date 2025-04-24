@@ -107,7 +107,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
     }
-  }, [scanId]);
+  }, [scanId, setScanCompleted]);
 
   const handleBack = useCallback(() => {
     onBack();
