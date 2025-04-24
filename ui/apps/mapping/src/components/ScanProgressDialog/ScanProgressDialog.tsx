@@ -94,11 +94,18 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const fetchScanProgress = useCallback(async () => {
     try {
       const status = await api.whiteRabbit.getFlowRunStatus(scanId);
+
       if (status.state_name === "Completed") {
         setScanCompleted(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
       } else if (status.state_name === "Failed" || status.state_name === "Crashed") {
         setScanCompleted(true);
         setScanFailed(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
       }
       setLog(status.state_name);
       if (status.state_name in FLOW_STATE_MAP) {
@@ -107,7 +114,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
     }
-  }, [scanId, setScanCompleted]);
+  }, [scanId]);
 
   const handleBack = useCallback(() => {
     onBack();
@@ -125,13 +132,11 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   useEffect(() => {
     if (open && scanId !== "" && !scanCompleted) {
-      intervalRef.current = setInterval(() => {
-        fetchScanProgress();
-        if (scanCompleted) {
-          clearInterval(intervalRef.current!);
-        }
-      }, 3000);
-      // Clear the interval when unmount
+      // Initial fetch
+      fetchScanProgress();
+
+      intervalRef.current = setInterval(fetchScanProgress, 3000);
+
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
