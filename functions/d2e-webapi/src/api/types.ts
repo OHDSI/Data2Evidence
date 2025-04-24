@@ -157,3 +157,30 @@ export interface IUserMe {
   id: string;
   username: string;
 }
+
+export interface IDataset {
+  databaseName: string;
+  databaseCode: string;
+  id: string;
+  dialect: string;
+  schemaName: string;
+  vocabSchemaName: string;
+  dataModel: string;
+  plugin: string;
+  attributes: string[];
+  tags: string[];
+  dashboards: string[];
+  tenant: {
+    id: string;
+    name: string;
+    system: string;
+  };
+  tokenStudyCode: string;
+  studyDetail: {
+    name: string;
+    id: string;
+    description: string;
+    summary: string;
+    showRequestAccess: boolean;
+  };
+}

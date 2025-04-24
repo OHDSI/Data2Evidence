@@ -1,0 +1,2 @@
+[install.scopes]
+"@data2evidence" = { url = "$PLUGINS_REGISTRY" }
