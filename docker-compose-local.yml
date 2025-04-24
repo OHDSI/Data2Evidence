@@ -141,3 +141,8 @@ services:
       - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
     ports:
       - 41130:3000
+
+  enterprise-gateway:
+    build: 
+      context: ./services/enterprise-gateway
+      dockerfile: Dockerfile
