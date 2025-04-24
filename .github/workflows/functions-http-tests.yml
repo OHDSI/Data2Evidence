@@ -343,6 +343,10 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
+      - name: print logs for fhir-server
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs fhir-server -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
