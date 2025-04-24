@@ -73,10 +73,9 @@ RUN python3 -m venv /usr/src/app
 ENV PATH="/usr/src/app/bin:$PATH"
 
 # Set environment variables
-ENV JAVA_HOME_11=/usr/lib/jvm/openjdk-11
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-17
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
-ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-17/lib/server
 ENV R_REMOTES_UPGRADE="always"
 
 ENV APP_VERSION=0.0.0
@@ -86,13 +85,6 @@ ENV PRING_PROFILES_ACTIVE=prod
 RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
 
 RUN rm openjdk.tgz*
-
-# OpenJDK 11
-RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_x64_linux_11.0.16_8.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_aarch64_linux_11.0.16_8.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME_11}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME_11" --strip-components 1 --no-same-owner ;
-
-RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME_11}/bin/java 100 && \
-    update-alternatives --install /usr/bin/javac javac ${JAVA_HOME_11}/bin/javac 100 && \
-    rm openjdk.tgz*
 
 # Verify the installation
 RUN java -version && R CMD javareconf
@@ -157,12 +149,6 @@ FROM base-build as dbsvc-build
 # Required for RPostgres R package
 RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 
-
-ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
-RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-
-
 FROM dbsvc-build AS final-build
 
 WORKDIR /app
@@ -170,9 +156,6 @@ WORKDIR /app
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
 COPY --chown=docker:docker ./base/init.R .
-
-# Grant docker ownership to create properties file
-RUN chown -R docker:docker ./liquibase/
 
 RUN mkdir /output
 RUN chown -R docker:docker /output
