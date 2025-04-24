@@ -45,5 +45,6 @@ def scan_report_file_flow(options: WhiteRabbitRequestType):
 
 
 def generate_etl_report_flow(options: WhiteRabbitRequestType):
+    start_awt_display()
     generateDataJson(options.data)
     generateETLWordDocument()
