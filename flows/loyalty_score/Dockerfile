@@ -154,10 +154,10 @@ RUN chown docker:alp ./duckdb_data
 RUN mkdir -p ./cdw-config/duckdb_data
 RUN chown -R docker:alp ./cdw-config
 
-COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
+COPY --chown=docker:docker --chmod=711 ./loyalty_score/requirements_loyalty_score.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip install -r requirements_base.txt
+RUN pip install -r requirements_loyalty_score.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base flows

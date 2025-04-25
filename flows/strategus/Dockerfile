@@ -24,14 +24,7 @@ RUN apt-get update && \
     gcc \
     git \
     less
-
-# # GitHub setup & test
-# RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
-# # RUN ssh-add -l # debug only
-# RUN git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD || exit 1
-# RUN git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD || exit 1
-# RUN git config --global advice.detachedHead false
-
+    
 # Set environment variables
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
@@ -72,6 +65,26 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
+RUN useradd docker -u 1001 \
+    && groupadd alp \
+    && mkdir /home/docker \
+    && chown docker:docker /home/docker \
+    && adduser docker staff \
+    && adduser docker alp
+
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar /app/inst/drivers/postgresql-42.3.1.jar
 
-USER jovyan
+COPY --chown=docker:docker --chmod=711 ./strategus/requirements_strategus.txt .
+ENV RUN_TYPE=$BUILD_TYPE
+RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
+RUN pip install -r requirements_strategus.txt
+
+COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
+COPY --chown=docker:docker --chmod=711 ./base flows
+
+# Change the ownership of /app folder to docker user for CohortGen error logs 
+RUN chown -R docker:docker /app
+# Grant docker user read/write access
+RUN chmod -R 755 /app
+
+USER docker
