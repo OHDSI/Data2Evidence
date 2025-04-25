@@ -24,11 +24,11 @@ export const ConceptSetCheckResponseDto = z.object({
   warnings: z.array(z.unknown()),
 });
 
-export const CreateSetCheckDto = ConceptSetDto.extend({
+export const ConceptSetCreateDto = ConceptSetDto.extend({
   description: z.string().nullable(),
   expression: ConceptSetItemsResponseDto,
 });
-export type ICreateSetCheckDto = z.infer<typeof CreateSetCheckDto>;
+export type IConceptSetCreateDto = z.infer<typeof ConceptSetCreateDto>;
 
 export const ConceptSetItemDto = z.object({
   conceptId: z.number(),
