@@ -12,7 +12,13 @@ const workspaceRoutes = createWorkspaceRouteRecords({
   flows: () => import('@/views/Flows.vue'),
   flow: () => import('@/views/Flow.vue'),
   runs: () => import('@/views/FlowRuns.vue'),
-  flowRun: () => import('@/views/FlowRun.vue')
+  flowRun: () => import('@/views/FlowRun.vue'),
+  blocks: () => import('@/views/Blocks.vue'),
+  blocksCatalog: () => import('@/views/BlocksCatalog.vue'),
+  blocksCatalogView: () => import('@/views/BlocksCatalogView.vue'),
+  blockCreate: () => import('@/views/BlocksCatalogCreate.vue'),
+  block: () => import('@/views/BlockView.vue'),
+  blockEdit: () => import('@/views/BlockEdit.vue')
 })
 
 const routeRecords: AppRouteRecord[] = [
