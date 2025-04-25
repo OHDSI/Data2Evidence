@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "@data2evidence/loyalty-score-flow",
+=======
+  "name": "@data2evidence/strategus-flow",
+>>>>>>> 10164db3 (Move plugins out of base flow)
   "version": "0.0.99",
   "description": "",
   "main": "index.js",

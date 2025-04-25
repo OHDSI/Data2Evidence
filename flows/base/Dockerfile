@@ -115,12 +115,7 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-FROM base-build AS dbsvc-build
-
-# Required for RPostgres R package
-RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
-
-FROM dbsvc-build AS final-build
+FROM base-build AS final-build
 
 WORKDIR /app
 
