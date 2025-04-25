@@ -19,7 +19,7 @@ import { generateQuery } from "../../utils/QueryGenSvcProxy";
 import { env } from "../../env";
 const log = Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 
 export class PatientCountEndpoint extends BaseQueryEngineEndpoint {

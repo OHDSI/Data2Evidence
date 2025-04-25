@@ -23,7 +23,7 @@ import { env } from "../../env";
 const language = "en";
 
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 
 export async function getCohortAnalyticsConnection(req: IMRIRequest) {
