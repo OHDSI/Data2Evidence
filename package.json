@@ -40,6 +40,9 @@
     "removetestdb": "node internal/build/initdb.js rmonly",
     "internal": "npm run-script --prefix internal"
   },
+  "optionalDependencies": {
+    "hdb": "0.19.12"
+  },
   "devDependencies": {
     "@types/node": "^18",
     "ts-node": "10.9.2",
