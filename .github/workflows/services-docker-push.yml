@@ -119,6 +119,7 @@ jobs:
             directory: ./services/enterprise-gateway/kernels/R_ohdsi_docker
             context: .
             fileName: Dockerfile
+            build_arg1: true
 
     uses: ./.github/workflows/services-docker-push-called.yml
     with:
