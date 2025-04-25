@@ -294,6 +294,7 @@ const initRoutes = async (app: express.Application) => {
                     let queryParams = {
                         action: "getMyConfig",
                         datasetId,
+                        configId: req.paConfigId
                     };
 
                     configResults = await mriConfigConnection.getMriConfig(
@@ -343,6 +344,7 @@ const initRoutes = async (app: express.Application) => {
                     let qParams = {
                         action: "getMyConfig",
                         datasetId,
+                        configId: req.paConfigId
                     };
                     configResults = await mriConfigConnection.getMriConfig(
                         req,

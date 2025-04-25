@@ -114,41 +114,8 @@ export class PatientCountEndpoint extends BaseQueryEngineEndpoint {
         log.addRequestCorrelationID(req);
         const promises = [];
 
-        // Get all available Configs
-        const payload = {
-            action: "getMyConfigList",
-            language: "en",
-        };
-        const myConfigs = (await mriConfigConnection.getMriConfig(
-            req,
-            payload
-        )) as any[];
-        if (!myConfigs) {
-            log.error("Unable to get any default config");
-            throw Error("No Configs found");
-        }
-        log.info(
-            "(PatientCountEndpoint) Retrieve the following configs: " +
-                JSON.stringify(myConfigs)
-        );
-
-        const DEFAULT_ASSIGNMENT_NAME =
-            process.env.ANALYTICS_SVC__DEFAULT_ASSIGNMENT_NAME;
-        const selectedConfig = myConfigs?.find(
-            ({ meta }) => meta.assignmentName === DEFAULT_ASSIGNMENT_NAME
-        );
-
-        log.info(
-            "(PatientCountEndpoint) Using assignment name: " +
-                DEFAULT_ASSIGNMENT_NAME
-        );
-        log.info(
-            "(PatientCountEndpoint) Found assignment: " +
-                JSON.stringify(selectedConfig)
-        );
-
-        const configId = selectedConfig.meta.configId;
-        const configVersion = selectedConfig.meta.configVersion;
+        const configId = req.paConfigId;
+        const configVersion = req.paConfigVersion;
 
         // Generate DB Credentials for each datasetId
         const dbCreds = {};

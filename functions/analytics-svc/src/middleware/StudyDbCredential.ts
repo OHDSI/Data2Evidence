@@ -152,7 +152,6 @@ export default async (req: IMRIRequest, res, next) => {
             getDbConnectionByStudyMetadata(studyMetadata);
             addPAConfigIdToReq(studyMetadata);
         }
-
         next();
     } catch (err) {
         log.enrichErrorWithRequestCorrelationID(err, req);
