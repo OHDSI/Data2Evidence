@@ -1,8 +1,12 @@
 services:
   trex:
     command: npm run startdev
+    build:
+      context: ./services/trex
+      dockerfile: Dockerfile
     ports:
       - 9229:9229
+      - 25432:5432
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
@@ -11,6 +15,8 @@ services:
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ../trex/core:/usr/src/core # For debugging trex with local code
     environment:
+      RUST_LOG: info
+      RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas"]'
@@ -133,14 +139,14 @@ services:
       context: ./services/alp-fhir
       dockerfile: Dockerfile
 
-  fhir-fe-server:
-    build:
-      context: ./services/alp-fhir/
-      dockerfile: Dockerfile.frontend
-    volumes:
-      - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
-    ports:
-      - 41130:3000
+  # fhir-fe-server:
+  #   build:
+  #     context: ./services/alp-fhir/
+  #     dockerfile: Dockerfile.frontend
+  #   volumes:
+  #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
+  #   ports:
+  #     - 41130:3000
 
   enterprise-gateway:
     build: 
