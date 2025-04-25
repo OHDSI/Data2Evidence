@@ -16,10 +16,6 @@ export default class MriConfigConnection {
     }
 
     public async getMriConfig(req, payload) {
-            const { hostname, port, protocol } = new URL(
-                this.serverUrl,
-            );
-
             const timestamp = (new Date()).valueOf();
             let authorizationValue = req.headers.authorization;
             const { action, datasetId, configId } = payload;
@@ -38,7 +34,7 @@ export default class MriConfigConnection {
               action,
               configId,
             };
-            const url = `${this.serverUrl}?datasetId=${datasetId}`;
+            const url = `${this.serverUrl}/enduser?datasetId=${datasetId}`;
             const result = await axios.post(url, body, options);
 
           return result.data;
