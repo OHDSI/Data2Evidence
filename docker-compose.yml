@@ -120,6 +120,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 20
     volumes:
       - trex:/usr/src/data
     healthcheck:
@@ -432,7 +434,8 @@ services:
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir"
+        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+        "jupyter": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-proxy:8888/jupyter"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}

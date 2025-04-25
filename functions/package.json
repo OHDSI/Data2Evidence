@@ -190,6 +190,11 @@
           "service": "logto"
         },
         {
+          "source" : "/jupyter",
+          "service":  "jupyter",
+          "rmsrc": true
+        },
+        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -468,7 +473,8 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
-          "d2e.webapi"
+          "d2e.webapi",
+          "jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -2233,6 +2239,12 @@
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
           ]
         }
       ]
