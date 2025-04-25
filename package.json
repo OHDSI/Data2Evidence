@@ -40,9 +40,6 @@
     "removetestdb": "node internal/build/initdb.js rmonly",
     "internal": "npm run-script --prefix internal"
   },
-  "optionalDependencies": {
-    "@alp/alp-dbcli": "file:cache/drivers/alp-dbcli-v1.0.0.tgz"
-  },
   "devDependencies": {
     "@types/node": "^18",
     "ts-node": "10.9.2",

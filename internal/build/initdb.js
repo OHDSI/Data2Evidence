@@ -1,66 +1,61 @@
-const _execSync = require('child_process').execSync;
-const path = require('path');
+const hdb = require("hdb");
+const fs = require("fs");
 
-if (process.argv.length < 3)
-    console.log("usage: node build/initdb.js <demo|test|rmonly> schema");
+const client = hdb.createClient({
+  host: process.env.HANASERVER,
+  port: process.env.HANAPORT,
+  databaseName: process.env.DATABASE,
+  user: process.env.HANAUSER,
+  password: process.env.HANAPW,
+});
+const TESTSCHEMA = process.env.TESTSCHEMA;
 
-var includeData = process.argv[2] === 'test' ? false : true;
-var rmonly = process.argv[2] === 'rmonly' ? true : false;
-var schema = process.argv.length === 4 ? process.argv[3] : process.env.TESTSCHEMA;
-var HDI___SYS_DI__USER = process.env.HDIUSER;
+const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
+const tmp = sqlScript.split(";");
+const tmp2 = tmp.slice(0, tmp.length - 1);
 
-var _env = {
-    PATH: process.env.PATH,
-    HDI__HOST: process.env.HANASERVER,
-    HDI__PORT: process.env.HDIPORT,
-    HDI___SYS_DI__USER: HDI___SYS_DI__USER,
-    HDI___SYS_DI__PASSWORD: process.env.HDIPW,
-    SCHEMA: schema
-}
+const queries = [];
 
-_env[`HDI__${schema}__USER`] = process.env.HDIUSER;
-_env[`HDI__${schema}__PASSWORD`] = process.env.HDIPW;
-console.log(_env);
-
-function exec(cmd) { console.log(_execSync(cmd, { env: _env, cwd: "services/mri-db" }).toString()); }
+tmp2.forEach((element) => {
+  queries.push(
+    element
+      .replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA) // replace with actual schema name
+      .replaceAll("PLACE_HOLDER_STR", ";,.:-") // replace with the actual delimiting characters
+  );
+});
 
 function main() {
-    try {
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js drop-container -f ${schema}`);
-    } catch (err) {
-        console.log("Can't drop container. It does not exist.");
+  console.log("Setting up test schema...");
+
+  client.on("error", function (err) {
+    console.error("Network connection error", err);
+  });
+  console.log(`Connection state: ${client.readyState}`);
+
+  client.connect((err) => {
+    if (err) {
+      return console.error("Error:", err);
     }
-    if (!rmonly) {
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js create-container -X ${HDI___SYS_DI__USER} ${schema}`);
+    queries.forEach((query, index) => {
+      // console.log(`Connection state: ${client.readyState}`);
 
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js write -r ${schema} src/ cfg/`);
-
-        // exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/data/`);
-        if (!includeData) {
-            console.log("including data")
-            exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/config_data/`);
+      client.exec(query, (err) => {
+        if (err) {
+          return console.error("Error:", err);
         }
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js make ${schema} @ src/ cfg/`);
-
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} SELECT ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} EXECUTE ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} INSERT ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} DELETE ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} UPDATE ${HDI___SYS_DI__USER}`);
-
-        // Grant same priveleges found in TENANT_READ_ROLE of other schemas
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} SELECT TENANT_READ_USER`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} EXECUTE TENANT_READ_USER`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} 'CREATE TEMPORARY TABLE' TENANT_READ_USER`);
-
-        exec(`yarn inittables`);
-    }
+        // console.log(`Table ${index} has been created`);
+        if (index === queries.length - 1) {
+          console.log(`All DB artefacts are created succussfully...`);
+          process.exit(0);
+        }
+      });
+    });
+  });
 }
 
 try {
-    main()
+  main();
 } catch (e) {
-    console.error("Failed. Retrying once ...");
-
-    main();
+  console.error("Setting up test schema failed. Retrying once more...");
+  main();
 }
