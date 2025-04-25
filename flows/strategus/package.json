@@ -1,0 +1,53 @@
+{
+  "name": "@data2evidence/strategus-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-strategus:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/ohdsi/d2e/flow-strategus",
+      "flows": [
+        {
+          "name": "strategus_plugin",
+          "type": "strategus",
+          "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
+          "image_pull_policy": "IfNotPresent",
+          "tags": [
+            "strategus"
+          ],
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "json_graph": {
+                "position": 0,
+                "title": "json_graph"
+              },
+              "options": {
+                "position": 1,
+                "title": "options"
+              }
+            },
+            "required": [
+              "json_graph",
+              "options"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
