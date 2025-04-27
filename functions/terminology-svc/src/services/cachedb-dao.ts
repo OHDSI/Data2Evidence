@@ -41,7 +41,7 @@ export class CachedbDAO {
       select *
           from fts
           limit ? OFFSET ?;
-          `;
+      `;
 
       const offset = pageNumber * rowsPerPage;
       const conceptsSqlParams = [
@@ -290,11 +290,8 @@ export class CachedbDAO {
    * Scoring system:
    * 1. Exact match (1000 points): When concept_name exactly matches the search term
    * 2. Starts with match (800 points): When concept_name starts with the search term
-   * 3. Contains match (500 points): When concept_name contains the search term
-   * 4. Contains all terms (250 points): When concept_name contains all individual search terms
-   * 5. Word order match (200 points): When concept_name contains all terms in the same order
-   * 6. Standard concept (100 points): When the concept is a standard concept (standard_concept = 'S')
-   * 7. BM25 score: Base relevance score from full-text search
+   * 3. Standard concept (100 points): When the concept is a standard concept (standard_concept = 'S')
+   * 4. BM25 score: Base relevance score from full-text search
    *
    * The final score is the sum of all applicable scores, and results are ordered by this score.
    */
@@ -320,41 +317,6 @@ export class CachedbDAO {
         [],
       ];
     } else {
-      // Prepare search terms for partial matching
-      const searchTerms = searchText
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((term) => term.length > 0);
-
-      // Create a condition to check if concept_name contains all search terms
-      const containsAllTermsCondition = searchTerms
-        .map(
-          (_, index) =>
-            `LOWER(concept_name) LIKE '%' || LOWER(?${index + 5}) || '%'`
-        )
-        .join(" AND ");
-
-      // Create parameters for the contains all terms condition
-      const containsAllTermsParams = searchTerms.map((term) => term);
-
-      // Create a condition to detect if the search is for a medication with dosage
-      const medicationWithDosagePattern = /^([a-zA-Z]+)\s+(\d+\s*[a-zA-Z]+)$/;
-      const isMedicationWithDosage =
-        medicationWithDosagePattern.test(searchText);
-
-      // Create a condition to detect if the search is for a procedure with qualifier
-      const procedureWithQualifierPattern =
-        /^([a-zA-Z\s]+)\s+with\s+([a-zA-Z\s]+)$/i;
-      const isProcedureWithQualifier =
-        procedureWithQualifierPattern.test(searchText);
-
-      // Create a regex pattern for word order matching
-      const wordOrderRegexPattern = searchTerms
-        .map(
-          (term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape special regex characters
-        )
-        .join(".*");
-
       // Build the query with all scoring factors
       const query = `
       with concept_with_scores as (
@@ -369,22 +331,8 @@ export class CachedbDAO {
           CASE
             WHEN LOWER(concept_name) = LOWER(?2) THEN 1000
             WHEN LOWER(concept_name) LIKE LOWER(?3) || '%' THEN 800
-            WHEN LOWER(concept_name) LIKE '%' || LOWER(?4) || '%' THEN 500
             ELSE 0
           END as exact_match_score,
-          
-          -- Contains all terms scoring (medium priority)
-          CASE
-            WHEN ${containsAllTermsCondition} THEN 250
-            ELSE 0
-          END as contains_all_terms_score,
-          
-          -- Word order and proximity scoring
-          CASE
-            -- For terms with numbers (like "type 2 diabetes")
-            WHEN regexp_matches(LOWER(concept_name), '${wordOrderRegexPattern}') THEN 200
-            ELSE 0
-          END as word_order_score,
           
           -- Standard concept boost
           CASE
@@ -397,7 +345,7 @@ export class CachedbDAO {
       
       select
         *,
-        (bm25_score + exact_match_score + contains_all_terms_score + word_order_score + standard_boost) as score
+        (bm25_score + exact_match_score + standard_boost) as score
       from
         concept_with_scores
       WHERE score > 0
@@ -410,8 +358,6 @@ export class CachedbDAO {
         searchText, // For BM25 score
         searchText, // For exact match (equals)
         searchText, // For exact match (starts with)
-        searchText, // For exact match (contains)
-        ...containsAllTermsParams, // For contains all terms condition
       ];
 
       // Create the final query with fts wrapper
