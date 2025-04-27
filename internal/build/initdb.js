@@ -37,7 +37,7 @@ function main() {
       return console.error("Error:", err);
     }
     queries.forEach((query, index) => {
-      // console.log(`Connection state: ${client.readyState}`);
+      console.log(`query: ${query}`);
 
       client.exec(query, (err) => {
         if (err) {
