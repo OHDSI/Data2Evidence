@@ -40,7 +40,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
   a.plugin.register(1, {
     serverSettings: {
-      baseUrl: "https://localhost:41100/jupyter",
+      baseUrl: "${uiFilesUrl}/jupyter",
       token: "${jwtToken}",
       appendToken: true,
       init: {

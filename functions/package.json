@@ -475,7 +475,7 @@
           "jobplugins.dqd.read",
           "d2e.webapi",
           "jupyter",
-          "usermgmt.jupyter.me"
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
