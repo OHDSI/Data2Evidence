@@ -474,7 +474,8 @@
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
           "d2e.webapi",
-          "jupyter"
+          "jupyter",
+          "usermgmt.jupyter.me"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -756,7 +757,7 @@
         {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
-            "usermgmt.me"
+            "usermgmt.me.jupyter"
           ],
           "httpMethods": [
             "GET"
