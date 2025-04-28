@@ -78,35 +78,41 @@
       </template>
     </messageBox>
 
+    <ImportAtlasCohortDefinitionDialog
+      v-if="showImportAtlasCohortDefinition"
+      @closeEv="closeImportAtlasCohortDefinition"
+      @createdEv="loadBookmarks"
+    />
+
     <div class="bookmark-content">
-      <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
-        <div style="flex: 1; border-bottom: 0px lightgrey solid; display: flex; justify-content: start; color: navy">
-          Create Cohort:
-        </div>
-        <div style="flex: 1; margin-left: 10px"></div>
-      </div>
-      <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
-        <div style="flex: 3">
+      <div class="bookmark-content__header">
+        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
-        </div>
-        <div v-if="enableAtlasCohortDefinition" style="flex: 3; margin-left: 10px">
-          <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink"> </Button>
-        </div>
-        <div style="flex: 3; margin-left: 10px">
+          <Button
+            v-if="enableAtlasCohortDefinition"
+            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :onClick="openAtlasLink"
+          >
+          </Button>
+          <Button
+            :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
+            :onClick="openImportAtlasCohortDefinition"
+          >
+          </Button>
           <Button
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
           >
           </Button>
-        </div>
-        <div style="flex: 1; margin-left: 10px; display: flex; align-items: center; justify-content: center">
-          <div style="font-size: 15px; color: navy; margin-right: 5px">
+          <div class="shared-toggle-container">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
+            <SlideToggle v-model="showSharedBookmarks" />
           </div>
-          <SlideToggle v-model="showSharedBookmarks" />
         </div>
       </div>
+
       <div class="bookmark-content__break" />
 
       <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
@@ -193,6 +199,7 @@ import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
+import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 
 export default {
   compatConfig: {
@@ -230,6 +237,7 @@ export default {
       },
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
+      showImportAtlasCohortDefinition: false,
     }
   },
   watch: {
@@ -544,6 +552,15 @@ export default {
     openAtlasLink() {
       getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
     },
+    openImportAtlasCohortDefinition() {
+      this.showImportAtlasCohortDefinition = true
+    },
+    closeImportAtlasCohortDefinition() {
+      this.showImportAtlasCohortDefinition = false
+    },
+    loadBookmarks() {
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+    },
   },
   components: {
     messageBox,
@@ -556,7 +573,7 @@ export default {
     BookmarkItems,
     SlideToggle,
     Button,
-    ,
+    ImportAtlasCohortDefinitionDialog,
   },
 }
 </script>
