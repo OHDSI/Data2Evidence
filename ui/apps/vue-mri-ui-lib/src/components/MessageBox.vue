@@ -54,6 +54,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    dialogWidth: {
+      type: String,
+      default: 'auto',
+    },
   },
   computed: {
     icon() {
@@ -64,7 +68,7 @@ export default {
     },
     dialogStyle() {
       const style = {
-        width: 'auto',
+        width: this.dialogWidth
       }
       return style
     },

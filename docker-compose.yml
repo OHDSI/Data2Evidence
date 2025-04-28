@@ -810,8 +810,6 @@ services:
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
-      alp-logto-seed:
-        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 30
@@ -839,7 +837,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm start
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1 && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -856,28 +854,6 @@ services:
       PORT: 3001
       TRUST_PROXY_HEADER: true
       DATABASE_CONNECTION_TIMEOUT: 30000
-
-  alp-logto-seed:
-    container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
-    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    entrypoint:
-      - sh
-      - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.22.0 && npx @logto/cli db alteration deploy 1.23.1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-    environment:
-      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
-    logging:
-      options:
-        tag: *c37
 
   alp-minerva-postgres:
     container_name: &c17 ${PROJECT_NAME:-d2e}-minerva-postgres-1
@@ -1079,7 +1055,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 120s
+      start_period: 180s
       test:
         - CMD
         - wget
