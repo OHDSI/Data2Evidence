@@ -102,10 +102,17 @@ export class CohortEndpoint {
                 offset,
                 limit
             );
-
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
-            );
+            let selectQueryResult;
+            if (this.connection.constructor.name === "TrexConnection") {
+                selectQueryResult =
+                    await selectQuery.executeQueryOnWriteConnection(
+                        this.connection
+                    );
+            } else {
+                selectQueryResult = await selectQuery.executeQuery(
+                    this.connection
+                );
+            }
 
             const processingCohort = async (
                 cohortDefObj,
@@ -179,9 +186,17 @@ export class CohortEndpoint {
                 queryParams
             );
 
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
-            );
+            let selectQueryResult;
+            if (this.connection.constructor.name === "TrexConnection") {
+                selectQueryResult =
+                    await selectQuery.executeQueryOnWriteConnection(
+                        this.connection
+                    );
+            } else {
+                selectQueryResult = await selectQuery.executeQuery(
+                    this.connection
+                );
+            }
             return selectQueryResult.data[0].COUNT;
         } catch (err) {
             logger.error(`Failed to query cohort definition counts`);
@@ -208,7 +223,15 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortDefinitionId);
-            const result = await query.executeQuery(this.connection);
+
+            let result;
+            if (this.connection.constructor.name === "TrexConnection") {
+                result = await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                result = await query.executeQuery(this.connection);
+            }
             return result;
         } catch (err) {
             logger.error(
@@ -247,7 +270,15 @@ export class CohortEndpoint {
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId
             );
-            let result = await query.executeQuery(this.connection);
+
+            let result;
+            if (this.connection.constructor.name === "TrexConnection") {
+                result = await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                result = await query.executeQuery(this.connection);
+            }
             return result;
         } catch (err) {
             logger.error(
@@ -284,7 +315,15 @@ export class CohortEndpoint {
                 cohortDefinition.subjectConceptId,
                 cohortDefinition.id
             );
-            const result = await query.executeQuery(this.connection);
+
+            let result;
+            if (this.connection.constructor.name === "TrexConnection") {
+                result = await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                result = await query.executeQuery(this.connection);
+            }
             return result;
         } catch (err) {
             logger.error(
@@ -312,7 +351,12 @@ export class CohortEndpoint {
                 name,
                 cohortDefinitionId
             );
-            await query.executeQuery(this.connection);
+
+            if (this.connection.constructor.name === "TrexConnection") {
+                await query.executeQueryOnWriteConnection(this.connection);
+            } else {
+                await query.executeQuery(this.connection);
+            }
         } catch (err) {
             logger.error(
                 `Failed to rename cohort definition with id: ${cohortDefinitionId}`
@@ -338,7 +382,15 @@ export class CohortEndpoint {
                     ...partialInsertQuery.parameterPlaceholders,
                 ]
             );
-            const rowCount = await insertQuery.executeQuery(this.connection);
+
+            let rowCount;
+            if (this.connection.constructor.name === "TrexConnection") {
+                rowCount = await insertQuery.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                rowCount = await insertQuery.executeQuery(this.connection);
+            }
             return rowCount;
         } catch (err) {
             logger.error(`Failed to insert cohort with data: ${cohort}`);
@@ -355,7 +407,15 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortId);
-            let result = await query.executeQuery(this.connection);
+
+            let result;
+            if (this.connection.constructor.name === "TrexConnection") {
+                result = await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                result = await query.executeQuery(this.connection);
+            }
             return result;
         } catch (err) {
             logger.error(`Failed to delete cohort with ID: ${cohortId}`);
@@ -369,7 +429,15 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortId);
-            let result = await query.executeQuery(this.connection);
+
+            let result;
+            if (this.connection.constructor.name === "TrexConnection") {
+                result = await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            } else {
+                result = await query.executeQuery(this.connection);
+            }
             return result;
         } catch (err) {
             logger.error(`Failed to delete cohort with ID: ${cohortId}`);
@@ -387,9 +455,17 @@ export class CohortEndpoint {
                 selectQueryString,
                 cohortDefinitionId
             );
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
-            );
+            let selectQueryResult;
+            if (this.connection.constructor.name === "TrexConnection") {
+                selectQueryResult =
+                    await selectQuery.executeQueryOnWriteConnection(
+                        this.connection
+                    );
+            } else {
+                selectQueryResult = await selectQuery.executeQuery(
+                    this.connection
+                );
+            }
             // Extract subject ids from array of objects
             let patientIds;
             if (selectQueryResult.data instanceof Array) {
@@ -437,10 +513,18 @@ export class CohortEndpoint {
                 selectQueryString,
                 ...sqlParams
             );
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
-            );
-            let cohortDefinitionId =
+            let selectQueryResult;
+            if (this.connection.constructor.name === "TrexConnection") {
+                selectQueryResult =
+                    await selectQuery.executeQueryOnWriteConnection(
+                        this.connection
+                    );
+            } else {
+                selectQueryResult = await selectQuery.executeQuery(
+                    this.connection
+                );
+            }
+            const cohortDefinitionId =
                 selectQueryResult.data[0].COHORT_DEFINITION_ID;
 
             return cohortDefinitionId;
