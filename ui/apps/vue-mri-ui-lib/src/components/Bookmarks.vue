@@ -87,18 +87,10 @@
       </div>
       <div style="display: flex; justify-content: space-evenly; margin-left: 1rem; margin-right: 1rem; margin-top: 5px">
         <div style="flex: 3">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort">
-            <template #icon-left>
-              <PatientsActiveIcon style="margin-right: 10px" fill="white" />
-            </template>
-          </Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
         </div>
         <div v-if="enableAtlasCohortDefinition" style="flex: 3; margin-left: 10px">
-          <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
-            <template #icon-left>
-              <GlobeIcon style="margin-right: 10px" fill="white" />
-            </template>
-          </Button>
+          <Button :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink"> </Button>
         </div>
         <div style="flex: 3; margin-left: 10px">
           <Button
@@ -106,9 +98,6 @@
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
           >
-            <template #icon-left>
-              <LeftRightArrowIcon style="margin-right: 10px" fill="white" />
-            </template>
           </Button>
         </div>
         <div style="flex: 1; margin-left: 10px; display: flex; align-items: center; justify-content: center">
@@ -203,10 +192,7 @@ import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
-import PatientsActiveIcon from './icons/PatientsActiveIcon.vue'
 import Button from './Button.vue'
-import GlobeIcon from './icons/GlobeIcon.vue'
-import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
 
 export default {
   compatConfig: {
@@ -569,10 +555,8 @@ export default {
     appMessageStrip,
     BookmarkItems,
     SlideToggle,
-    PatientsActiveIcon,
     Button,
-    GlobeIcon,
-    LeftRightArrowIcon,
+    ,
   },
 }
 </script>
