@@ -256,6 +256,7 @@ Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
+ -i, --dicom                Include DICOM Server
  -j, --jupyter              Include jupyter
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
