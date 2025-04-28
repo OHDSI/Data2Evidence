@@ -5,7 +5,7 @@ send_request <- function(analysisSpecification, executionSettings, connectionSet
   # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  url <- paste0(host, "/prefect/api/deployments/", deployment['deploymentId'], "create_flow_run")
+  url <- paste0(host, "/prefect/api/deployments/", deployment['deploymentId'], "/create_flow_run")
   json_graph = list(
         analysisSpecification = analysisSpecification,
         executionSettings = executionSettings,
@@ -15,7 +15,7 @@ send_request <- function(analysisSpecification, executionSettings, connectionSet
         mode = 'kernel'
     )
   parameters <- list(
-    json_graph = json_graph,
+    json_graph = ParallelLogger::convertSettingsToJson(json_graph),
     options = options
   )
   data <- list(

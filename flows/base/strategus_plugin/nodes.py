@@ -867,22 +867,27 @@ class StrategusNode(Node):
                     password=db_credentials.adminPassword.get_secret_value(),
                     pathToDriver = databaseConnectorJarFolder
                 )
-                rStrategus.storeConnectionDetails(
-                    connectionDetails = rConnectionDetails,
-                    connectionDetailsReference = database_code
-                )
                 rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                    connectionDetailsReference = database_code,
                     workDatabaseSchema = "cdmdefault",
                     cdmDatabaseSchema = "cdmdefault",
                     workFolder = '/tmp/work_folder',
                     resultsFolder = '/tmp/results_folder'
                 )
 
-                rStrategus.execute(analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
+
+@task(log_prints=True)
+def execute_r_strategus(analysisSpec, executionSettings, connectionDetails):
+    with ro.default_converter.context():
+        try:
+            rStrategus = ro.packages.importr('Strategus')
+            print('Strategus execution started...')
+            rStrategus.execute(connectionDetails = connectionDetails, analysisSpecifications = analysisSpec, executionSettings = executionSettings)
+        except Exception as e:
+            return RuntimeError('Execution of strategus has failed')
+
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
