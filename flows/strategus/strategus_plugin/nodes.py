@@ -13,7 +13,6 @@ from prefect.blocks.system import Secret
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 
-from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 
 class Node:

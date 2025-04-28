@@ -5,15 +5,15 @@ ARG GITHUB_PAT
 ARG BUILD_TYPE
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
-FROM elyra/kernel-r:3.2.3
+FROM rocker/r-ver:4.4 as base-build
 
-USER root
 RUN mkdir -p /app
 
 WORKDIR /app
 # GITHUB_PAT authentication for OHDSI remotes::install_github
 COPY --from=builder .Renviron .
 
+# installs
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -23,9 +23,14 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
-    less
-    
-# Set environment variables
+    less \
+    wget \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    && apt-get clean
+
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
@@ -72,7 +77,13 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar /app/inst/drivers/postgresql-42.3.1.jar
+FROM base-build AS final-build
+
+WORKDIR /app
+
+COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
+COPY --chown=docker:docker  ./__init__.py .
+COPY --chown=docker:docker ./base/init.R .
 
 COPY --chown=docker:docker --chmod=711 ./strategus/requirements_strategus.txt .
 ENV RUN_TYPE=$BUILD_TYPE
@@ -82,8 +93,6 @@ RUN pip install -r requirements_strategus.txt
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base flows
 
-# Change the ownership of /app folder to docker user for CohortGen error logs 
-RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
