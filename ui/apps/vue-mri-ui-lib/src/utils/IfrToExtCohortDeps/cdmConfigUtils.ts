@@ -134,7 +134,6 @@ const extractConceptSets = async (
       if (type === 'conceptSet') {
         const concepts = await getConceptsFromConceptSet({
           conceptSetId: String(conceptValue),
-          req,
           datasetId,
         })
         concepts.forEach(concept => {
@@ -149,7 +148,7 @@ const extractConceptSets = async (
         continue
       }
 
-      const concept = await getConcept(conceptValue, req, datasetId, conceptIdentifierType)
+      const concept = await getConcept(conceptValue, datasetId, conceptIdentifierType)
 
       if (!concept) {
         continue
@@ -253,7 +252,7 @@ export const createDemographicCriteriaList = async (
       const valueOrConceptName = constraintContent && 'value' in constraintContent ? constraintContent.value : undefined
 
       if (conceptIdentifierType) {
-        const concept = await getConcept(constraintContent.value, req, datasetId, conceptIdentifierType)
+        const concept = await getConcept(constraintContent.value, datasetId, conceptIdentifierType)
 
         if (!concept) {
           continue
@@ -392,7 +391,7 @@ export const createCriteriaList = async (
               } else {
                 const conceptIdentifierType: 'name' | 'code' | 'id' | null =
                   _.get(cdmConfig, `${attribute.configPath}.conceptIdentifierType`) || null
-                const concept = await getConcept(constraintContent.value, req, datasetId, conceptIdentifierType)
+                const concept = await getConcept(constraintContent.value, datasetId, conceptIdentifierType)
                 attributesForFilter[attributeInfo.key] = attributesForFilter[attributeInfo.key] || []
                 attributesForFilter[attributeInfo.key].push({
                   CONCEPT_CODE: concept.CONCEPT_CODE,
@@ -493,7 +492,6 @@ const getOccurrence = (isExcluded: boolean) => {
 }
 const getConcept = async (
   value: number | string,
-  req: IMRIRequest,
   datasetId: string,
   conceptIdentifierType: 'name' | 'code' | 'id' | null
 ) => {
@@ -504,18 +502,15 @@ const getConcept = async (
     conceptIdentifierType === 'name'
       ? await getConceptByName({
           conceptName: value as string,
-          req,
           datasetId,
         })
       : conceptIdentifierType === 'code'
       ? await getConceptByCode({
           conceptCode: value as string,
-          req,
           datasetId,
         })
       : await getConceptById({
           conceptId: value as unknown as number,
-          req,
           datasetId,
         })
   return concept

@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { ExtCohortConcept, IMRIRequest } from './types'
-import { terminologyRequest } from '../utils/TerminologySvcProxy'
+import { ExtCohortConcept } from './types'
+import { api } from './api'
 
 function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
   const result = {}
@@ -15,57 +15,45 @@ function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
 
 export const getConceptByName = async ({
   conceptName,
-  req,
   datasetId,
 }: {
   conceptName: string
-  req: IMRIRequest
   datasetId: string
 }): Promise<ExtCohortConcept | null> => {
-  const concept = await terminologyRequest(req, 'POST', `concept/searchByName`, { conceptName, datasetId })
-
+  const concept = await api.terminology.getConceptByName(conceptName, datasetId)
   return concept[0] ? upperCaseKeys(concept[0]) : null
 }
 
 export const getConceptById = async ({
   conceptId,
-  req,
   datasetId,
 }: {
   conceptId: number
-  req: IMRIRequest
   datasetId: string
 }): Promise<ExtCohortConcept | null> => {
-  const concept = await terminologyRequest(req, 'POST', `concept/searchById`, { conceptId, datasetId })
-
+  const concept = await api.terminology.getConceptById(conceptId, datasetId)
   return concept[0] ? upperCaseKeys(concept[0]) : null
 }
 
 export const getConceptByCode = async ({
   conceptCode,
-  req,
   datasetId,
 }: {
   conceptCode: string
-  req: IMRIRequest
   datasetId: string
 }): Promise<ExtCohortConcept | null> => {
-  const concept = await terminologyRequest(req, 'POST', `concept/searchByCode`, { conceptCode, datasetId })
-
+  const concept = await api.terminology.getConceptByCode(conceptCode, datasetId)
   return concept[0] ? upperCaseKeys(concept[0]) : null
 }
 
 export const getConceptsFromConceptSet = async ({
   conceptSetId,
-  req,
   datasetId,
 }: {
   conceptSetId: string
-  req: IMRIRequest
   datasetId: string
 }): Promise<ExtCohortConcept[] | null> => {
-  const { concepts } = await terminologyRequest(req, 'GET', `concept-set/${conceptSetId}?datasetId=${datasetId}`, null)
-
+  const { concepts } = await api.terminology.getConceptsFromConceptSet(conceptSetId, datasetId)
   return concepts.length
     ? concepts
         .map(concept => upperCaseKeys(concept))
