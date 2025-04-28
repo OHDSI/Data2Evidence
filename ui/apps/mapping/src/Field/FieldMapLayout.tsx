@@ -81,7 +81,7 @@ export const FieldMapLayout = () => {
           clearInterval(intervalId);
           setLoading(false);
         }
-      }, 10000);
+      }, 7000);
     } catch (error) {
       console.error("Failed to generate ETL report", error);
       setLoading(false);

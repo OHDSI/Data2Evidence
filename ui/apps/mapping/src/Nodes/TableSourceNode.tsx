@@ -12,7 +12,7 @@ import "./TableNode.scss";
 export const TableSourceNode = (props: NodeProps) => {
   const { openLoadMappingDialog } = useDialog();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [scanId, setScanId] = useState<number>(-1);
+  const [scanId, setScanId] = useState<string>("");
   const { sourceHandles } = useTable();
 
   const openScanDataDialog = () => {

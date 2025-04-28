@@ -72,11 +72,6 @@ jobs:
         run: |
           yarn ci:logs:minerva
 
-      - name: print logs for alp-logto-seed
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-seed -t
-
       - name: Clean Docker compose
         if: always()
         run: |
