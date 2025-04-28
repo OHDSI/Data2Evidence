@@ -36,36 +36,37 @@
                           "options"
                       ],
                       "definitions": {
-                          "WhiteRabbitRequestType": {
-                              "properties": {
-                                  "url": {
-                                      "title": "Url",
-                                      "type": "string"
-                                  },
-                                  "headers": {
-                                      "title": "Headers",
-                                      "type": "object"
-                                  },
-                                  "data": {
-                                      "anyOf": [
-                                          {
-                                              "type": "object"
-                                          },
-                                          {
-                                              "type": "null"
-                                          }
-                                      ],
-                                      "default": null,
-                                      "title": "Data"
-                                  }
+                        "WhiteRabbitRunType": {
+                            "enum": [
+                                "SCAN_REPORT_FILES",
+                                "SCAN_REPORT_DB",
+                                "GENERATE_ETL_REPORT"
+                            ],
+                            "title": "WhiteRabbitRunType",
+                            "type": "string"
+                        },
+                        "WhiteRabbitRequestType": {
+                            "properties": {
+                              "run_type": {
+                                "$ref": "#/definitions/WhiteRabbitRunType"
                               },
-                              "required": [
-                                  "url",
-                                  "headers"
-                              ],
-                              "title": "WhiteRabbitRequestType",
-                              "type": "object"
-                          }
+                              "data": {
+                                "title": "Data",
+                                "type": "object"
+                              },
+                              "username": {
+                                  "default": "",
+                                  "title": "username",
+                                  "type": "string"
+                                }
+                            },
+                            "required": [
+                              "run_type",
+                              "data"
+                            ],
+                            "title": "WhiteRabbitRequestType",
+                            "type": "object"
+                        }
                       }
                   },
                   "type": "white_rabbit"
