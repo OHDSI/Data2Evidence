@@ -24,6 +24,7 @@ import appButton from '../lib/ui/app-button.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { convertIFRToExtCohort } from '@/utils/IfrToExtCohort'
 
 export default {
   compatConfig: {
@@ -41,6 +42,9 @@ export default {
       'getActiveBookmark',
       'getSelectedDataset',
       'getActiveBookmark',
+      'getBookmarksData',
+      'getIFR',
+      'getBookmarkFromIFR',
     ]),
   },
   watch: {},
@@ -57,10 +61,11 @@ export default {
       }
       this.$emit('closeEv')
     },
-    onClickCreateCohortDefinition() {
-      const callback = () => {
-        const expression = this.getCohortDefinitionResponse()?.data || ''
-
+    async onClickCreateCohortDefinition() {
+      const IFRDefinition = { filter: this.getIFR }
+      const datasetId = this.getSelectedDataset?.id
+      try {
+        const expression = await convertIFRToExtCohort(IFRDefinition, datasetId)
         const now = +new Date()
         const content = {
           id: 0, // 0 is used by webapi for new cohort definitions
@@ -80,8 +85,9 @@ export default {
         }).then(() => {
           this.$emit('closeEv')
         })
+      } catch (error) {
+        console.error('Error converting IFR to external cohort:', error)
       }
-      this.fireD2EToAtlasCohortDefinitionQuery().then(callback)
     },
   },
   components: {
