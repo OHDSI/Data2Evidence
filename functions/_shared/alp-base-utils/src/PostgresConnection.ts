@@ -9,7 +9,7 @@ import type { Pool } from "pg";
 import { DBError } from "./DBError";
 import { CreateLogger } from "./Logger";
 import { Stream } from "node:stream";
-import Cursor from "npm:pg-cursor@^2.12.1";
+import Cursor from "npm:pg-cursor@~2.14.1";
 import { translateHanaToPostgres, translateHanaToDuckdb } from "./helpers/hanaTranslation";
 import { EnvVarUtils } from "./EnvVarUtils";
 const logger = CreateLogger("Postgres Connection");
