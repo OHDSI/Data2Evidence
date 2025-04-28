@@ -91,7 +91,7 @@ export class CohortEndpoint {
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
                 cd.COHORT_INITIATION_DATE,
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
-        `
+        `;
 
         let cohortArray = [];
 
@@ -107,10 +107,16 @@ export class CohortEndpoint {
                 this.connection
             );
 
-            const processingCohort = async (cohortDefObj, excludePatientIds?: boolean) => {
-            //For each cohort definition, query cohort table for list of patient ids
-                const patientIds = excludePatientIds ? undefined : await this.queryPatientIds(
-                    cohortDefObj.COHORT_DEFINITION_ID);
+            const processingCohort = async (
+                cohortDefObj,
+                excludePatientIds?: boolean
+            ) => {
+                //For each cohort definition, query cohort table for list of patient ids
+                const patientIds = excludePatientIds
+                    ? undefined
+                    : await this.queryPatientIds(
+                          cohortDefObj.COHORT_DEFINITION_ID
+                      );
                 return <CohortType>{
                     id: cohortDefObj.COHORT_DEFINITION_ID,
                     patientIds,
@@ -118,7 +124,7 @@ export class CohortEndpoint {
                     description: cohortDefObj.COHORT_DEFINITION_DESCRIPTION,
                     creationTimestamp: cohortDefObj.COHORT_INITIATION_DATE,
                     syntax: cohortDefObj.COHORT_DEFINITION_SYNTAX,
-                    patientCount: cohortDefObj.count
+                    patientCount: cohortDefObj.count,
                 };
             };
 
@@ -136,7 +142,13 @@ export class CohortEndpoint {
                     const slicedResults = await Promise.all(
                         items
                             .slice(start, end)
-                            .map(async (item) => await processingCohort(item, excludePatientIds))
+                            .map(
+                                async (item) =>
+                                    await processingCohort(
+                                        item,
+                                        excludePatientIds
+                                    )
+                            )
                     );
                     results = [...results, ...slicedResults];
                 }
