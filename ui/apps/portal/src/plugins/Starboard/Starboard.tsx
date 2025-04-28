@@ -29,13 +29,28 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
-  const setupPYQE = `
-import micropip
-await micropip.install('ssl')
-await micropip.install('pyjwt==2.9.0')
-await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
-os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
-os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
+  const setupPYQE = `import micropip
+  await micropip.install('ssl')
+  await micropip.install('pyjwt==2.9.0')
+  await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
+  os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
+  os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
+
+  const extractJupyterKernel = `\n# %% [esm]
+  import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
+  a.plugin.register(1, {
+    serverSettings: {
+      baseUrl: "https://localhost:41100/jupyter",
+      token: "${jwtToken}",
+      appendToken: true,
+      init: {
+          headers: {
+            datasetId: "${activeDatasetId}",
+            }
+          }
+        }
+      }
+    )`;
 
   const [runtime, setRuntime] = useState<StarboardEmbed>();
   const [unsaved, setUnsaved] = useState(false);
@@ -96,7 +111,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
       }
 
       const tokenAndPyqeScript = "\n# %% [python]\nimport os\nos.environ['TOKEN'] = '" + jwtToken + "'" + setupPYQE;
-      notebookContent += tokenAndPyqeScript;
+      notebookContent += tokenAndPyqeScript + extractJupyterKernel;
 
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
