@@ -427,7 +427,8 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.tenantview.read"
+          "codesuggestion.tenantview.read",
+          "d2e.webapi.public"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -485,7 +486,8 @@
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
-          "filesmanager.delete"
+          "filesmanager.delete",
+          "whiteRabbit.post"
         ]
       },
       "scopes": [
@@ -2219,6 +2221,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi/(health|source|i18n|notifications)(.*)",
+          "scopes": [
+            "d2e.webapi.public"
           ]
         },
         {

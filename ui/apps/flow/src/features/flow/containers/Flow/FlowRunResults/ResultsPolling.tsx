@@ -2,6 +2,7 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { IconButton, Tooltip } from "@portal/components";
 import SyncIcon from "@mui/icons-material/Sync";
+import SyncProblemIcon from "@mui/icons-material/SyncProblem";
 import {
   useGetLatestDataflowByIdQuery,
   useLazyGetFlowRunResultsByIdQuery,
@@ -19,8 +20,12 @@ export const ResultsPolling: FC = () => {
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
   });
-  const { isStoppedState } = useFlowRunState(dataflow?.lastFlowRunId || "");
+  const flowRunId = dataflow?.canvas?.lastFlowRunId || "";
+  const { isStoppedState } = useFlowRunState(flowRunId);
   const [_, setIsCompleted] = useState(isStoppedState);
+  const hasUnmappedFlowRunResult = useSelector(
+    (state: RootState) => state.flow.hasUnmappedFlowRunResult
+  );
 
   useEffect(() => {
     setIsCompleted((isCompleted) => {
@@ -46,10 +51,23 @@ export const ResultsPolling: FC = () => {
   }, [dataflowId]);
 
   return (
-    <Tooltip title="Refresh flow run results">
+    <Tooltip
+      title={
+        hasUnmappedFlowRunResult
+          ? "One or more flow run results are unmapped. Please re-run the flow to retrieve the latest results."
+          : "Refresh flow run results"
+      }
+    >
       <div>
         <IconButton
-          startIcon={<SyncIcon sx={{ width: 24, height: 24 }} />}
+          startIcon={
+            hasUnmappedFlowRunResult ? (
+              <SyncProblemIcon sx={{ width: 24, height: 24 }} />
+            ) : (
+              <SyncIcon sx={{ width: 24, height: 24 }} />
+            )
+          }
+          color={hasUnmappedFlowRunResult ? "error" : "primary"}
           loading={isFetching}
           onClick={fetchFlowRunResults}
         />

@@ -11,9 +11,8 @@ import {
   CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
   IUserArtifactAtlasCohortDefinitionDto,
+  ICohortDefinitionListResponseDto,
 } from "../dto/cohortdefinition.ts";
-import { CachedbDAO } from "../dao/cachedb.dao.ts";
-import { CachedbDialect } from "../dao/types.ts";
 import { UserArtifactServiceNames } from "../types.ts";
 
 export const generateCohort = async (
@@ -166,23 +165,22 @@ export const getCohortDefinitionList = async (
     await portalServerApi.getAtlasCohortDefinitionList(datasetId);
 
   // Construct response
-  const result: z.infer<(typeof CohortDefinitionResponseDto)[]> =
-    atlasCohortDefinitions.map(
-      (atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto) => {
-        return {
-          id: atlasCohortDefinition.id,
-          name: atlasCohortDefinition.name,
-          description: atlasCohortDefinition.description,
-          createdBy: atlasCohortDefinition.createdBy,
-          createdDate: atlasCohortDefinition.createdDate,
-          modifiedBy: atlasCohortDefinition.modifiedBy,
-          modifiedDate: atlasCohortDefinition.modifiedDate,
-          hasWriteAccess: true,
-          hasReadAccess: true,
-          tags: atlasCohortDefinition.tags,
-        };
-      }
-    );
+  const result: ICohortDefinitionListResponseDto = atlasCohortDefinitions.map(
+    (atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto) => {
+      return {
+        id: atlasCohortDefinition.id,
+        name: atlasCohortDefinition.name,
+        description: atlasCohortDefinition.description,
+        createdBy: atlasCohortDefinition.createdBy,
+        createdDate: atlasCohortDefinition.createdDate,
+        modifiedBy: atlasCohortDefinition.modifiedBy,
+        modifiedDate: atlasCohortDefinition.modifiedDate,
+        hasWriteAccess: true,
+        hasReadAccess: true,
+        tags: atlasCohortDefinition.tags,
+      };
+    }
+  );
   return result;
 };
 
