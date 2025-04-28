@@ -92,10 +92,10 @@ var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | s
 
 
 const start = Date.now();
-
+const duration = 900000; // 15mins 900000
 try {
     var running_count=1;
-    while (running_count>0) { 
+    while (running_count>0 && Date.now() < duration + start) { 
         var resp = await $`curl -ks --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/prefect/api/flow_runs/filter' \
             --header 'Content-Type: application/x-www-form-urlencoded' \
             --header 'Authorization: Bearer ${BEARER_TOKEN}'`
@@ -127,7 +127,7 @@ if (success_count == num_of_jobs) {
     console.log(chalk.red(`Some job runs have failed. Please refer to the Job Runs in the Admin Portal for more info.`));
     await $`exit 1` 
 } else {
-    console.log(`An error occurred. Please refer to the Job Runs in the Admin Portal for more info.`)
+    console.log(`Please refer to the Job Runs in the Admin Portal for more info.`)
     await $`exit 1` 
 }
 
