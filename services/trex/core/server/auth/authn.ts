@@ -22,7 +22,6 @@ export async function authn(c: Context, next: Function) {
       c.req.header("authorization")?.split(" ")[0].match(regex)
     ) {
       token = c.req.header("authorization")?.split(" ")[1] || "";
-      c.req.header("authorization").contains;
     }
     if (token === null || token.length === 0) {
       logger.error("authenticate: no token found");
