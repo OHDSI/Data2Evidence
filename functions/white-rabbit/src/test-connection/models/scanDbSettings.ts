@@ -1,9 +1,9 @@
 export class ScanDbSettings {
-  dbType!: string;
+  data_type!: string;
   server!: string;
   port!: number;
   database!: string;
-  user!: string;
+  user_name!: string;
   password!: string;
   schema!: string;
 }

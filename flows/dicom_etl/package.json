@@ -18,12 +18,14 @@
     "homepage": "https://github.com/data2evidence/d2e-flows#readme",
     "trex": {
         "flow": {
-            "image": "ghcr.io/data2evidence/d2e/flow-dicom-etl",
+            "image": "ghcr.io/ohdsi/d2e/flow-dicom-etl",
             "flows": [
                 {
                     "name": "dicom_etl_plugin",
                     "type": "dicom_etl",
                     "entrypoint": "flows.dicom_etl_plugin.flow.dicom_etl_plugin",
+                    "image": "ghcr.io/ohdsi/d2e/flow-dicom-etl:develop",
+                    "image_pull_policy": "IfNotPresent",
                     "tags": [
                         "data",
                         "data_load",

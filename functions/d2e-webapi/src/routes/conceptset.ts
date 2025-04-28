@@ -7,6 +7,7 @@ import {
   ConceptSetResponseDto,
   ConceptSetItemListDto,
   ConceptSetItemsResponseDto,
+  ConceptSetCreateDto,
 } from "../dto/conceptset.ts";
 
 import {
@@ -45,7 +46,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     {
       schema: {
         description: "Save a new concept set to the database",
-        body: ConceptSetCheckDto,
+        body: ConceptSetCreateDto,
         tags: ["conceptset"],
         response: { 200: ConceptSetResponseDto },
         security: [

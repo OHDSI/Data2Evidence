@@ -60,7 +60,7 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           className="logo"
           src={`${env.PUBLIC_URL}/assets/d2e.svg`}
           onClick={handleLogoClick}
-          height={60}
+          height={56}
         />
       </div>
 

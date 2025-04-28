@@ -6,11 +6,11 @@ import { UserGroupMetadata } from "../contexts/app-context/states";
 const USER_MGMT_BASE_URL = "usermgmt/api/";
 
 export class UserMgmt {
-  public getUserGroupList(userId: string): Promise<UserGroupMetadata> {
+  public getUserGroupList(userId: string, sync?: boolean): Promise<UserGroupMetadata> {
     return request({
       baseURL: USER_MGMT_BASE_URL,
       url: "user-group/list",
-      data: { userId },
+      data: { userId, sync },
       method: "POST",
     });
   }
