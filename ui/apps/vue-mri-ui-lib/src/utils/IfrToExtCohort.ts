@@ -1,26 +1,26 @@
-import { CdmConfig, IFRDefinition, IFRFilterCard, ExtCohortDefinition, IMRIRequest } from './IfrToExtCohortDeps/types'
+import { CdmConfig, IFRDefinition, IFRFilterCard, ExtCohortDefinition } from './IfrToExtCohortDeps/types'
 import {
   convertEventAttributesToConceptSets,
   createCriteriaList,
   createDemographicCriteriaList,
   createInclusionRules,
 } from './IfrToExtCohortDeps/cdmConfigUtils'
+import { api } from './IfrToExtCohortDeps/api'
 
 export const convertIFRToExtCohort = async (
   ifrDefinition: IFRDefinition,
-  cdmConfig: CdmConfig,
-  req: IMRIRequest,
   datasetId: string
 ): Promise<ExtCohortDefinition> => {
+  const backendConfig = await api.portalServer.getBackendConfig(datasetId)
+  const cdmConfig: CdmConfig = backendConfig.config
   const conceptSets = await convertEventAttributesToConceptSets(
     cdmConfig,
     ifrDefinition.filter.cards.content,
-    req,
     datasetId
   )
   const demography = ifrDefinition.filter.cards.content.shift() as IFRFilterCard | undefined
-  const demographicCriteriaList = await createDemographicCriteriaList(demography, cdmConfig, req, datasetId)
-  const criteriaList = await createCriteriaList(cdmConfig, ifrDefinition, conceptSets, req, datasetId)
+  const demographicCriteriaList = await createDemographicCriteriaList(demography, cdmConfig, datasetId)
+  const criteriaList = await createCriteriaList(cdmConfig, ifrDefinition, conceptSets, datasetId)
   return {
     ConceptSets: conceptSets,
     PrimaryCriteria: {
@@ -64,4 +64,3 @@ export const convertIFRToExtCohort = async (
     cdmVersionRange: '>=5.0.0',
   }
 }
-

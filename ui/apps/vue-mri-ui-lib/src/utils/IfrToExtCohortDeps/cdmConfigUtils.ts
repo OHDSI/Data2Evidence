@@ -10,7 +10,6 @@ import {
   IFRExcludedFilterCard,
   ExtCohortConcept,
   ExtCohortConceptSet,
-  IMRIRequest,
 } from './types'
 import { getConceptByCode, getConceptById, getConceptByName, getConceptsFromConceptSet } from './conceptGetters'
 
@@ -40,7 +39,6 @@ export const getExtCohortInfoForAttribute = (cdmConfig: CdmConfig, path?: string
 export const convertEventAttributesToConceptSets = async (
   cdmConfig: CdmConfig,
   filterCards: (IFRFilterCard | IFRExcludedFilterCard)[],
-  req: IMRIRequest,
   datasetId: string
 ) => {
   const [, ...nonBasicInfoFilterCards] = filterCards
@@ -54,7 +52,7 @@ export const convertEventAttributesToConceptSets = async (
       let conceptSetName: string
       if (filterContent.hasOwnProperty('op') && filterContent['op'] === 'NOT') {
         for (const c of filterContent['content']) {
-          const concepts = await extractConceptSets(c, cdmConfig, req, datasetId)
+          const concepts = await extractConceptSets(c, cdmConfig, datasetId)
           concepts.forEach(data => {
             data.concept.STANDARD_CONCEPT_CAPTION = data.concept.STANDARD_CONCEPT === 'S' ? 'Standard' : 'Non-standard'
           })
@@ -63,7 +61,7 @@ export const convertEventAttributesToConceptSets = async (
         conceptSetName = filterContent['content'][0].attributes?.content?.[0]?.instanceID
       } else {
         const filter = filterContent as IFRFilterCardContent
-        const concepts = await extractConceptSets(filterContent as IFRFilterCardContent, cdmConfig, req, datasetId)
+        const concepts = await extractConceptSets(filterContent as IFRFilterCardContent, cdmConfig, datasetId)
         concepts.forEach(data => {
           data.concept.STANDARD_CONCEPT_CAPTION = data.concept.STANDARD_CONCEPT === 'S' ? 'Standard' : 'Non-standard'
         })
@@ -94,12 +92,7 @@ export const convertEventAttributesToConceptSets = async (
   })
 }
 
-const extractConceptSets = async (
-  filter: IFRFilterCardContent,
-  cdmConfig: CdmConfig,
-  req: IMRIRequest,
-  datasetId: string
-) => {
+const extractConceptSets = async (filter: IFRFilterCardContent, cdmConfig: CdmConfig, datasetId: string) => {
   const conceptsForSet: {
     concept: ExtCohortConcept
     includeDescendants?: boolean
@@ -226,7 +219,6 @@ export const convertAttributeContentToCriteria = ({ attrType, content }: Params)
 export const createDemographicCriteriaList = async (
   demography: IFRFilterCard | undefined,
   cdmConfig: CdmConfig,
-  req: IMRIRequest,
   datasetId: string
 ): Promise<{ [key: string]: Criteria }[]> => {
   // For bookmarks, we only have a fixed section for basic data
@@ -292,7 +284,6 @@ export const createCriteriaList = async (
   cdmConfig: CdmConfig,
   ifrDefinition: IFRDefinition,
   conceptSets: ExtCohortConceptSet[],
-  req: IMRIRequest,
   datasetId: string
 ) => {
   const nonBasicFilterCards = ifrDefinition.filter.cards.content
