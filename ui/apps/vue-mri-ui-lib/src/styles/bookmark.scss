@@ -85,6 +85,21 @@
     color: $MriInfoColor;
     margin-bottom: 0;
   }
+  .import-json-textarea {
+    width: 100%;
+    transition: border-color 0.2s ease;
+  }
+  .import-json-textarea__error {
+    border-color: $MriErrorColor;
+    &:focus-visible {
+      border-color: $MriErrorColor;
+      outline: none;
+    }
+  }
+  .import-json-error {
+    color: $MriErrorColor;
+    padding-top: 0.5rem;
+  }
   .div-bookmark-dialog {
     padding: 1.5rem;
     .bookmark-ext-cont {
@@ -204,6 +219,27 @@
     }
     &__list {
       flex: 1;
+    }
+    .bookmark-content__header {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.5rem;
+      .bookmark-content__header-title {
+        color: $UiDarkText;
+      }
+      .bookmark-content__header-button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        .shared-toggle-container {
+          display: flex;
+          gap: 0.3rem;
+          align-items: center;
+          justify-content: center;
+          color: $UiDarkText;
+        }
+      }
     }
     .bookmark-noContent {
       color: $UiDarkText;
