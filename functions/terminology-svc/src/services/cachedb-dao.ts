@@ -1,5 +1,7 @@
 // @ts-types="npm:@types/pg"
 import pg from "pg";
+import { pipeline } from "transformers";
+
 import {
   Filters,
   IConceptRelationship,
@@ -240,11 +242,36 @@ export class CachedbDAO {
     }
   }
 
+  private getGTEEmbedding = async (searchText: string): Promise<number[]> => {
+    const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
+
+    // Generate the embedding from text
+    const output = await pipe(searchText, {
+      pooling: "mean",
+      normalize: true,
+    });
+
+    // Extract the embedding output
+    const embedding = Array.from(output.data) as number[];
+    console.log("gteembedding", embedding);
+    return embedding;
+  };
+
+  private embeddingCache: Map<string, number[]> = new Map();
+
+  // To solve the async of getGTEEmbedding
+  public async precomputeEmbedding(searchText: string): Promise<void> {
+    if (!this.embeddingCache.has(searchText)) {
+      const embedding = await this.getGTEEmbedding(searchText);
+      this.embeddingCache.set(searchText, embedding);
+    }
+  }
+
   private getDuckdbFtsBaseQuery = (
     searchText: string,
     filters: Filters,
     columns: string[] = []
-  ): [string, string[]] => {
+  ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
 
     const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
@@ -266,19 +293,28 @@ export class CachedbDAO {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND score is not null`
         : "WHERE score is not null ";
+      let textEmbedding = this.embeddingCache.get(searchText);
       return [
         `
-      with fts as (
-        select
+      with cal_score as (
+        select 
           ${columnsToSelect},
-          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as score
+          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as fts_score,
+          array_cosine_distance(concept_name_embedding, ?::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept
           ${duckdbFtsWhereClause} 
-          order by score desc
-        )
+        ),
+      fts as (
+        select 
+          cal_score.${columnsToSelect},
+          (0.8 * (embd_score + 1) / (select max(embd_score)+1 from cal_score) + (1-0.8) * fts_score / (select max(fts_score) from cal_score)) as hybrid_score
+        from 
+            cal_score
+        order by hybrid_score desc
+      )
       `,
-        [searchText],
+        [searchText, textEmbedding],
       ];
     }
   };

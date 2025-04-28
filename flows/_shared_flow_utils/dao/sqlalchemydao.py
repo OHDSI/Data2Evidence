@@ -99,6 +99,10 @@ class SqlAlchemyDao(DaoBase):
 
     def check_table_exists(self, table: str) -> bool:
         return self.inspector.has_table(schema=self.schema_name, table_name=table)
+    
+    def check_column_exists(self, table: str, column: str) -> bool:
+        columns = self.inspector.get_columns(table)
+        return any(col.name.lower() == column.lower() for col in columns)
 
     def get_table_names(self, include_views: bool = False) -> list[str]:
         tables = self.inspector.get_table_names(schema=self.schema_name)

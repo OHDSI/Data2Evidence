@@ -10,3 +10,7 @@
 #### Table to be created
 - cohort ids for each subject in EVA data model are populated into {cohorttableName}_result_all table
 - {cohorttableName}_result_master table stores the details of each cohort definitions.
+
+
+prefixed cohorttableName???
+phenotype_result_id

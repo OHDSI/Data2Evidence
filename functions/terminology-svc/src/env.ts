@@ -35,6 +35,8 @@ function initEnv(__env) {
   env["PG__TENANT_CONFIGS"] = _env["PG__TENANT_CONFIGS"];
   env["HANA__TENANT_CONFIGS"] = _env["HANA__TENANT_CONFIGS"];
   env["VCAP_SERVICES"] = _env["VCAP_SERVICES"];
+  env["useBrowserCache"] = false;
+  env["allowLocalModels"] = false;
 
   return env;
 }

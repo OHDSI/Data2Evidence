@@ -9,10 +9,7 @@ def average_pool(last_hidden_states: Tensor,
     last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
     return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
-def embedding_concept_table(concept_name_list):
-    tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
-    model = AutoModel.from_pretrained("Supabase/gte-small")
-
+def embedding_concept_table(concept_name_list,tokenizer, model):
     # Tokenize the input texts
     batch_dict = tokenizer(concept_name_list, max_length=512, padding=True, truncation=True, return_tensors='pt')
 
