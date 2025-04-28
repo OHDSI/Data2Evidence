@@ -9,7 +9,7 @@ from prefect.utilities.callables import parameter_schema_from_entrypoint
 # Constants - Do not overwrite
 VALIDATION_PATTERN = r"^[A-Za-z0-9_]+$"
 PACKAGE_PREFIX = "@data2evidence/"
-REG_IMAGE_PREFIX = "ghcr.io/data2evidence/d2e/flow-"
+REG_IMAGE_PREFIX = "ghcr.io/ohdsi/d2e/flow-"
 LOCAL_IMAGE_PREFIX = "d2e/flow-"
 LOCAL_IMAGE_TAG = ":local"
 
