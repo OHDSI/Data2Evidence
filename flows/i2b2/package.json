@@ -17,7 +17,7 @@
   "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
       "flow": {
-          "image": "ghcr.io/data2evidence/d2e/flow-i2b2",
+          "image": "ghcr.io/ohdsi/d2e/flow-i2b2",
           "flows": [
               {
                   "name": "i2b2_plugin",

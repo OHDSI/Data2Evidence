@@ -17,7 +17,7 @@
   "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
       "flow": {
-          "image": "ghcr.io/data2evidence/d2e/flow-base",
+          "image": "ghcr.io/ohdsi/d2e/flow-base",
           "flows": [
               {
                   "name": "cohort_generator_plugin",
