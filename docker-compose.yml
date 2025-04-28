@@ -652,8 +652,7 @@ services:
               rewrite /usermgmt/api/me/is_token_valid_internal
               header_up X-Forwarded-Method {method}
               header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.authorization}
-              header_up datasetId {http.request.uri.query.datasetId}
+              header_up authorization {http.request.uri.query.token}
 
               @good status 2xx
               handle_response @good {

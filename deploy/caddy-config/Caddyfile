@@ -42,7 +42,7 @@
 			}
 		}
 	}
-	
+
 	@jupyter_websocket {
 		header Connection *Upgrade*
 		header Upgrade websocket
@@ -60,8 +60,7 @@
 			rewrite /usermgmt/api/me/is_token_valid_internal
 			header_up X-Forwarded-Method {method}
 			header_up X-Forwarded-Uri {uri}
-			header_up authorization {http.request.uri.query.authorization}
-			header_up datasetId {http.request.uri.query.datasetId}
+			header_up authorization "Bearer {http.request.uri.query.token}"
 
 			@good status 2xx
 			handle_response @good {
@@ -69,7 +68,6 @@
 				request_header Remote-Email {rp.header.Remote-Email}
 			}
 		}
-
 		reverse_proxy @jupyter_websocket http://alp-enterprise-gateway-proxy:8888
 	}
 
