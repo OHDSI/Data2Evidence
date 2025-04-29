@@ -206,6 +206,11 @@
           "service": "logto"
         },
         {
+          "source": "/jupyter",
+          "service": "enterprise-gateway",
+          "rmsrc": true
+        },
+        {
           "source": "/concept-mapping",
           "function": "/concept-mapping",
           "env": "concept-mapping",

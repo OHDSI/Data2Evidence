@@ -137,14 +137,10 @@ def execute_node_task(nodename, node_type, node, input, test):
     return result
 
 
-@flow(name="execute-r-strategus",
-      log_prints=True)
 def runStrategus(json_graph):
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
     executionSettings = json_graph.get('executionSettings', {})
-    connectionDetails = json_graph.get('connectionDetails', {})
-
-    execute_r_strategus(analysisSpec, executionSettings, connectionDetails)
+    execute_r_strategus(analysisSpec, executionSettings)

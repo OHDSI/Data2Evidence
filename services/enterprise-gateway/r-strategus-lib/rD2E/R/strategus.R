@@ -1,15 +1,16 @@
 library(httr)
 
-send_request <- function(analysisSpecification, executionSettings, connectionSettings) {
+send_request <- function(analysisSpecification, executionSettings) {
   deployment <- get_deployment()
   # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   url <- paste0(host, "/prefect/api/deployments/", deployment['deploymentId'], "/create_flow_run")
+  analysisSpec <- ParallelLogger::convertSettingsToJson(analysisSpecification)
+  execSettings <- ParallelLogger::convertSettingsToJson(executionSettings)
   json_graph = list(
-        analysisSpecification = analysisSpecification,
-        executionSettings = executionSettings,
-        connectionSettings = connectionSettings
+        analysisSpecification = analysisSpec,
+        executionSettings = execSettings
     )
   options = list(
         mode = 'kernel'
@@ -23,7 +24,6 @@ send_request <- function(analysisSpecification, executionSettings, connectionSet
         type="SCHEDULED"
     ),
     parameters=parameters,
-    # infrastructure_document_id=deployment['infrastructureDocId'],
     empirical_policy = list(
         retries=0,
         retry_delay=0,
@@ -39,7 +39,7 @@ send_request <- function(analysisSpecification, executionSettings, connectionSet
   ))
 
   # Check if the request was successful
-  if (httr::status_code(response) == 200) {
+  if (httr::status_code(response) == 201 | httr::status_code(response) == 200) {
     return(httr::content(response))
   } else {
     # Return an error message
