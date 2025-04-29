@@ -496,7 +496,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     if (createFhirProject) {
       try {
         const fhirProjectInput: NewFhirProjectInput = {
-          name: name,
+          name: tokenStudyCode,
           description: description,
         };
         const { id } = await api.gateway.createFhirStaging(fhirProjectInput);
