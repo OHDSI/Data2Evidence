@@ -37,7 +37,9 @@ export const publicURLs = [
     '^/oidc/.*$',
     '^/sign-in$',
     '^/consent$',
-    '^/callback$'
+    '^/callback$',
+    '^/prefect/docs$',
+    '^/openapi.json$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
