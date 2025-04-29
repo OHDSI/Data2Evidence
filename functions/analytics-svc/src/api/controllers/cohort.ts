@@ -23,7 +23,7 @@ import { env } from "../../env";
 const language = "en";
 
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 
 export async function getCohortAnalyticsConnection(req: IMRIRequest) {
@@ -206,14 +206,13 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const bookmark = bookmarks[0];
         const bookmarkCohortDefinitionId: number | undefined =
             bookmark.cohortDefinitionId;
-
         if (env.USE_EXTENSION_FOR_COHORT_CREATION === "true") {
             const mriConfig = await mriConfigConnection.getStudyConfig(
                 {
                     req,
                     action: "getBackendConfig",
-                    configId: cohortDefinition.configData.configId,
-                    configVersion: cohortDefinition.configData.configVersion,
+                    configId: req.paConfigId,
+                    configVersion: req.paConfigVersion,
                     lang: language,
                     datasetId,
                 },
@@ -267,8 +266,8 @@ export async function createCohort(req: IMRIRequest, res: Response) {
 
         const querySvcParams = {
             queryParams: {
-                configId: cohortDefinition.configData.configId,
-                configVersion: cohortDefinition.configData.configVersion,
+                configId: req.paConfigId,
+                configVersion: req.paConfigVersion,
                 datasetId,
                 queryType: "plugin",
                 ifrRequest: cohortDefinition,
@@ -342,13 +341,12 @@ export async function generateCohortDefinition(
         const language = getUser(req).lang;
         // Remap mriquery for use in createEndpointFromRequest
         const { cohortDefinition } = await createEndpointFromRequest(req);
-
         const mriConfig = await mriConfigConnection.getStudyConfig(
             {
                 req,
                 action: "getBackendConfig",
-                configId: cohortDefinition.configData.configId,
-                configVersion: cohortDefinition.configData.configVersion,
+                configId: req.paConfigId,
+                configVersion: req.paConfigVersion,
                 lang: language,
                 datasetId,
             },

@@ -3,6 +3,7 @@
     <p-context-nav-item title="Job Runs" to="/runs" />
     <p-context-nav-item title="Jobs" to="/deployments" />
     <p-context-nav-item title="Blocks" to="/blocks" />
+    <p-context-nav-item title="Variables" to="/variables" />
   </div>
 </template>
   
