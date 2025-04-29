@@ -13,7 +13,6 @@ WORKDIR /app
 # GITHUB_PAT authentication for OHDSI remotes::install_github
 COPY --from=builder .Renviron .
 
-# installs
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -24,11 +23,36 @@ RUN apt-get update && \
     gcc \
     git \
     less \
-    wget \
+    libbz2-dev \
+    libcairo2-dev \
+    libcurl4-gnutls-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libharfbuzz-dev \
+    libicu-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libpq-dev \
+    libprotobuf-dev \
+    libsodium23 libsodium-dev libsecret-tools \
+    libssh2-1-dev \
+    libssl-dev \
+    libtiff-dev \
+    libxml2-dev \
+    libxt-dev \
+    locales \
+    openssh-client \
+    protobuf-compiler \
     python3 \
     python3-dev \
     python3-pip \
     python3-venv \
+    software-properties-common \
+    sqlite3 \
+    vim-tiny \
+    wget \
     && apt-get clean
 
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
