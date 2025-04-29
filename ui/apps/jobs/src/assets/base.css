@@ -89,7 +89,8 @@ body {
 }
 
 /* flow run page*/
-.flow-run-work-pool, .flow-run-work-queue {
+.flow-run-work-pool,
+.flow-run-work-queue {
   display: none !important;
 }
 
@@ -102,8 +103,11 @@ body {
   display: none;
 }
 
-.log-row > code, kbd, samp, pre {
-  font-size: 1.1em !important; 
+.log-row > code,
+kbd,
+samp,
+pre {
+  font-size: 1.1em !important;
 }
 
 .log-row__leading > span {
@@ -115,10 +119,10 @@ body {
 }
 
 .flow-run-graph-selection-panel > div > h3 > a {
-    pointer-events: none !important;
-    cursor: default !important;
-    text-decoration: none !important;
-    color: var(--p-color-text-default) !important;
+  pointer-events: none !important;
+  cursor: default !important;
+  text-decoration: none !important;
+  color: var(--p-color-text-default) !important;
 }
 
 .list-header--sticky {
