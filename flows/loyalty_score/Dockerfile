@@ -160,7 +160,7 @@ RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requiremen
 RUN pip install -r requirements_loyalty_score.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./base flows
+COPY --chown=docker:docker --chmod=711 ./loyalty_score flows
 
 # Change the ownership of /app folder to docker user for CohortGen error logs 
 RUN chown -R docker:docker /app

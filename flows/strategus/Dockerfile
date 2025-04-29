@@ -115,7 +115,7 @@ RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requiremen
 RUN pip install -r requirements_strategus.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./base flows
+COPY --chown=docker:docker --chmod=711 ./strategus flows
 
 # Grant docker user read/write access
 RUN chmod -R 755 /app
