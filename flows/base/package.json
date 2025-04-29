@@ -2,1521 +2,1441 @@
   "name": "@data2evidence/d2e-flows",
   "version": "0.0.99",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-base --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+      "build": "docker build ../ -f ./Dockerfile -t d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
-    "type": "git",
-    "url": "https://github.com/data2evidence/d2e-flows.git"
+      "type": "git",
+    "url": "https://github.com/OHDSI/d2e.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/data2evidence/d2e-flows/issues"
+      "url": "https://github.com/OHDSI/d2e/issues"
   },
-  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
-    "flow": {
-      "image": "ghcr.io/ohdsi/d2e/flow-base",
-      "flows": [
-        {
-          "name": "cohort_generator_plugin",
-          "type": "cohort_generator",
-          "entrypoint": "flows.cohort_generator_plugin.flow.cohort_generator_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "cohort_generator"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CohortGeneratorOptionsType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CohortGeneratorOptionsType": {
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
-                  },
-                  "vocabSchemaName": {
-                    "title": "Vocabschemaname",
-                    "type": "string"
-                  },
-                  "cohortJson": {
-                    "$ref": "#/definitions/CohortJsonType"
-                  },
-                  "datasetId": {
-                    "title": "Datasetid",
-                    "type": "string"
-                  },
-                  "description": {
-                    "title": "Description",
-                    "type": "string"
-                  },
-                  "token": {
-                    "title": "Token",
-                    "type": "string"
-                  },
-                  "cohortDefinitionId": {
-                    "anyOf": [
-                      {
-                        "type": "number"
+      "flow": {
+          "image": "ghcr.io/ohdsi/d2e/flow-base",
+          "flows": [
+              {
+                  "name": "cohort_generator_plugin",
+                  "entrypoint": "flows.cohort_generator_plugin.flow.cohort_generator_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/CohortGeneratorOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "CohortGeneratorOptionsType": {
+                              "properties": {
+                                  "databaseCode": {
+                                      "title": "Databasecode",
+                                      "type": "string"
+                                  },
+                                  "schemaName": {
+                                      "title": "Schemaname",
+                                      "type": "string"
+                                  },
+                                  "vocabSchemaName": {
+                                      "title": "Vocabschemaname",
+                                      "type": "string"
+                                  },
+                                  "cohortJson": {
+                                      "$ref": "#/definitions/CohortJsonType"
+                                  },
+                                  "datasetId": {
+                                      "title": "Datasetid",
+                                      "type": "string"
+                                  },
+                                  "description": {
+                                      "title": "Description",
+                                      "type": "string"
+                                  },
+                                  "cohortDefinitionId": {
+                                      "anyOf": [
+                                          {
+                                              "type": "integer"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Cohortdefinitionid"
+                                  }
+                              },
+                              "required": [
+                                  "databaseCode",
+                                  "schemaName",
+                                  "vocabSchemaName",
+                                  "cohortJson",
+                                  "datasetId",
+                                  "description"
+                              ],
+                              "title": "CohortGeneratorOptionsType",
+                              "type": "object"
+                          },
+                          "CohortJsonType": {
+                              "properties": {
+                                  "id": {
+                                      "title": "Id",
+                                      "type": "integer"
+                                  },
+                                  "name": {
+                                      "title": "Name",
+                                      "type": "string"
+                                  },
+                                  "createdDate": {
+                                      "title": "Createddate",
+                                      "type": "integer"
+                                  },
+                                  "modifiedDate": {
+                                      "title": "Modifieddate",
+                                      "type": "integer"
+                                  },
+                                  "hasWriteAccess": {
+                                      "title": "Haswriteaccess",
+                                      "type": "boolean"
+                                  },
+                                  "tags": {
+                                      "items": {},
+                                      "title": "Tags",
+                                      "type": "array"
+                                  },
+                                  "expressionType": {
+                                      "title": "Expressiontype",
+                                      "type": "string"
+                                  },
+                                  "expression": {
+                                      "title": "Expression",
+                                      "type": "object"
+                                  }
+                              },
+                              "required": [
+                                  "id",
+                                  "name",
+                                  "createdDate",
+                                  "modifiedDate",
+                                  "hasWriteAccess",
+                                  "tags",
+                                  "expressionType",
+                                  "expression"
+                              ],
+                              "title": "CohortJsonType",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "default": null,
-                    "title": "Cohortdefinitionid"
-                  }
-                },
-                "required": [
-                  "databaseCode",
-                  "schemaName",
-                  "vocabSchemaName",
-                  "cohortJson",
-                  "datasetId",
-                  "description",
-                  "token"
-                ],
-                "title": "CohortGeneratorOptionsType",
-                "type": "object"
+                  },
+                  "type": "cohort_generator"
               },
-              "CohortJsonType": {
-                "properties": {
-                  "id": {
-                    "title": "Id",
-                    "type": "integer"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  },
-                  "createdDate": {
-                    "title": "Createddate",
-                    "type": "integer"
-                  },
-                  "modifiedDate": {
-                    "title": "Modifieddate",
-                    "type": "integer"
-                  },
-                  "hasWriteAccess": {
-                    "title": "Haswriteaccess",
-                    "type": "boolean"
-                  },
-                  "tags": {
-                    "items": {},
-                    "title": "Tags",
-                    "type": "array"
-                  },
-                  "expressionType": {
-                    "title": "Expressiontype",
-                    "type": "string"
-                  },
-                  "expression": {
-                    "title": "Expression",
-                    "type": "object"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "createdDate",
-                  "modifiedDate",
-                  "hasWriteAccess",
-                  "tags",
-                  "expressionType",
-                  "expression"
-                ],
-                "title": "CohortJsonType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "create_cachedb_file_plugin",
-          "type": "create_cachedb_file",
-          "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "create_cachedb_file"
-          ],
-          "volumes": [
-            "cdw-config-duckdb-data-1:/app/cdw-config/duckdb_data",
-            "duckdb-data-1:/app/duckdb_data"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateDuckdbDatabaseFileType": {
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
-                  },
-                  "createForCdwConfigValidation": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
+              {
+                  "name": "create_cachedb_file_plugin",
+                  "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "CreateDuckdbDatabaseFileType": {
+                              "properties": {
+                                  "databaseCode": {
+                                      "title": "Databasecode",
+                                      "type": "string"
+                                  },
+                                  "schemaName": {
+                                      "title": "Schemaname",
+                                      "type": "string"
+                                  },
+                                  "tablesToCreateDuckdbFtsIndex": {
+                                      "default": [
+                                          "concept"
+                                      ],
+                                      "items": {
+                                          "$ref": "#/definitions/DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM"
+                                      },
+                                      "title": "Tablestocreateduckdbftsindex",
+                                      "type": "array"
+                                  },
+                                  "createForCdwConfigValidation": {
+                                      "anyOf": [
+                                          {
+                                              "type": "boolean"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": false,
+                                      "title": "Createforcdwconfigvalidation"
+                                  }
+                              },
+                              "required": [
+                                  "databaseCode",
+                                  "schemaName"
+                              ],
+                              "title": "CreateDuckdbDatabaseFileType",
+                              "type": "object"
+                          },
+                          "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM": {
+                              "enum": [
+                                  "concept",
+                                  "concept_relationship",
+                                  "relationship",
+                                  "vocabulary",
+                                  "concept_synonym",
+                                  "concept_class",
+                                  "domain",
+                                  "concept_ancestor",
+                                  "concept_recommended",
+                                  "note"
+                              ],
+                              "title": "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
+                              "type": "string"
+                          }
                       }
-                    ],
-                    "default": false,
-                    "title": "Createforcdwconfigvalidation"
-                  }
-                },
-                "required": [
-                  "databaseCode",
-                  "schemaName"
-                ],
-                "title": "CreateDuckdbDatabaseFileType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "data_characterization_plugin",
-          "type": "data_characterization",
-          "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data_characterization"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/DCOptionsType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "DCOptionsType": {
-                "properties": {
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
                   },
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "cdmVersionNumber": {
-                    "title": "Cdmversionnumber",
-                    "type": "string"
-                  },
-                  "vocabSchemaName": {
-                    "title": "Vocabschemaname",
-                    "type": "string"
-                  },
-                  "releaseDate": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Releasedate"
-                  },
-                  "resultsSchema": {
-                    "title": "Resultsschema",
-                    "type": "string"
-                  },
-                  "excludeAnalysisIds": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Excludeanalysisids"
-                  }
-                },
-                "required": [
-                  "schemaName",
-                  "databaseCode",
-                  "cdmVersionNumber",
-                  "vocabSchemaName",
-                  "resultsSchema"
-                ],
-                "title": "DCOptionsType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "data_load_plugin",
-          "type": "data_load",
-          "entrypoint": "flows.data_load_plugin.flow.data_load_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data",
-            "load",
-            "data-load"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/DataloadOptions",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "DataloadOptions": {
-                "properties": {
-                  "files": {
-                    "items": {
-                      "$ref": "#/definitions/File"
-                    },
-                    "title": "Files",
-                    "type": "array"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "header": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": true,
-                    "title": "Header"
-                  },
-                  "delimiter": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": ",",
-                    "title": "Delimiter"
-                  },
-                  "escape_character": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Escape Character"
-                  },
-                  "encoding": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Encoding"
-                  },
-                  "empty_string_to_null": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Empty String To Null"
-                  },
-                  "chunksize": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Chunksize"
-                  }
-                },
-                "required": [
-                  "files",
-                  "database_code",
-                  "schema_name"
-                ],
-                "title": "DataloadOptions",
-                "type": "object"
+                  "type": "create_cachedb_file"
               },
-              "File": {
-                "properties": {
-                  "path": {
-                    "title": "Path",
-                    "type": "string"
-                  },
-                  "table_name": {
-                    "title": "Table Name",
-                    "type": "string"
-                  },
-                  "truncate": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
+              {
+                  "name": "data_characterization_plugin",
+                  "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/DCOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "DCOptionsType": {
+                              "properties": {
+                                  "schemaName": {
+                                      "title": "Schemaname",
+                                      "type": "string"
+                                  },
+                                  "databaseCode": {
+                                      "title": "Databasecode",
+                                      "type": "string"
+                                  },
+                                  "cdmVersionNumber": {
+                                      "title": "Cdmversionnumber",
+                                      "type": "string"
+                                  },
+                                  "vocabSchemaName": {
+                                      "title": "Vocabschemaname",
+                                      "type": "string"
+                                  },
+                                  "releaseDate": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Releasedate"
+                                  },
+                                  "resultsSchema": {
+                                      "title": "Resultsschema",
+                                      "type": "string"
+                                  },
+                                  "excludeAnalysisIds": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Excludeanalysisids"
+                                  }
+                              },
+                              "required": [
+                                  "schemaName",
+                                  "databaseCode",
+                                  "cdmVersionNumber",
+                                  "vocabSchemaName",
+                                  "resultsSchema"
+                              ],
+                              "title": "DCOptionsType",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "default": false,
-                    "title": "Truncate"
-                  }
-                },
-                "required": [
-                  "path",
-                  "table_name"
-                ],
-                "title": "File",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "data_management_plugin",
-          "type": "datamodel",
-          "datamodels": [
-            "omop5-4",
-            "medical-imaging"
-          ],
-          "entrypoint": "flows.data_management_plugin.flow.data_management_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/DataModelType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "DataModelType": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/FlowActionType"
                   },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "data_model": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Data Model"
-                  },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Schema Name"
-                  },
-                  "cleansed_schema_option": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": false,
-                    "title": "Cleansed Schema Option"
-                  },
-                  "vocab_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Vocab Schema"
-                  },
-                  "rollback_count": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Count"
-                  },
-                  "rollback_tag": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Tag"
-                  },
-                  "update_count": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Update Count"
-                  },
-                  "datasets": {
-                    "anyOf": [
-                      {
-                        "items": {},
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Datasets"
-                  }
-                },
-                "required": [
-                  "flow_action_type",
-                  "database_code"
-                ],
-                "title": "DataModelType",
-                "type": "object"
+                  "type": "data_characterization"
               },
-              "FlowActionType": {
-                "enum": [
-                  "create_datamodel",
-                  "update_datamodel",
-                  "rollback_count",
-                  "rollback_tag",
-                  "get_version_info",
-                  "create_cdm_schema",
-                  "changelog_sync"
-                ],
-                "title": "FlowActionType",
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "name": "dataflow_ui_plugin",
-          "type": "dataflow_ui",
-          "entrypoint": "flows.dataflow_ui_plugin.flow.dataflow_ui_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "json_graph": {
-                "position": 0,
-                "title": "json_graph"
+              {
+                  "name": "data_load_plugin",
+                  "entrypoint": "flows.data_load_plugin.flow.data_load_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/DataloadOptions",
+                              "position": 0,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "DataloadOptions": {
+                              "properties": {
+                                  "files": {
+                                      "items": {
+                                          "$ref": "#/definitions/FileType"
+                                      },
+                                      "title": "Files",
+                                      "type": "array"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "schema_name": {
+                                      "title": "Schema Name",
+                                      "type": "string"
+                                  },
+                                  "header": {
+                                      "anyOf": [
+                                          {
+                                              "type": "boolean"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": true,
+                                      "title": "Header"
+                                  },
+                                  "delimiter": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": ",",
+                                      "title": "Delimiter"
+                                  },
+                                  "escape_character": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Escape Character"
+                                  },
+                                  "encoding": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Encoding"
+                                  },
+                                  "empty_string_to_null": {
+                                      "anyOf": [
+                                          {
+                                              "type": "boolean"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Empty String To Null"
+                                  },
+                                  "chunksize": {
+                                      "anyOf": [
+                                          {
+                                              "type": "integer"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Chunksize"
+                                  }
+                              },
+                              "required": [
+                                  "files",
+                                  "database_code",
+                                  "schema_name"
+                              ],
+                              "title": "DataloadOptions",
+                              "type": "object"
+                          },
+                          "FileType": {
+                              "properties": {
+                                  "path": {
+                                      "title": "Path",
+                                      "type": "string"
+                                  },
+                                  "table_name": {
+                                      "title": "Table Name",
+                                      "type": "string"
+                                  },
+                                  "truncate": {
+                                      "anyOf": [
+                                          {
+                                              "type": "boolean"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": false,
+                                      "title": "Truncate"
+                                  }
+                              },
+                              "required": [
+                                  "path",
+                                  "table_name"
+                              ],
+                              "title": "FileType",
+                              "type": "object"
+                          }
+                      }
+                  },
+                  "type": "data_load"
               },
-              "options": {
-                "position": 1,
-                "title": "options"
-              }
-            },
-            "required": [
-              "json_graph",
-              "options"
-            ]
-          }
-        },
-        {
-          "name": "datamart_plugin",
-          "type": "datamart",
-          "entrypoint": "flows.datamart_plugin.flow.datamart_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "datamart"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateDatamartOptions",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateDatamartOptions": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/DatamartFlowAction"
-                  },
-                  "dialect": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "data_management_plugin",
+                  "entrypoint": "flows.data_management_plugin.flow.data_management_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/DataModelType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "DataModelType": {
+                              "properties": {
+                                  "flow_action_type": {
+                                      "$ref": "#/definitions/FlowActionType"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "data_model": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Data Model"
+                                  },
+                                  "schema_name": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Schema Name"
+                                  },
+                                  "cleansed_schema_option": {
+                                      "anyOf": [
+                                          {
+                                              "type": "boolean"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": false,
+                                      "title": "Cleansed Schema Option"
+                                  },
+                                  "vocab_schema": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Vocab Schema"
+                                  },
+                                  "rollback_count": {
+                                      "anyOf": [
+                                          {
+                                              "type": "integer"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Rollback Count"
+                                  },
+                                  "rollback_tag": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Rollback Tag"
+                                  },
+                                  "update_count": {
+                                      "anyOf": [
+                                          {
+                                              "type": "integer"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Update Count"
+                                  },
+                                  "datasets": {
+                                      "anyOf": [
+                                          {
+                                              "items": {},
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Datasets"
+                                  }
+                              },
+                              "required": [
+                                  "flow_action_type",
+                                  "database_code"
+                              ],
+                              "title": "DataModelType",
+                              "type": "object"
+                          },
+                          "FlowActionType": {
+                              "enum": [
+                                  "create_datamodel",
+                                  "update_datamodel",
+                                  "rollback_count",
+                                  "rollback_tag",
+                                  "get_version_info",
+                                  "create_cdm_schema",
+                                  "changelog_sync"
+                              ],
+                              "title": "FlowActionType",
+                              "type": "string"
+                          }
                       }
-                    ],
-                    "default": null,
-                    "title": "Dialect"
                   },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Schema Name"
-                  },
-                  "source_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Source Schema"
-                  },
-                  "database_code": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Database Code"
-                  },
-                  "snapshot_copy_config": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/DatamartCopyConfig"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null
-                  },
-                  "datasets": {
-                    "anyOf": [
-                      {
-                        "items": {},
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Datasets"
-                  }
-                },
-                "required": [
-                  "flow_action_type"
-                ],
-                "title": "CreateDatamartOptions",
-                "type": "object"
+                  "type": "datamodel",
+                  "datamodels": [
+                      "omop5-4",
+                      "medical-imaging"
+                  ]
               },
-              "DatamartCopyConfig": {
-                "properties": {
-                  "timestamp": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "dataflow_ui_plugin",
+                  "entrypoint": "flows.dataflow_ui_plugin.flow.dataflow_ui_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "json_graph": {
+                              "position": 0,
+                              "title": "json_graph"
+                          },
+                          "options": {
+                              "position": 1,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Timestamp"
+                      "required": [
+                          "json_graph",
+                          "options"
+                      ],
+                      "definitions": {}
                   },
-                  "tableConfig": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "$ref": "#/definitions/DatamartCopyTableConfig"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Tableconfig"
-                  },
-                  "patientsToBeCopied": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "integer"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Patientstobecopied"
-                  }
-                },
-                "required": [
-                  "timestamp",
-                  "tableConfig",
-                  "patientsToBeCopied"
-                ],
-                "title": "DatamartCopyConfig",
-                "type": "object"
+                  "type": "dataflow_ui"
               },
-              "DatamartCopyTableConfig": {
-                "properties": {
-                  "tableName": {
-                    "title": "Tablename",
-                    "type": "string"
+              {
+                  "name": "datamart_plugin",
+                  "entrypoint": "flows.datamart_plugin.flow.datamart_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/CreateDatamartOptions",
+                              "position": 0,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "CreateDatamartOptions": {
+                              "properties": {
+                                  "flow_action_type": {
+                                      "$ref": "#/definitions/DatamartFlowAction"
+                                  },
+                                  "dialect": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Dialect"
+                                  },
+                                  "schema_name": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Schema Name"
+                                  },
+                                  "source_schema": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Source Schema"
+                                  },
+                                  "database_code": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Database Code"
+                                  },
+                                  "snapshot_copy_config": {
+                                      "anyOf": [
+                                          {
+                                              "$ref": "#/definitions/DatamartCopyConfig"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null
+                                  },
+                                  "datasets": {
+                                      "anyOf": [
+                                          {
+                                              "items": {},
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Datasets"
+                                  }
+                              },
+                              "required": [
+                                  "flow_action_type"
+                              ],
+                              "title": "CreateDatamartOptions",
+                              "type": "object"
+                          },
+                          "DatamartCopyConfig": {
+                              "properties": {
+                                  "timestamp": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Timestamp"
+                                  },
+                                  "tableConfig": {
+                                      "anyOf": [
+                                          {
+                                              "items": {
+                                                  "$ref": "#/definitions/DatamartCopyTableConfig"
+                                              },
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Tableconfig"
+                                  },
+                                  "patientsToBeCopied": {
+                                      "anyOf": [
+                                          {
+                                              "items": {
+                                                  "type": "integer"
+                                              },
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Patientstobecopied"
+                                  }
+                              },
+                              "required": [
+                                  "timestamp",
+                                  "tableConfig",
+                                  "patientsToBeCopied"
+                              ],
+                              "title": "DatamartCopyConfig",
+                              "type": "object"
+                          },
+                          "DatamartCopyTableConfig": {
+                              "properties": {
+                                  "tableName": {
+                                      "title": "Tablename",
+                                      "type": "string"
+                                  },
+                                  "columnsToBeCopied": {
+                                      "items": {
+                                          "type": "string"
+                                      },
+                                      "title": "Columnstobecopied",
+                                      "type": "array"
+                                  }
+                              },
+                              "required": [
+                                  "tableName",
+                                  "columnsToBeCopied"
+                              ],
+                              "title": "DatamartCopyTableConfig",
+                              "type": "object"
+                          },
+                          "DatamartFlowAction": {
+                              "enum": [
+                                  "create_snapshot",
+                                  "create_parquet_snapshot",
+                                  "get_version_info"
+                              ],
+                              "title": "DatamartFlowAction",
+                              "type": "string"
+                          }
+                      }
                   },
-                  "columnsToBeCopied": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "title": "Columnstobecopied",
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "tableName",
-                  "columnsToBeCopied"
-                ],
-                "title": "DatamartCopyTableConfig",
-                "type": "object"
+                  "type": "datamart"
               },
-              "DatamartFlowAction": {
-                "enum": [
-                  "create_snapshot",
-                  "create_parquet_snapshot",
-                  "get_version_info"
-                ],
-                "title": "DatamartFlowAction",
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "name": "dqd_plugin",
-          "type": "dqd",
-          "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data_quality_dashboard"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/DqdOptionsType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "DqdOptionsType": {
-                "properties": {
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
-                  },
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "cdmVersionNumber": {
-                    "title": "Cdmversionnumber",
-                    "type": "string"
-                  },
-                  "vocabSchemaName": {
-                    "title": "Vocabschemaname",
-                    "type": "string"
-                  },
-                  "releaseDate": {
-                    "title": "Releasedate",
-                    "type": "string"
-                  },
-                  "cohortDefinitionId": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "dqd_plugin",
+                  "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/DqdOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "DqdOptionsType": {
+                              "properties": {
+                                  "schemaName": {
+                                      "title": "Schemaname",
+                                      "type": "string"
+                                  },
+                                  "databaseCode": {
+                                      "title": "Databasecode",
+                                      "type": "string"
+                                  },
+                                  "cdmVersionNumber": {
+                                      "title": "Cdmversionnumber",
+                                      "type": "string"
+                                  },
+                                  "vocabSchemaName": {
+                                      "title": "Vocabschemaname",
+                                      "type": "string"
+                                  },
+                                  "releaseDate": {
+                                      "title": "Releasedate",
+                                      "type": "string"
+                                  },
+                                  "cohortDefinitionId": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Cohortdefinitionid"
+                                  },
+                                  "checkNames": {
+                                      "anyOf": [
+                                          {
+                                              "items": {
+                                                  "type": "string"
+                                              },
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Checknames"
+                                  },
+                                  "cohortDatabaseSchema": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Cohortdatabaseschema"
+                                  },
+                                  "cohortTableName": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Cohorttablename"
+                                  }
+                              },
+                              "required": [
+                                  "schemaName",
+                                  "databaseCode",
+                                  "cdmVersionNumber",
+                                  "vocabSchemaName",
+                                  "releaseDate"
+                              ],
+                              "title": "DqdOptionsType",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "default": null,
-                    "title": "Cohortdefinitionid"
                   },
-                  "checkNames": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "string"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Checknames"
-                  },
-                  "cohortDatabaseSchema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Cohortdatabaseschema"
-                  },
-                  "cohortTableName": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Cohorttablename"
-                  }
-                },
-                "required": [
-                  "schemaName",
-                  "databaseCode",
-                  "cdmVersionNumber",
-                  "vocabSchemaName",
-                  "releaseDate"
-                ],
-                "title": "DqdOptionsType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "omop_cdm_plugin",
-          "type": "datamodel",
-          "datamodels": [
-            "omop5-3",
-            "omop5-4"
-          ],
-          "entrypoint": "flows.omop_cdm_plugin.flow.omop_cdm_plugin",
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "omop_cdm"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/OmopCDMPluginOptions",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "FlowActionType": {
-                "enum": [
-                  "create_datamodel",
-                  "get_version_info",
-                  "update_datamodel",
-                  "create_seed_schemas"
-                ],
-                "title": "FlowActionType",
-                "type": "string"
+                  "type": "dqd"
               },
-              "OmopCDMPluginOptions": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/FlowActionType"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "data_model": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "omop_cdm_plugin",
+                  "entrypoint": "flows.omop_cdm_plugin.flow.omop_cdm_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/OmopCDMPluginOptions",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "FlowActionType": {
+                              "enum": [
+                                  "create_datamodel",
+                                  "get_version_info",
+                                  "update_datamodel",
+                                  "create_seed_schemas"
+                              ],
+                              "title": "FlowActionType",
+                              "type": "string"
+                          },
+                          "OmopCDMPluginOptions": {
+                              "properties": {
+                                  "flow_action_type": {
+                                      "$ref": "#/definitions/FlowActionType"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "data_model": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Data Model"
+                                  },
+                                  "schema_name": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Schema Name"
+                                  },
+                                  "vocab_schema": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Vocab Schema"
+                                  },
+                                  "datasets": {
+                                      "anyOf": [
+                                          {
+                                              "items": {},
+                                              "type": "array"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "default": null,
+                                      "title": "Datasets"
+                                  }
+                              },
+                              "required": [
+                                  "flow_action_type",
+                                  "database_code"
+                              ],
+                              "title": "OmopCDMPluginOptions",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "default": null,
-                    "title": "Data Model"
                   },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Schema Name"
-                  },
-                  "vocab_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Vocab Schema"
-                  },
-                  "datasets": {
-                    "anyOf": [
-                      {
-                        "items": {},
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Datasets"
-                  }
-                },
-                "required": [
-                  "flow_action_type",
-                  "database_code"
-                ],
-                "title": "OmopCDMPluginOptions",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "questionnaire_plugin",
-          "type": "questionnaire",
-          "entrypoint": "flows.questionnaire_plugin.flow.questionnaire_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "questionnaire"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/QuestionnaireOptionsType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "FlowActionType": {
-                "enum": [
-                  "create_questionnaire_definition",
-                  "get_questionnaire_response"
-                ],
-                "title": "FlowActionType",
-                "type": "string"
+                  "type": "datamodel",
+                  "datamodels": [
+                      "omop5-3",
+                      "omop5-4"
+                  ]
               },
-              "QuestionnaireOptionsType": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/FlowActionType"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "questionnaire_plugin",
+                  "entrypoint": "flows.questionnaire_plugin.flow.questionnaire_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/QuestionnaireOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "FlowActionType": {
+                              "enum": [
+                                  "create_questionnaire_definition",
+                                  "get_questionnaire_response"
+                              ],
+                              "title": "FlowActionType",
+                              "type": "string"
+                          },
+                          "QuestionnaireOptionsType": {
+                              "properties": {
+                                  "flow_action_type": {
+                                      "$ref": "#/definitions/FlowActionType"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "schema_name": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Schema Name"
+                                  },
+                                  "questionnaire_definition": {
+                                      "anyOf": [
+                                          {
+                                              "type": "object"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Questionnaire Definition"
+                                  },
+                                  "questionnaire_id": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Questionnaire Id"
+                                  }
+                              },
+                              "required": [
+                                  "flow_action_type",
+                                  "database_code",
+                                  "schema_name",
+                                  "questionnaire_definition",
+                                  "questionnaire_id"
+                              ],
+                              "title": "QuestionnaireOptionsType",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "title": "Schema Name"
                   },
-                  "questionnaire_definition": {
-                    "anyOf": [
-                      {
-                        "type": "object"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Questionnaire Definition"
-                  },
-                  "questionnaire_id": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Questionnaire Id"
-                  },
-                  "token": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Token"
-                  }
-                },
-                "required": [
-                  "flow_action_type",
-                  "database_code",
-                  "schema_name",
-                  "questionnaire_definition",
-                  "questionnaire_id",
-                  "token"
-                ],
-                "title": "QuestionnaireOptionsType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "create_fhir_datamodel_plugin",
-          "type": "FHIRDataModel",
-          "entrypoint": "flows.create_fhir_datamodel_plugin.flow.create_fhir_datamodel_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "FHIRDataModel"
-          ],
-          "volumes": [
-            "fhir-schema-file-1:/home/docker/fhir"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateFhirDataModelOptions",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateFhirDataModelOptions": {
-                "properties": {
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "vocab_schema": {
-                    "title": "Vocab Schema",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "database_code",
-                  "schema_name",
-                  "vocab_schema"
-                ],
-                "title": "CreateFhirDataModelOptions",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "phenotype_plugin",
-          "type": "phenotype",
-          "entrypoint": "flows.phenotype_plugin.flow.phenotype_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "phenotype"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "title": "options",
-                "position": 0,
-                "allOf": [
-                  {
-                    "$ref": "#/definitions/PhenotypeOptionsType"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "PhenotypeOptionsType": {
-                "title": "PhenotypeOptionsType",
-                "type": "object",
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "cdmschemaName": {
-                    "title": "Cdmschemaname",
-                    "type": "string"
-                  },
-                  "cohortschemaName": {
-                    "title": "Cohortschemaname",
-                    "type": "string"
-                  },
-                  "cohorttableName": {
-                    "title": "Cohorttablename",
-                    "type": "string"
-                  },
-                  "cohortsId": {
-                    "title": "Cohortsid",
-                    "type": "string"
-                  },
-                  "vocabschemaName": {
-                    "title": "Vocabschemaname",
-                    "type": "string"
-                  },
-                  "description": {
-                    "title": "Description",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "databaseCode",
-                  "cdmschemaName",
-                  "cohortschemaName",
-                  "cohorttableName",
-                  "cohortsId",
-                  "vocabschemaName",
-                  "description"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "name": "strategus_plugin",
-          "type": "strategus",
-          "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "json_graph": {
-                "position": 0,
-                "title": "json_graph"
+                  "type": "questionnaire"
               },
-              "options": {
-                "position": 1,
-                "title": "options"
-              }
-            },
-            "required": [
-              "json_graph",
-              "options"
-            ]
-          }
-        },
-        {
-          "name": "fhir_to_omop_plugin",
-          "type": "fhir_to_omop",
-          "entrypoint": "flows.fhir_to_omop_plugin.flow.fhir_to_omop_plugin",
-          "tags": [
-            "fhir"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/FHIRToOMOPOptionsType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "FHIRToOMOPOptionsType": {
-                "properties": {
-                  "batchChunksize": {
-                    "title": "Batchchunksize",
-                    "type": "string"
-                  },
-                  "fhirGatewayJdbcCurl": {
-                    "title": "Fhirgatewayjdbccurl",
-                    "type": "string"
-                  },
-                  "fhirGatewayUsername": {
-                    "title": "Fhirgatewayusername",
-                    "type": "string"
-                  },
-                  "fhirGatewayPassword": {
-                    "title": "Fhirgatewaypassword",
-                    "type": "string"
-                  },
-                  "fhirGatewayTable": {
-                    "title": "Fhirgatewaytable",
-                    "type": "string"
-                  },
-                  "omopCDMJdbcCurl": {
-                    "title": "Omopcdmjdbccurl",
-                    "type": "string"
-                  },
-                  "omopCDMUsername": {
-                    "title": "Omopcdmusername",
-                    "type": "string"
-                  },
-                  "omopCDMPassword": {
-                    "title": "Omopcdmpassword",
-                    "type": "string"
-                  },
-                  "omopCDMSchema": {
-                    "title": "Omopcdmschema",
-                    "type": "string"
-                  },
-                  "dataBeginDate": {
-                    "title": "Databegindate",
-                    "type": "string"
-                  },
-                  "dataEndDate": {
-                    "title": "Dataenddate",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "batchChunksize",
-                  "fhirGatewayJdbcCurl",
-                  "fhirGatewayUsername",
-                  "fhirGatewayPassword",
-                  "fhirGatewayTable",
-                  "omopCDMJdbcCurl",
-                  "omopCDMUsername",
-                  "omopCDMPassword",
-                  "omopCDMSchema",
-                  "dataBeginDate",
-                  "dataEndDate"
-                ],
-                "title": "FHIRToOMOPOptionsType",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "loyalty_score_plugin",
-          "type": "loyaltyscore",
-          "entrypoint": "flows.loyalty_score_plugin.flow.loyalty_score_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/LoyaltyPluginType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CalculateConfig": {
-                "properties": {
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "index_date": {
-                    "title": "Index Date",
-                    "type": "string"
-                  },
-                  "lookback_years": {
-                    "title": "Lookback Years",
-                    "type": "integer"
-                  },
-                  "coeff_table_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
+              {
+                  "name": "create_fhir_datamodel_plugin",
+                  "entrypoint": "flows.create_fhir_datamodel_plugin.flow.create_fhir_datamodel_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/CreateFhirDataModelOptions",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "type": "null"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "CreateFhirDataModelOptions": {
+                              "properties": {
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "schema_name": {
+                                      "title": "Schema Name",
+                                      "type": "string"
+                                  },
+                                  "vocab_schema": {
+                                      "title": "Vocab Schema",
+                                      "type": "string"
+                                  }
+                              },
+                              "required": [
+                                  "database_code",
+                                  "schema_name",
+                                  "vocab_schema"
+                              ],
+                              "title": "CreateFhirDataModelOptions",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "title": "Coeff Table Name"
                   },
-                  "loyalty_cohort_table_name": {
-                    "title": "Loyalty Cohort Table Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "schema_name",
-                  "database_code",
-                  "index_date",
-                  "lookback_years",
-                  "coeff_table_name",
-                  "loyalty_cohort_table_name"
-                ],
-                "title": "CalculateConfig",
-                "type": "object"
+                  "type": "FHIRDataModel"
               },
-              "LoyaltyPluginType": {
-                "properties": {
-                  "config": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/CalculateConfig"
+              {
+                  "name": "phenotype_plugin",
+                  "entrypoint": "flows.phenotype_plugin.flow.phenotype_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/PhenotypeOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
                       },
-                      {
-                        "$ref": "#/definitions/RetrainConfig"
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "PhenotypeOptionsType": {
+                              "properties": {
+                                  "databaseCode": {
+                                      "title": "Databasecode",
+                                      "type": "string"
+                                  },
+                                  "cdmschemaName": {
+                                      "title": "Cdmschemaname",
+                                      "type": "string"
+                                  },
+                                  "cohortschemaName": {
+                                      "title": "Cohortschemaname",
+                                      "type": "string"
+                                  },
+                                  "cohorttableName": {
+                                      "title": "Cohorttablename",
+                                      "type": "string"
+                                  },
+                                  "cohortsId": {
+                                      "title": "Cohortsid",
+                                      "type": "string"
+                                  },
+                                  "vocabschemaName": {
+                                      "title": "Vocabschemaname",
+                                      "type": "string"
+                                  },
+                                  "description": {
+                                      "title": "Description",
+                                      "type": "string"
+                                  }
+                              },
+                              "required": [
+                                  "databaseCode",
+                                  "cdmschemaName",
+                                  "cohortschemaName",
+                                  "cohorttableName",
+                                  "cohortsId",
+                                  "vocabschemaName",
+                                  "description"
+                              ],
+                              "title": "PhenotypeOptionsType",
+                              "type": "object"
+                          }
                       }
-                    ],
-                    "title": "Config"
-                  }
-                },
-                "required": [
-                  "config"
-                ],
-                "title": "LoyaltyPluginType",
-                "type": "object"
+                  },
+                  "type": "phenotype"
               },
-              "RetrainConfig": {
-                "properties": {
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
+              {
+                  "name": "strategus_plugin",
+                  "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "json_graph": {
+                              "position": 0,
+                              "title": "json_graph"
+                          },
+                          "options": {
+                              "position": 1,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "json_graph",
+                          "options"
+                      ],
+                      "definitions": {}
                   },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
+                  "type": "strategus"
+              },
+              {
+                  "name": "fhir_to_omop_plugin",
+                  "entrypoint": "flows.fhir_to_omop_plugin.flow.fhir_to_omop_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/FHIRToOMOPOptionsType",
+                              "position": 0,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "FHIRToOMOPOptionsType": {
+                              "properties": {
+                                  "batchChunksize": {
+                                      "title": "Batchchunksize",
+                                      "type": "string"
+                                  },
+                                  "fhirGatewayJdbcCurl": {
+                                      "title": "Fhirgatewayjdbccurl",
+                                      "type": "string"
+                                  },
+                                  "fhirGatewayUsername": {
+                                      "title": "Fhirgatewayusername",
+                                      "type": "string"
+                                  },
+                                  "fhirGatewayPassword": {
+                                      "title": "Fhirgatewaypassword",
+                                      "type": "string"
+                                  },
+                                  "fhirGatewayTable": {
+                                      "title": "Fhirgatewaytable",
+                                      "type": "string"
+                                  },
+                                  "omopCDMJdbcCurl": {
+                                      "title": "Omopcdmjdbccurl",
+                                      "type": "string"
+                                  },
+                                  "omopCDMUsername": {
+                                      "title": "Omopcdmusername",
+                                      "type": "string"
+                                  },
+                                  "omopCDMPassword": {
+                                      "title": "Omopcdmpassword",
+                                      "type": "string"
+                                  },
+                                  "omopCDMSchema": {
+                                      "title": "Omopcdmschema",
+                                      "type": "string"
+                                  },
+                                  "dataBeginDate": {
+                                      "title": "Databegindate",
+                                      "type": "string"
+                                  },
+                                  "dataEndDate": {
+                                      "title": "Dataenddate",
+                                      "type": "string"
+                                  }
+                              },
+                              "required": [
+                                  "batchChunksize",
+                                  "fhirGatewayJdbcCurl",
+                                  "fhirGatewayUsername",
+                                  "fhirGatewayPassword",
+                                  "fhirGatewayTable",
+                                  "omopCDMJdbcCurl",
+                                  "omopCDMUsername",
+                                  "omopCDMPassword",
+                                  "omopCDMSchema",
+                                  "dataBeginDate",
+                                  "dataEndDate"
+                              ],
+                              "title": "FHIRToOMOPOptionsType",
+                              "type": "object"
+                          }
+                      }
                   },
-                  "index_date": {
-                    "title": "Index Date",
-                    "type": "string"
+                  "type": "fhir_to_omop"
+              },
+              {
+                  "name": "loyalty_score_plugin",
+                  "entrypoint": "flows.loyalty_score_plugin.flow.loyalty_score_plugin",
+                  "parameter_openapi_schema": {
+                      "title": "Parameters",
+                      "type": "object",
+                      "properties": {
+                          "options": {
+                              "$ref": "#/definitions/LoyaltyPluginType",
+                              "position": 0,
+                              "title": "options"
+                          }
+                      },
+                      "required": [
+                          "options"
+                      ],
+                      "definitions": {
+                          "CalculateConfig": {
+                              "properties": {
+                                  "schema_name": {
+                                      "title": "Schema Name",
+                                      "type": "string"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "index_date": {
+                                      "title": "Index Date",
+                                      "type": "string"
+                                  },
+                                  "lookback_years": {
+                                      "title": "Lookback Years",
+                                      "type": "integer"
+                                  },
+                                  "coeff_table_name": {
+                                      "anyOf": [
+                                          {
+                                              "type": "string"
+                                          },
+                                          {
+                                              "type": "null"
+                                          }
+                                      ],
+                                      "title": "Coeff Table Name"
+                                  },
+                                  "loyalty_cohort_table_name": {
+                                      "title": "Loyalty Cohort Table Name",
+                                      "type": "string"
+                                  }
+                              },
+                              "required": [
+                                  "schema_name",
+                                  "database_code",
+                                  "index_date",
+                                  "lookback_years",
+                                  "coeff_table_name",
+                                  "loyalty_cohort_table_name"
+                              ],
+                              "title": "CalculateConfig",
+                              "type": "object"
+                          },
+                          "LoyaltyPluginType": {
+                              "properties": {
+                                  "config": {
+                                      "anyOf": [
+                                          {
+                                              "$ref": "#/definitions/CalculateConfig"
+                                          },
+                                          {
+                                              "$ref": "#/definitions/RetrainConfig"
+                                          }
+                                      ],
+                                      "title": "Config"
+                                  }
+                              },
+                              "required": [
+                                  "config"
+                              ],
+                              "title": "LoyaltyPluginType",
+                              "type": "object"
+                          },
+                          "RetrainConfig": {
+                              "properties": {
+                                  "schema_name": {
+                                      "title": "Schema Name",
+                                      "type": "string"
+                                  },
+                                  "database_code": {
+                                      "title": "Database Code",
+                                      "type": "string"
+                                  },
+                                  "index_date": {
+                                      "title": "Index Date",
+                                      "type": "string"
+                                  },
+                                  "train_years": {
+                                      "default": 2,
+                                      "title": "Train Years",
+                                      "type": "integer"
+                                  },
+                                  "return_years": {
+                                      "default": 1,
+                                      "title": "Return Years",
+                                      "type": "integer"
+                                  },
+                                  "test_ratio": {
+                                      "default": 0.2,
+                                      "title": "Test Ratio",
+                                      "type": "number"
+                                  },
+                                  "retraincoeff_table_name": {
+                                      "title": "Retraincoeff Table Name",
+                                      "type": "string"
+                                  }
+                              },
+                              "required": [
+                                  "schema_name",
+                                  "database_code",
+                                  "index_date",
+                                  "retraincoeff_table_name"
+                              ],
+                              "title": "RetrainConfig",
+                              "type": "object"
+                          }
+                      }
                   },
-                  "train_years": {
-                    "default": 2,
-                    "title": "Train Years",
-                    "type": "integer"
-                  },
-                  "return_years": {
-                    "default": 1,
-                    "title": "Return Years",
-                    "type": "integer"
-                  },
-                  "test_ratio": {
-                    "default": 0.2,
-                    "title": "Test Ratio",
-                    "type": "number"
-                  },
-                  "retraincoeff_table_name": {
-                    "title": "Retraincoeff Table Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "schema_name",
-                  "database_code",
-                  "index_date",
-                  "retraincoeff_table_name"
-                ],
-                "title": "RetrainConfig",
-                "type": "object"
+                  "type": "loyaltyscore"
               }
-            }
-          }
-        }
-      ]
-    }
+          ]
+      }
   }
 }
