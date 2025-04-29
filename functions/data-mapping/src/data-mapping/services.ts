@@ -1,7 +1,7 @@
 import { env } from "../env";
-import { IUICodeSnippet, LLM_User_Data, DataMappingError } from "../type";
+import { IUICodeSnippet, LLM_User_Data, DataMappingError } from "../types";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModelInstance } from "../utils/prepModels";
+import { getModelInstance } from "../utils/getModels";
 
 export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   const instructions = `Map the given JSON object to OMOP CDM v5 format - use the following instructions. 
@@ -11,11 +11,11 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
               4. Try to match all tables and columns to OMOP CDM format.
               5. The source JSON object is as following.`;
 
-  const model = await getModelInstance(env.AI_MODEL_NAME);
+  const model = await getModelInstance(env.AI_MODEL);
 
   if (model === "NULL"){
-    console.error(`LLM Model - ${env.AI_MODEL_NAME} not found`);
-    throw new DataMappingError(`LLM Model - ${env.AI_MODEL_NAME} not found.`,404);
+    console.error(`LLM Model - ${env.AI_MODEL} not found`);
+    throw new DataMappingError(`LLM Model - ${env.AI_MODEL} not found.`,404);
   }
   
   // convert the received JSON data to required format
