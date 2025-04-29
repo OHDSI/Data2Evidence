@@ -103,19 +103,16 @@ body {
   display: none;
 }
 
-.log-row > code,
-kbd,
-samp,
-pre {
-  font-size: 1.1em !important;
-}
-
-.log-row__leading > span {
-  font-size: 0.7em !important;
-}
-
-.log-row__trailing {
-  font-size: 0.65em !important;
+.log-row {
+  .log-row__content > span {
+    font-size: 1.1em;
+  }
+  .log-row__leading > span {
+    font-size: 0.7em;
+  }
+  .log-row__trailing {
+    font-size: 0.65em;
+  }
 }
 
 .flow-run-graph-selection-panel > div > h3 > a {
