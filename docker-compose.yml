@@ -205,7 +205,6 @@ services:
           "analytics-svc": {
             "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
             "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
-            "ANALYTICS_SVC__DEFAULT_ASSIGNMENT_NAME": "PUBLIC-CHART_DEFAULT-ASSIGNMENT",
             "ANALYTICS_SVC__PORT": 41102,
             "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 600,
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",

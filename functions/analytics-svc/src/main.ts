@@ -39,7 +39,7 @@ import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 /**
@@ -294,6 +294,7 @@ const initRoutes = async (app: express.Application) => {
                     let queryParams = {
                         action: "getMyConfig",
                         datasetId,
+                        configId: req.paConfigId
                     };
 
                     configResults = await mriConfigConnection.getMriConfig(
@@ -343,6 +344,7 @@ const initRoutes = async (app: express.Application) => {
                     let qParams = {
                         action: "getMyConfig",
                         datasetId,
+                        configId: req.paConfigId
                     };
                     configResults = await mriConfigConnection.getMriConfig(
                         req,
@@ -385,26 +387,26 @@ const initRoutes = async (app: express.Application) => {
                         let configData = Array.isArray(body)
                             ? body[0].configData
                             : body.configData;
-                        if (!configData) {
-                            let configMetadata = Array.isArray(body)
-                                ? body[0].filter.configMetadata
-                                : body.filter.configMetadata;
-                            configData = {
-                                configId: configMetadata.id,
-                                configVersion: configMetadata.version,
-                            };
-                        }
+                            if (!configData) {
+                                let configMetadata = Array.isArray(body)
+                                    ? body[0].filter.configMetadata
+                                    : body.filter.configMetadata;
+                                configData = {
+                                    configId: configMetadata.id,
+                                    configVersion: configMetadata.version,
+                                };
+                            }
                         const configId = configData.configId;
                         const configVersion = configData.configVersion;
                         const datasetId = req.body.datasetId;
-    
+
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
                                 {
                                     req,
                                     action: "getBackendConfig",
-                                    configId,
-                                    configVersion,
+                                    configId: req.paConfigId,
+                                    configVersion: req.paConfigVersion,
                                     lang: language,
                                     datasetId,
                                 },
