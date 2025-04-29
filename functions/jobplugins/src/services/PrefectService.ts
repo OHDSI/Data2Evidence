@@ -61,6 +61,20 @@ export class PrefectService {
     return flowRunId;
   }
 
+  public async createAnalaysisRunByJupyterKernel(token, flowRunParams) {
+    const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
+    const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
+    this.prefectApi = new PrefectAPI(token);
+
+    const flowRunId = await this.prefectApi.createFlowRun(
+      "jupyter-kernel-dataset-analysis",
+      prefectDeploymentName,
+      prefectFlowName,
+      flowRunParams
+    );
+    return flowRunId;
+  }
+
   public async getFlowRunLogs(id: string, token) {
     this.prefectApi = new PrefectAPI(token);
     return await this.prefectApi.getFlowRunLogs(id);

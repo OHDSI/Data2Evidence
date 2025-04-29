@@ -152,3 +152,5 @@ services:
     build: 
       context: ./services/enterprise-gateway
       dockerfile: Dockerfile
+    volumes:
+      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E

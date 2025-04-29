@@ -76,7 +76,8 @@ COPY --chown=jovyan:user ./flows/_shared_flow_utils/postgresql-42.3.1.jar /app/i
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
 WORKDIR /app/rD2E
-RUN Rscript -e 'devtools::install()'
+# R CMD build . && R CMD check $(ls -t . | head -n1)
+RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
 
 WORKDIR /app
 USER jovyan

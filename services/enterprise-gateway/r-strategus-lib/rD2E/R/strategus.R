@@ -1,15 +1,17 @@
-#' Load a Matrix
+
+
+#' Start running the Strategus flow in D2E
 #'
-#' This function loads a file as a matrix. It assumes that the first column
-#' contains the rownames and the subsequent columns are the sample identifiers.
-#' Any rows with duplicated row names will be dropped with the first one being
-#' kepted.
+#' This function creates a flow run in Prefect in D2E.
+#' Internally the flow run starts a network study analysis on the given dataset
+#' using the OHDSI Strategus R package.
 #'
-#' @param analysisSpecification Path to the input file
-#' @param executionSettings Path to the input file
-#' @return A matrix of the infile
+#' @param dataset_code is a string, which is the unique identifier of dataset in D2E
+#' @param analysisSpecification AnalysisSpecification object created by Strategus::createEmptyAnalysisSpecificiations
+#' @param executionSettings ExecutionSettings object created by Strategus::createCdmExecutionSettings
+#' @return Response object with flow run details, id and status
 #' @export
-run_strategus_flow <- function(analysisSpecification, executionSettings) {
+run_strategus_flow <- function(dataset_code, analysisSpecification, executionSettings) {
   deployment <- get_deployment()
   # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
@@ -42,7 +44,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings) {
 
   # Send a POST request to the backend
   # add headers "Content-Type":"application/json" and "Authorization": "Bearer XXXXXYZZZZ"
-  response <- httr::POST(url, body = data, encode = "json", add_headers(
+  response <- httr::POST(url, body = data, encode = "json", httr::add_headers(
     `Content-Type` = "application/json",
     Authorization = paste0("Bearer ", auth_token)
   ))
@@ -63,7 +65,7 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   
   response <- tryCatch(
-    expr = httr::GET(url, add_headers(
+    expr = httr::GET(url, httr::add_headers(
         Authorization=paste0('Bearer ', auth_token)
     )),
     error = function(e) {
