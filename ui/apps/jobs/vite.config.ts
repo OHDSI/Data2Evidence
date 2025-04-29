@@ -58,10 +58,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/portal/systemadmin/jobs/prefect': {
+      '^/portal/systemadmin/jobs/.*prefect': {
         target: 'https://localhost:41100',
         secure: false,
-        rewrite: (path) => path.replace('/portal/systemadmin/jobs/prefect', '/prefect')
+        rewrite: (path) => path.replace(/.*\/prefect/, '/prefect')
       }
     }
   }
