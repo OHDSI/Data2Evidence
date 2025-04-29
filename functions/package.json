@@ -1593,13 +1593,6 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/jupyter-kernel/flow-run/strategus",
-          "scopes": [
-            "jupyter"
-          ],
-          "httpMethods": ["POST"]
-        },
-        {
           "path": "^/dataflow-mgmt/analysisflow/(.*)",
           "scopes": [
             "dataflowmgmt.analysisflow.read"
@@ -1679,6 +1672,13 @@
           "httpMethods": [
             "GET"
           ]
+        },
+        {
+          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "jupyter"
+          ],
+          "httpMethods": ["POST"]
         },
         {
           "path": "^/dataflow-mgmt/prefect/flow$",

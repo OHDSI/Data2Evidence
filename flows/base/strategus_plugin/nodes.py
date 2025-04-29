@@ -881,7 +881,7 @@ class StrategusNode(Node):
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(analysisSpec, executionSettings):
+def execute_r_strategus(datasetId, analysisSpec, executionSettings):
     with ro.default_converter.context():
         try:
             rStrategus = importr('Strategus')

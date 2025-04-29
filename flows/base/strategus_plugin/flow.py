@@ -137,10 +137,14 @@ def execute_node_task(nodename, node_type, node, input, test):
     return result
 
 
-def runStrategus(json_graph):
+def runStrategus(json_graph, options):
+    datasetId = options.get('datasetId', None)
+    if(not datasetId):
+       raise Exception('DatasetId is missing')
+    
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
     executionSettings = json_graph.get('executionSettings', {})
-    execute_r_strategus(analysisSpec, executionSettings)
+    execute_r_strategus(datasetId, analysisSpec, executionSettings)

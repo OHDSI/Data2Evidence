@@ -6,17 +6,17 @@
 #' Internally the flow run starts a network study analysis on the given dataset
 #' using the OHDSI Strategus R package.
 #'
-#' @param dataset_code is a string, which is the unique identifier of dataset in D2E
 #' @param analysisSpecification AnalysisSpecification object created by Strategus::createEmptyAnalysisSpecificiations
 #' @param executionSettings ExecutionSettings object created by Strategus::createCdmExecutionSettings
 #' @return Response object with flow run details, id and status
 #' @export
-run_strategus_flow <- function(dataset_code, analysisSpecification, executionSettings) {
-  deployment <- get_deployment()
+run_strategus_flow <- function(analysisSpecification, executionSettings) {
   # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  url <- paste0(host, "/prefect/api/deployments/", deployment['deploymentId'], "/create_flow_run")
+  dataset_id <- Sys.getenv("TREX__DATASET_ID")
+  url <- paste0(host, "/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus")
+  
   analysisSpec <- ParallelLogger::convertSettingsToJson(analysisSpecification)
   execSettings <- ParallelLogger::convertSettingsToJson(executionSettings)
   json_graph = list(
@@ -24,33 +24,23 @@ run_strategus_flow <- function(dataset_code, analysisSpecification, executionSet
         executionSettings = execSettings
     )
   options = list(
-        mode = 'kernel'
+        mode = 'kernel',
+        datasetId = dataset_id
     )
   parameters <- list(
-    json_graph = ParallelLogger::convertSettingsToJson(json_graph),
+    json_graph = json_graph,
     options = options
-  )
-  data <- list(
-    state = list(
-        type="SCHEDULED"
-    ),
-    parameters=parameters,
-    empirical_policy = list(
-        retries=0,
-        retry_delay=0,
-        resuming=FALSE
-    )
   )
 
   # Send a POST request to the backend
   # add headers "Content-Type":"application/json" and "Authorization": "Bearer XXXXXYZZZZ"
-  response <- httr::POST(url, body = data, encode = "json", httr::add_headers(
+  response <- httr::POST(url, body = parameters, encode = "json", httr::add_headers(
     `Content-Type` = "application/json",
     Authorization = paste0("Bearer ", auth_token)
   ))
 
   # Check if the request was successful
-  if (httr::status_code(response) == 201 | httr::status_code(response) == 200) {
+  if (httr::status_code(response) == 201 || httr::status_code(response) == 200) {
     return(httr::content(response))
   } else {
     # Return an error message

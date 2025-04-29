@@ -78,11 +78,11 @@ export class PrefectController {
 
   private async createAnalaysisRunByJupyterKernel(req, res){
     try {
-      const { datasetId, flowRunParams } = req.params;
+      const { json_graph, options } = req.body;
       const token = this.getToken(req);
       const flowrunId = await this.prefectService.createAnalaysisRunByJupyterKernel(
         token,
-        { datasetId, flowRunParams }
+        { json_graph, options }
       )
       return res.status(200).send({ flowrunId, status: "Successfully created a flow run" })
     } catch (error) {
