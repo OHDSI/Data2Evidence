@@ -11,8 +11,8 @@ const dbCredentials = {
 const client = hdb.createClient(dbCredentials);
 const TESTSCHEMA = process.env.TESTSCHEMA;
 
-console.log(`DB creadentils: ${JSON.stringify(dbCredentials, null, 2)}`);
-console.log(`DB client: ${JSON.stringify(client, null, 2)}`);
+// console.log(`DB creadentils: ${JSON.stringify(dbCredentials, null, 2)}`);
+// console.log(`DB client: ${JSON.stringify(client, null, 2)}`);
 
 if (process.argv.length < 3)
   console.log("usage: node build/initdb.js <demo|test|rmonly> schema");
@@ -36,6 +36,7 @@ tmp2.forEach((element) => {
 function main() {
   client.on("error", function (err) {
     console.error("Network connection error", err);
+    process.exit(1);
   });
   console.log(`Connection state: ${client.readyState}`);
 
@@ -45,14 +46,16 @@ function main() {
 
     client.connect((err) => {
       if (err) {
-        return console.error("Error:", err);
+        console.error("Error:", err);
+        process.exit(1);
       }
       const query = `DROP SCHEMA ${TESTSCHEMA} CASCADE`;
-      console.log(`query: ${query}`);
+      // console.log(`query: ${query}`);
 
       client.exec(query, (err) => {
         if (err) {
-          return console.error("Error:", err);
+          console.error("Error:", err);
+          process.exit(1);
         }
         console.log(`Dropped test schema ${TESTSCHEMA} succussfully...`);
         process.exit(0);
@@ -64,14 +67,16 @@ function main() {
 
     client.connect((err) => {
       if (err) {
-        return console.error("Error:", err);
+        console.error("Error:", err);
+        process.exit(1);
       }
       queries.forEach((query, index) => {
-        console.log(`query: ${query}`);
+        // console.log(`query: ${query}`);
 
         client.exec(query, (err) => {
           if (err) {
-            return console.error("Error:", err);
+            console.error("Error:", err);
+            process.exit(1);
           }
           // console.log(`Table ${index} has been created`);
           if (index === queries.length - 1) {
