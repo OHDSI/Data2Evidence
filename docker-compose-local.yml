@@ -14,6 +14,7 @@ services:
       - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ../trex/core:/usr/src/core # For debugging trex with local code
+      # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: full
