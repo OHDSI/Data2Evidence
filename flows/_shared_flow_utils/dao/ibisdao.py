@@ -215,7 +215,7 @@ class IbisDao(SqlAlchemyDao):
     # --- Delete methods ---
     def drop_schema(self, cascade: bool=True):
         with self.ibis_connect() as con:
-            con.drop_database(self.schema_name, cascade)
+            con.drop_database(self.schema_name, cascade=cascade)
 
     def truncate_table(self, table_name: str):
         with self.ibis_connect() as con:
