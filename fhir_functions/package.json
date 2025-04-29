@@ -36,7 +36,8 @@
           "gateway.fhir.create"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
-          "gateway.fhir.create"
+          "gateway.fhir.create",
+          "portal.dataset.read"
         ]
       },
       "scopes": [
