@@ -24,6 +24,7 @@ import { groupBy } from "../utils/helperUtil.ts";
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
+  private semanticRatio: number;
 
   constructor(request: Request) {
     this.systemPortalApi = new SystemPortalAPI(request);
@@ -38,13 +39,19 @@ export class CachedbService {
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
     const { dialect, vocabSchemaName, databaseCode } =
       await this.systemPortalApi.getDatasetDetails(datasetId);
+    this.semanticRatio = await this.systemPortalApi.getHybridSearchConfig();
 
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
 
     // By default return CachedbDAO
-    return new CachedbDAO(this.token, datasetId, vocabSchemaName);
+    return new CachedbDAO(
+      this.token,
+      datasetId,
+      vocabSchemaName,
+      this.semanticRatio
+    );
   }
 
   async getConcepts(

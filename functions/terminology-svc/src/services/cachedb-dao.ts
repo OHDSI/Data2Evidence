@@ -18,11 +18,18 @@ export class CachedbDAO {
   private readonly jwt: string;
   private readonly datasetId: string;
   private readonly vocabSchemaName: string;
+  private readonly semanticRatio: number;
 
-  constructor(jwt: string, datasetId: string, vocabSchemaName: string) {
+  constructor(
+    jwt: string,
+    datasetId: string,
+    vocabSchemaName: string,
+    semanticRatio: number
+  ) {
     this.jwt = jwt;
     this.datasetId = datasetId;
     this.vocabSchemaName = vocabSchemaName;
+    this.semanticRatio = semanticRatio;
     if (!jwt) {
       throw new Error("No token passed for CachedbDAO!");
     }
@@ -245,23 +252,18 @@ export class CachedbDAO {
 
   private getGTEEmbedding = async (searchText: string): Promise<number[]> => {
     const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
-
-    // Generate the embedding from text
     const output = await pipe(searchText, {
       pooling: "mean",
       normalize: true,
     });
-
-    // Extract the embedding output
     const embedding = Array.from(output.data) as number[];
-    console.log("gteembedding", embedding);
+    console.log("GTEembedding", embedding);
     return embedding;
   };
 
-  private embeddingCache: Map<string, number[]> = new Map();
-
+  private embeddingCache: Map<string, any> = new Map();
   // To solve the async of getGTEEmbedding
-  public async precomputeEmbedding(searchText: string): Promise<void> {
+  async precomputeEmbedding(searchText: string): Promise<void> {
     if (!this.embeddingCache.has(searchText)) {
       const embedding = await this.getGTEEmbedding(searchText);
       this.embeddingCache.set(searchText, embedding);
@@ -309,7 +311,7 @@ export class CachedbDAO {
       fts as (
         select 
           cal_score.${columnsToSelect},
-          (0.8 * (embd_score + 1) / (select max(embd_score)+1 from cal_score) + (1-0.8) * fts_score / (select max(fts_score) from cal_score)) as hybrid_score
+          (${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from cal_score) + (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from cal_score)) as hybrid_score
         from 
             cal_score
         order by hybrid_score desc
