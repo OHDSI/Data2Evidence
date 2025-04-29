@@ -1,6 +1,6 @@
 const _env = Deno.env.toObject();
 
-const model = _env.AI_MODEL;
+const model = _env.AI_MODEL_NAME;
 let extraConfig = {};
 
 if (model.includes("azure")) {
@@ -17,6 +17,6 @@ else if (model.includes("openai")) {
   };
 }
 export const env = {
-  AI_MODEL: model,
+  AI_MODEL_NAME: model,
   ...extraConfig
 };

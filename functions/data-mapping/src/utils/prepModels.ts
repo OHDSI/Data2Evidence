@@ -1,6 +1,6 @@
 import { env } from "../env";
 
-export const getModels = async (llm) => {
+export const getModelInstance = async (llm) => {
   const pattern = {
     openai: () =>
       import("@langchain/openai").then(
@@ -28,5 +28,5 @@ export const getModels = async (llm) => {
       ),
   };
   const key = Object.keys(pattern).find((k) => llm.startsWith(k));
-  return key ? [await pattern[key](), "200"] : [`Selected LLM model name '${llm}' is not supported`, "501"];
+  return key ? await pattern[key]() : "NULL";
 };

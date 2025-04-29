@@ -1,8 +1,6 @@
 import { getDataMapping } from "./services";
 import express, { Request, Response } from "express";
-// import { env } from "../env";
 
-// const AI_MODEL = env.AI_MODEL;
 export class DataMappingRouter {
   public router = express.Router();
 
@@ -12,18 +10,15 @@ export class DataMappingRouter {
 
   private registerRoutes() {
     this.router.post("/", async (req: Request, res: Response) => {
-      // req.body.model = AI_MODEL;
-      let [rst, status] = await getDataMapping(req.body);
-      // LLM model
-      if (status === "200") {
-        res.status(200).json(rst);
+      try{
+        const modelResponse = await getDataMapping(req.body);
+        res.status(200).json(modelResponse);
       }
-      // Internal Server Error
-      else if (status === "500") {
-        res.status(500).json({
+      catch(error){
+        res.status(error.code).json({
           error: true,
-          message: "Cannot map data",
-          details: rst,
+          message: error.message,
+          details:error.name
         });
       }
     });

@@ -1,7 +1,7 @@
-import { IUICodeSnippet, LLM_User_Data } from "../type";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModels } from "../utils/prepModels";
 import { env } from "../env";
+import { IUICodeSnippet, LLM_User_Data, DataMappingError } from "../type";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { getModelInstance } from "../utils/prepModels";
 
 export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   const instructions = `Map the given JSON object to OMOP CDM v5 format - use the following instructions. 
@@ -11,18 +11,21 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
               4. Try to match all tables and columns to OMOP CDM format.
               5. The source JSON object is as following.`;
 
-  const [model, status] = await getModels(env.AI_MODEL);
-  // Unsupported models
-  if (status === "501"){
-    return ["Error! - ${model}", status];
+  const model = await getModelInstance(env.AI_MODEL_NAME);
+
+  if (model === "NULL"){
+    console.error(`LLM Model - ${env.AI_MODEL_NAME} not found`);
+    throw new DataMappingError(`LLM Model - ${env.AI_MODEL_NAME} not found.`,404);
   }
   
   // convert the received JSON data to required format
   const finalLLMData:{ data: LLM_User_Data[] } = {
     data : []
   };
+
   try{
     const srcTables = JSON.parse(uiCode.data).source_tables;
+
     for (const srcTable of srcTables){
       const llmData:LLM_User_Data ={
         "source_table": srcTable.table_name,
@@ -38,7 +41,8 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
     }
   }
   catch(error){
-    return ["JSON object format not valid", "500"];
+    console.error(`Error! Parsing the JSON object - ${error.message}`);
+    throw new DataMappingError(error.message, 400); // bad request - bad JSON object
   }
   
   const messages = [
@@ -49,9 +53,10 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   try {
     const response = await model.invoke(messages);
     const mappedData = response.content;
-    return [mappedData, "200"];
+    return mappedData;
   } 
   catch (error) {
-    return ["Error! invoking the LLM", "500"];
+    console.error(`Error! invoking the LLM - ${error.message}`);
+    throw new DataMappingError(`Error! invoking the LLM - ${error.message}`, 500);
   }
 };
