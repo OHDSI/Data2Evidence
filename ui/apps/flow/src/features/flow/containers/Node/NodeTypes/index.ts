@@ -95,7 +95,7 @@ test_exec <- function(myinput) {
   sql_query_node: {
     title: "SQL query",
     description: "Run SQL command.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {},
   },
   sql_node: {
@@ -118,7 +118,7 @@ test_exec <- function(myinput) {
     defaultData: {},
   },
   db_reader_node: {
-    title: "Database reader",
+    title: "Database query",
     description: "Output SQL query as table.",
     tag: NodeTag.Stable,
     defaultData: {},
