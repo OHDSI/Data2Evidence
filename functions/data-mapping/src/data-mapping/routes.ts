@@ -1,8 +1,8 @@
 import { getDataMapping } from "./services";
 import express, { Request, Response } from "express";
-import { env } from "../env";
+// import { env } from "../env";
 
-const AI_MODEL = env.AI_MODEL;
+// const AI_MODEL = env.AI_MODEL;
 export class DataMappingRouter {
   public router = express.Router();
 
@@ -12,7 +12,7 @@ export class DataMappingRouter {
 
   private registerRoutes() {
     this.router.post("/", async (req: Request, res: Response) => {
-      req.body.model = AI_MODEL;
+      // req.body.model = AI_MODEL;
       let [rst, status] = await getDataMapping(req.body);
       // LLM model
       if (status === "200") {

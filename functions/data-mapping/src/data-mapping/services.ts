@@ -1,6 +1,7 @@
-import { IUICodeSnippet } from "../type";
+import { IUICodeSnippet, LLM_User_Data } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/prepModels";
+import { env } from "../env";
 
 export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   const instructions = `Map the given JSON object to OMOP CDM v5 format - use the following instructions. 
@@ -10,31 +11,30 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
               4. Try to match all tables and columns to OMOP CDM format.
               5. The source JSON object is as following.`;
 
-  const [model, status] = await getModels(uiCode.model);
+  const [model, status] = await getModels(env.AI_MODEL);
+  // Unsupported models
+  if (status === "501"){
+    return ["Error! - ${model}", status];
+  }
   
   // convert the received JSON data to required format
-  type DATA = {
-        "source_table": any,
-        "OMOP_table" : any,
-        "columns_mapping": {}
-      };
-  const finalJSON:{ data: DATA[] } = {
+  const finalLLMData:{ data: LLM_User_Data[] } = {
     data : []
   };
-
   try{
-    const tables = JSON.parse(uiCode.data).source_tables;
-    for (const table of tables){
-      const tableJSON = {
-        "source_table": table.table_name,
+    const srcTables = JSON.parse(uiCode.data).source_tables;
+    for (const srcTable of srcTables){
+      const llmData:LLM_User_Data ={
+        "source_table": srcTable.table_name,
         "OMOP_table" : "",
         "columns_mapping": {}
       };
-      const columnList = table.column_list;
+      
+      const columnList = srcTable.column_list;
       for (const column of columnList){
-        tableJSON.columns_mapping[column.column_name] = "";
+        llmData.columns_mapping[column.column_name] = "";
       }
-      finalJSON.data.push(tableJSON);
+      finalLLMData.data.push(llmData);
     }
   }
   catch(error){
@@ -43,7 +43,7 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   
   const messages = [
       new SystemMessage(instructions),
-      new HumanMessage(JSON.stringify(finalJSON))
+      new HumanMessage(JSON.stringify(finalLLMData))
     ];
     
   try {

@@ -1,6 +1,6 @@
 services:
   trex:
-    command: npm run start
+    command: npm run startdev
     ports:
       - 9229:9229
     volumes:
@@ -34,7 +34,7 @@ services:
           "concept-mapping": false,
           "terminology-svc": false,
           "code-suggestion": false,
-          "data-mapping": true,
+          "data-mapping": false,
           "portal": false,
           "files-manager": false,
           "demo": false,
