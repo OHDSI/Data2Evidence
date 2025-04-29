@@ -417,6 +417,7 @@ export const i18n = {
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_TITLE: 'Unsaved changes',
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_TEXT: 'There are unsaved changes to the current cohort.',
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT: 'Do you want to save or discard changes?',
+    MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE: 'Import ATLAS Cohort Definition',
     MRI_PA_TOOLTIP_RENAME_BOOKMARK: 'Rename Saved Filter',
     MRI_PA_ATTRIBUTE_MENU_BUTTON_PLACEHOLDER: 'Select Attribute',
     MRI_PA_DISAGGR_MISSING_LIMIT_OFFSET:
@@ -811,6 +812,7 @@ export const i18n = {
     MRI_PA_CREATE_D2E_COHORT_TEXT: 'D2E',
     MRI_PA_CREATE_ATLAS_COHORT_TEXT: 'Atlas',
     MRI_PA_COMPARE_D2E_COHORT_TEXT: 'Compare',
+    MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Import',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',
@@ -861,6 +863,7 @@ export const i18n = {
     MRI_PA_FILTERCARD_CLEAR_ALL_BTN: 'Clear All',
     MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_SUCCESS: 'ATLAS cohort definition created successfully and added to Cohorts.',
     MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_ERROR: 'An error occurred while creating the ATLAS cohort definition.',
+    MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_JSON_TEXT: 'Paste Atlas Cohort Definition JSON here..',
     MRI_PA_BMK_COMPATIBLE_ERROR: 'Saved filter incompatible',
     MRI_PA_BMK_CONVERSION_ERROR: "Bookmark couldn't be converted",
     MRI_PA_DATE_PLACEHOLDER: 'Select or Enter Date (YYYY-MM-DD)',
