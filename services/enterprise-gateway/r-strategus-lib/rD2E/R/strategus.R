@@ -1,6 +1,15 @@
-library(httr)
-
-send_request <- function(analysisSpecification, executionSettings) {
+#' Load a Matrix
+#'
+#' This function loads a file as a matrix. It assumes that the first column
+#' contains the rownames and the subsequent columns are the sample identifiers.
+#' Any rows with duplicated row names will be dropped with the first one being
+#' kepted.
+#'
+#' @param analysisSpecification Path to the input file
+#' @param executionSettings Path to the input file
+#' @return A matrix of the infile
+#' @export
+run_strategus_flow <- function(analysisSpecification, executionSettings) {
   deployment <- get_deployment()
   # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
