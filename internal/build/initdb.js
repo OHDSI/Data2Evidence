@@ -75,7 +75,7 @@ function main() {
           }
           // console.log(`Table ${index} has been created`);
           if (index === queries.length - 1) {
-            console.log(`All DB artefacts are created succussfully...`);
+            console.log(`All DB artefacts(${queries.length}) are created succussfully...`);
             process.exit(0);
           }
         });
