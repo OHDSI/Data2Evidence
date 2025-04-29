@@ -42,8 +42,6 @@ export async function getmultiplecohortdata(req: IMRIRequest, res) {
         const user = getUser(req);
         const lang = user.lang;
         let settings = new Settings();
-        let configId: string;
-        let configVersion: string;
         let userSelectedAttributes: PluginColumnType[] = [];
 
         let chartType: string = req.params.chartType;
@@ -60,10 +58,6 @@ export async function getmultiplecohortdata(req: IMRIRequest, res) {
                     order: null,
                 }));
         }
-        if (req.query.configId && req.query.configVersion) {
-            configId = req.query.configId;
-            configVersion = req.query.configVersion;
-        }
 
         let schemaName = await getSchemaName(datasetId, lang, res);
 
@@ -75,8 +69,8 @@ export async function getmultiplecohortdata(req: IMRIRequest, res) {
                 user,
                 yaxis,
                 chartType,
-                configId,
-                configVersion,
+                configId: req.paConfigId,
+                configVersion: req.paConfigVersion,
             },
         };
 

@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@alp/alp-base-utils": "1.1.9",
+    "axios": "^0.21.2",
     "typescript": "5.5.4"
   }
 }
