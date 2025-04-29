@@ -34,6 +34,18 @@ async function buildStarboardNotebook() {
   console.log("Starboard Notebook build completed.");
 }
 
+async function buildStarboardJupyter () {
+  const sourceDir = path.resolve(
+    __dirname,
+    "../node_modules/@data2evidence/d2e-starboard-notebook/starboard-jupyter/dist"
+  );
+  const destDir = path.join(resourcesDir, "starboard-jupyter");
+  createDir(destDir);
+
+  runCommand(`cp -r ${sourceDir}/. ${destDir}`);
+  console.log("Starboard Notebook build completed.");
+}
+
 async function buildPyodidePyqe() {
   console.log("Building PyodidePyqe...");
   const pyqeDir = path.resolve(__dirname, "../alp-libs/python/pyodidepyqe");
@@ -73,5 +85,6 @@ async function buildPyodidePyqe() {
 (async function main() {
   createDir(resourcesDir);
   await buildStarboardNotebook();
+  await buildStarboardJupyter();
   await buildPyodidePyqe();
 })();

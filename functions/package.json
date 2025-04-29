@@ -190,6 +190,11 @@
           "service": "logto"
         },
         {
+          "source" : "/jupyter",
+          "service":  "jupyter",
+          "rmsrc": true
+        },
+        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -473,7 +478,9 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
-          "d2e.webapi"
+          "d2e.webapi",
+          "jupyter",
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -755,7 +762,7 @@
         {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
-            "usermgmt.me"
+            "usermgmt.me.jupyter"
           ],
           "httpMethods": [
             "GET"
@@ -2238,6 +2245,12 @@
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
           ]
         }
       ]

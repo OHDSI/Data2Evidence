@@ -81,7 +81,7 @@ x-envs:
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "enterprise-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
+       "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -110,7 +110,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -121,6 +121,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 20
     volumes:
       - trex:/usr/src/data
     healthcheck:
@@ -437,7 +439,7 @@ services:
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-        "enterprise-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
+        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-proxy:8888/jupyter"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -585,6 +587,8 @@ services:
     networks:
       alp:
         priority: 20
+      enterprise-gateway:
+        priority: 20
     platform: linux/amd64
     command: >
       sh -c "
@@ -633,6 +637,35 @@ services:
                 read_buffer 8192
               }
             }
+          }
+
+          @jupyter_websocket {
+            header Connection *Upgrade*
+            header Upgrade websocket
+          }
+
+          handle @jupyter_websocket {
+            reverse_proxy https://{$PROJECT_NAME}-trex:33000 {
+              transport http {
+                tls
+                tls_insecure_skip_verify
+                read_buffer 8192
+              }
+
+              method GET
+              rewrite /usermgmt/api/me/is_token_valid_internal
+              header_up X-Forwarded-Method {method}
+              header_up X-Forwarded-Uri {uri}
+              header_up authorization {http.request.uri.query.token}
+
+              @good status 2xx
+              handle_response @good {
+                request_header Remote-User {rp.header.Remote-User}
+                request_header Remote-Email {rp.header.Remote-Email}
+              }
+            }
+
+            reverse_proxy @jupyter_websocket http://alp-enterprise-gateway-proxy:8888
           }
 
           ## call gateway if there are no matched files

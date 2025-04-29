@@ -43,6 +43,34 @@
 		}
 	}
 
+	@jupyter_websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+
+	handle @jupyter_websocket {
+		reverse_proxy https://{$PROJECT_NAME}-trex:33000 {
+			transport http {
+				tls
+				tls_insecure_skip_verify
+				read_buffer 8192
+			}
+
+			method GET
+			rewrite /usermgmt/api/me/is_token_valid_internal
+			header_up X-Forwarded-Method {method}
+			header_up X-Forwarded-Uri {uri}
+			header_up authorization "Bearer {http.request.uri.query.token}"
+
+			@good status 2xx
+			handle_response @good {
+				request_header Remote-User {rp.header.Remote-User}
+				request_header Remote-Email {rp.header.Remote-Email}
+			}
+		}
+		reverse_proxy @jupyter_websocket http://alp-enterprise-gateway-proxy:8888
+	}
+
 	## call gateway if there are no matched files
 	handle {
 		reverse_proxy https://{$PROJECT_NAME}-trex:33000 {
