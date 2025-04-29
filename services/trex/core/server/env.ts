@@ -49,7 +49,7 @@ export const env = {
     TLS__INTERNAL__CRT: _env.TLS__INTERNAL__CRT?.replace(/\\n/g, '\n'),
     TLS__INTERNAL__KEY: _env.TLS__INTERNAL__KEY?.replace(/\\n/g, '\n'),
     TLS__INTERNAL__CA_CRT: _env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, '\n'),
-    SERVICE_ROUTES: JSON.parse(_env.SERVICE_ROUTES),
+    SERVICE_ROUTES: _env.SERVICE_ROUTES ? JSON.parse(_env.SERVICE_ROUTES) : {},
     GATEWAY_WO_PROTOCOL_FQDN: _env.GATEWAY__WO_PROTOCOL_FQDN || "localhost",
     LOGTO_CLIENT_ID: _env.LOGTO__CLIENT_ID,
     LOGTO_SCOPE: _env.LOGTO__SCOPE,
@@ -72,7 +72,7 @@ export const env = {
     REP_PG: _env.REP_PG,
     PREFECT_DOCKER_NETWORK: _env.PREFECT_DOCKER_NETWORK || `${_env.PROJECT_NAME}_data`,
     PREFECT_POOL: "docker-pool",
-    SERVICE_ENV: JSON.parse(_env.SERVICE_ENV),
+    SERVICE_ENV: _env.SERVICE_ENV ? JSON.parse(_env.SERVICE_ENV) : {},
     CADDY__ALP__PUBLIC_FQDN: _env.CADDY__ALP__PUBLIC_FQDN || 'localhost',
     PREFECT_HEALTH_CHECK: _env.PREFECT_API_URL,
   
@@ -85,7 +85,7 @@ export const env = {
     PG__CA_ROOT_CERT: _env.PG__CA_ROOT_CERT,
     IDP_ALP_SVC_CLIENT_ID: _env.IDP__ALP_SVC_CLIENT_ID,
     IDP_DATA_SVC_CLIENT_ID: _env.IDP__ALP_DATA_CLIENT_ID,
-    PREFECT_DOCKER_VOLUMES: JSON.parse(_env.PREFECT_DOCKER_VOLUMES) || [],
+    PREFECT_DOCKER_VOLUMES: _env.PREFECT_DOCKER_VOLUMES ? JSON.parse(_env.PREFECT_DOCKER_VOLUMES) : [],
     DB_CREDENTIALS__PRIVATE_KEY: _env.DB_CREDENTIALS__PRIVATE_KEY,
     GIT_COMMIT: _env.GIT_COMMIT,
     GH_TOKEN: _env.GH_TOKEN,
@@ -93,9 +93,8 @@ export const env = {
     PLUGINS_PATH: _env.PLUGINS_PATH || "./data/plugins",
     PLUGINS_API_VERSION: _env.PLUGINS_API_VERSION || 'latest',
     PLUGINS_INIT: _env.PLUGINS_SEED? JSON.parse(_env.PLUGINS_SEED) : [],
-    PLUGINS_SEED_UPDATE: JSON.parse(_env.PLUGINS_SEED_UPDATE) === true || false,
+    PLUGINS_SEED_UPDATE: _env.PLUGINS_SEED_UPDATE ? JSON.parse(_env.PLUGINS_SEED_UPDATE) === true : false,
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
     PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop' 
 
 }
-
