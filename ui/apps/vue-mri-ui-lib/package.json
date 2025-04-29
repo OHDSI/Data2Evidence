@@ -37,7 +37,8 @@
     "vue-multiselect": "2.1.0",
     "vue-slider-component": "2.5.8",
     "vuedraggable": "2.24.3",
-    "vuex": "4.1.0"
+    "vuex": "4.1.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.0",
