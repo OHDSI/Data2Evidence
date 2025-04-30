@@ -435,7 +435,7 @@ services:
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-        "jupyter": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-proxy:8888/jupyter"
+        "jupyter": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -641,7 +641,7 @@ services:
           }
 
           handle @jupyter_websocket {
-            reverse_proxy https://{$PROJECT_NAME}-trex:33000 {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
               transport http {
                 tls
                 tls_insecure_skip_verify
@@ -661,7 +661,7 @@ services:
               }
             }
 
-            reverse_proxy @jupyter_websocket http://alp-enterprise-gateway-proxy:8888
+            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-alp-enterprise-gateway:8888
           }
 
           ## call gateway if there are no matched files
@@ -1174,15 +1174,20 @@ services:
       EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
       EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
       # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_docker','python_docker','python_tf_docker','python_tf_gpu_docker','scala_docker'}}
+      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_docker'}}
       EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
+      EG_ALLOW_ORIGIN: "*"
+      EG_ALLOW_HEADERS: "*"
+      EG_ALLOW_METHODS: "*"
       KERNEL_USERNAME: jovyan
+      EG_DEFAULT_KERNEL_NAME: "r_docker"
       EG_DOCKER_MODE: docker
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./kernels:/usr/local/share/jupyter/kernels
     labels:
       app: "enterprise-gateway"
       component: "enterprise-gateway"
@@ -1253,10 +1258,18 @@ services:
         frontend proxy
           bind 0.0.0.0:8888 maxconn 10000
           option forwardfor
+          http-response set-header Access-Control-Allow-Origin "*"
+          http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, JSNLog-RequestId, activityId, applicationId, applicationUserId, channelId, senderId, sessionId"
+          http-response set-header Access-Control-Max-Age 3628800
+          http-response set-header Access-Control-Allow-Methods "GET, DELETE, OPTIONS, POST, PUT"
           default_backend enterprise-gateway
 
         backend enterprise-gateway
           dynamic-cookie-key ENTERPRISE_KEY
+          http-response set-header Access-Control-Allow-Origin "*"
+          http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, JSNLog-RequestId, activityId, applicationId, applicationUserId, channelId, senderId, sessionId"
+          http-response set-header Access-Control-Max-Age 3628800
+          http-response set-header Access-Control-Allow-Methods "GET, DELETE, OPTIONS, POST, PUT"
           cookie SRVID insert dynamic
           server-template enterprise-gateway 2 enterprise-gateway:8888 check resolvers docker
         EOF
