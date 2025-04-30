@@ -431,7 +431,7 @@ export default {
       this.toggleChartAndListModal(false)
     },
     updateMinSplitterWidth() {
-      this.splitterMinWidth = (500 / window.innerWidth) * 100
+      this.splitterMinWidth = (400 / window.innerWidth) * 100
     },
   },
   components: {
