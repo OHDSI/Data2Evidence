@@ -4,7 +4,6 @@ export type NodeType =
   | "py2table_node"
   | "r_node"
   | "strategus"
-  | "sql_query_node"
   | "sql_node"
   | "data_mapping_node"
   | "csv_node"
