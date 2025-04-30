@@ -27,5 +27,4 @@
 | `PG_WRITE_PASSWORD`                             | password       | Write Permissions Only                                                              |
 | `PG__LOGTO_MANAGER_PASSWORD`                    | string         |
 | `REDIS_PASSWORD`                                | string         | Redis Password                                                                      |
-| `STRATEGUS__KEYRING_PASSWORD`                   | string         | Strategus Keyring Password                                                          |
 | `TLS__CADDY_DIRECTIVE`                          | string         | Generate self-signed or public x509 certificate                                     |
