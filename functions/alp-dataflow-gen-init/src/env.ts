@@ -46,7 +46,6 @@ export const env = {
     "idp-alp-data-client-id": _env.IDP__ALP_DATA_CLIENT_ID,
     "idp-alp-data-client-secret": _env.IDP__ALP_DATA__CLIENT_SECRET,
     "minio-secret-key": _env.MINIO__SECRET_KEY,
-    "strategus-keyring-password": _env.STRATEGUS__KEYRING_PASSWORD,
     "pg-admin-user": _env.PG_ADMIN_USER,
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
   },

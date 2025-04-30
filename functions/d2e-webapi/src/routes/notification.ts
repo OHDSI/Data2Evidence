@@ -1,7 +1,10 @@
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 
-import { NotificationResponseDto } from "../dto/notification.ts";
+import {
+  NotificationResponseDto,
+  INotificationResponseDto,
+} from "../dto/notification.ts";
 
 // deno-lint-ignore require-await
 export const notification: FastifyPluginAsyncZod = async function (app) {
@@ -100,7 +103,7 @@ export const notification: FastifyPluginAsyncZod = async function (app) {
         //   },
         //   ownerType: "ALL_JOB",
         // },
-      ];
+      ] as INotificationResponseDto;
       res.send(dummyresponse);
     }
   );

@@ -2,8 +2,6 @@ from .types import Concept_ls_Standard
 
 import pandas as pd
 
-concept_code = pd.read_csv(Concept_ls_Standard)
-
 def get_gold_label(conn, data, schema_name, train_ed, index_date):
     # Achieve gold labels
     visit = conn.table(database=schema_name, name='visit_occurrence')
@@ -18,6 +16,7 @@ def get_gold_label(conn, data, schema_name, train_ed, index_date):
     data['Return'] = data.person_id.isin(person).astype(int)
 
 def getcodes(feature:str):
+    concept_code = pd.read_csv(Concept_ls_Standard)
     concept_ls = concept_code.loc[concept_code.variable==feature,'standard_concept'].astype(str).values
     return list(concept_ls)
 

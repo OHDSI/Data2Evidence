@@ -206,6 +206,14 @@
           "service": "logto"
         },
         {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
+        },
+        {
           "source": "/concept-mapping",
           "function": "/concept-mapping",
           "env": "concept-mapping",
@@ -427,7 +435,8 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.tenantview.read"
+          "codesuggestion.tenantview.read",
+          "d2e.webapi.public"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -2220,6 +2229,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi/(health|source|i18n|notifications)(.*)",
+          "scopes": [
+            "d2e.webapi.public"
           ]
         },
         {

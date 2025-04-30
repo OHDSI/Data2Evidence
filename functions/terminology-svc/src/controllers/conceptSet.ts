@@ -170,17 +170,32 @@ export const getIncludedConcepts = async (
 ) => {
   try {
     const { body } = schemas.getIncludedConcepts.parse(req);
-
     const { conceptSetIds, datasetId } = body;
+    const systemPortalApi = new SystemPortalAPI(req);
 
-    const promises = conceptSetIds.map(async (conceptSetId) => {
-      const systemPortalApi = new SystemPortalAPI(req);
+    const getCachedbservice = async () => {
+      const datasetDB = {
+        ...(await systemPortalApi.getDatasetDetails(datasetId)),
+        datasetId,
+      };
+      const cachedbService = new CachedbService(req, datasetDB);
+      return cachedbService;
+    };
+
+    const conceptsSetsDb = conceptSetIds.map(async (conceptSetId) => {
       const conceptSet = await systemPortalApi.getConceptSetById(
         conceptSetId,
         datasetId
       );
+      return conceptSet;
+    });
+
+    const [cachedbService, ...rawConceptSets] = await Promise.all([
+      getCachedbservice(),
+      ...conceptsSetsDb,
+    ]);
+    const promises = rawConceptSets.map(async (conceptSet) => {
       const conceptIds = conceptSet.concepts.map((c) => c.id);
-      const cachedbService = new CachedbService(req);
       const concepts = await cachedbService.getConceptsByIds(
         conceptIds,
         datasetId
@@ -218,7 +233,7 @@ export const getIncludedConcepts = async (
     });
 
     const uniqueConceptIds = await _resolveConceptSetConcepts(
-      req,
+      cachedbService,
       conceptSetConcepts,
       datasetId
     );
@@ -238,11 +253,19 @@ export const resolveConceptSetExpression = async (
     const { body } = schemas.resolveConceptSetExpression.parse(req);
     const { concepts, datasetId } = body;
 
+    const systemPortalApi = new SystemPortalAPI(req);
+    const datasetDB = {
+      ...(await systemPortalApi.getDatasetDetails(datasetId)),
+      datasetId,
+    };
+    const cachedbService = new CachedbService(req, datasetDB);
+
     const uniqueConceptIds = await _resolveConceptSetConcepts(
-      req,
+      cachedbService,
       concepts,
       datasetId
     );
+
     res.send(uniqueConceptIds);
   } catch (e) {
     console.error("Error resolving concept set expression for concepts!");
@@ -251,7 +274,7 @@ export const resolveConceptSetExpression = async (
 };
 
 const _resolveConceptSetConcepts = async (
-  req: Request,
+  cachedbService: CachedbService,
   conceptSetConcepts: ConceptSetConcept[],
   datasetId: string
 ): Promise<number[]> => {
@@ -308,28 +331,25 @@ const _resolveConceptSetConcepts = async (
     return [];
   }
 
-  const conceptSetConceptIdsToInclude = await _getConceptSetConceptIds(
-    req,
-    datasetId,
-    conceptIds,
-    conceptIdsToIncludeDescendant,
-    conceptIdsToIncludeMapped,
-    conceptIdsToIncludeMappedAndDescendant
-  );
-
-  // Return early if no concepts to exclude
-  if (conceptIdsToExclude.length === 0) {
-    return conceptSetConceptIdsToInclude;
-  }
-
-  const conceptSetConceptIdsToExclude = await _getConceptSetConceptIds(
-    req,
-    datasetId,
-    conceptIdsToExclude,
-    conceptIdsToExcludeDescendant,
-    conceptIdsToExcludeMapped,
-    conceptIdsToExcludeMappedAndDescendant
-  );
+  const [conceptSetConceptIdsToInclude, conceptSetConceptIdsToExclude] =
+    await Promise.all([
+      _getConceptSetConceptIds(
+        cachedbService,
+        datasetId,
+        conceptIds,
+        conceptIdsToIncludeDescendant,
+        conceptIdsToIncludeMapped,
+        conceptIdsToIncludeMappedAndDescendant
+      ),
+      _getConceptSetConceptIds(
+        cachedbService,
+        datasetId,
+        conceptIdsToExclude,
+        conceptIdsToExcludeDescendant,
+        conceptIdsToExcludeMapped,
+        conceptIdsToExcludeMappedAndDescendant
+      ),
+    ]);
 
   // Get included concepts difference excluded concepts
   const conceptSetConceptIds = Array.from(
@@ -341,35 +361,47 @@ const _resolveConceptSetConcepts = async (
 };
 
 const _getConceptSetConceptIds = async (
-  req: Request,
+  cachedbService: CachedbService,
   datasetId: string,
   conceptIds: number[],
   conceptIdsToIncludeDescendant: number[],
   conceptIdsToIncludeMapped: number[],
   conceptIdsToIncludeMappedAndDescendant: number[]
 ): Promise<number[]> => {
-  const cachedbService = new CachedbService(req);
+  // Return early if conceptIds is empty
+  if (conceptIds.length === 0) {
+    return [];
+  }
 
-  const includedConceptIds = await cachedbService.getConceptsAndDescendantIds(
-    conceptIds,
-    conceptIdsToIncludeDescendant,
-    datasetId
-  );
-  const mappedConceptsAndDescendantIds =
-    await cachedbService.getConceptsAndDescendantIds(
-      conceptIdsToIncludeMapped,
-      conceptIdsToIncludeMappedAndDescendant,
+  const [includedConceptIds, mappedConceptIds] = await Promise.all([
+    cachedbService.getConceptsAndDescendantIds(
+      conceptIds,
+      conceptIdsToIncludeDescendant,
       datasetId
-    );
+    ),
+    (async () => {
+      const mappedConceptsAndDescendantIds =
+        await cachedbService.getConceptsAndDescendantIds(
+          conceptIdsToIncludeMapped,
+          conceptIdsToIncludeMappedAndDescendant,
+          datasetId
+        );
 
-  const mappedConceptIds = await cachedbService.getConceptRelationshipMapsTo(
-    mappedConceptsAndDescendantIds,
-    datasetId
-  );
+      const mappedConceptIds =
+        await cachedbService.getConceptRelationshipMapsTo(
+          mappedConceptsAndDescendantIds,
+          datasetId
+        );
+      return mappedConceptIds;
+    })(),
+  ]);
+
   mappedConceptIds.forEach((concept) => {
     includedConceptIds.push(concept.concept_id_1);
   });
 
-  const uniqueConceptIds = Array.from(new Set(includedConceptIds)).sort();
+  const uniqueConceptIds = Array.from(
+    new Set(includedConceptIds.concat(conceptIds))
+  ).sort();
   return uniqueConceptIds;
 };
