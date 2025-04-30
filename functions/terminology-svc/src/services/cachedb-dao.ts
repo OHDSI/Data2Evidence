@@ -281,7 +281,7 @@ export class CachedbDAO {
       let textEmbedding = this.embeddingCache.get(searchText);
       return [
         `
-      with cal_score as (
+      with sem_fts_scores as (
         select 
           ${columnsToSelect},
           ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as fts_score,
@@ -292,10 +292,13 @@ export class CachedbDAO {
       ),
       fts as (
         select 
-          cal_score.${columnsToSelect},
-          (${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from cal_score) + (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from cal_score)) as hybrid_score
+          sem_fts_scores.${columnsToSelect},
+          (
+            ${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from sem_fts_scores) + 
+            (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from sem_fts_scores)
+          ) as hybrid_score
         from 
-            cal_score
+            sem_fts_scores
         order by hybrid_score desc
         )
       `,
@@ -337,20 +340,17 @@ export class CachedbDAO {
         [],
       ];
     } else {
+      let textEmbedding = this.embeddingCache.get(searchText); // embed the searchText
       // Build the query with all scoring factors
       const query = `
       with concept_with_scores as (
         select
           ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-          -- Base BM25 score (existing functionality)
-          ${
-            this.vocabSchemaName
-          }.fts_main_concept.match_bm25(concept_id, ?1) as bm25_score,
           
           -- Exact match scoring (highest priority)
           CASE
-            WHEN LOWER(concept_name) = LOWER(?2) THEN 1000
-            WHEN LOWER(concept_name) LIKE LOWER(?3) || '%' THEN 800
+            WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
+            WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' THEN 800
             ELSE 0
           END as exact_match_score,
           
@@ -361,13 +361,41 @@ export class CachedbDAO {
           END as standard_boost
         from
           ${this.vocabSchemaName}.concept
+      ),
+
+      sem_fts_scores as (
+        select 
+          ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+          ${
+            this.vocabSchemaName
+          }.fts_main_concept.match_bm25(concept_id, ?3) as fts_score,
+          array_cosine_distance(concept_name_embedding, ?4::FLOAT[384]) as embd_score
+        from
+          ${this.vocabSchemaName}.concept
+          ${filterWhereClause}
+        ),
+
+      normalized_hybrid as (
+        select 
+          ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+          (
+            ${this.semanticRatio} * 
+            (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) + 
+            (1 - ${this.semanticRatio}) * 
+            fts_score / (select max(fts_score) from sem_fts_scores)
+          ) as hybrid_score
+        from 
+          sem_fts_scores
       )
       
       select
         *,
-        (bm25_score + exact_match_score + standard_boost) as score
+        nh.hybrid_score,
+        (nh.hybrid_score + c.exact_match_score + c.standard_boost) as score
       from
-        concept_with_scores
+        concept_with_scores c
+      join normalized_hybrid nh
+      on nh.concept_id = c.concept_id
       WHERE score > 0
       ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
       order by score desc
@@ -375,9 +403,10 @@ export class CachedbDAO {
 
       // Combine all parameters
       const queryParams = [
-        searchText, // For BM25 score
         searchText, // For exact match (equals)
         searchText, // For exact match (starts with)
+        searchText, // For BM25 score
+        textEmbedding, // For BM25 score
       ];
 
       // Create the final query with fts wrapper
