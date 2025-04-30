@@ -207,7 +207,7 @@
         },
         {
           "source": "/jupyter",
-          "service": "enterprise-gateway",
+          "service": "jupyter-gateway",
           "rmsrc": true
         },
         {
