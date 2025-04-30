@@ -109,7 +109,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -207,7 +207,6 @@ services:
           "analytics-svc": {
             "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
             "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
-            "ANALYTICS_SVC__DEFAULT_ASSIGNMENT_NAME": "PUBLIC-CHART_DEFAULT-ASSIGNMENT",
             "ANALYTICS_SVC__PORT": 41102,
             "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 600,
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
@@ -402,7 +401,6 @@ services:
             "POSTGRES__DRIVER_CLASS_PATH": "",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "STRATEGUS__KEYRING_PASSWORD": "${STRATEGUS__KEYRING_PASSWORD}",
             "DATABASE_CREDENTIALS": "{}",
             "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
             "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
@@ -807,8 +805,6 @@ services:
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
-      alp-logto-seed:
-        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 30
@@ -836,7 +832,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm start
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1 && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -853,28 +849,6 @@ services:
       PORT: 3001
       TRUST_PROXY_HEADER: true
       DATABASE_CONNECTION_TIMEOUT: 30000
-
-  alp-logto-seed:
-    container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
-    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    entrypoint:
-      - sh
-      - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.22.0 && npx @logto/cli db alteration deploy 1.23.1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-    environment:
-      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
-    logging:
-      options:
-        tag: *c37
 
   alp-minerva-postgres:
     container_name: &c17 ${PROJECT_NAME:-d2e}-minerva-postgres-1
@@ -1076,7 +1050,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 120s
+      start_period: 180s
       test:
         - CMD
         - wget

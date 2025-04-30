@@ -17,6 +17,7 @@ export type ConceptSetConcept = {
   id: number;
   useDescendants: boolean;
   useMapped: boolean;
+  isExcluded: boolean;
 };
 export interface IConcept {
   concept_id: number;
@@ -246,3 +247,10 @@ export enum DatasetDialects {
   POSTGRES = "postgres",
   DUCKDB = "duckdb",
 }
+
+export type DatasetDB = {
+  datasetId: string;
+  databaseCode: string;
+  dialect: string;
+  vocabSchemaName: string;
+};

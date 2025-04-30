@@ -21,8 +21,8 @@ export function values(req: IMRIRequest, res, next) {
     const language = user.lang;
     const attributePath = req.query.attributePath;
     const attributeType = req.query.attributeType;
-    const configId = req.query.configId;
-    const configVersion = req.query.configVersion;
+    const configId = req.paConfigId;
+    const configVersion = req.paConfigVersion;
     const suggestionLimit = req.query.suggestionLimit;
     const datasetId = req.query.datasetId;
     const searchQuery = req.query.searchQuery ? req.query.searchQuery : "";

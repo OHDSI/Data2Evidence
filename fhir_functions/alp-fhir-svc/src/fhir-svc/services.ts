@@ -16,7 +16,7 @@ const getDatasetId = async (
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
 
-  const dataset = datasets.find((item) => item.studyDetail.name === studyCode);
+  const dataset = datasets.find((item) => item.tokenStudyCode === studyCode);
 
   const datasetId = dataset ? dataset.id : null;
 
@@ -144,10 +144,10 @@ export const forwardRequest = async (
 ) => {
   let fhirApi = new FhirAPI();
 
-  // authenticate with superadmin credentials
+  //Authenticate with superadmin credentials
   await fhirApi.clientCredentialsLogin();
 
-  // Check project exists which has unique name
+  //Check project exists which has unique name
   const projectExists = await checkProjectNameExists(fhirApi, projectName);
 
   if (projectExists === false) {
@@ -160,13 +160,13 @@ export const forwardRequest = async (
   if(datasetId == null){
     throw new Error(`No dataset id found for project '${projectName}'`);
   }
-  // Get client ID and secret for project
+  //Get client ID and secret for project
   const projClientCredentials = await getClientCredentials(
     fhirApi,
     projectName
   );
 
-  // Add dataset metadata to req body
+  //Add dataset metadata to req body
   let resourceDetails = body;
   const metaInfo = {
     author: {
