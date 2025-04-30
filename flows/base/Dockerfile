@@ -118,14 +118,14 @@ RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upg
 # OHDSI HADES
 # private d2e repo auth - ssh key
 # public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
-RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.13.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
+RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortMethod@v5.2.0")'
 
 # Install version of JSONIO which doesn't break Strategus and CohortGenerator
 RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/RJSONIO_1.3-1.11.tar.gz", repos = NULL, type = "source")'
 
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.8.1", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)' # for cohort_generator plugin: HADES@v1.13.0 has CohortGenerator@v0.8.0
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v3.3.0")'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 # OHDSI packages and versions - after HADES
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
@@ -133,7 +133,7 @@ RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' |
 # OHDSI packages and versions - after D2E
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v0.2.1", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 
 # D2E packages
@@ -169,7 +169,6 @@ WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
-COPY --chown=docker:docker ./base/init.R .
 
 # Grant docker ownership to create properties file
 RUN chown -R docker:docker ./liquibase/
