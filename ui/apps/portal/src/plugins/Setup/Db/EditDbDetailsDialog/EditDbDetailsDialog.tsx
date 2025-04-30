@@ -7,6 +7,7 @@ import { api } from "../../../../axios/api";
 import { isEqual } from "lodash";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { useTranslation } from "../../../../contexts";
+import { PUB_SLOT_NAME } from "../../../../constant";
 import "./EditDbDetailsDialog.scss";
 
 interface EditDbDialogProps {
@@ -22,7 +23,6 @@ interface FormData {
   vocabSchemas: string[];
   extra: string;
   publication: string;
-  slot: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
@@ -32,7 +32,6 @@ const EMPTY_FORM_DATA: FormData = {
   vocabSchemas: [],
   extra: "",
   publication: "",
-  slot: "",
 };
 
 const styles: SxProps = {
@@ -69,7 +68,6 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const publication = db.publications?.length > 0 ? db.publications[0].publication : "";
-  const slot = db.publications?.length > 0 ? db.publications[0].slot : "";
 
   const hasChanges = useMemo(
     () =>
@@ -78,8 +76,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
       !isEqual(db.port, formData.port) ||
       (!isEqual(db.vocabSchemas, formData.vocabSchemas) && formData.vocabSchemas.length > 0) ||
       originalExtra !== formData.extra ||
-      !isEqual(publication, formData.publication) ||
-      !isEqual(slot, formData.slot),
+      !isEqual(publication, formData.publication),
     [db, formData, originalExtra]
   );
 
@@ -93,7 +90,6 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
         vocabSchemas: db.vocabSchemas,
         extra: extraStr,
         publication: publication,
-        slot: slot,
       });
       setOriginalExtra(extraStr);
       setFeedback({});
@@ -119,7 +115,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
 
       const publications: IDbPublication[] = [];
       if (formData.publication) {
-        publications.push({ publication: formData.publication, slot: formData.slot });
+        publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
       }
 
       await api.dbCredentialsMgr.updateDbDetails({
@@ -257,13 +253,6 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
               sx={{ minWidth: "300px" }}
               value={formData.publication}
               onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
-            />
-            <TextField
-              label={getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__SLOT)}
-              variant="standard"
-              sx={{ minWidth: "300px" }}
-              value={formData.slot}
-              onChange={(event) => handleFormDataChange({ slot: event.target?.value })}
             />
           </Box>
         </Box>
