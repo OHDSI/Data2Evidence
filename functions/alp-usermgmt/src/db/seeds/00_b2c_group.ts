@@ -45,6 +45,11 @@ const getSeeds = (): { [key: string]: any }[] => {
       id: '1792e31c-5dda-467a-9625-31f97cdfb4ec',
       role: ROLES.ALP_DASHBOARD_VIEWER,
       system: ALP_SYSTEM
+    },
+    {
+      id: '5e07ea6e-becc-40ba-8f39-1bfe74d3c9d9',
+      role: ROLES.STUDY_WRITE_DQD_RESEARCHER,
+      system: ALP_SYSTEM
     }
   ]
 
@@ -63,12 +68,6 @@ const getSeeds = (): { [key: string]: any }[] => {
       {
         id: 'a6478dac-78cd-4238-8360-85b3dcd93283',
         role: ROLES.STUDY_RESEARCHER,
-        study_id: STUDY_ID,
-        tenant_id: TENANT_ID
-      },
-      {
-        id: '5e07ea6e-becc-40ba-8f39-1bfe74d3c9d9',
-        role: ROLES.STUDY_WRITE_DQD_RESEARCHER,
         study_id: STUDY_ID,
         tenant_id: TENANT_ID
       },
