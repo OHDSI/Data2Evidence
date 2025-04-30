@@ -1,9 +1,9 @@
 import { env } from "../env";
-import { IUICodeSnippet, LLM_User_Data, DataMappingError } from "../types";
+import { LLM_User_Data, DataMappingError, DataMappingRequest } from "../types";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModelInstance } from "../utils/getModels";
 
-export const getDataMapping = async (uiCode: IUICodeSnippet) => {
+export const getDataMapping = async (srcJSONObj: DataMappingRequest) => {
   const instructions = `Map the given JSON object to OMOP CDM v5 format - use the following instructions. 
               1. Map the following table and column names to OMOP CDM v5 table and column names.
               2. For Output, fill the blanks in JSON object provided below.
@@ -24,7 +24,7 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
   };
 
   try {
-    const srcTables = JSON.parse(uiCode.data).source_tables;
+    const srcTables = srcJSONObj.source_tables;
 
     for (const srcTable of srcTables) {
       const llmData: LLM_User_Data = {
@@ -51,8 +51,13 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
 
   try {
     const response = await model.invoke(messages);
-    const mappedData = response.content;
-    return mappedData;
+    const llmResponse = response.content
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+    const llmResponseFormatted = JSON.parse(llmResponse);
+
+    return llmResponseFormatted;
   } catch (error) {
     console.error(`Error! invoking the LLM - ${error.message}`);
     throw new DataMappingError(

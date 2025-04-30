@@ -7,10 +7,10 @@ export class App {
 
   constructor() {
     this.app = express();
+    this.app.use(express.json());
   }
 
   async start() {
-    this.app.use(express.json());
     this.app.use("/data-mapping", new DataMappingRouter().router);
     this.app.listen(10000);
   }

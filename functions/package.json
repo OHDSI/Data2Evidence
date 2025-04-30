@@ -394,7 +394,6 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
-          "datamapping.read",
           "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
@@ -2208,9 +2207,7 @@
         {
           "path": "^/data-mapping",
           "scopes": [
-            "datamapping.read",
-            "datamapping.post",
-            "datamapping.tenantview.read"
+            "datamapping.post"
           ],
           "httpMethods": [
             "POST"
