@@ -21,3 +21,5 @@ export enum ConfigTypes {
   IMPRINT_DISPLAY = "imprint-display",
   HYBRID_SEARCH = "hybrid-search",
 }
+
+export const PUB_SLOT_NAME = "data2evidence";
