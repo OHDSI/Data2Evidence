@@ -190,11 +190,6 @@
           "service": "logto"
         },
         {
-          "source" : "/jupyter",
-          "service":  "jupyter",
-          "rmsrc": true
-        },
-        {
           "source": "/oidc",
           "service": "logto"
         },
