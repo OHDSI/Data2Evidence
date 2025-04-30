@@ -190,4 +190,17 @@ export class SystemPortalAPI {
     };
     return options;
   }
+
+  async getHybridSearchConfig() {
+    const errorMessage = `Error getting hybrid search config`;
+    try {
+      const url = `${this.url}/system-portal/config/hybrid-search`;
+      const result = await axios.get(url);
+      console.log(result.data);
+      return result.data;
+    } catch (error) {
+      console.error(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
+  }
 }

@@ -14,7 +14,6 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     use_cache_db = options.use_cache_db
     database_code = options.database_code
     schema_name = options.schema_name
-    recreate = options.recreate
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code, 
                   schema_name=schema_name,
@@ -22,27 +21,42 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     
     duckdb_database_name = f"{database_code}_{schema_name}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"
-    vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension';
+    vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
 
     with duckdb.connect(duckdb_file_path) as conn:
-        conn.load_extension(vss_extension_path)
-        if recreate:
-            conn.execute("DROP TABLE IF EXISTS gte_embeddings")
-        elif DBDao.check_table_exists():
-            raise "Embedding table exists"
-        conn.execute(f"CREATE TABLE {duckdb_database_name}.gte_embeddings (concept_id int, vec FLOAT[384]);")
-
         concept = conn.execute('SELECT concept_id, concept_name FROM concept').fetchnumpy()
         logger.info("Start embedding")
         length = len(concept['concept_name'])
-        for i in range(0, length, 100):
-            concept_name = concept['concept_name'][i:i+100].tolist()
-            concept_id = concept['concept_id'][i:i+100]
-            embeddings = embedding_concept_table(concept_name).tolist()
+        step = 100
+        conn.execute("DROP TABLE IF EXISTS gte_embeddings")
+        conn.execute(f"CREATE TABLE gte_embeddings (concept_id int, vec FLOAT[384]);")
+        tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
+        model = AutoModel.from_pretrained("Supabase/gte-small")
+        for i in range(0, length, step):
+            concept_name = concept['concept_name'][i:i+step].tolist()
+            concept_id = concept['concept_id'][i:i+step]
+            embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
             rst = pd.DataFrame({'concept_id':concept_id, 'gte-small_384': embeddings})
             conn.execute(f"""INSERT INTO gte_embeddings SELECT concept_id, "gte-small_384" FROM rst""")
-            percent = (i+1)/(int(length / 100) + (length % 100 > 0)) * 100
+            percent = (i/step + 1)/(int(length / step) + (length % step > 0)) * 100
+            logger.info(f'i:{i}, length:{length}, step:{step}')
             logger.info(f'{round(percent,2)} % completed')
+
+        if not check_duckdb_column_exists(conn, 'concept', 'concept_name_embedding'):
+            conn.execute(f"""
+                            ALTER TABLE concept
+                            ADD COLUMN concept_name_embedding FLOAT[384];
+                        """)
+
+        conn.execute(f"""
+                        UPDATE concept AS c
+                        SET concept_name_embedding = g.vec
+                        FROM gte_embeddings AS g
+                        WHERE c.concept_id = g.concept_id;
+                     """)
+        
+        conn.execute(f"DROP TABLE gte_embeddings;")
+        conn.load_extension(vss_extension_path)
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-        conn.execute("CREATE INDEX gte_cos_idx ON gte_embeddings USING HNSW (vec) WITH (metric = 'cosine')")
+        conn.execute("CREATE INDEX gte_cos_idx ON concept USING HNSW (concept_name_embedding) WITH (metric = 'cosine')")
 
