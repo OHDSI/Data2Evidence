@@ -125,3 +125,8 @@ body {
 .list-header--sticky {
   position: relative !important;
 }
+
+.block-documents-table__logo,
+.p-button--outline {
+  background: inherit;
+}

@@ -7,7 +7,6 @@ import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
 import { RNode } from "./RNode/RNode";
 import { StrategusNode } from "./StrategusNode/StrategusNode";
-import { SqlQueryNode } from "./SqlQueryNode/SqlQueryNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
@@ -23,7 +22,6 @@ export const NODE_TYPES: {
   py2table_node: Py2TableNode,
   r_node: RNode,
   strategus: StrategusNode,
-  sql_query_node: SqlQueryNode,
   sql_node: SqlNode,
   data_mapping_node: DataMappingNode,
   csv_node: CsvNode,
@@ -40,7 +38,6 @@ export const NODE_COLORS: {
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   strategus: "#999fcb",
-  sql_query_node: "#999fcb",
   sql_node: "#999fcb",
   data_mapping_node: "#999fcb",
   csv_node: "#999fcb",
@@ -92,12 +89,6 @@ test_exec <- function(myinput) {
     tag: NodeTag.Experimental,
     defaultData: {},
   },
-  sql_query_node: {
-    title: "SQL query",
-    description: "Run SQL command.",
-    tag: NodeTag.Experimental,
-    defaultData: {},
-  },
   sql_node: {
     title: "SQL",
     description: "Run SQL in a database",
@@ -118,7 +109,7 @@ test_exec <- function(myinput) {
     defaultData: {},
   },
   db_reader_node: {
-    title: "Database reader",
+    title: "Database query",
     description: "Output SQL query as table.",
     tag: NodeTag.Stable,
     defaultData: {},
