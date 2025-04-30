@@ -54,6 +54,12 @@ RUN apt-get update && \
     wget \
     && apt-get clean
 
+# Python Library Setup
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20
+RUN python3 -m venv /usr/src/app
+# Enable venv
+ENV PATH="/usr/src/app/bin:$PATH"
+
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
