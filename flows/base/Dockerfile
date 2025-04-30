@@ -132,7 +132,6 @@ WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
-COPY --chown=docker:docker ./base/init.R .
 
 # Grant docker ownership to create properties file
 RUN chown -R docker:docker ./liquibase/

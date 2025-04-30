@@ -2,10 +2,9 @@ FROM alpine AS builder
 
 # Create .Renviron file with GITHUB_PAT
 ARG GITHUB_PAT
-ARG BUILD_TYPE
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
-FROM rocker/r-ver:4.4 as base-build
+FROM rocker/r-ver:4.4 AS base-build
 
 RUN mkdir -p /app
 
@@ -102,7 +101,7 @@ RUN useradd docker -u 1001 \
     && adduser docker alp
 
 FROM base-build AS final-build
-
+ARG BUILD_TYPE
 WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
