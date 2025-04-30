@@ -82,8 +82,6 @@ jobs:
   bld:
     needs: setup
     if: vars.DOCKER_BUILD_FORCE == 'true' || needs.setup.outputs.GIT_BRANCH_NAME == 'develop' ||  contains('release', needs.setup.outputs.GIT_BRANCH_NAME) || github.event_name == 'workflow_dispatch' || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # run if branch is develop|release|workflow_dispatch OR any non-draft pull_request
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     strategy:
       fail-fast: false
@@ -136,5 +134,5 @@ jobs:
       DOCKER_IMG_TAG_NAME: ${{ needs.setup.outputs.DOCKER_IMG_TAG_NAME }}
       GIT_BRANCH_NAME: ${{ needs.setup.outputs.GIT_BRANCH_NAME }}
       GIT_REPO_FULL_NAME: ${{ needs.setup.outputs.GIT_REPO_FULL_NAME }}
-      DOCKER_BUILD_ARG1: ${{ matrix.build_arg1 && format('GITHUB_PAT={0}', env.GITHUB_PAT) || '' }}
+      DOCKER_BUILD_ARG1: ${{ matrix.build_arg1 || '' }}
     secrets: inherit
