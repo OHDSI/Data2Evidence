@@ -18,3 +18,5 @@ RUN R -e "remotes::install_github('IRkernel/repr'); \
 RUN R -e "IRkernel::installspec()"
 
 COPY --chown=jovyan:users kernels/R_ohdsi_docker /usr/local/share/jupyter/kernels/R_ohdsi_docker
+
+USER jovyan
