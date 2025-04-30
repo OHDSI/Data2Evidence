@@ -854,9 +854,7 @@ class StrategusNode(Node):
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                os.environ['STRATEGUS_KEYRING_PASSWORD'] = Secret.load("strategus-keyring-password").get()
                 
-                database_code = 'alpdev_pg'
                 db_credentials = DBDao(use_cache_db=self.use_cache_db, 
                                    database_code=self.database, 
                                    schema_name=self.schema).tenant_configs
@@ -875,6 +873,7 @@ class StrategusNode(Node):
                     resultsFolder = '/tmp/results_folder'
                 )
 
+                rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)

@@ -161,10 +161,6 @@ SQL_RETURN_ON:
   comment: null
   publish: false
   type: string
-STRATEGUS__KEYRING_PASSWORD:
-  comment: Strategus Keyring Password
-  publish: true
-  type: string
 TLS__CADDY_DIRECTIVE:
   comment: Generate self-signed or public x509 certificate
   publish: true
