@@ -2,16 +2,9 @@ FROM alpine AS builder
 
 # Create .Renviron file with GITHUB_PAT
 ARG GITHUB_PAT
-<<<<<<< HEAD
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
 FROM rocker/r-ver:4.4 AS base-build
-
-=======
-ARG BUILD_TYPE
-RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
-
-FROM elyra/kernel-r:3.2.3
 
 USER root
 >>>>>>> 10164db3 (Move plugins out of base flow)
