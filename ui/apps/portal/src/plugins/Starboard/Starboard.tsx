@@ -15,7 +15,6 @@ import { getAuthToken } from "../../containers/auth/auth";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
-const zipUrl = `${uiFilesUrl}starboard-notebook-base/alp-starboard-notebook-base.zip`;
 const codeSuggestionUrl = "code-suggestion";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
@@ -28,13 +27,6 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
 
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
-
-  const setupPYQE = `import micropip
-  await micropip.install('ssl')
-  await micropip.install('pyjwt==2.9.0')
-  await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
-  os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
-  os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
 
   const extractJupyterKernel = `\n# %% [esm]
   import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
@@ -51,6 +43,11 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         }
       }
     )`;
+
+  const initialiseJupyterKernel = `\n# %% [jupyter]
+  Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
+  Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
+  `;
 
   const [runtime, setRuntime] = useState<StarboardEmbed>();
   const [unsaved, setUnsaved] = useState(false);
@@ -109,9 +106,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-
-      const tokenAndPyqeScript = "\n# %% [python]\nimport os\nos.environ['TOKEN'] = '" + jwtToken + "'" + setupPYQE;
-      notebookContent += tokenAndPyqeScript + extractJupyterKernel;
+      notebookContent += extractJupyterKernel + initialiseJupyterKernel;
 
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
@@ -131,7 +126,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
       setRuntime(embedEl);
       setUnsaved(false);
     },
-    [jwtToken, metadata, setupPYQE]
+    [jwtToken, metadata]
   );
 
   useEffect(() => {
@@ -228,7 +223,6 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         currentContent={handleReadContent}
         createNotebook={createNotebook}
         fetchNotebooks={fetchNotebooks}
-        zipUrl={zipUrl}
         isShared={isShared}
         setIsShared={setIsShared}
         activeDatasetId={activeDatasetId}

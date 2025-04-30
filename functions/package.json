@@ -216,6 +216,14 @@
           "rmsrc": true
         },
         {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
+        },
+        {
           "source": "/concept-mapping",
           "function": "/concept-mapping",
           "env": "concept-mapping",

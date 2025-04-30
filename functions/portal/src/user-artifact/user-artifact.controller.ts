@@ -12,47 +12,47 @@ export class UserArtifactController {
   constructor(private readonly userArtifactService: UserArtifactService) { }
 
   @Get(':serviceName/list')
-  getAllServiceArtifacts(@Param('serviceName') serviceName: ServiceName) {
+  async getAllServiceArtifacts(@Param('serviceName') serviceName: ServiceName) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getAllServiceArtifacts(serviceName)
+    return await this.userArtifactService.getAllServiceArtifacts(serviceName)
   }
 
   @Get(':userId/:serviceName/list')
-  getUserServiceArtifact(
+  async getUserServiceArtifact(
     @Param('userId') userId: string,
     @Param('serviceName') serviceName: string
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getUserServiceArtifact(userId, serviceName)
+    return await this.userArtifactService.getUserServiceArtifact(userId, serviceName)
   }
 
   @Get(':serviceName/sequence/nextval')
-  getServiceArtifactSequenceNextval(
+  async getServiceArtifactSequenceNextval(
     @Param('serviceName') serviceName: ServiceName
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getServiceArtifactSequenceNextval(serviceName)
+    return await this.userArtifactService.getServiceArtifactSequenceNextval(serviceName)
   }
 
   @Get(':userId/:serviceName/shared/list')
-  getAllUserServiceArtifacts(
+  async getAllUserServiceArtifacts(
     @Param('userId') userId: string,
     @Param('serviceName') serviceName: ServiceName
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getAllUserServiceArtifacts(serviceName, userId)
+    return await this.userArtifactService.getAllUserServiceArtifacts(serviceName, userId)
   }
 
   @Get(':userId/:serviceName/:id')
-  getUserServiceArtifactById(
+  async getUserServiceArtifactById(
     @Param('userId') userId: string,
     @Param('serviceName') serviceName: string,
     @Param('id') id: string
@@ -60,52 +60,52 @@ export class UserArtifactController {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getUserServiceArtifactById(userId, serviceName, id)
+    return await this.userArtifactService.getUserServiceArtifactById(userId, serviceName, id)
   }
 
   @Get(':serviceName/:id')
-  getServiceArtifactById(
+  async getServiceArtifactById(
     @Param('serviceName') serviceName: ServiceName,
     @Param('id') id: string
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.getServiceArtifactById(serviceName, id)
+    return await this.userArtifactService.getServiceArtifactById(serviceName, id)
   }
 
   @Post(':serviceName')
-  createServiceArtifact(
+  async createServiceArtifact(
     @Param('serviceName') serviceName: ServiceName, 
     @Body() createArtifactDto: any
   ) {
-    return this.userArtifactService.createServiceArtifact(serviceName, createArtifactDto)
+    return await this.userArtifactService.createServiceArtifact(serviceName, createArtifactDto)
   }
 
   @Put(':serviceName/user')
-  updateUserServiceArtifact(
+  async updateUserServiceArtifact(
     @Param('serviceName') serviceName: ServiceName,
     @Body() updateArtifactDto: any
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.updateUserServiceArtifactEntity(serviceName, updateArtifactDto)
+    return await this.userArtifactService.updateUserServiceArtifactEntity(serviceName, updateArtifactDto)
   }
 
   @Put(':serviceName')
-  updateServiceArtifact(
+  async updateServiceArtifact(
     @Param('serviceName') serviceName: ServiceName,
     @Body() updateArtifactDto: any
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.updateServiceArtifactEntity(serviceName, updateArtifactDto)
+    return await this.userArtifactService.updateServiceArtifactEntity(serviceName, updateArtifactDto)
   }
 
   @Delete(':userId/:serviceName/:id')
-  deleteUserServiceArtifact(
+  async deleteUserServiceArtifact(
     @Param('userId') userId: string,
     @Param('serviceName') serviceName: ServiceName | string,
     @Param('id') id: string
@@ -113,17 +113,17 @@ export class UserArtifactController {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.deleteUserServiceArtifact(userId, serviceName, id)
+    return await this.userArtifactService.deleteUserServiceArtifact(userId, serviceName, id)
   }
 
   @Delete(':serviceName/:id')
-  deleteServiceArtifactEntity(
+  async deleteServiceArtifactEntity(
     @Param('serviceName') serviceName: ServiceName,
     @Param('id') id: string
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
-    return this.userArtifactService.deleteServiceArtifactEntity(serviceName, id)
+    return await this.userArtifactService.deleteServiceArtifactEntity(serviceName, id)
   }
 }

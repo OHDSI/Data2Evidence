@@ -68,7 +68,7 @@
 				request_header Remote-Email {rp.header.Remote-Email}
 			}
 		}
-		reverse_proxy @jupyter_websocket http://alp-enterprise-gateway-proxy:8888
+		reverse_proxy @jupyter_websocket http://{$PROJECT_NAME}-enterprise-gateway:8888
 	}
 
 	## call gateway if there are no matched files
