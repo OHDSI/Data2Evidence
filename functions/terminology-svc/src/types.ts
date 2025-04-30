@@ -246,3 +246,10 @@ export enum DatasetDialects {
   POSTGRES = "postgres",
   DUCKDB = "duckdb",
 }
+
+export type DatasetDB = {
+  datasetId: string;
+  databaseCode: string;
+  dialect: string;
+  vocabSchemaName: string;
+};
