@@ -660,7 +660,7 @@ services:
               }
             }
 
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-alp-enterprise-gateway:8888
+            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
           }
 
           ## call gateway if there are no matched files
