@@ -17,6 +17,7 @@ type RoleTypeOf<T> = {
   TENANT_VIEWER: T
   STUDY_MANAGER: T
   STUDY_RESEARCHER: T
+  STUDY_WRITE_DQD_RESEARCHER: T
 }
 
 //Roles for tenant users map
@@ -33,6 +34,7 @@ export interface IAppRequest extends Request {
 
 export interface RoleMap {
   alp_tenant_id: string[] // list of all tenant ids
+  alp_role_study_write_dqd_researcher: string[] // list of study ids
   alp_role_study_researcher: string[] // list of study ids
   alp_role_study_mgr: string[] // list of study ids
   alp_role_study_admin: string[] // list of study ids

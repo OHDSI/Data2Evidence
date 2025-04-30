@@ -503,6 +503,10 @@
           "filesmanager.post",
           "filesmanager.delete",
           "whiteRabbit.post"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
@@ -1823,6 +1827,7 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
           "scopes": [
+            "portal.dataset.resource.read",
             "dataflowmgmt.dqd.dataQuality.flowRun.add"
           ],
           "httpMethods": [

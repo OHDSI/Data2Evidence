@@ -368,10 +368,13 @@ paths:
                         type: boolean
                       useMapped:
                         type: boolean
+                      isExcluded:
+                        type: boolean
                     required:
                       - id
                       - useDescendants
                       - useMapped
+                      - isExcluded
                 name:
                   type: string
                 shared:
@@ -399,7 +402,8 @@ paths:
       parameters:
         - schema:
             type: number
-          required: true
+            nullable: true
+          required: false
           name: conceptSetId
           in: path
         - schema:
@@ -422,7 +426,8 @@ paths:
       parameters:
         - schema:
             type: number
-          required: true
+            nullable: true
+          required: false
           name: conceptSetId
           in: path
       requestBody:
@@ -442,10 +447,13 @@ paths:
                         type: boolean
                       useMapped:
                         type: boolean
+                      isExcluded:
+                        type: boolean
                     required:
                       - id
                       - useDescendants
                       - useMapped
+                      - isExcluded
                 name:
                   type: string
                 shared:
@@ -467,7 +475,8 @@ paths:
       parameters:
         - schema:
             type: number
-          required: true
+            nullable: true
+          required: false
           name: conceptSetId
           in: path
       responses:
@@ -495,6 +504,7 @@ paths:
                   type: array
                   items:
                     type: number
+                    nullable: true
               required:
                 - datasetId
                 - conceptSetIds
@@ -531,14 +541,17 @@ paths:
                         properties:
                           id:
                             type: number
+                          useDescendants:
+                            type: boolean
                           useMapped:
                             type: boolean
-                          useDescendants:
+                          isExcluded:
                             type: boolean
                         required:
                           - id
-                          - useMapped
                           - useDescendants
+                          - useMapped
+                          - isExcluded
                   required:
                     - datasetId
                     - concepts
