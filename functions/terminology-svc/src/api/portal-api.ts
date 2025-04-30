@@ -1,7 +1,7 @@
 // @ts-types="npm:@types/express"
 import { Request } from "express";
 import axios, { AxiosRequestConfig } from "axios";
-// import { Agent } from "https";
+import { Agent } from "http";
 import { env } from "../env.ts";
 import { ConceptSet } from "../types.ts";
 
@@ -16,10 +16,11 @@ interface UpdateConceptSetDto {
 export class SystemPortalAPI {
   private readonly token: string;
   private readonly url: string;
-  // private readonly httpsAgent: Agent;
+  private readonly agent: Agent;
 
   constructor(request: Request) {
     this.token = request.headers["authorization"]!;
+    this.agent = new Agent({ keepAlive: true })
     if (env.SERVICE_ROUTES.portalServer) {
       this.url = env.SERVICE_ROUTES.portalServer;
       // this.httpsAgent = new Agent({
@@ -184,7 +185,8 @@ export class SystemPortalAPI {
       headers: {
         Authorization: this.token,
       },
-      timeout: 20000,
+      timeout: 30000,
+      httpAgent: this.agent
     };
     return options;
   }
