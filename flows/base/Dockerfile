@@ -73,9 +73,10 @@ RUN python3 -m venv /usr/src/app
 ENV PATH="/usr/src/app/bin:$PATH"
 
 # Set environment variables
+ENV JAVA_HOME_11=/usr/lib/jvm/openjdk-11
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-17
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
-ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-17/lib/server
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
 ENV R_REMOTES_UPGRADE="always"
 
 ENV APP_VERSION=0.0.0
@@ -86,6 +87,13 @@ RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='h
 
 RUN rm openjdk.tgz*
 
+# OpenJDK 11
+RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_x64_linux_11.0.16_8.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_aarch64_linux_11.0.16_8.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME_11}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME_11" --strip-components 1 --no-same-owner ;
+
+RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME_11}/bin/java 100 && \
+    update-alternatives --install /usr/bin/javac javac ${JAVA_HOME_11}/bin/javac 100 && \
+    rm openjdk.tgz*
+
 # Verify the installation
 RUN java -version && R CMD javareconf
 
@@ -93,10 +101,39 @@ RUN java -version && R CMD javareconf
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")' 
+# Install OHDSI Packages - sequence per dependencies
 
+# HADES Dependencies
+# https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
+RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v0.6.4")' # https://github.com/OHDSI/Andromeda
+RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
+RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.4.0")' # https://github.com/OHDSI/Cyclops
+RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https://github.com/rstudio/reticulate
+# RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")' # https://github.com/OHDSI/Achilles same version installed by HADES
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 
+# # print packages and versions - before HADES
+# RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
+# OHDSI HADES
+# private d2e repo auth - ssh key
+# public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
+RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortMethod@v5.2.0")'
+
+# Install version of JSONIO which doesn't break Strategus and CohortGenerator
+RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/RJSONIO_1.3-1.11.tar.gz", repos = NULL, type = "source")'
+
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
+
+# OHDSI packages and versions - after HADES
+RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
+# OHDSI packages and versions - after D2E
+RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
+RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 
 # D2E packages
@@ -115,7 +152,7 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-FROM base-build AS dbsvc-build
+FROM base-build as dbsvc-build
 
 # Required for RPostgres R package
 RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
