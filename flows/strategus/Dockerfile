@@ -23,7 +23,6 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
-<<<<<<< HEAD
     less \
     libbz2-dev \
     libcairo2-dev \
@@ -63,18 +62,6 @@ RUN python3 -m venv /usr/src/app
 # Enable venv
 ENV PATH="/usr/src/app/bin:$PATH"
 
-=======
-    less
-
-# # GitHub setup & test
-# RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
-# # RUN ssh-add -l # debug only
-# RUN git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD || exit 1
-# RUN git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD || exit 1
-# RUN git config --global advice.detachedHead false
-
-# Set environment variables
->>>>>>> 10164db3 (Move plugins out of base flow)
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
@@ -114,7 +101,6 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-<<<<<<< HEAD
 RUN useradd docker -u 1001 \
     && groupadd alp \
     && mkdir /home/docker \
@@ -142,8 +128,3 @@ COPY --chown=docker:docker --chmod=711 ./strategus flows
 RUN chmod -R 755 /app
 
 USER docker
-=======
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar /app/inst/drivers/postgresql-42.3.1.jar
-
-USER jovyan
->>>>>>> 10164db3 (Move plugins out of base flow)
