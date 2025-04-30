@@ -2,6 +2,7 @@ import { TableState } from "./table-state";
 import { FieldState } from "./field-state";
 import { ScannedSchemaState, TableSchemaState } from "./scanned-schema-state";
 import { DialogState, INIT_DIALOG_STATE } from "./dialog-state";
+import { FIELD_SOURCE_MENU, FIELD_TARGET_MENU, TABLE_SOURCE_MENU, TABLE_TARGET_MENU } from "../../constants";
 
 export interface AppState {
   saved: boolean;
@@ -21,7 +22,7 @@ export const initialState: AppState = {
   table: {
     nodes: [
       {
-        id: "table_source_menu",
+        id: TABLE_SOURCE_MENU,
         type: "sourceTable",
         position: { x: 0, y: 0 },
         style: {
@@ -32,7 +33,7 @@ export const initialState: AppState = {
         data: null,
       },
       {
-        id: "table_target_menu",
+        id: TABLE_TARGET_MENU,
         type: "targetTable",
         position: { x: 700, y: 0 },
         style: {
@@ -50,7 +51,7 @@ export const initialState: AppState = {
   field: {
     nodes: [
       {
-        id: "field_source_menu",
+        id: FIELD_SOURCE_MENU,
         type: "fieldNode",
         position: { x: 0, y: 0 },
         style: {
@@ -61,7 +62,7 @@ export const initialState: AppState = {
         data: { type: "source" },
       },
       {
-        id: "field_target_menu",
+        id: FIELD_TARGET_MENU,
         type: "fieldNode",
         position: { x: 700, y: 0 },
         style: {
