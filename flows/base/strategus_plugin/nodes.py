@@ -881,7 +881,7 @@ class StrategusNode(Node):
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(datasetId, analysisSpec, executionSettings):
+def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name):
     with ro.default_converter.context():
         try:
             rStrategus = importr('Strategus')
@@ -889,26 +889,26 @@ def execute_r_strategus(datasetId, analysisSpec, executionSettings):
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
 
-            # dbdao = DBDao(use_cache_db=False,
-            #       database_code="demodb", 
-            #       schema_name="cdmdefault")
-            # db_credentials = dbdao.tenant_configs
-            # rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-            #     dbms='postgresql', 
-            #     connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
-            #     user=db_credentials.adminUser,
-            #     password=db_credentials.adminPassword.get_secret_value(),
-            #     pathToDriver = databaseConnectorJarFolder
-            # )
+            dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code, 
+                  schema_name=schema_name)
+            db_credentials = dbdao.tenant_configs
+            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+                dbms='postgresql', 
+                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
+                pathToDriver = databaseConnectorJarFolder
+            )
 
             # TODO: remove hardcode
-            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                    dbms='postgresql', 
-                    connectionString=f'jdbc:postgresql://alp-demodb:5432/postgres',
-                    user='postgres',
-                    password='mypass',
-                    pathToDriver = databaseConnectorJarFolder
-                )
+            # rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+            #         dbms='postgresql', 
+            #         connectionString=f'jdbc:postgresql://alp-demodb:5432/postgres',
+            #         user='',
+            #         password='',
+            #         pathToDriver = databaseConnectorJarFolder
+            #     )
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)

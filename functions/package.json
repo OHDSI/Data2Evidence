@@ -1676,7 +1676,8 @@
         {
           "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
           "scopes": [
-            "jupyter"
+            "jupyter",
+            "portal.dataset.read"
           ],
           "httpMethods": ["POST"]
         },

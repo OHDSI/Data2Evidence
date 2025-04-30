@@ -17,7 +17,7 @@ def strategus_plugin(json_graph, options):
     logger = get_run_logger()
 
     if(options.get('mode', None) == 'kernel'):
-        runStrategus(json_graph)
+        runStrategus(json_graph, options)
         return
 
     # Grab root flow id
@@ -139,12 +139,18 @@ def execute_node_task(nodename, node_type, node, input, test):
 
 def runStrategus(json_graph, options):
     datasetId = options.get('datasetId', None)
+    database_code = options.get('databaseCode', None)
+    schema_name = options.get('schemaName', None)
     if(not datasetId):
        raise Exception('DatasetId is missing')
+    if(not database_code):
+       raise Exception('Database code is missing')
+    if(not schema_name):
+       raise Exception('Schema name is missing')
     
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
     executionSettings = json_graph.get('executionSettings', {})
-    execute_r_strategus(datasetId, analysisSpec, executionSettings)
+    execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name)

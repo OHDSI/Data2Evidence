@@ -79,7 +79,7 @@ export class PrefectController {
   private async createAnalaysisRunByJupyterKernel(req, res){
     try {
       const { json_graph, options } = req.body;
-      const token = this.getToken(req);
+      const token = req.headers["Authorization"] || req.headers["authorization"];
       const flowrunId = await this.prefectService.createAnalaysisRunByJupyterKernel(
         token,
         { json_graph, options }

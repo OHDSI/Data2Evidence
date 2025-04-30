@@ -5,6 +5,7 @@ import {
   PrefectAnalysisParamsTransformer,
 } from "../utils/DataflowParser.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
+import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
 
 export class PrefectService {
@@ -62,15 +63,27 @@ export class PrefectService {
   }
 
   public async createAnalaysisRunByJupyterKernel(token, flowRunParams) {
+    const { json_graph, options } = flowRunParams;
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
     this.prefectApi = new PrefectAPI(token);
+    const portalServerApi = new PortalServerAPI(token);
+
+    const { schemaName, databaseCode } = await portalServerApi.getDataset(
+      options['datasetId']
+    );
 
     const flowRunId = await this.prefectApi.createFlowRun(
       "jupyter-kernel-dataset-analysis",
       prefectDeploymentName,
       prefectFlowName,
-      flowRunParams
+      {
+        json_graph,
+        options: Object.assign(options, {
+          schemaName,
+          databaseCode
+        }, {})
+      }
     );
     return flowRunId;
   }
