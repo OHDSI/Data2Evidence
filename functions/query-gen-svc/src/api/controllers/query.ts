@@ -28,7 +28,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         totalPatientCount: 0,
     };
     const timestamp = (new Date()).valueOf();
-    console.time(`time-query-svc-generateQuery-${timestamp}`)   
     let result: MRIEndpointResultType;
     try {
         const body =
@@ -57,10 +56,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             insert,
         };
 
-        console.time(`time-query-svc-initplugin-${timestamp}`)
-        console.time(`time-query-svc-callStudyMRIConfig-${timestamp}`)
-
-
         // get backend config for the given configId, configVersion & datasetId
         const configParams = {
             req,
@@ -72,8 +67,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         };
         const configResponse = await callStudyMRIConfig(configParams);
         const config = configResponse.config;
-
-        console.timeEnd(`time-query-svc-callStudyMRIConfig-${timestamp}`)
 
         if (!ifrRequest) {
             if (queryType === "patientdetail") {
@@ -118,21 +111,12 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             userSpecificSettings.getPlaceholderMap();
         // placeholderMap = placeholderMap || Settings.getDimPlaceholderForAttribute();
 
-        console.timeEnd(`time-query-svc-initplugin-${timestamp}`)
-
-
-        console.time(`time-query-svc-ifrWithConceptSetConcepts-${timestamp}`)   
-
         const ifrWithConceptSetConcepts = await updateIfrWithConcepts(
             config,
             ifrRequest,
             datasetId,
             req.headers.authorization
         );
-        console.timeEnd(`time-query-svc-ifrWithConceptSetConcepts-${timestamp}`)   
-
-
-        console.time(`time-query-svc-queryResponse-${timestamp}`)   
 
         // generate query
         const queryResponse = await new QueryGenSvc(
@@ -145,7 +129,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             censoringThreshold
         ).generateQuery();
 
-        console.timeEnd(`time-query-svc-queryResponse-${timestamp}`)   
 
         // set cdm config metadata
         queryResponse.cdmConfigMetaData.id =
@@ -154,10 +137,8 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             configResponse.meta.dependentConfig.configVersion;
 
         // log.debug(`Query response:\n${JSON.stringify(queryResponse)}`);
-        console.timeEnd(`time-query-svc-generateQuery-${timestamp}`)
         res.status(200).send(queryResponse);
     } catch (err) {
-        console.timeEnd(`time-query-svc-generateQuery-${timestamp}`)
         log.enrichErrorWithRequestCorrelationID(err, req);
         console.error(`Error in generating query (${err.stack})!`);
         res.status(500).send(

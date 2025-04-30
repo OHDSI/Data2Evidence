@@ -2,7 +2,7 @@
   "imports": {
     "crypto": "node:crypto",
     "fs": "node:fs",
-    "https": "node:https",
+    "http": "node:http",
     "@asteasolutions/zod-to-openapi": "npm:@asteasolutions/zod-to-openapi@7.3.0",
     "axios": "npm:axios@1.7.7",
     "express": "npm:express@5.0.0",

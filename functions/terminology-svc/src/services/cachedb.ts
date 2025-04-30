@@ -14,6 +14,7 @@ import {
   IDuckdbFacet,
   DatasetDialects,
   IConceptHierarchy,
+  DatasetDB,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
@@ -24,11 +25,13 @@ import { groupBy } from "../utils/helperUtil.ts";
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
+  private readonly datasetDB: DatasetDB | undefined;
   private semanticRatio: number;
 
-  constructor(request: Request) {
+  constructor(request: Request, datasetDB?: DatasetDB) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
+    this.datasetDB = datasetDB;
   }
 
   /*
@@ -38,9 +41,9 @@ export class CachedbService {
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
     const { dialect, vocabSchemaName, databaseCode } =
-      await this.systemPortalApi.getDatasetDetails(datasetId);
+      this.datasetDB ??
+      (await this.systemPortalApi.getDatasetDetails(datasetId));
     this.semanticRatio = await this.systemPortalApi.getHybridSearchConfig();
-
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }

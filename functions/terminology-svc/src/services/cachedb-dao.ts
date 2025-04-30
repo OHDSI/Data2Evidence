@@ -44,13 +44,13 @@ export class CachedbDAO {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-        this.getDuckdbFtsBaseQuery(searchText, filters);
+        this.getOptimizedSearchQuery(searchText, filters);
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
       select *
           from fts
           limit ? OFFSET ?;
-          `;
+      `;
 
       const offset = pageNumber * rowsPerPage;
       const conceptsSqlParams = [
@@ -131,120 +131,101 @@ export class CachedbDAO {
     searchText: string,
     filters: Filters
   ): Promise<any> {
-    const facetColumns = {
-      conceptClassId: "concept_class_id",
-      domainId: "domain_id",
-      standardConcept: "standard_concept",
-      vocabularyId: "vocabulary_id",
-      validity: "valid_end_date",
-    };
-
-    const getFacetSql = (column: string): string => {
-      return `
-            select
-              ${column},
-              COUNT(${column}) as count
-            from
-              fts
-            GROUP BY
-              ${column};
-          `;
-    };
-    const getValidityFacetSql = (column: string): string => {
-      return `
-            select
-              valid_end_date,
-              count(a.valid_end_date) as count
-            from
-              (
-                SELECT
-                  CASE
-                    WHEN ${column} >= current_date THEN 'Valid'
-                    ELSE 'Invalid'
-                  end AS valid_end_date
-                FROM
-                  fts
-              ) as a
-            GROUP BY
-              a.valid_end_date;
-          `;
-    };
-
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
-      const facetPromises = Object.values(facetColumns).map(
-        (column: string) => {
-          const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-            this.getDuckdbFtsBaseQuery(searchText, filters, [column]);
-          let facetSql;
-          if (column === "valid_end_date") {
-            facetSql = getValidityFacetSql(column);
-          } else {
-            facetSql = getFacetSql(column);
-          }
-          const sql = `
-            ${duckdbFtsBaseQuery}
-            ${facetSql}
-          `;
-          const sqlParams = duckdbFtsBaseQueryParams;
-          return client.query(sql, sqlParams);
+      // Get the base query with filters applied once
+      const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
+        searchText,
+        filters
+      );
+
+      // Create a single consolidated query that gets all facet data at once
+      const sql = `
+        ${baseQuery}
+        SELECT 'concept_class_id' as facet_type, concept_class_id as facet_value, COUNT(*) as count 
+        FROM fts 
+        GROUP BY concept_class_id
+        
+        UNION ALL
+        
+        SELECT 'domain_id' as facet_type, domain_id as facet_value, COUNT(*) as count 
+        FROM fts 
+        GROUP BY domain_id
+        
+        UNION ALL
+        
+        SELECT 'standard_concept' as facet_type, COALESCE(standard_concept, '') as facet_value, COUNT(*) as count 
+        FROM fts 
+        GROUP BY standard_concept
+        
+        UNION ALL
+        
+        SELECT 'vocabulary_id' as facet_type, vocabulary_id as facet_value, COUNT(*) as count 
+        FROM fts 
+        GROUP BY vocabulary_id
+        
+        UNION ALL
+        
+        SELECT 'valid_end_date' as facet_type, 
+          CASE WHEN valid_end_date >= current_date THEN 'Valid' ELSE 'Invalid' END as facet_value, 
+          COUNT(*) as count 
+        FROM fts 
+        GROUP BY facet_value;
+      `;
+
+      // Execute the query once instead of 5 separate queries
+      const result = await client.query(sql, baseQueryParams);
+
+      // Prepare the response structure
+      const filterOptions: Record<string, Record<string, number>> = {
+        conceptClassId: {},
+        domainId: {},
+        standardConcept: {},
+        vocabularyId: {},
+        validity: {},
+      };
+
+      // Process all results in a single loop
+      for (const row of result.rows) {
+        const facetType = row.facet_type;
+        const facetValue = row.facet_value ?? ""; // Handle null values
+        const count = Number(row.count);
+
+        // Map to appropriate filter category
+        switch (facetType) {
+          case "concept_class_id":
+            filterOptions.conceptClassId[facetValue] = count;
+            break;
+          case "domain_id":
+            filterOptions.domainId[facetValue] = count;
+            break;
+          case "standard_concept":
+            filterOptions.standardConcept[facetValue] = count;
+            break;
+          case "vocabulary_id":
+            filterOptions.vocabularyId[facetValue] = count;
+            break;
+          case "valid_end_date":
+            filterOptions.validity[facetValue] = count;
+            break;
         }
-      );
+      }
 
-      const results = await Promise.all(facetPromises).then(function (
-        data: { rows: string[] }[]
-      ) {
-        return data.map((result) => {
-          return result.rows;
-        });
-      });
+      // Calculate concept counts (derived from standard_concept)
+      const standardConceptCount = filterOptions.standardConcept["S"] || 0;
+      const totalConceptCount = Object.values(
+        filterOptions.standardConcept
+      ).reduce((acc, val) => acc + val, 0);
 
-      // Map data to match existing concept.service logic which works with meilisearch search results
-      const filterOptions = Object.entries(facetColumns).reduce<{
-        [index: string]: any;
-      }>(
-        (
-          accumulator1: { [index: string]: { [index: string]: number } },
-          [facetKey, facetColumn],
-          index: number
-        ) => {
-          const result = results[index];
-          const fields = [facetColumn, "count"];
+      filterOptions["concept"] = {
+        Standard: standardConceptCount,
+        "Non-standard": totalConceptCount - standardConceptCount,
+      };
 
-          accumulator1[facetKey] = result.reduce(
-            (
-              accumulator2: { [index: string]: number },
-              { [fields[0]]: facetColumn, [fields[1]]: count }: any
-            ) => {
-              accumulator2[facetColumn] = Number(count);
-              return accumulator2;
-            },
-            {}
-          );
-          return accumulator1;
-        },
-        {}
-      );
-      // concept is a derived value, not from duckdb fts index search
-      filterOptions["concept"] = (() => {
-        const standardConcepts = filterOptions["standardConcept"];
-        const standardConceptsCount = standardConcepts["S"] || 0;
-
-        const totalConceptsCount = Object.values(standardConcepts).reduce(
-          (accumulator: number, value) => accumulator + Number(value),
-          0
-        );
-
-        const nonStandardConceptsCount =
-          totalConceptsCount - standardConceptsCount;
-        return {
-          Standard: standardConceptsCount,
-          "Non-standard": nonStandardConceptsCount,
-        };
-      })();
       return filterOptions;
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching concept filter options:", error);
+      throw error;
     } finally {
       await client.end();
     }
@@ -280,6 +261,7 @@ export class CachedbDAO {
     const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
 
     if (searchText === "") {
+      console.log("vocab schema", this.vocabSchemaName);
       return [
         `
       with fts as (
@@ -306,8 +288,8 @@ export class CachedbDAO {
           array_cosine_distance(concept_name_embedding, ?::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept
-          ${duckdbFtsWhereClause} 
-        ),
+          ${duckdbFtsWhereClause}
+      ),
       fts as (
         select 
           cal_score.${columnsToSelect},
@@ -315,10 +297,97 @@ export class CachedbDAO {
         from 
             cal_score
         order by hybrid_score desc
-      )
+        )
       `,
         [searchText, textEmbedding],
       ];
+    }
+  };
+
+  /**
+   * Optimized search query method with multi-factor scoring - used for concept searches
+   *
+   * Scoring system:
+   * 1. Exact match (1000 points): When concept_name exactly matches the search term
+   * 2. Starts with match (800 points): When concept_name starts with the search term
+   * 3. Standard concept (100 points): When the concept is a standard concept (standard_concept = 'S')
+   * 4. BM25 score: Base relevance score from full-text search
+   *
+   * The final score is the sum of all applicable scores, and results are ordered by this score.
+   */
+  private getOptimizedSearchQuery = (
+    searchText: string,
+    filters: Filters,
+    columns: string[] = []
+  ): [string, string[]] => {
+    const filterWhereClause = this.generateFilterWhereClause(filters);
+    const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
+
+    if (searchText === "") {
+      return [
+        `
+      with fts as (
+        select
+          ${columnsToSelect}
+        from
+          ${this.vocabSchemaName}.concept
+          ${filterWhereClause}
+        )
+      `,
+        [],
+      ];
+    } else {
+      // Build the query with all scoring factors
+      const query = `
+      with concept_with_scores as (
+        select
+          ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+          -- Base BM25 score (existing functionality)
+          ${
+            this.vocabSchemaName
+          }.fts_main_concept.match_bm25(concept_id, ?1) as bm25_score,
+          
+          -- Exact match scoring (highest priority)
+          CASE
+            WHEN LOWER(concept_name) = LOWER(?2) THEN 1000
+            WHEN LOWER(concept_name) LIKE LOWER(?3) || '%' THEN 800
+            ELSE 0
+          END as exact_match_score,
+          
+          -- Standard concept boost
+          CASE
+            WHEN standard_concept = 'S' THEN 100
+            ELSE 0
+          END as standard_boost
+        from
+          ${this.vocabSchemaName}.concept
+      )
+      
+      select
+        *,
+        (bm25_score + exact_match_score + standard_boost) as score
+      from
+        concept_with_scores
+      WHERE score > 0
+      ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
+      order by score desc
+      `;
+
+      // Combine all parameters
+      const queryParams = [
+        searchText, // For BM25 score
+        searchText, // For exact match (equals)
+        searchText, // For exact match (starts with)
+      ];
+
+      // Create the final query with fts wrapper
+      const finalQuery = `
+      with fts as (
+        ${query}
+      )
+      `;
+
+      return [finalQuery, queryParams];
     }
   };
 
