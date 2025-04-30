@@ -19,7 +19,7 @@ interface TerminologyListProps {
   isConceptSet?: boolean;
   selectedConcepts: FhirValueSetExpansionContainsWithExt[];
   tab: TabName;
-  toggleDescendantsAndMapped?: (conceptId: number, type: "DESCENDANTS" | "MAPPED") => void;
+  toggleDescendantsAndMapped?: (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => void;
   showAddIcon: boolean;
   conceptsResult: TerminologyResult | null;
   setConceptsResult: React.Dispatch<React.SetStateAction<TerminologyResult | null>>;
@@ -467,10 +467,31 @@ const TerminologyList: FC<TerminologyListProps> = ({
             sx: { justifyContent: "center", border: "none" },
           },
         },
+        {
+          accessorKey: "isExcluded",
+          header: getText(i18nKeys.TERMINOLOGY_LIST__EXCLUDE),
+          Cell: ({ row }: { row: any }) => {
+            const terminology = row.original as FhirValueSetExpansionContainsWithExt;
+            return (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Checkbox
+                  checked={terminology?.isExcluded}
+                  onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "EXCLUDE")}
+                  sx={{ padding: 0 }}
+                />
+              </div>
+            );
+          },
+          grow: false,
+          size: 80,
+          muiTableBodyCellProps: {
+            sx: { justifyContent: "center", border: "none" },
+          },
+        },
       ];
       return {
         columns: [...addButton, ...descendantsAndMapped, ...basicColumns],
-        columnOrder: ["addButton", "useDescendants", "useMapped", ...basicColumnOrder],
+        columnOrder: ["addButton", "useDescendants", "useMapped", "isExcluded", ...basicColumnOrder],
       };
     }
     if (showAddIcon && onSelectConceptId) {
