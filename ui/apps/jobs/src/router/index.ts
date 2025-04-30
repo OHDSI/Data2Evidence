@@ -18,7 +18,8 @@ const workspaceRoutes = createWorkspaceRouteRecords({
   blocksCatalogView: () => import('@/views/BlocksCatalogView.vue'),
   blockCreate: () => import('@/views/BlocksCatalogCreate.vue'),
   block: () => import('@/views/BlockView.vue'),
-  blockEdit: () => import('@/views/BlockEdit.vue')
+  blockEdit: () => import('@/views/BlockEdit.vue'),
+  variables: () => import('@/views/Variables.vue')
 })
 
 const routeRecords: AppRouteRecord[] = [
