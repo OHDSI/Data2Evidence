@@ -22,30 +22,27 @@
       "flows": [
         {
           "name": "strategus_plugin",
-          "type": "strategus",
           "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "strategus"
-          ],
           "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "json_graph": {
-                "position": 0,
-                "title": "json_graph"
+              "title": "Parameters",
+              "type": "object",
+              "properties": {
+                  "json_graph": {
+                      "position": 0,
+                      "title": "json_graph"
+                  },
+                  "options": {
+                      "position": 1,
+                      "title": "options"
+                  }
               },
-              "options": {
-                "position": 1,
-                "title": "options"
-              }
-            },
-            "required": [
-              "json_graph",
-              "options"
-            ]
-          }
+              "required": [
+                  "json_graph",
+                  "options"
+              ],
+              "definitions": {}
+          },
+          "type": "strategus"
         }
       ]
     }
