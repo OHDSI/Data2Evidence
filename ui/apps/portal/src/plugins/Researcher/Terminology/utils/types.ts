@@ -29,6 +29,7 @@ export type ConceptSetConcept = {
   id: number;
   useDescendants: boolean;
   useMapped: boolean;
+  isExcluded: boolean;
 };
 export type ConceptSet = {
   concepts: ConceptSetConcept[];
@@ -170,6 +171,7 @@ export interface FhirValueSetExpansionContainsWithExt extends Concept {
   contains?: FhirValueSetExpansionContainsWithExt[];
   useDescendants?: boolean;
   useMapped?: boolean;
+  isExcluded?: boolean;
   score?: number;
 }
 
