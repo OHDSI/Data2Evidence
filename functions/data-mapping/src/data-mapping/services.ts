@@ -13,50 +13,51 @@ export const getDataMapping = async (uiCode: IUICodeSnippet) => {
 
   const model = await getModelInstance(env.AI_MODEL);
 
-  if (model === "NULL"){
+  if (model === "NULL") {
     console.error(`LLM Model - ${env.AI_MODEL} not found`);
-    throw new DataMappingError(`LLM Model - ${env.AI_MODEL} not found.`,404);
+    throw new DataMappingError(`LLM Model - ${env.AI_MODEL} not found.`, 404);
   }
-  
+
   // convert the received JSON data to required format
-  const finalLLMData:{ data: LLM_User_Data[] } = {
-    data : []
+  const finalLLMData: { data: LLM_User_Data[] } = {
+    data: [],
   };
 
-  try{
+  try {
     const srcTables = JSON.parse(uiCode.data).source_tables;
 
-    for (const srcTable of srcTables){
-      const llmData:LLM_User_Data ={
-        "source_table": srcTable.table_name,
-        "OMOP_table" : "",
-        "columns_mapping": {}
+    for (const srcTable of srcTables) {
+      const llmData: LLM_User_Data = {
+        source_table: srcTable.table_name,
+        OMOP_table: "",
+        columns_mapping: {},
       };
-      
+
       const columnList = srcTable.column_list;
-      for (const column of columnList){
+      for (const column of columnList) {
         llmData.columns_mapping[column.column_name] = "";
       }
       finalLLMData.data.push(llmData);
     }
-  }
-  catch(error){
+  } catch (error) {
     console.error(`Error! Parsing the JSON object - ${error.message}`);
     throw new DataMappingError(error.message, 400); // bad request - bad JSON object
   }
-  
+
   const messages = [
-      new SystemMessage(instructions),
-      new HumanMessage(JSON.stringify(finalLLMData))
-    ];
-    
+    new SystemMessage(instructions),
+    new HumanMessage(JSON.stringify(finalLLMData)),
+  ];
+
   try {
     const response = await model.invoke(messages);
     const mappedData = response.content;
     return mappedData;
-  } 
-  catch (error) {
+  } catch (error) {
     console.error(`Error! invoking the LLM - ${error.message}`);
-    throw new DataMappingError(`Error! invoking the LLM - ${error.message}`, 500);
+    throw new DataMappingError(
+      `Error! invoking the LLM - ${error.message}`,
+      500
+    );
   }
 };

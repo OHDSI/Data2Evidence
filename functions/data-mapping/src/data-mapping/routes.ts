@@ -10,15 +10,14 @@ export class DataMappingRouter {
 
   private registerRoutes() {
     this.router.post("/", async (req: Request, res: Response) => {
-      try{
+      try {
         const modelResponse = await getDataMapping(req.body);
         res.status(200).json(modelResponse);
-      }
-      catch(error){
+      } catch (error) {
         res.status(error.code).json({
           error: true,
           message: error.message,
-          details:error.name
+          details: error.name,
         });
       }
     });
