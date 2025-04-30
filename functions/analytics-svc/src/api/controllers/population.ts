@@ -189,8 +189,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         }
 
                         try {
-                            const configId = configData.configId;
-                            const configVersion = configData.configVersion;
+                            const configId = req.paConfigId;
+                            const configVersion = req.paConfigVersion;
                             const datasetId = body.datasetId;
 
                             let sFilename: string =

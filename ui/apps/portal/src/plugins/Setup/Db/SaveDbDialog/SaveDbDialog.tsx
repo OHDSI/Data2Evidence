@@ -40,6 +40,7 @@ import { validateCredentials } from "../CredentialValidator";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
 import { useTranslation } from "../../../../contexts";
+import { PUB_SLOT_NAME } from "../../../../constant";
 import "./SaveDbDialog.scss";
 
 interface SaveDbDialogProps {
@@ -68,7 +69,6 @@ const styles: SxProps = {
 
 interface FormData extends Omit<IDatabase, "id" | "credentials.id" | "publications"> {
   publication: string;
-  slot: string;
 }
 
 const dbCredentialProcessor = new DbCredentialProcessor();
@@ -119,7 +119,6 @@ const EMPTY_FORM_DATA: FormData = {
   credentials: EMPTY_CREDENTIALS,
   vocabSchemas: [],
   publication: "",
-  slot: "",
 };
 
 interface ITestingResult {
@@ -224,7 +223,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
       const publications: IDbPublication[] = [];
       if (formData.publication) {
-        publications.push({ publication: formData.publication, slot: formData.slot });
+        publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
       }
 
       const params = omit(formData, "publication", "slot");
@@ -619,13 +618,6 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               sx={{ minWidth: "300px" }}
               value={formData.publication}
               onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
-            />
-            <TextField
-              label={getText(i18nKeys.SAVE_DB_DIALOG__SLOT)}
-              variant="standard"
-              sx={{ minWidth: "300px" }}
-              value={formData.slot}
-              onChange={(event) => handleFormDataChange({ slot: event.target?.value })}
             />
           </Box>
         </Box>
