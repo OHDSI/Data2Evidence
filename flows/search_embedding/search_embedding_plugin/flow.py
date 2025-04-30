@@ -21,11 +21,9 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     
     duckdb_database_name = f"{database_code}_{schema_name}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"
-    vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension';
+    vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
 
     with duckdb.connect(duckdb_file_path) as conn:
-        conn.load_extension(vss_extension_path)
-
         concept = conn.execute('SELECT concept_id, concept_name FROM concept').fetchnumpy()
         logger.info("Start embedding")
         length = len(concept['concept_name'])
@@ -44,7 +42,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             logger.info(f'i:{i}, length:{length}, step:{step}')
             logger.info(f'{round(percent,2)} % completed')
 
-        if not dbdao.check_column_exists('concept', 'concept_name_embedding'):
+        if not check_duckdb_column_exists(conn, 'concept', 'concept_name_embedding'):
             conn.execute(f"""
                             ALTER TABLE concept
                             ADD COLUMN concept_name_embedding FLOAT[384];
@@ -58,6 +56,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
                      """)
         
         conn.execute(f"DROP TABLE gte_embeddings;")
+        conn.load_extension(vss_extension_path)
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
         conn.execute("CREATE INDEX gte_cos_idx ON concept USING HNSW (concept_name_embedding) WITH (metric = 'cosine')")
 

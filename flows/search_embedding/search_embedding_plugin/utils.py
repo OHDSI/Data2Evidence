@@ -19,3 +19,9 @@ def embedding_concept_table(concept_name_list,tokenizer, model):
     # (Optionally) normalize embeddings
     embeddings = F.normalize(embeddings, p=2, dim=1)
     return embeddings
+
+def check_duckdb_column_exists(conn, table_name, column):
+    rst = conn.execute(f'PRAGMA table_info({table_name});').fetchall()
+    columns = [row[1] for row in rst]
+    return any(col.lower() == column.lower() for col in columns)
+
