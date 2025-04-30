@@ -35,6 +35,11 @@ export default async (req: IMRIRequest, res, next) => {
         }
     };
 
+    const addPAConfigIdToReq = (studyMetadata): void => { 
+        req.paConfigId = studyMetadata.paConfigId;
+        req.paConfigVersion = "A";
+    }
+
     const getDefaultDbConnection = (): any => {
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
             ...analyticsCredentials[Object.keys(analyticsCredentials)[0]],
@@ -126,6 +131,7 @@ export default async (req: IMRIRequest, res, next) => {
                     req.selectedstudyDbMetadata = studyMetadata;
                 }
                 getDbConnectionByStudyMetadata(studyMetadata);
+                addPAConfigIdToReq(studyMetadata);
             } else {
                 getDefaultDbConnection();
             }
@@ -144,8 +150,8 @@ export default async (req: IMRIRequest, res, next) => {
                 req.selectedstudyDbMetadata = studyMetadata;
             }
             getDbConnectionByStudyMetadata(studyMetadata);
+            addPAConfigIdToReq(studyMetadata);
         }
-
         next();
     } catch (err) {
         log.enrichErrorWithRequestCorrelationID(err, req);

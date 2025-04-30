@@ -88,36 +88,23 @@
       <div class="bookmark-content__header">
         <div class="bookmark-content__header-title">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort">
-            <template #icon-left>
-              <PatientsActiveIcon style="margin-right: 10px" fill="white" />
-            </template>
-          </Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
           <Button
             v-if="enableAtlasCohortDefinition"
             :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
             :onClick="openAtlasLink"
           >
-            <template #icon-left>
-              <GlobeIcon style="margin-right: 10px" fill="white" />
-            </template>
           </Button>
           <Button
             :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
           >
-            <template #icon-left>
-              <UploadIcon style="margin-right: 10px" fill="white" />
-            </template>
           </Button>
           <Button
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
           >
-            <template #icon-left>
-              <LeftRightArrowIcon style="margin-right: 10px" fill="white" />
-            </template>
           </Button>
           <div class="shared-toggle-container">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
@@ -211,13 +198,8 @@ import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
-import PatientsActiveIcon from './icons/PatientsActiveIcon.vue'
 import Button from './Button.vue'
-import GlobeIcon from './icons/GlobeIcon.vue'
-import UploadIcon from './icons/UploadIcon.vue'
-import LeftRightArrowIcon from './icons/LeftRightArrowIcon.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-
 
 export default {
   compatConfig: {
@@ -590,11 +572,7 @@ export default {
     appMessageStrip,
     BookmarkItems,
     SlideToggle,
-    PatientsActiveIcon,
     Button,
-    GlobeIcon,
-    LeftRightArrowIcon,
-    UploadIcon,
     ImportAtlasCohortDefinitionDialog,
   },
 }
