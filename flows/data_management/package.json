@@ -1,0 +1,175 @@
+{
+    "name": "@data2evidence/data-management-flow",
+    "version": "0.0.99",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "docker build ../ -f ./Dockerfile -t d2e/flow-data-management:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OHDSI/d2e.git"
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/OHDSI/d2e/issues"
+    },
+    "homepage": "https://github.com/OHDSI/d2e/flows#readme",
+    "trex": {
+        "flow": {
+            "image": "ghcr.io/ohdsi/d2e/flow-data-management",
+            "flows": [
+                {
+                    "name": "data_management_plugin",
+                    "entrypoint": "flows.data_management_plugin.flow.data_management_plugin",
+                    "parameter_openapi_schema": {
+                        "title": "Parameters",
+                        "type": "object",
+                        "properties": {
+                            "options": {
+                                "$ref": "#/definitions/DataModelType",
+                                "position": 0,
+                                "title": "options"
+                            }
+                        },
+                        "required": [
+                            "options"
+                        ],
+                        "definitions": {
+                            "DataModelType": {
+                                "properties": {
+                                    "flow_action_type": {
+                                        "$ref": "#/definitions/FlowActionType"
+                                    },
+                                    "database_code": {
+                                        "title": "Database Code",
+                                        "type": "string"
+                                    },
+                                    "data_model": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Data Model"
+                                    },
+                                    "schema_name": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Schema Name"
+                                    },
+                                    "cleansed_schema_option": {
+                                        "anyOf": [
+                                            {
+                                                "type": "boolean"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": false,
+                                        "title": "Cleansed Schema Option"
+                                    },
+                                    "vocab_schema": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Vocab Schema"
+                                    },
+                                    "rollback_count": {
+                                        "anyOf": [
+                                            {
+                                                "type": "integer"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Rollback Count"
+                                    },
+                                    "rollback_tag": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Rollback Tag"
+                                    },
+                                    "update_count": {
+                                        "anyOf": [
+                                            {
+                                                "type": "integer"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Update Count"
+                                    },
+                                    "datasets": {
+                                        "anyOf": [
+                                            {
+                                                "items": {},
+                                                "type": "array"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
+                                        "default": null,
+                                        "title": "Datasets"
+                                    }
+                                },
+                                "required": [
+                                    "flow_action_type",
+                                    "database_code"
+                                ],
+                                "title": "DataModelType",
+                                "type": "object"
+                            },
+                            "FlowActionType": {
+                                "enum": [
+                                    "create_datamodel",
+                                    "update_datamodel",
+                                    "rollback_count",
+                                    "rollback_tag",
+                                    "get_version_info",
+                                    "create_cdm_schema",
+                                    "changelog_sync"
+                                ],
+                                "title": "FlowActionType",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "type": "datamodel",
+                    "datamodels": null
+                }
+            ]
+        }
+    }
+}
