@@ -1179,15 +1179,11 @@ services:
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
-      EG_ALLOW_ORIGIN: "*"
-      EG_ALLOW_HEADERS: "*"
-      EG_ALLOW_METHODS: "*"
       KERNEL_USERNAME: jovyan
       EG_DEFAULT_KERNEL_NAME: "r_docker"
       EG_DOCKER_MODE: docker
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - ./kernels:/usr/local/share/jupyter/kernels
     labels:
       app: "enterprise-gateway"
       component: "enterprise-gateway"
@@ -1258,18 +1254,10 @@ services:
         frontend proxy
           bind 0.0.0.0:8888 maxconn 10000
           option forwardfor
-          http-response set-header Access-Control-Allow-Origin "*"
-          http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, JSNLog-RequestId, activityId, applicationId, applicationUserId, channelId, senderId, sessionId"
-          http-response set-header Access-Control-Max-Age 3628800
-          http-response set-header Access-Control-Allow-Methods "GET, DELETE, OPTIONS, POST, PUT"
           default_backend enterprise-gateway
 
         backend enterprise-gateway
           dynamic-cookie-key ENTERPRISE_KEY
-          http-response set-header Access-Control-Allow-Origin "*"
-          http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, JSNLog-RequestId, activityId, applicationId, applicationUserId, channelId, senderId, sessionId"
-          http-response set-header Access-Control-Max-Age 3628800
-          http-response set-header Access-Control-Allow-Methods "GET, DELETE, OPTIONS, POST, PUT"
           cookie SRVID insert dynamic
           server-template enterprise-gateway 2 enterprise-gateway:8888 check resolvers docker
         EOF
