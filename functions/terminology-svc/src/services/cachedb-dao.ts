@@ -11,7 +11,6 @@ import {
   IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
-// import { env as transformersEnv, pipeline } from "transformers";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
 export class CachedbDAO {
