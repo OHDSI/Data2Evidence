@@ -25,7 +25,7 @@ import { groupBy } from "../utils/helperUtil.ts";
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
-  private readonly datasetDB: DatasetDB | undefined;
+  private readonly datasetDB: DatasetDB;
   private semanticRatio: number;
 
   constructor(request: Request, datasetDB?: DatasetDB) {
@@ -43,7 +43,12 @@ export class CachedbService {
     const { dialect, vocabSchemaName, databaseCode } =
       this.datasetDB ??
       (await this.systemPortalApi.getDatasetDetails(datasetId));
-    this.semanticRatio = await this.systemPortalApi.getHybridSearchConfig();
+    const hybridSearchConfig =
+      await this.systemPortalApi.getHybridSearchConfig();
+    const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
+    this.semanticRatio = enableSemantic
+      ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
+      : 0;
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }

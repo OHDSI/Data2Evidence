@@ -3,6 +3,7 @@ import duckdb
 from prefect import flow
 from prefect.logging import get_run_logger
 from prefect.variables import Variable
+import time
 
 from .types import *
 from .utils import *
@@ -10,6 +11,7 @@ from _shared_flow_utils.dao.DBDao import DBDao
 
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
+    # time.sleep(600)
     logger = get_run_logger()
     use_cache_db = options.use_cache_db
     database_code = options.database_code
@@ -24,12 +26,13 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
 
     with duckdb.connect(duckdb_file_path) as conn:
+        conn.load_extension(vss_extension_path)
         concept = conn.execute('SELECT concept_id, concept_name FROM concept').fetchnumpy()
         logger.info("Start embedding")
         length = len(concept['concept_name'])
         step = 100
         conn.execute("DROP TABLE IF EXISTS gte_embeddings")
-        conn.execute(f"CREATE TABLE gte_embeddings (concept_id int, vec FLOAT[384]);")
+        conn.execute("CREATE TABLE gte_embeddings (concept_id int, vec FLOAT[384]);")
         tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
         model = AutoModel.from_pretrained("Supabase/gte-small")
         for i in range(0, length, step):
@@ -39,7 +42,6 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             rst = pd.DataFrame({'concept_id':concept_id, 'gte-small_384': embeddings})
             conn.execute(f"""INSERT INTO gte_embeddings SELECT concept_id, "gte-small_384" FROM rst""")
             percent = (i/step + 1)/(int(length / step) + (length % step > 0)) * 100
-            logger.info(f'i:{i}, length:{length}, step:{step}')
             logger.info(f'{round(percent,2)} % completed')
 
         if not check_duckdb_column_exists(conn, 'concept', 'concept_name_embedding'):
@@ -55,8 +57,8 @@ def search_embedding_plugin(options: SearchEmbeddingType):
                         WHERE c.concept_id = g.concept_id;
                      """)
         
-        conn.execute(f"DROP TABLE gte_embeddings;")
-        conn.load_extension(vss_extension_path)
+        conn.execute("DROP TABLE gte_embeddings;")
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
+        conn.execute("DROP INDEX IF EXISTS gte_cos_idx;")
         conn.execute("CREATE INDEX gte_cos_idx ON concept USING HNSW (concept_name_embedding) WITH (metric = 'cosine')")
 

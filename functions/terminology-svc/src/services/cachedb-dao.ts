@@ -1,7 +1,5 @@
 // @ts-types="npm:@types/pg"
 import pg from "pg";
-import { pipeline } from "transformers";
-
 import {
   Filters,
   IConceptRelationship,
@@ -13,6 +11,11 @@ import {
   IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
+// import { env as transformersEnv, pipeline } from "transformers";
+import {
+  env as transformersEnv,
+  pipeline,
+} from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0";
 
 export class CachedbDAO {
   private readonly jwt: string;
@@ -43,8 +46,12 @@ export class CachedbDAO {
   ) {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await this.getGTEEmbedding(searchText)).join(",")
+          : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-        this.getOptimizedSearchQuery(searchText, filters);
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
       select *
@@ -58,7 +65,6 @@ export class CachedbDAO {
         rowsPerPage,
         offset,
       ];
-
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -134,11 +140,15 @@ export class CachedbDAO {
     const client = this.getCachedbConnection(this.jwt, this.datasetId);
     try {
       // Get the base query with filters applied once
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await this.getGTEEmbedding(searchText)).join(",")
+          : "";
       const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
         searchText,
+        textEmbedding,
         filters
       );
-
       // Create a single consolidated query that gets all facet data at once
       const sql = `
         ${baseQuery}
@@ -221,7 +231,6 @@ export class CachedbDAO {
         Standard: standardConceptCount,
         "Non-standard": totalConceptCount - standardConceptCount,
       };
-
       return filterOptions;
     } catch (error) {
       console.error("Error fetching concept filter options:", error);
@@ -231,37 +240,19 @@ export class CachedbDAO {
     }
   }
 
-  private getGTEEmbedding = async (searchText: string): Promise<number[]> => {
-    const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
-    const output = await pipe(searchText, {
-      pooling: "mean",
-      normalize: true,
-    });
-    const embedding = Array.from(output.data) as number[];
-    console.log("GTEembedding", embedding);
-    return embedding;
-  };
-
-  private embeddingCache: Map<string, any> = new Map();
-  // To solve the async of getGTEEmbedding
-  async precomputeEmbedding(searchText: string): Promise<void> {
-    if (!this.embeddingCache.has(searchText)) {
-      const embedding = await this.getGTEEmbedding(searchText);
-      this.embeddingCache.set(searchText, embedding);
-    }
-  }
-
   private getDuckdbFtsBaseQuery = (
     searchText: string,
+    textEmbedding: string,
     filters: Filters,
     columns: string[] = []
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
 
-    const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
-
+    const columnsToSelect =
+      columns.length === 0
+        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
+        : columns.join(", ");
     if (searchText === "") {
-      console.log("vocab schema", this.vocabSchemaName);
       return [
         `
       with fts as (
@@ -274,18 +265,18 @@ export class CachedbDAO {
       `,
         [],
       ];
-    } else {
+    } else if (this.semanticRatio > 0) {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND score is not null`
         : "WHERE score is not null ";
-      let textEmbedding = this.embeddingCache.get(searchText);
+
       return [
         `
       with sem_fts_scores as (
         select 
           ${columnsToSelect},
-          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as fts_score,
-          array_cosine_distance(concept_name_embedding, ?::FLOAT[384]) as embd_score
+          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?1) as fts_score,
+          array_cosine_distance(concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept
           ${duckdbFtsWhereClause}
@@ -298,14 +289,50 @@ export class CachedbDAO {
             (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from sem_fts_scores)
           ) as hybrid_score
         from 
-            sem_fts_scores
+          sem_fts_scores
         order by hybrid_score desc
         )
       `,
         [searchText, textEmbedding],
       ];
+    } else {
+      const duckdbFtsWhereClause = filterWhereClause
+        ? `${filterWhereClause} AND score is not null`
+        : "WHERE score is not null ";
+      return [
+        `
+      with fts as (
+        select
+          ${columnsToSelect},
+          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as score
+        from
+          ${this.vocabSchemaName}.concept
+          ${duckdbFtsWhereClause}
+          order by score desc
+        )
+      `,
+        [searchText],
+      ];
     }
   };
+
+  /** Generate the embedding for query text */
+  private async getGTEEmbedding(searchText: string): Promise<number[]> {
+    transformersEnv.useBrowserCache = false;
+    transformersEnv.allowLocalModels = false;
+    try {
+      const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
+      const output = await pipe(searchText, {
+        pooling: "mean",
+        normalize: true,
+      });
+      const embedding = Array.from(output.data) as number[];
+      return embedding;
+    } catch (error) {
+      console.error("Detailed error:", error);
+      throw new Error(`Error in embedding generation: ${error.message}`);
+    }
+  }
 
   /**
    * Optimized search query method with multi-factor scoring - used for concept searches
@@ -320,11 +347,15 @@ export class CachedbDAO {
    */
   private getOptimizedSearchQuery = (
     searchText: string,
+    textEmbedding: string,
     filters: Filters,
     columns: string[] = []
-  ): [string, string[]] => {
+  ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
-    const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
+    const columnsToSelect =
+      columns.length === 0
+        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
+        : columns.join(", ");
 
     if (searchText === "") {
       return [
@@ -339,14 +370,12 @@ export class CachedbDAO {
       `,
         [],
       ];
-    } else {
-      let textEmbedding = this.embeddingCache.get(searchText); // embed the searchText
-      // Build the query with all scoring factors
+    } else if (this.semanticRatio > 0) {
+      // Hybrid Search: Build the query with all scoring factors
       const query = `
       with concept_with_scores as (
         select
           ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-          
           -- Exact match scoring (highest priority)
           CASE
             WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
@@ -362,19 +391,17 @@ export class CachedbDAO {
         from
           ${this.vocabSchemaName}.concept
       ),
-
       sem_fts_scores as (
         select 
           ${columnsToSelect}${columns.length === 0 ? ", " : ""}
           ${
             this.vocabSchemaName
           }.fts_main_concept.match_bm25(concept_id, ?3) as fts_score,
-          array_cosine_distance(concept_name_embedding, ?4::FLOAT[384]) as embd_score
+          array_cosine_distance(concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept
           ${filterWhereClause}
         ),
-
       normalized_hybrid as (
         select 
           ${columnsToSelect}${columns.length === 0 ? ", " : ""}
@@ -390,12 +417,11 @@ export class CachedbDAO {
       
       select
         *,
-        nh.hybrid_score,
         (nh.hybrid_score + c.exact_match_score + c.standard_boost) as score
       from
         concept_with_scores c
       join normalized_hybrid nh
-      on nh.concept_id = c.concept_id
+        on nh.concept_id = c.concept_id
       WHERE score > 0
       ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
       order by score desc
@@ -405,8 +431,8 @@ export class CachedbDAO {
       const queryParams = [
         searchText, // For exact match (equals)
         searchText, // For exact match (starts with)
-        searchText, // For BM25 score
-        textEmbedding, // For BM25 score
+        searchText, // For hybrid score
+        textEmbedding, // For hybrid score
       ];
 
       // Create the final query with fts wrapper
@@ -415,7 +441,57 @@ export class CachedbDAO {
         ${query}
       )
       `;
+      return [finalQuery, queryParams];
+    } else {
+      // FTS search: Build the query with all scoring factors
+      const query = `
+      with concept_with_scores as (
+        select
+          ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+          -- Base BM25 score (existing functionality)
+          ${
+            this.vocabSchemaName
+          }.fts_main_concept.match_bm25(concept_id, ?1) as bm25_score,
+          
+          -- Exact match scoring (highest priority)
+          CASE
+            WHEN LOWER(concept_name) = LOWER(?2) THEN 1000
+            WHEN LOWER(concept_name) LIKE LOWER(?3) || '%' THEN 800
+            ELSE 0
+          END as exact_match_score,
+          
+          -- Standard concept boost
+          CASE
+            WHEN standard_concept = 'S' THEN 100
+            ELSE 0
+          END as standard_boost
+        from
+          ${this.vocabSchemaName}.concept
+      )
+      
+      select
+        *,
+        (bm25_score + exact_match_score + standard_boost) as score
+      from
+        concept_with_scores
+      WHERE score > 0
+      ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
+      order by score desc
+      `;
 
+      // Combine all parameters
+      const queryParams = [
+        searchText, // For BM25 score
+        searchText, // For exact match (equals)
+        searchText, // For exact match (starts with)
+      ];
+
+      // Create the final query with fts wrapper
+      const finalQuery = `
+      with fts as (
+        ${query}
+      )
+      `;
       return [finalQuery, queryParams];
     }
   };

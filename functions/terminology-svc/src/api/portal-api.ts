@@ -20,7 +20,7 @@ export class SystemPortalAPI {
 
   constructor(request: Request) {
     this.token = request.headers["authorization"]!;
-    this.agent = new Agent({ keepAlive: true })
+    this.agent = new Agent({ keepAlive: true });
     if (env.SERVICE_ROUTES.portalServer) {
       this.url = env.SERVICE_ROUTES.portalServer;
       // this.httpsAgent = new Agent({
@@ -186,7 +186,7 @@ export class SystemPortalAPI {
         Authorization: this.token,
       },
       timeout: 30000,
-      httpAgent: this.agent
+      httpAgent: this.agent,
     };
     return options;
   }
@@ -194,9 +194,9 @@ export class SystemPortalAPI {
   async getHybridSearchConfig() {
     const errorMessage = `Error getting hybrid search config`;
     try {
-      const url = `${this.url}/system-portal/config/hybrid-search`;
-      const result = await axios.get(url);
-      console.log(result.data);
+      const options = await this.createOptions();
+      const url = `${this.url}/config/hybrid-search`;
+      const result = await axios.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
