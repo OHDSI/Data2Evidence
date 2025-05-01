@@ -12,7 +12,7 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 // import { env as transformersEnv, pipeline } from "transformers";
-import { env as transformersEnv, pipeline } from "transformers";
+import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
 export class CachedbDAO {
   private readonly jwt: string;
@@ -45,7 +45,7 @@ export class CachedbDAO {
     try {
       const textEmbedding =
         this.semanticRatio > 0
-          ? (await this.getGTEEmbedding(searchText)).join(",")
+          ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
@@ -139,7 +139,7 @@ export class CachedbDAO {
       // Get the base query with filters applied once
       const textEmbedding =
         this.semanticRatio > 0
-          ? (await this.getGTEEmbedding(searchText)).join(",")
+          ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
         searchText,
@@ -312,24 +312,6 @@ export class CachedbDAO {
       ];
     }
   };
-
-  /** Generate the embedding for query text */
-  private async getGTEEmbedding(searchText: string): Promise<number[]> {
-    transformersEnv.useBrowserCache = false;
-    transformersEnv.allowLocalModels = false;
-    try {
-      const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
-      const output = await pipe(searchText, {
-        pooling: "mean",
-        normalize: true,
-      });
-      const embedding = Array.from(output.data) as number[];
-      return embedding;
-    } catch (error) {
-      console.error("Detailed error:", error);
-      throw new Error(`Error in embedding generation: ${error.message}`);
-    }
-  }
 
   /**
    * Optimized search query method with multi-factor scoring - used for concept searches
