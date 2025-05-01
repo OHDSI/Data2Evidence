@@ -12,10 +12,7 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 // import { env as transformersEnv, pipeline } from "transformers";
-import {
-  env as transformersEnv,
-  pipeline,
-} from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0";
+import { env as transformersEnv, pipeline } from "transformers";
 
 export class CachedbDAO {
   private readonly jwt: string;
