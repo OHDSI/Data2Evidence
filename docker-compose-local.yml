@@ -1,6 +1,6 @@
 services:
   trex:
-    command: npm run start
+    command: npm run startdev
     build:
       context: ./services/trex
       dockerfile: Dockerfile
@@ -25,7 +25,7 @@ services:
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
-          "analytics-svc": true,
+          "analytics-svc": false,
           "mri-pg-config": false,
           "alp-fhir-svc": false,
           "alp-fhir-init": false,
@@ -36,10 +36,10 @@ services:
           "mri-pa-config": false,
           "cdw-svc": false,
           "jobplugins": false,
-          "dataset": true,
+          "dataset": false,
           "alpdb": false,
-          "concept-mapping": true,
-          "terminology-svc": true,
+          "concept-mapping": false,
+          "terminology-svc": false,
           "code-suggestion": false,
           "portal": false,
           "files-manager": false,
