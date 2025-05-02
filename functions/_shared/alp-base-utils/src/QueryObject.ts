@@ -371,6 +371,81 @@ export class QueryObject {
     });
   }
 
+  /**
+   * Execute a query and return the result set. Only used by TrexConnection connections
+   *
+   * Output Format of result.data is
+   * [
+   * {<columnName1>: <value1>, <columnName2>: <value2>, ...}, // row 0
+   * {<columnName1>: <value1>, <columnName2>: <value2>, ...}, // row 1
+   * ...
+   * ]
+   * @param   {Object}   connection DB connection object
+   * @returns {Promise<QueryObjectResultType<T>>} an object {"data": <data>, "sql": <query>,
+   * "sqlParameters": <queryPlaceholders>} where <data> contains the actual result
+   *                   formatted as above and <sql>/<sqlParameters>
+   *                   optionally contain the used query.
+   */
+  public executeQueryOnWriteConnection<T>(
+    connection: ConnectionInterface,
+    callback?: CallBackInterface,
+    schemaName?: string,
+  ): Promise<QueryObjectResultType<T>> {
+    const run = (internalCallback: CallBackInterface) => {
+      const preparedQuery = this._prepareQuery();
+
+      const _process = resultData => {
+        const result: any = { data: resultData };
+        if (this.sqlReturnOn) {
+          result.sql = connection.getTranslatedSql(
+            preparedQuery.sql,
+            schemaName || connection.schemaName,
+            preparedQuery.placeholders,
+          );
+          result.sqlParameters = preparedQuery.placeholders.map(p => p.value);
+          logger.debug(`
+          ${result.sql}
+          ${result.sqlParameters}
+          `);
+        }
+        return result;
+      };
+
+      const shortenedQuery = this.shortenIdentifier(preparedQuery.sql);
+
+      connection.executeUpdate(
+        shortenedQuery,
+        preparedQuery.placeholders,
+        (err, resultData) => {
+          if (err) {
+            internalCallback(err, null);
+          } else {
+            this.remapIdentifiers(resultData);
+            internalCallback(err, _process(resultData));
+          }
+        },
+        schemaName,
+      );
+    };
+
+    return new Promise<QueryObjectResultType<T>>((resolve, reject) => {
+      if (callback) {
+        return run(callback);
+      }
+
+      run((err, result) => {
+        try {
+          if (err) {
+            return reject(err);
+          }
+          resolve(result);
+        } catch (err) {
+          reject(new DBError.DBError(logger.error(err), err.message));
+        }
+      });
+    });
+  }
+
   public executeStreamQuery<T>(
     connection: ConnectionInterface,
     schemaName: string = "",
