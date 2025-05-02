@@ -1,0 +1,16 @@
+{
+  "imports": {
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "axios": "npm:axios@^1.7.7",
+    "./src/env": "./src/env.ts",
+    "./src/types": "./src/types.ts",
+    "./src/api/AWSTokenAPI": "./src/api/AWSTokenAPI.ts",
+    "./src/data-mapping/services": "./src/data-mapping/services.ts",
+    "./src/data-mapping/routes": "./src/data-mapping/routes.ts",
+    "./src/utils/getModels": "./src/utils/getModels.ts",
+    "@langchain/core": "npm:@langchain/core@^0.3.40",
+    "@langchain/openai": "npm:@langchain/openai@^0.4.4",
+    "@langchain/core/messages": "npm:@langchain/core/messages"
+  }
+}
