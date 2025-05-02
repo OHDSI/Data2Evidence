@@ -418,6 +418,7 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
+          "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
