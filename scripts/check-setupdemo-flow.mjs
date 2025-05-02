@@ -5,7 +5,7 @@ if ( await $`[ -f .env ]` ) {
     dotenv.config('.env');
 } else { 
     console.log(chalk.red(`FATAL .env file not found`));
-    await $`exit 1`
+    process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
@@ -92,7 +92,7 @@ var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | s
 
 
 const start = Date.now();
-const duration = 900000; // 15mins 900000
+const duration = 900000; // 15mins
 try {
     var running_count=1;
     while (running_count>0 && Date.now() < duration + start) { 
@@ -113,7 +113,7 @@ try {
     }
 } catch (error) { 
     console.error(error);
-    await $`exit 1` 
+    process.exit(1)
 }
 
 const end = Date.now();
@@ -122,12 +122,11 @@ const durationSec = (durationMs / 1000).toFixed(2);
 console.log(`=== Summary of Job Runs ===\n${job_runs}\nTime taken: ${durationSec} seconds`);
 if (success_count == num_of_jobs) { 
     console.log(chalk.green(`Job runs completed.`));
-    await $`exit 0`
 } else if (failed_count>0) {
     console.log(chalk.red(`Some job runs have failed. Please refer to the Job Runs in the Admin Portal for more info.`));
-    await $`exit 1` 
+    process.exit(1)
 } else {
     console.log(`Please refer to the Job Runs in the Admin Portal for more info.`)
-    await $`exit 1` 
+    process.exit(1)
 }
 
