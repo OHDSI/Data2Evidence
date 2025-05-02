@@ -325,7 +325,10 @@
                 "name": "Data mapping",
                 "enabled": true,
                 "pluginPath": "https://$$FQDN$$/mapping/module.js",
-                "route": "data-mapping"
+                "route": "data-mapping",
+                "data": {
+                  "mappingSuggestion": false
+                }
               },
               {
                 "data": {

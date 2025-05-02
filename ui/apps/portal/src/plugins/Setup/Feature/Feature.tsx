@@ -5,6 +5,12 @@ import { useFeedback, useTranslation } from "../../../contexts";
 import { api } from "../../../axios/api";
 import { IFeature } from "../../../types";
 import "./Feature.scss";
+import {
+  FEATURE_DATASET_FILTER,
+  FEATURE_DATASET_SEARCH,
+  FEATURE_FHIR_SERVER,
+  FEATURE_MAPPING_SUGGESTION,
+} from "../../../config";
 
 interface FormData {
   features: IFeature[];
@@ -23,10 +29,10 @@ export const Feature: FC = () => {
 
   const FEATURES: Record<string, { name: string }> = useMemo(
     () => ({
-      datasetFilter: {
+      [FEATURE_DATASET_FILTER]: {
         name: getText(i18nKeys.FEATURE__DATASET_FILTER),
       },
-      datasetSearch: {
+      [FEATURE_DATASET_SEARCH]: {
         name: getText(i18nKeys.FEATURE__DATASET_SEARCH),
       },
       conceptSets: {
@@ -44,8 +50,11 @@ export const Feature: FC = () => {
       strategus: {
         name: getText(i18nKeys.FEATURE__STRATEGUS),
       },
-      fhirServer: {
+      [FEATURE_FHIR_SERVER]: {
         name: getText(i18nKeys.FEATURE__FHIR_SERVER),
+      },
+      [FEATURE_MAPPING_SUGGESTION]: {
+        name: getText(i18nKeys.FEATURE__DATA_MAPPING_SUGGESTION),
       },
     }),
     [getText]
