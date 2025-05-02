@@ -14,7 +14,7 @@ import {
   IDuckdbFacet,
   DatasetDialects,
   IConceptHierarchy,
-  DatasetDB
+  DatasetDB,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
@@ -26,11 +26,12 @@ export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
   private readonly datasetDB: DatasetDB;
+  private semanticRatio: number;
 
   constructor(request: Request, datasetDB?: DatasetDB) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
-    this.datasetDB = datasetDB
+    this.datasetDB = datasetDB;
   }
 
   /*
@@ -39,13 +40,26 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-      const { dialect, vocabSchemaName, databaseCode } = this.datasetDB ?? await this.systemPortalApi.getDatasetDetails(datasetId);
-      if (dialect === DatasetDialects.HANA) {
-        return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
-      }
-  
-      // By default return CachedbDAO
-      return new CachedbDAO(this.token, datasetId, vocabSchemaName);
+    const { dialect, vocabSchemaName, databaseCode } =
+      this.datasetDB ??
+      (await this.systemPortalApi.getDatasetDetails(datasetId));
+    const hybridSearchConfig =
+      await this.systemPortalApi.getHybridSearchConfig();
+    const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
+    this.semanticRatio = enableSemantic
+      ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
+      : 0;
+    if (dialect === DatasetDialects.HANA) {
+      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
+    }
+
+    // By default return CachedbDAO
+    return new CachedbDAO(
+      this.token,
+      datasetId,
+      vocabSchemaName,
+      this.semanticRatio
+    );
   }
 
   async getConcepts(

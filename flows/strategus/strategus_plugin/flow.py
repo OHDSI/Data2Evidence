@@ -9,12 +9,16 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow
+from .nodes import generate_nodes_flow, execute_r_strategus
 
 
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
     logger = get_run_logger()
+
+    if(options.get('mode', None) == 'kernel'):
+        runStrategus(json_graph, options)
+        return
 
     # Grab root flow id
     root_flow_run_context = FlowRunContext.get().flow_run.dict()
@@ -131,3 +135,22 @@ def execute_node_task(nodename, node_type, node, input, test):
             case _:
                 result = _node.task(input, task_run_context)
     return result
+
+
+def runStrategus(json_graph, options):
+    datasetId = options.get('datasetId', None)
+    database_code = options.get('databaseCode', None)
+    schema_name = options.get('schemaName', None)
+    if(not datasetId):
+       raise Exception('DatasetId is missing')
+    if(not database_code):
+       raise Exception('Database code is missing')
+    if(not schema_name):
+       raise Exception('Schema name is missing')
+    
+    if(type(json_graph) == str):
+        json_graph = json.loads(json_graph)
+
+    analysisSpec = json_graph.get('analysisSpecification', {})
+    executionSettings = json_graph.get('executionSettings', {})
+    execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name)
