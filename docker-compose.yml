@@ -379,6 +379,14 @@ services:
             "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
             "AI_MODEL": "${AI_MODEL:-null}"
           },
+          "data-mapping": {
+            "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+            "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+            "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+            "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+            "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+            "AI_MODEL": "${AI_MODEL:-null}"
+          },
           "demo": {
             "DEMO__DB_CODE": "demo_database",
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",

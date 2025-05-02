@@ -41,6 +41,7 @@ services:
           "concept-mapping": false,
           "terminology-svc": false,
           "code-suggestion": false,
+          "data-mapping": false,
           "portal": false,
           "files-manager": false,
           "demo": false,
@@ -150,7 +151,7 @@ services:
   #     - 41130:3000
 
   enterprise-gateway:
-    build: 
+    build:
       context: ./services/enterprise-gateway
       dockerfile: Dockerfile
     volumes:
