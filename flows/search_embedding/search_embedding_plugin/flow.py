@@ -29,7 +29,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         length = len(concept['concept_name'])
         step = 100
         conn.execute(f"DROP TABLE IF EXISTS {schema_name}.gte_embeddings")
-        conn.execute("CREATE TABLE gte_embeddings (concept_id int, vec FLOAT[384]);")
+        conn.execute(f"CREATE TABLE {schema_name}.gte_embeddings (concept_id int, vec FLOAT[384]);")
         tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
         model = AutoModel.from_pretrained("Supabase/gte-small")
         for i in range(0, length, step):
