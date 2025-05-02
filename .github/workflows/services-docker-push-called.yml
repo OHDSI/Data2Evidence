@@ -83,6 +83,14 @@ jobs:
         with:
           ref: ${{ env.GIT_BRANCH_NAME }}
           repository: ${{ env.GIT_REPO_FULL_NAME }}
+
+      - name: Prepare
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "$DOCKER_BUILD_ARG1" == 'true' ]]; then
+            echo "DOCKER_BUILD_ARG1=GITHUB_PAT=$GITHUB_PAT" >> $GITHUB_ENV
+          fi
           
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
