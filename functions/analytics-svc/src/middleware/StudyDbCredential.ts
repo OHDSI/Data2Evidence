@@ -35,7 +35,12 @@ export default async (req: IMRIRequest, res, next) => {
         }
     };
 
-    const addPAConfigIdToReq = (studyMetadata): void => { 
+    const addPAConfigIdToReq = (studyMetadata): void => {
+        //This is for scenarios where dataset is yet to be created
+        if (studyMetadata == null) {
+            log.info(`Skip injection of PA config ID for path ${req.url}`)
+            return;
+        }
         req.paConfigId = studyMetadata.paConfigId;
         req.paConfigVersion = "A";
     }
