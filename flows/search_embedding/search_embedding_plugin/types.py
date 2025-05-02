@@ -4,7 +4,6 @@ from typing import Optional
 # PATH_TO_EXTERNAL_FILES = r"external"
 
 class SearchEmbeddingType(BaseModel):
-    recreate: bool
     database_code: str
     schema_name: str
 
