@@ -5,11 +5,12 @@ import { ThemeProvider } from "@mui/material";
 import { AppProvider } from "./contexts/AppContext";
 import { theme } from "./theme/theme";
 import { MappingLayout } from "./MappingLayout";
+import { MappingMetadataParams } from "./main";
 import "./App.css";
 
-export interface AppProps extends PageProps<SystemAdminPageMetadata<void>> {}
+export interface AppProps extends PageProps<SystemAdminPageMetadata<MappingMetadataParams>> {}
 
-export let pluginMetadata: SystemAdminPageMetadata<void> | undefined;
+export let pluginMetadata: SystemAdminPageMetadata<MappingMetadataParams> | undefined;
 
 export const App: FC<AppProps> = ({ metadata }) => {
   pluginMetadata = metadata;
@@ -22,7 +23,7 @@ export const App: FC<AppProps> = ({ metadata }) => {
     <ReactFlowProvider>
       <ThemeProvider theme={theme}>
         <AppProvider>
-          <MappingLayout />
+          <MappingLayout {...pluginMetadata.data} />
         </AppProvider>
       </ThemeProvider>
     </ReactFlowProvider>

@@ -27,5 +27,9 @@ export const useApp = () => {
     dispatch({ type: ACTION_TYPES.SET_VOCABULARY_DATASET_ID, payload: data });
   }, []);
 
-  return { reset, load, clearHandles, markAsSaved, setVocabularyDatasetId, state };
+  const setMappingSuggestion = useCallback((data: boolean) => {
+    dispatch({ type: ACTION_TYPES.SET_MAPPING_SUGGESTION, payload: data });
+  }, []);
+
+  return { reset, load, clearHandles, markAsSaved, setVocabularyDatasetId, setMappingSuggestion, state };
 };

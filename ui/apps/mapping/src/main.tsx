@@ -5,10 +5,17 @@ import { SystemAdminPageMetadata } from "@portal/plugin";
 import { App, AppProps } from "./App.tsx";
 import "./index.css";
 
-const mockMetadata: SystemAdminPageMetadata<void> = {
+export interface MappingMetadataParams {
+  mappingSuggestion: boolean;
+}
+
+const mockMetadata: SystemAdminPageMetadata<MappingMetadataParams> = {
   system: "Local1",
   userId: "Mock user",
   getToken: () => Promise.resolve("MockToken"),
+  data: {
+    mappingSuggestion: true,
+  },
 };
 
 const pageProps: AppProps = {

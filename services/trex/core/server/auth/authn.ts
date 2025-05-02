@@ -1,22 +1,22 @@
-
 import { createRemoteJWKSet, jwtVerify } from "npm:jose";
 import { Context } from "npm:hono";
-import { env, publicURLs, logger } from '../env.ts'
+import { env, publicURLs, logger } from "../env.ts";
 
-export type AuthcType = 'logto'
+export type AuthcType = "logto";
 
-
-const JWKS = createRemoteJWKSet(
-  new URL(`${env.LOGTO_ISSUER}/jwks`)
-);
+const JWKS = createRemoteJWKSet(new URL(`${env.LOGTO_ISSUER}/jwks`));
 
 export async function authn(c: Context, next: Function) {
-  if(publicURLs.some((url) => new RegExp(url).test(c.req.path))){
-    logger.log(`PUBLIC URL ${c.req.path} ${publicURLs.indexOf(c.req.path)} NO AUTHN CHECK`);
+  if (publicURLs.some((url) => new RegExp(url).test(c.req.path))) {
+    logger.log(
+      `PUBLIC URL ${c.req.path} ${publicURLs.indexOf(
+        c.req.path
+      )} NO AUTHN CHECK`
+    );
   } else {
     let token = "";
-    const regex = /\b(Bearer|bearer)\b/;
-    
+    const regex = /\b(Bearer|bearer|token)\b/;
+
     if (
       c.req.header("authorization") &&
       c.req.header("authorization")?.split(" ")[0].match(regex)
