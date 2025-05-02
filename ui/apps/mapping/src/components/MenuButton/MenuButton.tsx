@@ -10,13 +10,15 @@ import { SelectVocabDatasetDialog } from "../SelectVocabDatasetDialog/SelectVoca
 import { TerminologyProps } from "../../types/vocabSearchDialog";
 import "./MenuButton.scss";
 
+const SUGGEST_MAPPING_MENU_LABEL = "Suggest Mapping";
+
 const MENU_ITEMS = [
   "New Mapping",
   "Open Mapping",
   "Save Mapping",
   "Open Vocabulary Search",
   "Change Vocabulary Dataset",
-  "Suggest Mapping",
+  SUGGEST_MAPPING_MENU_LABEL,
   "Delete All Mappings",
 ];
 
@@ -143,7 +145,7 @@ export const MenuButton = () => {
         openSaveMappingDialog(true);
       } else if (menuName === "Open Mapping") {
         openLoadMappingDialog(true);
-      } else if (menuName === "Suggest Mapping") {
+      } else if (menuName === SUGGEST_MAPPING_MENU_LABEL) {
         await handleSuggestMapping();
       } else if (menuName === "Change Vocabulary Dataset") {
         handleOpenDatasetSelectDialog();
@@ -174,11 +176,14 @@ export const MenuButton = () => {
       <div className="menu">
         <IconButton onClick={handleClick}>{loading ? <CircularProgress size={24} /> : <MenuIcon />}</IconButton>
         <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-          {MENU_ITEMS.map((item) => (
-            <MenuItem key={item} onClick={() => handleMenuClick(item)}>
-              {item}
-            </MenuItem>
-          ))}
+          {MENU_ITEMS.map(
+            (item) =>
+              (item !== SUGGEST_MAPPING_MENU_LABEL || state.mappingSuggestion) && (
+                <MenuItem key={item} onClick={() => handleMenuClick(item)}>
+                  {item}
+                </MenuItem>
+              )
+          )}
         </Menu>
       </div>
       <SelectVocabDatasetDialog open={isSelectDatasetDialogOpen} onClose={handleCloseDatasetSelectionDialog} />

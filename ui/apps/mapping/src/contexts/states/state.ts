@@ -7,6 +7,7 @@ import { FIELD_SOURCE_MENU, FIELD_TARGET_MENU, TABLE_SOURCE_MENU, TABLE_TARGET_M
 export interface AppState {
   saved: boolean;
   datasetSelected: string;
+  mappingSuggestion: boolean;
   dialog: DialogState;
   table: TableState;
   field: FieldState;
@@ -18,6 +19,7 @@ export interface AppState {
 export const initialState: AppState = {
   saved: true,
   datasetSelected: "",
+  mappingSuggestion: false,
   dialog: INIT_DIALOG_STATE,
   table: {
     nodes: [
