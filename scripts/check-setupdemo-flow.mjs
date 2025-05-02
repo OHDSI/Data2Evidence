@@ -5,7 +5,7 @@ if ( await $`[ -f .env ]` ) {
     dotenv.config('.env');
 } else { 
     console.log(chalk.red(`FATAL .env file not found`));
-    await $`exit 1`
+    process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
@@ -122,7 +122,6 @@ const durationSec = (durationMs / 1000).toFixed(2);
 console.log(`=== Summary of Job Runs ===\n${job_runs}\nTime taken: ${durationSec} seconds`);
 if (success_count == num_of_jobs) { 
     console.log(chalk.green(`Job runs completed.`));
-    process.exit(0)
 } else if (failed_count>0) {
     console.log(chalk.red(`Some job runs have failed. Please refer to the Job Runs in the Admin Portal for more info.`));
     process.exit(1)

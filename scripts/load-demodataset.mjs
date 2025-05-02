@@ -5,7 +5,7 @@ if ( await $`[ -f .env ]` ) {
     dotenv.config('.env');
 } else { 
     console.log(chalk.red(`FATAL .env file not found`));
-    await $`exit 1`
+    process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
