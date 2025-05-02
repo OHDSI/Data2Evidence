@@ -68,6 +68,15 @@ export class CohortEndpoint {
         return QueryObject.format(selectQueryString, ...queryValues);
     }
 
+    // Helper function to execute cohort queries
+    private async executeCohortQuery(query: any) {
+        if (this.connection.constructor.name === "TrexConnection") {
+            return await query.executeQueryOnWriteConnection(this.connection);
+        } else {
+            return await query.executeQuery(this.connection);
+        }
+    }
+
     public async queryCohorts(
         queryParams: Object,
         offset?: number,
@@ -91,7 +100,7 @@ export class CohortEndpoint {
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
                 cd.COHORT_INITIATION_DATE,
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
-        `
+        `;
 
         let cohortArray = [];
 
@@ -103,14 +112,20 @@ export class CohortEndpoint {
                 limit
             );
 
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
             );
 
-            const processingCohort = async (cohortDefObj, excludePatientIds?: boolean) => {
-            //For each cohort definition, query cohort table for list of patient ids
-                const patientIds = excludePatientIds ? undefined : await this.queryPatientIds(
-                    cohortDefObj.COHORT_DEFINITION_ID);
+            const processingCohort = async (
+                cohortDefObj,
+                excludePatientIds?: boolean
+            ) => {
+                //For each cohort definition, query cohort table for list of patient ids
+                const patientIds = excludePatientIds
+                    ? undefined
+                    : await this.queryPatientIds(
+                          cohortDefObj.COHORT_DEFINITION_ID
+                      );
                 return <CohortType>{
                     id: cohortDefObj.COHORT_DEFINITION_ID,
                     patientIds,
@@ -118,7 +133,7 @@ export class CohortEndpoint {
                     description: cohortDefObj.COHORT_DEFINITION_DESCRIPTION,
                     creationTimestamp: cohortDefObj.COHORT_INITIATION_DATE,
                     syntax: cohortDefObj.COHORT_DEFINITION_SYNTAX,
-                    patientCount: cohortDefObj.count
+                    patientCount: cohortDefObj.count,
                 };
             };
 
@@ -136,7 +151,13 @@ export class CohortEndpoint {
                     const slicedResults = await Promise.all(
                         items
                             .slice(start, end)
-                            .map(async (item) => await processingCohort(item, excludePatientIds))
+                            .map(
+                                async (item) =>
+                                    await processingCohort(
+                                        item,
+                                        excludePatientIds
+                                    )
+                            )
                     );
                     results = [...results, ...slicedResults];
                 }
@@ -167,8 +188,8 @@ export class CohortEndpoint {
                 queryParams
             );
 
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
             );
             return selectQueryResult.data[0].COUNT;
         } catch (err) {
@@ -196,7 +217,7 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortDefinitionId);
-            const result = await query.executeQuery(this.connection);
+            const result = await this.executeCohortQuery(query);
             return result;
         } catch (err) {
             logger.error(
@@ -235,7 +256,7 @@ export class CohortEndpoint {
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId
             );
-            let result = await query.executeQuery(this.connection);
+            const result = await this.executeCohortQuery(query);
             return result;
         } catch (err) {
             logger.error(
@@ -272,7 +293,7 @@ export class CohortEndpoint {
                 cohortDefinition.subjectConceptId,
                 cohortDefinition.id
             );
-            const result = await query.executeQuery(this.connection);
+            const result = await this.executeCohortQuery(query);
             return result;
         } catch (err) {
             logger.error(
@@ -300,7 +321,7 @@ export class CohortEndpoint {
                 name,
                 cohortDefinitionId
             );
-            await query.executeQuery(this.connection);
+            await this.executeCohortQuery(query);
         } catch (err) {
             logger.error(
                 `Failed to rename cohort definition with id: ${cohortDefinitionId}`
@@ -326,7 +347,7 @@ export class CohortEndpoint {
                     ...partialInsertQuery.parameterPlaceholders,
                 ]
             );
-            const rowCount = await insertQuery.executeQuery(this.connection);
+            const rowCount = await this.executeCohortQuery(insertQuery);
             return rowCount;
         } catch (err) {
             logger.error(`Failed to insert cohort with data: ${cohort}`);
@@ -343,7 +364,7 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortId);
-            let result = await query.executeQuery(this.connection);
+            const result = await this.executeCohortQuery(query);
             return result;
         } catch (err) {
             logger.error(`Failed to delete cohort with ID: ${cohortId}`);
@@ -357,7 +378,7 @@ export class CohortEndpoint {
 
         try {
             const query = QueryObject.format(queryString, cohortId);
-            let result = await query.executeQuery(this.connection);
+            const result = await this.executeCohortQuery(query);
             return result;
         } catch (err) {
             logger.error(`Failed to delete cohort with ID: ${cohortId}`);
@@ -375,8 +396,9 @@ export class CohortEndpoint {
                 selectQueryString,
                 cohortDefinitionId
             );
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
+
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
             );
             // Extract subject ids from array of objects
             let patientIds;
@@ -425,8 +447,8 @@ export class CohortEndpoint {
                 selectQueryString,
                 ...sqlParams
             );
-            let selectQueryResult = await selectQuery.executeQuery(
-                this.connection
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
             );
             let cohortDefinitionId =
                 selectQueryResult.data[0].COHORT_DEFINITION_ID;
