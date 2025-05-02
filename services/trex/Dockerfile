@@ -1,9 +1,15 @@
 FROM ghcr.io/data2evidence/d2e-trex-base@sha256:7f84d117eb98ac195b81564ddec9e0c5a1ccf6a5fc8c8c6e68bd7a3be0da4ee8 AS base
 
+RUN useradd docker -u 1001 \
+    && groupadd alp \
+    && adduser docker staff \
+    && adduser docker alp
+
 WORKDIR /usr/src
 
 COPY core /usr/src/core
 RUN mkdir -p /usr/src/data/cache
+RUN chown -R docker:alp /usr/src/data/cache
 RUN mkdir -p /usr/src/data/plugins
 COPY _npmrc /usr/src/data/plugins/.npmrc
 COPY package.json.plugin /usr/src/data/plugins/package.json

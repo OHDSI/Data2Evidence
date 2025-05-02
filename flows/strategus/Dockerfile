@@ -113,6 +113,7 @@ WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
+COPY --chown=docker:docker ./strategus/init.R .
 
 COPY --chown=docker:docker --chmod=711 ./strategus/requirements_strategus.txt .
 ENV RUN_TYPE=$BUILD_TYPE

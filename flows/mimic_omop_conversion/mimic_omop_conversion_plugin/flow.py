@@ -22,9 +22,7 @@ def mimic_omop_conversion_plugin(options:MimicOMOPOptionsType):
     schema_name = options.schema_name
     overwrite_schema = options.overwrite_schema
     chunk_size = options.chunk_size
-    to_dbdao = DBDao(use_cache_db=use_cache_db,
-                database_code=database_code,
-                schema_name=schema_name)
+    to_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     
     # Load data to duckdb
     if load_mimic_vocab:
@@ -48,7 +46,7 @@ def mimic_omop_conversion_plugin(options:MimicOMOPOptionsType):
 
     # Export OMOP tables to Database
     logger.info("*** Exporting CDM tables to Database ***") 
-    export_data(duckdb_file_name=duckdb_file_name, to_dbdao=to_dbdao, overwrite_schema=overwrite_schema, chunk_size=chunk_size)
+    export_data(duckdb_file_name=duckdb_file_name, schema_name=schema_name, to_dbdao=to_dbdao, overwrite_schema=overwrite_schema, chunk_size=chunk_size)
 
     # Cleanup process
     with duckdb.connect(duckdb_file_name) as conn:

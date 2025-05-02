@@ -40,7 +40,7 @@ COPY --chown=docker:docker ./__init__.py .
 
 # Add Apache Ant for i2b2 data model creation
 ENV ANT_VERSION=1.9.6
-ENV I2B2_TAG_NAME 1.8.1.0001
+ENV I2B2_TAG_NAME=1.8.1.0001
 
 RUN wget http://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
     && tar xvfvz apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt \
@@ -57,10 +57,7 @@ RUN tar -xzf v$I2B2_TAG_NAME.tar.gz
 # Change ownership to overwrite db.properties in flow definition
 RUN chown -R docker:docker /app/i2b2-data-$I2B2_TAG_NAME
 
-
 COPY --chown=docker:docker --chmod=711 ./i2b2/requirements_i2b2.txt .
-ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
 RUN pip install -r requirements_i2b2.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils

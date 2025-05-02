@@ -38,16 +38,15 @@ def data_characterization_plugin(options: DCOptionsType):
     flow_run_context = FlowRunContext.get().flow_run.dict()
     flow_run_id = str(flow_run_context.get("id"))
     output_folder = f"/output/{flow_run_id}"
-    
+
     admin_user = UserType.ADMIN_USER
     read_user = UserType.READ_USER
-    
+
     results_schema_dao = DBDao(use_cache_db=use_cache_db,
-                               database_code=database_code, 
-                               schema_name=results_schema)
-    
+                               database_code=database_code)
+
     dialect = results_schema_dao.dialect
-    
+
     match dialect:
         case SupportedDatabaseDialects.POSTGRES:
             results_schema = results_schema.lower()
@@ -56,29 +55,31 @@ def data_characterization_plugin(options: DCOptionsType):
         case SupportedDatabaseDialects.HANA:
             results_schema = results_schema.upper()
             vocab_schema_name = vocab_schema_name.upper()
-            schema_name = schema_name.upper()      
-    
+            schema_name = schema_name.upper()
+
     dc_schema = create_data_characterization_schema(
         vocab_schema_name,
         flow_name,
         changelog_file,
+        results_schema,
         results_schema_dao,
         logger
     )
 
     if dc_schema:
-        
+
         set_admin_connection_string = results_schema_dao.get_database_connector_connection_string(
             user_type=admin_user,
             release_date=release_date
         )
-        
+
         set_read_connection_string = results_schema_dao.get_database_connector_connection_string(
             user_type=read_user,
             release_date=release_date
-        )       
+        )
 
         dc_status = execute_data_characterization(schema_name=schema_name,
+                                                  results_schema=results_schema,
                                                   cdm_version_number=cdm_version_number,
                                                   vocab_schema_name=vocab_schema_name,
                                                   results_schema_dao=results_schema_dao,
@@ -90,10 +91,12 @@ def data_characterization_plugin(options: DCOptionsType):
 
         if dc_status:
             msg = dc_status.get("error_message")
-            raise Exception(f"An error occurred while executing data characterization: {msg}")
+            raise Exception(
+                f"An error occurred while executing data characterization: {msg}")
 
-        execute_export_to_ares(schema_name=schema_name, 
+        execute_export_to_ares(schema_name=schema_name,
                                vocab_schema_name=vocab_schema_name,
+                               results_schema=results_schema,
                                results_schema_dao=results_schema_dao,
                                output_folder=output_folder,
                                set_connection_string=set_read_connection_string)
@@ -102,25 +105,26 @@ def data_characterization_plugin(options: DCOptionsType):
 def create_data_characterization_schema(vocab_schema_name: str,
                                         flow_name: str,
                                         changelog_file: str,
+                                        results_schema: str,
                                         results_schema_dao,
                                         logger):
     try:
         plugin_classpath = get_plugin_classpath(flow_name)
         dialect = results_schema_dao.dialect
         tenant_configs = results_schema_dao.tenant_configs
-        
+
         # create results schema
-        create_schema_task(results_schema_dao)
-        
+        create_schema_task(results_schema_dao, results_schema)
+
         # create result tables with liquibase
         create_tables_wo = run_liquibase_update_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao))])
-        
+            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
+
         create_tables_wo(action=LiquibaseAction.UPDATE,
                          data_model=CHARACTERIZATION_DATA_MODEL,
                          dialect=dialect,
                          changelog_file=changelog_file,
-                         schema_name=results_schema_dao.schema_name,
+                         schema_name=results_schema,
                          vocab_schema=vocab_schema_name,
                          tenant_configs=tenant_configs,
                          plugin_classpath=plugin_classpath,
@@ -128,17 +132,18 @@ def create_data_characterization_schema(vocab_schema_name: str,
 
         # task
         enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao))])
-        
-        enable_audit_policies_wo(results_schema_dao)
+            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
 
-        # task 
+        enable_audit_policies_wo(results_schema_dao, results_schema)
+
+        # task
         create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao))])
-        
-        create_and_assign_roles_wo(results_schema_dao)
+            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
 
-        logger.info(f"Data Characterization results schema '{results_schema_dao.schema_name}' successfully created and privileges assigned!")
+        create_and_assign_roles_wo(results_schema_dao, results_schema)
+
+        logger.info(
+            f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
 
     except Exception as e:
         logger.error(e)
@@ -149,6 +154,7 @@ def create_data_characterization_schema(vocab_schema_name: str,
 
 @task(log_prints=True)
 def execute_data_characterization(schema_name: str,
+                                  results_schema: str,
                                   cdm_version_number: str,
                                   vocab_schema_name: str,
                                   results_schema_dao,
@@ -168,7 +174,7 @@ def execute_data_characterization(schema_name: str,
                     cdmVersion <- '{cdm_version_number}'
                     cdmDatabaseSchema <- '{schema_name}'
                     vocabDatabaseSchema <- '{vocab_schema_name}'
-                    resultsDatabaseSchema <- '{results_schema_dao.schema_name}'
+                    resultsDatabaseSchema <- '{results_schema}'
                     outputFolder <- '{output_folder}'
                     numThreads <- {threads}
                     createTable <- TRUE
@@ -181,7 +187,7 @@ def execute_data_characterization(schema_name: str,
         with open(f'{output_folder}/errorReportR.txt', 'rt') as f:
             error_message = f.read()
         logger.error(error_message)
-        
+
         # drop schema
         logger.info(f"Dropping schema")
         results_schema_dao.drop_schema()
@@ -195,7 +201,7 @@ def execute_data_characterization(schema_name: str,
 
         # Create an artifact to store the error result
         create_markdown_artifact(
-            key="data_characterization_error",
+            key="data-characterization-error",
             markdown=json.dumps(error_result)
         )
 
@@ -205,6 +211,7 @@ def execute_data_characterization(schema_name: str,
 @task()
 def execute_export_to_ares(schema_name: str,
                            vocab_schema_name: str,
+                           results_schema: str,
                            results_schema_dao,
                            output_folder: str,
                            set_connection_string: str):
@@ -212,13 +219,12 @@ def execute_export_to_ares(schema_name: str,
         logger = get_run_logger()
         logger.info('Running exportToAres')
 
-        results_schema_name = results_schema_dao.schema_name 
-        results_schema_dao.schema_name = schema_name
-        cdm_source_abbreviation = results_schema_dao.get_value(table_name="cdm_source", 
-                                                               column_name="cdm_source_abbreviation")
-        
+        cdm_source_abbreviation = results_schema_dao.get_value(schema=schema_name,
+                                                               table="cdm_source",
+                                                               column="cdm_source_abbreviation")
+
         # Get name of folder created by at {outputFolder/cdm_source_abbreviation}
-        ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25 \
+        ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25
                                  else cdm_source_abbreviation)
 
         with robjects.conversion.localconverter(robjects.default_converter):
@@ -228,7 +234,7 @@ def execute_export_to_ares(schema_name: str,
                     {set_connection_string}
                     cdmDatabaseSchema <- '{schema_name}'
                     vocabDatabaseSchema <- '{vocab_schema_name}'
-                    resultsDatabaseSchema <- '{results_schema_name}'
+                    resultsDatabaseSchema <- '{results_schema}'
                     outputPath <- '{output_folder}'
                     Achilles::exportToAres(
                         connectionDetails = connectionDetails,
@@ -239,20 +245,23 @@ def execute_export_to_ares(schema_name: str,
                         reports = c()
                     )
             ''')
-
-            # Create an artifact to store the export result
-            create_markdown_artifact(
-                key="export_to_ares_result",
-                markdown=f"Export to Ares completed successfully for schema: {schema_name}"
-            )
-
-            return get_export_to_ares_results_from_file(ares_path)
     except Exception as e:
         logger.error(f"execute_export_to_ares task failed")
-        error_message = get_export_to_ares_execute_error_message_from_file(ares_path)
+        error_message = get_export_to_ares_execute_error_message_from_file(
+            ares_path)
         logger.error(error_message)
-        
-        logger.info(f"Dropping Data Characterization results schema '{results_schema_name}'..")
+
+        logger.info(
+            f"Dropping Data Characterization results schema '{results_schema}'")
         results_schema_dao.drop_schema()
-        
-        raise Exception(f"An error occurred while executing export to ares: {error_message}") 
+
+        raise Exception(
+            f"An error occurred while executing export to ares: {error_message}")
+    else:
+        # Create an artifact to store the export result
+        create_markdown_artifact(
+            key="export-to-ares-result",
+            markdown=json.dumps(
+                get_export_to_ares_results_from_file(ares_path)),
+            description=f"Export to Ares completed successfully for schema: {schema_name}"
+        )

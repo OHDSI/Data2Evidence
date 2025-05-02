@@ -17,22 +17,21 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     recreate = options.recreate
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code, 
-                  schema_name=schema_name,
                   connect_to_duckdb=True)
     
-    duckdb_database_name = f"{database_code}_{schema_name}"
+    duckdb_database_name = f"{database_code}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"
     vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension';
 
     with duckdb.connect(duckdb_file_path) as conn:
         conn.load_extension(vss_extension_path)
         if recreate:
-            conn.execute("DROP TABLE IF EXISTS gte_embeddings")
-        elif DBDao.check_table_exists():
+            conn.execute(f"DROP TABLE IF EXISTS {schema_name}.gte_embeddings")
+        elif dbdao.check_table_exists(schema=schema_name):
             raise "Embedding table exists"
-        conn.execute(f"CREATE TABLE {duckdb_database_name}.gte_embeddings (concept_id int, vec FLOAT[384]);")
+        conn.execute(f"CREATE TABLE {schema_name}.gte_embeddings (concept_id int, vec FLOAT[384]);")
 
-        concept = conn.execute('SELECT concept_id, concept_name FROM concept').fetchnumpy()
+        concept = conn.execute(f"SELECT concept_id, concept_name FROM {schema_name}.concept;").fetchnumpy()
         logger.info("Start embedding")
         length = len(concept['concept_name'])
         for i in range(0, length, 100):
@@ -40,9 +39,9 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             concept_id = concept['concept_id'][i:i+100]
             embeddings = embedding_concept_table(concept_name).tolist()
             rst = pd.DataFrame({'concept_id':concept_id, 'gte-small_384': embeddings})
-            conn.execute(f"""INSERT INTO gte_embeddings SELECT concept_id, "gte-small_384" FROM rst""")
+            conn.execute(f"""INSERT INTO {schema_name}.gte_embeddings SELECT concept_id, "gte-small_384" FROM rst""")
             percent = (i+1)/(int(length / 100) + (length % 100 > 0)) * 100
             logger.info(f'{round(percent,2)} % completed')
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-        conn.execute("CREATE INDEX gte_cos_idx ON gte_embeddings USING HNSW (vec) WITH (metric = 'cosine')")
+        conn.execute(f"CREATE INDEX {schema_name}.gte_cos_idx ON gte_embeddings USING HNSW (vec) WITH (metric = 'cosine')")
 

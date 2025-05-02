@@ -39,18 +39,17 @@ def final_cdm_tables(conn):
 
 
 @task(log_prints=True) 
-def export_data(duckdb_file_name, to_dbdao, overwrite_schema, chunk_size):
+def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk_size):
     logger = get_run_logger()
     db_credentials = to_dbdao.tenant_configs
     dialect = to_dbdao.dialect
-    schema_name = to_dbdao.schema_name
-    if to_dbdao.check_schema_exists():
+    if to_dbdao.check_schema_exists(schema_name):
         if overwrite_schema:
-            to_dbdao.drop_schema()
+            to_dbdao.drop_schema(schema_name)
         else:
-            logger.error(f"Schema '{to_dbdao.schema_name}'exist! To overwrite the existing schema, set 'Overwrite Schema' to True")
+            logger.error(f"Schema '{schema_name}'exist! To overwrite the existing schema, set 'Overwrite Schema' to True")
             raise ValueError()
-    to_dbdao.create_schema()
+    to_dbdao.create_schema(schema_name)
     match dialect:
         case SupportedDatabaseDialects.POSTGRES:
             attach_qry = f"""ATTACH 'host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} 
@@ -77,7 +76,7 @@ def export_data(duckdb_file_name, to_dbdao, overwrite_schema, chunk_size):
                 with to_dbdao.engine.connect() as hana_conn:
                     hana_conn.execute(text(create_sql))
                     hana_conn.commit()
-            tables = to_dbdao.get_table_names()
+            tables = to_dbdao.get_table_names(schema=schema_name)
             for table in tables:
                 tmp = 0
                 for chunk, percent in read_table_chunks(duckdb_file_name, table, chunk_size=chunk_size):   
