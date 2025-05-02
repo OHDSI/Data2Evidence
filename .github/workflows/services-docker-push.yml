@@ -152,5 +152,5 @@ jobs:
       GIT_BRANCH_NAME: ${{ needs.setup.outputs.GIT_BRANCH_NAME }}
       GIT_REPO_FULL_NAME: ${{ needs.setup.outputs.GIT_REPO_FULL_NAME }}
       DOCKER_BUILD_ARG1: ${{ matrix.build_arg1 || '' }}
-      BUILD_DISABLE: ${{ matrix.build_disable || "false" }}
+      BUILD_DISABLE: ${{ matrix.build_disable || 'false' }}
     secrets: inherit
