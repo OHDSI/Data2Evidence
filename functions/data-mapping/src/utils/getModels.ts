@@ -13,7 +13,6 @@ export const getModelInstance = async (llm) => {
     azure: () =>
       import("@langchain/openai").then(
         ({ AzureChatOpenAI }) =>
-          // new AzureChatOpenAI({ model: llm})
           new AzureChatOpenAI({
             model: llm.replace("azure:", ""),
             azureOpenAIApiKey: env.AZURE_OPENAI_API_KEY,

@@ -2,6 +2,7 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
+  enterprise-gateway:
 
 volumes:
   caddy:
@@ -200,6 +201,7 @@ services:
               "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
               "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
+              "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
@@ -313,6 +315,13 @@ services:
             "isTestEnv": "${isTestEnv}",
             "DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb",
             "BUILT_IN_DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb"
+          },
+          "jobplugins-init": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "jobplugins",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
           },
           "jobplugins": {
             "PREFECT_API_URL": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
@@ -470,7 +479,7 @@ services:
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
       NODE_ENV: development
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
-      PREFECT_DOCKER_VOLUMES: '["${PROJECT_NAME:-d2e}_cachedb-data-1:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]'
+      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_cachedb-data-1:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
       PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas"]'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
@@ -485,7 +494,7 @@ services:
       alp-minerva-postgres:
         condition: service_healthy
     hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c15
@@ -517,8 +526,7 @@ services:
           "+${PG_DB_NAME:-alp}": {
            "schemas": {
             "+cdw_config": {},
-            "+dataflow": {},
-            "+db_credentials_mgr": {},
+            "+jobplugins": {},
             "+logto": {},
             "+portal": {},
             "+public": {},
@@ -812,7 +820,7 @@ services:
     depends_on:
       alp-logto:
         condition: service_healthy
-    image: ghcr.io/data2evidence/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
     networks:
       alp:
         priority: 20
@@ -856,7 +864,7 @@ services:
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c8
@@ -888,7 +896,6 @@ services:
       PORT: 3001
       TRUST_PROXY_HEADER: true
       DATABASE_CONNECTION_TIMEOUT: 30000
-
 
   alp-minerva-postgres:
     container_name: &c17 ${PROJECT_NAME:-d2e}-minerva-postgres-1
@@ -989,7 +996,7 @@ services:
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
     hostname: ${PROJECT_NAME:-d2e}-cachedb.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-cachedb:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     depends_on:
       trex:
@@ -1039,6 +1046,10 @@ services:
     image: ohdsi/broadsea-atlasdb:2.0.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
     environment:
       - POSTGRES_PASSWORD=mypass
     networks:
@@ -1094,7 +1105,8 @@ services:
         - fhir.status
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
-    image: ghcr.io/data2evidence/fhir-server:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
+    platform: linux/amd64
     logging:
       options:
         tag: *c6
@@ -1158,7 +1170,6 @@ services:
       - dicom-sqlite-storage:/var/lib/orthanc/db
     profiles: [dicom]
 
-
   enterprise-gateway:
     image: ghcr.io/ohdsi/d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
@@ -1211,4 +1222,3 @@ services:
   #       alp:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
-
