@@ -3,7 +3,6 @@ import duckdb
 from prefect import flow
 from prefect.logging import get_run_logger
 from prefect.variables import Variable
-import time
 
 from .types import *
 from .utils import *
