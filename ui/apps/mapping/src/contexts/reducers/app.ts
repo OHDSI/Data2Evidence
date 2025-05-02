@@ -26,3 +26,8 @@ export const setVocabularybDatasetId = (state: AppState, payload: Partial<AppSta
   ...state,
   ...payload,
 });
+
+export const setMappingSuggestion = (state: AppState, payload: boolean) => ({
+  ...state,
+  mappingSuggestion: payload,
+});
