@@ -89,7 +89,7 @@ class Py2TableNode(Node):
             return pd.DataFrame(data)
 
     def _exec(self, _input: dict[str, Result]) -> pd.DataFrame:
-        source_node = self.ui_map.get("source") # Todo: self.ui_map.get("source").split(".")[0]
+        source_node = self.ui_map.get("source").split(".")[0] # Todo: After change payload, use: self.ui_map.get("source") 
         path = self.ui_map.get("path")
         result_obj = _input.get(source_node).result
 
@@ -270,7 +270,7 @@ class DbWriter(Node):
         self.schema_name = _node["schemaname"]
         self.table_name = _node["dbtablename"]
         self.database = _node["database"] 
-        self.dataframe = _node["dataframe"] # Todo: self.dataframe = _node["dataframe"][0]
+        self.dataframe = _node["dataframe"][0] # Todo: after change payload, use _node["dataframe"]
         self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
