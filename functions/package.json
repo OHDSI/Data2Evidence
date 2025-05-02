@@ -211,6 +211,11 @@
           "service": "logto"
         },
         {
+          "source": "/jupyter",
+          "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
           "source": "/prefect/docs",
           "service": "prefect"
         },
@@ -1675,6 +1680,14 @@
           "httpMethods": [
             "GET"
           ]
+        },
+        {
+          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "jupyter",
+            "portal.dataset.read"
+          ],
+          "httpMethods": ["POST"]
         },
         {
           "path": "^/dataflow-mgmt/prefect/flow$",
