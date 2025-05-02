@@ -136,7 +136,7 @@ jobs:
             context: .
             fileName: Dockerfile
             build_arg1: true
-            build_disable: ${{ needs.check_rkernel_file_changes.outputs.changes != 'true' || 'true' }}
+            build_disable: ${{ (needs.check_rkernel_file_changes.outputs.changes != 'true') && 'true' || 'false' }}
           - name: d2e-trex
             directory: ./services/trex
             context: ./services/trex
