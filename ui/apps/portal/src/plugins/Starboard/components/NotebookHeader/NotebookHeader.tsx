@@ -1,6 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useMemo } from "react";
 import { saveAs } from "file-saver";
-import { Button, EditIcon, IconButton, Checkbox, DownloadIcon, Tooltip } from "@portal/components";
+import { Button, EditIcon, IconButton, Checkbox } from "@portal/components";
 import { useDialogHelper } from "../../../../hooks";
 import { useFeedback, useTranslation, useUser } from "../../../../contexts";
 import {
@@ -24,7 +24,6 @@ interface HeaderProps {
   currentContent: () => any;
   createNotebook: () => void;
   fetchNotebooks: (runInBackground?: boolean) => Promise<void>;
-  zipUrl: string;
   isShared: boolean | undefined;
   setIsShared: React.Dispatch<React.SetStateAction<boolean | undefined>>;
   activeDatasetId: string;
@@ -38,7 +37,6 @@ export const Header: FC<HeaderProps> = ({
   currentContent,
   createNotebook,
   fetchNotebooks,
-  zipUrl,
   isShared,
   setIsShared,
   activeDatasetId,
@@ -251,11 +249,6 @@ export const Header: FC<HeaderProps> = ({
             onClick={handleDeleteNotebook}
             disabled={isNotUserNotebook}
           />
-          <Tooltip title={getText(i18nKeys.HEADER__DOWNLOAD)}>
-            <div>
-              <IconButton startIcon={<DownloadIcon />} onClick={() => window.open(zipUrl, "_blank")} />
-            </div>
-          </Tooltip>
         </div>
       </div>
       {showEditTitleDialog && (

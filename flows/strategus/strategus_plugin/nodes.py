@@ -2,6 +2,7 @@ import os
 import logging
 import pandas as pd
 from rpy2 import robjects as ro
+from rpy2.robjects.packages import importr
 import traceback as tb
 from functools import partial
 from typing import List, Dict
@@ -876,6 +877,49 @@ class StrategusNode(Node):
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
+
+
+@flow(name="execute-r-strategus",
+      log_prints=True)
+def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name):
+    with ro.default_converter.context():
+        try:
+            rStrategus = importr('Strategus')
+            rParallelLogger = importr('ParallelLogger')
+            rDatabaseConnector = importr('DatabaseConnector')
+            databaseConnectorJarFolder = '/app/inst/drivers'
+
+            dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code, 
+                  schema_name=schema_name)
+            db_credentials = dbdao.tenant_configs
+            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+                dbms='postgresql', 
+                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
+                pathToDriver = databaseConnectorJarFolder
+            )
+
+            # TODO: remove hardcode
+            # rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+            #         dbms='postgresql', 
+            #         connectionString=f'jdbc:postgresql://alp-demodb:5432/postgres',
+            #         user='',
+            #         password='',
+            #         pathToDriver = databaseConnectorJarFolder
+            #     )
+
+            rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
+            rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
+
+            print('Strategus execution started...')
+            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
+        except Exception as e:
+            print('Error: ', e)
+            return RuntimeError('Execution of strategus has failed')
+
+
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]

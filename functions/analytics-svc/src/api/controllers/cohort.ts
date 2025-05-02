@@ -27,8 +27,16 @@ const mriConfigConnection = new MriConfigConnection(
 );
 
 export async function getCohortAnalyticsConnection(req: IMRIRequest) {
+    // If USE_TREX_DB_CONN is true, return early with trex duckdb connection (takes precedence over USE_CACHEDB)
     // If USE_CACHEDB is true, return early with cachedb connection
     const { analyticsConnection } = req.dbConnections;
+
+    if (
+        env.USE_TREX_DB_CONN === "true" &&
+        analyticsConnection.dialect !== "hana"
+    ) {
+        return analyticsConnection;
+    }
 
     if (env.USE_CACHEDB === "true" && analyticsConnection.dialect !== "hana") {
         let userObj: User;
@@ -111,10 +119,15 @@ export async function getAllCohorts(req: IMRIRequest, res: Response) {
 
         const offset = req.query.offset;
         const limit = req.query.limit;
-        const excludePatientIds = req.query.excludePatientIds === 'true';
+        const excludePatientIds = req.query.excludePatientIds === "true";
 
         // Send empty object to query all cohorts
-        const result = await cohortEndpoint.queryCohorts({}, offset, limit, excludePatientIds);
+        const result = await cohortEndpoint.queryCohorts(
+            {},
+            offset,
+            limit,
+            excludePatientIds
+        );
         // Get count of all cohort definitions for pagination
         const cohortDefinitionCount =
             await cohortEndpoint.queryCohortDefinitionCount({});

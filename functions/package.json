@@ -191,6 +191,11 @@
           "service": "logto"
         },
         {
+          "source" : "/jupyter",
+          "service":  "jupyter",
+          "rmsrc": true
+        },
+        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -205,6 +210,19 @@
         {
           "source": "/callback",
           "service": "logto"
+        },
+        {
+          "source": "/jupyter",
+          "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
         },
         {
           "source": "/concept-mapping",
@@ -430,6 +448,8 @@
           "portal.config.read",
           "codesuggestion.tenantview.read",
           "datamapping.tenantview.read"
+          "d2e.webapi.public"
+
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -469,7 +489,9 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
-          "d2e.webapi"
+          "d2e.webapi",
+          "jupyter",
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -750,7 +772,7 @@
         {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
-            "usermgmt.me"
+            "usermgmt.me.jupyter"
           ],
           "httpMethods": [
             "GET"
@@ -1662,6 +1684,14 @@
           ]
         },
         {
+          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "jupyter",
+            "portal.dataset.read"
+          ],
+          "httpMethods": ["POST"]
+        },
+        {
           "path": "^/dataflow-mgmt/prefect/flow$",
           "scopes": [
             "dataflowmgmt.prefect.flow.add"
@@ -2224,9 +2254,21 @@
           ]
         },
         {
+          "path": "^/d2e-webapi/(health|source|i18n|notifications)(.*)",
+          "scopes": [
+            "d2e.webapi.public"
+          ]
+        },
+        {
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
           ]
         }
       ]

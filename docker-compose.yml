@@ -79,7 +79,8 @@ x-envs:
        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-       "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+       "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
+       "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -108,7 +109,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ghcr.io/data2evidence/d2e-trex-base:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ghcr.io/ohdsi/d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -119,6 +120,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 20
     volumes:
       - trex:/usr/src/data
     healthcheck:
@@ -199,7 +202,9 @@ services:
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-              "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001"
+              "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
+              "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
+
             }
           },
           "analytics-svc": {
@@ -212,6 +217,7 @@ services:
             "LOCAL_DEBUG": "false",
             "USE_DUCKDB": "${USE_DUCKDB:-true}",
             "USE_CACHEDB": "${USE_CACHEDB:-true}",
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
             "USE_EXTENSION_FOR_COHORT_CREATION": "false",
             "isTestEnv": "${isTestEnv}",
             "local": "${local}",
@@ -407,7 +413,8 @@ services:
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}"
-          }
+          },
+          "jupyter-gateway": {}
         }
       SERVICE_ROUTES: |-
         {
@@ -429,7 +436,8 @@ services:
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir"
+        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-proxy:8888/jupyter"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -578,6 +586,8 @@ services:
     networks:
       alp:
         priority: 20
+      enterprise-gateway:
+        priority: 20
     platform: linux/amd64
     command: >
       sh -c "
@@ -626,6 +636,35 @@ services:
                 read_buffer 8192
               }
             }
+          }
+
+          @jupyter_websocket {
+            header Connection *Upgrade*
+            header Upgrade websocket
+          }
+
+          handle @jupyter_websocket {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
+              transport http {
+                tls
+                tls_insecure_skip_verify
+                read_buffer 8192
+              }
+
+              method GET
+              rewrite /usermgmt/api/me/is_token_valid_internal
+              header_up X-Forwarded-Method {method}
+              header_up X-Forwarded-Uri {uri}
+              header_up authorization {http.request.uri.query.token}
+
+              @good status 2xx
+              handle_response @good {
+                request_header Remote-User {rp.header.Remote-User}
+                request_header Remote-Email {rp.header.Remote-Email}
+              }
+            }
+
+            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
           }
 
           ## call gateway if there are no matched files
@@ -805,8 +844,6 @@ services:
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
-      alp-logto-seed:
-        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 30
@@ -834,7 +871,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm start
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1 && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -852,27 +889,6 @@ services:
       TRUST_PROXY_HEADER: true
       DATABASE_CONNECTION_TIMEOUT: 30000
 
-  alp-logto-seed:
-    container_name: &c37 ${PROJECT_NAME:-d2e}-logto-seed
-    image: ghcr.io/data2evidence/d2e-logto:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    entrypoint:
-      - sh
-      - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.22.0 && npx @logto/cli db alteration deploy 1.23.1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-    environment:
-      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
-    logging:
-      options:
-        tag: *c37
 
   alp-minerva-postgres:
     container_name: &c17 ${PROJECT_NAME:-d2e}-minerva-postgres-1
@@ -1070,7 +1086,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 120s
+      start_period: 180s
       test:
         - CMD
         - wget
@@ -1141,3 +1157,58 @@ services:
     volumes:
       - dicom-sqlite-storage:/var/lib/orthanc/db
     profiles: [dicom]
+
+
+  enterprise-gateway:
+    image: ghcr.io/ohdsi/d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
+    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    platform: linux/amd64
+    logging:
+      options:
+        tag: *c28
+    networks:
+      enterprise-gateway:
+    user: root # Run as root
+    environment:
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
+      EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+      EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
+      EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
+      # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
+      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
+      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
+      EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
+      KG_PORT: ${KG_PORT:-8888}
+      EG_BASE_URL: /jupyter
+      KERNEL_USERNAME: jovyan
+      EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
+      EG_DOCKER_MODE: docker
+      TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      app: "enterprise-gateway"
+      component: "enterprise-gateway"
+    deploy:
+      replicas: 1
+      endpoint_mode: dnsrr
+      labels:
+        app: "enterprise-gateway"
+        component: "enterprise-gateway"
+    profiles: [jupyter]
+
+  # fhir-fe-server:
+  #     container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
+  #     image: ghcr.io/ohdsi/d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+  #     platform: linux/amd64
+  #     logging:
+  #       options:
+  #         tag: *c29
+  #     depends_on:
+  #       fhir-server:
+  #         condition: service_started
+  #     networks:
+  #       alp:
+  #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+  #     profiles: [fhir]
+
