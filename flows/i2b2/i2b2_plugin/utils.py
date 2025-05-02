@@ -7,11 +7,11 @@ def get_version_from_tag(tag: str) -> str:
 def path_to_ant(tag: str) -> str:
     return f"/app/i2b2-data-{tag[1:]}/edu.harvard.i2b2.data/Release_{get_version_from_tag(tag)}"
 
-def check_table_creation(dbdao):
+def check_table_creation(dbdao, schema_name: str):
     '''
     Check if tables were created
     '''
-    table_list = dbdao.get_table_names()
+    table_list = dbdao.get_table_names(schema_name)
     if table_list == []:
         raise Exception(f"Failed to create i2b2 tables. Schema is empty.")
 
