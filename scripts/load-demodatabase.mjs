@@ -7,7 +7,7 @@ if ( await $`[ -f .env ]` ) {
     dotenv.config('.env');
 } else { 
     console.log(chalk.red(`FATAL .env file not found`));
-    await $`exit 1`
+    process.exit(1)
 }
 const args = process.argv.slice(2); 
 const vIndex_version = args.indexOf("-v");
@@ -173,7 +173,7 @@ if (resp_status_code == '200') {
 } else {
     console.log(chalk.red(`Setup unsuccessful.`));
     console.log(`resp: ${resp}`)
-    await $`exit 1`
+    process.exit(1)
 }
 
 console.log(`Restarting services with d2e -e -v ${version} stop...`);

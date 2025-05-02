@@ -550,6 +550,7 @@ export const i18nDefault = {
     FEATURE__ERROR: "An error has occurred.",
     FEATURE__FEATURE_FLAGS: "Feature flags",
     FEATURE__KAPLAN_MEIER: "Kaplan-Meier",
+    FEATURE__DATA_MAPPING_SUGGESTION: "Data mapping AI suggestion",
     FEATURE__NOTEBOOKS: "Notebooks",
     FEATURE__PATIENT_ANALYTICS: "Patient Analytics",
     FEATURE__SAVE: "Save",
