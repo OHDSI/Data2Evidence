@@ -32,7 +32,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings) {
     options = options
   )
 
-  # Send a POST request to the backend 
+  # Send a POST request to the backend
   # add headers "Content-Type":"application/json" and "Authorization": "Bearer XXXXXYZZZZ"
   response <- httr::POST(url, body = parameters, encode = "json", httr::add_headers(
     `Content-Type` = "application/json",
