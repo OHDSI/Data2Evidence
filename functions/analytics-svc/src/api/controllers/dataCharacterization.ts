@@ -128,9 +128,12 @@ const mapDcResultKeysToUppercase = (data: unknown[]) => {
     });
 };
 
-// Resolve schema for data characterization depending on USE_CACHEDB flag
+// Resolve schema for data characterization depending on USE_CACHEDB and USE_TREX_DB_CONN database flags
 const resolveDcSchemaName = (schemaName: string) => {
-    if (env.USE_CACHEDB === "true") {
+    // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
+    if (env.USE_TREX_DB_CONN === "true") {
+        return schemaName;
+    } else if (env.USE_CACHEDB === "true") {
         // If using cachedb for connection, database connection has to point to direct_db_conn to access dc results
         return `direct_db_conn.${schemaName}`;
     } else {

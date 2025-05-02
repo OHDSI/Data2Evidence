@@ -216,6 +216,7 @@ services:
             "LOCAL_DEBUG": "false",
             "USE_DUCKDB": "${USE_DUCKDB:-true}",
             "USE_CACHEDB": "${USE_CACHEDB:-true}",
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
             "USE_EXTENSION_FOR_COHORT_CREATION": "false",
             "isTestEnv": "${isTestEnv}",
             "local": "${local}",
@@ -1192,7 +1193,7 @@ services:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
     profiles: [jupyter]
-    
+
   enterprise-gateway-proxy:
     image: haproxy:alpine
     container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-proxy
