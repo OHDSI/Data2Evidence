@@ -132,7 +132,7 @@ export class PrefectAPI {
         },
       },
     };
-    const options = this.createOptions();
+    const options = await this.createOptions();
     try {
       const blockSchema = await axios.post(url, blockSchemaOptions, options);
       return blockSchema.data[0].id;
