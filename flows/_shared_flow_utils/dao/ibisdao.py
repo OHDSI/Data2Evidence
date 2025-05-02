@@ -213,7 +213,7 @@ class IbisDao(SqlAlchemyDao):
         
 
     # --- Delete methods ---
-    def drop_schema(self, schema: str, cascade: bool=False):
+    def drop_schema(self, schema: str, cascade: bool = False):
         with self.ibis_connect() as con:
             con.drop_database(schema, cascade=cascade)
 

@@ -75,7 +75,7 @@ def create_datamart(options: CreateDatamartOptions):
         logger.error(error_message)
         if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
             logger.info(f"Cleaning up schema '{target_schema}'")
-            dbdao.drop_schema(target_schema)
+            dbdao.drop_schema(target_schema, cascade=True)
             logger.info(f"Successfully dropped schema '{target_schema}'")
             raise Exception(error_message) from err
     else:
@@ -91,7 +91,7 @@ def create_datamart(options: CreateDatamartOptions):
                 error_message = f"Failed to grant read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!"
                 logger.error(error_message)
                 logger.info(f"Cleaning up schema '{target_schema}'")
-                dbdao.drop_schema(target_schema)
+                dbdao.drop_schema(target_schema, cascade=True)
                 logger.info(f"Successfully dropped schema '{target_schema}'")
                 raise Exception(error_message) from err
 

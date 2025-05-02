@@ -45,7 +45,7 @@ def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk
     dialect = to_dbdao.dialect
     if to_dbdao.check_schema_exists(schema_name):
         if overwrite_schema:
-            to_dbdao.drop_schema(schema_name)
+            to_dbdao.drop_schema(schema_name, cascade=True)
         else:
             logger.error(f"Schema '{schema_name}'exist! To overwrite the existing schema, set 'Overwrite Schema' to True")
             raise ValueError()

@@ -190,7 +190,7 @@ def execute_data_characterization(schema_name: str,
 
         # drop schema
         logger.info(f"Dropping schema")
-        results_schema_dao.drop_schema()
+        results_schema_dao.drop_schema(schema_name, cascade=True)
 
         error_result = {
             "flow_run_id": flow_run_id,
@@ -253,7 +253,7 @@ def execute_export_to_ares(schema_name: str,
 
         logger.info(
             f"Dropping Data Characterization results schema '{results_schema}'")
-        results_schema_dao.drop_schema()
+        results_schema_dao.drop_schema(schema_name, cascade=True)
 
         raise Exception(
             f"An error occurred while executing export to ares: {error_message}")

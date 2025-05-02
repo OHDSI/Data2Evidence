@@ -172,7 +172,7 @@ class DaoBase(ABC):
     # --- Delete methods ---
 
     @abstractmethod
-    def drop_schema(self, schema: str, cascade: bool = True):
+    def drop_schema(self, schema: str, cascade: bool = False):
         pass
 
     @abstractmethod
