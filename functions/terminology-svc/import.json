@@ -11,6 +11,7 @@
     "yaml": "npm:yaml@2.6.1",
     "zod": "npm:zod@3.23.8",
     "hdb": "npm:hdb@0.19.12",
-    "lodash": "npm:lodash"
+    "lodash": "npm:lodash",
+    "transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0"
   }
 }

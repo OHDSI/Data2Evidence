@@ -45,15 +45,10 @@
                 "type": "object",
                 "title": "SearchEmbeddingType",
                 "required": [
-                  "recreate",
                   "database_code",
                   "schema_name"
                 ],
                 "properties": {
-                  "recreate": {
-                    "type": "boolean",
-                    "title": "Recreate"
-                  },
                   "schema_name": {
                     "type": "string",
                     "title": "Schema Name"
