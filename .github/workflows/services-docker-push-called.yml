@@ -42,6 +42,10 @@ on:
         default: ""
         required: false
         type: string
+      BUILD_DISABLE:
+        default: "false"
+        required: false
+        type: string
 
 jobs:
   build-push-prune:
@@ -51,7 +55,7 @@ jobs:
       AZ_REG_REPOSITORY: ${{ inputs.AZ_REG_REPOSITORY }}
       DOCKER_BUILD_ARG1: ${{ inputs.DOCKER_BUILD_ARG1 }}
       DOCKER_BUILD_CONTEXT_PATH: ${{ inputs.DOCKER_BUILD_CONTEXT_PATH }}
-      DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
+      DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || inputs.BUILD_DISABLE || 'false' }}
       DOCKER_BUILD_FILE_PATH: ${{ inputs.DOCKER_BUILD_FILE_PATH }}
       DOCKER_BUILD_PULL_BOOL_STR: ${{ inputs.DOCKER_BUILD_PULL_BOOL_STR }}
       DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}

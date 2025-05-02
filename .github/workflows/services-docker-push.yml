@@ -39,6 +39,22 @@ env:
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
 
 jobs:
+
+  check_rkernel_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3.0.2
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "./services/enterprise-gateway/r-strategus-lib/rD2E"
+
   setup:
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +96,7 @@ jobs:
       GIT_REPO_FULL_NAME: ${{ steps.setup.outputs.GIT_REPO_FULL_NAME }}
 
   bld:
-    needs: setup
+    needs: [setup, check_rkernel_file_changes]
     if: vars.DOCKER_BUILD_FORCE == 'true' || needs.setup.outputs.GIT_BRANCH_NAME == 'develop' ||  contains('release', needs.setup.outputs.GIT_BRANCH_NAME) || github.event_name == 'workflow_dispatch' || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # run if branch is develop|release|workflow_dispatch OR any non-draft pull_request
 
     strategy:
@@ -120,6 +136,7 @@ jobs:
             context: .
             fileName: Dockerfile
             build_arg1: true
+            build_disable: ${{ needs.check_rkernel_file_changes.outputs.changes != 'true' || 'true' }}
           - name: d2e-trex
             directory: ./services/trex
             context: ./services/trex
@@ -135,4 +152,5 @@ jobs:
       GIT_BRANCH_NAME: ${{ needs.setup.outputs.GIT_BRANCH_NAME }}
       GIT_REPO_FULL_NAME: ${{ needs.setup.outputs.GIT_REPO_FULL_NAME }}
       DOCKER_BUILD_ARG1: ${{ matrix.build_arg1 || '' }}
+      BUILD_DISABLE: ${{ matrix.build_disable || "false" }}
     secrets: inherit
