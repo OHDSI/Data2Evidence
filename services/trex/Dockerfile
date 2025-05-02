@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:dda060241650e41817afe4088f42ed894aaddb92edf8761d121f1ffe60959ae0 AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:79ba4792037c64fb81d93e57e52d23d566a04c92aceb653949d1155287f973f7 AS base
 
 WORKDIR /usr/src
 
