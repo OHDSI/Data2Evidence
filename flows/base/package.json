@@ -139,14 +139,74 @@
                   "type": "cohort_generator"
               },
               {
-                  "name": "create_cachedb_file_plugin",
-                  "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+                "name": "create_cachedb_file_plugin",
+                "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+                "parameter_openapi_schema": {
+                    "title": "Parameters",
+                    "type": "object",
+                    "properties": {
+                        "options": {
+                            "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
+                            "position": 0,
+                            "title": "options"
+                        }
+                    },
+                    "required": [
+                        "options"
+                    ],
+                    "definitions": {
+                        "CreateDuckdbDatabaseFileType": {
+                            "properties": {
+                                "databaseCode": {
+                                    "title": "Databasecode",
+                                    "type": "string"
+                                },
+                                "tablesToCreateDuckdbFtsIndex": {
+                                    "default": [
+                                        "concept"
+                                    ],
+                                    "items": {
+                                        "$ref": "#/definitions/DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM"
+                                    },
+                                    "title": "Tablestocreateduckdbftsindex",
+                                    "type": "array"
+                                }
+                            },
+                            "required": [
+                                "databaseCode"
+                            ],
+                            "title": "CreateDuckdbDatabaseFileType",
+                            "type": "object"
+                        },
+                        "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM": {
+                            "enum": [
+                                "concept",
+                                "concept_relationship",
+                                "relationship",
+                                "vocabulary",
+                                "concept_synonym",
+                                "concept_class",
+                                "domain",
+                                "concept_ancestor",
+                                "concept_recommended",
+                                "note"
+                            ],
+                            "title": "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "create_cachedb_file"
+                },
+              {
+                  "name": "create_cdw_validation_config_plugin",
+                  "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cdw_validation_config_plugin",
                   "parameter_openapi_schema": {
                       "title": "Parameters",
                       "type": "object",
                       "properties": {
                           "options": {
-                              "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
+                              "$ref": "#/definitions/CreateCDWValidationConfig",
                               "position": 0,
                               "title": "options"
                           }
@@ -155,7 +215,7 @@
                           "options"
                       ],
                       "definitions": {
-                          "CreateDuckdbDatabaseFileType": {
+                          "CreateCDWValidationConfig": {
                               "properties": {
                                   "databaseCode": {
                                       "title": "Databasecode",
@@ -164,56 +224,18 @@
                                   "schemaName": {
                                       "title": "Schemaname",
                                       "type": "string"
-                                  },
-                                  "tablesToCreateDuckdbFtsIndex": {
-                                      "default": [
-                                          "concept"
-                                      ],
-                                      "items": {
-                                          "$ref": "#/definitions/DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM"
-                                      },
-                                      "title": "Tablestocreateduckdbftsindex",
-                                      "type": "array"
-                                  },
-                                  "createForCdwConfigValidation": {
-                                      "anyOf": [
-                                          {
-                                              "type": "boolean"
-                                          },
-                                          {
-                                              "type": "null"
-                                          }
-                                      ],
-                                      "default": false,
-                                      "title": "Createforcdwconfigvalidation"
                                   }
                               },
                               "required": [
                                   "databaseCode",
                                   "schemaName"
                               ],
-                              "title": "CreateDuckdbDatabaseFileType",
+                              "title": "CreateCDWValidationConfig",
                               "type": "object"
-                          },
-                          "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM": {
-                              "enum": [
-                                  "concept",
-                                  "concept_relationship",
-                                  "relationship",
-                                  "vocabulary",
-                                  "concept_synonym",
-                                  "concept_class",
-                                  "domain",
-                                  "concept_ancestor",
-                                  "concept_recommended",
-                                  "note"
-                              ],
-                              "title": "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
-                              "type": "string"
                           }
                       }
                   },
-                  "type": "create_cachedb_file"
+                  "type": "create_cdw_config"
               },
               {
                   "name": "data_characterization_plugin",

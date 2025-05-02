@@ -22,13 +22,13 @@ if TYPE_CHECKING:
 
 @task(log_prints=True)
 def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFrame,
-               image_feature_df: pd.DataFrame, dbdao: DBDao):
+               image_feature_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     table_name = "dicom_file_metadata"
     logger = get_run_logger()
-    eav_table_id = dbdao.get_next_record_id(table_name, "metadata_id")
+    eav_table_id = dbdao.get_next_record_id(schema_name, table_name, "metadata_id")
 
     logger.info(
-        f"{len(mapped_concepts_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(mapped_concepts_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "metadata_id",
@@ -100,26 +100,26 @@ def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFra
     logger.info(f"eav_df length is {len(eav_df)}")
 
     # Insert numeric records
-    eav_df_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name,
+    eav_df_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                              chunksize=50000, method=psql_insert_copy)
     logger.info(
-        f"Successfully ingested {len(eav_df_numeric)} numeric records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(eav_df_numeric)} numeric records into '{schema_name}.{table_name}' table!")
 
     # Insert non-numeric records
     ingestion_columns.remove("value_as_number")
-    eav_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name,
+    eav_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                      chunksize=50000, method=psql_insert_copy)
     logger.info(
-        f"Successfully ingested {len(eav_df)} non-numeric records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(eav_df)} non-numeric records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
-def ingest_procedure_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao):
+def ingest_procedure_occurrence(image_occurrence_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     logger = get_run_logger()
     table_name = "procedure_occurrence"
 
     logger.info(
-        f"{len(image_occurrence_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(image_occurrence_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "procedure_occurrence_id",
@@ -136,20 +136,20 @@ def ingest_procedure_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao)
     })
 
     logger.info(
-        f"Ingesting {len(procedure_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table..")
+        f"Ingesting {len(procedure_occurrence_df)} records into '{schema_name}.{table_name}' table..")
     procedure_occurrence_df[ingestion_columns].to_sql(
-        table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name, chunksize=50000)
+        table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name, chunksize=50000)
     logger.info(
-        f"Successfully ingested {len(procedure_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(procedure_occurrence_df)} records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
-def ingest_visit_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao):
+def ingest_visit_occurrence(image_occurrence_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     logger = get_run_logger()
     table_name = "visit_occurrence"
 
     logger.info(
-        f"{len(image_occurrence_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(image_occurrence_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "visit_occurrence_id",
@@ -166,20 +166,20 @@ def ingest_visit_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao):
     visit_occurrence_df["visit_end_date"] = visit_occurrence_df["visit_start_date"]
 
     logger.info(
-        f"Ingesting {len(visit_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table..")
+        f"Ingesting {len(visit_occurrence_df)} records into '{schema_name}.{table_name}' table..")
     visit_occurrence_df[ingestion_columns].to_sql(
-        table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name, chunksize=50000)
+        table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name, chunksize=50000)
     logger.info(
-        f"Successfully ingested {len(visit_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(visit_occurrence_df)} records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
-def ingest_image_feature(image_feature_df: pd.DataFrame, dbdao: DBDao):
+def ingest_image_feature(image_feature_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     logger = get_run_logger()
     table_name = "image_feature"
 
     logger.info(
-        f"{len(image_feature_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(image_feature_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "image_feature_id",
@@ -199,19 +199,19 @@ def ingest_image_feature(image_feature_df: pd.DataFrame, dbdao: DBDao):
         "image_feature_event_type_id": "image_feature_type_concept_id",
     })
 
-    image_feature_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name,
+    image_feature_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                                chunksize=50000, method=psql_insert_copy)
     logger.info(
-        f"Successfully ingested {len(image_feature_df)} records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(image_feature_df)} records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
-def ingest_measurement(image_feature_df: pd.DataFrame, dbdao: DBDao):
+def ingest_measurement(image_feature_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     logger = get_run_logger()
     table_name = "measurement"
 
     logger.info(
-        f"{len(image_feature_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(image_feature_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "measurement_id",
@@ -239,29 +239,29 @@ def ingest_measurement(image_feature_df: pd.DataFrame, dbdao: DBDao):
     measurement_df = measurement_df[measurement_df['value_as_number'].isna()]
 
     logger.info(
-        f"Ingesting {len(measurement_df)} records into '{dbdao.schema_name}.{table_name}' table..")
+        f"Ingesting {len(measurement_df)} records into '{schema_name}.{table_name}' table..")
 
     # Insert numeric
-    measurement_df_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name,
+    measurement_df_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                                      chunksize=50000, method=psql_insert_copy)
     logger.info(
-        f"Successfully ingested {len(measurement_df_numeric)} numeric records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(measurement_df_numeric)} numeric records into '{schema_name}.{table_name}' table!")
 
     # Insert non-numeric
     ingestion_columns.remove("value_as_number")
-    measurement_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name,
+    measurement_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                              chunksize=50000, method=psql_insert_copy)
     logger.info(
-        f"Successfully ingested {len(measurement_df)} non-numeric records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(measurement_df)} non-numeric records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
-def ingest_image_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao):
+def ingest_image_occurrence(image_occurrence_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     logger = get_run_logger()
     table_name = "image_occurrence"
 
     logger.info(
-        f"{len(image_occurrence_df)} records to be ingested into '{dbdao.schema_name}.{table_name}' table..")
+        f"{len(image_occurrence_df)} records to be ingested into '{schema_name}.{table_name}' table..")
 
     ingestion_columns = [
         "image_occurrence_id",
@@ -276,11 +276,11 @@ def ingest_image_occurrence(image_occurrence_df: pd.DataFrame, dbdao: DBDao):
     ]
 
     logger.info(
-        f"Ingesting {len(image_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table..")
+        f"Ingesting {len(image_occurrence_df)} records into '{schema_name}.{table_name}' table..")
     image_occurrence_df[ingestion_columns].to_sql(
-        table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name, chunksize=50000)
+        table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name, chunksize=50000)
     logger.info(
-        f"Successfully ingested {len(image_occurrence_df)} records into '{dbdao.schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(image_occurrence_df)} records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
@@ -288,7 +288,8 @@ def transform_for_image_feature(mapped_concepts_df: pd.DataFrame,
                                 image_occurrence_df: pd.DataFrame,
                                 new_image_feature_id: int,
                                 new_measurement_id: int,
-                                vocab_dbdao: DBDao) -> pd.DataFrame:
+                                vocab_schema_name: str,
+                                dbdao: DBDao) -> pd.DataFrame:
 
     logger = get_run_logger()
 
@@ -332,16 +333,16 @@ def transform_for_image_feature(mapped_concepts_df: pd.DataFrame,
         by="count", ascending=False))
 
     # Attempt to map concept_ids for CS values
-    with vocab_dbdao.ibis_connect() as conn:
+    with dbdao.ibis_connect() as conn:
         concept_table = conn.table(
-            name="concept", database=vocab_dbdao.schema_name)
+            name="concept", database=vocab_schema_name)
         concept_df = concept_table[["concept_id",
                                     "concept_code", "concept_name"]].execute()
         concept_df['concept_code'] = concept_df['concept_code'].astype(str)
         concept_df['concept_code'] = concept_df['concept_code'].str.upper()
 
         concept_relationship_table = conn.table(
-            name="concept_relationship", database=vocab_dbdao.schema_name)
+            name="concept_relationship", database=vocab_schema_name)
         concept_relationship_df = concept_relationship_table.filter(concept_relationship_table.relationship_id == "Maps to value")[
             ["concept_id_1", "concept_id_2"]].execute()
 
@@ -410,7 +411,7 @@ def transform_for_image_feature(mapped_concepts_df: pd.DataFrame,
 
 
 @task(log_prints=True)
-def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_dbdao: DBDao, mapping_dbdao: DBDao,
+def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_schema_name: str, dbdao: DBDao,
                                    person_patient_mapping: PersonPatientMapping, next_record_ids: tuple[int, int, int]) -> pd.DataFrame:
 
     task_logger = get_run_logger()
@@ -444,7 +445,7 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_dbdao
     person_id_col = person_patient_mapping.person_id_column_name
     patient_id_col = person_patient_mapping.patient_id_column_name
 
-    with mapping_dbdao.ibis_connect() as conn:
+    with dbdao.ibis_connect() as conn:
         mapping_table = conn.table(name=person_patient_mapping.table_name,
                                    database=person_patient_mapping.schema_name)
 
@@ -462,9 +463,9 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_dbdao
         'Int64')
 
     # Get concept id for modality and body part
-    with vocab_dbdao.ibis_connect() as conn:
+    with dbdao.ibis_connect() as conn:
         concept_table = conn.table(
-            name="concept", database=vocab_dbdao.schema_name)
+            name="concept", database=vocab_schema_name)
         concept_df = concept_table.filter(concept_table.vocabulary_id == "DICOM")[
             ["concept_id", "concept_code"]].execute()
         concept_df['concept_code'] = concept_df['concept_code'].astype(str)
@@ -520,12 +521,12 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_dbdao
 
 
 @task(log_prints=True)
-def get_concept_ids_for_tags(extracted_data_df: pd.DataFrame, vocab_dbdao: DBDao) -> pd.DataFrame:
+def get_concept_ids_for_tags(extracted_data_df: pd.DataFrame, vocab_schema_name: str, dbdao: DBDao) -> pd.DataFrame:
     task_logger = get_run_logger()
 
-    with vocab_dbdao.ibis_connect() as conn:
+    with dbdao.ibis_connect() as conn:
         concept_table = conn.table(
-            name="concept", database=vocab_dbdao.schema_name)
+            name="concept", database=vocab_schema_name)
         concept_df = concept_table.filter(concept_table.vocabulary_id == "DICOM")[["concept_id",
                                                                                    "concept_name",
                                                                                    "concept_code"
@@ -611,12 +612,12 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
 
 
 @task(log_prints=True)
-def setup_vocab(dbdao, to_truncate: bool):
+def setup_vocab(dbdao, vocab_schema: str, to_truncate: bool):
     task_logger = get_run_logger()
-    update_vocabulary_table(dbdao, to_truncate, task_logger)
-    update_concept_class_table(dbdao, to_truncate, task_logger)
-    update_concept_table(dbdao, to_truncate, task_logger)
-    update_concept_relationship_table(dbdao, to_truncate, task_logger)
+    update_vocabulary_table(dbdao, vocab_schema, to_truncate, task_logger)
+    update_concept_class_table(dbdao, vocab_schema, to_truncate, task_logger)
+    update_concept_table(dbdao, vocab_schema, to_truncate, task_logger)
+    update_concept_relationship_table(dbdao, vocab_schema, to_truncate, task_logger)
 
 
 @task(
