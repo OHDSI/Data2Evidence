@@ -57,7 +57,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         
         conn.execute(f"DROP TABLE {schema_name}.gte_embeddings;")
         conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-        conn.execute(f"DROP INDEX IF EXISTS {schema_name}.gte_cos_idx;")
-        conn.execute(f"CREATE INDEX {schema_name}.gte_cos_idx ON {schema_name}.concept USING HNSW (concept_name_embedding) WITH (metric = 'cosine')")
+        conn.execute(f"DROP INDEX IF EXISTS gte_cos_idx;")
+        conn.execute(f"CREATE INDEX gte_cos_idx ON {schema_name}.concept USING HNSW (concept_name_embedding) WITH (metric = 'cosine')")
 
 
