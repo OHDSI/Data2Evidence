@@ -51,10 +51,9 @@ export const DATA_ADMIN_ROLES: { [key: string]: string } = {
   [ALP_SYSTEM_ADMIN]: "Admin",
 };
 
-export const FEATURE_DATAFLOW = "dataflow";
-export const FEATURE_DISABLE_JUPYTER_CELL = "disableJupyterCell";
 export const FEATURE_DATASET_FILTER = "datasetFilter";
 export const FEATURE_DATASET_SEARCH = "datasetSearch";
 export const FEATURE_FHIR_SERVER = "fhirServer";
+export const FEATURE_MAPPING_SUGGESTION = "mappingSuggestion";
 
 export * from "./FeatureGate";

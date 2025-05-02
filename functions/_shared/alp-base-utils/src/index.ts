@@ -15,6 +15,7 @@ import { UserMgmtAPI } from "./api/UserMgmtAPI";
 import { EnvVarUtils } from "./EnvVarUtils";
 import { getUser } from "./GetUser";
 import { healthCheckMiddleware } from "./HealthCheckMiddleware";
+import { translateHanaToDuckdb } from "./helpers/hanaTranslation";
 
 export {
   utils,
@@ -35,6 +36,7 @@ export {
   getUser,
   healthCheckMiddleware,
   UserMgmtAPI,
+  translateHanaToDuckdb,
 };
 
 import {
