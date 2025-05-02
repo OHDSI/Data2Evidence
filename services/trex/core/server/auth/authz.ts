@@ -135,7 +135,7 @@ const buildUserFromToken = (
     if (userMgmtGroups.alp_role_dashboard_viewer === true) {
       roles.push(ROLES.ALP_DASHBOARD_VIEWER);
     }
-    if (userMgmtGroups.alp_role_study_write_dqd_researcher > 0) {
+    if (userMgmtGroups.alp_role_study_write_dqd_researcher === true) {
       roles.push(ROLES.STUDY_WRITE_DQD_RESEARCHER);
     } 
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
