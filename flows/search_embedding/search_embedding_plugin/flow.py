@@ -10,7 +10,6 @@ from _shared_flow_utils.dao.DBDao import DBDao
 
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
-    # time.sleep(600)
     logger = get_run_logger()
     use_cache_db = options.use_cache_db
     database_code = options.database_code
