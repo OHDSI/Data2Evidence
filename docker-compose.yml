@@ -1170,10 +1170,9 @@ services:
         tag: *c28
     networks:
       enterprise-gateway:
-      alp:
     user: root # Run as root
     environment:
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_alp}
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
       EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
       EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
       EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
