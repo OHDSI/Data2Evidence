@@ -101,6 +101,20 @@ jobs:
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
   
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            d2e checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
       - name: Stop d2e services
         if: success() || failure()
         id: stop
@@ -125,4 +139,5 @@ jobs:
             start: ${{ steps.start.outcome }}\n
             patchdemodb: ${{ steps.patchdemodb.outcome }}\n
             setupdemo: ${{ steps.setupdemo.outcome }}\n
+            checkflow: ${{ steps.checkflow.outcome }}\n
             stop: ${{ steps.stop.outcome }}"
