@@ -53,7 +53,7 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "./services/enterprise-gateway/r-strategus-lib/rD2E"
+              - "./services/enterprise-gateway/r-strategus-lib/**"
 
   setup:
     runs-on: ubuntu-latest
