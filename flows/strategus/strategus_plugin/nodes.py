@@ -878,7 +878,6 @@ class StrategusNode(Node):
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
-
 @flow(name="execute-r-strategus",
       log_prints=True)
 def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name):
@@ -918,7 +917,6 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
         except Exception as e:
             print('Error: ', e)
             return RuntimeError('Execution of strategus has failed')
-
 
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):

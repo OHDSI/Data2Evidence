@@ -12,11 +12,9 @@ from .flowutils import get_node_list, get_incoming_edges
 from .nodes import generate_nodes_flow, execute_r_strategus
 
 
-
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
     logger = get_run_logger()
-
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
@@ -136,7 +134,6 @@ def execute_node_task(nodename, node_type, node, input, test):
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
-
     return result
 
 
