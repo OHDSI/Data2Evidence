@@ -1,0 +1,155 @@
+{
+  "name": "@data2evidence/loyalty-score-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-loyalty-score:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/ohdsi/d2e/flow-loyalty_score",
+      "flows": [
+        {
+          "name": "loyalty_score_plugin",
+          "entrypoint": "flows.loyalty_score_plugin.flow.loyalty_score_plugin",
+          "parameter_openapi_schema": {
+              "title": "Parameters",
+              "type": "object",
+              "properties": {
+                  "options": {
+                      "$ref": "#/definitions/LoyaltyPluginType",
+                      "position": 0,
+                      "title": "options"
+                  }
+              },
+              "required": [
+                  "options"
+              ],
+              "definitions": {
+                  "CalculateConfig": {
+                      "properties": {
+                          "schema_name": {
+                              "title": "Schema Name",
+                              "type": "string"
+                          },
+                          "database_code": {
+                              "title": "Database Code",
+                              "type": "string"
+                          },
+                          "index_date": {
+                              "title": "Index Date",
+                              "type": "string"
+                          },
+                          "lookback_years": {
+                              "title": "Lookback Years",
+                              "type": "integer"
+                          },
+                          "coeff_table_name": {
+                              "anyOf": [
+                                  {
+                                      "type": "string"
+                                  },
+                                  {
+                                      "type": "null"
+                                  }
+                              ],
+                              "title": "Coeff Table Name"
+                          },
+                          "loyalty_cohort_table_name": {
+                              "title": "Loyalty Cohort Table Name",
+                              "type": "string"
+                          }
+                      },
+                      "required": [
+                          "schema_name",
+                          "database_code",
+                          "index_date",
+                          "lookback_years",
+                          "coeff_table_name",
+                          "loyalty_cohort_table_name"
+                      ],
+                      "title": "CalculateConfig",
+                      "type": "object"
+                  },
+                  "LoyaltyPluginType": {
+                      "properties": {
+                          "config": {
+                              "anyOf": [
+                                  {
+                                      "$ref": "#/definitions/CalculateConfig"
+                                  },
+                                  {
+                                      "$ref": "#/definitions/RetrainConfig"
+                                  }
+                              ],
+                              "title": "Config"
+                          }
+                      },
+                      "required": [
+                          "config"
+                      ],
+                      "title": "LoyaltyPluginType",
+                      "type": "object"
+                  },
+                  "RetrainConfig": {
+                      "properties": {
+                          "schema_name": {
+                              "title": "Schema Name",
+                              "type": "string"
+                          },
+                          "database_code": {
+                              "title": "Database Code",
+                              "type": "string"
+                          },
+                          "index_date": {
+                              "title": "Index Date",
+                              "type": "string"
+                          },
+                          "train_years": {
+                              "default": 2,
+                              "title": "Train Years",
+                              "type": "integer"
+                          },
+                          "return_years": {
+                              "default": 1,
+                              "title": "Return Years",
+                              "type": "integer"
+                          },
+                          "test_ratio": {
+                              "default": 0.2,
+                              "title": "Test Ratio",
+                              "type": "number"
+                          },
+                          "retraincoeff_table_name": {
+                              "title": "Retraincoeff Table Name",
+                              "type": "string"
+                          }
+                      },
+                      "required": [
+                          "schema_name",
+                          "database_code",
+                          "index_date",
+                          "retraincoeff_table_name"
+                      ],
+                      "title": "RetrainConfig",
+                      "type": "object"
+                  }
+              }
+          },
+          "type": "loyaltyscore"
+        }
+      ]
+    }
+  }
+}

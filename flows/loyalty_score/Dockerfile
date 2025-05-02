@@ -92,8 +92,13 @@ RUN java -version && R CMD javareconf
 # Install Dependencies
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
-RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
+
+# OHDSI packages and versions - after HADES
+RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
+# OHDSI packages and versions - after D2E
+RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 
 # D2E packages
@@ -112,26 +117,12 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-FROM base-build AS dbsvc-build
-
-# Required for RPostgres R package
-RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
-
-
-ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
-RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-
-
-FROM dbsvc-build AS final-build
+FROM base-build AS final-build
 
 WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
-
-# Grant docker ownership to create properties file
-RUN chown -R docker:docker ./liquibase/
 
 RUN mkdir /output
 RUN chown -R docker:docker /output
@@ -162,13 +153,13 @@ RUN chown docker:alp ./duckdb_data
 RUN mkdir -p ./cdw-config/duckdb_data
 RUN chown -R docker:alp ./cdw-config
 
-COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
+COPY --chown=docker:docker --chmod=711 ./loyalty_score/requirements_loyalty_score.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip install -r requirements_base.txt
+RUN pip install -r requirements_loyalty_score.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./base flows
+COPY --chown=docker:docker --chmod=711 ./loyalty_score flows
 
 # Change the ownership of /app folder to docker user for CohortGen error logs 
 RUN chown -R docker:docker /app
