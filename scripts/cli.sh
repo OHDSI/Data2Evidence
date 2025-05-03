@@ -68,14 +68,15 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+
 if [ -n "${function_path:-}" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
     export D2E_FUNCTIONS=$function_path
-    export PROJECT_NAME=${PROJECT_NAME:-alp}
 else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
+export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
