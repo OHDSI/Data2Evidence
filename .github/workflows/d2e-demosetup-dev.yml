@@ -27,7 +27,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          npx d2e init 
+          npx d2e -e -v develop init 
 
       - name: Build docker images
         if: success() || failure()
