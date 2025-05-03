@@ -33,8 +33,6 @@ const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
-console.log(CADDY__ALP__PUBLIC_FQDN);
-console.log(process.env);
 async function createCredentials (password,public_key) {
     try {
         const salt = crypto.randomBytes(16).toString("base64");
