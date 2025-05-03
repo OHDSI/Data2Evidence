@@ -83,6 +83,11 @@ jobs:
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
   
+      - name: Logs 
+        if: success() || failure()
+        run: |
+          npx d2e -v ${{ env.VERSION }} -d ./functions logs
+
       - name: Checkflow
         if: success() || failure()
         uses: nick-fields/retry@v3
