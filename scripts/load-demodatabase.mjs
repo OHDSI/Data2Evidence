@@ -176,9 +176,9 @@ if (resp_status_code == '200') {
     process.exit(1)
 }
 
-console.log(`Restarting services with d2e -e -v ${version} stop...`);
+/*console.log(`Restarting services with d2e -e -v ${version} stop...`);
 await $`d2e -e -v ${version} stop`
-await $`d2e -e -v ${version} start`
+await $`d2e -e -v ${version} start`*/
 console.log(chalk.blue(`Patching demo database...`));
 await $`d2e patchdemodb`
 console.log(chalk.green(`Completed patching demo database.`));

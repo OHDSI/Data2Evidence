@@ -29,7 +29,7 @@ jobs:
         run: |
           npx d2e init 
 
-      - name: Pull docker images
+      - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
@@ -46,7 +46,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            npx d2e -e -v ${{ env.VERSION }} start
+            npx d2e -e -v ${{ env.VERSION }} -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -67,20 +67,6 @@ jobs:
         run: |
           npx d2e -v ${{ env.VERSION }} logs
 
-      - name: Patchdemodb
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: patchdemodb
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 3
-          retry_on: any
-          command: |
-            npx d2e patchdemodb
-            DC_EXIT_CODE=$?
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-            
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -91,7 +77,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            npx d2e -e -v ${{ env.VERSION }} setupdemo
+            npx d2e -e -v ${{ env.VERSION }} -d ./functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
