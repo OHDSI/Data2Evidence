@@ -20,7 +20,6 @@ jobs:
 
       - name: npm install
         if: success() || failure()
-        id: init
         run: |
           npm install 
 
