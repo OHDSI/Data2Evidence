@@ -17,7 +17,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: npm install
+        if: success() || failure()
+        id: init
+        run: |
+          npm install 
+
       - name: Initialise d2e
         if: success() || failure()
         id: init

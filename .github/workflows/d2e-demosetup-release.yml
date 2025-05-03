@@ -11,9 +11,6 @@ on:
         required: true
         type: string
 
-env:
-  VERSION: ${{ github.event.inputs.version ||  vars.NPM_INSTALL_D2E_VER  }}
-
 jobs:
   demosetup:
     runs-on: ubuntu-24.04
@@ -36,7 +33,7 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          d2e -e -v ${{ env.VERSION }} pull
+          d2e -e pull
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -49,7 +46,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            d2e -e -v ${{ env.VERSION }} start
+            d2e -e start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -68,7 +65,7 @@ jobs:
       - name: Logs 
         if: success() || failure()
         run: |
-          d2e -v ${{ env.VERSION }} logs
+          d2e logs
 
       - name: Patchdemodb
         if: success() || failure()
@@ -94,7 +91,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            d2e -e -v ${{ env.VERSION }} setupdemo
+            d2e -e setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -118,7 +115,7 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          d2e -e -v ${{ env.VERSION }} stop
+          d2e -e stop
       - name: Clean d2e services
         if: success() || failure()
         id: clean
@@ -131,7 +128,7 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
           username: ${{ github.actor }}
-          content: "### Status of ${{ env.VERSION }} Installation\n
+          content: "### Status of Installation\n
             install: ${{ steps.install.outcome }}\n
             init: ${{ steps.init.outcome }}\n
             pull: ${{ steps.pull.outcome }}\n
