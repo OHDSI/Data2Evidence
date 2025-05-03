@@ -53,8 +53,8 @@ export class PrefectAPI {
   private readonly baseURL: string;
 
   constructor() {
-    if (env.SERVICE_ENV.prefect) {
-      this.baseURL = env.SERVICE_ENV.prefect;
+    if (env.SERVICE_ROUTES.prefect) {
+      this.baseURL = env.SERVICE_ROUTES.prefect;
     } else {
       throw new Error("No url is set for Prefect");
     }
