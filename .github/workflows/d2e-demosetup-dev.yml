@@ -43,7 +43,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
             npx d2e -e -v ${{ env.VERSION }} -d ./functions start
@@ -74,7 +74,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
             npx d2e -e -v ${{ env.VERSION }} -d ./functions setupdemo
@@ -95,7 +95,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
             npx d2e checkflow
