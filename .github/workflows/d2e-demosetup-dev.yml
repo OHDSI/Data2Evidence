@@ -65,7 +65,7 @@ jobs:
       - name: Logs 
         if: success() || failure()
         run: |
-          npx d2e -v ${{ env.VERSION }} logs
+          npx d2e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Setupdemo
         if: success() || failure()
@@ -101,7 +101,7 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          npx d2e -e -v ${{ env.VERSION }} stop
+          npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
       - name: Clean d2e services
         if: success() || failure()
         id: clean
