@@ -1,4 +1,4 @@
-name: d2e/npm-install-d2e-run
+name: d2e/demosetup-release
 
 on:
   schedule:
@@ -15,7 +15,7 @@ env:
   VERSION: ${{ github.event.inputs.version ||  vars.NPM_INSTALL_D2E_VER  }}
 
 jobs:
-  npm-install-run:
+  demosetup:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +24,7 @@ jobs:
         if: success() || failure() 
         id: install
         run: |
-          curl -L https://github.com/OHDSI/d2e/releases/download/latest/data2evidence-cli.tgz > data2evidence-cli.tgz
-          npm i -g data2evidence-cli.tgz
+          npm i -g d2e
       
       - name: Initialise d2e
         if: success() || failure()
