@@ -110,7 +110,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -494,7 +494,7 @@ services:
       alp-minerva-postgres:
         condition: service_healthy
     hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c15
@@ -820,7 +820,7 @@ services:
     depends_on:
       alp-logto:
         condition: service_healthy
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-logto-post-init:${DOCKER_TAG_NAME:-develop}
     networks:
       alp:
         priority: 20
@@ -864,7 +864,7 @@ services:
         - http://localhost:3001/api/status
     hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-logto:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c8
@@ -996,7 +996,7 @@ services:
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
     hostname: ${PROJECT_NAME:-d2e}-cachedb.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-cachedb:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-cachedb:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     depends_on:
       trex:
@@ -1105,7 +1105,7 @@ services:
         - fhir.status
         - http://localhost:8103/healthcheck
     hostname: fhir-server-1
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     logging:
       options:
@@ -1171,7 +1171,7 @@ services:
     profiles: [dicom]
 
   enterprise-gateway:
-    image: ${DOCKER_IMAGE_PREFIX:-}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
     platform: linux/amd64
     logging:
@@ -1210,7 +1210,7 @@ services:
 
   # fhir-fe-server:
   #     container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
-  #     image: ${DOCKER_IMAGE_PREFIX:-}d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
+  #     image: ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
   #     platform: linux/amd64
   #     logging:
   #       options:
