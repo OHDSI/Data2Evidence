@@ -53,6 +53,7 @@ jobs:
   bld:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    environment: ${{github.event_name == 'workflow_dispatch' && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
@@ -60,6 +61,7 @@ jobs:
       GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
       GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
       DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+      REG_URL: ${{github.event_name == 'workflow_dispatch' && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
 
     strategy:
       fail-fast: false
@@ -154,12 +156,21 @@ jobs:
           echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
           echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: "Login to GitHub Container Registry"
+      - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
+        if: ${{ job.environment == 'github' }}
         with:
           registry: ghcr.io
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: 'Login to Docker Container Registry'
+        uses: docker/login-action@v3
+        if: ${{ job.environment == 'dockerhub' }}
+        with:
+          registry: registry.hub.docker.com
+          username: data2evidence
+          password: ${{secrets.DOCKER_TOKEN}}
 
       - name: Build and Push
         id: build-push
@@ -169,7 +180,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
-          tags: ghcr.io/ohdsi/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
