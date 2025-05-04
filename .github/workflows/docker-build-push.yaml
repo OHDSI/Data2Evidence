@@ -41,10 +41,12 @@ env:
 
 jobs:
   check_file_changes:
+    environment: ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
+      jenv: ${{  job.environment }}
     steps:
       - uses: actions/checkout@v4
 
@@ -70,7 +72,7 @@ jobs:
       GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
       GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
       DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-      REG_URL: ${{github.event_name == 'workflow_dispatch' && contains('release/', github.ref_name) && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
+      REG_URL: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
 
     strategy:
       fail-fast: false
@@ -202,7 +204,7 @@ jobs:
 
       - name: 'Login to Docker Container Registry'
         uses: docker/login-action@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && contains('release/', github.ref_name) }}
+        if: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' }}
         with:
           registry: registry.hub.docker.com
           username: data2evidence
