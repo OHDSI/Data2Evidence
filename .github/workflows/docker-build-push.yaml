@@ -30,6 +30,15 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push
+  cancel-in-progress: true
+
+env:
+  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
+  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+
+
 jobs:
   check_file_changes:
     runs-on: ubuntu-latest
@@ -46,6 +55,7 @@ jobs:
           filters: |
             src:
               - "flows/**"
+              - "services/**"
               - "package.json"
               - "docker-compose.yml"
 
@@ -53,7 +63,6 @@ jobs:
   bld:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    environment: ${{github.event_name == 'workflow_dispatch' && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
@@ -100,6 +109,34 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-strategus
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
+          - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
+            DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
+          - AZ_REG_REPOSITORY: d2e-logto
+            DOCKER_BUILD_FILE_PATH: ./services/alp-logto/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto
+          - AZ_REG_REPOSITORY: d2e-logto-post-init
+            DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
+          - AZ_REG_REPOSITORY: d2e-fhir-server
+            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
+          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
+            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
+          - AZ_REG_REPOSITORY: d2e-cachedb
+            DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
+          - AZ_REG_REPOSITORY: d2e-enterprise-gateway
+            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
+          - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
+            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
+            build_arg1: true
+          - AZ_REG_REPOSITORY: d2e-trex
+            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -158,7 +195,6 @@ jobs:
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
-        if: ${{ job.environment == 'github' }}
         with:
           registry: ghcr.io
           username: ${{github.actor}}
@@ -166,16 +202,20 @@ jobs:
 
       - name: 'Login to Docker Container Registry'
         uses: docker/login-action@v3
-        if: ${{ job.environment == 'dockerhub' }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           registry: registry.hub.docker.com
           username: data2evidence
           password: ${{secrets.DOCKER_TOKEN}}
 
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
       - name: Build and Push
         id: build-push
         uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.builder.outputs.name }}
           context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
