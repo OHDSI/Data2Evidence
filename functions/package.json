@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/jobplugins-init",
+          "imports": "/jobplugins-init/import.json",
+          "env": "jobplugins-init"
+        },
+        {
           "function": "/mri-pg-config",
           "imports": "/mri-pg-config/import.json",
           "env": "mri-pg-config"
@@ -128,6 +133,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/data-mapping",
+          "function": "/data-mapping",
+          "imports": "/data-mapping/import.json",
+          "env": "data-mapping"
+        },
+        {
           "source": "/analytics-svc/api/services/bookmark",
           "function": "/bookmark-svc",
           "imports": "/bookmark-svc/import.json",
@@ -196,6 +207,11 @@
           "service": "logto"
         },
         {
+          "source" : "/jupyter",
+          "service":  "jupyter",
+          "rmsrc": true
+        },
+        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -210,6 +226,19 @@
         {
           "source": "/callback",
           "service": "logto"
+        },
+        {
+          "source": "/jupyter",
+          "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
         },
         {
           "source": "/concept-mapping",
@@ -385,6 +414,7 @@
           "gateway.db.vocabSchemas.read",
           "gateway.db.dataset.versionInfo.read",
           "gateway.db.schema.update",
+          "gateway.db.database.test",
           "gateway.terminology.concept.getStandardConcepts.read",
           "gateway.terminology.concept.searchByName.read",
           "gateway.terminology.concept.searchById.read",
@@ -399,6 +429,7 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
+          "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
@@ -432,7 +463,8 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
-          "codesuggestion.tenantview.read"
+          "codesuggestion.tenantview.read",
+          "d2e.webapi.public"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -472,7 +504,9 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
-          "d2e.webapi"
+          "d2e.webapi",
+          "jupyter",
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -490,7 +524,8 @@
           "dataflowmgmt.dataflow.flowRun.results.read",
           "filesmanager.read",
           "filesmanager.post",
-          "filesmanager.delete"
+          "filesmanager.delete",
+          "whiteRabbit.post"
         ]
       },
       "scopes": [
@@ -759,7 +794,7 @@
         {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
-            "usermgmt.me"
+            "usermgmt.me.jupyter"
           ],
           "httpMethods": [
             "GET"
@@ -1671,6 +1706,14 @@
           ]
         },
         {
+          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "jupyter",
+            "portal.dataset.read"
+          ],
+          "httpMethods": ["POST"]
+        },
+        {
           "path": "^/dataflow-mgmt/prefect/flow$",
           "scopes": [
             "dataflowmgmt.prefect.flow.add"
@@ -2167,6 +2210,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/db/test",
+          "scopes": [
+            "gateway.db.database.test"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/prefect",
           "scopes": [
             "prefect.read"
@@ -2214,6 +2266,15 @@
           ]
         },
         {
+          "path": "^/data-mapping",
+          "scopes": [
+            "datamapping.post"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/demo",
           "scopes": [
             "demo.setup"
@@ -2224,9 +2285,21 @@
           ]
         },
         {
+          "path": "^/d2e-webapi/(health|source|i18n|notifications)(.*)",
+          "scopes": [
+            "d2e.webapi.public"
+          ]
+        },
+        {
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
           ]
         }
       ]

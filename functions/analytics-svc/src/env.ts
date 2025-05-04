@@ -7,7 +7,6 @@ function initEnv(__env) {
     const Env = z.object({
         ALP_GATEWAY_OAUTH__URL: z.string(),
         ALP__SYSTEM_ID: z.string(),
-        ANALYTICS_SVC__DEFAULT_ASSIGNMENT_NAME: z.string(),
         ANALYTICS_SVC__PORT: z
             .string()
             .refine((val) => !isNaN(parseInt(val)))
@@ -23,6 +22,7 @@ function initEnv(__env) {
 
         USE_DUCKDB: z.string(),
         USE_CACHEDB: z.string(),
+        USE_TREX_DB_CONN: z.string(),
         USE_HANA_JWT_AUTHC: z.string(),
 
         PG__IDLE_TIMEOUT_IN_MS: z

@@ -51,9 +51,9 @@ export const dataflowApiSlice = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({
+              ...result.map(({ nodeName }) => ({
                 type: "DataflowResult" as const,
-                id,
+                id: nodeName,
               })),
               { type: "DataflowResult", id: "LIST" },
             ]

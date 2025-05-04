@@ -2,7 +2,7 @@
   "imports": {
     "crypto": "node:crypto",
     "fs": "node:fs",
-    "https": "node:https",
+    "http": "node:http",
     "@asteasolutions/zod-to-openapi": "npm:@asteasolutions/zod-to-openapi@7.3.0",
     "axios": "npm:axios@1.7.7",
     "express": "npm:express@5.0.0",
@@ -11,6 +11,7 @@
     "yaml": "npm:yaml@2.6.1",
     "zod": "npm:zod@3.23.8",
     "hdb": "npm:hdb@0.19.12",
-    "lodash": "npm:lodash"
+    "lodash": "npm:lodash",
+    "transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0"
   }
 }

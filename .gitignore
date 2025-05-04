@@ -12,7 +12,7 @@ target
 .mypy_cache
 *.egg-info
 deno.lock
-services/trex
+services/trex_base
 package-lock.json
 pnpm-lock.yaml
 yarn-error.log

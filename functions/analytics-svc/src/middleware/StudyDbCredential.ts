@@ -35,6 +35,16 @@ export default async (req: IMRIRequest, res, next) => {
         }
     };
 
+    const addPAConfigIdToReq = (studyMetadata): void => {
+        //This is for scenarios where dataset is yet to be created
+        if (studyMetadata == null) {
+            log.info(`Skip injection of PA config ID for path ${req.url}`)
+            return;
+        }
+        req.paConfigId = studyMetadata.paConfigId;
+        req.paConfigVersion = "A";
+    }
+
     const getDefaultDbConnection = (): any => {
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
             ...analyticsCredentials[Object.keys(analyticsCredentials)[0]],
@@ -126,6 +136,7 @@ export default async (req: IMRIRequest, res, next) => {
                     req.selectedstudyDbMetadata = studyMetadata;
                 }
                 getDbConnectionByStudyMetadata(studyMetadata);
+                addPAConfigIdToReq(studyMetadata);
             } else {
                 getDefaultDbConnection();
             }
@@ -144,8 +155,8 @@ export default async (req: IMRIRequest, res, next) => {
                 req.selectedstudyDbMetadata = studyMetadata;
             }
             getDbConnectionByStudyMetadata(studyMetadata);
+            addPAConfigIdToReq(studyMetadata);
         }
-
         next();
     } catch (err) {
         log.enrichErrorWithRequestCorrelationID(err, req);

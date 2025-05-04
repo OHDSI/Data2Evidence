@@ -36,20 +36,20 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     use_cache_db = options.use_cache_db
 
     omop_cdm_dao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code, 
-                         schema_name=schema_name)
+                         database_code=database_code)
     
     # Create schema if there is no existing schema first
-    create_schema_task(omop_cdm_dao)
+    create_schema_task(omop_cdm_dao, schema_name)
 
     # Parent task with hook to drop schema on failure
     create_datamodel_wo = create_datamodel_parent_task.with_options(
         on_failure=[partial(
-            drop_schema_hook, **dict(dbdao=omop_cdm_dao)
+            drop_schema_hook, **dict(dbdao=omop_cdm_dao, schema=schema_name)
         )]
     )
     create_datamodel_wo(cdm_version=options.cdm_version, 
                         schema_dao=omop_cdm_dao,
+                        cdm_schema=schema_name,
                         vocab_schema=options.vocab_schema
                         )
 

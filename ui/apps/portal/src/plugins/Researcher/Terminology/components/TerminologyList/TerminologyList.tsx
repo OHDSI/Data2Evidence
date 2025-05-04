@@ -19,7 +19,7 @@ interface TerminologyListProps {
   isConceptSet?: boolean;
   selectedConcepts: FhirValueSetExpansionContainsWithExt[];
   tab: TabName;
-  toggleDescendantsAndMapped?: (conceptId: number, type: "DESCENDANTS" | "MAPPED") => void;
+  toggleDescendantsAndMapped?: (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => void;
   showAddIcon: boolean;
   conceptsResult: TerminologyResult | null;
   setConceptsResult: React.Dispatch<React.SetStateAction<TerminologyResult | null>>;
@@ -32,16 +32,10 @@ interface TerminologyListProps {
 }
 
 const mapFilterOptions = (options: { [key: string]: number }): { text: string; value: string }[] => {
-  const optionsWithCount: string[] = Object.keys(options)
-    .filter((key) => options[key])
-    .sort();
-  const optionsWithNoCount: string[] = Object.keys(options)
-    .filter((key) => !options[key])
-    .sort();
-  const optionNames = [...optionsWithCount, ...optionsWithNoCount];
-  return optionNames.map((optionName) => {
+  const sortedOptions = Object.keys(options).sort();
+  return sortedOptions.map((optionName) => {
     return {
-      text: `${optionName} (${options[optionName]})`,
+      text: `${optionName}`,
       value: optionName,
     };
   });
@@ -71,14 +65,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [terminologiesCount, setTerminologiesCount] = useState(0);
   const [searchText, setSearchText] = useState(initialInput);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    conceptClassId: {},
-    domainId: {},
-    standardConcept: {},
-    vocabularyId: {},
-    concept: {},
-    validity: {},
-  });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [allFilterOptionsZeroed, setAllFilterOptionsZeroed] = useState<FilterOptions>({
     conceptClassId: {},
     domainId: {},
@@ -129,23 +116,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
             Array.isArray(vocabularyIdFilters) &&
             Array.isArray(standardConceptFilters)
           ) {
-            const filterOptions = await terminologyAPI.getFilterOptions(
-              datasetId,
-              searchText.toLowerCase(),
-              conceptClassIdFilters,
-              domainIdFilters,
-              vocabularyIdFilters,
-              standardConceptFilters
-            );
-            const combinedFilterOptions: FilterOptions = {
-              conceptClassId: { ...allFilterOptionsZeroed.conceptClassId, ...filterOptions.conceptClassId },
-              domainId: { ...allFilterOptionsZeroed.domainId, ...filterOptions.domainId },
-              vocabularyId: { ...allFilterOptionsZeroed.vocabularyId, ...filterOptions.vocabularyId },
-              standardConcept: { ...allFilterOptionsZeroed.standardConcept, ...filterOptions.standardConcept },
-              concept: { ...allFilterOptionsZeroed.concept, ...filterOptions.concept },
-              validity: { ...allFilterOptionsZeroed.validity, ...filterOptions.validity },
-            };
-            setFilterOptions(combinedFilterOptions);
             const fhirResponse = await terminologyAPI.getTerminologies(
               page,
               rowsPerPage,
@@ -167,8 +137,32 @@ const TerminologyList: FC<TerminologyListProps> = ({
               data["vocabularyId"] = data["system"] as string;
             });
             if (counter === apiCounter) {
-              setFilterOptions(combinedFilterOptions);
               setConceptsResult(response);
+            }
+            // Used to initialize the filter options for the first time
+            if (!filterOptions) {
+              // Using .then so that the filter options which take longer to load are not blocking the data update
+              // Also placed after the concept search as putting it concurrent seems to make the concept search slow
+              terminologyAPI
+                .getFilterOptions(
+                  datasetId,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters
+                )
+                .then((filterOptions) => {
+                  const combinedFilterOptions: FilterOptions = {
+                    conceptClassId: { ...allFilterOptionsZeroed.conceptClassId, ...filterOptions.conceptClassId },
+                    domainId: { ...allFilterOptionsZeroed.domainId, ...filterOptions.domainId },
+                    vocabularyId: { ...allFilterOptionsZeroed.vocabularyId, ...filterOptions.vocabularyId },
+                    standardConcept: { ...allFilterOptionsZeroed.standardConcept, ...filterOptions.standardConcept },
+                    concept: { ...allFilterOptionsZeroed.concept, ...filterOptions.concept },
+                    validity: { ...allFilterOptionsZeroed.validity, ...filterOptions.validity },
+                  };
+                  setFilterOptions(combinedFilterOptions);
+                });
             }
           } else {
             const response = await terminologyAPI.getRecommendedConcepts(
@@ -473,10 +467,31 @@ const TerminologyList: FC<TerminologyListProps> = ({
             sx: { justifyContent: "center", border: "none" },
           },
         },
+        {
+          accessorKey: "isExcluded",
+          header: getText(i18nKeys.TERMINOLOGY_LIST__EXCLUDE),
+          Cell: ({ row }: { row: any }) => {
+            const terminology = row.original as FhirValueSetExpansionContainsWithExt;
+            return (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Checkbox
+                  checked={terminology?.isExcluded}
+                  onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "EXCLUDE")}
+                  sx={{ padding: 0 }}
+                />
+              </div>
+            );
+          },
+          grow: false,
+          size: 80,
+          muiTableBodyCellProps: {
+            sx: { justifyContent: "center", border: "none" },
+          },
+        },
       ];
       return {
         columns: [...addButton, ...descendantsAndMapped, ...basicColumns],
-        columnOrder: ["addButton", "useDescendants", "useMapped", ...basicColumnOrder],
+        columnOrder: ["addButton", "useDescendants", "useMapped", "isExcluded", ...basicColumnOrder],
       };
     }
     if (showAddIcon && onSelectConceptId) {

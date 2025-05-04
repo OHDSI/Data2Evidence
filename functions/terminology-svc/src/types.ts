@@ -17,6 +17,7 @@ export type ConceptSetConcept = {
   id: number;
   useDescendants: boolean;
   useMapped: boolean;
+  isExcluded: boolean;
 };
 export interface IConcept {
   concept_id: number;
@@ -92,6 +93,25 @@ export interface IHanaConceptRelationship {
   VALID_START_DATE: string;
   VALID_END_DATE: string;
   INVALID_REASON: string | null;
+}
+
+export interface IConceptHierarchy {
+  ancestor_concept_id: number;
+  descendant_concept_id: number;
+  depth: number;
+  concept_id: number;
+  concept_name: string;
+  vocabulary_id: string;
+  concept_class_: string;
+}
+export interface IHanaConceptHierarchy {
+  ANCESTOR_CONCEPT_ID: string;
+  DESCENDANT_CONCEPT_ID: string;
+  DEPTH: string;
+  CONCEPT_ID: string;
+  CONCEPT_NAME: string;
+  VOCABULARY_ID: string;
+  CONCEPT_CLASS_: string;
 }
 
 export interface IConceptRecommended {
@@ -227,3 +247,10 @@ export enum DatasetDialects {
   POSTGRES = "postgres",
   DUCKDB = "duckdb",
 }
+
+export type DatasetDB = {
+  datasetId: string;
+  databaseCode: string;
+  dialect: string;
+  vocabSchemaName: string;
+};

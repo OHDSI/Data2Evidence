@@ -39,6 +39,7 @@ context=""
 fhir=""
 demo=""
 dicom=""
+jupyter=""
 compose=""
 args=""
 services=""
@@ -49,6 +50,7 @@ while [[ $# -gt 0 ]]; do
         -e|--demo) demo=--profile="demodb" ;;
         -f|--fhir) fhir=--profile="fhir" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
+        -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
@@ -90,7 +92,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $dev $compose $args"
 
 case $cmd in
     start)
@@ -197,7 +199,6 @@ case $cmd in
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo STRATEGUS__KEYRING_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
@@ -219,7 +220,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull ghcr.io/ohdsi/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -227,8 +228,11 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
+        ;;
+    checkflow) 
+        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
         ;;
     *)
         if [ -z ${cmd:-} ]; then
@@ -245,13 +249,14 @@ Commands:
   start       Starts d2e services. Requires d2e init and d2e setup to be run.
   stop        Stops d2e services
   clean       Removes d2e docker containers and volumes
-  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run.
+  setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
 
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
+ -j, --jupyter              Include jupyter
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
  -v, --version [VERSION]    Version of the d2e services to use

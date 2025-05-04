@@ -1,8 +1,7 @@
 import { Service } from 'typedi'
 import axios, { AxiosRequestConfig } from 'axios'
 import { createLogger } from '../logger'
-import https from 'https'
-import { env, services } from '../env'
+import { services } from '../env'
 import { Dataset } from '../utils/types'
 
 @Service()

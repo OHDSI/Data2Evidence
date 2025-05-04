@@ -19,4 +19,7 @@ export enum ConfigTypes {
   PRIVACY_POLICY_DISPLAY = "privacy-policy-display",
   TERMS_OF_USE_DISPLAY = "terms-of-use-display",
   IMPRINT_DISPLAY = "imprint-display",
+  HYBRID_SEARCH = "hybrid-search",
 }
+
+export const PUB_SLOT_NAME = "data2evidence";

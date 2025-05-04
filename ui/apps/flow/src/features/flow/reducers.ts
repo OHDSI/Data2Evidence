@@ -30,6 +30,7 @@ const initialState: FlowRootState = {
   addGroupDialog: { visible: false },
   saveFlowDialog: { visible: false, dataflowId: null },
   isTestMode: false,
+  hasUnmappedFlowRunResult: false,
 
   status: undefined,
   flowRunState: flowRunStatesInitialState,
@@ -56,10 +57,7 @@ const flowSlice = createSlice({
     ) => {
       state.addNodeTypeDialog = action.payload;
     },
-    setAddGroupDialog: (
-      state,
-      action: PayloadAction<AddGroupDialogState>
-    ) => {
+    setAddGroupDialog: (state, action: PayloadAction<AddGroupDialogState>) => {
       state.addGroupDialog = action.payload;
     },
     setSaveFlowDialog: (state, action: PayloadAction<SaveFlowDialogState>) => {
@@ -83,6 +81,11 @@ const flowSlice = createSlice({
     // Flow run state
     setFlowRunState: (state, action: PayloadAction<FlowRunState>) => {
       flowRunStatesAdapter.setAll(state.flowRunState, [action.payload]);
+    },
+
+    // Flow run result
+    setHasUnmappedFlowRunResult: (state, action: PayloadAction<boolean>) => {
+      state.hasUnmappedFlowRunResult = action.payload;
     },
 
     // Nodes
@@ -125,6 +128,9 @@ export const {
 
   // Flow run state
   setFlowRunState,
+
+  // Flow run result
+  setHasUnmappedFlowRunResult,
 
   // Nodes
   replaceNodes,

@@ -1,4 +1,7 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
+import omit from "lodash/omit";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import WarningIcon from "@mui/icons-material/Warning";
 import {
   Autocomplete,
   Box,
@@ -10,6 +13,7 @@ import {
   MenuItem,
   Select,
   TextField,
+  Tooltip,
 } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import { SxProps } from "@mui/system";
@@ -29,13 +33,14 @@ import {
   CREDENTIAL_SERVICE_SCOPES,
   AUTHENTICATION_MODES,
   IDbPublication,
+  ITestConnection,
 } from "../../../../types";
 import { api } from "../../../../axios/api";
 import { validateCredentials } from "../CredentialValidator";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
 import { useTranslation } from "../../../../contexts";
-import omit from "lodash/omit";
+import { PUB_SLOT_NAME } from "../../../../constant";
 import "./SaveDbDialog.scss";
 
 interface SaveDbDialogProps {
@@ -64,7 +69,6 @@ const styles: SxProps = {
 
 interface FormData extends Omit<IDatabase, "id" | "credentials.id" | "publications"> {
   publication: string;
-  slot: string;
 }
 
 const dbCredentialProcessor = new DbCredentialProcessor();
@@ -115,14 +119,20 @@ const EMPTY_FORM_DATA: FormData = {
   credentials: EMPTY_CREDENTIALS,
   vocabSchemas: [],
   publication: "",
-  slot: "",
 };
+
+interface ITestingResult {
+  [key: string]: boolean;
+}
 
 export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
+
+  const [testing, setTesting] = useState(false);
+  const [testingResult, setTestingResult] = useState<ITestingResult>({});
 
   useEffect(() => {
     if (open) {
@@ -133,6 +143,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
   }, [open]);
 
   const handleFormDataChange = useCallback((updates: { [field: string]: any }) => {
+    setTestingResult({});
     setFormData((formData) => ({ ...formData, ...updates }));
   }, []);
 
@@ -212,7 +223,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
       const publications: IDbPublication[] = [];
       if (formData.publication) {
-        publications.push({ publication: formData.publication, slot: formData.slot });
+        publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
       }
 
       const params = omit(formData, "publication", "slot");
@@ -244,6 +255,53 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       setSaving(false);
     }
   }, [handleClose, formData, setFeedback, getText]);
+
+  const handleTestConnection = useCallback(async () => {
+    try {
+      setTesting(true);
+      setFeedback({});
+
+      const credentials = formData.credentials.filter((x) => Boolean(x.username));
+      if (credentials.length === 0) {
+        setFeedback({ type: "error", message: getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION_VALIDATE) });
+        return;
+      }
+
+      const testResult: ITestingResult = {};
+      for (const cred of credentials) {
+        try {
+          const params: ITestConnection = {
+            host: formData.host,
+            port: formData.port,
+            database: formData.name,
+            user: cred.username,
+            password: cred.password,
+          };
+          const result = await api.dbCredentialsMgr.testConnection(params);
+
+          testResult[cred.username] = result.success;
+          setTestingResult((x) => ({ ...x, [cred.username]: result.success }));
+        } catch (err: any) {
+          testResult[cred.username] = false;
+          setTestingResult((x) => ({ ...x, [cred.username]: false }));
+        }
+      }
+
+      if (Object.keys(testResult).length > 0) {
+        if (Object.values(testResult).every((x) => x)) {
+          setFeedback({
+            type: "success",
+            message: getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_VERIFIED),
+            autoClose: 5000,
+          });
+        } else {
+          setFeedback({ type: "error", message: getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED), autoClose: 5000 });
+        }
+      }
+    } finally {
+      setTesting(false);
+    }
+  }, [formData]);
 
   return (
     <Dialog
@@ -528,6 +586,24 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                   </Select>
                 </FormControl>
               </Box>
+              <Box sx={{ width: "50px", alignSelf: "flex-end" }}>
+                {Object.keys(testingResult).includes(cred.username) && (
+                  <Tooltip
+                    title={
+                      testingResult[cred.username]
+                        ? getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_VERIFIED)
+                        : getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED)
+                    }
+                    placement="top"
+                  >
+                    {testingResult[cred.username] ? (
+                      <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} />
+                    ) : (
+                      <WarningIcon sx={{ width: 28, height: 28, color: "red" }} />
+                    )}
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
           ))}
         </Box>
@@ -543,18 +619,20 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               value={formData.publication}
               onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
             />
-            <TextField
-              label={getText(i18nKeys.SAVE_DB_DIALOG__SLOT)}
-              variant="standard"
-              sx={{ minWidth: "300px" }}
-              value={formData.slot}
-              onChange={(event) => handleFormDataChange({ slot: event.target?.value })}
-            />
           </Box>
         </Box>
       </div>
       <div className="save-db-dialog__footer">
         <Box display="flex" gap={1} className="save-db-dialog__footer-actions">
+          <Button
+            text={getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION)}
+            variant="outlined"
+            loading={testing}
+            onClick={handleTestConnection}
+            {...(!testing && Object.values(testingResult).length > 0 && Object.values(testingResult).every((x) => x)
+              ? { startIcon: <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} /> }
+              : {})}
+          />
           <Button
             text={getText(i18nKeys.SAVE_DB_DIALOG__CANCEL)}
             variant="outlined"

@@ -13,21 +13,25 @@ import {
   Filters,
   IDuckdbFacet,
   DatasetDialects,
+  IConceptHierarchy,
+  DatasetDB,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
 import { HanaHDBDao } from "./hana-hdb-dao.ts";
 import { SystemPortalAPI } from "../api/portal-api.ts";
 import { groupBy } from "../utils/helperUtil.ts";
-import { env } from "../env.ts";
 
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
+  private readonly datasetDB: DatasetDB;
+  private semanticRatio: number;
 
-  constructor(request: Request) {
+  constructor(request: Request, datasetDB?: DatasetDB) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
+    this.datasetDB = datasetDB;
   }
 
   /*
@@ -37,14 +41,25 @@ export class CachedbService {
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
     const { dialect, vocabSchemaName, databaseCode } =
-      await this.systemPortalApi.getDatasetDetails(datasetId);
-
+      this.datasetDB ??
+      (await this.systemPortalApi.getDatasetDetails(datasetId));
+    const hybridSearchConfig =
+      await this.systemPortalApi.getHybridSearchConfig();
+    const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
+    this.semanticRatio = enableSemantic
+      ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
+      : 0;
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
 
     // By default return CachedbDAO
-    return new CachedbDAO(this.token, datasetId, vocabSchemaName);
+    return new CachedbDAO(
+      this.token,
+      datasetId,
+      vocabSchemaName,
+      this.semanticRatio
+    );
   }
 
   async getConcepts(
@@ -242,11 +257,13 @@ export class CachedbService {
         return [];
       }
       // Result has to be mapped like this due to expected response from frontend
-      const mappedResults = duckdbMappedResult.expansion.contains.map((mappedResult) => 
-              ({...mappedResult,
-              conceptCode: mappedResult.code,
-              conceptName: mappedResult.display,
-              vocabularyId: mappedResult.system})
+      const mappedResults = duckdbMappedResult.expansion.contains.map(
+        (mappedResult) => ({
+          ...mappedResult,
+          conceptCode: mappedResult.code,
+          conceptName: mappedResult.display,
+          vocabularyId: mappedResult.system,
+        })
       );
       return mappedResults;
     } catch (err) {
@@ -255,21 +272,22 @@ export class CachedbService {
     }
   }
 
-  async getDescendants(conceptIds: number[], datasetId: string) {
-    if (conceptIds.length === 0) {
-      return [];
-    }
+  async getHierarchyDescendants(
+    conceptId: number,
+    datasetId: string
+  ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
-    const result = await cachedbDao.getExactConceptDescendants(conceptIds);
+    const result = await cachedbDao.getHierarchyDescendants(conceptId);
     return result;
   }
 
-  async getAncestors(conceptIds: number[], datasetId: string, depth: number) {
-    if (conceptIds.length === 0) {
-      return [];
-    }
+  async getHierarchyAncestors(
+    conceptId: number,
+    datasetId: string,
+    depth: number
+  ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
-    const result = await cachedbDao.getExactConceptAncestors(conceptIds, depth);
+    const result = await cachedbDao.getHierarchyAncestors(conceptId, depth);
     return result;
   }
 

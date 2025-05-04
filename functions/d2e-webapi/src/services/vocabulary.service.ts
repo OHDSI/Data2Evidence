@@ -53,6 +53,7 @@ export const resolveConceptSetExpression = async (
         id: item.concept.CONCEPT_ID,
         useMapped: item.includeMapped,
         useDescendants: item.includeDescendants,
+        isExcluded: item.isExcluded,
       };
     });
 
@@ -77,6 +78,7 @@ export const getIncludedConceptsCount = async (
         id: item.concept.CONCEPT_ID,
         useMapped: item.includeMapped,
         useDescendants: item.includeDescendants,
+        isExcluded: item.isExcluded,
       };
     });
 

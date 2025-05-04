@@ -18,6 +18,7 @@ on:
         required: false
         type: choice
         options:
+          - ohdsi/d2e
           - data2evidence/d2e
       GIT_BRANCH_NAME:
         default: develop
@@ -73,9 +74,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-data-mapping
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_mapping/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-white-rabbit
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/white_rabbit/Dockerfile
@@ -88,6 +86,18 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-search-embedding
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/search_embedding/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-data-management
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/data_management/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-strategus
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -159,7 +169,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
-          tags: ghcr.io/data2evidence/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ghcr.io/ohdsi/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS

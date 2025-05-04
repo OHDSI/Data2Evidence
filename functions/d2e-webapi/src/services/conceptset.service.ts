@@ -2,7 +2,7 @@ import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
   IConceptSetListResponseDto,
   IConceptSetResponseDto,
-  ICreateSetCheckDto,
+  IConceptSetCreateDto,
   IConceptSetItemListDto,
   IConceptSetItemsResponseDto,
 } from "../dto/conceptset.ts";
@@ -43,7 +43,7 @@ export const getConceptSets = async (
 export const createConceptSet = async (
   token: string,
   datasetId: string,
-  conceptSetDto: ICreateSetCheckDto
+  conceptSetDto: IConceptSetCreateDto
 ): Promise<IConceptSetResponseDto> => {
   // Get username
   const userMgmtAPI = new UserMgmtAPI(token);
@@ -88,15 +88,13 @@ export const updateConceptSetItems = async (
     conceptSetId
   );
 
-  // https://github.com/data2evidence/internal/issues/1675
-  // isExcluded from conceptSetItemList is not supported.
   const terminologyConceptSetConcept: ITerminologyConceptSetConcept[] =
     conceptSetItemList.map(function (conceptSetItem) {
       return {
         id: conceptSetItem.conceptId,
         useMapped: conceptSetItem.includeMapped,
         useDescendants: conceptSetItem.includeDescendants,
-        // TODO: add saving of isExcluded to concept_sets after feature is supported
+        isExcluded: conceptSetItem.isExcluded,
       };
     });
   // Update terminologyConceptSet with concept set items from request
@@ -145,11 +143,9 @@ export const getConceptSetExpression = async (
           VALID_START_DATE: terminologyConcept.validStartDate,
           VALID_END_DATE: terminologyConcept.validEndDate,
         },
-        // https://github.com/data2evidence/internal/issues/1675
-        // Remove hardcoded value from isExcluded when resolving issue
-        isExcluded: false,
         includeDescendants: terminologyConcept.useDescendants,
         includeMapped: terminologyConcept.useMapped,
+        isExcluded: terminologyConcept.isExcluded,
       };
     }),
   };

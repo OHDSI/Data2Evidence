@@ -5,7 +5,7 @@ if ( await $`[ -f .env ]` ) {
     dotenv.config('.env');
 } else { 
     console.log(chalk.red(`FATAL .env file not found`));
-    await $`exit 1`
+    process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
@@ -111,43 +111,44 @@ try {
         if (progress_status == "inprogress") { 
             console.log(`Setting up demo dataset...\n`);
            await $`sleep 15`
-        } else if  (progress_status == "completed") {
+        } else if (progress_status == "completed") {
             console.log(chalk.green(`Setup completed succcessfully. Go to Job Runs to view the result.\n`));
         }
         else {
             console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
+            process.exit(1)
         }
     }
 } catch (error) { 
     console.error(error);
+    process.exit(1)
 }
 
-// Adding admin user access permissions to demo dataset  
-console.log(chalk.blue(`Adding admin user access permissions to demo dataset...\n`));
-var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list/systemadmin' \
-        --header 'Content-Type: application/x-www-form-urlencoded' \
-        --header 'Authorization: Bearer ${BEARER_TOKEN}'`    
-var resp = JSON.parse(resp);
-
-for (var i = 0; i < resp.length; i++) {
-    var data = resp[i];
-    var databaseName = data['databaseName'];
-    if (databaseName == "demo_database") {
-        var studyId = data['id'];
-        var tenantId = data['tenant']['id'];
+if (progress_status == "completed") {
+    // Adding admin user access permissions to demo dataset  
+    console.log(chalk.blue(`Adding admin user access permissions to demo dataset...\n`));
+    var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list/systemadmin' \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --header 'Authorization: Bearer ${BEARER_TOKEN}'`    
+    var resp = JSON.parse(resp);
+    for (var i = 0; i < resp.length; i++) {
+        var data = resp[i];
+        var databaseName = data['databaseName'];
+        if (databaseName == "demo_database") {
+            var studyId = data['id'];
+            var tenantId = data['tenant']['id'];
+        }
     }
+    var response = await $`curl -iks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/usermgmt/api/user-group/register-study-roles' \
+            --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
+            --header 'client_id: ${app_client_id}' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer ${BEARER_TOKEN}' \
+            --data '{
+            "userIds": ["a6660e40-261e-4782-873e-f76b4328aecf"],
+            "tenantId": "${tenantId}",
+            "studyId": "${studyId}",
+            "roles": ["RESEARCHER"]
+            }'`
+    console.log(chalk.green(`Completed adding admin user access permissions to demo dataset.`));
 }
-
-var response = await $`curl -iks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/usermgmt/api/user-group/register-study-roles' \
-        --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-        --header 'client_id: ${app_client_id}' \
-        --header 'Content-Type: application/json' \
-        --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-        --data '{
-        "userIds": ["a6660e40-261e-4782-873e-f76b4328aecf"],
-        "tenantId": "${tenantId}",
-        "studyId": "${studyId}",
-        "roles": ["RESEARCHER"]
-        }'`
-
-console.log(chalk.green(`Completed adding admin user access permissions to demo dataset.`));
