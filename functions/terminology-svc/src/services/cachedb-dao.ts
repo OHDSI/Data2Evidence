@@ -266,7 +266,7 @@ export class CachedbDAO {
         select
           ${columnsToSelect}
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${filterWhereClause}
         )
       `,
@@ -285,7 +285,7 @@ export class CachedbDAO {
           ${this.fts_concept_identifier}.match_bm25(concept_id, ?1) as fts_score,
           array_cosine_distance(concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${duckdbFtsWhereClause}
       ),
       fts as (
@@ -313,7 +313,7 @@ export class CachedbDAO {
           ${columnsToSelect},
           ${this.fts_concept_identifier}.match_bm25(concept_id, ?) as score
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${duckdbFtsWhereClause}
           order by score desc
         )
@@ -353,7 +353,7 @@ export class CachedbDAO {
         select
           ${columnsToSelect}
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${filterWhereClause}
         )
       `,
@@ -377,7 +377,7 @@ export class CachedbDAO {
               ELSE 0
             END as standard_boost
           from
-            ${this.vocabSchemaName}.concept
+            ${this.vocabSchemaName}.concept c
         ),
       `;
 
@@ -395,7 +395,7 @@ export class CachedbDAO {
               }.match_bm25(concept_id, ?3) as fts_score,
               array_cosine_distance(concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
             from
-              ${this.vocabSchemaName}.concept
+              ${this.vocabSchemaName}.concept c
               ${filterWhereClause}
             ),
           search_scores as (
@@ -428,7 +428,7 @@ export class CachedbDAO {
                 this.fts_concept_identifier
               }.match_bm25(concept_id, ?3) as search_score
             from
-              ${this.vocabSchemaName}.concept
+              ${this.vocabSchemaName}.concept c
           )
         `;
         // Combine all parameters for fts
@@ -815,7 +815,7 @@ class TrexDuckdbConnection {
     }
   }
 
-  async query(sql: string, params: any[]): Promise<any> {
+  async query(sql: string, params: any[] = []): Promise<any> {
     return new Promise((resolve, reject) => {
       this.conn.execute(
         sql,
