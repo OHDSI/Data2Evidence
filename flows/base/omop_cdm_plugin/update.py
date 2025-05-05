@@ -33,7 +33,7 @@ def update_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
             run_update_migration_script(schema_dao, schema_name, logger)
             # update indexes
         case CDMVersion.OMOP54:
-            logger.info(f"Schema '{cdm_version}' already updated at CDM Version '{cdm_version}'!")
+            logger.info(f"Schema '{schema_name}' already updated at CDM Version '{cdm_version}'!")
         case _:
             raise ValueError(f"CDM Version '{cdm_version}' for schema '{schema_name}' not valid")
 
