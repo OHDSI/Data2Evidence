@@ -19,8 +19,6 @@ if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
 
 
-
-
 @flow(log_prints=True)
 def data_load_plugin(options: DataloadOptions):
     logger = get_run_logger()
@@ -35,31 +33,31 @@ def data_load_plugin(options: DataloadOptions):
     chunksize = options.chunksize if options.chunksize else None
     
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema)
+                  database_code=database_code) # Todo:,schema_name=schema)
 
     truncate_tables(table_list=tables_to_truncate,
+                    schema=schema,
                     dbdao=dbdao,
                     logger=logger)
 
     for csv_file in files:
-       etl_task(dbdao, file=csv_file, escapechar=escape_char, header=header, 
+       etl_task(dbdao=dbdao, schema=schema, file=csv_file, escapechar=escape_char, header=header, 
                 delimiter=options.delimiter, encoding=options.encoding, 
                 chunksize=chunksize, logger=logger)
                 
 
 
 @task(log_prints=True)
-def truncate_tables(table_list: list[str], dbdao: DaoBase, logger):   
+def truncate_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):   
     # Truncate tables
     for table in table_list:
-        logger.info(f"Truncating table '{dbdao.schema_name}.{table}'")
-        dbdao.truncate_table(table)
+        logger.info(f"Truncating table '{schema}.{table}'")
+        dbdao.truncate_table(schema, table)
 
 
 @task(log_prints=True,
       task_run_name="etl_parent_task-{file.table_name}")
-def etl_task(dbdao: DaoBase, file: FileType, escapechar: str, header: bool|None, delimiter: str, encoding: str, chunksize: int, logger):
+def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, header: bool|None, delimiter: str, encoding: str, chunksize: int, logger):
     logger.info(f"Reading data from file '{file.table_name}'")
 
     for i, data in read_csv(file.path, escapechar=escapechar, header=header, 
@@ -67,28 +65,29 @@ def etl_task(dbdao: DaoBase, file: FileType, escapechar: str, header: bool|None,
 
         transformed_df = format_vocab_synpuf_data(dbdao, data, file.table_name, logger) 
         
-        load_data(dbdao, transformed_df, header, file, chunksize, i, logger)
+        load_data(dbdao, schema, transformed_df, header, file, chunksize, i, logger)
         
 
-def load_data(dbdao: DaoBase, df: pd.DataFrame, header: bool|None, file: FileType, chunksize: int, chunkindex: int, logger):
+def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None, 
+              file: FileType, chunksize: int, chunkindex: int, logger):
     try:
         if header == 0:
             csv_column_names = df.columns.tolist()
-            table_column_names = dbdao.get_columns(file.table_name) # use ibis to get columns from table, raise exception if table is empty
+            table_column_names = dbdao.get_columns(schema, file.table_name) # use ibis to get columns from table, raise exception if table is empty
             
             if table_column_names is None:
-                raise Exception(f"No columns found for table {file.table_name} in schema {dbdao.schema_name}!")
+                raise Exception(f"No columns found for table {file.table_name} in schema {schema}!")
             # else:
             #     table_column_names = [column_name[0] for column_name in table_column_names]
             common_columns = list(set(csv_column_names) & set(table_column_names))
-            df[common_columns].to_sql(file.table_name, dbdao.engine, if_exists='append', index=False, schema=dbdao.schema_name, chunksize=chunksize, method=psql_insert_copy)
+            df[common_columns].to_sql(file.table_name, dbdao.engine, if_exists='append', index=False, schema=schema, chunksize=chunksize, method=psql_insert_copy)
         elif header is None:
-            df.to_sql(file.table_name, dbdao.engine, if_exists="append", index=False, schema=dbdao.schema_name, chunksize=chunksize, method=psql_insert_copy)
+            df.to_sql(file.table_name, dbdao.engine, if_exists="append", index=False, schema=schema, chunksize=chunksize, method=psql_insert_copy)
     except Exception as e:
-        logger.error(f"'Data load failed for the table '{dbdao.schema_name}.{file.table_name}' at the chunk index: {chunkindex}  with error: {e}")
+        logger.error(f"'Data load failed for the table '{schema}.{file.table_name}' at the chunk index: {chunkindex}  with error: {e}")
         raise e
     else:
-        logger.info(f"Data load succeeded for table '{dbdao.schema_name}.{file.table_name}'!")
+        logger.info(f"Data load succeeded for table '{schema}.{file.table_name}'!")
 
 
 def read_csv(filepath, escapechar, header, delimiter, encoding, chunksize):
@@ -100,8 +99,7 @@ def read_csv(filepath, escapechar, header, delimiter, encoding, chunksize):
     else:
         yield i, pd.read_csv(filepath)
 
-# @task(log_prints=True,
-#       task_run_name="format_vocab_synpuf_data_task-{table_name}")
+
 def format_vocab_synpuf_data(dbdao, data: pd.DataFrame, table_name: str, logger) -> pd.DataFrame:
     match dbdao.dialect:
         case SupportedDatabaseDialects.POSTGRES:

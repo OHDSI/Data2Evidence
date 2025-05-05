@@ -854,10 +854,8 @@ class StrategusNode(Node):
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                
-                db_credentials = DBDao(use_cache_db=self.use_cache_db, 
-                                   database_code=self.database, 
-                                   schema_name=self.schema).tenant_configs
+                db_credentials = DBDao(use_cache_db=self.use_cache_db,
+                                       database_code=self.database).tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
                 rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                     dbms='postgresql', 

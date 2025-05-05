@@ -21,15 +21,15 @@ def incrementer() -> Generator[int, None, None]:
         n += 1
 
 
-def update_vocabulary_table(dbdao, to_truncate: bool, logger):
+def update_vocabulary_table(dbdao, schema_name: str, to_truncate: bool, logger):
     '''
     Add DICOM Vocabulary to Vocabulary table
     '''
     vocabulary_table = "vocabulary"    
     if to_truncate:
-        logger.info(f"Truncating '{dbdao.schema_name}.{vocabulary_table}' table..")
+        logger.info(f"Truncating '{schema_name}.{vocabulary_table}' table..")
     try:
-        logger.info(f"Populating '{dbdao.schema_name}.{vocabulary_table}' table..")
+        logger.info(f"Populating '{schema_name}.{vocabulary_table}' table..")
         values_to_insert = {
             "vocabulary_id": "DICOM",
             "vocabulary_name": "Digital Imaging and Communications in Medicine (National Electrical Manufacturers Association)",
@@ -37,38 +37,38 @@ def update_vocabulary_table(dbdao, to_truncate: bool, logger):
             "vocabulary_version": "NEMA Standard PS3", 
             "vocabulary_concept_id": 2128000000
         }
-        dbdao.insert_values_into_table(vocabulary_table, values_to_insert)
+        dbdao.insert_values_into_table(schema_name, vocabulary_table, values_to_insert)
     except Exception as e:
-        logger.error(f"Failed to insert DICOM Vocabulary into'{dbdao.schema_name}.{vocabulary_table}' table!")
+        logger.error(f"Failed to insert DICOM Vocabulary into'{schema_name}.{vocabulary_table}' table!")
         raise e
     else:
-        logger.info(f"Successfully inserted DICOM Vocabulary into '{dbdao.schema_name}.{vocabulary_table}' table!")
+        logger.info(f"Successfully inserted DICOM Vocabulary into '{schema_name}.{vocabulary_table}' table!")
 
 
-def update_concept_class_table(dbdao, to_truncate: bool, logger):
+def update_concept_class_table(dbdao, schema_name: str, to_truncate: bool, logger):
     '''
     Add DICOM Vocabulary to Concept Class table
     '''  
     concept_class_table = "concept_class"
 
     if to_truncate:
-        logger.info(f"Truncating '{dbdao.schema_name}.{concept_class_table}' table..")
+        logger.info(f"Truncating '{schema_name}.{concept_class_table}' table..")
         dbdao.truncate_table(concept_class_table)
     try:
-        logger.info(f"Populating '{dbdao.schema_name}.{concept_class_table}' table..")
+        logger.info(f"Populating '{schema_name}.{concept_class_table}' table..")
         values_to_insert = [
             {"concept_class_id": "DICOM Attributes", "concept_class_name": "DICOM Attributes", "concept_class_concept_id": 2128000001},
             {"concept_class_id": "DICOM Value Sets", "concept_class_name": "DICOM Value Sets", "concept_class_concept_id": 2128000002}
         ]
-        dbdao.insert_values_into_table(concept_class_table, values_to_insert)
+        dbdao.insert_values_into_table(schema_name, concept_class_table, values_to_insert)
     except Exception as e:
-        logger.error(f"Failed to insert DICOM Vocabulary into'{dbdao.schema_name}.{concept_class_table}' table!")
+        logger.error(f"Failed to insert DICOM Vocabulary into'{schema_name}.{concept_class_table}' table!")
         raise e
     else:
-        logger.info(f"Successfully inserted DICOM Vocabulary into '{dbdao.schema_name}.{concept_class_table}' table!")
+        logger.info(f"Successfully inserted DICOM Vocabulary into '{schema_name}.{concept_class_table}' table!")
 
 
-def update_concept_relationship_table(dbdao, to_truncate: bool, logger):
+def update_concept_relationship_table(dbdao, schema_name: str, to_truncate: bool, logger):
     concept_relationship_table = "concept_relationship"
     columns_to_use = ["concept_id_1", "concept_id_2", "relationship_id"]
 
@@ -77,11 +77,11 @@ def update_concept_relationship_table(dbdao, to_truncate: bool, logger):
     cs_values_maps_to_df = pd.read_csv(f'{PATH_TO_EXTERNAL_FILES}/cs_values_maps_to.csv', usecols=columns_to_use)
 
     if to_truncate:
-        logger.info(f"Truncating '{dbdao.schema_name}.{concept_relationship_table}' table..")
+        logger.info(f"Truncating '{schema_name}.{concept_relationship_table}' table..")
         dbdao.truncate_table(concept_relationship_table)
 
     try:
-        logger.info(f"Populating '{dbdao.schema_name}.{concept_relationship_table}' table..")
+        logger.info(f"Populating '{schema_name}.{concept_relationship_table}' table..")
 
         concept_relationship_staging_df["valid_start_date"] = pd.to_datetime(concept_relationship_staging_df["valid_start_date"].astype(str), format='%Y%m%d').dt.strftime('%Y%m%d')
         concept_relationship_staging_df["valid_end_date"] = pd.to_datetime(concept_relationship_staging_df["valid_end_date"].astype(str), format='%Y%m%d').dt.strftime('%Y%m%d')
@@ -89,7 +89,7 @@ def update_concept_relationship_table(dbdao, to_truncate: bool, logger):
         concept_relationship_staging_df.to_sql(
             name=concept_relationship_table, 
             con=dbdao.engine,
-            schema=dbdao.schema_name,
+            schema=schema_name,
             if_exists="append",
             index=False
         )
@@ -100,7 +100,7 @@ def update_concept_relationship_table(dbdao, to_truncate: bool, logger):
         cs_values_maps_to_value_df.to_sql(
             name=concept_relationship_table, 
             con=dbdao.engine,
-            schema=dbdao.schema_name,
+            schema=schema_name,
             if_exists="append",
             index=False
         )
@@ -111,25 +111,25 @@ def update_concept_relationship_table(dbdao, to_truncate: bool, logger):
         cs_values_maps_to_df.to_sql(
             name=concept_relationship_table, 
             con=dbdao.engine,
-            schema=dbdao.schema_name,
+            schema=schema_name,
             if_exists="append",
             index=False
         )
     except Exception as e:
-        logger.error(f"Failed to insert DICOM Vocabulary into'{dbdao.schema_name}.{concept_relationship_table}' table!")
+        logger.error(f"Failed to insert DICOM Vocabulary into'{schema_name}.{concept_relationship_table}' table!")
         raise e
     else:
-        logger.info(f"Successfully inserted DICOM Vocabulary into '{dbdao.schema_name}.{concept_relationship_table}' table!")
+        logger.info(f"Successfully inserted DICOM Vocabulary into '{schema_name}.{concept_relationship_table}' table!")
 
 
-def update_concept_table(dbdao, to_truncate: bool, logger):
+def update_concept_table(dbdao, schema_name: str, to_truncate: bool, logger):
     concept_table = "concept"
 
     if to_truncate:
         dbdao.truncate_table(concept_table)
 
 
-    logger.info(f"Populating '{dbdao.schema_name}.{concept_table}' table..")
+    logger.info(f"Populating '{schema_name}.{concept_table}' table..")
     try:
         concept_df = pd.read_csv(f"{PATH_TO_EXTERNAL_FILES}/omop_table_staging_v3.csv")
         
@@ -150,15 +150,15 @@ def update_concept_table(dbdao, to_truncate: bool, logger):
         concept_df.to_sql(
             name=concept_table, 
             con=dbdao.engine,
-            schema=dbdao.schema_name,
+            schema=schema_name,
             if_exists="append",
             index=False
         )
     except Exception as e:
-        logger.error(f"Failed to insert DICOM Concepts into'{dbdao.schema_name}.{concept_table}' table!")
+        logger.error(f"Failed to insert DICOM Concepts into'{schema_name}.{concept_table}' table!")
         raise e
     else:
-        logger.info(f"Successfully inserted DICOM Concepts into '{dbdao.schema_name}.{concept_table}' table!")
+        logger.info(f"Successfully inserted DICOM Concepts into '{schema_name}.{concept_table}' table!")
 
 
 def extract_metadata(data_element: DataElement, record: dict, id: int, parent_sequence_id: int = None) -> DataElementType:
