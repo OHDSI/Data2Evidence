@@ -50,8 +50,7 @@ def calculate_loyalty_score(options:CalculateConfig):
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, cal_st, cal_ed, database_code, schema_name, use_cache_db)
         coef, feature = load_coef_table(conn, coeff_table_name, schema_name)
@@ -83,8 +82,7 @@ def retrain_algo(options:RetrainConfig):
     train_st = index_datetime.replace(year=index_datetime.year-train_years-return_years).strftime("%Y-%m-%d")
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, train_st, train_ed, database_code, schema_name, use_cache_db)
         feature = list(set(data.columns) - set(['person_id']))

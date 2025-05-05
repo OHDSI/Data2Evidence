@@ -7,9 +7,9 @@ from .types import *
 from _shared_flow_utils.update_dataset_metadata import extract_version
 
 
-def get_tables_to_copy(source_dbdao, table_filter: list[DatamartCopyTableConfig], logger) -> list[str]:
+def get_tables_to_copy(source_dbdao, source_schema: str, table_filter: list[DatamartCopyTableConfig], logger) -> list[str]:
     # get all tables in source_schema
-    source_schema_tables = source_dbdao.get_table_names()
+    source_schema_tables = source_dbdao.get_table_names(source_schema)
     
     # retrieve tables to always include using TABLES_TO_INCLUDE_REGEX
     include_pattern = re.compile(TABLES_TO_INCLUDE_REGEX)
@@ -43,9 +43,9 @@ def get_tables_to_copy(source_dbdao, table_filter: list[DatamartCopyTableConfig]
     return tables_to_copy
 
 
-def get_columns_to_copy(source_dbdao, source_table: str, table_filter: list[DatamartCopyTableConfig]) -> list[str]:
+def get_columns_to_copy(source_dbdao, source_schema: str, source_table: str, table_filter: list[DatamartCopyTableConfig]) -> list[str]:
     # get all columns in source_table
-    source_table_columns = source_dbdao.get_columns(table=source_table)
+    source_table_columns = source_dbdao.get_columns(schema=source_schema, table=source_table)
     
     # retrieve columns to always exclude using COLUMNS_TO_EXCLUDE_REGEX
     exclude_pattern = re.compile(COLUMNS_TO_EXCLUDE_REGEX)
@@ -96,12 +96,12 @@ def create_copy_table(dbdao, target_schema, table, select_statement):
     return rows_copied
 
 
-def get_schema_version(dbdao, cdm_version, logger) -> str:
+def get_schema_version(dbdao, schema:str, cdm_version, logger) -> str:
     try:
-        liquibase_migration = dbdao.check_table_exists("databasechangelog")
+        liquibase_migration = dbdao.check_table_exists(schema, "databasechangelog")
         if liquibase_migration:
             # data management plugin
-            latest_executed_changeset = dbdao.get_last_executed_changeset()
+            latest_executed_changeset = dbdao.get_last_executed_changeset(schema)
             current_schema_version = extract_version(latest_executed_changeset)
         else:
             # use omop cdm plugin

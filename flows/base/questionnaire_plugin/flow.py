@@ -23,18 +23,17 @@ def questionnaire_plugin(options: QuestionnaireOptionsType):
     use_cache_db = options.use_cache_db
     
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
     
     match options.flow_action_type:
         case FlowActionType.CREATE_QUESTIONNAIRE_DEFINITION:
-            create_questionnaire_definition_task(db_connection=dbdao, questionnaire_definition=questionnaire_definition)
+            create_questionnaire_definition_task(db_connection=dbdao, schema=schema_name, questionnaire_definition=questionnaire_definition)
         case FlowActionType.GET_QUESTIONNAIRE_RESPONSE:
             get_questionnaire_response_task(dbdao=dbdao, questionnaire_id=options.questionnaire_id)
 
 
 @task(log_prints=True)
-def create_questionnaire_definition_task(db_connection, questionnaire_definition: QuestionnaireDefinitionType):
+def create_questionnaire_definition_task(db_connection, schema: str, questionnaire_definition: QuestionnaireDefinitionType):
 
     logger = get_run_logger(f"Running Create Questionnaire Definition..")
     try:
@@ -53,6 +52,7 @@ def create_questionnaire_definition_task(db_connection, questionnaire_definition
 
         logger.info(f"Inserting into '{questionnaire_table}' table..")
         db_connection.insert_values_into_table(
+            schema,
             questionnaire_table,
             questionnaire_values_to_insert
         )
@@ -64,6 +64,7 @@ def create_questionnaire_definition_task(db_connection, questionnaire_definition
             f"Processing questionnaire items..")
         create_questionnaire_item(items,
                                   questionnaire_id,
+                                  schema,
                                   db_connection,
                                   questionnaire_item_table)
     except Exception as e:
@@ -73,6 +74,7 @@ def create_questionnaire_definition_task(db_connection, questionnaire_definition
 
 def create_questionnaire_item(items: List[IItemType],
                               questionnaire_id: str,
+                              schema: str,
                               dbconnection,
                               questionnaire_item_table: str,
                               parent_item_id: str = ""):
@@ -97,6 +99,7 @@ def create_questionnaire_item(items: List[IItemType],
                                     "gdm_item_quesionnaire_parent_id", "GDM.ITEM_QUESIONNAIRE_PARENT_ID")
 
         dbconnection.insert_values_into_table(
+            schema,
             questionnaire_item_table,
             questionnaire_item_values_to_insert
         )

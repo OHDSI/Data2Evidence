@@ -23,7 +23,7 @@ def create_datamodel(database_code: str,
                      count: int = 0,
                      cleansed_schema_option: bool = False):
 
-    dbdao = DBDao(use_cache_db=False, database_code=database_code, schema_name=schema_name, vocab_schema_name=vocab_schema)
+    dbdao = DBDao(use_cache_db=False, database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
     task_status = create_schema_tasks(
@@ -63,7 +63,7 @@ def create_schema_tasks(dialect: str,
                         plugin_classpath: str,
                         count: int) -> bool:
     try:
-        schema_dao = DBDao(database_code=database_code, schema_name=schema_name, use_cache_db=False)
+        schema_dao = DBDao(database_code=database_code, use_cache_db=False)
         
         create_db_schema_wo = create_schema_task.with_options(
             on_completion=[partial(create_dataset_schema_hook,
@@ -72,7 +72,7 @@ def create_schema_tasks(dialect: str,
                                 **dict(schema_dao=schema_dao))])
 
         # create schema if not exists
-        create_db_schema_wo(schema_dao)
+        create_db_schema_wo(schema_dao, schema_name)
         if count == 0 or count is None:
             action = LiquibaseAction.UPDATE
         elif count > 0:
@@ -80,7 +80,7 @@ def create_schema_tasks(dialect: str,
 
         create_tables_wo = run_liquibase_update_task.with_options(
             on_failure=[partial(drop_schema_hook,
-                                **dict(dbdao=schema_dao))])
+                                **dict(dbdao=schema_dao, schema=schema_name))])
 
         create_tables_wo(action=action,
                          dialect=dialect,
@@ -95,15 +95,15 @@ def create_schema_tasks(dialect: str,
 
         # task
         enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao))])
+            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
         
-        enable_audit_policies_wo(schema_dao)
+        enable_audit_policies_wo(schema_dao, schema_name)
 
         # task
         create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao))])
+            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
         
-        create_and_assign_roles_wo(schema_dao)
+        create_and_assign_roles_wo(schema_dao, schema_name)
 
         if data_model in OMOP_DATA_MODELS:
             cdm_version = DATAMODEL_CDM_VERSION.get(data_model)
@@ -113,7 +113,7 @@ def create_schema_tasks(dialect: str,
                 on_failure=[partial(update_cdm_version_hook,
                                     **dict(db=database_code, schema=schema_name))])
 
-            insert_cdm_version_wo(schema_dao, cdm_version)
+            insert_cdm_version_wo(schema_dao, schema_name, cdm_version)
         print("Dataset schema successfully created and privileges assigned!")
         return True
     except Exception as e:
@@ -163,10 +163,10 @@ def update_datamodel(flow_action_type: str,
             cdm_version = DATAMODEL_CDM_VERSION.get(data_model)
             
             # check if cdm source table is empty
-            cdm_source_row_count = schema_dao.get_table_row_count("cdm_source")
+            cdm_source_row_count = schema_dao.get_table_row_count(schema_name, "cdm_source")
             if cdm_source_row_count == 0:
                 # insert cdm version
-                insert_cdm_version(schema_dao, cdm_version) 
+                insert_cdm_version(schema_dao, schema_name, cdm_version) 
             else:
                 # update cdm version
                 update_cdm_version_wo = update_cdm_version.with_options(
@@ -193,8 +193,7 @@ def rollback_count_task(use_cache_db: bool,
                         rollback_count: int):
 
     dbdao = DBDao(use_cache_db=use_cache_db, 
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
     try:
@@ -231,8 +230,7 @@ def rollback_tag_task(use_cache_db: bool,
                       rollback_tag: str):
 
     dbdao = DBDao(use_cache_db=use_cache_db, 
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
 
@@ -259,38 +257,38 @@ def rollback_tag_task(use_cache_db: bool,
 
 
 @task(log_prints=True)
-def insert_cdm_version(schema_dao: DBDao, cdm_version: str):
+def insert_cdm_version(schema_dao: DBDao, schema_name: str, cdm_version: str):
     #Todo: make cdm_holder value more generic
-    get_run_logger().info(f"Inserting cdm version '{cdm_version}' into '{schema_dao.schema_name}.cdm_source' table..")
-    is_lower_case = check_table_case(schema_dao)
+    get_run_logger().info(f"Inserting cdm version '{cdm_version}' into '{schema_name}.cdm_source' table..")
+    is_lower_case = check_table_case(schema_dao, schema_name)
     if is_lower_case:
         values_to_insert = {
-            "cdm_source_name": schema_dao.schema_name,
-            "cdm_source_abbreviation": schema_dao.schema_name[0:25],
+            "cdm_source_name": schema_name,
+            "cdm_source_abbreviation": schema_name[0:25],
             "cdm_holder": "D4L",
             "source_release_date": datetime.now(),
             "cdm_release_date": datetime.now(),
             "cdm_version": cdm_version
         }
-        schema_dao.insert_values_into_table("cdm_source", values_to_insert)
+        schema_dao.insert_values_into_table(schema_name, "cdm_source", values_to_insert)
     else:
         # for hana & pg schemas before conversion to lower case
         values_to_insert = {
-            "CDM_SOURCE_NAME": schema_dao.schema_name,
-            "CDM_SOURCE_ABBREVIATION": schema_dao.schema_name[0:25],
+            "CDM_SOURCE_NAME": schema_name,
+            "CDM_SOURCE_ABBREVIATION": schema_name[0:25],
             "CDM_HOLDER": "D4L",
             "SOURCE_RELEASE_DATE": datetime.now(),
             "CDM_RELEASE_DATE": datetime.now(),
             "CDM_VERSION": cdm_version
         }
-        schema_dao.insert_values_into_table("CDM_SOURCE", values_to_insert)
-    get_run_logger().info(f"Successfully inserted cdm version '{cdm_version}' into '{schema_dao.schema_name}.cdm_source' table..")
+        schema_dao.insert_values_into_table(schema_name, "CDM_SOURCE", values_to_insert)
+    get_run_logger().info(f"Successfully inserted cdm version '{cdm_version}' into '{schema_name}.cdm_source' table..")
 
 @task(log_prints=True)
-def update_cdm_version(schema_dao: DBDao, cdm_version: str):
-    get_run_logger().info(f"Updating cdm version '{cdm_version}' for '{schema_dao.schema_name}.cdm_source' table..")
-    schema_dao.update_cdm_version(cdm_version)
-    get_run_logger().info(f"Successfully updated cdm version '{cdm_version}' for '{schema_dao.schema_name}.cdm_source' table..")
+def update_cdm_version(schema_dao: DBDao, schema_name, cdm_version: str):
+    get_run_logger().info(f"Updating cdm version '{cdm_version}' for '{schema_name}.cdm_source' table..")
+    schema_dao.update_cdm_version(schema_name, cdm_version)
+    get_run_logger().info(f"Successfully updated cdm version '{cdm_version}' for '{schema_name}.cdm_source' table..")
 
 def create_cdm_schema_tasks(database_code: str,
                             data_model: str,
@@ -306,7 +304,7 @@ def create_cdm_schema_tasks(database_code: str,
                              database_code=database_code, 
                              schema_name=vocab_schema)
     
-    vocab_schema_exists = vocab_schema_dao.check_schema_exists()
+    vocab_schema_exists = vocab_schema_dao.check_schema_exists(schema_name)
     
     if (vocab_schema_exists == False):
         try:
@@ -326,7 +324,7 @@ def create_cdm_schema_tasks(database_code: str,
     if (schema_name != vocab_schema):
         # Check if the incoming schema_name exists or not
         cdm_schema_dao = DBDao(database_code=database_code, schema_name=schema_name, use_cache_db=False)
-        cdm_schema_exists = cdm_schema_dao.check_schema_exists()
+        cdm_schema_exists = cdm_schema_dao.check_schema_exists(schema_name)
         if (cdm_schema_exists == False):
             try:
                 # create cdm schema
