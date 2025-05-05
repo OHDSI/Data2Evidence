@@ -68,6 +68,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const publication = db.publications?.length > 0 ? db.publications[0].publication : "";
+  const dialect = db.dialect;
 
   const hasChanges = useMemo(
     () =>
@@ -114,7 +115,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
       setLoading(true);
 
       const publications: IDbPublication[] = [];
-      if (formData.publication) {
+      if (dialect === "postgres" && formData.publication) {
         publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
       }
 
@@ -147,7 +148,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
     } finally {
       setLoading(false);
     }
-  }, [formData]);
+  }, [formData, dialect]);
 
   return (
     <Dialog
@@ -242,7 +243,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
             />
           </Box>
         </Box>
-        <Box mb={4}>
+        <Box mb={4} hidden={dialect !== "postgres"}>
           <Box mb={2}>
             <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__CACHE_REPLICATION)}</b>
           </Box>
