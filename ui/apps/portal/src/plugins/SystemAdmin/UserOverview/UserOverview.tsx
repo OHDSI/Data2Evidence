@@ -13,6 +13,7 @@ import {
   ALP_SYSTEM_ADMIN,
   ALP_USER_ADMIN,
   DATA_ADMIN_ROLES,
+  STUDY_WRITE_DQD_RESEARCHER,
   TENANT_ROLES,
   ALP_DASHBOARD_VIEWER,
 } from "../../../config";
@@ -158,6 +159,10 @@ export const UserOverview: FC<UserOverviewProps> = () => {
 
     if (roles.includes(ALP_DASHBOARD_VIEWER)) {
       roleList.push(ALP_ROLES[ALP_DASHBOARD_VIEWER]);
+    }
+
+    if(roles.includes(STUDY_WRITE_DQD_RESEARCHER)) {
+      roleList.push(ALP_ROLES[STUDY_WRITE_DQD_RESEARCHER]);
     }
 
     return roleList;
