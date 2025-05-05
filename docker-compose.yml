@@ -125,6 +125,7 @@ services:
         priority: 20
     volumes:
       - trex:/usr/src/data
+      - cachedb-data-1:/app/duckdb_data/cache
     healthcheck:
       interval: 60s
       retries: 30
@@ -144,6 +145,7 @@ services:
         - *x-pg
         - *x-perseus
       REP_PG: postgres://postgres:mypass@demodb:5432/postgres
+      CACHE_FOLDER_PATH: /app/duckdb_data/cache
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -479,7 +481,7 @@ services:
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
       NODE_ENV: development
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
-      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
+      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_cachedb-data-1:/app/duckdb_data/cache", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
       PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas"]'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
