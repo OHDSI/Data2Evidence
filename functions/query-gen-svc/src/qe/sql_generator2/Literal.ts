@@ -1,5 +1,6 @@
 import { AstElement } from "./AstElement";
 import { QueryObject as qo } from "@alp/alp-base-utils";
+import moment from "moment";
 import QueryObject = qo.QueryObject;
 
 export class Literal extends AstElement {
@@ -8,7 +9,7 @@ export class Literal extends AstElement {
     }
 
     private _isValidDateString = function (value: string) {
-        return !isNaN(Date.parse(value));
+        return moment(value, "YYYY-MM-DD", true).isValid();
     };
 
     getSQLNoCase() {
