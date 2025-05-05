@@ -157,7 +157,12 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
   const handleDialectChange = useCallback(
     (dialect: string) => {
-      handleFormDataChange({ dialect, vocabSchemas: [], authenticationMode: AUTHENTICATION_MODES.PASSWORD });
+      handleFormDataChange({
+        dialect,
+        vocabSchemas: [],
+        authenticationMode: AUTHENTICATION_MODES.PASSWORD,
+        publication: "",
+      });
     },
     [handleFormDataChange]
   );
@@ -222,7 +227,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       }
 
       const publications: IDbPublication[] = [];
-      if (formData.publication) {
+      if (formData.dialect === "postgres" && formData.publication) {
         publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
       }
 
@@ -607,7 +612,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             </Box>
           ))}
         </Box>
-        <Box mb={4}>
+        <Box mb={4} hidden={formData.dialect !== "postgres"}>
           <Box mb={2}>
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__CACHE_REPLICATION)}</b>
           </Box>
