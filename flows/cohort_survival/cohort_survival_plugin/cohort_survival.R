@@ -45,6 +45,7 @@ run_cohort_survival <- function(
             pg_con <- DBI::dbConnect(RPostgres::Postgres(),
                 dbname = pg_dbname,
                 host = pg_host,
+                port = pg_port,
                 user = pg_user,
                 password = pg_password,
                 options = sprintf("-c search_path=%s", pg_schema)
