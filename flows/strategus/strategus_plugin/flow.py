@@ -60,7 +60,7 @@ def strategus_plugin(json_graph, options):
 
     # Create an artifact to store the nodes output
     create_markdown_artifact(
-        key="strategus_plugin_nodes_output",
+        key="strategus-plugin-nodes-output",
         markdown=json.dumps(nodes_out)
     )
 

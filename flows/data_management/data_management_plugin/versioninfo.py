@@ -5,16 +5,13 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 from .const import OMOP_DATA_MODELS, check_table_case, convert_case
-from .types import (PortalDatasetType, 
-                                                ExtractDatasetSchemaType)
+from .types import PortalDatasetType, ExtractDatasetSchemaType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.liquibase import Liquibase
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
-from _shared_flow_utils.types import (UserType, 
-                                LiquibaseAction,
-                                EntityCountDistributionType)
+from _shared_flow_utils.types import LiquibaseAction, EntityCountDistributionType
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
@@ -82,7 +79,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
 
     try:
         # handle case of wrong db credentials
-        dataset_dao = DBDao(use_cache_db=use_cache_db, database_code=database_code, schema_name=schema_name)
+        dataset_dao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     except Exception as e:
         logger.error(f"Failed to connect to database")
         raise e
@@ -90,7 +87,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
         portal_server_api = PortalServerAPI()
         
         # handle case where schema does not exist in db
-        schema_exists = dataset_dao.check_schema_exists()
+        schema_exists = dataset_dao.check_schema_exists(schema_name)
         if schema_exists == False:
             error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
             logger.error(error_msg)
@@ -102,6 +99,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dataset_dao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_release_date",
                 entity_name="created_date",
@@ -128,7 +126,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
 
             try:
                 # update with current version count or error msg
-                current_schema_version = get_current_version(dataset_dao)
+                current_schema_version = get_current_version(dataset_dao, schema_name)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", current_schema_version)
             except Exception as e:
                 logger.error(
@@ -140,13 +138,14 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             if data_model in OMOP_DATA_MODELS:
                 
                 # used for hana datasets and pg datasets created before default
-                is_lower_case = check_table_case(dataset_dao)
+                is_lower_case = check_table_case(dataset_dao, schema_name)
 
                 # update patient count or error msg
                 update_entity_distinct_count(
                     portal_server_api=portal_server_api,
                     dataset_id=dataset_id,
                     dbdao=dataset_dao,
+                    schema_name=schema_name,
                     table_name=convert_case("person", is_lower_case),
                     column_name=convert_case("person_id", is_lower_case),
                     entity_name="patient_count",
@@ -156,7 +155,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 try:
                     # update with entity distribution json string
                     entity_count_distribution = get_entity_count_distribution(
-                        dataset_dao, is_lower_case)
+                        dataset_dao, schema_name, is_lower_case)
                     portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count_distribution", json.dumps(entity_count_distribution))
                 except Exception as e:
                     logger.error(
@@ -178,6 +177,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                     portal_server_api=portal_server_api,
                     dataset_id=dataset_id,
                     dbdao=dataset_dao,
+                    schema_name=schema_name,
                     table_name=convert_case("cdm_source", is_lower_case),
                     column_name=convert_case("cdm_version", is_lower_case),
                     entity_name="version",
@@ -217,9 +217,9 @@ def get_latest_available_version(**kwargs) -> str:
     return latest_available_schema_version
 
 
-def get_current_version(dao_obj: DBDao) -> str:
+def get_current_version(dao_obj: DBDao, schema_name: str) -> str:
     try:
-        latest_executed_changeset = dao_obj.get_last_executed_changeset()
+        latest_executed_changeset = dao_obj.get_last_executed_changeset(schema)
         current_version = extract_version(latest_executed_changeset)
     except Exception as e:
         error_msg = f"Error retrieving current version"
@@ -230,7 +230,7 @@ def get_current_version(dao_obj: DBDao) -> str:
 
 def get_updated_date(dao_obj: DBDao) -> str:
     try:
-        updated_date = str(dao_obj.get_datamodel_updated_date()).split(" ")[0]
+        updated_date = str(dao_obj.get_datamodel_updated_date(schema_name)).split(" ")[0]
     except Exception as e:
         error_msg = f"Error retrieving updated date"
         get_run_logger().error(f"{error_msg}: {e}")
@@ -238,17 +238,17 @@ def get_updated_date(dao_obj: DBDao) -> str:
     return updated_date
 
 
-def get_entity_count_distribution(dao_obj: DBDao, is_lower_case: bool) -> EntityCountDistributionType:
+def get_entity_count_distribution(dao_obj: DBDao, schema_name: str, is_lower_case: bool) -> EntityCountDistributionType:
     entity_count_distribution = {}
     # retrieve count for each entity table
     for table, unique_id_column in OMOP_NON_PERSON_ENTITIES.items():
         try:
             if is_lower_case:
                 entity_count = dao_obj.get_distinct_count(
-                    table, unique_id_column)
+                    schema_name, table, unique_id_column)
             else:
                 entity_count = dao_obj.get_distinct_count(
-                    table.upper(), unique_id_column.upper())
+                    schema_name, table.upper(), unique_id_column.upper())
         except Exception as e:
             get_run_logger().error(
                 f"Error retrieving entity count for {table}: {e}")
