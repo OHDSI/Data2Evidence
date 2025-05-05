@@ -14,7 +14,7 @@ import "./Starboard.scss";
 import { getAuthToken } from "../../containers/auth/auth";
 
 const MRI_ROOT_URL = "analytics-svc";
-const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
+const uiFilesUrl = "https://localhost:41100/";
 const codeSuggestionUrl = "code-suggestion";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
@@ -28,11 +28,20 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
+  const setupPYQE = `#%% [python]
+  import os
+  import micropip
+  await micropip.install('ssl')
+  await micropip.install('pyjwt==2.9.0')
+  await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
+  os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
+  os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
+
   const extractJupyterKernel = `\n# %% [esm]
   import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
   a.plugin.register(1, {
     serverSettings: {
-      baseUrl: "${uiFilesUrl}/jupyter",
+      baseUrl: "${uiFilesUrl}jupyter",
       token: "${jwtToken}",
       appendToken: true,
       init: {
@@ -106,7 +115,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-      notebookContent += extractJupyterKernel + initialiseJupyterKernel;
+      notebookContent += setupPYQE + extractJupyterKernel + initialiseJupyterKernel;
 
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
