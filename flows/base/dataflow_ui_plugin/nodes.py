@@ -75,20 +75,21 @@ class Py2TableNode(Node):
 
         # Assume only one match so return index 0
         return matched[0].value
-
-
-    def __create_dataframe(self, data: dict):
-        if all(not isinstance(v, list) for v in data.values()):
-            # If values are all scalar, need to pass in index
-            index = [0]
-            return pd.DataFrame(data, index=index)
+    
+    def __create_dataframe(self, data: dict|list) -> pd.DataFrame:
+        if isinstance(data, dict):
+            if all(not isinstance(v, list) for v in data.values()):
+                # If values are all scalar, need to pass in index
+                index = [0]
+                return pd.DataFrame(data, index=index)
+            else:
+                return pd.DataFrame.from_dict(data)
         else:
-
-            return pd.DataFrame.from_dict(data)
+            # Data is list
+            return pd.DataFrame(data)
 
     def _exec(self, _input: dict[str, Result]) -> pd.DataFrame:
-        # Todo: Remove scriptnode prefix coming from UI
-        source_node = self.ui_map.get("source").split(".")[0]
+        source_node = self.ui_map.get("source").split(".")[0] # Todo: After change payload, use: self.ui_map.get("source") 
         path = self.ui_map.get("path")
         result_obj = _input.get(source_node).result
 
@@ -266,37 +267,26 @@ class CsvNode(Node):
 class DbWriter(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.schema_name = _node["dbtablename"].split(".")[0] # Todo: Add on UI side
-        self.table_name = _node["dbtablename"].split(".")[1]
+        self.schema_name = _node["schemaname"]
+        self.table_name = _node["dbtablename"]
         self.database = _node["database"] 
-        # self.dataframe = _node["dataframe"] # Todo: Add on UI side
+        self.dataframe = _node["dataframe"][0] # Todo: after change payload, use _node["dataframe"]
         self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
         return False
 
-    # Todo: Connect to db without specifying schema
     def task(self, _input: dict[str, Result], task_run_context):        
-        dbutils = DBDao(use_cache_db=self.use_cache_db, 
-                        database_code=self.database,
-                        schema_name=self.schema_name)
-        
+        dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
         dbconn = dbutils.engine
 
         try:
-            for key, value in _input.items(): 
-                result_obj_df = value.result
-                result_obj_df.to_sql(
-                    self.table_name, con=dbconn, index=False, if_exists="append", schema=self.schema_name
-                )
-            return Result(False,  result_obj_df, self, task_run_context)
-            
-            # Todo: Update with dataframe once it's incorporated in backend
-            # for path in self.dataframe:
-            #     input_element = input_element[path].data
-            # result = input_element.to_sql(
-            #     self.tablename, dbconn, if_exists='replace')
-            # return Result(False,  result, self, task_run_context)
+            df_to_write = _input[self.dataframe].result
+            result = df_to_write.to_sql(self.table_name, 
+                                        dbconn, 
+                                        schema=self.schema_name, 
+                                        if_exists='replace')
+            return Result(False,  result, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -311,14 +301,9 @@ class DBReader(Node):
     def test(self, task_run_context):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
-    # Todo: Connect to db without specifying schema
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(use_cache_db=False, 
-                        database_code=self.database,
-                        schema_name=self.schemaname)
-        
+        dbutils = DBDao(use_cache_db=False, database_code=self.database) 
         dbconn = dbutils.engine
-        # Set search path to schema
 
         try:
             df = pd.read_sql_query(
@@ -369,8 +354,7 @@ class SqlQueryNode(Node):
         try:
             # Todo: Connect to db without specifying schema
             tenant_configs = DBDao(use_cache_db=self.use_cache_db, 
-                                   database_code=self.database, 
-                                   schema_name=self.schema).tenant_configs
+                                   database_code=self.database).tenant_configs
             con = ibis.postgres.connect(database=self.database,
                                         host=tenant_configs.host,
                                         user=tenant_configs.adminUser,

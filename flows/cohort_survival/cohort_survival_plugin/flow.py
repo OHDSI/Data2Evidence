@@ -26,14 +26,11 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
         options.competingOutcomeCohortDefinitionId
     )
 
-    dbdao = DBDao(
-        use_cache_db=use_cache_db,
-        database_code=database_code,
-        schema_name=schema_name
-    )
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
     generate_cohort_survival_data(
         dbdao,
+        schema_name,
         target_cohort_definition_id,
         outcome_cohort_definition_id,
         analysis_type,
@@ -44,6 +41,7 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
 @task()
 def generate_cohort_survival_data(
     dbdao,
+    schema_name: str,
     target_cohort_definition_id: int,
     outcome_cohort_definition_id: int,
     analysis_type: str = "single_event",
@@ -91,7 +89,7 @@ def generate_cohort_survival_data(
             pg_dbname=db_credentials.databaseName,
             pg_user=db_credentials.readUser,
             pg_password=db_credentials.readPassword.get_secret_value(),
-            pg_schema=dbdao.schema_name
+            pg_schema=schema_name
         )
         
         # Parse the JSON result

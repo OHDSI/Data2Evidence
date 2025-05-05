@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Any, Callable
 from datetime import datetime
 import pandas as pd
-import re
+
 
 import sqlalchemy as sql
 from sqlalchemy.engine import Connection
@@ -23,12 +23,9 @@ class SqlAlchemyDao(DaoBase):
 
     def __init__(self, use_cache_db: bool, database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 schema_name: str = None, vocab_schema_name: str = None,
                  connect_to_duckdb=False, metadata=None):
 
-        super().__init__(use_cache_db, database_code, user_type,
-                         schema_name, vocab_schema_name, connect_to_duckdb)
-        self.metadata = sql.MetaData(self.schema_name)
+        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
 
     # --- Property methods ---
 
@@ -69,18 +66,16 @@ class SqlAlchemyDao(DaoBase):
         return sql.inspect(self.engine)
 
     # --- Create methods ---
-    def create_schema(self, schema_name: str = None) -> None:
-        schema = schema_name if schema_name else self.schema_name
+    def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
         with self.engine.connect() as connection:
             connection.execute(CreateSchema(schema))
             connection.commit()
 
-    def create_table(self, table_name: str, columns: dict, schema_name: str = None):
-        schema = schema_name if schema_name else self.schema_name
+    def create_table(self, schema: str, table: str, columns: dict):
         metadata_obj = sql.MetaData(schema=schema)
         with self.engine.connect() as connection:
-            new_table = sql.Table(table_name,
+            new_table = sql.Table(table,
                                   metadata_obj,
                                   *(sql.Column(name, dtype) for name, dtype in columns.items())
                                   )
@@ -89,60 +84,62 @@ class SqlAlchemyDao(DaoBase):
 
     # --- Read methods ---
 
-    def check_schema_exists(self) -> bool:
-        return self.inspector.has_schema(self.schema_name)
+    def check_schema_exists(self, schema: str) -> bool:
+        return self.inspector.has_schema(schema)
 
-    def check_empty_schema(self) -> bool:
-        schema = schema if schema else self.schema_name
-        tables = self.get_table_names()
+    def check_empty_schema(self, schema: str) -> bool:
+        tables = self.get_table_names(schema)
         return False if tables else True
 
-    def check_table_exists(self, table: str) -> bool:
-        return self.inspector.has_table(schema=self.schema_name, table_name=table)
+    def check_table_exists(self, schema: str, table: str) -> bool:
+        return self.inspector.has_table(schema=schema, table_name=table)
+    
+    def get_schema_names(self) -> list[str]:
+        return self.inspector.get_schema_names()
 
-    def get_table_names(self, include_views: bool = False) -> list[str]:
-        tables = self.inspector.get_table_names(schema=self.schema_name)
+    def get_table_names(self, schema: str, include_views: bool = False) -> list[str]:
+        tables = self.inspector.get_table_names(schema=schema)
         if include_views:
-            views = self.inspector.get_view_names(schema=self.schema_name)
+            views = self.inspector.get_view_names(schema=schema)
         else:
             views = []
         return tables + views
 
-    def get_indexes_for_table(self, table: str) -> list[dict]:
+    def get_indexes_for_table(self, schema: str, table: str) -> list[dict]:
         # Doesn't return indexes created on primary key
-        return self.inspector.get_indexes(schema=self.schema_name, table_name=table)
+        return self.inspector.get_indexes(schema=schema, table_name=table)
 
-    def get_indexes_for_pk(self, table: str) -> dict:
+    def get_indexes_for_pk(self, schema: str, table: str) -> dict:
         # To get indexes created on primary key
         # returns { "constrained_columns": [str], "name": str, comment: str|None }
-        return self.inspector.get_pk_constraint(schema=self.schema_name, table_name=table)
+        return self.inspector.get_pk_constraint(schema=schema, table_name=table)
 
-    def get_columns(self, table: str) -> list[str]:
+    def get_columns(self, schema: str, table: str) -> list[str]:
         all_columns = self.inspector.get_columns(
-            schema=self.schema_name, table_name=table)
+            schema=schema, table_name=table)
         column_names = [col.get("name") for col in all_columns]
         return column_names
 
-    def get_table_row_count(self, table: str) -> int:
+    def get_table_row_count(self, schema: str, table: str) -> int:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
             select_count_stmt = sql.select(sql.func.count()).select_from(table)
             row_count = connection.execute(select_count_stmt).scalar()
         return row_count
 
-    def get_distinct_count(self, table: str, column_name: str) -> int:
+    def get_distinct_count(self, schema: str, table: str, column: str) -> int:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj,
                               autoload_with=connection)
             distinct_count = connection.execute(sql.func.count(
-                sql.func.distinct(getattr(table.c, column_name)))).scalar()
+                sql.func.distinct(getattr(table.c, column)))).scalar()
         return distinct_count
 
-    def get_last_executed_changeset(self) -> str:
+    def get_last_executed_changeset(self, schema: str) -> str:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table("databasechangelog".casefold(), metadata_obj,
                               autoload_with=connection)
             filename_col = getattr(table.c, "filename".casefold())
@@ -152,9 +149,9 @@ class SqlAlchemyDao(DaoBase):
             latest_changeset = connection.execute(select_stmt).scalar()
             return latest_changeset
 
-    def get_datamodel_created_date(self) -> datetime:
+    def get_datamodel_created_date(self, schema: str) -> datetime:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table("databasechangelog".casefold(), metadata_obj,
                               autoload_with=connection)
             dateexecuted_col = getattr(table.c, "dateexecuted".casefold())
@@ -163,9 +160,9 @@ class SqlAlchemyDao(DaoBase):
             created_date = connection.execute(select_stmt).scalar()
             return created_date
 
-    def get_datamodel_updated_date(self) -> datetime:
+    def get_datamodel_updated_date(self, schema: str) -> datetime:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table("databasechangelog".casefold(), metadata_obj,
                               autoload_with=connection)
             dateexecuted_col = getattr(table.c, "dateexecuted".casefold())
@@ -174,21 +171,21 @@ class SqlAlchemyDao(DaoBase):
             updated_date = connection.execute(select_stmt).scalar()
             return updated_date
 
-    def get_value(self, table_name: str, column_name: str) -> str:
+    def get_value(self, schema: str, table: str, column: str) -> str:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
-            table = sql.Table(table_name, metadata_obj,
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = sql.Table(table, metadata_obj,
                               autoload_with=connection)
-            stmt = sql.select(table.c[column_name]).select_from(table)
+            stmt = sql.select(table_obj.c[column]).select_from(table_obj)
             value = connection.execute(stmt).scalar()
             return value
 
-    def get_next_record_id(self, table_name: str, id_column_name: int) -> int:
-        metadata_obj = sql.MetaData(schema=self.schema_name)
-        table = sql.Table(table_name, metadata_obj,
+    def get_next_record_id(self, schema: str, table: str, id_column: int) -> int:
+        metadata_obj = sql.MetaData(schema=schema)
+        table_obj = sql.Table(table, metadata_obj,
                           autoload_with=self.engine)
-        id_column = getattr(table.c, id_column_name.casefold())
-        last_record_id_stmt = sql.select(sql.func.max(id_column))
+        id_column_obj = getattr(table_obj.c, id_column.casefold())
+        last_record_id_stmt = sql.select(sql.func.max(id_column_obj))
         last_record_id = self.execute_sqlalchemy_statement(
             last_record_id_stmt, self.get_single_value)
         if last_record_id is None:
@@ -198,72 +195,72 @@ class SqlAlchemyDao(DaoBase):
 
     # --- Update methods ---
 
-    def update_cdm_version(self, cdm_version: str):
+    def update_cdm_version(self, schema: str, cdm_version: str):
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table("cdm_source".casefold(), metadata_obj,
                               autoload_with=connection)
             cdm_source_col = getattr(table.c, "cdm_source_name".casefold())
             update_stmt = sql.update(table).where(
-                cdm_source_col == self.schema_name).values(cdm_version=cdm_version)
+                cdm_source_col == schema).values(cdm_version=cdm_version)
             res = connection.execute(update_stmt)
             connection.commit()
 
-    def insert_values_into_table(self, table_name: str, column_value_mapping: list[dict]):
+    def insert_values_into_table(self, schema: str, table: str, column_value_mapping: list[dict]):
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
-            table = sql.Table(table_name, metadata_obj,
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = sql.Table(table, metadata_obj,
                               autoload_with=connection)
-            res = connection.execute(table.insert(), column_value_mapping)
+            res = connection.execute(table_obj.insert(), column_value_mapping)
             connection.commit()
 
-    def update_data_ingestion_date(self):
+    def update_data_ingestion_date(self, schema: str):
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
-            table = sql.Table("dataset_metadata".casefold(), metadata_obj,
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = sql.Table("dataset_metadata".casefold(), metadata_obj,
                               autoload_with=connection)
-            condition_col = getattr(table.c, "schema_name".casefold())
-            update_stmt = sql.update(table).where(
-                condition_col == self.schema_name).values(data_ingestion_date=datetime.now())
+            condition_col = getattr(table_obj.c, "schema_name".casefold())
+            update_stmt = sql.update(table_obj).where(
+                condition_col == schema).values(data_ingestion_date=datetime.now())
             print(
-                f"Updating data ingestion date for schema {self.schema_name}")
+                f"Updating data ingestion date for schema {schema}")
             res = connection.execute(update_stmt)
             connection.commit()
-            print(f"Updated data ingestion date for {self.schema_name}")
+            print(f"Updated data ingestion date for {schema}")
 
     # --- Delete methods ---
 
-    def drop_schema(self, cascade: bool = True):
+    def drop_schema(self, schema: str, cascade: bool = False):
         with self.engine.connect() as connection:
-            connection.execute(DropSchema(self.schema_name, cascade=cascade))
+            connection.execute(DropSchema(schema, cascade=cascade))
             connection.commit()
 
-    def delete_records(self, table_name: str, conditions: list):
-        metadata_obj = sql.MetaData(schema=self.schema_name)
-        table = sql.Table(table_name, metadata_obj, autoload_with=self.engine)
+    def delete_records(self, schema: str, table: str, conditions: list):
+        metadata_obj = sql.MetaData(schema=schema)
+        table_obj = sql.Table(table, metadata_obj, autoload_with=self.engine)
         delete_from_conditions = sql.and_(*conditions)
-        delete_from_statement = table.delete().where(delete_from_conditions)
+        delete_from_statement = table_obj.delete().where(delete_from_conditions)
         result = self.execute_sqlalchemy_statement(
             delete_from_statement, SqlAlchemyDao.return_affected_rowcounts
         )
         return result
 
-    def truncate_table(self, table_name):
+    def truncate_table(self, schema: str, table: str):
         with self.engine.connect() as connection:
             trans = connection.being()
             try:
                 truncate_sql = sql.text(
-                    f"delete from {self.schema_name}.{table_name}")
+                    f"delete from {schema}.{table}")
                 connection.execute(truncate_sql)
                 trans.commit()
             except Exception as e:
                 trans.rollback()
                 print(
-                    f"Failed to truncate table '{self.schema_name}.{table_name}': {e}")
+                    f"Failed to truncate table '{schema}.{table}': {e}")
                 raise e
             else:
                 print(
-                    f"Table '{self.schema_name}.{table_name}' truncated successfully!")
+                    f"Table '{schema}.{table}' truncated successfully!")
                 self.engine.dispose()
 
     # --- Static methods ---
@@ -294,16 +291,19 @@ class SqlAlchemyDao(DaoBase):
             return result
         return wrapper
 
-    def get_sqlalchemy_columns(self, table_name: str, column_names: list[str]) -> dict[str, Column]:
+    def get_sqlalchemy_columns(self, schema: str, table: str, column_names: list[str]) -> dict[str, Column]:
         '''
         Returns a dictionary mapping column names to sqlalchemy Column objects
         '''
         with self.engine.connect() as connection:
-            metadata_obj = self.metadata
-            table = Table(table_name, metadata_obj, autoload_with=connection)
-            return {column_name: getattr(table.c, column_name.casefold()) for column_name in column_names}
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = Table(table, metadata_obj, autoload_with=connection)
+            return {column_name: getattr(table_obj.c, column_name.casefold()) for column_name in column_names}
 
     def execute_sqlalchemy_statement(self, sqlalchemy_statement, callback: Callable) -> Any | None:
+        '''
+        Executed on default schema if no schema name specified 
+        '''
         with self.engine.connect() as connection:
             res = connection.execute(sqlalchemy_statement)
             connection.commit()
@@ -401,21 +401,21 @@ class SqlAlchemyDao(DaoBase):
             connection.commit()
             print(f" {role_name} Role Granted to {user} User Successfully")
 
-    def grant_read_privileges(self, role_name: str):
+    def grant_read_privileges(self, schema: str, role_name: str):
         match self.dialect:
             case SupportedDatabaseDialects.POSTGRES:
                 grant_read_stmt = sql.text(f"""
-                    GRANT USAGE ON SCHEMA {self.schema_name} TO {role_name};
-                    GRANT SELECT ON ALL TABLES IN SCHEMA {self.schema_name} TO {role_name};
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {self.schema_name} TO {role_name};
-                    GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {self.schema_name} TO {role_name};
-                    GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA {self.schema_name} TO {role_name};
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA {self.schema_name} GRANT SELECT ON TABLES TO {role_name};
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA {self.schema_name} GRANT USAGE, SELECT ON SEQUENCES TO {role_name};
-                    ALTER DEFAULT PRIVILEGES IN SCHEMA {self.schema_name} GRANT EXECUTE ON FUNCTIONS TO {role_name};""")
+                    GRANT USAGE ON SCHEMA {schema} TO {role_name};
+                    GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role_name};
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO {role_name};
+                    GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA {schema} TO {role_name};
+                    GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA {schema} TO {role_name};
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT ON TABLES TO {role_name};
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT USAGE, SELECT ON SEQUENCES TO {role_name};
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT EXECUTE ON FUNCTIONS TO {role_name};""")
             case SupportedDatabaseDialects.HANA:
                 grant_read_stmt = sql.text(
-                    f"GRANT SELECT, EXECUTE, CREATE TEMPORARY TABLE ON SCHEMA {self.schema_name} to {role_name}")
+                    f"GRANT SELECT, EXECUTE, CREATE TEMPORARY TABLE ON SCHEMA {schema} to {role_name}")
         with self.engine.connect() as connection:
 
             print("Executing grant read privilege statement..")
@@ -424,12 +424,12 @@ class SqlAlchemyDao(DaoBase):
             connection.commit()
             print(f"Granted Read privileges Successfully")
 
-    def grant_cohort_write_privileges(self, role_name: str):
+    def grant_cohort_write_privileges(self, schema: str, role_name: str):
         with self.engine.connect() as connection:
             grant_cohort_write_stmt = sql.text(
-                f"GRANT DELETE, INSERT, UPDATE ON {self.schema_name}.cohort TO {role_name}")
+                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort TO {role_name}")
             grant_cohort_def_write_stmt = sql.text(
-                f"GRANT DELETE, INSERT, UPDATE ON {self.schema_name}.cohort_definition TO {role_name}")
+                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort_definition TO {role_name}")
             print("Executing grant cohort write privilege statement..")
             try:
                 grant_cohort_write_res = connection.execute(
@@ -443,19 +443,20 @@ class SqlAlchemyDao(DaoBase):
                 print(
                     f"Granted cohort and cohort definition Write privileges Successfully")
 
-    def create_table_from_select(self, source_table: str, target_schema: str, target_table: str, columns_to_copy: list[str], filter_conditions: list) -> int:
+    def create_table_from_select(self, source_schema: str, source_table: str, target_schema: str, target_table: str, columns_to_copy: list[str], filter_conditions: list) -> int:
 
+        sanitized_source_schema = self.__sanitize_inputs(source_schema)
         sanitized_source_table = self.__sanitize_inputs(source_table)
         sanitized_target_table = self.__sanitize_inputs(target_table)
         sanitized_target_schema = self.__sanitize_inputs(target_schema)
 
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=source_schema)
             source_table = sql.Table(sanitized_source_table, metadata_obj,
                                      autoload_with=connection)
 
-            select_statement = self.create_select_statement(
-                source_table, columns_to_copy, filter_conditions)
+            select_statement = self.create_select_statement(source_schema, source_table, 
+                                                            columns_to_copy, filter_conditions)
 
             compiled_sql_query = str(select_statement.compile(
                 compile_kwargs={"literal_binds": True}))
@@ -467,18 +468,19 @@ class SqlAlchemyDao(DaoBase):
 
         return row_count
 
-    def copy_table_as_dataframe(self, source_table_name: str, columns_to_copy: list[str], filter_conditions: str) -> pd.DataFrame:
+    def copy_table_as_dataframe(self, source_schema_name: str, source_table_name: str, 
+                                columns_to_copy: list[str], filter_conditions: str) -> pd.DataFrame:
         # Construct select statements with filter conditions
-        select_statement = self.create_select_statement(
-            source_table_name, columns_to_copy, filter_conditions)
+        select_statement = self.create_select_statement(source_schema_name, source_table_name, 
+                                                        columns_to_copy, filter_conditions)
         df = pd.read_sql_query(select_statement, self.engine)
         return df
 
-    def create_select_statement(self, table_name: str, columns_to_select: list[str], filter_conditions: list) -> Select:
+    def create_select_statement(self, schema: str, table: str, columns_to_select: list[str], filter_conditions: list) -> Select:
         select_from_conditions = sql.and_(*filter_conditions)
         with self.engine.connect() as connection:
-            metadata_obj = self.metadata
-            source_table = sql.Table(table_name, metadata_obj,
+            metadata_obj = sql.MetaData(schema=schema)
+            source_table = sql.Table(table, metadata_obj,
                                      autoload_with=connection)
 
             match self.dialect:
@@ -493,9 +495,9 @@ class SqlAlchemyDao(DaoBase):
 
         return select_statement
 
-    def copy_table(self, source_table_name: str, target_table_name: str, target_schema_name: str, columns_to_copy: list[str], filter_conditions: str) -> int:
+    def copy_table(self, source_schema_name: str, source_table_name: str, target_table_name: str, target_schema_name: str, columns_to_copy: list[str], filter_conditions: str) -> int:
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=self.schema_name)
+            metadata_obj = sql.MetaData(schema=source_schema_name)
             source_table = sql.Table(
                 source_table_name, metadata_obj, autoload_with=connection)
 
@@ -523,8 +525,8 @@ class SqlAlchemyDao(DaoBase):
                     index.create(connection)
 
             # Construct select statements with filter conditions
-            select_statement = self.create_select_statement(
-                source_table_name, columns_to_copy, filter_conditions)
+            select_statement = self.create_select_statement(source_schema_name, source_table_name, 
+                                                            columns_to_copy, filter_conditions)
 
             # Insert into target table from source table
             insert_statement = sql.insert(target_table).from_select(
@@ -574,9 +576,9 @@ class SqlAlchemyDao(DaoBase):
             else:
                 print("Audit policy for system configuration already exists!")
 
-    def create_schema_audit_policy(self):
+    def create_schema_audit_policy(self, schema: str):
         with self.engine.connect() as connection:
-            schema_audit_policy = f"ALP_AUDIT_POLICY_{self.schema_name}"
+            schema_audit_policy = f"ALP_AUDIT_POLICY_{schema}"
             check_schema_audit_policy = sql.text(
                 f"SELECT * from SYS.AUDIT_POLICIES WHERE AUDIT_POLICY_NAME = '{schema_audit_policy}'")
             print("Executing check system audit policy statement..")
@@ -586,18 +588,18 @@ class SqlAlchemyDao(DaoBase):
                 create_audit_policy = sql.text(f'''
                     CREATE AUDIT POLICY {schema_audit_policy}
                     AUDITING ALL INSERT, SELECT, UPDATE, DELETE ON
-                    {self.schema_name}.* LEVEL INFO
+                    {schema}.* LEVEL INFO
                     ''')
                 print("Executing create schema audit policy statement..")
                 create_audit_policy_res = connection.execute(
                     create_audit_policy)
                 alter_audit_policy = sql.text(
-                    f'''ALTER AUDIT POLICY ALP_AUDIT_POLICY_{self.schema_name} ENABLE''')
+                    f'''ALTER AUDIT POLICY ALP_AUDIT_POLICY_{schema} ENABLE''')
                 print("Executing alter schema audit policy statement..")
                 alter_audit_policy_res = connection.execute(alter_audit_policy)
                 connection.commit()
                 print(
-                    f"New audit policy for {self.schema_name} '{schema_audit_policy}' created & enabled successfully!")
+                    f"New audit policy for {schema} '{schema_audit_policy}' created & enabled successfully!")
             else:
                 print(
                     f"Audit policy for schema '{schema_audit_policy}' already exists!")

@@ -19,19 +19,18 @@ def update_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     use_cache_db = options.use_cache_db
 
     schema_dao = DBDao(use_cache_db=use_cache_db,
-                       database_code=database_code, 
-                       schema_name=schema_name)
+                       database_code=database_code)
     
     # check schema exists
-    schema_exists = schema_dao.check_schema_exists()
+    schema_exists = schema_dao.check_schema_exists(schema_name)
     if schema_exists is False:
-        raise ValueError(f"Schema '{schema_dao.schema_name}' does not exist in database '{schema_dao.database_code}'")
+        raise ValueError(f"Schema '{schema_name}' does not exist in database '{schema_dao.database_code}'")
     
-    cdm_version = schema_dao.get_value(table_name="cdm_source", column_name="cdm_version")
+    cdm_version = schema_dao.get_value(schema_name, "cdm_source", "cdm_version")
     
     match cdm_version:
         case CDMVersion.OMOP53:
-            run_update_migration_script(schema_dao, logger)
+            run_update_migration_script(schema_dao, schema_name, logger)
             # update indexes
         case CDMVersion.OMOP54:
             logger.info(f"Schema '{cdm_version}' already updated at CDM Version '{cdm_version}'!")
@@ -40,8 +39,8 @@ def update_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
 
 
 @task(log_prints=True,
-      task_run_name="run_update_migration_script-{schema_dao.schema_name}")
-def run_update_migration_script(schema_dao, logger):
+      task_run_name="run_update_migration_script-{schema_name}")
+def run_update_migration_script(schema_dao, schema_name: str, logger):
     # Inlcudes update of cdm version
     
     script_directory = Path(f"flows/omop_cdm_plugin/update_scripts/{schema_dao.dialect}")
@@ -64,9 +63,9 @@ def run_update_migration_script(schema_dao, logger):
     try:
         # Begin a transaction
         with session.begin():
-            logger.info(f"Executing update to cdm_version 5.4 for '{schema_dao.schema_name}'..")
+            logger.info(f"Executing update to cdm_version 5.4 for '{schema_name}'..")
             # Execute migration script
-            session.execute(text(f"""SET session search_path = '{schema_dao.schema_name}'"""))
+            session.execute(text(f"""SET session search_path = '{schema_name}'"""))
             session.execute(text(ddl_script))
             session.execute(text(pk_script))
             session.execute(text(idx_script))
