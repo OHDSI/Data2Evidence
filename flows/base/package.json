@@ -313,7 +313,10 @@
               }
             }
           },
-          "type": "data_characterization"
+          "type": "data_characterization",
+          "tags": [
+            "data_characterization"
+          ]
         },
         {
           "name": "data_load_plugin",
@@ -776,7 +779,10 @@
               }
             }
           },
-          "type": "dqd"
+          "type": "dqd",
+          "tags": [
+            "data_quality_dashboard"
+          ]
         },
         {
           "name": "omop_cdm_plugin",
