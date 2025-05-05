@@ -48,6 +48,7 @@ RUN apt-get update && \
     r-cran-broom \
     r-cran-dbplyr \
     r-cran-rjson \
+    xz-utils \
     && apt-get clean
 
 # Python Library Setup
@@ -69,14 +70,11 @@ RUN Rscript -e 'install.packages(c("remotes"))'
 
 ### START COHORT SURVIVAL ###
 
-#RUN Rscript -e "remotes::install_version('snakecase', quiet=TRUE, upgrade='never', force=FALSE, dependencies=TRUE, repos='https://cloud.r-project.org')"
-#RUN Rscript -e "remotes::install_version('broom', quiet=TRUE, upgrade='never', force=FALSE, dependencies=TRUE, repos='https://cloud.r-project.org')"
-#RUN Rscript -e "remotes::install_version('dbplyr', version='2.4.0', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')" 
-#RUN Rscript -e "remotes::install_version('rjson', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')" 
 RUN Rscript -e "remotes::install_version('CDMConnector', version='1.4.0', quiet=TRUE, upgrade='never', force=FALSE, dependencies=NA, repos='https://cloud.r-project.org')" 
 RUN Rscript -e "remotes::install_version('PatientProfiles', version='1.0.0', quiet=TRUE, upgrade='never', force=FALSE, dependencies=TRUE, repos='https://cloud.r-project.org')" 
 RUN Rscript -e "remotes::install_version('CohortSurvival', version='0.5.1', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')" 
-RUN Rscript -e "remotes::install_version('RPostgres', version='1.4.5', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')" 
+RUN Rscript -e "remotes::install_version('RPostgres', version='1.4.5', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')"
+RUN Rscript -e "remotes::install_version('duckdb', version='1.2.1', quiet=FALSE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')"
 
 # force=TRUE used to override the packages PatientProfiles installs which versions are too high
 # force=TRUE packages should be put at the end of this list
