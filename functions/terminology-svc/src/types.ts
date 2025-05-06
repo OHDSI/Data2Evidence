@@ -253,4 +253,5 @@ export type DatasetDB = {
   databaseCode: string;
   dialect: string;
   vocabSchemaName: string;
+  schemaName: string;
 };
