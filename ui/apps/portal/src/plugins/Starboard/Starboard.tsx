@@ -51,7 +51,7 @@ a.plugin.register(1, {
           }
         }
       }
-  )`;
+    )`;
 
   const initialiseJupyterKernel = `\n# %% [jupyter]
 Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
@@ -71,13 +71,14 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
     const token = await getAuthToken(false);
     return `Bearer ${token}`;
   }, []);
+
   useEffect(() => {
     const fetchToken = async () => {
       const bearerToken = await getBearerToken();
       setToken(bearerToken);
     };
     fetchToken();
-  }, []);
+  }, [getBearerToken]);
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -102,7 +103,7 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         setLoading(false);
       }
     },
-    [setFeedback, getText, updateActiveNotebook]
+    [setFeedback, getText, updateActiveNotebook, activeDatasetId]
   );
 
   useEffect(() => {
@@ -161,7 +162,7 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         message: getText(i18nKeys.STARBOARD__ERROR_CREATE),
       });
     }
-  }, [fetchNotebooks, updateActiveNotebook, setFeedback, getText]);
+  }, [fetchNotebooks, updateActiveNotebook, setFeedback, getText, activeDatasetId]);
 
   // Check Jupyter Notebook Name if it exist in the database
   const checkNotebookName = async (name: string) => {
