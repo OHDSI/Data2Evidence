@@ -1,4 +1,5 @@
 import { FhirConceptMapElementTarget } from "../types.ts";
+import { env as transformersEnv, pipeline } from "transformers";
 
 export function groupBy(
   objectArray: FhirConceptMapElementTarget[],
@@ -30,4 +31,22 @@ export function groupBy(
 export enum DB {
   HANA = "hana",
   POSTGRES = "postgres",
+}
+
+/** Generate the embedding for query text */
+export async function getGTEEmbedding(searchText: string): Promise<number[]> {
+  transformersEnv.useBrowserCache = false;
+  transformersEnv.allowLocalModels = false;
+  try {
+    const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
+    const output = await pipe(searchText, {
+      pooling: "mean",
+      normalize: true,
+    });
+    const embedding = Array.from(output.data) as number[];
+    return embedding;
+  } catch (error) {
+    console.error("Detailed error:", error);
+    throw new Error(`Error in embedding generation: ${error.message}`);
+  }
 }

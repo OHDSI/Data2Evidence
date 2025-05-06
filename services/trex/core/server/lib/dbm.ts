@@ -4,6 +4,7 @@ import {Validator} from "npm:jsonschema"
 import { dbSchema } from './schema.ts';
 import { constants, privateDecrypt } from "node:crypto";
 import * as base64 from "jsr:@std/encoding/base64";
+import {transformDBCredentials, PrefectAPI} from "../api/PrefectAPI.ts";
 
 export class DatabaseManager {
 
@@ -69,7 +70,19 @@ export class DatabaseManager {
 
         const params = [c.code || c.id, c.host, c.port, c.name, c.dialect, JSON.stringify(c.credentials), JSON.stringify(c.vocabSchemas) || null, JSON.stringify(c.publications) || null, JSON.stringify(c.extra?.Internal) || null, c.authenticationMode || null ];
         const r = await this.pgclient.query(this.insert_query, params);
-        this.trexdbm.setCredentials(await this.getCredentialsDecrypted());
+        const dbCredentials = await this.getCredentialsDecrypted();
+        this.trexdbm.setCredentials(dbCredentials);
+        const transformedCredentials = transformDBCredentials(dbCredentials);
+        const prefectApi = new PrefectAPI();
+        const dbCredBlockName = "database-credentials";
+        const dbCredentialsOptions = {
+          value: transformedCredentials,
+        };
+        const dbCredBlockId = await prefectApi.createBlockDocument(
+          dbCredBlockName,
+          dbCredentialsOptions,
+          "secret"
+        );
         return c.code;
     }
 

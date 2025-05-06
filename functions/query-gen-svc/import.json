@@ -18,6 +18,8 @@
         "typescript": "npm:typescript@4.4.4",
         "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
         "node-fetch": "npm:node-fetch@^2.6",
+        "dayjs": "npm:dayjs@^1.11.13",
+        "dayjs/plugin/customParseFormat": "npm:dayjs@^1.11.13/plugin/customParseFormat.js",
         "base64": "jsr:@std/encoding/base64",
         "../_shared/alp-base-utils/src/PostgresConnection": "../_shared/alp-base-utils/src/PostgresConnection.ts",
         "../_shared/alp-base-utils/src/EnvVarUtils": "../_shared/alp-base-utils/src/EnvVarUtils.ts",

@@ -17,7 +17,3 @@ class DqdOptionsType(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False

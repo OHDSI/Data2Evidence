@@ -14,6 +14,7 @@ import {
   IDuckdbFacet,
   DatasetDialects,
   IConceptHierarchy,
+  DatasetDB,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
@@ -24,10 +25,12 @@ import { groupBy } from "../utils/helperUtil.ts";
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
+  private readonly datasetDB?: DatasetDB;
 
-  constructor(request: Request) {
+  constructor(request: Request, datasetDB?: DatasetDB) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
+    this.datasetDB = datasetDB;
   }
 
   /*
@@ -36,15 +39,28 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode } =
-      await this.systemPortalApi.getDatasetDetails(datasetId);
-
+    const { dialect, vocabSchemaName, databaseCode, schemaName } =
+      this.datasetDB ??
+      (await this.systemPortalApi.getDatasetDetails(datasetId));
+    const hybridSearchConfig =
+      await this.systemPortalApi.getHybridSearchConfig();
+    const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
+    const semanticRatio = enableSemantic
+      ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
+      : 0;
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
 
     // By default return CachedbDAO
-    return new CachedbDAO(this.token, datasetId, vocabSchemaName);
+    return new CachedbDAO(
+      this.token,
+      datasetId,
+      vocabSchemaName,
+      semanticRatio,
+      databaseCode,
+      schemaName
+    );
   }
 
   async getConcepts(
@@ -364,10 +380,18 @@ export class CachedbService {
       code: item.concept_code,
       // The date is stored as seconds from epoch, but new Date() expects ms
       validStartDate: item.valid_start_date
-        ? new Date(item.valid_start_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_start_date * 1000
+              : item.valid_start_date
+          ).toISOString()
         : new Date(0).toISOString(),
       validEndDate: item.valid_end_date
-        ? new Date(item.valid_end_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_end_date * 1000
+              : item.valid_end_date
+          ).toISOString()
         : "",
       validity,
       score: item.score,

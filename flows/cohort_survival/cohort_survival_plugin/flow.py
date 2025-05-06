@@ -1,8 +1,8 @@
 import json
+import os
 from rpy2 import robjects
 
 from prefect import flow, task
-from prefect.variables import Variable
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
@@ -22,14 +22,15 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     target_cohort_definition_id = options.targetCohortDefinitionId
     outcome_cohort_definition_id = options.outcomeCohortDefinitionId
     analysis_type = options.analysisType
-    competing_outcome_cohort_definition_id = options.competingOutcomeCohortDefinitionId
-
-    dbdao = DBDao(
-        use_cache_db=use_cache_db, database_code=database_code, schema_name=schema_name
+    competing_outcome_cohort_definition_id = (
+        options.competingOutcomeCohortDefinitionId
     )
+
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
     generate_cohort_survival_data(
         dbdao,
+        schema_name,
         target_cohort_definition_id,
         outcome_cohort_definition_id,
         analysis_type,
@@ -40,6 +41,7 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
 @task()
 def generate_cohort_survival_data(
     dbdao,
+    schema_name: str,
     target_cohort_definition_id: int,
     outcome_cohort_definition_id: int,
     analysis_type: str = "single_event",
@@ -51,106 +53,46 @@ def generate_cohort_survival_data(
         and competing_outcome_cohort_definition_id is None
     ):
         raise ValueError(
-            "competing_outcome_cohort_definition_id is required for competing_risk analysis"
+            "competing_outcome_cohort_definition_id is required "
+            "for competing_risk analysis"
         )
     # Get credentials for database code
     db_credentials = dbdao.tenant_configs
-
+    
+    # Load R script from file
+    script_dir = os.path.dirname(__file__)
+    r_script_path = os.path.join(script_dir, 'cohort_survival.R')
+    
+    # Call the R function with parameters
     with robjects.conversion.localconverter(robjects.default_converter):
-        result = robjects.r(
-            f"""
-            .libPaths(c(.libPaths(), "/usr/lib/R/site-library"))
-            library(CDMConnector)
-            library(CohortSurvival)
-            library(dplyr)
-            library(ggplot2)
-            library(rjson)
-            library(tools)
-            library(RPostgres)
-
-            # VARIABLES
-            target_cohort_definition_id <- {target_cohort_definition_id}
-            outcome_cohort_definition_id <- {outcome_cohort_definition_id}
-            analysis_type <- "{analysis_type}"
-            competing_outcome_cohort_definition_id <- {competing_outcome_cohort_definition_id if competing_outcome_cohort_definition_id is not None else 'NULL'}
-            pg_host <- "{db_credentials.host}"
-            pg_port <- "{db_credentials.port}"
-            pg_dbname <- "{db_credentials.databaseName}"
-            pg_user <- "{db_credentials.readUser}"
-            pg_password <- "{db_credentials.readPassword.get_secret_value()}"
-            pg_schema <- "{dbdao.schema_name}"
-
-            con <- NULL
-            tryCatch(
-                {{
-                    pg_con <- DBI::dbConnect(RPostgres::Postgres(),
-                        dbname = pg_dbname,
-                        host = pg_host,
-                        user = pg_user,
-                        password = pg_password,
-                        options=sprintf("-c search_path=%s", pg_schema))
-
-                    # Begin transaction to run below 2 queries as is required for cohort survival but are not needed to be commited to database
-                    DBI::dbBegin(pg_con)
-
-                    # cdm_from_con is from CDMConnection
-                    cdm <- CDMConnector::cdm_from_con(
-                        con = pg_con,
-                        write_schema = pg_schema,
-                        cdm_schema = pg_schema,
-                        cohort_tables = c("cohort"),
-                        .soft_validation = TRUE
-                    )
-
-                    # Choose the appropriate survival analysis method based on analysis_type
-                    if (analysis_type == "competing_risk") {{
-                        survival <- estimateCompetingRiskSurvival(cdm,
-                            targetCohortId = target_cohort_definition_id,
-                            outcomeCohortId = outcome_cohort_definition_id,
-                            targetCohortTable = "cohort",
-                            outcomeCohortTable = "cohort",
-                            competingOutcomeCohortTable = "cohort",
-                            competingOutcomeCohortId = competing_outcome_cohort_definition_id,
-                            estimateGap = 30
-                        )
-                        plot <- plotSurvival(survival, cumulativeFailure = TRUE)
-                    }} else {{
-                        survival <- estimateSingleEventSurvival(cdm,
-                            targetCohortId = target_cohort_definition_id,
-                            outcomeCohortId = outcome_cohort_definition_id,
-                            targetCohortTable = "cohort",
-                            outcomeCohortTable = "cohort",
-                            estimateGap = 30
-                        )
-                        plot <- plotSurvival(survival)
-                    }}
-                    
-                    # Rollback queries done above after cohort survival is done
-                    DBI::dbRollback(pg_con)
-
-                    
-                    plot_data <- ggplot_build(plot)$data[[1]]
-                    # Convert data to a list if not already
-                    plot_data <- as.list(plot_data)
-
-                    # Add a key to the list
-                    plot_data[["status"]] <- "SUCCESS"
-                    plot_data_json <- toJSON(plot_data)
-
-                    print(plot_data_json)
-                    cdm_disconnect(cdm)
-                    return(plot_data_json) }},
-                error = function(e) {{ print(e)
-                    data <- list(status = "ERROR", e$message)
-                    return(toJSON(data)) }},
-                finally = {{ if (!is.null(con)) {{ DBI::dbDisconnect(con)
-                    print("Disconnected the database.") }}
-                }}
-            )
-            """
+        # Source the R script to load the function
+        robjects.r(f'source("{r_script_path}")')
+        
+        # Convert None to R's NULL
+        competing_outcome_value = (
+            robjects.r('NULL')
+            if competing_outcome_cohort_definition_id is None
+            else competing_outcome_cohort_definition_id
         )
-        # Parsing the json from R and returning to prevent double serialization
-        # of the string
+        
+        # Get the R function
+        run_cohort_survival_r = robjects.r['run_cohort_survival']
+        
+        # Call the function with parameters
+        result = run_cohort_survival_r(
+            target_cohort_definition_id=target_cohort_definition_id,
+            outcome_cohort_definition_id=outcome_cohort_definition_id,
+            analysis_type=analysis_type,
+            competing_outcome_cohort_definition_id=competing_outcome_value,
+            pg_host=db_credentials.host,
+            pg_port=db_credentials.port,
+            pg_dbname=db_credentials.databaseName,
+            pg_user=db_credentials.readUser,
+            pg_password=db_credentials.readPassword.get_secret_value(),
+            pg_schema=schema_name
+        )
+        
+        # Parse the JSON result
         result_dict = json.loads(str(result[0]))
 
         # Create an artifact to store the result

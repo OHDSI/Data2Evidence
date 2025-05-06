@@ -61,7 +61,7 @@ def generate_package_json(package_json_name: str, entrypoint: str, plugin_type: 
         for idx, plugin in enumerate(package_json["trex"]["flow"]["flows"]):
             if plugin["name"] == plugin_name:
                 override = modify_plugin(plugin, plugin_name, prefect_entrypoint,
-                                  parameter_schema, plugin_type, datamodels)
+                                  parameter_schema, plugin_type, datamodels, plugin["tags"])
                 package_json["trex"]["flow"]["flows"][idx].update(override)
 
     # Update package version
@@ -119,8 +119,8 @@ def create_prefect_entrypoint(filepath: str, flow_function: str) -> str:
     return import_path + "." + flow_function
 
 
-def modify_plugin(plugin: dict, plugin_name: str, prefect_entrypoint: str,
-                  parameter_schema: dict, plugin_type: str = "", datamodels: list = []):
+def modify_plugin(plugin: dict, plugin_name: str, prefect_entrypoint: str, parameter_schema: dict, 
+                  plugin_type: str = "", datamodels: list = [], tags: list = []):
     plugin["name"] = plugin_name
     plugin["entrypoint"] = ".".join(
         ["flows"] + prefect_entrypoint.split(".")[1:])
@@ -128,4 +128,5 @@ def modify_plugin(plugin: dict, plugin_name: str, prefect_entrypoint: str,
     plugin["type"] = "datamodel" if plugin_type == "datamodel" else plugin_type
     if plugin_type == "datamodel":
         plugin["datamodels"] = datamodels
+    plugin["tags"] = tags
     return plugin

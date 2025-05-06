@@ -11,16 +11,34 @@ import {
   IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
+import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
 export class CachedbDAO {
   private readonly jwt: string;
   private readonly datasetId: string;
   private readonly vocabSchemaName: string;
+  private readonly semanticRatio: number;
+  private readonly databaseCode: string;
+  private readonly schemaName: string;
+  private readonly fts_concept_identifier: string;
 
-  constructor(jwt: string, datasetId: string, vocabSchemaName: string) {
+  constructor(
+    jwt: string,
+    datasetId: string,
+    vocabSchemaName: string,
+    semanticRatio: number,
+    databaseCode: string,
+    schemaName: string
+  ) {
     this.jwt = jwt;
     this.datasetId = datasetId;
     this.vocabSchemaName = vocabSchemaName;
+    this.semanticRatio = semanticRatio;
+    this.databaseCode = databaseCode;
+    this.schemaName = schemaName;
+    this.fts_concept_identifier = env.USE_TREX_DB_CONN
+      ? `fts_${vocabSchemaName}_concept`
+      : `${vocabSchemaName}.fts_main_concept`;
     if (!jwt) {
       throw new Error("No token passed for CachedbDAO!");
     }
@@ -32,10 +50,14 @@ export class CachedbDAO {
     searchText = "",
     filters: Filters
   ) {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
-        this.getOptimizedSearchQuery(searchText, filters);
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
       select *
@@ -49,13 +71,13 @@ export class CachedbDAO {
         rowsPerPage,
         offset,
       ];
-
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
         client.query<IConcept>(conceptsSql, conceptsSqlParams),
         client.query<{ count: string }>(countSql, countSqlParams),
       ] as const;
+
       const results = await Promise.all(sqlPromises);
 
       const data = {
@@ -81,7 +103,7 @@ export class CachedbDAO {
         totalHits: 0,
       };
     }
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       const searchTextWhereClause =
         searchTexts.reduce((accumulator, _searchText, index: number) => {
@@ -91,7 +113,7 @@ export class CachedbDAO {
 
       const invalidReasonWhereClause = includeInvalid
         ? ""
-        : `AND invalid_reason = '' `;
+        : `AND invalid_reason IS NULL `;
 
       const sql = `
         select *
@@ -122,14 +144,18 @@ export class CachedbDAO {
     searchText: string,
     filters: Filters
   ): Promise<any> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       // Get the base query with filters applied once
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
       const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
         searchText,
+        textEmbedding,
         filters
       );
-
       // Create a single consolidated query that gets all facet data at once
       const sql = `
         ${baseQuery}
@@ -212,7 +238,6 @@ export class CachedbDAO {
         Standard: standardConceptCount,
         "Non-standard": totalConceptCount - standardConceptCount,
       };
-
       return filterOptions;
     } catch (error) {
       console.error("Error fetching concept filter options:", error);
@@ -224,13 +249,16 @@ export class CachedbDAO {
 
   private getDuckdbFtsBaseQuery = (
     searchText: string,
+    textEmbedding: string,
     filters: Filters,
     columns: string[] = []
-  ): [string, string[]] => {
+  ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
 
-    const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
-
+    const columnsToSelect =
+      columns.length === 0
+        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
+        : columns.join(", ");
     if (searchText === "") {
       return [
         `
@@ -238,11 +266,41 @@ export class CachedbDAO {
         select
           ${columnsToSelect}
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${filterWhereClause}
         )
       `,
         [],
+      ];
+    } else if (this.semanticRatio > 0) {
+      const duckdbFtsWhereClause = filterWhereClause
+        ? `${filterWhereClause} AND score is not null`
+        : "WHERE score is not null ";
+
+      return [
+        `
+      with sem_fts_scores as (
+        select 
+          ${columnsToSelect},
+          ${this.fts_concept_identifier}.match_bm25(concept_id, ?1) as fts_score,
+          array_cosine_distance(concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
+        from
+          ${this.vocabSchemaName}.concept c
+          ${duckdbFtsWhereClause}
+      ),
+      fts as (
+        select 
+          sem_fts_scores.${columnsToSelect},
+          (
+            ${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from sem_fts_scores) + 
+            (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from sem_fts_scores)
+          ) as hybrid_score
+        from 
+          sem_fts_scores
+        order by hybrid_score desc
+        )
+      `,
+        [searchText, textEmbedding],
       ];
     } else {
       const duckdbFtsWhereClause = filterWhereClause
@@ -253,9 +311,9 @@ export class CachedbDAO {
       with fts as (
         select
           ${columnsToSelect},
-          ${this.vocabSchemaName}.fts_main_concept.match_bm25(concept_id, ?) as score
+          ${this.fts_concept_identifier}.match_bm25(concept_id, ?) as score
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${duckdbFtsWhereClause}
           order by score desc
         )
@@ -278,11 +336,15 @@ export class CachedbDAO {
    */
   private getOptimizedSearchQuery = (
     searchText: string,
+    textEmbedding: string,
     filters: Filters,
     columns: string[] = []
-  ): [string, string[]] => {
+  ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
-    const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
+    const columnsToSelect =
+      columns.length === 0
+        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
+        : columns.join(", ");
 
     if (searchText === "") {
       return [
@@ -291,89 +353,140 @@ export class CachedbDAO {
         select
           ${columnsToSelect}
         from
-          ${this.vocabSchemaName}.concept
+          ${this.vocabSchemaName}.concept c
           ${filterWhereClause}
         )
       `,
         [],
       ];
     } else {
-      // Build the query with all scoring factors
-      const query = `
-      with concept_with_scores as (
-        select
-          ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-          -- Base BM25 score (existing functionality)
-          ${
-            this.vocabSchemaName
-          }.fts_main_concept.match_bm25(concept_id, ?1) as bm25_score,
-          
-          -- Exact match scoring (highest priority)
-          CASE
-            WHEN LOWER(concept_name) = LOWER(?2) THEN 1000
-            WHEN LOWER(concept_name) LIKE LOWER(?3) || '%' THEN 800
-            ELSE 0
-          END as exact_match_score,
-          
-          -- Standard concept boost
-          CASE
-            WHEN standard_concept = 'S' THEN 100
-            ELSE 0
-          END as standard_boost
-        from
-          ${this.vocabSchemaName}.concept
-      )
-      
-      select
-        *,
-        (bm25_score + exact_match_score + standard_boost) as score
-      from
-        concept_with_scores
-      WHERE score > 0
-      ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
-      order by score desc
+      const conceptWithScores = `
+        with concept_with_scores as (
+          select
+            ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+            -- Exact match scoring (highest priority)
+            CASE
+              WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
+              WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' THEN 800
+              ELSE 0
+            END as exact_match_score,
+            
+            -- Standard concept boost
+            CASE
+              WHEN standard_concept = 'S' THEN 100
+              ELSE 0
+            END as standard_boost
+          from
+            ${this.vocabSchemaName}.concept c
+        ),
       `;
 
-      // Combine all parameters
-      const queryParams = [
-        searchText, // For BM25 score
-        searchText, // For exact match (equals)
-        searchText, // For exact match (starts with)
-      ];
+      let searchScores: string;
+      let queryParams: any[];
+
+      if (this.semanticRatio > 0) {
+        // Hybrid Search: Build the query with all scoring factors
+        searchScores = `
+          sem_fts_scores as (
+            select 
+              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              ${
+                this.fts_concept_identifier
+              }.match_bm25(concept_id, ?3) as fts_score,
+              array_cosine_distance(concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
+            from
+              ${this.vocabSchemaName}.concept c
+              ${filterWhereClause}
+            ),
+          search_scores as (
+            select 
+              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              (
+                ${this.semanticRatio} * 
+                (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) + 
+                (1 - ${this.semanticRatio}) * 
+                fts_score / (select max(fts_score) from sem_fts_scores)
+              ) as search_score
+            from 
+              sem_fts_scores
+          )
+        `;
+        // Combine all parameters for hybrid search
+        queryParams = [
+          searchText, // For exact match (equals)
+          searchText, // For exact match (starts with)
+          searchText, // For match_bm25
+          textEmbedding, // For embedding score
+        ];
+      } else {
+        // FTS search: Build the query with all scoring factors
+        searchScores = `
+          search_scores as (
+            select 
+              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              ${
+                this.fts_concept_identifier
+              }.match_bm25(concept_id, ?3) as search_score
+            from
+              ${this.vocabSchemaName}.concept c
+          )
+        `;
+        // Combine all parameters for fts
+        //  search
+        queryParams = [
+          searchText, // For exact match (equals)
+          searchText, // For exact match (starts with)
+          searchText, // For match_bm25
+        ];
+      }
+
+      const finalScores = `
+        select
+          *,
+          (ss.search_score + c.exact_match_score + c.standard_boost) as score
+        from
+          concept_with_scores c
+        join search_scores ss
+          on ss.concept_id = c.concept_id
+        WHERE score > 0
+        ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
+        order by score desc
+      `;
 
       // Create the final query with fts wrapper
       const finalQuery = `
-      with fts as (
-        ${query}
-      )
+        with fts as (
+          ${conceptWithScores}
+          ${searchScores}
+          ${finalScores}
+        )
       `;
-
       return [finalQuery, queryParams];
     }
   };
 
   public generateFilterWhereClause(filters: Filters): string {
     const conceptClassIdFilter = filters.conceptClassId.map((filterValue) => {
-      return `concept_class_id = '${filterValue}'`;
+      return `c.concept_class_id = '${filterValue}'`;
     });
     const domainIdFilter = filters.domainId.map((filterValue) => {
-      return `domain_id = '${filterValue}'`;
+      return `c.domain_id = '${filterValue}'`;
     });
     const standardConceptFilter = filters.standardConcept.map((filterValue) => {
-      if (filterValue === "S") return `standard_concept = 'S'`;
-      else return `standard_concept != 'S'`;
+      if (filterValue === "S") return `c.standard_concept = 'S'`;
+      else return `c.standard_concept != 'S'`;
     });
     const vocabularyIdFilter = filters.vocabularyId.map((filterValue) => {
-      return `vocabulary_id = '${filterValue}'`;
+      return `c.vocabulary_id = '${filterValue}'`;
     });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todaySeconds = Math.floor(Number(today) / 1000);
     const validityFilter = filters.validity.map((filterValue) => {
       if (filterValue === "Valid") {
-        return `valid_end_date >= ${todaySeconds}`;
+        return `c.valid_end_date >= ${todaySeconds}`;
       } else {
-        return `valid_end_date < ${todaySeconds}`;
+        return `c.valid_end_date < ${todaySeconds}`;
       }
     });
 
@@ -400,7 +513,7 @@ export class CachedbDAO {
     }[];
     totalHits: number;
   }> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       const sql = `
       select *
@@ -439,7 +552,7 @@ export class CachedbDAO {
         totalHits: 0,
       };
     }
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       const placeholders = relationshipIds
         .map((_, index) => `$${index + 1}`)
@@ -467,7 +580,7 @@ export class CachedbDAO {
     conceptName: string | number,
     conceptColumnName: "concept_name" | "concept_id" | "concept_code"
   ): Promise<any> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       const sql = `
         select concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason from ${this.vocabSchemaName}.concept WHERE ${conceptColumnName}=? AND standard_concept='S';
@@ -484,7 +597,7 @@ export class CachedbDAO {
   async getExactConceptRecommended(
     searchConceptIds: number[]
   ): Promise<IConceptRecommended[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
@@ -509,7 +622,7 @@ export class CachedbDAO {
   async getExactConceptDescendants(
     searchConceptIds: number[]
   ): Promise<IConceptAncestor[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
     // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
     // https://github.com/alp-os/internal/issues/1411
@@ -535,7 +648,7 @@ export class CachedbDAO {
     searchConceptIds: number[],
     conceptRelationshipType: "Maps to"
   ): Promise<IConceptRelationship[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
@@ -560,7 +673,7 @@ export class CachedbDAO {
   async getHierarchyDescendants(
     searchConceptId: number
   ): Promise<IConceptHierarchy[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       const sql = `
         select
@@ -593,7 +706,7 @@ export class CachedbDAO {
     searchConceptId: number,
     maxDepth: number
   ): Promise<IConceptHierarchy[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    const client = this.getDuckdbConnection();
     try {
       // Recursive SQL statement taken with reference from OHDSI Athena
       // src/main/java/com/odysseusinc/athena/repositories/v5/ConceptAncestorRelationV5Repository.java
@@ -642,20 +755,87 @@ export class CachedbDAO {
     }
   }
 
-  private getCachedbConnection = (jwt: string, datasetId: string) => {
+  private getDuckdbConnection = () => {
+    if (env.USE_TREX_DB_CONN) {
+      return this.getTrexDuckdbConnection();
+    } else {
+      return this.getCachedbConnection();
+    }
+  };
+
+  private getCachedbConnection = () => {
     try {
       const client = new pg.Client({
         host: env.CACHEDB__HOST,
         port: env.CACHEDB__PORT,
-        user: jwt,
-        database: `A|${DatasetDialects.DUCKDB}|read|${datasetId}`,
+        user: this.jwt,
+        database: `A|${DatasetDialects.DUCKDB}|read|${this.datasetId}`,
         connectionTimeoutMillis: 30000,
       });
       client.connect();
       return client;
     } catch (err) {
-      console.error(err);
+      console.error("Error getting cachedb connection, ", err);
       throw err;
     }
   };
+
+  private getTrexDuckdbConnection = () => {
+    return new TrexDuckdbConnection(
+      this.databaseCode,
+      this.schemaName,
+      this.vocabSchemaName
+    );
+  };
+}
+
+class TrexDuckdbConnection {
+  private readonly conn: any;
+
+  constructor(
+    databaseCode: string,
+    schemaName: string,
+    vocabSchemaName: string
+  ) {
+    try {
+      const dbm = Trex.databaseManager();
+      const conn = dbm.getConnection(
+        databaseCode,
+        schemaName,
+        vocabSchemaName,
+        {
+          duckdb: (e: unknown) => e,
+        } // Dummy function which returns itself, originally used for translation function
+      );
+
+      this.conn = conn;
+    } catch (err) {
+      console.error("Error getting trex connection, ", err);
+      throw err;
+    }
+  }
+
+  async query(sql: string, params: any[] = []): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.conn.execute(
+        sql,
+        params.map((e) => {
+          return { value: e };
+        }),
+        (err, res) => {
+          if (err) {
+            reject(err);
+          }
+
+          // Map results to row object which cachedbDao expects
+          // TODO: Remove mapping when we decide to remove cachedb connection option
+          resolve({ rows: res, rowCount: res.length ?? 0 });
+        }
+      );
+    });
+  }
+
+  async end() {
+    this.conn.close();
+  }
 }

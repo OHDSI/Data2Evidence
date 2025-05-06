@@ -23,12 +23,20 @@ import { env } from "../../env";
 const language = "en";
 
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 
 export async function getCohortAnalyticsConnection(req: IMRIRequest) {
+    // If USE_TREX_DB_CONN is true, return early with trex duckdb connection (takes precedence over USE_CACHEDB)
     // If USE_CACHEDB is true, return early with cachedb connection
     const { analyticsConnection } = req.dbConnections;
+
+    if (
+        env.USE_TREX_DB_CONN === "true" &&
+        analyticsConnection.dialect !== "hana"
+    ) {
+        return analyticsConnection;
+    }
 
     if (env.USE_CACHEDB === "true" && analyticsConnection.dialect !== "hana") {
         let userObj: User;
@@ -111,10 +119,15 @@ export async function getAllCohorts(req: IMRIRequest, res: Response) {
 
         const offset = req.query.offset;
         const limit = req.query.limit;
-        const excludePatientIds = req.query.excludePatientIds === 'true';
+        const excludePatientIds = req.query.excludePatientIds === "true";
 
         // Send empty object to query all cohorts
-        const result = await cohortEndpoint.queryCohorts({}, offset, limit, excludePatientIds);
+        const result = await cohortEndpoint.queryCohorts(
+            {},
+            offset,
+            limit,
+            excludePatientIds
+        );
         // Get count of all cohort definitions for pagination
         const cohortDefinitionCount =
             await cohortEndpoint.queryCohortDefinitionCount({});
@@ -193,14 +206,13 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const bookmark = bookmarks[0];
         const bookmarkCohortDefinitionId: number | undefined =
             bookmark.cohortDefinitionId;
-
         if (env.USE_EXTENSION_FOR_COHORT_CREATION === "true") {
             const mriConfig = await mriConfigConnection.getStudyConfig(
                 {
                     req,
                     action: "getBackendConfig",
-                    configId: cohortDefinition.configData.configId,
-                    configVersion: cohortDefinition.configData.configVersion,
+                    configId: req.paConfigId,
+                    configVersion: req.paConfigVersion,
                     lang: language,
                     datasetId,
                 },
@@ -254,8 +266,8 @@ export async function createCohort(req: IMRIRequest, res: Response) {
 
         const querySvcParams = {
             queryParams: {
-                configId: cohortDefinition.configData.configId,
-                configVersion: cohortDefinition.configData.configVersion,
+                configId: req.paConfigId,
+                configVersion: req.paConfigVersion,
                 datasetId,
                 queryType: "plugin",
                 ifrRequest: cohortDefinition,
@@ -329,13 +341,12 @@ export async function generateCohortDefinition(
         const language = getUser(req).lang;
         // Remap mriquery for use in createEndpointFromRequest
         const { cohortDefinition } = await createEndpointFromRequest(req);
-
         const mriConfig = await mriConfigConnection.getStudyConfig(
             {
                 req,
                 action: "getBackendConfig",
-                configId: cohortDefinition.configData.configId,
-                configVersion: cohortDefinition.configData.configVersion,
+                configId: req.paConfigId,
+                configVersion: req.paConfigVersion,
                 lang: language,
                 datasetId,
             },

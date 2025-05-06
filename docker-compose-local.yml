@@ -41,6 +41,7 @@ services:
           "concept-mapping": false,
           "terminology-svc": false,
           "code-suggestion": false,
+          "data-mapping": false,
           "portal": false,
           "files-manager": false,
           "demo": false,
@@ -148,3 +149,11 @@ services:
   #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
   #   ports:
   #     - 41130:3000
+
+  enterprise-gateway:
+    build:
+      context: ./services/enterprise-gateway
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
+      - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker

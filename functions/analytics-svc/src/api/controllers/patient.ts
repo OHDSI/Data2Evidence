@@ -663,8 +663,8 @@ export async function getSinglePatientRoute(req, res) {
         ? req.query.interactionTypes
         : null;
     const patientId = req.params.patientId;
-    const configId = req.query.configId;
-    const configVersion = req.query.configVersion;
+    const configId = req.paConfigId;
+    const configVersion = req.paConfigVersion;
     const datasetId = req.query.datasetId;
     const { analyticsConnection } = req.dbConnections;
     const lang = getUser(req).lang;
