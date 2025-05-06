@@ -96,6 +96,7 @@ def launch_docker_kernel(
         kwargs["network"] = docker_network
         kwargs["group_add"] = [group, "100"]
         kwargs["detach"] = True
+        kwargs["platform"] = "linux/amd64"
         if param_env.get("KERNEL_WORKING_DIR"):
             kwargs["working_dir"] = param_env.get("KERNEL_WORKING_DIR")
         # kwargs['volumes'] = volumes   # Enable if necessary
