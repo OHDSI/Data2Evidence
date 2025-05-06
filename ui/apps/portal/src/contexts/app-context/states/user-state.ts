@@ -18,6 +18,7 @@ type RoleTypeOf<T, Boolean> = {
   ALP_USER_ADMIN: Boolean;
   ALP_SYSTEM_ADMIN: Boolean;
   ALP_DASHBOARD_VIEWER: Boolean;
+  STUDY_WRITE_DQD_RESEARCHER: Boolean;
   TENANT_VIEWER: T;
   STUDY_MANAGER: T;
   STUDY_RESEARCHER: T;

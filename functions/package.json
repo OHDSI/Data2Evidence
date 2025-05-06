@@ -196,11 +196,6 @@
           "service": "logto"
         },
         {
-          "source" : "/jupyter",
-          "service":  "jupyter",
-          "rmsrc": true
-        },
-        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -515,6 +510,11 @@
           "filesmanager.post",
           "filesmanager.delete",
           "whiteRabbit.post"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "rD2E.jupyter.kernel.flowRun.add",
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
@@ -1691,7 +1691,7 @@
         {
           "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
           "scopes": [
-            "jupyter",
+            "rD2E.jupyter.kernel.flowRun.add",
             "portal.dataset.read"
           ],
           "httpMethods": ["POST"]
@@ -1835,6 +1835,7 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
           "scopes": [
+            "portal.dataset.resource.read",
             "dataflowmgmt.dqd.dataQuality.flowRun.add"
           ],
           "httpMethods": [
@@ -1898,7 +1899,8 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
           "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
+            "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
+            "portal.dataset.read"
           ],
           "httpMethods": [
             "POST"
