@@ -1,5 +1,23 @@
-export const DB_DIALECTS = ["postgres", "hana"];
-export type DbDialect = typeof DB_DIALECTS[number];
+export enum DB_DIALECTS {
+  POSTGRES = "postgres",
+  HANA = "hana",
+  BIG_QUERY = "big_query",
+}
+export type DbDialect = `${DB_DIALECTS}`;
+export const DB_DIALECTS_KEY_VALUE = [
+  {
+    key: DB_DIALECTS.POSTGRES,
+    value: "PostgreSQL",
+  },
+  {
+    key: DB_DIALECTS.HANA,
+    value: "Hana",
+  },
+  {
+    key: DB_DIALECTS.BIG_QUERY,
+    value: "BigQuery (experimental)",
+  },
+];
 
 export enum AUTHENTICATION_MODES {
   PASSWORD = "Password",
