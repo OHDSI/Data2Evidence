@@ -362,7 +362,8 @@ services:
             "PG_SCHEMA": "files_manager"
           },
           "terminology-svc": {
-            "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}"
+            "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}"
           },
           "perseus": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
