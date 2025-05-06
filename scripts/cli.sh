@@ -230,7 +230,7 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         ;;
     checkflow) 
