@@ -78,6 +78,10 @@ export default defineConfig(({ command, mode }) => {
           target: "https://localhost:41100",
           secure: false,
         },
+        "/data-mapping": {
+          target: "https://localhost:41100",
+          secure: false,
+        },
       },
     },
   };

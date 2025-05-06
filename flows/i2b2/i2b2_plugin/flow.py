@@ -42,19 +42,19 @@ def create_i2b2_dataset_flow(options: i2b2PluginType):
     use_cache_db = options.use_cache_db
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  schema_name=schema_name)
+                  database_code=database_code)
 
     # Create schema if there is no existing schema first
-    create_schema_task(dbdao)
+    create_schema_task(dbdao, schema_name)
 
     # Parent task with hook to drop schema on failure
     setup_and_create_datamodel_wo = setup_and_create_datamodel.with_options(
         on_failure=[partial(
-            drop_schema_hook, **dict(dbdao=dbdao)
+            drop_schema_hook, **dict(dbdao=dbdao, schema=schema_name)
         )]
     )
     setup_and_create_datamodel_wo(tag_name=options.tag_name,
+                                  schema_name=schema_name,
                                   data_model=options.data_model,
                                   dbdao=dbdao,
                                   load_demo_data=options.load_demo_data
@@ -63,17 +63,18 @@ def create_i2b2_dataset_flow(options: i2b2PluginType):
 
 @task(log_prints=True, timeout_seconds=1800)
 def setup_and_create_datamodel(tag_name: str,
+                               schema_name: str,
                                data_model: str,
                                dbdao: DBDao,
                                load_demo_data):
     logger = get_run_logger()
-    setup_plugin(tag_name, dbdao, logger)
+    setup_plugin(tag_name, dbdao, schema_name, logger)
     version = get_version_from_tag(tag_name)
-    create_crc_tables_and_procedures(version, dbdao, logger)
-    create_metadata_table(dbdao, tag_name, data_model[1:], logger)
-    create_and_assign_roles_task(dbdao)
+    create_crc_tables_and_procedures(version, dbdao, schema_name, logger)
+    create_metadata_table(dbdao, schema_name, tag_name, data_model[1:], logger)
+    create_and_assign_roles_task(dbdao, schema_name)
     if load_demo_data:
-        load_demo_i2b2_data(dbdao, logger)
+        load_demo_i2b2_data(dbdao, schema_name, logger)
 
 
 def update_dataset_metadata_flow(options: i2b2PluginType):
@@ -95,7 +96,7 @@ def update_dataset_metadata_flow(options: i2b2PluginType):
 
 
 @task(log_prints=True)
-def setup_plugin(tag_name: str, dbdao: DBDao, logger):
+def setup_plugin(tag_name: str, dbdao: DBDao, schema_name: str, logger):
     '''
     Overwrite db.properties file
     '''
@@ -120,7 +121,7 @@ def setup_plugin(tag_name: str, dbdao: DBDao, logger):
                     db.username={dbdao.tenant_configs.adminUser}
                     db.password={dbdao.tenant_configs.adminPassword.get_secret_value()}
                     db.driver=org.postgresql.Driver
-                    db.url=jdbc:postgresql://{host}:{port}/{database_name}?currentSchema={dbdao.schema_name}
+                    db.url=jdbc:postgresql://{host}:{port}/{database_name}?currentSchema={schema_name}
                     db.project=demo
                        ''')
     except Exception as e:
@@ -129,7 +130,7 @@ def setup_plugin(tag_name: str, dbdao: DBDao, logger):
 
 
 @task(log_prints=True)
-def create_crc_tables_and_procedures(version: str, dbdao: DBDao, logger):
+def create_crc_tables_and_procedures(version: str, dbdao: DBDao, schema_name: str, logger):
     '''
     Runs apache ant commands to create i2b2 tables and stored procedures
     '''
@@ -138,7 +139,7 @@ def create_crc_tables_and_procedures(version: str, dbdao: DBDao, logger):
             f"ant -f data_build.xml create_crcdata_tables_release_{version}"
         ]).run()
 
-    check_table_creation(dbdao)
+    check_table_creation(dbdao, schema_name)
 
     ShellOperation(
         commands=[
@@ -147,7 +148,7 @@ def create_crc_tables_and_procedures(version: str, dbdao: DBDao, logger):
 
 
 @task(log_prints=True)
-def load_demo_i2b2_data(dbdao: DBDao, logger):
+def load_demo_i2b2_data(dbdao: DBDao, schema_name: str, logger):
     logger.info("Loading demo i2b2 data..")
     ShellOperation(
         commands=[
@@ -155,11 +156,11 @@ def load_demo_i2b2_data(dbdao: DBDao, logger):
         ]
     ).run()
     logger.info("Successfully loaded demo i2b2 data!")
-    dbdao.update_data_ingestion_date()
+    dbdao.update_data_ingestion_date(schema_name)
 
 
 @task(log_prints=True)
-def create_metadata_table(dbdao: DBDao, tag_name: str, version: str, logger):
+def create_metadata_table(dbdao: DBDao, schema_name: str, tag_name: str, version: str, logger):
     columns_to_create = {
         "schema_name": String,
         "created_date": TIMESTAMP,
@@ -168,15 +169,15 @@ def create_metadata_table(dbdao: DBDao, tag_name: str, version: str, logger):
         "tag": String,
         "release_version": String
     }
-    dbdao.create_table('dataset_metadata', columns_to_create)
+    dbdao.create_table(schema_name, 'dataset_metadata', columns_to_create)
     values_to_insert = {
-        "schema_name": dbdao.schema_name,
+        "schema_name": schema_name,
         "created_date": datetime.now(),
         "updated_date": datetime.now(),
         "tag": tag_name,
         "release_version": version
     }
-    dbdao.insert_values_into_table('dataset_metadata', values_to_insert)
+    dbdao.insert_values_into_table(schema_name, 'dataset_metadata', values_to_insert)
 
 
 @task(log_prints=True)
@@ -193,12 +194,11 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code,
-                      schema_name=schema_name)
+                      database_code=database_code)
         portal_server_api = PortalServerAPI()
 
         # check if schema exists
-        schema_exists = dbdao.check_schema_exists()
+        schema_exists = dbdao.check_schema_exists(schema_name)
         if schema_exists == False:
             error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
             logger.error(error_msg)
@@ -212,6 +212,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="patient_dimension",
                 column_name="patient_num",
                 entity_name="patient_count",
@@ -249,6 +250,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="dataset_metadata",
                 column_name="created_date",
                 entity_name="created_date",
@@ -260,6 +262,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="dataset_metadata",
                 column_name="updated_date",
                 entity_name="updated_date",
@@ -271,6 +274,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="dataset_metadata",
                 column_name="data_ingestion_date",
                 entity_name="data_ingestion_date",

@@ -2,36 +2,26 @@
   "name": "@data2evidence/d2e-flows",
   "version": "0.0.99",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e-flows-local-base --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/data2evidence/d2e-flows.git"
+    "url": "https://github.com/OHDSI/d2e.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/data2evidence/d2e-flows/issues"
+    "url": "https://github.com/OHDSI/d2e/issues"
   },
-  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
     "flow": {
       "image": "ghcr.io/ohdsi/d2e/flow-base",
       "flows": [
         {
           "name": "cohort_generator_plugin",
-          "type": "cohort_generator",
           "entrypoint": "flows.cohort_generator_plugin.flow.cohort_generator_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "cohort_generator"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -71,14 +61,10 @@
                     "title": "Description",
                     "type": "string"
                   },
-                  "token": {
-                    "title": "Token",
-                    "type": "string"
-                  },
                   "cohortDefinitionId": {
                     "anyOf": [
                       {
-                        "type": "number"
+                        "type": "integer"
                       },
                       {
                         "type": "null"
@@ -94,8 +80,7 @@
                   "vocabSchemaName",
                   "cohortJson",
                   "datasetId",
-                  "description",
-                  "token"
+                  "description"
                 ],
                 "title": "CohortGeneratorOptionsType",
                 "type": "object"
@@ -150,21 +135,12 @@
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "cohort_generator"
         },
         {
           "name": "create_cachedb_file_plugin",
-          "type": "create_cachedb_file",
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "create_cachedb_file"
-          ],
-          "volumes": [
-            "cdw-config-duckdb-data-1:/app/cdw-config/duckdb_data",
-            "duckdb-data-1:/app/duckdb_data"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -185,45 +161,85 @@
                     "title": "Databasecode",
                     "type": "string"
                   },
+                  "tablesToCreateDuckdbFtsIndex": {
+                    "default": [
+                      "concept"
+                    ],
+                    "items": {
+                      "$ref": "#/definitions/DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM"
+                    },
+                    "title": "Tablestocreateduckdbftsindex",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "databaseCode"
+                ],
+                "title": "CreateDuckdbDatabaseFileType",
+                "type": "object"
+              },
+              "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM": {
+                "enum": [
+                  "concept",
+                  "concept_relationship",
+                  "relationship",
+                  "vocabulary",
+                  "concept_synonym",
+                  "concept_class",
+                  "domain",
+                  "concept_ancestor",
+                  "concept_recommended",
+                  "note"
+                ],
+                "title": "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
+                "type": "string"
+              }
+            }
+          },
+          "type": "create_cachedb_file"
+        },
+        {
+          "name": "create_cdw_validation_config_plugin",
+          "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cdw_validation_config_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CreateCDWValidationConfig",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "CreateCDWValidationConfig": {
+                "properties": {
+                  "databaseCode": {
+                    "title": "Databasecode",
+                    "type": "string"
+                  },
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
-                  },
-                  "createForCdwConfigValidation": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": false,
-                    "title": "Createforcdwconfigvalidation"
                   }
                 },
                 "required": [
                   "databaseCode",
                   "schemaName"
                 ],
-                "title": "CreateDuckdbDatabaseFileType",
+                "title": "CreateCDWValidationConfig",
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "create_cdw_config"
         },
         {
           "name": "data_characterization_plugin",
-          "type": "data_characterization",
           "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data_characterization"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -296,19 +312,15 @@
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "data_characterization",
+          "tags": [
+            "data_characterization"
+          ]
         },
         {
           "name": "data_load_plugin",
-          "type": "data_load",
           "entrypoint": "flows.data_load_plugin.flow.data_load_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data",
-            "load",
-            "data-load"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -327,7 +339,7 @@
                 "properties": {
                   "files": {
                     "items": {
-                      "$ref": "#/definitions/File"
+                      "$ref": "#/definitions/FileType"
                     },
                     "title": "Files",
                     "type": "array"
@@ -421,7 +433,7 @@
                 "title": "DataloadOptions",
                 "type": "object"
               },
-              "File": {
+              "FileType": {
                 "properties": {
                   "path": {
                     "title": "Path",
@@ -448,174 +460,16 @@
                   "path",
                   "table_name"
                 ],
-                "title": "File",
+                "title": "FileType",
                 "type": "object"
               }
             }
-          }
-        },
-        {
-          "name": "data_management_plugin",
-          "type": "datamodel",
-          "datamodels": [
-            "omop5-4",
-            "medical-imaging"
-          ],
-          "entrypoint": "flows.data_management_plugin.flow.data_management_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/DataModelType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "DataModelType": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/FlowActionType"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "data_model": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Data Model"
-                  },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Schema Name"
-                  },
-                  "cleansed_schema_option": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": false,
-                    "title": "Cleansed Schema Option"
-                  },
-                  "vocab_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Vocab Schema"
-                  },
-                  "rollback_count": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Count"
-                  },
-                  "rollback_tag": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Tag"
-                  },
-                  "update_count": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Update Count"
-                  },
-                  "datasets": {
-                    "anyOf": [
-                      {
-                        "items": {},
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Datasets"
-                  }
-                },
-                "required": [
-                  "flow_action_type",
-                  "database_code"
-                ],
-                "title": "DataModelType",
-                "type": "object"
-              },
-              "FlowActionType": {
-                "enum": [
-                  "create_datamodel",
-                  "update_datamodel",
-                  "rollback_count",
-                  "rollback_tag",
-                  "get_version_info",
-                  "create_cdm_schema",
-                  "changelog_sync"
-                ],
-                "title": "FlowActionType",
-                "type": "string"
-              }
-            }
-          }
+          },
+          "type": "data_load"
         },
         {
           "name": "dataflow_ui_plugin",
-          "type": "dataflow_ui",
           "entrypoint": "flows.dataflow_ui_plugin.flow.dataflow_ui_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -632,18 +486,14 @@
             "required": [
               "json_graph",
               "options"
-            ]
-          }
+            ],
+            "definitions": {}
+          },
+          "type": "dataflow_ui"
         },
         {
           "name": "datamart_plugin",
-          "type": "datamart",
           "entrypoint": "flows.datamart_plugin.flow.datamart_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "datamart"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -823,20 +673,12 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "type": "datamart"
         },
         {
           "name": "dqd_plugin",
-          "type": "dqd",
           "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "data_quality_dashboard"
-          ],
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -936,24 +778,15 @@
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "dqd",
+          "tags": [
+            "data_quality_dashboard"
+          ]
         },
         {
           "name": "omop_cdm_plugin",
-          "type": "datamodel",
-          "datamodels": [
-            "omop5-3",
-            "omop5-4"
-          ],
           "entrypoint": "flows.omop_cdm_plugin.flow.omop_cdm_plugin",
-          "volumes": [
-            "r-libs:/home/docker/plugins/R/site-library"
-          ],
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "omop_cdm"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -1045,17 +878,16 @@
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "datamodel",
+          "datamodels": [
+            "omop5-3",
+            "omop5-4"
+          ]
         },
         {
           "name": "questionnaire_plugin",
-          "type": "questionnaire",
           "entrypoint": "flows.questionnaire_plugin.flow.questionnaire_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "questionnaire"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -1119,17 +951,6 @@
                       }
                     ],
                     "title": "Questionnaire Id"
-                  },
-                  "token": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Token"
                   }
                 },
                 "required": [
@@ -1137,33 +958,24 @@
                   "database_code",
                   "schema_name",
                   "questionnaire_definition",
-                  "questionnaire_id",
-                  "token"
+                  "questionnaire_id"
                 ],
                 "title": "QuestionnaireOptionsType",
                 "type": "object"
               }
             }
-          }
+          },
+          "type": "questionnaire"
         },
         {
-          "name": "create_fhir_datamodel_plugin",
-          "type": "FHIRDataModel",
-          "entrypoint": "flows.create_fhir_datamodel_plugin.flow.create_fhir_datamodel_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "FHIRDataModel"
-          ],
-          "volumes": [
-            "fhir-schema-file-1:/home/docker/fhir"
-          ],
+          "name": "phenotype_plugin",
+          "entrypoint": "flows.phenotype_plugin.flow.phenotype_plugin",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
             "properties": {
               "options": {
-                "$ref": "#/definitions/CreateFhirDataModelOptions",
+                "$ref": "#/definitions/PhenotypeOptionsType",
                 "position": 0,
                 "title": "options"
               }
@@ -1172,62 +984,7 @@
               "options"
             ],
             "definitions": {
-              "CreateFhirDataModelOptions": {
-                "properties": {
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "vocab_schema": {
-                    "title": "Vocab Schema",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "database_code",
-                  "schema_name",
-                  "vocab_schema"
-                ],
-                "title": "CreateFhirDataModelOptions",
-                "type": "object"
-              }
-            }
-          }
-        },
-        {
-          "name": "phenotype_plugin",
-          "type": "phenotype",
-          "entrypoint": "flows.phenotype_plugin.flow.phenotype_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [
-            "phenotype"
-          ],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "title": "options",
-                "position": 0,
-                "allOf": [
-                  {
-                    "$ref": "#/definitions/PhenotypeOptionsType"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
               "PhenotypeOptionsType": {
-                "title": "PhenotypeOptionsType",
-                "type": "object",
                 "properties": {
                   "databaseCode": {
                     "title": "Databasecode",
@@ -1266,44 +1023,17 @@
                   "cohortsId",
                   "vocabschemaName",
                   "description"
-                ]
+                ],
+                "title": "PhenotypeOptionsType",
+                "type": "object"
               }
             }
-          }
-        },
-        {
-          "name": "strategus_plugin",
-          "type": "strategus",
-          "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "json_graph": {
-                "position": 0,
-                "title": "json_graph"
-              },
-              "options": {
-                "position": 1,
-                "title": "options"
-              }
-            },
-            "required": [
-              "json_graph",
-              "options"
-            ]
-          }
+          },
+          "type": "phenotype"
         },
         {
           "name": "fhir_to_omop_plugin",
-          "type": "fhir_to_omop",
           "entrypoint": "flows.fhir_to_omop_plugin.flow.fhir_to_omop_plugin",
-          "tags": [
-            "fhir"
-          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -1382,139 +1112,8 @@
                 "type": "object"
               }
             }
-          }
-        },
-        {
-          "name": "loyalty_score_plugin",
-          "type": "loyaltyscore",
-          "entrypoint": "flows.loyalty_score_plugin.flow.loyalty_score_plugin",
-          "image": "ghcr.io/ohdsi/d2e/flow-base:develop",
-          "image_pull_policy": "IfNotPresent",
-          "tags": [],
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/LoyaltyPluginType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CalculateConfig": {
-                "properties": {
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "index_date": {
-                    "title": "Index Date",
-                    "type": "string"
-                  },
-                  "lookback_years": {
-                    "title": "Lookback Years",
-                    "type": "integer"
-                  },
-                  "coeff_table_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Coeff Table Name"
-                  },
-                  "loyalty_cohort_table_name": {
-                    "title": "Loyalty Cohort Table Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "schema_name",
-                  "database_code",
-                  "index_date",
-                  "lookback_years",
-                  "coeff_table_name",
-                  "loyalty_cohort_table_name"
-                ],
-                "title": "CalculateConfig",
-                "type": "object"
-              },
-              "LoyaltyPluginType": {
-                "properties": {
-                  "config": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/CalculateConfig"
-                      },
-                      {
-                        "$ref": "#/definitions/RetrainConfig"
-                      }
-                    ],
-                    "title": "Config"
-                  }
-                },
-                "required": [
-                  "config"
-                ],
-                "title": "LoyaltyPluginType",
-                "type": "object"
-              },
-              "RetrainConfig": {
-                "properties": {
-                  "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
-                  },
-                  "database_code": {
-                    "title": "Database Code",
-                    "type": "string"
-                  },
-                  "index_date": {
-                    "title": "Index Date",
-                    "type": "string"
-                  },
-                  "train_years": {
-                    "default": 2,
-                    "title": "Train Years",
-                    "type": "integer"
-                  },
-                  "return_years": {
-                    "default": 1,
-                    "title": "Return Years",
-                    "type": "integer"
-                  },
-                  "test_ratio": {
-                    "default": 0.2,
-                    "title": "Test Ratio",
-                    "type": "number"
-                  },
-                  "retraincoeff_table_name": {
-                    "title": "Retraincoeff Table Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "schema_name",
-                  "database_code",
-                  "index_date",
-                  "retraincoeff_table_name"
-                ],
-                "title": "RetrainConfig",
-                "type": "object"
-              }
-            }
-          }
+          },
+          "type": "fhir_to_omop"
         }
       ]
     }

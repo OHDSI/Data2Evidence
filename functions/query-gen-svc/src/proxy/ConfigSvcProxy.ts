@@ -5,7 +5,7 @@ import * as testConfigs from "./test-data/test_configs";
 import { env } from "../env";
 
 const mriConfigConnection = new MriConfigConnection(
-    env.SERVICE_ROUTES?.portalServer
+    env.SERVICE_ROUTES?.paConfig
 );
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 

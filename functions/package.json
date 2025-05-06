@@ -122,6 +122,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/data-mapping",
+          "function": "/data-mapping",
+          "imports": "/data-mapping/import.json",
+          "env": "data-mapping"
+        },
+        {
           "source": "/analytics-svc/api/services/bookmark",
           "function": "/bookmark-svc",
           "imports": "/bookmark-svc/import.json",
@@ -204,6 +210,19 @@
         {
           "source": "/callback",
           "service": "logto"
+        },
+        {
+          "source": "/jupyter",
+          "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
         },
         {
           "source": "/concept-mapping",
@@ -394,6 +413,7 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
+          "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
@@ -468,7 +488,9 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
-          "d2e.webapi"
+          "d2e.webapi",
+          "jupyter",
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -488,6 +510,11 @@
           "filesmanager.post",
           "filesmanager.delete",
           "whiteRabbit.post"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "rD2E.jupyter.kernel.flowRun.add",
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
@@ -750,7 +777,7 @@
         {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
-            "usermgmt.me"
+            "usermgmt.me.jupyter"
           ],
           "httpMethods": [
             "GET"
@@ -1662,6 +1689,14 @@
           ]
         },
         {
+          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "rD2E.jupyter.kernel.flowRun.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": ["POST"]
+        },
+        {
           "path": "^/dataflow-mgmt/prefect/flow$",
           "scopes": [
             "dataflowmgmt.prefect.flow.add"
@@ -1800,6 +1835,7 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
           "scopes": [
+            "portal.dataset.resource.read",
             "dataflowmgmt.dqd.dataQuality.flowRun.add"
           ],
           "httpMethods": [
@@ -1863,7 +1899,8 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
           "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
+            "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
+            "portal.dataset.read"
           ],
           "httpMethods": [
             "POST"
@@ -2214,6 +2251,15 @@
           ]
         },
         {
+          "path": "^/data-mapping",
+          "scopes": [
+            "datamapping.post"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/demo",
           "scopes": [
             "demo.setup"
@@ -2233,6 +2279,12 @@
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
           ]
         }
       ]

@@ -364,7 +364,8 @@ async function main() {
       darkPrimaryColor: "#0000B3",
     },
     customCss: `a[aria-label="Powered By Logto"] { display: none; }
-img[alt="app logo"] { height: 80px; }`,
+img[alt="app logo"] { height: 80px; }
+button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
   };
   await update("sign-in-exp", headers, signinExperience);

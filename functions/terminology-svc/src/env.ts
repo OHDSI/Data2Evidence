@@ -8,6 +8,8 @@ function initEnv(__env) {
     CACHEDB__HOST: z.string(),
     CACHEDB__PORT: z.string().transform(Number),
 
+    USE_TREX_DB_CONN: z.string().transform(Boolean),
+
     USE_HANA_JWT_AUTHC: z.string(),
 
     HANA_FTS_FUZZY: z.string().transform(Number),

@@ -273,6 +273,7 @@ export const Terminology: FC<TerminologyProps> = ({
           id: concept.conceptId,
           useDescendants: !!concept.useDescendants,
           useMapped: !!concept.useMapped,
+          isExcluded: !!concept.isExcluded,
         };
       }),
       name: conceptSetName,
@@ -356,6 +357,7 @@ export const Terminology: FC<TerminologyProps> = ({
             ...concept,
             useDescendants: false,
             useMapped: false,
+            isExcluded: false,
           };
           selectedConceptsCopy.push(conceptToSelect);
         }
@@ -372,7 +374,7 @@ export const Terminology: FC<TerminologyProps> = ({
   );
 
   const toggleDescendantsAndMapped = useCallback(
-    (conceptId: number, type: "DESCENDANTS" | "MAPPED") => {
+    (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => {
       const selectedConceptsCopy = JSON.parse(
         JSON.stringify(selectedConcepts)
       ) as FhirValueSetExpansionContainsWithExt[];
@@ -382,6 +384,8 @@ export const Terminology: FC<TerminologyProps> = ({
             concept.useDescendants = !concept.useDescendants;
           } else if (type === "MAPPED") {
             concept.useMapped = !concept.useMapped;
+          } else if (type === "EXCLUDE") {
+            concept.isExcluded = !concept.isExcluded;
           }
         }
       });

@@ -19,5 +19,5 @@ export const useScannedSchema = () => {
     dispatch({ type: ACTION_TYPES.SET_SCANNED_SCHEMA, payload: scannedSchema });
   }, []);
 
-  return { setScannedSchema, sourceTables };
+  return { scannedSchema, setScannedSchema, sourceTables };
 };
