@@ -21,7 +21,7 @@ console.log(`Version: ${version}`);
 // Database variables
 let project_name = process.env.PROJECT_NAME ? `${process.env.PROJECT_NAME}` : 'd2e';
 let database_name = 'postgres'; // actual name of database in database_host
-let database_host = `${project_name}-demodb`; //PostgreSQL container name /or/ external database FQDN
+let database_host = `demodb`; //PostgreSQL container name /or/ external database FQDN
 let DEMO__DB_CODE = 'demo_database'; //display name
 let DEMO__DB_CDM_SCHEMA = 'demo_cdm';
 let DEMO__DB_USER = 'postgres';
