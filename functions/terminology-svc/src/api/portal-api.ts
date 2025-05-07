@@ -35,6 +35,7 @@ export class SystemPortalAPI {
   private async getDataset(datasetId: string): Promise<{
     databaseCode: string;
     dialect: string;
+    schemaName: string;
     vocabSchemaName: string;
   }> {
     console.info(`Portal request to get dataset info for id : ${datasetId}`);
@@ -63,6 +64,10 @@ export class SystemPortalAPI {
       );
     }
 
+    if (!dataset.schemaName) {
+      throw new Error(`schemaName does not exist for datasetId: ${datasetId}`);
+    }
+
     if (!dataset.vocabSchemaName) {
       throw new Error(
         `vocabSchemaName does not exist for datasetId: ${datasetId}`
@@ -71,6 +76,7 @@ export class SystemPortalAPI {
 
     return {
       databaseCode: dataset.databaseCode,
+      schemaName: dataset.schemaName,
       vocabSchemaName: dataset.vocabSchemaName,
       dialect: dataset.dialect,
     };

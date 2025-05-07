@@ -25,8 +25,7 @@ import { groupBy } from "../utils/helperUtil.ts";
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
-  private readonly datasetDB: DatasetDB;
-  private semanticRatio: number;
+  private readonly datasetDB?: DatasetDB;
 
   constructor(request: Request, datasetDB?: DatasetDB) {
     this.systemPortalApi = new SystemPortalAPI(request);
@@ -40,13 +39,13 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode } =
+    const { dialect, vocabSchemaName, databaseCode, schemaName } =
       this.datasetDB ??
       (await this.systemPortalApi.getDatasetDetails(datasetId));
     const hybridSearchConfig =
       await this.systemPortalApi.getHybridSearchConfig();
     const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
-    this.semanticRatio = enableSemantic
+    const semanticRatio = enableSemantic
       ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
       : 0;
     if (dialect === DatasetDialects.HANA) {
@@ -58,7 +57,9 @@ export class CachedbService {
       this.token,
       datasetId,
       vocabSchemaName,
-      this.semanticRatio
+      semanticRatio,
+      databaseCode,
+      schemaName
     );
   }
 
@@ -379,10 +380,18 @@ export class CachedbService {
       code: item.concept_code,
       // The date is stored as seconds from epoch, but new Date() expects ms
       validStartDate: item.valid_start_date
-        ? new Date(item.valid_start_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_start_date * 1000
+              : item.valid_start_date
+          ).toISOString()
         : new Date(0).toISOString(),
       validEndDate: item.valid_end_date
-        ? new Date(item.valid_end_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_end_date * 1000
+              : item.valid_end_date
+          ).toISOString()
         : "",
       validity,
       score: item.score,
