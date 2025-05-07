@@ -455,8 +455,8 @@ export class MRIConfig {
                             return reject(err);
                         }
 
-                        const paConfig = configs[0].config;
-                        const { config, ...metaWithoutPaConfig } = configs[0];
+                        const { config: paConfig, ...metaWithoutPaConfig } =
+                          configs[0];
                         // delete configs[0].config;
                         const finalConfig = {
                           meta: metaWithoutPaConfig,
