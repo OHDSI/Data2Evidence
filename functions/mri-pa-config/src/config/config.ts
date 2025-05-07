@@ -456,13 +456,18 @@ export class MRIConfig {
                         }
 
                         const paConfig = configs[0].config;
+                        const { config, ...metaWithoutPaConfig } = configs[0];
                         // delete configs[0].config;
-                        const config = {
-                            meta: configs[0],
-                            config: this.formatter.formatFrontendConfig({ mriConfig: paConfig, dmConfig: cdwConfig, lang }),
+                        const finalConfig = {
+                          meta: metaWithoutPaConfig,
+                          config: this.formatter.formatFrontendConfig({
+                            mriConfig: paConfig,
+                            dmConfig: cdwConfig,
+                            lang,
+                          }),
                         };
 
-                        resolve([config]);
+                        resolve([finalConfig]);
                     },
                 });
             };
