@@ -1195,6 +1195,7 @@ services:
       KERNEL_USERNAME: jovyan
       EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
       EG_DOCKER_MODE: docker
+      EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-41100}}"
       TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
