@@ -33,7 +33,7 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
