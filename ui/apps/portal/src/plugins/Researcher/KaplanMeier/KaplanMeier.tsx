@@ -406,6 +406,9 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
   const [targetCohortId, setTargetCohortId] = useState<number | null>(null);
   const [outcomeCohortId, setOutcomeCohortId] = useState<number | null>(null);
   const [competingOutcomeCohortId, setCompetingOutcomeCohortId] = useState<number | null>(null);
+  const [strata1CohortId, setStrata1CohortId] = useState<number | null>(null);
+  const [strata2CohortId, setStrata2CohortId] = useState<number | null>(null);
+  const [strata3CohortId, setStrata3CohortId] = useState<number | null>(null);
   const [analysisType, setAnalysisType] = useState<"single_event" | "competing_risk">("single_event");
   const { setFeedback } = useFeedback();
 
@@ -517,9 +520,25 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         setIsGraphLoading(false);
       }
     };
+
     const fetchData = async () => {
       try {
         // We can safely use non-null assertion (!) here because isFormValid ensures these values are not null
+        const strata1 =
+          strata1CohortId !== null
+            ? { id: strata1CohortId, name: cohortList.find((c) => Number(c.id) === strata1CohortId)?.name || "" }
+            : undefined;
+
+        const strata2 =
+          strata2CohortId !== null
+            ? { id: strata2CohortId, name: cohortList.find((c) => Number(c.id) === strata2CohortId)?.name || "" }
+            : undefined;
+
+        const strata3 =
+          strata3CohortId !== null
+            ? { id: strata3CohortId, name: cohortList.find((c) => Number(c.id) === strata3CohortId)?.name || "" }
+            : undefined;
+
         const result: { flowRunId: string } = await cohortMgmtClient.startKmAnalysis({
           targetCohortId: targetCohortId!,
           outcomeCohortId: outcomeCohortId!,
@@ -528,6 +547,9 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
               ? competingOutcomeCohortId
               : undefined,
           analysisType,
+          strata1,
+          strata2,
+          strata3,
         });
         await fetchGraphData(result.flowRunId);
       } catch (err) {
@@ -540,7 +562,19 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
       }
     };
     fetchData();
-  }, [cohortMgmtClient, setFeedback, getText, targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType]);
+  }, [
+    cohortMgmtClient,
+    setFeedback,
+    getText,
+    targetCohortId,
+    outcomeCohortId,
+    competingOutcomeCohortId,
+    strata1CohortId,
+    strata2CohortId,
+    strata3CohortId,
+    analysisType,
+    cohortList,
+  ]);
 
   const option = useMemo(() => {
     if (!graphData) {
@@ -591,6 +625,43 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             cohortId={competingOutcomeCohortId}
             cohortList={cohortList}
             disabled={isLoading || isGraphLoading || analysisType === "single_event"}
+            allowClear={true}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", marginTop: "20px" }}>
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">Strata 1:</div>
+          <CohortSelector
+            cohortTableName="Strata 1"
+            setCohortId={setStrata1CohortId}
+            cohortId={strata1CohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading}
+            allowClear={true}
+          />
+        </div>
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">Strata 2:</div>
+          <CohortSelector
+            cohortTableName="Strata 2"
+            setCohortId={setStrata2CohortId}
+            cohortId={strata2CohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading}
+            allowClear={true}
+          />
+        </div>
+        <div className="kaplan_meier__cohort_selector">
+          <div className="kaplan_meier__cohort_selector_label">Strata 3:</div>
+          <CohortSelector
+            cohortTableName="Strata 3"
+            setCohortId={setStrata3CohortId}
+            cohortId={strata3CohortId}
+            cohortList={cohortList}
+            disabled={isLoading || isGraphLoading}
+            allowClear={true}
           />
         </div>
       </div>
