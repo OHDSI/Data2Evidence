@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - develop
-      - "*/*"
 
 env:
   VERSION: develop
@@ -34,7 +33,7 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          npx d2e -e -v develop pull
+          npm run build:minerva
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
