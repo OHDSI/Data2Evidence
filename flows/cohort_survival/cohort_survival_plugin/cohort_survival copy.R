@@ -219,7 +219,7 @@ run_cohort_survival <- function(target_cohort_definition_id,
                     plot <- plotSurvival(survival)
                 }
             }
-            # return(survival)
+            #return(survival)
             plot_data <- ggplot_build(plot)$data
             # Convert data to a list if not already
             plot_data <- as.list(plot_data)
@@ -227,14 +227,14 @@ run_cohort_survival <- function(target_cohort_definition_id,
             # Add a key to the list
             plot_data[["status"]] <- "SUCCESS"
             plot_data_json <- toJSON(plot_data)
-            #  return(survival)
+            # return(survival)
             # print(plot_data_json)
             # return(plot_data_json)
-
+            
             gb <- ggplot_build(plot)
-            layout <- gb$layout$layout # Contains PANEL-to-facet mapping
+            layout <- gb$layout$layout  # Contains PANEL-to-facet mapping
             plot_data2 <- lapply(gb$data, function(layer_data) {
-                left_join(layer_data, layout, by = "PANEL")
+              left_join(layer_data, layout, by = "PANEL")
             })
             print("LAYOUT")
             print(names(layout))

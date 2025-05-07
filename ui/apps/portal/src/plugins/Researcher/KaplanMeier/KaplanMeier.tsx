@@ -11,35 +11,251 @@ import { i18nKeys } from "../../../contexts/app-context/states";
 
 export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {}
 
+// Colors for different cohort lines
+const colors = [
+  "#E41A1C", // Red
+  "#377EB8", // Blue
+  "#4DAF4A", // Green
+  "#984EA3", // Purple
+  "#FF7F00", // Orange
+  "#FFFF33", // Yellow
+  "#A65628", // Brown
+  "#F781BF", // Pink
+  "#999999", // Grey
+  "#00CED1", // Turquoise
+];
+
 // Transform the data for step plot and confidence intervals
-type GraphData = { timeX: number[]; survivalY: number[] };
+type GraphData = {
+  timeX: number[];
+  survivalY: number[];
+  confidenceLowerY?: number[];
+  confidenceUpperY?: number[];
+  facetVar?: string[]; // Added facet variable support
+};
+
+// Process the data into a facet-organized structure
+const processGraphDataByFacets = (
+  data: GraphData
+): Array<{
+  facet: string;
+  data: Array<{
+    time: number;
+    probability: number;
+    confidenceLower?: number;
+    confidenceUpper?: number;
+  }>;
+}> => {
+  if (!data.timeX || !data.survivalY || !data.timeX.length) {
+    return [];
+  }
+
+  const facets = data.facetVar ? [...new Set(data.facetVar)] : ["default"]; // If no facets, use 'default'
+
+  const facetData: Array<{
+    facet: string;
+    data: Array<{
+      time: number;
+      probability: number;
+      confidenceLower?: number;
+      confidenceUpper?: number;
+    }>;
+  }> = [];
+
+  const hasConfidenceIntervals = data.confidenceLowerY && data.confidenceUpperY;
+
+  // Initialize the array for each facet
+  facets.forEach((facet) => {
+    facetData.push({ facet, data: [] });
+  });
+
+  // Process data by facet
+  for (let i = 0; i < data.timeX.length; i++) {
+    const facetIndex = data.facetVar ? facets.indexOf(data.facetVar[i]) : 0; // Default to the first (and only) facet if no facet variable
+
+    const point = {
+      time: data.timeX[i],
+      probability: data.survivalY[i],
+      confidenceLower: hasConfidenceIntervals ? data.confidenceLowerY![i] : undefined,
+      confidenceUpper: hasConfidenceIntervals ? data.confidenceUpperY![i] : undefined,
+    };
+
+    // Check if we already have this time point for this facet (to avoid duplicates)
+    const prevTime =
+      facetData[facetIndex].data.length > 0
+        ? facetData[facetIndex].data[facetData[facetIndex].data.length - 1].time
+        : null;
+
+    if (prevTime === point.time) {
+      facetData[facetIndex].data[facetData[facetIndex].data.length - 1] = point;
+    } else {
+      facetData[facetIndex].data.push(point);
+    }
+  }
+
+  return facetData;
+};
+
+const generateSeriesData = (
+  processedData: Array<{
+    facet: string;
+    data: Array<{
+      time: number;
+      probability: number;
+      confidenceLower?: number;
+      confidenceUpper?: number;
+    }>;
+  }>,
+  cohortNames: { [key: string]: string } // Map from facet to cohort name
+) => {
+  const seriesData: any[] = [];
+
+  processedData.forEach((facetGroup, facetIndex) => {
+    const cohortName = cohortNames[facetGroup.facet] || facetGroup.facet;
+    const d = facetGroup.data;
+    const hasConfidenceIntervals =
+      d.length > 0 && d[0].confidenceLower !== undefined && d[0].confidenceUpper !== undefined;
+
+    if (hasConfidenceIntervals) {
+      // Add lower bound area (base)
+      seriesData.push({
+        name: `${cohortName} - Lower Bound`,
+        type: "line",
+        step: "end",
+        data: d.map((item) => [item.time, item.confidenceLower]),
+        lineStyle: { opacity: 0 },
+        areaStyle: { opacity: 0 },
+        stack: `confidence-band-${facetGroup.facet}`,
+        symbol: "none",
+        z: facetIndex,
+        tooltip: { show: false },
+      });
+
+      // Add confidence interval area
+      seriesData.push({
+        name: `${cohortName} - CI`,
+        type: "line",
+        step: "end",
+        data: d.map((item) => [item.time, item.confidenceUpper! - item.confidenceLower!]),
+        lineStyle: { opacity: 0 },
+        areaStyle: {
+          color: colors[facetIndex % colors.length],
+          opacity: 0.2,
+        },
+        stack: `confidence-band-${facetGroup.facet}`,
+        symbol: "none",
+        z: facetIndex,
+        tooltip: { show: false },
+      });
+
+      // Add dashed lines for confidence bounds
+      seriesData.push({
+        name: `${cohortName} - Lower CI`,
+        type: "line",
+        step: "end",
+        data: d.map((item) => [item.time, item.confidenceLower]),
+        lineStyle: {
+          type: "dashed",
+          opacity: 0.5,
+          color: colors[facetIndex % colors.length],
+          width: 1,
+        },
+        showSymbol: false,
+        symbol: "none",
+        z: facetIndex,
+        tooltip: { show: false },
+      });
+
+      seriesData.push({
+        name: `${cohortName} - Upper CI`,
+        type: "line",
+        step: "end",
+        data: d.map((item) => [item.time, item.confidenceUpper]),
+        lineStyle: {
+          type: "dashed",
+          opacity: 0.5,
+          color: colors[facetIndex % colors.length],
+          width: 1,
+        },
+        showSymbol: false,
+        symbol: "none",
+        z: facetIndex,
+        tooltip: { show: false },
+      });
+    }
+
+    // Main survival curve
+    seriesData.push({
+      name: cohortName,
+      type: "line",
+      step: "end",
+      data: d.map((item) => [item.time, item.probability]),
+      itemStyle: { color: colors[facetIndex % colors.length] },
+      lineStyle: { width: 2 },
+      symbolSize: 6,
+      showSymbol: false,
+      z: facetIndex + 10, // Ensure main lines are on top
+    });
+  });
+
+  return seriesData;
+};
+
 const getKaplanMeierGraphOption = (
   data: GraphData | null,
   outcomeCohort: CohortMapping,
   competingOutcomeCohort?: CohortMapping | null
 ) => {
-  const _data = data || { timeX: [], survivalY: [] };
-  const outcomeTimes = [];
-  const outcomeSurvivals: number[] = [];
-  const competingOutcomeTimes = [];
-  const competingOutcomeSurvivals: number[] = [];
-  for (let i = 0; i < _data.survivalY.length; i++) {
-    if (i % 2 === 0) {
-      outcomeTimes.push(_data.timeX[i]);
-      outcomeSurvivals.push(_data.survivalY[i]);
-      if (i < _data.survivalY.length - 1) {
-        outcomeTimes.push(_data.timeX[i + 1]);
-        outcomeSurvivals.push(_data.survivalY[i]);
-      }
+  if (!data || !data.timeX.length) {
+    return {
+      title: {
+        text: !competingOutcomeCohort ? "Cohort Survival" : "Cumulative Incidence Functions",
+        left: "center",
+      },
+      xAxis: {
+        type: "value",
+        name: "Days",
+      },
+      yAxis: {
+        type: "value",
+        name: !competingOutcomeCohort ? "Survival Probability" : "Cumulative Failure Probability",
+      },
+    };
+  }
+
+  // Process data by facets
+  const cohortNames: { [key: string]: string } = {};
+
+  // If facets exist in the data, use them; otherwise, create default facets
+  if (!data.facetVar) {
+    if (competingOutcomeCohort) {
+      // For competing risk, alternate between outcome and competing outcome
+      data.facetVar = data.timeX.map((_, i) => (i % 2 === 0 ? "outcome" : "competing"));
+      cohortNames["outcome"] = outcomeCohort.name;
+      cohortNames["competing"] = competingOutcomeCohort.name;
     } else {
-      competingOutcomeTimes.push(_data.timeX[i]);
-      competingOutcomeSurvivals.push(_data.survivalY[i]);
-      if (i < _data.survivalY.length - 1) {
-        competingOutcomeTimes.push(_data.timeX[i + 1]);
-        competingOutcomeSurvivals.push(_data.survivalY[i]);
-      }
+      // For single outcome, all points belong to the outcome cohort
+      data.facetVar = data.timeX.map(() => "outcome");
+      cohortNames["outcome"] = outcomeCohort.name;
     }
   }
+
+  // Process data into facet groups
+  const processedData = processGraphDataByFacets(data);
+
+  // Generate series data from processed facets
+  const seriesData = generateSeriesData(processedData, cohortNames);
+
+  // Get the list of unique facet names for the legend
+  const legendData = processedData.map((facet) => cohortNames[facet.facet] || facet.facet);
+
+  // Get the longest time series for X axis
+  let allTimes: number[] = [];
+  processedData.forEach((facet) => {
+    allTimes = [...allTimes, ...facet.data.map((d) => d.time)];
+  });
+  allTimes = [...new Set(allTimes)].sort((a, b) => a - b);
+
   const option = {
     toolbox: {
       feature: {
@@ -52,60 +268,89 @@ const getKaplanMeierGraphOption = (
     },
     title: {
       text: !competingOutcomeCohort ? "Cohort Survival" : "Cumulative Incidence Functions",
+      left: "center",
     },
     xAxis: {
       type: "value",
       name: "Days",
+      nameLocation: "middle",
+      nameGap: 30,
     },
     yAxis: {
       type: "value",
       name: !competingOutcomeCohort ? "Survival Probability" : "Cumulative Failure Probability",
+      nameLocation: "middle",
+      nameGap: 40,
+      min: 0,
+      max: 1,
+      axisLabel: {
+        formatter: (value: number) => `${(value * 100).toFixed(0)}%`,
+      },
+    },
+    grid: {
+      left: "5%",
+      right: "5%",
+      bottom: "10%",
+      containLabel: true,
+    },
+    legend: {
+      data: legendData,
+      bottom: 10,
     },
     tooltip: {
       trigger: "axis",
+      axisPointer: {
+        type: "cross",
+        animation: false,
+        label: {
+          backgroundColor: "#ccc",
+          borderColor: "#aaa",
+          borderWidth: 1,
+          shadowBlur: 0,
+          shadowOffsetX: 0,
+          shadowOffsetY: 0,
+          color: "#222",
+        },
+      },
       formatter: function (params: any) {
-        let result = "Days: " + Math.floor(params[0].axisValue) + "<br>";
-        let outcomeProbability = 1;
-        let competingOutcomeProbability = 1;
-        let outcomeMarker = "";
-        let competingOutcomeMarker = "";
-        params.forEach(function (item: any) {
-          if (item.seriesName === outcomeCohort.name) {
-            outcomeProbability = item.data[1];
-            outcomeMarker = item.marker;
-          }
-          if (item.seriesName === competingOutcomeCohort?.name) {
-            competingOutcomeProbability = item.data[1];
-            competingOutcomeMarker = item.marker;
+        const time = params[0].axisValue;
+        let tooltip = `Days: ${Math.floor(time)}<br/><br/>`;
+
+        // Group by facets and display data for each facet
+        processedData.forEach((facetGroup, facetIndex) => {
+          const cohortName = cohortNames[facetGroup.facet] || facetGroup.facet;
+          const displayColor = colors[facetIndex % colors.length];
+
+          // Find the closest data point for this time
+          const dataPoint =
+            facetGroup.data.find((d) => d.time === parseFloat(time)) ||
+            facetGroup.data.reduce(
+              (closest, current) =>
+                Math.abs(current.time - parseFloat(time)) < Math.abs(closest.time - parseFloat(time))
+                  ? current
+                  : closest,
+              facetGroup.data[0]
+            );
+
+          if (dataPoint) {
+            // Add color indicator
+            tooltip += `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${displayColor};"></span>`;
+            tooltip += `<b>${cohortName}:</b><br/>`;
+            tooltip += `Probability: ${(dataPoint.probability * 100).toFixed(2)}%<br/>`;
+
+            // Add confidence intervals if available
+            if (dataPoint.confidenceLower !== undefined && dataPoint.confidenceUpper !== undefined) {
+              tooltip += `95% CI: [${(dataPoint.confidenceLower * 100).toFixed(2)}%, ${(
+                dataPoint.confidenceUpper * 100
+              ).toFixed(2)}%]<br/><br/>`;
+            }
           }
         });
-        result += outcomeMarker + outcomeCohort.name + ": " + outcomeProbability;
-        if (competingOutcomeCohort) {
-          result += "<br>" + competingOutcomeMarker + competingOutcomeCohort.name + ": " + competingOutcomeProbability;
-        }
-        return result;
+
+        return tooltip;
       },
     },
-    series: [
-      {
-        name: outcomeCohort.name,
-        data: outcomeTimes.map((time, index) => [time, outcomeSurvivals[index]]),
-        type: "line",
-        step: "end",
-        smooth: true,
-      },
-      ...(competingOutcomeCohort
-        ? [
-            {
-              name: competingOutcomeCohort.name,
-              data: competingOutcomeTimes.map((time, index) => [time, competingOutcomeSurvivals[index]]),
-              type: "line",
-              step: "end",
-              smooth: true,
-            },
-          ]
-        : []),
-    ],
+    series: seriesData,
   };
   return option;
 };
@@ -195,7 +440,22 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         const { data } = await cohortMgmtClient.getKmAnalysisResults(flowRunId);
         const parsedData = JSON.parse(data);
         if (parsedData.status === "SUCCESS") {
-          const newGraphData = { timeX: parsedData.x, survivalY: parsedData.y };
+          const newGraphData: GraphData = {
+            timeX: parsedData.x,
+            survivalY: parsedData.y,
+          };
+
+          // Add confidence intervals if present in the response
+          if (parsedData.ci_lower && parsedData.ci_upper) {
+            newGraphData.confidenceLowerY = parsedData.ci_lower;
+            newGraphData.confidenceUpperY = parsedData.ci_upper;
+          }
+
+          // Add facets if present in the response
+          if (parsedData.facet_var) {
+            newGraphData.facetVar = parsedData.facet_var;
+          }
+
           setGraphData(newGraphData);
         } else {
           setGraphData(null);
@@ -334,8 +594,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             <Loader text={getText(i18nKeys.COHORT_SURVIVAL__GRAPH_LOADING)} />
           </div>
         ) : graphData ? (
-          // <div>he</div>
-          <ReactECharts option={option} style={{ width: "100%", height: "100%" }} />
+          <ReactECharts option={option} style={{ width: "100%", height: "600px" }} />
         ) : null}
       </div>
     </Card>
