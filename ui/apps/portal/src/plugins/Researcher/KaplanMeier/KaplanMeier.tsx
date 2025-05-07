@@ -75,7 +75,8 @@ type GraphDataApi = (
 
 // Process the data into a facet-organized structure
 const processGraphDataByFacets = (
-  data: GraphData
+  data: GraphData,
+  isCompetingRisk = false
 ): Array<{
   facet: string;
   data: Array<{
@@ -101,6 +102,19 @@ const processGraphDataByFacets = (
     }>;
   }> = [];
 
+  const riskData: Array<{
+    facet: string;
+    data: Array<{
+      time: number;
+      probability: number;
+      confidenceLower?: number;
+      confidenceUpper?: number;
+    }>;
+  }> = [];
+  [0, 1].forEach((val) => {
+    riskData.push({ facet: String(val), data: [] });
+  });
+
   const hasConfidenceIntervals = data.confidenceLowerY && data.confidenceUpperY;
 
   // Initialize the array for each facet
@@ -108,6 +122,7 @@ const processGraphDataByFacets = (
     facetData.push({ facet, data: [] });
   });
 
+  let prevTime = null;
   // Process data by facet
   for (let i = 0; i < data.timeX.length; i++) {
     const facetIndex = data.facetVar ? facets.indexOf(data.facetVar[i]) : 0; // Default to the first (and only) facet if no facet variable
@@ -119,20 +134,28 @@ const processGraphDataByFacets = (
       confidenceUpper: hasConfidenceIntervals ? data.confidenceUpperY![i] : undefined,
     };
 
-    // Check if we already have this time point for this facet (to avoid duplicates)
-    const prevTime =
-      facetData[facetIndex].data.length > 0
-        ? facetData[facetIndex].data[facetData[facetIndex].data.length - 1].time
-        : null;
-
-    if (prevTime === point.time) {
-      facetData[facetIndex].data[facetData[facetIndex].data.length - 1] = point;
+    // const prevTime =
+    //   facetData[facetIndex].data.length > 0
+    //     ? facetData[facetIndex].data[facetData[facetIndex].data.length - 1].time
+    //     : null;
+    // For competing risk analysis, always add points (don't replace)
+    // The data for competing risk is [0, 0, 1, 1] where [line1, line2, line1, line2]
+    if (isCompetingRisk) {
+      const index = prevTime === point.time ? 0 : 1;
+      riskData[index].data.push(point);
     } else {
-      facetData[facetIndex].data.push(point);
+      // For survival analysis, check if we already have this time point for this facet (to avoid duplicates)
+
+      if (prevTime === point.time) {
+        facetData[facetIndex].data[facetData[facetIndex].data.length - 1] = point;
+      } else {
+        facetData[facetIndex].data.push(point);
+      }
     }
+    prevTime = point.time;
   }
 
-  return facetData;
+  return isCompetingRisk ? riskData : facetData;
 };
 
 const generateSeriesData = (
@@ -280,8 +303,8 @@ const getKaplanMeierGraphOption = (
     }
   }
 
-  // Process data into facet groups
-  const processedData = processGraphDataByFacets(data);
+  // Process data into facet groups - pass isCompetingRisk flag based on presence of competingOutcomeCohort
+  const processedData = processGraphDataByFacets(data, !!competingOutcomeCohort);
 
   // Generate series data from processed facets
   const seriesData = generateSeriesData(processedData, cohortNames);
@@ -625,43 +648,6 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             cohortId={competingOutcomeCohortId}
             cohortList={cohortList}
             disabled={isLoading || isGraphLoading || analysisType === "single_event"}
-            allowClear={true}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: "flex", marginTop: "20px" }}>
-        <div className="kaplan_meier__cohort_selector">
-          <div className="kaplan_meier__cohort_selector_label">Strata 1:</div>
-          <CohortSelector
-            cohortTableName="Strata 1"
-            setCohortId={setStrata1CohortId}
-            cohortId={strata1CohortId}
-            cohortList={cohortList}
-            disabled={isLoading || isGraphLoading}
-            allowClear={true}
-          />
-        </div>
-        <div className="kaplan_meier__cohort_selector">
-          <div className="kaplan_meier__cohort_selector_label">Strata 2:</div>
-          <CohortSelector
-            cohortTableName="Strata 2"
-            setCohortId={setStrata2CohortId}
-            cohortId={strata2CohortId}
-            cohortList={cohortList}
-            disabled={isLoading || isGraphLoading}
-            allowClear={true}
-          />
-        </div>
-        <div className="kaplan_meier__cohort_selector">
-          <div className="kaplan_meier__cohort_selector_label">Strata 3:</div>
-          <CohortSelector
-            cohortTableName="Strata 3"
-            setCohortId={setStrata3CohortId}
-            cohortId={strata3CohortId}
-            cohortList={cohortList}
-            disabled={isLoading || isGraphLoading}
-            allowClear={true}
           />
         </div>
       </div>
@@ -687,12 +673,57 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             name="analysisType"
             value="competing_risk"
             checked={analysisType === "competing_risk"}
-            onChange={() => setAnalysisType("competing_risk")}
+            onChange={() => {
+              setAnalysisType("competing_risk");
+              // Clear all strata selections when switching to competing risk
+              setStrata1CohortId(null);
+              setStrata2CohortId(null);
+              setStrata3CohortId(null);
+            }}
             disabled={isLoading || isGraphLoading}
           />
           {" Competing Risk Analysis"}
         </div>
       </div>
+
+      {analysisType === "single_event" && (
+        <div style={{ display: "flex", marginTop: "20px" }}>
+          <div className="kaplan_meier__cohort_selector">
+            <div className="kaplan_meier__cohort_selector_label">Strata 1:</div>
+            <CohortSelector
+              cohortTableName="Strata 1"
+              setCohortId={setStrata1CohortId}
+              cohortId={strata1CohortId}
+              cohortList={cohortList}
+              disabled={isLoading || isGraphLoading}
+              allowClear={true}
+            />
+          </div>
+          <div className="kaplan_meier__cohort_selector">
+            <div className="kaplan_meier__cohort_selector_label">Strata 2:</div>
+            <CohortSelector
+              cohortTableName="Strata 2"
+              setCohortId={setStrata2CohortId}
+              cohortId={strata2CohortId}
+              cohortList={cohortList}
+              disabled={isLoading || isGraphLoading}
+              allowClear={true}
+            />
+          </div>
+          <div className="kaplan_meier__cohort_selector">
+            <div className="kaplan_meier__cohort_selector_label">Strata 3:</div>
+            <CohortSelector
+              cohortTableName="Strata 3"
+              setCohortId={setStrata3CohortId}
+              cohortId={strata3CohortId}
+              cohortList={cohortList}
+              disabled={isLoading || isGraphLoading}
+              allowClear={true}
+            />
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "10px" }}>
         <Button
           text={getText(i18nKeys.COHORT_SURVIVAL__RUN_SURVIVAL_ANALYSIS)}

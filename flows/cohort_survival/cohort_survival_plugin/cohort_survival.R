@@ -154,8 +154,25 @@ run_cohort_survival <- function(target_cohort_definition_id,
             print("TARGET")
             print(cdm[["cohort"]])
             print("END TARGET")
+
+            # Get column names from cohort table
+            cohort_cols <- DBI::dbListFields(duck_con, "cohort")
+            print("cohort_cols:")
+            print(cohort_cols)
+
+            # Find strata columns (those that start with "strata_")
+            strata_cols <- cohort_cols[grepl("^strata_", cohort_cols)]
+            # Set up strata parameter - if strata columns exist, use them; otherwise use NULL
+            strata_param <- if (length(strata_cols) > 0) {
+                # Each strata column should be a separate analysis, not all columns together
+                # Convert from list(c("col1", "col2")) to list(c("col1"), c("col2"))
+                lapply(strata_cols, function(col) c(col))
+            } else {
+                NULL
+            }
             # Choose the appropriate survival analysis method based on analysis_type
             if (analysis_type == "competing_risk") {
+                # Does not support strata yet
                 survival <- estimateCompetingRiskSurvival(cdm,
                     targetCohortId = target_cohort_definition_id,
                     outcomeCohortId = outcome_cohort_definition_id,
@@ -167,14 +184,6 @@ run_cohort_survival <- function(target_cohort_definition_id,
                 )
                 plot <- plotSurvival(survival, cumulativeFailure = TRUE)
             } else {
-                # Get column names from cohort table
-                cohort_cols <- DBI::dbListFields(duck_con, "cohort")
-                print("cohort_cols:")
-                print(cohort_cols)
-
-                # Find strata columns (those that start with "strata_")
-                strata_cols <- cohort_cols[grepl("^strata_", cohort_cols)]
-
                 # Verify that strata columns actually exist in the cohort table
                 print("Checking for strata columns in cohort table:")
                 for (col in strata_cols) {
@@ -182,14 +191,6 @@ run_cohort_survival <- function(target_cohort_definition_id,
                     print(paste(col, "exists:", col_exists))
                 }
 
-                # Set up strata parameter - if strata columns exist, use them; otherwise use NULL
-                strata_param <- if (length(strata_cols) > 0) {
-                    # Each strata column should be a separate analysis, not all columns together
-                    # Convert from list(c("col1", "col2")) to list(c("col1"), c("col2"))
-                    lapply(strata_cols, function(col) c(col))
-                } else {
-                    NULL
-                }
 
                 # Proper way to print these values
                 print("strata_param:")
