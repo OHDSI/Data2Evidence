@@ -28,7 +28,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
-  const setupPYQE = `#%% [python]
+  const setupPYQE = `\n#%% [python]
 import os
 import micropip
 await micropip.install('ssl')
