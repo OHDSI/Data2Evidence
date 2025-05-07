@@ -34,6 +34,45 @@ type GraphData = {
   facetVar?: string[]; // Added facet variable support
 };
 
+type GraphDataApi = (
+  | {
+      x: number[];
+      y: number[];
+      PANEL: string[];
+      group: number[];
+      flipped_aes: boolean[];
+      colour: string[];
+      linewidth: number[];
+      linetype: number[];
+      alpha: string[];
+      ROW: number[];
+      COL: number[];
+      SCALE_X: number[];
+      SCALE_Y: number[];
+      ymin?: undefined;
+      ymax?: undefined;
+      fill?: undefined;
+    }
+  | {
+      ymin: number[];
+      ymax: number[];
+      x: number[];
+      y: number[];
+      PANEL: string[];
+      group: number[];
+      flipped_aes: boolean[];
+      colour: string[];
+      fill: string[];
+      linewidth: number[];
+      linetype: number[];
+      alpha: number[];
+      ROW: number[];
+      COL: number[];
+      SCALE_X: number[];
+      SCALE_Y: number[];
+    }
+)[];
+
 // Process the data into a facet-organized structure
 const processGraphDataByFacets = (
   data: GraphData
@@ -122,7 +161,7 @@ const generateSeriesData = (
         name: `${cohortName} - Lower Bound`,
         type: "line",
         step: "end",
-        data: d.map((item) => [item.time, item.confidenceLower]),
+        data: d.map((item) => item.confidenceLower),
         lineStyle: { opacity: 0 },
         areaStyle: { opacity: 0 },
         stack: `confidence-band-${facetGroup.facet}`,
@@ -136,7 +175,7 @@ const generateSeriesData = (
         name: `${cohortName} - CI`,
         type: "line",
         step: "end",
-        data: d.map((item) => [item.time, item.confidenceUpper! - item.confidenceLower!]),
+        data: d.map((item) => item.confidenceUpper! - item.confidenceLower!),
         lineStyle: { opacity: 0 },
         areaStyle: {
           color: colors[facetIndex % colors.length],
@@ -153,7 +192,7 @@ const generateSeriesData = (
         name: `${cohortName} - Lower CI`,
         type: "line",
         step: "end",
-        data: d.map((item) => [item.time, item.confidenceLower]),
+        data: d.map((item) => item.confidenceLower),
         lineStyle: {
           type: "dashed",
           opacity: 0.5,
@@ -170,7 +209,7 @@ const generateSeriesData = (
         name: `${cohortName} - Upper CI`,
         type: "line",
         step: "end",
-        data: d.map((item) => [item.time, item.confidenceUpper]),
+        data: d.map((item) => item.confidenceUpper),
         lineStyle: {
           type: "dashed",
           opacity: 0.5,
@@ -189,7 +228,7 @@ const generateSeriesData = (
       name: cohortName,
       type: "line",
       step: "end",
-      data: d.map((item) => [item.time, item.probability]),
+      data: d.map((item) => item.probability),
       itemStyle: { color: colors[facetIndex % colors.length] },
       lineStyle: { width: 2 },
       symbolSize: 6,
@@ -206,6 +245,7 @@ const getKaplanMeierGraphOption = (
   outcomeCohort: CohortMapping,
   competingOutcomeCohort?: CohortMapping | null
 ) => {
+  console.log("getKaplanMeierGraphOption", data, outcomeCohort, competingOutcomeCohort);
   if (!data || !data.timeX.length) {
     return {
       title: {
@@ -213,7 +253,7 @@ const getKaplanMeierGraphOption = (
         left: "center",
       },
       xAxis: {
-        type: "value",
+        type: "category",
         name: "Days",
       },
       yAxis: {
@@ -271,7 +311,7 @@ const getKaplanMeierGraphOption = (
       left: "center",
     },
     xAxis: {
-      type: "value",
+      type: "category",
       name: "Days",
       nameLocation: "middle",
       nameGap: 30,
@@ -438,34 +478,36 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
     const fetchGraphData = async (flowRunId: string) => {
       try {
         const { data } = await cohortMgmtClient.getKmAnalysisResults(flowRunId);
-        const parsedData = JSON.parse(data);
-        if (parsedData.status === "SUCCESS") {
-          const newGraphData: GraphData = {
-            timeX: parsedData.x,
-            survivalY: parsedData.y,
-          };
+        const parsedData = JSON.parse(data) as GraphDataApi;
 
-          // Add confidence intervals if present in the response
-          if (parsedData.ci_lower && parsedData.ci_upper) {
-            newGraphData.confidenceLowerY = parsedData.ci_lower;
-            newGraphData.confidenceUpperY = parsedData.ci_upper;
-          }
+        // Initialize GraphData with empty arrays
+        const newGraphData: GraphData = {
+          timeX: [],
+          survivalY: [],
+        };
 
-          // Add facets if present in the response
-          if (parsedData.facet_var) {
-            newGraphData.facetVar = parsedData.facet_var;
-          }
+        // Extract data from the array of series
+        // Find the main curve data (first object typically has the main curve data)
+        const mainCurveData = parsedData[0];
+        newGraphData.timeX = mainCurveData.x;
+        newGraphData.survivalY = mainCurveData.y;
 
-          setGraphData(newGraphData);
-        } else {
-          setGraphData(null);
-          setFeedback({
-            type: "error",
-            message: getText(i18nKeys.COHORT_SURVIVAL__ERROR_OCCURRED),
-            description: getText(i18nKeys.COHORT_SURVIVAL__TRY_AGAIN),
-          });
+        // If there are facet variables (PANEL), use them
+        // TODO: only use facet_var, but available only when strata is used
+        if (mainCurveData.PANEL) {
+          newGraphData.facetVar = mainCurveData.PANEL;
         }
+
+        // Find confidence interval data (usually in an object with ymin and ymax)
+        const confIntervalData = parsedData.find((item) => item.ymin !== undefined && item.ymax !== undefined);
+        if (confIntervalData) {
+          newGraphData.confidenceLowerY = confIntervalData.ymin;
+          newGraphData.confidenceUpperY = confIntervalData.ymax;
+        }
+
+        setGraphData(newGraphData);
       } catch (err) {
+        setGraphData(null);
         setFeedback({
           type: "error",
           message: getText(i18nKeys.COHORT_SURVIVAL__ERROR_OCCURRED),
@@ -487,8 +529,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
               : undefined,
           analysisType,
         });
-        const graphData = await fetchGraphData(result.flowRunId);
-        console.log(graphData);
+        await fetchGraphData(result.flowRunId);
       } catch (err) {
         setFeedback({
           type: "error",
@@ -509,7 +550,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
     const competingOutcomeCohort = cohortList.find((cohort) => Number(cohort.id) == competingOutcomeCohortId);
     return getKaplanMeierGraphOption(graphData, outcomeCohort!, competingOutcomeCohort);
   }, [cohortList, graphData, outcomeCohortId, competingOutcomeCohortId]);
-
+  console.log("option", option);
   return (
     <Card className="kaplan_meier__container">
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", fontSize: 20 }}>

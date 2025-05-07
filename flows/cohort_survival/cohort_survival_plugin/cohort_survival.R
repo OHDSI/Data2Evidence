@@ -238,7 +238,7 @@ run_cohort_survival <- function(target_cohort_definition_id,
             })
             print("LAYOUT")
             print(names(layout))
-            return(plot_data2)
+            return(toJSON(plot_data2))
         },
         error = function(e) {
             print(e)
@@ -258,17 +258,3 @@ run_cohort_survival <- function(target_cohort_definition_id,
         }
     )
 }
-
-data <- run_cohort_survival(
-    target_cohort_definition_id = 13,
-    outcome_cohort_definition_id = 16,
-    analysis_type = "single_event",
-    competing_outcome_cohort_definition_id = NULL,
-    pg_host = "localhost",
-    pg_port = "15432",
-    pg_dbname = "postgres",
-    pg_user = "jerome_read",
-    pg_password = "Toor1234",
-    pg_schema = "demo_cdm",
-    strata_cohorts = list(list(id = 14, name = "Above 90"), list(id = 15, name = "Viral Sinusitis"), list(id = 15, name = "Jerome"))
-)
