@@ -36,10 +36,10 @@ function main() {
         exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js write -r ${schema} src/ cfg/`);
 
         // exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/data/`);
-        if (!includeData) {
-            console.log("including data")
-            exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/config_data/`);
-        }
+        // if (!includeData) {
+        //     console.log("including data")
+        //     exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/config_data/`);
+        // }
         exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js make ${schema} @ src/ cfg/`);
 
         exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} SELECT ${HDI___SYS_DI__USER}`);
