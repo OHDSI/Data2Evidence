@@ -32,18 +32,18 @@ def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_
     schema_tables = dbdao.get_table_names(schema_name, include_views=False)
 
     for vocab_table_name in tables_to_create_duckdb_fts_index:
-        if vocab_table_name.value in schema_tables:
+        if vocab_table_name in schema_tables:
             logger.info(
-                f"Creating duckdb fulltext search index for table: {vocab_table_name.value}...")
+                f"Creating duckdb fulltext search index for table: {vocab_table_name}...")
 
             config_document_identifier = DUCKDB_FULLTEXT_SEARCH_CONFIG[
                 vocab_table_name]["document_identifier"]
 
-            columns = dbdao.get_columns(schema_name, vocab_table_name.value)
+            columns = dbdao.get_columns(schema_name, vocab_table_name)
 
             fts_creation_sql = get_duckdb_fts_creation_sql(
                 schema_name=schema_name,
-                table_name=vocab_table_name.value,
+                table_name=vocab_table_name,
                 document_identifier=DUCKDB_FULLTEXT_SEARCH_CONFIG[
                     vocab_table_name]["document_identifier"],
                 columns=columns
@@ -54,11 +54,11 @@ def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_
             if config_document_identifier not in columns:
                 logger.info(
                     f"Adding unique auto increment column...")
-                sequence_name = f"{vocab_table_name.value}_id_sequence"
+                sequence_name = f"{vocab_table_name}_id_sequence"
                 con.execute(
                     f"CREATE SEQUENCE {schema_name}.{sequence_name} START 1;")
                 con.execute(
-                    f"ALTER TABLE {schema_name}.{vocab_table_name.value} ADD COLUMN {config_document_identifier} INTEGER DEFAULT nextval('{sequence_name}');")
+                    f"ALTER TABLE {schema_name}.{vocab_table_name} ADD COLUMN {config_document_identifier} INTEGER DEFAULT nextval('{sequence_name}');")
                 logger.info(
                     f"Colum successfully addded")
 
