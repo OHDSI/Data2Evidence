@@ -70,61 +70,79 @@ export class Formatter {
             }
         });
         config.chartOptions = {
-            stacked: {
-                visible: mriConfig.chartOptions.stacked.visible,
-                downloadEnabled: mriConfig.chartOptions.stacked.downloadEnabled,
-                pdfDownloadEnabled: mriConfig.chartOptions.stacked.pdfDownloadEnabled,
-                imageDownloadEnabled: mriConfig.chartOptions.stacked.imageDownloadEnabled,
-                collectionEnabled: mriConfig.chartOptions.stacked.collectionEnabled,
-                beginVisible: mriConfig.chartOptions.stacked.beginVisible,
-                fillMissingValuesEnabled: mriConfig.chartOptions.stacked.fillMissingValuesEnabled,
-            },
-            boxplot: {
-                visible: mriConfig.chartOptions.boxplot.visible,
-                downloadEnabled: mriConfig.chartOptions.boxplot.downloadEnabled,
-                pdfDownloadEnabled: mriConfig.chartOptions.boxplot.pdfDownloadEnabled,
-                imageDownloadEnabled: mriConfig.chartOptions.boxplot.imageDownloadEnabled,
-                collectionEnabled: mriConfig.chartOptions.boxplot.collectionEnabled,
-                beginVisible: mriConfig.chartOptions.boxplot.beginVisible,
-                fillMissingValuesEnabled: mriConfig.chartOptions.boxplot.fillMissingValuesEnabled,
-            },
-            km: {
-                visible: mriConfig.chartOptions.km.visible,
-                downloadEnabled: mriConfig.chartOptions.km.downloadEnabled,
-                pdfDownloadEnabled: mriConfig.chartOptions.km.pdfDownloadEnabled,
-                imageDownloadEnabled: mriConfig.chartOptions.km.imageDownloadEnabled,
-                collectionEnabled: mriConfig.chartOptions.km.collectionEnabled,
-                beginVisible: mriConfig.chartOptions.km.beginVisible,
-                selectedEndInteractions: mriConfig.chartOptions.km.selectedEndInteractions,
-            },
-            list: {
-                visible: mriConfig.chartOptions.list.visible,
-                downloadEnabled: mriConfig.chartOptions.list.downloadEnabled,
-                zipDownloadEnabled: mriConfig.chartOptions.list.zipDownloadEnabled,
-                collectionEnabled: mriConfig.chartOptions.list.collectionEnabled,
-                beginVisible: mriConfig.chartOptions.list.beginVisible,
-                pageSize: mriConfig.chartOptions.list.pageSize,
-                initialColumns,
-            },
-            vb: {
-                visible: mriConfig.chartOptions.vb.visible,
-                referenceName: mriConfig.chartOptions.vb.referenceName,
-            },
-            custom: {
-                visible: mriConfig.chartOptions.custom && mriConfig.chartOptions.custom.visible,
-                customCharts: mriConfig.chartOptions.custom ? mriConfig.chartOptions.custom.customCharts : [],
-            },
-            sac: {
-                enabled: sacFlag,
-                visible: mriConfig.chartOptions.sac && mriConfig.chartOptions.sac.visible && sacFlag,
-                sacCharts: mriConfig.chartOptions.sac ? mriConfig.chartOptions.sac.sacCharts : [],
-            },
-            shared: {
-                enabled: sharingFlag,
-                systemName,
-            },
-            initialAttributes: mriConfig.chartOptions.initialAttributes,
-            initialChart: mriConfig.chartOptions.initialChart,
+          stacked: {
+            visible: mriConfig.chartOptions.stacked.visible,
+            downloadEnabled: mriConfig.chartOptions.stacked.downloadEnabled,
+            pdfDownloadEnabled:
+              mriConfig.chartOptions.stacked.pdfDownloadEnabled,
+            imageDownloadEnabled:
+              mriConfig.chartOptions.stacked.imageDownloadEnabled,
+            collectionEnabled: mriConfig.chartOptions.stacked.collectionEnabled,
+            beginVisible: mriConfig.chartOptions.stacked.beginVisible,
+            fillMissingValuesEnabled:
+              mriConfig.chartOptions.stacked.fillMissingValuesEnabled,
+          },
+          boxplot: {
+            visible: mriConfig.chartOptions.boxplot.visible,
+            downloadEnabled: mriConfig.chartOptions.boxplot.downloadEnabled,
+            pdfDownloadEnabled:
+              mriConfig.chartOptions.boxplot.pdfDownloadEnabled,
+            imageDownloadEnabled:
+              mriConfig.chartOptions.boxplot.imageDownloadEnabled,
+            collectionEnabled: mriConfig.chartOptions.boxplot.collectionEnabled,
+            beginVisible: mriConfig.chartOptions.boxplot.beginVisible,
+            fillMissingValuesEnabled:
+              mriConfig.chartOptions.boxplot.fillMissingValuesEnabled,
+          },
+          km: {
+            visible: mriConfig.chartOptions.km.visible,
+            downloadEnabled: mriConfig.chartOptions.km.downloadEnabled,
+            pdfDownloadEnabled: mriConfig.chartOptions.km.pdfDownloadEnabled,
+            imageDownloadEnabled:
+              mriConfig.chartOptions.km.imageDownloadEnabled,
+            collectionEnabled: mriConfig.chartOptions.km.collectionEnabled,
+            beginVisible: mriConfig.chartOptions.km.beginVisible,
+            selectedEndInteractions:
+              mriConfig.chartOptions.km.selectedEndInteractions,
+          },
+          list: {
+            visible: mriConfig.chartOptions.list.visible,
+            downloadEnabled: mriConfig.chartOptions.list.downloadEnabled,
+            zipDownloadEnabled: mriConfig.chartOptions.list.zipDownloadEnabled,
+            collectionEnabled: mriConfig.chartOptions.list.collectionEnabled,
+            beginVisible: mriConfig.chartOptions.list.beginVisible,
+            pageSize: mriConfig.chartOptions.list.pageSize,
+            initialColumns,
+          },
+          vb: {
+            visible: mriConfig.chartOptions.vb.visible,
+            referenceName: mriConfig.chartOptions.vb.referenceName,
+          },
+          custom: {
+            visible:
+              mriConfig.chartOptions.custom &&
+              mriConfig.chartOptions.custom.visible,
+            customCharts: mriConfig.chartOptions.custom
+              ? mriConfig.chartOptions.custom.customCharts
+              : [],
+          },
+          sac: {
+            enabled: sacFlag,
+            visible:
+              mriConfig.chartOptions.sac &&
+              mriConfig.chartOptions.sac.visible &&
+              sacFlag,
+            sacCharts: mriConfig.chartOptions.sac
+              ? mriConfig.chartOptions.sac.sacCharts
+              : [],
+          },
+          shared: {
+            enabled: sharingFlag,
+            systemName,
+          },
+          initialAttributes: mriConfig.chartOptions.initialAttributes,
+          initialChart: mriConfig.chartOptions.initialChart,
+          minCohortSize: mriConfig.chartOptions.minCohortSize,
         };
         config.pageTitle = mriConfig.pageTitle;
         config.panelOptions = {
