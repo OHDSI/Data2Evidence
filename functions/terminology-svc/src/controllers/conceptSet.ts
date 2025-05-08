@@ -169,6 +169,10 @@ export const getIncludedConcepts = async (
   next: NextFunction
 ) => {
   try {
+    const timestamp = (new Date()).valueOf();
+    console.time(`time-terminology-svc-getIncludedConcepts-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-initialize-${timestamp}`)
+
     const { body } = schemas.getIncludedConcepts.parse(req);
     const { conceptSetIds, datasetId } = body;
     const systemPortalApi = new SystemPortalAPI(req);
@@ -194,6 +198,8 @@ export const getIncludedConcepts = async (
       getCachedbservice(),
       ...conceptsSetsDb,
     ]);
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-initialize-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-promises-${timestamp}`)
     const promises = rawConceptSets.map(async (conceptSet) => {
       const conceptIds = conceptSet.concepts.map((c) => c.id);
       const concepts = await cachedbService.getConceptsByIds(
@@ -231,12 +237,15 @@ export const getIncludedConcepts = async (
         });
       });
     });
-
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-promises-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-_resolveConceptSetConcepts-${timestamp}`)
     const uniqueConceptIds = await _resolveConceptSetConcepts(
       cachedbService,
       conceptSetConcepts,
       datasetId
     );
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-_resolveConceptSetConcepts-${timestamp}`)
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-${timestamp}`)
     res.send(uniqueConceptIds);
   } catch (e) {
     console.error("Error getting included concepts for concept sets!");
