@@ -2,7 +2,7 @@ import express, { NextFunction, Response } from 'express'
 import { Service } from 'typedi'
 import { ROLES } from '../const'
 import { IAppRequest, IUserWithRoles } from '../types'
-import { UserAdminService, DashboardViewerService } from '../services'
+import { UserAdminService, DashboardViewerService, JobRunnerService } from '../services'
 import { createLogger } from '../Logger'
 import { User } from '../entities'
 
@@ -13,7 +13,8 @@ export class AlpUserRouter {
 
   constructor(
     private readonly userAdminService: UserAdminService,
-    private readonly dashboardViewerService: DashboardViewerService
+    private readonly dashboardViewerService: DashboardViewerService,
+    private readonly jobRunnerService: JobRunnerService
   ) {
     this.registerRoutes()
   }
@@ -46,6 +47,9 @@ export class AlpUserRouter {
         if (roles.includes(ROLES.ALP_USER_ADMIN)) {
           await this.userAdminService.registerUser(userId)
         }
+        if (roles.includes(ROLES.STUDY_WRITE_DQD_RESEARCHER)) {
+          await this.jobRunnerService.registerUser(userId)
+        }
         if (roles.includes(ROLES.ALP_DASHBOARD_VIEWER)) {
           await this.dashboardViewerService.registerUser(userId)
         }
@@ -68,6 +72,9 @@ export class AlpUserRouter {
       try {
         if (roles.includes(ROLES.ALP_USER_ADMIN)) {
           await this.userAdminService.withdrawUser(userId)
+        }
+        if (roles.includes(ROLES.STUDY_WRITE_DQD_RESEARCHER)) {
+          await this.jobRunnerService.withdrawUser(userId)
         }
         if (roles.includes(ROLES.ALP_DASHBOARD_VIEWER)) {
           await this.dashboardViewerService.withdrawUser(userId)
