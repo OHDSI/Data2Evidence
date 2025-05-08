@@ -36,11 +36,11 @@ export class DemoController {
         message: "Adding demo dataset...",
         task: this.service.addDataset.bind(this.service),
       },
-      {
+      /*{
         code: "cache",
         message: "Creating cache for demo dataset...",
         task: this.service.createCache.bind(this.service),
-      },
+      },*/
       {
         code: "dqd",
         message: "Running DQD on demo dataset...",
