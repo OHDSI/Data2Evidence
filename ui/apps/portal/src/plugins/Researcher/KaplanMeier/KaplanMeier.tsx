@@ -144,9 +144,11 @@ const processGraphDataByFacets = (
       const index = prevTime === point.time ? 0 : 1;
       riskData[index].data.push(point);
     } else {
-      // For survival analysis, check if we already have this time point for this facet (to avoid duplicates)
-
+      if (facetData[facetIndex].data[facetData[facetIndex].data.length - 1]?.probability === 0) {
+        continue;
+      }
       if (prevTime === point.time) {
+        // Currently assuming the last point is the one to keep
         facetData[facetIndex].data[facetData[facetIndex].data.length - 1] = point;
       } else {
         facetData[facetIndex].data.push(point);
