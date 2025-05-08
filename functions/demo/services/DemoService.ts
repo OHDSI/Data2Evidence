@@ -107,7 +107,7 @@ export class DemoService {
     return { ...dataset, ...result };
   }
 
-  public async createCache(
+  /*public async createCache(
     token: string,
     _input: IDemoInput,
     progress?: IProgress
@@ -128,7 +128,7 @@ export class DemoService {
 
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
     return result.flowRunId ? result : result.data;
-  }
+  }*/
 
   public async runDQD(token: string, _input: IDemoInput, progress?: IProgress) {
     this.logger.info("Running DQD");
