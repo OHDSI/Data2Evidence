@@ -61,31 +61,31 @@ const getClientCredentials = async (
   }
 };
 
-export const createProject = async (name: string, description: string) => {
-  console.info(`Creating a fhir project for the dataset '${name}'..`);
+export const createProject = async (token: string, id: string, description: string) => {
+  console.info(`Creating a fhir project for the dataset '${id}'..`);
   let fhirApi = new FhirAPI();
   await fhirApi.clientCredentialsLogin();
 
-  // check if project with same name already exists
-  const projectExists = await checkProjectNameExists(fhirApi, name);
+  // check if project with same id already exists
+  const projectExists = await checkProjectNameExists(fhirApi, id);
   if (projectExists === true) {
-    throw new Error(`Project with name '${name}' already exists!`);
+    throw new Error(`Project with id '${id}' already exists!`);
   }
 
   const projectDetails = {
     resourceType: "Project",
-    name: name,
+    name: id,
     strictMode: true, // whether this project uses strict FHIR validation
     description: description,
   };
   const projectResult = await fhirApi.post("Project", projectDetails);
   const projectId = projectResult.id;
 
-  console.info(`Creating a client application for project '${name}'..`);
+  console.info(`Creating a client application for project '${id}'..`);
   const clientSecret = uuidv4();
   const clientApplicationDetails = {
     resourceType: "ClientApplication",
-    name: name,
+    name: id,
     description: description,
     meta: {
       project: projectId,
@@ -103,7 +103,7 @@ export const createProject = async (name: string, description: string) => {
   );
   const clientId = clientApplicationResult.id;
 
-  console.info(`Creating project membership for project ${name}..`);
+  console.info(`Creating project membership for project ${id}..`);
   const projectMembershipDetails = {
     resourceType: "ProjectMembership",
     project: {
@@ -119,18 +119,21 @@ export const createProject = async (name: string, description: string) => {
     },
     user: {
       reference: `ClientApplication/${clientId}`,
-      display: name,
+      display: id,
     },
     profile: {
       reference: `ClientApplication/${clientId}`,
-      display: name,
+      display: id,
     },
   };
   await fhirApi.post("ProjectMembership", projectMembershipDetails);
-  return {
-    projectName: name,
-    projectId: projectId,
-  };
+
+  //Update dataset information
+  const portalAPI = new PortalAPI(token);
+  const dataset: Dataset = await portalAPI.getDatasetById(id);
+  dataset.fhir_project_id = projectId
+  await portalAPI.updateDataset(dataset)
+  return true
 };
 
 export const forwardRequest = async (

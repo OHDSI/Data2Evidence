@@ -53,7 +53,7 @@ export interface CopyStudyInput {
 }
 
 export interface NewFhirProjectInput {
-  name: string;
+  id: string;
   description: string;
 }
 
