@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.6.0 #default version
+version=0.7.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -39,6 +39,7 @@ context=""
 fhir=""
 demo=""
 dicom=""
+cachedb=""
 jupyter=""
 compose=""
 args=""
@@ -52,6 +53,7 @@ while [[ $# -gt 0 ]]; do
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
+        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -94,7 +96,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
 
 case $cmd in
     start)
@@ -258,6 +260,7 @@ Options:
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
+ -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
