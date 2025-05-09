@@ -231,7 +231,6 @@ case $cmd in
         npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demodb_pg_publication FOR ALL TABLES;"
         docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demodb_pg_publication FOR TABLES IN SCHEMA demo_cdm;"
         ;;
     checkflow) 
