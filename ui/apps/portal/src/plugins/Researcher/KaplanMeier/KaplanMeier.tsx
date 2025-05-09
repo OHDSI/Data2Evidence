@@ -334,7 +334,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             <Loader text={getText(i18nKeys.COHORT_SURVIVAL__GRAPH_LOADING)} />
           </div>
         ) : graphData ? (
-          <ReactECharts option={option} style={{ width: "100%", height: "600px" }} />
+          <ReactECharts option={option} style={{ width: "100%", height: "375px" }} />
         ) : null}
       </div>
     </Card>

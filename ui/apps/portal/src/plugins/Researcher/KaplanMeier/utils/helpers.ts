@@ -190,9 +190,6 @@ export const getKaplanMeierGraphOption = (data: GraphData | null, isCompetingRis
   // Generate series data from processed facets
   const seriesData = generateSeriesData(processedData);
 
-  // Get the list of unique facet names for the legend
-  const legendData = processedData.map(({ facet }) => facet);
-
   // Get the longest time series for X axis
   let allTimes: number[] = [];
   processedData.forEach((facet) => {
@@ -236,10 +233,6 @@ export const getKaplanMeierGraphOption = (data: GraphData | null, isCompetingRis
       right: "5%",
       bottom: "10%",
       containLabel: true,
-    },
-    legend: {
-      data: legendData,
-      bottom: 10,
     },
     tooltip: {
       trigger: "axis",
