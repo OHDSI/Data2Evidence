@@ -1,4 +1,4 @@
-import { processGraphDataByFacets } from "../helpers";
+import { processGraphDataByFacets, generateSeriesData } from "../helpers";
 import { GraphData } from "../types";
 
 describe("processGraphDataByFacets", () => {
@@ -134,5 +134,122 @@ describe("processGraphDataByFacets", () => {
     expect(result).toHaveLength(1); // One group: GroupA
     expect(result[0].facet).toBe("GroupA");
     expect(result[0].data).toHaveLength(3);
+  });
+});
+
+describe("generateSeriesData", () => {
+  it("should return empty array for empty input", () => {
+    const result = generateSeriesData([]);
+    expect(result).toEqual([]);
+  });
+
+  it("should generate correct series data for a single facet", () => {
+    const processedData = [
+      {
+        facet: "Group A",
+        data: [
+          { time: 0, probability: 1, confidenceLower: 0.9, confidenceUpper: 1 },
+          { time: 10, probability: 0.8, confidenceLower: 0.7, confidenceUpper: 0.9 },
+          { time: 20, probability: 0.6, confidenceLower: 0.5, confidenceUpper: 0.7 },
+        ],
+      },
+    ];
+
+    const result = generateSeriesData(processedData);
+
+    expect(result.length).toBe(5); // 5 series for each facet
+
+    // Check main survival curve (the last one added)
+    const mainCurve = result[4];
+    expect(mainCurve.name).toBe("Group A");
+    expect(mainCurve.type).toBe("line");
+    expect(mainCurve.step).toBe("end");
+    
+    // Check data points with individual assertions to handle floating point precision
+    expect(mainCurve.data).toHaveLength(3);
+    expect(mainCurve.data[0][0]).toBe(0);
+    expect(mainCurve.data[0][1]).toBe(1);
+    expect(mainCurve.data[1][0]).toBe(10);
+    expect(mainCurve.data[1][1]).toBe(0.8);
+    expect(mainCurve.data[2][0]).toBe(20);
+    expect(mainCurve.data[2][1]).toBe(0.6);
+
+    // Check confidence interval area with floating point precision handling
+    const ciArea = result[1];
+    expect(ciArea.name).toBe("Group A - CI");
+    expect(ciArea.data).toHaveLength(3);
+    expect(ciArea.data[0][0]).toBe(0);
+    expect(ciArea.data[0][1]).toBeCloseTo(0.1, 10);
+    expect(ciArea.data[1][0]).toBe(10);
+    expect(ciArea.data[1][1]).toBeCloseTo(0.2, 10);
+    expect(ciArea.data[2][0]).toBe(20);
+    expect(ciArea.data[2][1]).toBeCloseTo(0.2, 10);
+
+    // Check lower bound with floating point precision handling
+    const lowerBound = result[0];
+    expect(lowerBound.name).toBe("Group A - Lower Bound");
+    expect(lowerBound.data).toHaveLength(3);
+    expect(lowerBound.data[0][0]).toBe(0);
+    expect(lowerBound.data[0][1]).toBe(0.9);
+    expect(lowerBound.data[1][0]).toBe(10);
+    expect(lowerBound.data[1][1]).toBe(0.7);
+    expect(lowerBound.data[2][0]).toBe(20);
+    expect(lowerBound.data[2][1]).toBe(0.5);
+  });
+
+  it("should generate series data for multiple facets with correct colors", () => {
+    const processedData = [
+      {
+        facet: "Group A",
+        data: [
+          { time: 0, probability: 1, confidenceLower: 0.9, confidenceUpper: 1 },
+          { time: 10, probability: 0.8, confidenceLower: 0.7, confidenceUpper: 0.9 },
+        ],
+      },
+      {
+        facet: "Group B",
+        data: [
+          { time: 0, probability: 1, confidenceLower: 0.9, confidenceUpper: 1 },
+          { time: 10, probability: 0.7, confidenceLower: 0.6, confidenceUpper: 0.8 },
+        ],
+      },
+    ];
+
+    const result = generateSeriesData(processedData);
+
+    expect(result.length).toBe(10); // 5 series per facet, 2 facets
+
+    // Check main curve for first facet (index 4)
+    expect(result[4].name).toBe("Group A");
+    expect(result[4].itemStyle.color).toBe("#E41A1C"); // First color in the colors array
+
+    // Check main curve for second facet (index 9)
+    expect(result[9].name).toBe("Group B");
+    expect(result[9].itemStyle.color).toBe("#377EB8"); // Second color in the colors array
+
+    // Check each facet has its own stack for confidence bands
+    expect(result[0].stack).toBe("confidence-band-Group A");
+    expect(result[5].stack).toBe("confidence-band-Group B");
+  });
+
+  it("should handle optional confidence interval values", () => {
+    const processedData = [
+      {
+        facet: "Group A",
+        data: [
+          { time: 0, probability: 1 }, // Missing confidence intervals
+          { time: 10, probability: 0.8, confidenceLower: 0.7, confidenceUpper: 0.9 },
+        ],
+      },
+    ];
+
+    const result = generateSeriesData(processedData);
+
+    expect(result.length).toBe(5);
+
+    // Check confidence interval calculations still work even with undefined values
+    expect(result[1].data[0][1]).toBeNaN(); // upper - lower = NaN
+    // Use toBeCloseTo for floating point comparisons to handle precision issues
+    expect(result[1].data[1][1]).toBeCloseTo(0.2, 10); // 0.9 - 0.7 = 0.2
   });
 });
