@@ -18,6 +18,19 @@ if (vIndex_version !== -1 && args[vIndex_version + 1]) {
 }
 console.log(`Version: ${version}`);
 
+const args_dev_mode = process.argv.slice(2); 
+const vIndex_dev_mode = args_dev_mode.indexOf("-d");
+if (vIndex_dev_mode !== -1 && args[vIndex_dev_mode + 1]) {
+    var dev_mode = true;
+    path = (args[vIndex_dev_mode + 1]);
+    console.log(`Dev Mode: ${dev_mode}, function path: ${path}`);
+    var ENV_TYPE = process.env.ENV_TYPE || 'remote';
+    var CADDY__CONFIG = process.env.CADDY__CONFIG || './.deploy/caddy-config';
+} else {
+    var dev_mode = false;
+}
+
+
 // Database variables
 let project_name = process.env.PROJECT_NAME ? `${process.env.PROJECT_NAME}` : 'd2e';
 let database_name = 'postgres'; // actual name of database in database_host
@@ -155,7 +168,13 @@ var payload = JSON.stringify({
     "vocabSchemas": [
         DEMO__DB_CDM_SCHEMA
     ], 
-    "authenticationMode": "Password"
+    "authenticationMode": "Password",
+    "publications" : [
+        { 
+            "slot": "data2evidence",
+            "publication": "demodb_pg_publication", 
+        }
+    ]
 })
 try { 
     var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
@@ -176,9 +195,12 @@ if (resp_status_code == '200') {
     process.exit(1)
 }
 
-console.log(`Restarting services with d2e -e -v ${version} stop...`);
-await $`d2e -e -v ${version} stop`
-await $`d2e -e -v ${version} start`
-console.log(chalk.blue(`Patching demo database...`));
-await $`d2e patchdemodb`
-console.log(chalk.green(`Completed patching demo database.`));
+if (dev_mode) {
+    console.log(`Restarting services with ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`);
+    await $`ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`
+    await $`ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} start`
+} else { 
+    console.log(`Restarting services with d2e -e -v ${version} stop`);
+    await $`d2e -e -v ${version} stop`
+    await $`d2e -e -v ${version} start`
+}

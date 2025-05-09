@@ -455,14 +455,19 @@ export class MRIConfig {
                             return reject(err);
                         }
 
-                        const paConfig = configs[0].config;
+                        const { config: paConfig, ...metaWithoutPaConfig } =
+                          configs[0];
                         // delete configs[0].config;
-                        const config = {
-                            meta: configs[0],
-                            config: this.formatter.formatFrontendConfig({ mriConfig: paConfig, dmConfig: cdwConfig, lang }),
+                        const finalConfig = {
+                          meta: metaWithoutPaConfig,
+                          config: this.formatter.formatFrontendConfig({
+                            mriConfig: paConfig,
+                            dmConfig: cdwConfig,
+                            lang,
+                          }),
                         };
 
-                        resolve([config]);
+                        resolve([finalConfig]);
                     },
                 });
             };

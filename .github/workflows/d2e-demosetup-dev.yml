@@ -1,43 +1,39 @@
-name: d2e/npm-install-d2e-run
+name: d2e/demosetup-dev
 
 on:
-  schedule:
-    - cron: "0 22 * * *" # UTC timing
-  workflow_dispatch:
-    inputs:
-      version:
-        default: 0.6.0
-        description: Enter version to use
-        required: true
-        type: string
+  workflow_dispatch: # Allow manual triggering
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  push:
+    branches:
+      - develop
 
 env:
-  VERSION: ${{ github.event.inputs.version ||  vars.NPM_INSTALL_D2E_VER  }}
+  VERSION: develop
+
 
 jobs:
-  npm-install-run:
+  demosetup:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install latest cli
-        if: success() || failure() 
-        id: install
+
+      - name: npm install
+        if: success() || failure()
         run: |
-          curl -L https://github.com/OHDSI/d2e/releases/download/latest/data2evidence-cli.tgz > data2evidence-cli.tgz
-          npm i -g data2evidence-cli.tgz
-      
+          npm install 
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
         run: |
-          d2e init 
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v develop init
 
-      - name: Pull docker images
+      - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
-          d2e -e -v ${{ env.VERSION }} pull
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -47,10 +43,10 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
-            d2e -e -v ${{ env.VERSION }} start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }}  -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -69,22 +65,8 @@ jobs:
       - name: Logs 
         if: success() || failure()
         run: |
-          d2e -v ${{ env.VERSION }} logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Patchdemodb
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: patchdemodb
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 3
-          retry_on: any
-          command: |
-            d2e patchdemodb
-            DC_EXIT_CODE=$?
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-            
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -92,15 +74,20 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
-            d2e -e -v ${{ env.VERSION }} setupdemo
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }}  -d ./functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
   
+      - name: Logs 
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions logs
+
       - name: Checkflow
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -108,10 +95,10 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 3
+          max_attempts: 1
           retry_on: any
           command: |
-            d2e checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
@@ -119,25 +106,9 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          d2e -e -v ${{ env.VERSION }} stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
       - name: Clean d2e services
         if: success() || failure()
         id: clean
         run: |
-          echo "y" | d2e clean  
-
-      - name: Discord notification on status
-        if: success() || failure()
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
-          username: ${{ github.actor }}
-          content: "### Status of ${{ env.VERSION }} Installation\n
-            install: ${{ steps.install.outcome }}\n
-            init: ${{ steps.init.outcome }}\n
-            pull: ${{ steps.pull.outcome }}\n
-            start: ${{ steps.start.outcome }}\n
-            patchdemodb: ${{ steps.patchdemodb.outcome }}\n
-            setupdemo: ${{ steps.setupdemo.outcome }}\n
-            checkflow: ${{ steps.checkflow.outcome }}\n
-            stop: ${{ steps.stop.outcome }}"
+          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions clean
