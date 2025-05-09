@@ -66,21 +66,7 @@ jobs:
         if: success() || failure()
         run: |
           d2e logs
-
-      - name: Patchdemodb
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: patchdemodb
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 3
-          retry_on: any
-          command: |
-            d2e patchdemodb
-            DC_EXIT_CODE=$?
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-            
+ 
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3

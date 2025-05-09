@@ -301,9 +301,11 @@
           "PAConfig.ui",
           "PAConfig.i18n",
           "PAConfig.svc",
+          "PAConfig.svc/read",
           "PSConfig.svc",
           "CDWConfig.ui",
           "CDWConfig.svc",
+          "CDWConfig.svc/read",
           "ConfigAssignment.ui",
           "ConfigAssignment.svc",
           "jobplugins",
@@ -644,7 +646,6 @@
         {
           "path": "^/pa-config-svc/enduser(.*)",
           "scopes": [
-            "PAConfig.svc",
             "PAConfig.svc/read"
           ]
         },
@@ -663,8 +664,7 @@
         {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
-            "CDWConfig.svc/read",
-            "CDWConfig.svc"
+            "CDWConfig.svc/read"
           ],
           "httpMethods": [
             "GET"
