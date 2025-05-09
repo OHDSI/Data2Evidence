@@ -1042,6 +1042,7 @@ services:
         limits:
           cpus: ${D2E_CPU_LIMIT:-2}
           memory: ${D2E_MEMORY_LIMIT:-7G}
+    profiles: [cachedb]
 
   demodb:
     image: ohdsi/broadsea-atlasdb:2.2.0
