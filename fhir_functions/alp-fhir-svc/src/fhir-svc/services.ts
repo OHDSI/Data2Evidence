@@ -25,12 +25,12 @@ const getDatasetId = async (
 
 const checkProjectNameExists = async (
   fhirApi: FhirAPI,
-  datasetName: string
+  projectName: string
 ): Promise<boolean> => {
   // check project with same name already exists
   const existingProject = await fhirApi.getOneResource(
     "Project",
-    `name=${datasetName}`
+    `name=${projectName}`
   );
 
   if (existingProject !== undefined) {
@@ -150,19 +150,20 @@ export const forwardRequest = async (
   //Authenticate with superadmin credentials
   await fhirApi.clientCredentialsLogin();
 
-  //Check project exists which has unique name
-  const projectExists = await checkProjectNameExists(fhirApi, projectName);
-
-  if (projectExists === false) {
-    throw new Error(`Project '${projectName}' does not exist in fhir server!`);
-  }
-
-  //Get dataset information
+  //Get datasetId for incoming token study code
   const datasetId = await getDatasetId(token, projectName);
-
   if(datasetId == null){
     throw new Error(`No dataset id found for project '${projectName}'`);
   }
+  //DatasetId is the Fhir project name
+  projectName = datasetId
+  //Check fhir project exists which has unique name
+  const projectExists = await checkProjectNameExists(fhirApi, projectName);
+
+  if (projectExists === false) {
+    throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
+  }
+
   //Get client ID and secret for project
   const projClientCredentials = await getClientCredentials(
     fhirApi,
