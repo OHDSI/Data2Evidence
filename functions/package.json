@@ -301,6 +301,7 @@
           "PAConfig.ui",
           "PAConfig.i18n",
           "PAConfig.svc",
+          "PAConfig.svc/read",
           "PSConfig.svc",
           "CDWConfig.ui",
           "CDWConfig.svc",
@@ -644,7 +645,6 @@
         {
           "path": "^/pa-config-svc/enduser(.*)",
           "scopes": [
-            "PAConfig.svc",
             "PAConfig.svc/read"
           ]
         },
