@@ -83,7 +83,7 @@ if [[ $version = "develop" ]]; then
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
-  export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
+  #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
