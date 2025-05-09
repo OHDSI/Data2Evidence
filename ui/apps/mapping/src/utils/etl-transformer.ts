@@ -163,18 +163,20 @@ const getFieldByHandleId = (
 };
 
 const getLogicString = (fieldData?: FieldTargetHandleData) => {
+  let logics: string[] = [];
+
   if (!fieldData) return "";
 
   if (fieldData.constantValue) {
-    return `Constant value: "${fieldData.constantValue}"`;
+    logics.push(`Constant value: "${fieldData.constantValue}"`);
   }
   if (fieldData.isSqlEnabled && fieldData.sql) {
-    return `SQL Function: ${fieldData.sql}`;
+    logics.push(`SQL Function: ${fieldData.sql}`);
   }
   if (fieldData.isLookupEnabled && fieldData.lookupSql) {
-    return `Lookup: ${fieldData.lookupName} ${fieldData.lookupSql}`;
+    logics.push(`Lookup: ${fieldData.lookupName} ${fieldData.lookupSql}`);
   }
-  return "";
+  return logics.join("\n");
 };
 
 let etlGlobalVar = {
