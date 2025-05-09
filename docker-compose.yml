@@ -1044,7 +1044,7 @@ services:
           memory: ${D2E_MEMORY_LIMIT:-7G}
 
   demodb:
-    image: ohdsi/broadsea-atlasdb:2.0.0
+    image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
     command:
