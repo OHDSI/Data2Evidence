@@ -29,13 +29,16 @@ export class CachedbService {
   private readonly datasetDB: DatasetDB;
   private readonly hybridSearchConfig: HybridSearchConfig;
 
-  constructor(request: Request, datasetDB: DatasetDB, hybridSearchConfig?: HybridSearchConfig) {
+  constructor(request: Request, datasetDB: DatasetDB, hybridSearchConfig: HybridSearchConfig) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
     this.datasetDB = datasetDB;
     this.hybridSearchConfig = hybridSearchConfig;
   }
 
+  /*
+  Initialize in an optimal way
+  */
   public static async createCacheDBService(request: Request, datasetId: string): CachedbService {
     const systemPortalApi = new SystemPortalAPI(request);
     const getDatasetDetails = async () => {
