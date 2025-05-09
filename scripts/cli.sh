@@ -68,14 +68,15 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+
 if [ -n "${function_path:-}" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
     export D2E_FUNCTIONS=$function_path
-    export PROJECT_NAME=${PROJECT_NAME:-alp}
 else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
+export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
@@ -91,6 +92,7 @@ else
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
+  export DOCKER_IMAGE_PREFIX=data2evidence/
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $dev $compose $args"
@@ -221,7 +223,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/ohdsi/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-data2evidence/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -229,7 +231,7 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         ;;
     checkflow) 
