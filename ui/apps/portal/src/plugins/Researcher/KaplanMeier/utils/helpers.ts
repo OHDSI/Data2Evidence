@@ -1,5 +1,4 @@
 import { GraphData } from "./types";
-import { CohortMapping } from "../../../../types";
 
 // Colors for different cohort lines
 const colors = [
