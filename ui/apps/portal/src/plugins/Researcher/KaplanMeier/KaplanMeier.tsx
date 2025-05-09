@@ -95,8 +95,7 @@ const processGraphDataByFacets = (
     if (data.strataLevel?.[i] === "FALSE") {
       continue;
     }
-    // TODO: check if competing risk is 1 or 0
-    const facetIndex = isCompetingRisk ? (i < data.timeX.length / 2 ? 1 : 0) : facets.indexOf(data.strataName[i]);
+    const facetIndex = isCompetingRisk ? (i < data.timeX.length / 2 ? 0 : 1) : facets.indexOf(data.strataName[i]);
 
     const point = {
       time: data.timeX[i],
