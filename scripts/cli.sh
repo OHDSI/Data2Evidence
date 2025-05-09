@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.6.0 #default version
+version=0.7.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -39,6 +39,7 @@ context=""
 fhir=""
 demo=""
 dicom=""
+cachedb=""
 jupyter=""
 compose=""
 args=""
@@ -52,6 +53,7 @@ while [[ $# -gt 0 ]]; do
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
+        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -68,21 +70,22 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+
 if [ -n "${function_path:-}" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
     export D2E_FUNCTIONS=$function_path
-    export PROJECT_NAME=${PROJECT_NAME:-alp}
 else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
+export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
-  export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
+  #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
@@ -93,7 +96,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
 
 case $cmd in
     start)
@@ -221,7 +224,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/ohdsi/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -229,7 +232,7 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         ;;
     checkflow) 
@@ -257,6 +260,7 @@ Options:
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
+ -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
