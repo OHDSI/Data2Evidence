@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.6.0 #default version
+version=0.7.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -52,6 +52,7 @@ while [[ $# -gt 0 ]]; do
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
+        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -95,7 +96,7 @@ else
   export DOCKER_IMAGE_PREFIX=data2evidence/
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
 
 case $cmd in
     start)
