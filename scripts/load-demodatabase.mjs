@@ -168,7 +168,13 @@ var payload = JSON.stringify({
     "vocabSchemas": [
         DEMO__DB_CDM_SCHEMA
     ], 
-    "authenticationMode": "Password"
+    "authenticationMode": "Password",
+    "publications" : [
+        { 
+            "slot": "data2evidence",
+            "publication": "demodb_pg_publication", 
+        }
+    ]
 })
 try { 
     var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
@@ -198,7 +204,3 @@ if (dev_mode) {
     await $`d2e -e -v ${version} stop`
     await $`d2e -e -v ${version} start`
 }
-
-console.log(chalk.blue(`Patching demo database...`));
-await $`d2e patchdemodb`
-console.log(chalk.green(`Completed patching demo database.`));
