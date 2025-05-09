@@ -238,7 +238,7 @@ jobs:
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
 
-  success:
+  docker-success:
     needs: bld
     runs-on: ubuntu-latest
     steps:
