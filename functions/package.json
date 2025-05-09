@@ -305,6 +305,7 @@
           "PSConfig.svc",
           "CDWConfig.ui",
           "CDWConfig.svc",
+          "CDWConfig.svc/read",
           "ConfigAssignment.ui",
           "ConfigAssignment.svc",
           "jobplugins",
@@ -663,8 +664,7 @@
         {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
-            "CDWConfig.svc/read",
-            "CDWConfig.svc"
+            "CDWConfig.svc/read"
           ],
           "httpMethods": [
             "GET"
