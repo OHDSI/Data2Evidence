@@ -198,7 +198,3 @@ if (dev_mode) {
     await $`d2e -e -v ${version} stop`
     await $`d2e -e -v ${version} start`
 }
-
-console.log(chalk.blue(`Patching demo database...`));
-await $`d2e patchdemodb`
-console.log(chalk.green(`Completed patching demo database.`));
