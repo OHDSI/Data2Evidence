@@ -171,8 +171,8 @@ var payload = JSON.stringify({
     "authenticationMode": "Password",
     "publications" : [
         { 
-            publication: "demodb_pg_publication", 
-            slot: "data2evidence"
+            "slot": "data2evidence",
+            "publication": "demodb_pg_publication", 
         }
     ]
 })
