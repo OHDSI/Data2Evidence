@@ -8,6 +8,7 @@ import CohortSelector from "./CohortSelector";
 import { CohortSurvival } from "../../../axios/cohort-survival";
 import { CohortMapping } from "../../../types";
 import { i18nKeys } from "../../../contexts/app-context/states";
+import { GraphData, GraphDataApi } from "./utils/types";
 
 export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {}
 
@@ -24,33 +25,6 @@ const colors = [
   "#999999", // Grey
   "#00CED1", // Turquoise
 ];
-
-// Transform the data for step plot and confidence intervals
-type GraphData = {
-  timeX: number[];
-  survivalY: number[];
-  confidenceLowerY: number[];
-  confidenceUpperY: number[];
-  strataName: string[];
-  strataLevel: string[];
-};
-
-type GraphDataApi = {
-  result_id: number[];
-  cohort: string[];
-  outcome: string[];
-  facet_var: string[];
-  strata_name: string[];
-  strata_level: string[];
-  variable_name: string[];
-  variable_level: string[];
-  time: number[];
-  result_type: string[];
-  analysis_type: string[];
-  estimate: number[];
-  estimate_95CI_lower: number[];
-  estimate_95CI_upper: number[];
-};
 
 // Process the data into a facet-organized structure
 const processGraphDataByFacets = (
@@ -105,7 +79,6 @@ const processGraphDataByFacets = (
     };
     graphData[facetIndex].data.push(point);
   }
-
   return graphData;
 };
 
@@ -125,76 +98,72 @@ const generateSeriesData = (
   processedData.forEach((facetGroup, facetIndex) => {
     const facetName = facetGroup.facet;
     const d = facetGroup.data;
-    const hasConfidenceIntervals =
-      d.length > 0 && d[0].confidenceLower !== undefined && d[0].confidenceUpper !== undefined;
 
-    if (hasConfidenceIntervals) {
-      // Add lower bound area (base)
-      seriesData.push({
-        name: `${facetName} - Lower Bound`,
-        type: "line",
-        step: "end",
-        data: d.map((item) => [item.time, item.confidenceLower]),
-        lineStyle: { opacity: 0 },
-        areaStyle: { opacity: 0 },
-        stack: `confidence-band-${facetGroup.facet}`,
-        symbol: "none",
-        z: facetIndex,
-        tooltip: { show: false },
-      });
+    // Add lower bound area (base)
+    seriesData.push({
+      name: `${facetName} - Lower Bound`,
+      type: "line",
+      step: "end",
+      data: d.map((item) => [item.time, item.confidenceLower]),
+      lineStyle: { opacity: 0 },
+      areaStyle: { opacity: 0 },
+      stack: `confidence-band-${facetGroup.facet}`,
+      symbol: "none",
+      z: facetIndex,
+      tooltip: { show: false },
+    });
 
-      // Add confidence interval area
-      seriesData.push({
-        name: `${facetName} - CI`,
-        type: "line",
-        step: "end",
-        data: d.map((item) => [item.time, item.confidenceUpper! - item.confidenceLower!]),
-        lineStyle: { opacity: 0 },
-        areaStyle: {
-          color: colors[facetIndex % colors.length],
-          opacity: 0.2,
-        },
-        stack: `confidence-band-${facetGroup.facet}`,
-        symbol: "none",
-        z: facetIndex,
-        tooltip: { show: false },
-      });
+    // Add confidence interval area
+    seriesData.push({
+      name: `${facetName} - CI`,
+      type: "line",
+      step: "end",
+      data: d.map((item) => [item.time, item.confidenceUpper! - item.confidenceLower!]),
+      lineStyle: { opacity: 0 },
+      areaStyle: {
+        color: colors[facetIndex % colors.length],
+        opacity: 0.2,
+      },
+      stack: `confidence-band-${facetGroup.facet}`,
+      symbol: "none",
+      z: facetIndex,
+      tooltip: { show: false },
+    });
 
-      // Add dashed lines for confidence bounds
-      seriesData.push({
-        name: `${facetName} - Lower CI`,
-        type: "line",
-        step: "end",
-        data: d.map((item) => [item.time, item.confidenceLower]),
-        lineStyle: {
-          type: "dashed",
-          opacity: 0.5,
-          color: colors[facetIndex % colors.length],
-          width: 1,
-        },
-        showSymbol: false,
-        symbol: "none",
-        z: facetIndex,
-        tooltip: { show: false },
-      });
+    // Add dashed lines for confidence bounds
+    seriesData.push({
+      name: `${facetName} - Lower CI`,
+      type: "line",
+      step: "end",
+      data: d.map((item) => [item.time, item.confidenceLower]),
+      lineStyle: {
+        type: "dashed",
+        opacity: 0.5,
+        color: colors[facetIndex % colors.length],
+        width: 1,
+      },
+      showSymbol: false,
+      symbol: "none",
+      z: facetIndex,
+      tooltip: { show: false },
+    });
 
-      seriesData.push({
-        name: `${facetName} - Upper CI`,
-        type: "line",
-        step: "end",
-        data: d.map((item) => [item.time, item.confidenceUpper]),
-        lineStyle: {
-          type: "dashed",
-          opacity: 0.5,
-          color: colors[facetIndex % colors.length],
-          width: 1,
-        },
-        showSymbol: false,
-        symbol: "none",
-        z: facetIndex,
-        tooltip: { show: false },
-      });
-    }
+    seriesData.push({
+      name: `${facetName} - Upper CI`,
+      type: "line",
+      step: "end",
+      data: d.map((item) => [item.time, item.confidenceUpper]),
+      lineStyle: {
+        type: "dashed",
+        opacity: 0.5,
+        color: colors[facetIndex % colors.length],
+        width: 1,
+      },
+      showSymbol: false,
+      symbol: "none",
+      z: facetIndex,
+      tooltip: { show: false },
+    });
 
     // Main survival curve
     seriesData.push({
@@ -335,9 +304,9 @@ const getKaplanMeierGraphOption = (
             tooltip += `Probability: ${(dataPoint.probability * 100).toFixed(2)}%<br/>`;
 
             // Add confidence intervals if available
-              tooltip += `95% CI: [${(dataPoint.confidenceLower * 100).toFixed(2)}%, ${(
-                dataPoint.confidenceUpper * 100
-              ).toFixed(2)}%]<br/><br/>`;
+            tooltip += `95% CI: [${(dataPoint.confidenceLower * 100).toFixed(2)}%, ${(
+              dataPoint.confidenceUpper * 100
+            ).toFixed(2)}%]<br/><br/>`;
           }
         });
 
