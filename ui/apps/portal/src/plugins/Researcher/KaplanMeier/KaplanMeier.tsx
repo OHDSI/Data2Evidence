@@ -29,49 +29,28 @@ const colors = [
 type GraphData = {
   timeX: number[];
   survivalY: number[];
-  confidenceLowerY?: number[];
-  confidenceUpperY?: number[];
-  facetVar?: string[]; // Added facet variable support
+  confidenceLowerY: number[];
+  confidenceUpperY: number[];
+  strataName: string[];
+  strataLevel: string[];
 };
 
-type GraphDataApi = (
-  | {
-      x: number[];
-      y: number[];
-      PANEL: string[];
-      group: number[];
-      flipped_aes: boolean[];
-      colour: string[];
-      linewidth: number[];
-      linetype: number[];
-      alpha: string[];
-      ROW: number[];
-      COL: number[];
-      SCALE_X: number[];
-      SCALE_Y: number[];
-      ymin?: undefined;
-      ymax?: undefined;
-      fill?: undefined;
-    }
-  | {
-      ymin: number[];
-      ymax: number[];
-      x: number[];
-      y: number[];
-      PANEL: string[];
-      group: number[];
-      flipped_aes: boolean[];
-      colour: string[];
-      fill: string[];
-      linewidth: number[];
-      linetype: number[];
-      alpha: number[];
-      ROW: number[];
-      COL: number[];
-      SCALE_X: number[];
-      SCALE_Y: number[];
-    }
-)[];
+type GraphDataApi = {
+  result_id: number[];
+  cohort: string[];
+  outcome: string[];
+  facet_var: string[];
+  strata_name: string[];
+  strata_level: string[];
+  variable_name: string[];
+  variable_level: string[];
+  time: number[];
+  result_type: string[];
+  analysis_type: string[];
+  estimate: number[];
+  estimate_95CI_lower: number[];
+  estimate_95CI_upper: number[];
+};
 
 // Process the data into a facet-organized structure
 const processGraphDataByFacets = (
@@ -82,82 +61,53 @@ const processGraphDataByFacets = (
   data: Array<{
     time: number;
     probability: number;
-    confidenceLower?: number;
-    confidenceUpper?: number;
+    confidenceLower: number;
+    confidenceUpper: number;
   }>;
 }> => {
   if (!data.timeX || !data.survivalY || !data.timeX.length) {
     return [];
   }
 
-  const facets = data.facetVar ? [...new Set(data.facetVar)] : ["default"]; // If no facets, use 'default'
+  const facets = isCompetingRisk
+    ? ["outcome", "competing_outcome"]
+    : data.strataName
+    ? [...new Set(data.strataName)]
+    : ["default"]; // If no facets, use 'default'
 
-  const facetData: Array<{
+  const graphData: Array<{
     facet: string;
     data: Array<{
       time: number;
       probability: number;
-      confidenceLower?: number;
-      confidenceUpper?: number;
+      confidenceLower: number;
+      confidenceUpper: number;
     }>;
   }> = [];
 
-  const riskData: Array<{
-    facet: string;
-    data: Array<{
-      time: number;
-      probability: number;
-      confidenceLower?: number;
-      confidenceUpper?: number;
-    }>;
-  }> = [];
-  [0, 1].forEach((val) => {
-    riskData.push({ facet: String(val), data: [] });
+  // Initialize the array
+  facets.forEach((val) => {
+    graphData.push({ facet: String(val), data: [] });
   });
 
-  const hasConfidenceIntervals = data.confidenceLowerY && data.confidenceUpperY;
-
-  // Initialize the array for each facet
-  facets.forEach((facet) => {
-    facetData.push({ facet, data: [] });
-  });
-
-  let prevTime = null;
   // Process data by facet
   for (let i = 0; i < data.timeX.length; i++) {
-    const facetIndex = data.facetVar ? facets.indexOf(data.facetVar[i]) : 0; // Default to the first (and only) facet if no facet variable
+    if (data.strataLevel?.[i] === "FALSE") {
+      continue;
+    }
+    // TODO: check if competing risk is 1 or 0
+    const facetIndex = isCompetingRisk ? (i < data.timeX.length / 2 ? 1 : 0) : facets.indexOf(data.strataName[i]);
 
     const point = {
       time: data.timeX[i],
       probability: data.survivalY[i],
-      confidenceLower: hasConfidenceIntervals ? data.confidenceLowerY![i] : undefined,
-      confidenceUpper: hasConfidenceIntervals ? data.confidenceUpperY![i] : undefined,
+      confidenceLower: data.confidenceLowerY![i],
+      confidenceUpper: data.confidenceUpperY![i],
     };
-
-    // const prevTime =
-    //   facetData[facetIndex].data.length > 0
-    //     ? facetData[facetIndex].data[facetData[facetIndex].data.length - 1].time
-    //     : null;
-    // For competing risk analysis, always add points (don't replace)
-    // The data for competing risk is [0, 0, 1, 1] where [line1, line2, line1, line2]
-    if (isCompetingRisk) {
-      const index = prevTime === point.time ? 0 : 1;
-      riskData[index].data.push(point);
-    } else {
-      if (facetData[facetIndex].data[facetData[facetIndex].data.length - 1]?.probability === 0) {
-        continue;
-      }
-      if (prevTime === point.time) {
-        // Currently assuming the last point is the one to keep
-        facetData[facetIndex].data[facetData[facetIndex].data.length - 1] = point;
-      } else {
-        facetData[facetIndex].data.push(point);
-      }
-    }
-    prevTime = point.time;
+    graphData[facetIndex].data.push(point);
   }
 
-  return isCompetingRisk ? riskData : facetData;
+  return graphData;
 };
 
 const generateSeriesData = (
@@ -169,13 +119,12 @@ const generateSeriesData = (
       confidenceLower?: number;
       confidenceUpper?: number;
     }>;
-  }>,
-  cohortNames: { [key: string]: string } // Map from facet to cohort name
+  }>
 ) => {
   const seriesData: any[] = [];
 
   processedData.forEach((facetGroup, facetIndex) => {
-    const cohortName = cohortNames[facetGroup.facet] || facetGroup.facet;
+    const facetName = facetGroup.facet;
     const d = facetGroup.data;
     const hasConfidenceIntervals =
       d.length > 0 && d[0].confidenceLower !== undefined && d[0].confidenceUpper !== undefined;
@@ -183,7 +132,7 @@ const generateSeriesData = (
     if (hasConfidenceIntervals) {
       // Add lower bound area (base)
       seriesData.push({
-        name: `${cohortName} - Lower Bound`,
+        name: `${facetName} - Lower Bound`,
         type: "line",
         step: "end",
         data: d.map((item) => [item.time, item.confidenceLower]),
@@ -197,7 +146,7 @@ const generateSeriesData = (
 
       // Add confidence interval area
       seriesData.push({
-        name: `${cohortName} - CI`,
+        name: `${facetName} - CI`,
         type: "line",
         step: "end",
         data: d.map((item) => [item.time, item.confidenceUpper! - item.confidenceLower!]),
@@ -214,7 +163,7 @@ const generateSeriesData = (
 
       // Add dashed lines for confidence bounds
       seriesData.push({
-        name: `${cohortName} - Lower CI`,
+        name: `${facetName} - Lower CI`,
         type: "line",
         step: "end",
         data: d.map((item) => [item.time, item.confidenceLower]),
@@ -231,7 +180,7 @@ const generateSeriesData = (
       });
 
       seriesData.push({
-        name: `${cohortName} - Upper CI`,
+        name: `${facetName} - Upper CI`,
         type: "line",
         step: "end",
         data: d.map((item) => [item.time, item.confidenceUpper]),
@@ -250,7 +199,7 @@ const generateSeriesData = (
 
     // Main survival curve
     seriesData.push({
-      name: cohortName,
+      name: facetName,
       type: "line",
       step: "end",
       data: d.map((item) => [item.time, item.probability]),
@@ -288,31 +237,14 @@ const getKaplanMeierGraphOption = (
     };
   }
 
-  // Process data by facets
-  const cohortNames: { [key: string]: string } = {};
-
-  // If facets exist in the data, use them; otherwise, create default facets
-  if (!data.facetVar) {
-    if (competingOutcomeCohort) {
-      // For competing risk, alternate between outcome and competing outcome
-      data.facetVar = data.timeX.map((_, i) => (i % 2 === 0 ? "outcome" : "competing"));
-      cohortNames["outcome"] = outcomeCohort.name;
-      cohortNames["competing"] = competingOutcomeCohort.name;
-    } else {
-      // For single outcome, all points belong to the outcome cohort
-      data.facetVar = data.timeX.map(() => "outcome");
-      cohortNames["outcome"] = outcomeCohort.name;
-    }
-  }
-
   // Process data into facet groups - pass isCompetingRisk flag based on presence of competingOutcomeCohort
   const processedData = processGraphDataByFacets(data, !!competingOutcomeCohort);
 
   // Generate series data from processed facets
-  const seriesData = generateSeriesData(processedData, cohortNames);
+  const seriesData = generateSeriesData(processedData);
 
   // Get the list of unique facet names for the legend
-  const legendData = processedData.map((facet) => cohortNames[facet.facet] || facet.facet);
+  const legendData = processedData.map(({ facet }) => facet);
 
   // Get the longest time series for X axis
   let allTimes: number[] = [];
@@ -383,7 +315,7 @@ const getKaplanMeierGraphOption = (
 
         // Group by facets and display data for each facet
         processedData.forEach((facetGroup, facetIndex) => {
-          const cohortName = cohortNames[facetGroup.facet] || facetGroup.facet;
+          const facetName = facetGroup.facet;
           const displayColor = colors[facetIndex % colors.length];
 
           // Find the closest data point for this time
@@ -400,15 +332,13 @@ const getKaplanMeierGraphOption = (
           if (dataPoint) {
             // Add color indicator
             tooltip += `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${displayColor};"></span>`;
-            tooltip += `<b>${cohortName}:</b><br/>`;
+            tooltip += `<b>${facetName}:</b><br/>`;
             tooltip += `Probability: ${(dataPoint.probability * 100).toFixed(2)}%<br/>`;
 
             // Add confidence intervals if available
-            if (dataPoint.confidenceLower !== undefined && dataPoint.confidenceUpper !== undefined) {
               tooltip += `95% CI: [${(dataPoint.confidenceLower * 100).toFixed(2)}%, ${(
                 dataPoint.confidenceUpper * 100
               ).toFixed(2)}%]<br/><br/>`;
-            }
           }
         });
 
@@ -512,25 +442,26 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
         const newGraphData: GraphData = {
           timeX: [],
           survivalY: [],
+          strataName: [],
+          strataLevel: [],
+          confidenceLowerY: [],
+          confidenceUpperY: [],
         };
 
-        // Extract data from the array of series
-        // Find the main curve data (first object typically has the main curve data)
-        const mainCurveData = parsedData[0];
-        newGraphData.timeX = mainCurveData.x;
-        newGraphData.survivalY = mainCurveData.y;
+        // Extract data from the API response using the GraphDataApi structure
+        newGraphData.timeX = parsedData.time;
+        newGraphData.survivalY = parsedData.estimate;
 
-        // If there are facet variables (PANEL), use them
-        // TODO: only use facet_var, but available only when strata is used
-        if (mainCurveData.PANEL) {
-          newGraphData.facetVar = mainCurveData.PANEL;
+        // Add confidence intervals if available
+        if (parsedData.estimate_95CI_lower && parsedData.estimate_95CI_upper) {
+          newGraphData.confidenceLowerY = parsedData.estimate_95CI_lower;
+          newGraphData.confidenceUpperY = parsedData.estimate_95CI_upper;
         }
 
-        // Find confidence interval data (usually in an object with ymin and ymax)
-        const confIntervalData = parsedData.find((item) => item.ymin !== undefined && item.ymax !== undefined);
-        if (confIntervalData) {
-          newGraphData.confidenceLowerY = confIntervalData.ymin;
-          newGraphData.confidenceUpperY = confIntervalData.ymax;
+        // Add facet variables if available
+        if (parsedData.strata_name) {
+          newGraphData.strataName = parsedData.strata_name;
+          newGraphData.strataLevel = parsedData.strata_level;
         }
 
         setGraphData(newGraphData);
@@ -664,6 +595,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
             onChange={() => {
               setAnalysisType("single_event");
               setCompetingOutcomeCohortId(null);
+              setGraphData(null); // Clear existing graph data
             }}
             disabled={isLoading || isGraphLoading}
           />
@@ -681,6 +613,7 @@ export const KaplanMeier: FC<TerminologyProps> = () => {
               setStrata1CohortId(null);
               setStrata2CohortId(null);
               setStrata3CohortId(null);
+              setGraphData(null); // Clear existing graph data
             }}
             disabled={isLoading || isGraphLoading}
           />
