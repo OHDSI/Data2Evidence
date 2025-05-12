@@ -117,6 +117,9 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
+        if [ -n "$services" ]; then
+            cmd="$cmd $services"
+        fi
         echo . $cmd
         $cmd
         ;;
