@@ -1008,6 +1008,8 @@ services:
       /usr/bin/mc policy download myminio/dataflow-adhoc-flows;
       exit 0;
       "
+    profiles:
+      - [minio]
 
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
