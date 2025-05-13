@@ -23,7 +23,7 @@ class SqlAlchemyDao(DaoBase):
 
     def __init__(self, use_cache_db: bool, database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb=False, metadata=None):
+                 connect_to_duckdb=False):
 
         super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
 
@@ -476,13 +476,17 @@ class SqlAlchemyDao(DaoBase):
         df = pd.read_sql_query(select_statement, self.engine)
         return df
 
-    def create_select_statement(self, schema: str, table: str, columns_to_select: list[str], filter_conditions: list) -> Select:
+    def create_select_statement(self, schema: str, table: str, columns_to_select: list[str], 
+                                filter_conditions: list, source_table_obj = None) -> Select:
         select_from_conditions = sql.and_(*filter_conditions)
-        with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=schema)
-            source_table = sql.Table(table, metadata_obj,
-                                     autoload_with=connection)
 
+        with self.engine.connect() as connection:
+            if source_table_obj is not None:
+                source_table = source_table_obj
+            else:
+                metadata_obj = sql.MetaData(schema=schema)
+                source_table = sql.Table(table, metadata_obj, autoload_with=connection)
+        
             match self.dialect:
                 case SupportedDatabaseDialects.HANA:
                     # cast text columns to nclob
@@ -495,25 +499,33 @@ class SqlAlchemyDao(DaoBase):
 
         return select_statement
 
-    def copy_table(self, source_schema_name: str, source_table_name: str, target_table_name: str, target_schema_name: str, columns_to_copy: list[str], filter_conditions: str) -> int:
+    def copy_table(self, source_schema_name: str, source_table_name: str, target_table_name: str, 
+                   target_schema_name: str, columns_to_copy: list[str], filter_conditions: dict) -> int:
+        # Only used for datamart copy snapshot
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=source_schema_name)
-            source_table = sql.Table(
-                source_table_name, metadata_obj, autoload_with=connection)
+            where_conditions = []
 
-            # Copy column from source_table including data type
-            target_columns = [source_table.c[col].copy()
-                              for col in columns_to_copy]
+            metadata_obj = sql.MetaData()
+            source_table = sql.Table(
+                source_table_name, metadata_obj, autoload_with=connection, schema=source_schema_name)
+            
+            if "patient_filter" in list(filter_conditions.keys()):
+                person_id_column_obj = source_table.c[filter_conditions["patient_filter"]["person_id_column"]]
+                where_conditions.append(person_id_column_obj.in_(filter_conditions["patient_filter"]["patients_to_filter"]))
+
+            if "date_filter" in list(filter_conditions.keys()):
+                timestamp_column_obj = source_table.c[filter_conditions["date_filter"]["timestamp_column"]]
+                where_conditions.append(filter_conditions["date_filter"]["dates_to_filter"] >= timestamp_column_obj)
+
+            # Create table in target schema by copying columns from source_table including data type
+            target_columns = [source_table.c[col].copy() for col in columns_to_copy]
             target_constraints = [constraint.copy() for constraint in source_table.constraints if set(
                 constraint.columns.keys()).issubset(columns_to_copy)]
-            target_metadata = sql.MetaData(schema=target_schema_name)
-            target_table = sql.Table(target_table_name, target_metadata, *
-                                     target_columns, *target_constraints, schema=target_schema_name)
+            target_table = sql.Table(target_table_name, metadata_obj, *target_columns, 
+                                     *target_constraints,schema=target_schema_name)            
+            target_table.create(bind=self.engine, checkfirst=True)
 
-            # Create the new table in the database
-            target_metadata.create_all(self.engine, tables=[target_table])
-
-            # Create indexes manually
+            # Create indexes in target table manually
             for index in source_table.indexes:
                 index_name = index.name
                 index_columns = [col.name for col in index.columns]
@@ -526,7 +538,7 @@ class SqlAlchemyDao(DaoBase):
 
             # Construct select statements with filter conditions
             select_statement = self.create_select_statement(source_schema_name, source_table_name, 
-                                                            columns_to_copy, filter_conditions)
+                                                            columns_to_copy, where_conditions, source_table)
 
             # Insert into target table from source table
             insert_statement = sql.insert(target_table).from_select(
