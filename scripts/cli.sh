@@ -97,10 +97,10 @@ else
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
-source "$ENVFILE"
 
 case $cmd in
     start)
+        source "$ENVFILE"
         cmd="$dockerbasecmd up --force-recreate --wait"
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
@@ -160,6 +160,7 @@ case $cmd in
         $cmd
         ;;
     patchdemodb)
+        source "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
@@ -238,10 +239,11 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
+        source "$ENVFILE"
         npx d2e patchdemodb
         database_host=${PROJECT_NAME:-d2e}-demodb
         docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demo_database_publication FOR TABLES IN SCHEMA demo_cdm; ALTER TABLE demo_cdm.COHORT REPLICA IDENTITY FULL; ALTER TABLE demo_cdm.COHORT_DEFINITION REPLICA IDENTITY FULL;"
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path -n "$ENVFILE" &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
         npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
         ;;
