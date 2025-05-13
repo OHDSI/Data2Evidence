@@ -984,6 +984,8 @@ services:
         - *x-tls
       MINIO_ROOT_PASSWORD: ${MINIO__SECRET_KEY}
       MINIO_ROOT_USER: ${MINIO__ACCESS_KEY:-root}
+    profiles:
+      - [minio]
 
   alp-minio-post-init:
     container_name: &c23 ${PROJECT_NAME:-d2e}-minio-post-init
