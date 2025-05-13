@@ -363,7 +363,9 @@ services:
             "PG_DATABASE": "${PG_DB_NAME:-alp}",
             "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
             "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
-            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}"
+            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+            "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -1144,8 +1146,8 @@ services:
       PORT: 9000
       FILE_SIZE_LIMIT: 52428800
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
-      PGRST_JWT_SECRET: ${JWT_SECRET:-d3eL5ndkSY4BW4Dmj39HaBmQ1xpy0mdK83ATLOUs}
-      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3NDQwNDE2MDAsCiAgImV4cCI6IDE5MDE4MDgwMDAKfQ.RzRgCyQ4VIvscxvJA5lJy8XZnpWbcA8OxhE0u1WXrwI}
+      PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET}
+      SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN}
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
       SKIP_MIGRATIONS: "true"
@@ -1167,7 +1169,7 @@ services:
     networks:
       alp:
         priority: 20
-    restart: "no"
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
@@ -1181,7 +1183,8 @@ services:
         psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
         echo 'Granting permissions on updated view...' &&
         psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
-        echo 'Supabase Storage post-initialization complete!'
+        echo 'Supabase Storage post-initialization complete!' &&
+        exit 0
       "
 
   # Wait for trex to be finish migrations before starting supabase-storage

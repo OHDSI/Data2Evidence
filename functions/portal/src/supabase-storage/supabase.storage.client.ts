@@ -1,6 +1,6 @@
 import { BadRequestException, InternalServerErrorException } from "@danet/core";
 import { contentType } from "npm:mime-types@2.1.35";
-import { env } from "../env.ts";
+import { env, services } from "../env.ts";
 import pg from "npm:pg";
 
 export class SupabaseStorageClient {
@@ -11,12 +11,9 @@ export class SupabaseStorageClient {
   private pgOpt;
 
   constructor() {
-    // TODO: Get from env
-    this.baseUrl = env.SUPABASE_URL || "http://alp-supabase-storage-1:9000";
-    // TODO: Get from env
+    this.baseUrl = services.supabaseStorage;
     this.authToken =
-      env.SUPABASE_SERVICE_ROLE_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3NDQwNDE2MDAsCiAgImV4cCI6IDE5MDE4MDgwMDAKfQ.RzRgCyQ4VIvscxvJA5lJy8XZnpWbcA8OxhE0u1WXrwI";
+      env.SUPABASE_STORAGE_JWT_TOKEN
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
