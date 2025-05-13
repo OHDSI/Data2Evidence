@@ -16,4 +16,4 @@ pandas==2.2.2
 numpy==2.0.0
 ibis-framework[duckdb, postgres]==10.0.0
 jsonpath-ng==1.7.0
-pyodbc==5.2.0
+pymssql==2.3.4

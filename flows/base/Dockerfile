@@ -121,13 +121,6 @@ RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
 RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gnupg \
-    unixodbc-dev \
-    libgssapi-krb5-2 \
-    && apt-get clean
     
 FROM dbsvc-build AS final-build
 
@@ -135,13 +128,6 @@ WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
-
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update && \
-    ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
-    ACCEPT_EULA=Y apt-get install -y mssql-tools18 && \
-    echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 
 # Grant docker ownership to create properties file
 RUN chown -R docker:docker ./liquibase/
