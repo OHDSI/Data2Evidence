@@ -117,6 +117,9 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
+        if [ -n "$services" ]; then
+            cmd="$cmd $services"
+        fi
         echo . $cmd
         $cmd
         ;;
@@ -154,6 +157,10 @@ case $cmd in
         cmd="$dockerbasecmd down --volumes --remove-orphans"
         echo . $cmd
         $cmd
+        ;;
+    patchdemodb)
+        database_host=${PROJECT_NAME:-d2e}-demodb
+        docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
@@ -228,10 +235,12 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demodb_pg_publication FOR TABLES IN SCHEMA demo_cdm;"
+        npx d2e patchdemodb
+        # database_host=${PROJECT_NAME:-d2e}-demodb
+        # docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demodb_pg_publication FOR TABLES IN SCHEMA demo_cdm;"
         npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
+        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
         ;;
     checkflow) 
         npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
