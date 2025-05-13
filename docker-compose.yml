@@ -109,8 +109,6 @@ services:
         condition: service_completed_successfully
       alp-logto-post-init:
         condition: service_completed_successfully
-      alp-minio-post-init:
-        condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
@@ -781,8 +779,6 @@ services:
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
-      alp-minio-post-init:
-        condition: service_completed_successfully
       trex:
         condition: service_healthy
       alp-logto-post-init:
@@ -984,8 +980,7 @@ services:
         - *x-tls
       MINIO_ROOT_PASSWORD: ${MINIO__SECRET_KEY}
       MINIO_ROOT_USER: ${MINIO__ACCESS_KEY:-root}
-    profiles:
-      - [minio]
+    profiles: [minio]
 
   alp-minio-post-init:
     container_name: &c23 ${PROJECT_NAME:-d2e}-minio-post-init
@@ -1008,8 +1003,7 @@ services:
       /usr/bin/mc policy download myminio/dataflow-adhoc-flows;
       exit 0;
       "
-    profiles:
-      - [minio]
+    profiles: [minio]
 
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
