@@ -81,14 +81,14 @@ export class TransformationService {
     if (typeof object !== "object" || object === null) {
       return object;
     }
-    // Keep first 15 elements of array
+    // Keep first 50 elements of array
     if (Array.isArray(object)) {
-      return object.slice(0, 15).map((item) => this.simplifyJson(item));
+      return object.slice(0, 50).map((item) => this.simplifyJson(item));
     }
 
     const simplifiedObject = {};
-    // Keep first 15 key-value pairs of object
-    const keys = Object.keys(object).slice(0, 15);
+    // Keep first 50 key-value pairs of object
+    const keys = Object.keys(object).slice(0, 50);
     for (const key of keys) {
       const value = object[key];
       if (typeof value === "object") {
