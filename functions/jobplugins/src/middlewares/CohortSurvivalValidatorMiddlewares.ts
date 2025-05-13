@@ -38,4 +38,25 @@ export const validateCohortSurvivalFlowRunDto = () => [
       }
       return true;
     }),
+  body("options.strataCohorts")
+    .optional()
+    .isArray()
+    .withMessage("strataCohorts must be an array")
+    .custom((value) => {
+      // Check if each item in the array is an object with id and name properties
+      if (
+        !value.every(
+          (item) =>
+            typeof item === "object" &&
+            item !== null &&
+            "id" in item &&
+            "name" in item
+        )
+      ) {
+        throw new Error(
+          "Each item in strataCohorts must be an object with id and name properties"
+        );
+      }
+      return true;
+    }),
 ];
