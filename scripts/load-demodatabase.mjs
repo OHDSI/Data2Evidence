@@ -168,7 +168,13 @@ var payload = JSON.stringify({
     "vocabSchemas": [
         DEMO__DB_CDM_SCHEMA
     ], 
-    "authenticationMode": "Password"
+    "authenticationMode": "Password" /*,
+    "publications" : [
+       { 
+            "slot": "data2evidence",
+            "publication": "demodb_pg_publication", 
+        }
+    ]*/
 })
 try { 
     var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
@@ -182,13 +188,14 @@ try {
 var resp_status_code = await $`echo ${resp} | grep -o 'status_code:[0-9]*' | awk -F':' '{print $2}'`
 
 if (resp_status_code == '200') { 
-    console.log(chalk.green(`Setup completed successfully.`));
+    console.log(chalk.green(`Setup database completed successfully.`));
 } else {
-    console.log(chalk.red(`Setup unsuccessful.`));
+    console.log(chalk.red(`Setup database unsuccessful.`));
     console.log(`resp: ${resp}`)
     process.exit(1)
 }
 
+/*
 if (dev_mode) {
     console.log(`Restarting services with ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`);
     await $`ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`
@@ -197,8 +204,4 @@ if (dev_mode) {
     console.log(`Restarting services with d2e -e -v ${version} stop`);
     await $`d2e -e -v ${version} stop`
     await $`d2e -e -v ${version} start`
-}
-
-console.log(chalk.blue(`Patching demo database...`));
-await $`d2e patchdemodb`
-console.log(chalk.green(`Completed patching demo database.`));
+}*/

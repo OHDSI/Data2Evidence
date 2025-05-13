@@ -88,12 +88,14 @@ export class PrefectAPI {
 
     const options = await this.createOptions();
 
-    try {
-      const result = await axios.post(url, blockDocOptions, options);
-      console.log(successMsg);
-      return result.data.id;
-    } catch (error) {
-      if (error.response.status === 409) {
+    const result = await axios.post(url, blockDocOptions, options);
+
+    if(result.status >= 200 && result.status < 300) {
+        console.log(successMsg);
+        return result.data.id;
+      
+    } else if (result.status === 409) {
+
         // update block which already exists
         url = `${this.baseURL}/block_types/slug/${slugName}/block_documents/name/${blockName}`;
         const existingBlock = await axios.get(url, options);
@@ -114,13 +116,14 @@ export class PrefectAPI {
         console.log(successMsg);
         return existingBlockId;
       } else {
+
         console.error(
-          `[${error.response.status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
-          error.response.data
+          `[${result.status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
+          result.data
         );
-        throw error;
       }
-    }
+
+    
   }
 
   private async getBlockSchemaId(blockTypeId: string): Promise<string> {

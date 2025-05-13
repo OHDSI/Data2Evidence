@@ -94,13 +94,19 @@ export const getConceptSet = async (
 ) => {
   try {
     const { query, params } = schemas.getConceptSet.parse(req);
-    const systemPortalApi = new SystemPortalAPI(req);
-    const conceptSet = await systemPortalApi.getConceptSetById(
-      params.conceptSetId,
-      query.datasetId
-    );
+
+    const getCachedbservice = async () => {
+      return await CachedbService.createCacheDBService(req, datasetId);
+    };
+
+    const getConceptSet = async () => {
+      const systemPortalApi = new SystemPortalAPI(req);
+      return await systemPortalApi.getConceptSetById(params.conceptSetId, query.datasetId);
+    }
+
+    const [cachedbService, conceptSet] = await Promise.all([getCachedbservice(), getConceptSet()]);
+
     const conceptIds = conceptSet.concepts.map((c) => c.id);
-    const cachedbService = new CachedbService(req);
     const concepts = await cachedbService.getConceptsByIds(
       conceptIds,
       query.datasetId
@@ -169,20 +175,19 @@ export const getIncludedConcepts = async (
   next: NextFunction
 ) => {
   try {
+    const timestamp = (new Date()).valueOf();
+    console.time(`time-terminology-svc-getIncludedConcepts-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-initialize-${timestamp}`)
+
     const { body } = schemas.getIncludedConcepts.parse(req);
     const { conceptSetIds, datasetId } = body;
-    const systemPortalApi = new SystemPortalAPI(req);
 
     const getCachedbservice = async () => {
-      const datasetDB = {
-        ...(await systemPortalApi.getDatasetDetails(datasetId)),
-        datasetId,
-      };
-      const cachedbService = new CachedbService(req, datasetDB);
-      return cachedbService;
+      return await CachedbService.createCacheDBService(req, datasetId);
     };
 
     const conceptsSetsDb = conceptSetIds.map(async (conceptSetId) => {
+      const systemPortalApi = new SystemPortalAPI(req);
       const conceptSet = await systemPortalApi.getConceptSetById(
         conceptSetId,
         datasetId
@@ -194,6 +199,8 @@ export const getIncludedConcepts = async (
       getCachedbservice(),
       ...conceptsSetsDb,
     ]);
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-initialize-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-promises-${timestamp}`)
     const promises = rawConceptSets.map(async (conceptSet) => {
       const conceptIds = conceptSet.concepts.map((c) => c.id);
       const concepts = await cachedbService.getConceptsByIds(
@@ -231,12 +238,15 @@ export const getIncludedConcepts = async (
         });
       });
     });
-
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-promises-${timestamp}`)
+    console.time(`time-terminology-svc-getIncludedConcepts-_resolveConceptSetConcepts-${timestamp}`)
     const uniqueConceptIds = await _resolveConceptSetConcepts(
       cachedbService,
       conceptSetConcepts,
       datasetId
     );
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-_resolveConceptSetConcepts-${timestamp}`)
+    console.timeEnd(`time-terminology-svc-getIncludedConcepts-${timestamp}`)
     res.send(uniqueConceptIds);
   } catch (e) {
     console.error("Error getting included concepts for concept sets!");
@@ -252,13 +262,7 @@ export const resolveConceptSetExpression = async (
   try {
     const { body } = schemas.resolveConceptSetExpression.parse(req);
     const { concepts, datasetId } = body;
-
-    const systemPortalApi = new SystemPortalAPI(req);
-    const datasetDB = {
-      ...(await systemPortalApi.getDatasetDetails(datasetId)),
-      datasetId,
-    };
-    const cachedbService = new CachedbService(req, datasetDB);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
 
     const uniqueConceptIds = await _resolveConceptSetConcepts(
       cachedbService,

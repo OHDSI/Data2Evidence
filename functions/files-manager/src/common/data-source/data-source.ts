@@ -11,6 +11,14 @@ export const getLogLevels = (): LogLevel[] => {
   return ["log", "info", "warn", "error", "migration", "query", "schema"];
 };
 
+let ssl = JSON.parse(env.PG__SSL.toLowerCase());
+if (env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: env.PG__CA_ROOT_CERT,
+  };
+}
+
 export const dataSourceOptions: DataSourceOptions = {
   type: "postgres",
   host: env.PG__HOST,
@@ -19,6 +27,7 @@ export const dataSourceOptions: DataSourceOptions = {
   password: env.PG_ADMIN_PASSWORD,
   database: env.PG__DB_NAME,
   schema: env.PG_SCHEMA,
+  ssl,
   logging: getLogLevels(),
   entities: [UserData, BlobData],
 };
