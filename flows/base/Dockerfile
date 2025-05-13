@@ -121,8 +121,7 @@ RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
 RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-
-
+    
 FROM dbsvc-build AS final-build
 
 WORKDIR /app
