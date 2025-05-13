@@ -100,6 +100,7 @@ dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $nod
 
 case $cmd in
     start)
+        source "$ENVFILE"
         cmd="$dockerbasecmd up --force-recreate --wait"
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
@@ -168,6 +169,7 @@ case $cmd in
         DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
+        PROJECT_NAME=${PROJECT_NAME:-d2e}
         [ -v DOTENV_FILE ] || DOTENV_FILE=$env
         DOTENV_KEYS=$DOTENV_FILE.keys
 
@@ -207,6 +209,7 @@ case $cmd in
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
+        echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
