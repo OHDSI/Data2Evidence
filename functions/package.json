@@ -74,12 +74,6 @@
       ],
       "api": [
         {
-          "source": "/storage/v1",
-          "function": "/supabase/src/proxy",
-          "imports": "/supabase/import.json",
-          "env": "supabase-storage"
-        },
-        {
           "source": "/jobplugins",
           "function": "/jobplugins",
           "imports": "/jobplugins/import.json",
@@ -593,12 +587,6 @@
         },
         {
           "path": "^/jobplugins(.*)",
-          "scopes": [
-            "jobplugins"
-          ]
-        },
-        {
-          "path": "^/storage(.*)",
           "scopes": [
             "jobplugins"
           ]
