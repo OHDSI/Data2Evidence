@@ -409,13 +409,13 @@ const getUserInfo =
         );
       }
 
-      const { id, mail, displayName } = result.data;
+      const { id, mail, userPrincipalName, displayName } = result.data;
 
       // @ts-ignore
       globalThis.tokenMap = globalThis.tokenMap || {};
       // @ts-ignore
       globalThis.refreshTokenMap = globalThis.refreshTokenMap || {};
-      const mapId = mail;
+      const mapId = mail || userPrincipalName;
       // @ts-ignore
       globalThis.tokenMap[mapId] = idToken;
       // @ts-ignore
