@@ -78,7 +78,7 @@ else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
-export PROJECT_NAME=${PROJECT_NAME:-d2e}
+# export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
@@ -97,10 +97,10 @@ else
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
+source "$ENVFILE"
 
 case $cmd in
     start)
-        source "$ENVFILE"
         cmd="$dockerbasecmd up --force-recreate --wait"
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
