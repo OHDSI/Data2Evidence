@@ -168,13 +168,13 @@ var payload = JSON.stringify({
     "vocabSchemas": [
         DEMO__DB_CDM_SCHEMA
     ], 
-    "authenticationMode": "Password" /*,
+    "authenticationMode": "Password",
     "publications" : [
        { 
             "slot": "data2evidence",
-            "publication": "demodb_pg_publication", 
-        }
-    ]*/
+            "publication": `${DEMO__DB_CODE}_publication`,
+       }
+    ]
 })
 try { 
     var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
