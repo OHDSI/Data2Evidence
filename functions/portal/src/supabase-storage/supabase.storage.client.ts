@@ -88,7 +88,7 @@ export class SupabaseStorageClient {
     }
   }
 
-  // Client sdk does not work for listing files, need further investigation.
+  // Supabase storage API does not work for listing files, need further investigation.
   // Directly query the database to get the files.
   async list(datasetId: string) {
     try {
