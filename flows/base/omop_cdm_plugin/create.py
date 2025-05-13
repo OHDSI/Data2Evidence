@@ -125,7 +125,17 @@ def insert_cdm_version(cdm_version: str, dbdao: DaoBase, cdm_schema: str, vocab_
     cdm_concept_code = "CDM " + RELEASE_VERSION_MAPPING.get(cdm_version)
     
     if not use_placeholder_values:
-            cdm_version_concept_id = dbdao.get_cdm_version_concept_id(vocab_schema, cdm_concept_code)
+            try:
+                cdm_version_concept_id = dbdao.get_cdm_version_concept_id(vocab_schema, cdm_concept_code)
+            except Exception as e:
+                logger.error(f"Failed to retrieve cdm version 'concept_id' from '{vocab_schema}.concept' table.")
+                cdm_version_concept_code = {
+                    "CDM v5.3.1": 1147638,
+                    "CDM v5.3.2": 902376,
+                    "CDM v5.4.0": 756265,
+                    "CDM v5.4.1": 798878
+                }
+                cdm_version_concept_id = cdm_version_concept_code[cdm_concept_code]
             logger.info(f"Retrieved cdm_version_concept_id '{cdm_version_concept_id}' from vocab schema '{vocab_schema}' with cdm_concept_code '{cdm_concept_code}'..")
             vocabulary_version = dbdao.get_vocabulary_version(vocab_schema)
             logger.info(f"Retrieved vocabulary_version '{vocabulary_version}' from vocab schema '{vocab_schema}' with cdm_concept_code '{cdm_concept_code}'..")
