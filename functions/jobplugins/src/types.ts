@@ -80,6 +80,10 @@ interface CohortSurvivalFlowRunOptions {
   outcomeCohortDefinitionId: number;
   analysisType?: string; // Optional, defaults to "single_event"
   competingOutcomeCohortDefinitionId?: number; // Optional, required for competing_risk analysis
+  strataCohorts: {
+    id: number;
+    name: string;
+  }[];
 }
 
 export interface CohortGeneratorFlowRunDto {
