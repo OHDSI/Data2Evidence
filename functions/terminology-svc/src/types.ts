@@ -253,4 +253,10 @@ export type DatasetDB = {
   databaseCode: string;
   dialect: string;
   vocabSchemaName: string;
+  schemaName: string;
 };
+
+export type HybridSearchConfig = {
+  isEnabled: boolean;
+  semanticRatio: number;
+}

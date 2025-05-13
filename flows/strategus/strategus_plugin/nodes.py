@@ -887,8 +887,7 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code, 
-                  schema_name=schema_name)
+                  database_code=database_code)
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 

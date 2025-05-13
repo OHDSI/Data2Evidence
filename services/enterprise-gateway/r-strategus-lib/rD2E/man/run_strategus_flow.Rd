@@ -4,11 +4,9 @@
 \alias{run_strategus_flow}
 \title{Start running the Strategus flow in D2E}
 \usage{
-run_strategus_flow(dataset_code, analysisSpecification, executionSettings)
+run_strategus_flow(analysisSpecification, executionSettings)
 }
 \arguments{
-\item{dataset_code}{is a string, which is the unique identifier of dataset in D2E}
-
 \item{analysisSpecification}{AnalysisSpecification object created by Strategus::createEmptyAnalysisSpecificiations}
 
 \item{executionSettings}{ExecutionSettings object created by Strategus::createCdmExecutionSettings}

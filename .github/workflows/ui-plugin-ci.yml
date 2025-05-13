@@ -8,7 +8,7 @@ on:
           required: false
           type: choice
           options:
-            - data2evidence/d2e
+            - ohdsi/d2e
         GIT_BRANCH_NAME:
           default: develop
           description: Enter BranchName / ReleaseTagName

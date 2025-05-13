@@ -116,55 +116,30 @@ def copy_schema(datamart_action: str,
         columns_to_copy = get_columns_to_copy(dbdao, source_schema, table, table_filter)
 
         base_config_table = BASE_CONFIG_LIST.get(table, {})
-
-        if dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-            filter_conditions = {}
-        else:
-            filter_conditions = []
+        filter_conditions = {}
 
         # Filter by patients if patient_filter and person_id_column is provided
         person_id_column = base_config_table.get("person_id_column", "")
         if len(patient_filter) > 0 and person_id_column:
-            # Ibis implementation            
-            if dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-                filter_conditions["patient_filter"] = {
-                    "person_id_column": person_id_column,
-                    "patients_to_filter": patient_filter
-                }
-            
-            else:
-                # SqlAlchemy implmentation
-                person_id_column_obj = dbdao.get_sqlalchemy_columns(table_name=table, column_names=[person_id_column])
-                filter_conditions.append(
-                    person_id_column_obj.get(person_id_column).in_(patient_filter)
-                )
+            filter_conditions["patient_filter"] = {
+                "person_id_column": person_id_column,
+                "patients_to_filter": patient_filter
+            }
 
         # Filter by timestamp if date_filter and timestamp_column is provided
         timestamp_column = base_config_table.get("timestamp_column", "")
         if date_filter and timestamp_column:
-            # Ibis implementation
-            if dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-                filter_conditions["date_filter"] = {
-                    "timestamp_column": timestamp_column,
-                    "dates_to_filter": date_filter
-                }
-            else:
-                # SqlAlchemy implementation
-                timestamp_column_obj = dbdao.get_sqlalchemy_columns(table_name=table, column_names=[timestamp_column])
-                filter_conditions.append(
-                    date_filter >= timestamp_column_obj.get(timestamp_column)
-                )
+            filter_conditions["date_filter"] = {
+                "timestamp_column": timestamp_column,
+                "dates_to_filter": date_filter
+            }
 
         match datamart_action:
             case DatamartFlowAction.CREATE_SNAPSHOT:
                 try:
-                    # copy from source schema to target schema
-                    rows_copied = dbdao.copy_table(source_schema_name=source_schema,
-                                                   source_table_name=table,
-                                                   target_table_name=table,
-                                                   target_schema_name=target_schema,
-                                                   columns_to_copy=columns_to_copy,
-                                                   filter_conditions=filter_conditions)
+                    rows_copied = dbdao.copy_table(source_schema_name=source_schema, source_table_name=table,
+                                                   target_table_name=table, target_schema_name=target_schema,
+                                                   columns_to_copy=columns_to_copy, filter_conditions=filter_conditions)
                 except Exception as err:
                     logger.error(f"""Datamart copying failed from {source_schema} to {
                         target_schema} for table: {table} with Error:{err}""")

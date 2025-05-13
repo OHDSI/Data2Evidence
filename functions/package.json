@@ -207,11 +207,6 @@
           "service": "logto"
         },
         {
-          "source" : "/jupyter",
-          "service":  "jupyter",
-          "rmsrc": true
-        },
-        {
           "source": "/oidc",
           "service": "logto"
         },
@@ -317,9 +312,11 @@
           "PAConfig.ui",
           "PAConfig.i18n",
           "PAConfig.svc",
+          "PAConfig.svc/read",
           "PSConfig.svc",
           "CDWConfig.ui",
           "CDWConfig.svc",
+          "CDWConfig.svc/read",
           "ConfigAssignment.ui",
           "ConfigAssignment.svc",
           "jobplugins",
@@ -526,6 +523,11 @@
           "filesmanager.post",
           "filesmanager.delete",
           "whiteRabbit.post"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "rD2E.jupyter.kernel.flowRun.add",
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
@@ -661,7 +663,6 @@
         {
           "path": "^/pa-config-svc/enduser(.*)",
           "scopes": [
-            "PAConfig.svc",
             "PAConfig.svc/read"
           ]
         },
@@ -680,8 +681,7 @@
         {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
-            "CDWConfig.svc/read",
-            "CDWConfig.svc"
+            "CDWConfig.svc/read"
           ],
           "httpMethods": [
             "GET"
@@ -1708,7 +1708,7 @@
         {
           "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
           "scopes": [
-            "jupyter",
+            "rD2E.jupyter.kernel.flowRun.add",
             "portal.dataset.read"
           ],
           "httpMethods": ["POST"]
@@ -1852,6 +1852,7 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
           "scopes": [
+            "portal.dataset.resource.read",
             "dataflowmgmt.dqd.dataQuality.flowRun.add"
           ],
           "httpMethods": [
@@ -1915,7 +1916,8 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
           "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
+            "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
+            "portal.dataset.read"
           ],
           "httpMethods": [
             "POST"

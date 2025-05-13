@@ -1,4 +1,4 @@
-name: d2e-flows Docker Build
+name: d2e Docker Build
 
 on:
   pull_request:
@@ -30,12 +30,23 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push
+  cancel-in-progress: true
+
+env:
+  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
+  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+
+
 jobs:
   check_file_changes:
+    environment: 'github' # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
+      jenv: ${{  job.environment }}
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +57,7 @@ jobs:
           filters: |
             src:
               - "flows/**"
+              - "services/**"
               - "package.json"
               - "docker-compose.yml"
 
@@ -60,6 +72,7 @@ jobs:
       GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
       GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
       DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+      REG_URL: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
 
     strategy:
       fail-fast: false
@@ -98,6 +111,34 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-strategus
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
+          - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
+            DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
+          - AZ_REG_REPOSITORY: d2e-logto
+            DOCKER_BUILD_FILE_PATH: ./services/alp-logto/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto
+          - AZ_REG_REPOSITORY: d2e-logto-post-init
+            DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
+          - AZ_REG_REPOSITORY: d2e-fhir-server
+            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
+          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
+            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
+          - AZ_REG_REPOSITORY: d2e-cachedb
+            DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
+          - AZ_REG_REPOSITORY: d2e-enterprise-gateway
+            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
+          - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
+            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
+            build_arg1: true
+          - AZ_REG_REPOSITORY: d2e-trex
+            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -154,22 +195,34 @@ jobs:
           echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
           echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: "Login to GitHub Container Registry"
+      - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
 
+      - name: 'Login to Docker Container Registry'
+        uses: docker/login-action@v3
+        if: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' }}
+        with:
+          registry: registry.hub.docker.com
+          username: data2evidence
+          password: ${{secrets.DOCKER_TOKEN}}
+
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
       - name: Build and Push
         id: build-push
         uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.builder.outputs.name }}
           context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
-          tags: ghcr.io/ohdsi/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
@@ -185,7 +238,7 @@ jobs:
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
 
-  success:
+  docker-success:
     needs: bld
     runs-on: ubuntu-latest
     steps:
