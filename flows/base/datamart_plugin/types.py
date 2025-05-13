@@ -9,9 +9,9 @@ class DatamartCopyTableConfig(BaseModel):
  
 
 class DatamartCopyConfig(BaseModel):
-    timestamp: Optional[str]
-    tableConfig: Optional[List[DatamartCopyTableConfig]]
-    patientsToBeCopied: Optional[List[int]]
+    timestamp: Optional[str] = ""
+    tableConfig: Optional[List[DatamartCopyTableConfig]] = []
+    patientsToBeCopied: Optional[List[int]] = []
     
 
 class DatamartOptionsType(BaseModel):
