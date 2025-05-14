@@ -31,6 +31,7 @@
     "config:minerva": "npm run local:minerva -- config",
     "ps:minerva": "npm run local:minerva -- ps",
     "ci:logs:minerva": "npm run local:minerva -- logs",
+    "setup:minerva": "npm run local:minerva -- setupdemo",
     "deploy:logs:minerva": "ENV_TYPE=remote npx d2e -v develop -e -n .env.remote logs",
     "logs:minerva": "npm run local:minerva -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",

@@ -262,7 +262,8 @@ services:
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
             "isTestEnv": "${isTestEnv}",
             "TESTSCHEMA": "${TESTSCHEMA}",
-            "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}"
+            "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
+            "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
           },
           "alp-usermgmt": {
             "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
@@ -1042,9 +1043,10 @@ services:
         limits:
           cpus: ${D2E_CPU_LIMIT:-2}
           memory: ${D2E_MEMORY_LIMIT:-7G}
+    profiles: [cachedb]
 
   demodb:
-    image: ohdsi/broadsea-atlasdb:2.0.0
+    image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
     command:

@@ -39,7 +39,11 @@ export class Literal extends AstElement {
             } else if (this._isValidDateString(this.node.value)) {
                 return QueryObject.format("%t", this.node.value);
             } else {
-                return QueryObject.format("UPPER(%s)", this.node.value);
+                let value = this.node.value
+                if (this.parent.op.trim() === "LIKE") {
+                    value = `%${this.node.value}%`
+                }
+                return QueryObject.format("UPPER(%s)", value);
             }
         } else if (typeof this.node.value === "number") {
             return QueryObject.format("%f", this.node.value);
