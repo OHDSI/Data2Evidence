@@ -1105,8 +1105,8 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      supabase-storage-prerequisite:
-        condition: service_completed_successfully
+      trex:
+        condition: service_healthy
       alp-minerva-postgres:
         condition: service_healthy
       alp-minerva-pg-mgmt-init:
@@ -1137,6 +1137,10 @@ services:
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - supabase-storage-data:/var/lib/storage
+    entrypoint: ["/bin/sh", "-c"]
+    command: > # Wait 30 seconds for trex to finish migrations
+      "echo 'Waiting 30 seconds before starting...' && sleep 30 && echo 'Starting server now' && node dist/start/server.js"
+
     environment:
       <<:
         - *x-tls
@@ -1175,7 +1179,7 @@ services:
       PGUSER: ${PG_SUPER_USER:-postgres}
       PGPASSWORD: ${PG_SUPER_PASSWORD}
     command: >
-      bash -c "
+      sh -c "
         echo 'Updating public.objects view to include user_metadata column...' &&
         psql -c 'ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;' &&
         psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
@@ -1184,16 +1188,6 @@ services:
         echo 'Supabase Storage post-initialization complete!' &&
         exit 0
       "
-
-  # Wait for trex to be finish migrations before starting supabase-storage
-  supabase-storage-prerequisite:
-    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-prerequisite-1
-    image: busybox
-    depends_on:
-      trex:
-        condition: service_healthy
-    command: sleep 30
-    restart: "no"
 
   fhir-server:
     container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
