@@ -59,6 +59,7 @@ d2e init
 
 Start the Data2Evidence services by running:
 ```bash
+d2e -e pull
 d2e -e start
 ```
 

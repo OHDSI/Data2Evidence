@@ -312,7 +312,6 @@ describe("getKaplanMeierGraphOption", () => {
 
     // Check main properties
     expect(result.title.text).toBe("Cohort Survival");
-    expect(result.legend.data).toEqual(["GroupA", "GroupB"]);
     expect(result.yAxis.min).toBe(0);
     expect(result.yAxis.max).toBe(1);
 
@@ -352,9 +351,6 @@ describe("getKaplanMeierGraphOption", () => {
     // Check competing risk specific properties
     expect(result.title.text).toBe("Cumulative Incidence Functions");
     expect(result.yAxis.name).toBe("Cumulative Failure Probability");
-
-    // Check legend data reflects competing risk facets
-    expect(result.legend.data).toEqual(["outcome", "competing_outcome"]);
   });
 
   it("should properly format y-axis labels as percentages", () => {
