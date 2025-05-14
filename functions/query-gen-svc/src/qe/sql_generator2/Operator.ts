@@ -206,8 +206,7 @@ export class Operator extends AstElement {
                 if (env.USE_LIKE_SEARCH === "true") {
                     this.op = "LIKE"
                 }
-                
-                let ret = QueryObject.format(
+                return QueryObject.format(
                     "(%Q)",
                     QueryObject.format(" " + this.op + " ").join(
                         this.node.operand.map((x) =>
@@ -217,7 +216,6 @@ export class Operator extends AstElement {
                         )
                     )
                 );
-                return ret
             } else {
                 return QueryObject.format(
                     "(%Q)",
