@@ -13,6 +13,7 @@ const Env = z
         isHttpTestRun: z.string().optional(),
         isTestEnv: z.string().optional(),
         TESTSCHEMA: z.string().optional(),
+        USE_LIKE_SEARCH: z.string(),
         SERVICE_ROUTES: z
             .string()
             .transform((str, ctx): z.infer<ReturnType<typeof object>> => {
