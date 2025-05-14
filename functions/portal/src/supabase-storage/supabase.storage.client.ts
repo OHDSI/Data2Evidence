@@ -1,5 +1,5 @@
 import { BadRequestException, InternalServerErrorException } from "@danet/core";
-import { contentType } from "npm:mime-types@2.1.35";
+import { contentType } from "mime-types";
 import { env, services } from "../env.ts";
 import pg from "npm:pg";
 
