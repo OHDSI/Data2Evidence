@@ -24,3 +24,10 @@
   const empty = computed(() => subscription.executed && subscription.response == 0)
   const loaded = computed(() => subscription.executed)
 </script>
+
+<style scoped>
+.block-documents-table__logo,
+.p-button--outline {
+  background: inherit;
+}
+</style>

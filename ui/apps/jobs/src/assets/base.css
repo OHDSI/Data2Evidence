@@ -88,38 +88,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* flow run page*/
-.flow-run-work-pool,
-.flow-run-work-queue {
-  display: none !important;
-}
-
-/* deployment page*/
-.deployment-relationships {
-  display: none !important;
-}
-
-.deployment-details > *:nth-child(-n + 5) {
-  display: none;
-}
-
-.log-row {
-  .log-row__content > span {
-    font-size: 1.1em;
-  }
-  .log-row__leading > span {
-    font-size: 0.7em;
-  }
-  .log-row__trailing {
-    font-size: 0.65em;
-  }
-}
-
 .list-header--sticky {
   position: relative !important;
-}
-
-.block-documents-table__logo,
-.p-button--outline {
-  background: inherit;
 }
