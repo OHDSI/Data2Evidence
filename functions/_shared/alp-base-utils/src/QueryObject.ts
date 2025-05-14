@@ -417,6 +417,7 @@ export class QueryObject {
         shortenedQuery,
         preparedQuery.placeholders,
         (err, resultData) => {
+          err = connection.constructor.name === "TrexConnection" ? resultData.error : err
           if (err) {
             internalCallback(err, null);
           } else {
