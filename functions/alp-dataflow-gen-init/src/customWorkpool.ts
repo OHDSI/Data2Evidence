@@ -1,6 +1,6 @@
-import { D2E_MEMORY_LIMIT, D2E_SWAP_LIMIT, CUSTOM_CONFIGURATION } from "./env";
+import { D2E_MEMORY_LIMIT, D2E_SWAP_LIMIT, CUSTOM_WORK_POOL_CONFIGURATION } from "./env";
 
-export const customDockerWorkpool = Object.keys(CUSTOM_CONFIGURATION) > 0 ? CUSTOM_CONFIGURATION : {
+export const customDockerWorkpool = Object.keys(CUSTOM_WORK_POOL_CONFIGURATION).length > 0 ? CUSTOM_WORK_POOL_CONFIGURATION : {
   variables: {
     type: "object",
     properties: {
