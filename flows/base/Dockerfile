@@ -95,6 +95,8 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
+RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.1.1", upgrade="never")'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
 
 # D2E packages
 RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-SqlRender.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
@@ -121,7 +123,6 @@ RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
 RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-    
 FROM dbsvc-build AS final-build
 
 WORKDIR /app
