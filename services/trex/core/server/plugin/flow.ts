@@ -43,7 +43,7 @@ export async function addPlugin(value: any) {
 								    finalImage = `${valueImage}:${env.PLUGINS_IMAGE_TAG}`
 							}
 						}
-						logger.log(`NEW FLOW IMAGE NAME ${finalImage}`);
+						logger.log(`Final Flow Image ${finalImage}`);
 						return finalImage;
 					}
 					const body: any = {
