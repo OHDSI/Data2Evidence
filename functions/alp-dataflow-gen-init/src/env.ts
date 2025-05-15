@@ -3,7 +3,7 @@ const _env = Deno.env.toObject();
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
 export const env = {
   TEST_VALUE: _env.TEST_VALUE,
-  CUSTOM_WORK_POOL_CONFIGURATION: CUSTOM_WORK_POOL_CONFIGURATION ? JSON.parse(_env.CUSTOM_WORK_POOL_CONFIGURATION) : {},
+  CUSTOM_WORK_POOL_CONFIGURATION: _env.CUSTOM_WORK_POOL_CONFIGURATION ? JSON.parse(_env.CUSTOM_WORK_POOL_CONFIGURATION) : {},
 
   VARIABLES: {
     // Prefect Variables
