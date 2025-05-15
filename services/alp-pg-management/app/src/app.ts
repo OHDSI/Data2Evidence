@@ -185,44 +185,32 @@ export class App {
 
     try {
       // Create anon role
-      try {
+      const anonRoleExists = await this.userDao.verifyIfUserExists(client, "anon");
+      if (!anonRoleExists) {
         await client.query(`CREATE ROLE anon NOLOGIN INHERIT;`);
         this.logger.info("Created anon role successfully");
-      } catch (err: any) {
-        if (err.code === "42710") {
-          // Role already exists error code
-          this.logger.info("anon role already exists");
-        } else {
-          this.logger.error(`Error creating anon role: ${err.message}`);
-        }
+      } else {
+        this.logger.info("anon role already exists");
       }
-
+  
       // Create authenticated role
-      try {
+      const authenticatedRoleExists = await this.userDao.verifyIfUserExists(client, "authenticated");
+      if (!authenticatedRoleExists) {
         await client.query(`CREATE ROLE authenticated NOLOGIN INHERIT;`);
         this.logger.info("Created authenticated role successfully");
-      } catch (err: any) {
-        if (err.code === "42710") {
-          this.logger.info("authenticated role already exists");
-        } else {
-          this.logger.error(`Error creating authenticated role: ${err.message}`);
-        }
+      } else {
+        this.logger.info("authenticated role already exists");
       }
-
+  
       // Create service_role role
-      try {
-        await client.query(
-          `CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`
-        );
+      const serviceRoleExists = await this.userDao.verifyIfUserExists(client, "service_role");
+      if (!serviceRoleExists) {
+        await client.query(`CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`);
         this.logger.info("Created service_role role successfully");
-      } catch (err: any) {
-        if (err.code === "42710") {
-          this.logger.info("service_role role already exists");
-        } else {
-          this.logger.error(`Error creating service_role role: ${err.message}`);
-        }
+      } else {
+        this.logger.info("service_role role already exists");
       }
-
+  
       // Verify roles were created
       const result = await client.query(`
         SELECT rolname FROM pg_roles
@@ -234,7 +222,6 @@ export class App {
 
       // Grant roles to users
       const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
-      const superuser = config.getProperties()["postgres_superuser"];
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);

@@ -1101,9 +1101,7 @@ services:
     profiles: [fhir]
 
   supabase-storage:
-    container_name: &c19 alp-supabase-storage-${BASE_PORT:-1}
-    ports:
-      - "9000:9000"
+    container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
     depends_on:
       trex:
         condition: service_healthy
@@ -1119,11 +1117,11 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://alp-supabase-storage-1:9000/status"
+          "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/status"
         ]
-      timeout: 5s
+      timeout: 30s
       interval: 5s
-      retries: 5
+      retries: 10
       start_period: 15s
     image: supabase/storage-api:v1.14.5
     logging:
