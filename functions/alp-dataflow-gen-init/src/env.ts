@@ -3,6 +3,7 @@ const _env = Deno.env.toObject();
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
 export const env = {
   TEST_VALUE: _env.TEST_VALUE,
+  CUSTOM_CONFIGURATION: JSON.parse(_env.CUSTOM_CONFIGURATION) || {},
 
   VARIABLES: {
     // Prefect Variables
@@ -56,3 +57,4 @@ export const env = {
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
 export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
+export const CUSTOM_CONFIGURATION = env.CUSTOM_CONFIGURATION;
