@@ -323,10 +323,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-postgres-1 -t
-      - name: print logs for alp-minerva-s3
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-s3 -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: |
