@@ -10,4 +10,5 @@ pandas==2.2.2
 numpy==2.0.0
 pydicom==2.4.4
 orthanc-api-client==0.15.3
+s3fs==2023.1.0
 ibis-framework[duckdb, postgres]==10.0.0
