@@ -323,6 +323,14 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-postgres-1 -t
+      - name: print logs for alp-supabase-storage-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs alp-supabase-storage-1 -t
+      - name: print logs for alp-supabase-storage-post-init-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs alp-supabase-storage-post-init-1 -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: |
