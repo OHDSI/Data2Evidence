@@ -34,7 +34,7 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/import.json",
           "env": "alp-dataflow-gen-init",
-          "waitfor": "http://dataflow-gen-1:41120/api/health"
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
           "function": "/files-manager/src/init",
