@@ -1170,7 +1170,6 @@ services:
     networks:
       alp:
         priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
