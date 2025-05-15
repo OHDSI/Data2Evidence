@@ -733,6 +733,8 @@ services:
         condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
+      supabase-storage-post-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 30s
       retries: 30
