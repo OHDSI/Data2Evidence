@@ -1,1 +1,1 @@
-FROM ghcr.io/data2evidence/logto-with-logto-schema:develop
+FROM ghcr.io/data2evidence/logto-with-logto-schema:0.7.0-beta
