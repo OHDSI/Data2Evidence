@@ -729,8 +729,6 @@ services:
       - "apt-get update && apt-get install -y curl && prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       supabase-storage-post-init:
