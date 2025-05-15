@@ -202,4 +202,8 @@ const deleteFlowRuns = (): void => {
 </script>
   
 <style>
+.flow-run-work-pool,
+.flow-run-work-queue {
+  display: none
+}
 </style>
