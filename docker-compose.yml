@@ -15,6 +15,7 @@ volumes:
   demodb-data:
   dicom-sqlite-storage:
   fhir-binary-1:
+  supabase-storage-data:
 
 x-envs:
   db-svc: &x-dbsvc
@@ -81,7 +82,8 @@ x-envs:
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
+       "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
+       "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -106,8 +108,6 @@ services:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
       alp-logto-post-init:
-        condition: service_completed_successfully
-      alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
@@ -205,8 +205,8 @@ services:
               "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-              "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
-
+              "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
+              "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
             }
           },
           "analytics-svc": {
@@ -295,6 +295,13 @@ services:
             "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
             "PG_SCHEMA": "white_rabbit"
           },
+          "supabase-storage": {
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_SCHEMA": "storage"
+          },
           "bookmark-svc": {
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
@@ -355,7 +362,9 @@ services:
             "PG_DATABASE": "${PG_DB_NAME:-alp}",
             "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
             "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
-            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}"
+            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+            "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -448,7 +457,8 @@ services:
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter"
+        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
+        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -538,7 +548,8 @@ services:
             "+files_manager": {},
             "+perseus": {},
             "+white_rabbit": {},
-            "+trex": {}
+            "+trex": {},
+            "+storage": {}
            }
           },
           "+${PG__FHIR_DB_NAME:-alp_fhir}": {
@@ -722,6 +733,8 @@ services:
         condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
+      supabase-storage-post-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 30s
       retries: 30
@@ -769,8 +782,6 @@ services:
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
-      alp-minio-post-init:
-        condition: service_completed_successfully
       trex:
         condition: service_healthy
       alp-logto-post-init:
@@ -972,6 +983,7 @@ services:
         - *x-tls
       MINIO_ROOT_PASSWORD: ${MINIO__SECRET_KEY}
       MINIO_ROOT_USER: ${MINIO__ACCESS_KEY:-root}
+    profiles: [minio]
 
   alp-minio-post-init:
     container_name: &c23 ${PROJECT_NAME:-d2e}-minio-post-init
@@ -994,6 +1006,7 @@ services:
       /usr/bin/mc policy download myminio/dataflow-adhoc-flows;
       exit 0;
       "
+    profiles: [minio]
 
   alp-cachedb:
     container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
@@ -1089,6 +1102,92 @@ services:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [fhir]
+
+  supabase-storage:
+    container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
+    depends_on:
+      trex:
+        condition: service_healthy
+      alp-minerva-postgres:
+        condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/status"
+        ]
+      timeout: 30s
+      interval: 5s
+      retries: 10
+      start_period: 15s
+    image: supabase/storage-api:v1.14.5
+    logging:
+      options:
+        tag: *c19
+    networks:
+      alp:
+        priority: 20
+      data:
+        priority: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    volumes:
+      - supabase-storage-data:/var/lib/storage
+    entrypoint: ["/bin/sh", "-c"]
+    command: > # Wait 30 seconds for trex to finish migrations
+      "echo 'Waiting 30 seconds before starting...' && sleep 30 && echo 'Starting server now' && node dist/start/server.js"
+
+    environment:
+      <<:
+        - *x-tls
+      PROJECT_REF: ${PROJECT_REF:-default}
+      PORT: 9000
+      FILE_SIZE_LIMIT: 52428800
+      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:-mysecret}
+      SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
+      MIGRATIONS_SCHEMA: storage
+      MIGRATIONS_TABLE: migrations
+      SKIP_MIGRATIONS: "true"
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: stub
+      GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
+      GLOBAL_S3_PROTOCOL: "http"
+      GLOBAL_S3_FORCE_PATH_STYLE: true
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+
+  supabase-storage-post-init:
+    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-post-init-1
+    image: postgres:15-alpine
+    depends_on:
+      supabase-storage:
+        condition: service_healthy
+    networks:
+      alp:
+        priority: 20
+    environment:
+      PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
+      PGPORT: ${PG_PORT:-5432}
+      PGDATABASE: ${PG_DB_NAME:-alp}
+      PGUSER: ${PG_SUPER_USER:-postgres}
+      PGPASSWORD: ${PG_SUPER_PASSWORD}
+    command: >
+      sh -c "
+        echo 'Updating public.objects view to include user_metadata column...' &&
+        psql -c 'ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;' &&
+        psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
+        echo 'Granting permissions on updated view...' &&
+        psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
+        echo 'Supabase Storage post-initialization complete!' &&
+        exit 0
+      "
 
   fhir-server:
     container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
