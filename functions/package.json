@@ -310,6 +310,7 @@
           "ConfigAssignment.svc",
           "jobplugins",
           "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
           "usermgmt.dataAdmin.read",
           "usermgmt.group.read",
           "usermgmt.me",
@@ -490,6 +491,7 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
           "d2e.webapi",
           "jupyter",
           "usermgmt.me.jupyter"
@@ -578,6 +580,24 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/(data-characterization|data-quality)/cohort/[a-zA-Z0-9]+/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.execute"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
@@ -1694,7 +1714,9 @@
             "rD2E.jupyter.kernel.flowRun.add",
             "portal.dataset.read"
           ],
-          "httpMethods": ["POST"]
+          "httpMethods": [
+            "POST"
+          ]
         },
         {
           "path": "^/dataflow-mgmt/prefect/flow$",
