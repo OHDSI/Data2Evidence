@@ -103,8 +103,6 @@ RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-Datab
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-# RUN rm -rf .Renviron /app/.github/.ssh
-
 RUN useradd docker -u 1001 \
     && groupadd alp \
     && mkdir /home/docker \
@@ -127,6 +125,8 @@ FROM dbsvc-build AS final-build
 WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
+# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
+
 COPY --chown=docker:docker  ./__init__.py .
 
 # Grant docker ownership to create properties file
@@ -173,5 +173,7 @@ COPY --chown=docker:docker --chmod=711 ./base flows
 RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
+
+RUN rm -rf .Renviron /app/.github/.ssh
 
 USER docker
