@@ -122,6 +122,8 @@ RUN pip install -r requirements_strategus.txt
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./strategus flows
 
+RUN rm -f .Renviron
+
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 

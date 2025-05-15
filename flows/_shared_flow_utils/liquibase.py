@@ -6,7 +6,7 @@ from subprocess import PIPE, STDOUT, run, CalledProcessError
 from prefect.variables import Variable
 
 from .types import *
-from .api.PrefectAPI import get_auth_token_from_input, get_token_value
+from .api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
 
 
 class Liquibase:
@@ -47,7 +47,7 @@ class Liquibase:
         if self.dialect == SupportedDatabaseDialects.HANA and self.tenant_configs.authMode == AuthMode.JWT:
             # jwt authentication
             auth_token: AuthToken = get_auth_token_from_input()
-            admin_password = get_token_value(auth_token)
+            admin_password = get_third_party_token_value(auth_token)
         else:
             # password authentication
             admin_user = self.tenant_configs.adminUser

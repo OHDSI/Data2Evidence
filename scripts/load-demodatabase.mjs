@@ -3,29 +3,35 @@
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
-if ( await $`[ -f .env ]` ) { 
-    dotenv.config('.env');
-} else { 
-    console.log(chalk.red(`FATAL .env file not found`));
+const args = process.argv.slice(2); 
+const vIndex_envfile = args.indexOf("-n");
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
+    envfile = (args[vIndex_envfile + 1]);
+} else {
+    var envfile = ".env";
+}
+console.log(`ENVFILE: ${envfile}`);
+try {
+    await $`test -f ${envfile}`;
+    dotenv.config({ path: `${envfile}` });
+} catch (error) {
+    console.log(chalk.red(`FATAL ${envfile} not found`));
     process.exit(1)
 }
-const args = process.argv.slice(2); 
+
 const vIndex_version = args.indexOf("-v");
-if (vIndex_version !== -1 && args[vIndex_version + 1]) {
+if (vIndex_version !== -1 && !args[vIndex_version + 1].startsWith('-')) {
     version = (args[vIndex_version + 1]);
 } else {
-    version = "0.6.0"; //default version
+    version = "0.7.0"; //default version
 }
 console.log(`Version: ${version}`);
 
-const args_dev_mode = process.argv.slice(2); 
-const vIndex_dev_mode = args_dev_mode.indexOf("-d");
-if (vIndex_dev_mode !== -1 && args[vIndex_dev_mode + 1]) {
+const vIndex_dev_mode = args.indexOf("-d");
+if (vIndex_dev_mode !== -1 && !args[vIndex_dev_mode + 1].startsWith('-') ) {
     var dev_mode = true;
     path = (args[vIndex_dev_mode + 1]);
     console.log(`Dev Mode: ${dev_mode}, function path: ${path}`);
-    var ENV_TYPE = process.env.ENV_TYPE || 'remote';
-    var CADDY__CONFIG = process.env.CADDY__CONFIG || './.deploy/caddy-config';
 } else {
     var dev_mode = false;
 }
