@@ -62,6 +62,15 @@
             "PATCH",
             "DELETE"
           ]
+        },
+        {
+          "path": "^/gateway/api/fhir/deleteProject",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
         }
       ]
     }
