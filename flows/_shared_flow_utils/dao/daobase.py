@@ -251,16 +251,16 @@ class DaoBase(ABC):
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
 
-        hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
-
-        if auth_mode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
-            # Prefect task to fetch token
-            auth_token: AuthToken = get_auth_token_from_input()
-            hana_connect_args["password"] = get_third_party_token_value(auth_token)
-            return base_url, hana_connect_args
-        
         if dialect == SupportedDatabaseDialects.HANA:
-            return base_url, hana_connect_args
+            hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
+            if auth_mode == AuthMode.JWT:
+                # Prefect task to fetch token
+                auth_token: AuthToken = get_auth_token_from_input()
+                hana_connect_args["password"] = get_third_party_token_value(auth_token)
+                return base_url, hana_connect_args
+            
+            if auth_mode == AuthMode.PASSWORD:
+                return base_url, hana_connect_args.update({"user": user, "password": password.get_secret_value()})
 
         return base_url, {"user": user, "password": password.get_secret_value()}
 
