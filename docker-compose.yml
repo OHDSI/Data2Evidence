@@ -262,7 +262,8 @@ services:
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
             "isTestEnv": "${isTestEnv}",
             "TESTSCHEMA": "${TESTSCHEMA}",
-            "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}"
+            "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
+            "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
           },
           "alp-usermgmt": {
             "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",

@@ -12,6 +12,7 @@ class CohortSurvivalOptionsType(BaseModel):
     competingOutcomeCohortDefinitionId: Optional[int] = (
         None  # Optional for competing risk analysis
     )
+    strataCohorts: list = []
 
     @property
     def use_cache_db(self) -> str:
