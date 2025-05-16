@@ -124,7 +124,7 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
                     r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
                     r.env,
 					r.eszip ? r.eszip : null, dir,
-                    r.waitfor ?? (r.waitforEnvVar ? Deno.env.get(r.waitforEnvVar) : "")); //Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
+                    r.waitfor ?? (r.waitforEnvVar ? (env[r.waitforEnvVar] ?? Deno.env.get(r.waitforEnvVar)) : "")); //Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
                 if (r.delay) await new Promise(resolve => setTimeout(resolve, r.delay));
                 logger.log(`add init fn done @ ${dir}${r.function}`)
 
