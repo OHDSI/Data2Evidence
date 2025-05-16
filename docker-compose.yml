@@ -1147,7 +1147,7 @@ services:
       PROJECT_REF: ${PROJECT_REF:-default}
       PORT: 9000
       FILE_SIZE_LIMIT: 52428800
-      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:-mysecret}
       SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
       MIGRATIONS_SCHEMA: storage
@@ -1172,7 +1172,7 @@ services:
       alp:
         priority: 20
     environment:
-      PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
+      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
       PGDATABASE: ${PG_DB_NAME:-alp}
       PGUSER: ${PG_SUPER_USER:-postgres}
