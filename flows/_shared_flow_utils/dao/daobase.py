@@ -8,7 +8,7 @@ from sqlalchemy import text
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from _shared_flow_utils.types import UserType, AuthToken
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_token_value
+from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
@@ -254,7 +254,7 @@ class DaoBase(ABC):
         if auth_mode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
             # Prefect task to fetch token
             auth_token: AuthToken = get_auth_token_from_input()
-            return base_url, {"password": get_token_value(auth_token)}
+            return base_url, {"password": get_third_party_token_value(auth_token)}
 
         return base_url, {"user": user, "password": password.get_secret_value()}
 
@@ -307,7 +307,7 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.POSTGRES:
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?{database_name}"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}"
                 extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
                 conn_url += extra_config
 
@@ -315,7 +315,7 @@ class DaoBase(ABC):
             user = ""  # Todo: Confirm if can be left blank
             # Prefect task to fetch token
             auth_token: AuthToken = get_auth_token_from_input()
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{get_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         else:
             match user_type:

@@ -635,9 +635,6 @@
                   }
                 },
                 "required": [
-                  "timestamp",
-                  "tableConfig",
-                  "patientsToBeCopied"
                 ],
                 "title": "DatamartCopyConfig",
                 "type": "object"

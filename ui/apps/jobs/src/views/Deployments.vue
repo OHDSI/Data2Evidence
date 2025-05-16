@@ -15,8 +15,8 @@
     </template>
   </p-layout-default>
 </template>
-  
-  <script lang="ts" setup>
+
+<script lang="ts" setup>
 import {
   DeploymentList,
   DeploymentsPageEmptyState,
