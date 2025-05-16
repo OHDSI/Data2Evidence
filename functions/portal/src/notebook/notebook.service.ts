@@ -51,7 +51,7 @@ export class NotebookService {
         );
       return userNotebooks;
     } catch (error) {
-      this.logger.error(
+      console.error(
         `Error while getting notebooks for user id ${this.userId}: ${error}`
       );
       throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE);
@@ -87,7 +87,7 @@ export class NotebookService {
 
       return notebookEntity;
     } catch (error) {
-      this.logger.error(`Error while creating new notebook: ${error}`);
+      console.error(`Error while creating new notebook: ${error}`);
       throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE);
     }
   }
@@ -104,7 +104,7 @@ export class NotebookService {
         );
 
       if (notebook.userId !== this.userId) {
-        this.logger.error("Notebook does not belong to user!");
+        console.error("Notebook does not belong to user!");
         throw new InternalServerErrorException(
           "Notebook does not belong to user!"
         );
@@ -132,7 +132,7 @@ export class NotebookService {
         userId: this.userId,
       };
     } catch (error) {
-      this.logger.error(
+      console.error(
         `Error while updating notebook ${notebookUpdateDto.id}: ${error}`
       );
       if (error instanceof NotFoundException) {
@@ -144,7 +144,6 @@ export class NotebookService {
     }
   }
 
-  // TODO: Support deleting from git
   async deleteNotebook(id: string): Promise<any> {
     try {
       const notebook = await this.getNotebook(id);
@@ -154,15 +153,14 @@ export class NotebookService {
         id
       );
 
-      await this.saveToGitRepo(
+      await this.deleteFromGitRepo(
         id,
-        { deleted: true, name: notebook.name },
         `Deleted notebook ${notebook.name} with id ${id}`
       );
 
       return notebook;
     } catch (error) {
-      this.logger.error(`Error deleting notebook ${id}: ${error}`);
+      console.error(`Error deleting notebook ${id}: ${error}`);
       if (error instanceof NotFoundException) {
         throw new NotFoundException(`Notebook with id ${id} not found`);
       }
@@ -246,7 +244,7 @@ export class NotebookService {
           });
           console.log(`Successfully cloned repository`);
         } catch (cloneError) {
-          this.logger.error(
+          console.error(
             `Failed to clone repository: ${cloneError.message}`
           );
           throw new Error(
@@ -281,7 +279,7 @@ export class NotebookService {
                   await git.checkout({ fs, dir: repoDir, ref: defaultBranch });
                   console.log(`Switched to ${defaultBranch} branch`);
                 } catch (checkoutError) {
-                  this.logger.error(
+                  console.error(
                     `Could not checkout ${defaultBranch}: ${checkoutError.message}`
                   );
                   throw new Error(
@@ -332,14 +330,14 @@ export class NotebookService {
                 );
               }
             } catch (remoteError) {
-              this.logger.error(`Could not add remote: ${remoteError.message}`);
+              console.error(`Could not add remote: ${remoteError.message}`);
               throw new Error(
                 `Failed to connect to remote repository at ${this.gitRemoteUrl}`
               );
             }
           }
         } catch (remoteError) {
-          this.logger.error(`Error checking remotes: ${remoteError.message}`);
+          console.error(`Error checking remotes: ${remoteError.message}`);
         }
       }
 
@@ -370,20 +368,20 @@ export class NotebookService {
             });
             console.log(`Pushed changes to origin/${defaultBranch}`);
           } catch (pushError) {
-            this.logger.error(`Push failed: ${pushError.message}`);
+            console.error(`Push failed: ${pushError.message}`);
             throw new Error(
               `Failed to push changes to remote repository. Please ensure you have write access to ${this.gitRemoteUrl}`
             );
           }
         } catch (commitError) {
-          this.logger.error(`Commit failed: ${commitError.message}`);
+          console.error(`Commit failed: ${commitError.message}`);
           throw new Error(`Failed to commit changes: ${commitError.message}`);
         }
       } else {
         console.log(`No changes to commit for notebook ${notebookId}`);
       }
     } catch (error) {
-      this.logger.error(`Git operation failed: ${error.message}`);
+      console.error(`Git operation failed: ${error.message}`);
     }
   }
 
@@ -396,5 +394,119 @@ export class NotebookService {
       };
     }
     return null;
+  }
+
+  private async deleteFromGitRepo(
+    notebookId: string,
+    commitMessage: string
+  ) {
+    if (!this.gitRemoteUrl) {
+      console.log(
+        "Git remote URL not configured, skipping Git operations"
+      );
+      return;
+    }
+
+    const repoDir = this.gitRepoPath;
+    const fileName = `${notebookId}.json`;
+    const filePath = path.join(repoDir, fileName);
+    const defaultBranch = "main";
+
+    const author = {
+      name: this.userId || this.gitConfig.defaultAuthor.name,
+      email: `${this.userId || "system"}@notebook.example.com`,
+    };
+
+    try {
+      let isGitRepo = false;
+      try {
+        await git.resolveRef({ fs, dir: repoDir, ref: "HEAD" });
+        isGitRepo = true;
+      } catch (e) {
+        isGitRepo = false;
+      }
+
+      if (!isGitRepo) {
+        console.error("Not a git repository, cannot delete file");
+        return;
+      }
+
+      // Fetch latest changes
+      try {
+        const remotes = await git.listRemotes({ fs, dir: repoDir });
+        const hasOrigin = remotes.some((r) => r.remote === "origin");
+
+        if (hasOrigin) {
+          try {
+            await git.fetch({
+              fs,
+              http,
+              dir: repoDir,
+              remote: "origin",
+              ref: defaultBranch,
+              onAuth: () => this.getGitCredentials(),
+            });
+            console.log("Fetched latest changes from remote");
+
+            const currentBranch = await git.currentBranch({ fs, dir: repoDir });
+            if (currentBranch !== defaultBranch) {
+              await git.checkout({ fs, dir: repoDir, ref: defaultBranch });
+              console.log(`Switched to ${defaultBranch} branch`);
+            }
+
+            try {
+              await git.merge({
+                fs,
+                dir: repoDir,
+                theirs: `origin/${defaultBranch}`,
+                author,
+              });
+              console.log(`Merged changes from origin/${defaultBranch}`);
+            } catch (mergeError) {
+              console.log(`Could not merge: ${mergeError.message}`);
+            }
+          } catch (fetchError) {
+            console.log(`Could not fetch: ${fetchError.message}`);
+          }
+        }
+      } catch (remoteError) {
+        console.error(`Error checking remotes: ${remoteError.message}`);
+      }
+
+      if (!fs.existsSync(filePath)) {
+        console.log(`File ${fileName} does not exist in repository`);
+        return;
+      }
+
+      // Remove the file from the filesystem and git
+      fs.unlinkSync(filePath);
+      await git.remove({ fs, dir: repoDir, filepath: fileName });
+
+      const commitId = await git.commit({
+        fs,
+        dir: repoDir,
+        author,
+        message: commitMessage,
+      });
+      console.log(`Committed deletion with ID: ${commitId}`);
+
+      try {
+        await git.push({
+          fs,
+          http,
+          dir: repoDir,
+          remote: "origin",
+          ref: defaultBranch,
+          onAuth: () => this.getGitCredentials(),
+        });
+        console.log(`Pushed deletion to origin/${defaultBranch}`);
+      } catch (pushError) {
+        console.error(`Push failed: ${pushError.message}`);
+      }
+    } catch (error) {
+      console.error(
+        `Git operation failed during deletion: ${error.message}`
+      );
+    }
   }
 }
