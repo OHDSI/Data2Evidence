@@ -1173,7 +1173,7 @@ services:
       alp:
         priority: 20
     environment:
-      PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
+      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
       PGDATABASE: ${PG_DB_NAME:-alp}
       PGUSER: ${PG_SUPER_USER:-postgres}
