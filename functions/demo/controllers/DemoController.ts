@@ -12,9 +12,42 @@ export class DemoController {
   }
 
   private registerRoutes() {
+    this.router.post("/setup", this.executeSetup.bind(this));
     this.router.post("/setup-db", this.executeSetupDb.bind(this));
     this.router.post("/setup-dataset", this.executeSetupDataset.bind(this));
     this.router.get("/progress/:id", this.getProgress.bind(this));
+  }
+
+  private async executeSetup(req: Request, res: Response) {
+    const steps: IStepTask[] = [
+      {
+        code: "db",
+        message: "Adding demo database...",
+        task: this.service.addDatabase.bind(this.service),
+      },
+      {
+        code: "dataset",
+        message: "Adding demo dataset...",
+        task: this.service.addDataset.bind(this.service),
+      },
+      {
+        code: "dqd",
+        message: "Running DQD on demo dataset...",
+        task: this.service.runDQD.bind(this.service),
+      },
+      {
+        code: "dc",
+        message: "Running DC on demo dataset...",
+        task: this.service.runDC.bind(this.service),
+      },
+      {
+        code: "metadata",
+        message: "Updating metadata for dataset...",
+        task: this.service.updateDatasetMetadata.bind(this.service),
+      },
+    ];
+
+    return await this.executeSteps(req, res, steps);
   }
 
   private async executeSetupDb(req: Request, res: Response) {
@@ -36,11 +69,6 @@ export class DemoController {
         message: "Adding demo dataset...",
         task: this.service.addDataset.bind(this.service),
       },
-      /*{
-        code: "cache",
-        message: "Creating cache for demo dataset...",
-        task: this.service.createCache.bind(this.service),
-      },*/
       {
         code: "dqd",
         message: "Running DQD on demo dataset...",
