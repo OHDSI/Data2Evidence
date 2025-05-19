@@ -20,7 +20,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const activeDatasetId = metadata?.studyId;
+  const activeDatasetId = metadata?.studyId!;
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
