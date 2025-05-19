@@ -792,7 +792,7 @@ export const cdwFHIRConfigDuckdb = {
     },
     tableMapping: {
       "@QUESTIONNAIRERESPONSE": "$$SCHEMA$$.QuestionnaireResponse",
-      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "source[9:]",
+      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "source[-36:]", // Take last 36 characters which is an UUID
       "@PATIENT": "$$SCHEMA$$.\"Patient\"",
       "@PATIENT.PATIENT_ID": "id",
       "@PATIENT.DOD": "deathDate",
