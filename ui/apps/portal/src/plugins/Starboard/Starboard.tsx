@@ -4,14 +4,13 @@ import { StarboardNotebook } from "./utils/notebook";
 import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
 import { Card, Loader } from "@portal/components";
 import { api } from "../../axios/api";
-import { useActiveDataset, useFeedback, useTranslation } from "../../contexts";
+import { useFeedback, useTranslation } from "../../contexts";
 import { EmptyNotebook } from "./components/EmptyNotebook";
 import { Header } from "./components/NotebookHeader/NotebookHeader";
 import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
 import { i18nKeys } from "../../contexts/app-context/states";
 import env from "../../env";
 import "./Starboard.scss";
-import { getAuthToken } from "../../containers/auth/auth";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
@@ -21,8 +20,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const { activeDataset } = useActiveDataset();
-  const activeDatasetId = activeDataset.id;
+  const activeDatasetId = metadata?.studyId;
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
