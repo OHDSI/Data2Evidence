@@ -15,7 +15,6 @@ import { getAuthToken } from "../../containers/auth/auth";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
-const codeSuggestionUrl = "code-suggestion";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
@@ -24,7 +23,6 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   const [loading, setLoading] = useState(true);
   const { activeDataset } = useActiveDataset();
   const activeDatasetId = activeDataset.id;
-
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
@@ -37,27 +35,6 @@ await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-p
 os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
 os.environ['TOKEN'] = '${jwtToken}'
 os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
-
-  const extractJupyterKernel = `\n#%% [esm]
-import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
-a.plugin.register(1, {
-    serverSettings: {
-      baseUrl: "${uiFilesUrl}jupyter",
-      token: "${jwtToken}",
-      appendToken: true,
-      init: {
-          headers: {
-            datasetId: "${activeDatasetId}",
-            }
-          }
-        }
-      }
-    )`;
-
-  const initialiseJupyterKernel = `\n# %% [jupyter]
-Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
-Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
-  `;
 
   const [runtime, setRuntime] = useState<StarboardEmbed>();
   const [unsaved, setUnsaved] = useState(false);
@@ -117,8 +94,7 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-      notebookContent += setupPYQE + extractJupyterKernel + initialiseJupyterKernel;
-
+      notebookContent += setupPYQE;
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
         mount.removeChild(mount.firstChild);
@@ -128,8 +104,10 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         notebookContent: notebookContent || "",
         src: `${uiFilesUrl}starboard-notebook-base/index.html`,
         preventNavigationWithUnsavedChanges: true,
-        suggestionUrl: `${uiFilesUrl}${codeSuggestionUrl}?datasetId=${activeDatasetId}`,
-        bearerToken: accessToken,
+        serverUrl: uiFilesUrl,
+        token: jwtToken,
+        userId: metadata?.userId,
+        datasetId: activeDatasetId,
         onUnsavedChangesStatusChange: () => setUnsaved(true),
       });
 
