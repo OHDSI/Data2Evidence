@@ -43,21 +43,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
   const [isShared, setIsShared] = useState<boolean | undefined>();
 
-  // Get Bearer Token for code-suggestion
-  const [accessToken, setToken] = useState("");
-  const getBearerToken = useCallback(async () => {
-    const token = await getAuthToken(false);
-    return `Bearer ${token}`;
-  }, []);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      const bearerToken = await getBearerToken();
-      setToken(bearerToken);
-    };
-    fetchToken();
-  }, [getBearerToken]);
-
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
     setIsShared(notebook?.isShared ?? false);
