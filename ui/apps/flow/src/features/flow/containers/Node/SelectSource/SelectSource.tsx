@@ -108,7 +108,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
         {...props}
       >
         {filtered.map(({ key, value }) => (
-          <MenuItem key={key} value={key}>
+          <MenuItem key={key} value={value}>
             <Box display="flex" gap={1}>
               {value}
             </Box>
