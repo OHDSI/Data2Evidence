@@ -41,7 +41,8 @@
     "internal": "npm run-script --prefix internal"
   },
   "optionalDependencies": {
-    "hdb": "0.19.12"
+    "hdb": "0.19.12",
+    "fast-csv": "5.0.2"
   },
   "devDependencies": {
     "@types/node": "^18",
