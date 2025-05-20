@@ -89,7 +89,7 @@ export const RunFlowButton: FC = () => {
     } else {
       await runFlow();
     }
-  }, [dataflowId, runFlow]);
+  }, [dataflowId, runFlow, status]);
 
   const handleCancel = useCallback(async () => {
     await cancelFlowRun(flowRunId);
