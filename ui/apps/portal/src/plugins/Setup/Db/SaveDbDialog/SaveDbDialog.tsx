@@ -386,6 +386,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               <Autocomplete
                 multiple
                 freeSolo
+                autoSelect
                 options={[] as string[]}
                 sx={styles}
                 id="autocomplete-vocab-schemas"
@@ -394,7 +395,9 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
                   ))
                 }
-                renderInput={(params) => <TextField {...params} variant="standard" />}
+                renderInput={(params) => (
+                  <TextField {...params} variant="standard" helperText="Press enter to confirm the entry" />
+                )}
                 value={formData.vocabSchemas}
                 onChange={(_, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
               />
