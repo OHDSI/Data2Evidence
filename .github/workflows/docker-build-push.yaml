@@ -220,7 +220,8 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: env.build_disable == 'false'
+        # <condition> && <true-value> || <false-value>
+        if: ${{matrix.build_disable == 'true' && 'false'  || 'true'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
