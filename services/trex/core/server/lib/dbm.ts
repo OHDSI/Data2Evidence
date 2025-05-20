@@ -72,15 +72,12 @@ export class DatabaseManager {
         const r = await this.pgclient.query(this.insert_query, params);
         const dbCredentials = await this.getCredentialsDecrypted();
         this.trexdbm.setCredentials(dbCredentials);
-        const transformedCredentials = transformDBCredentials(dbCredentials);
         const prefectApi = new PrefectAPI();
-        const dbCredBlockName = "database-credentials";
-        const dbCredentialsOptions = {
-          value: transformedCredentials,
-        };
         const dbCredBlockId = await prefectApi.createBlockDocument(
-          dbCredBlockName,
-          dbCredentialsOptions,
+          "database-credentials",
+          {
+            value: transformDBCredentials(dbCredentials),
+          },
           "secret"
         );
         return c.code;

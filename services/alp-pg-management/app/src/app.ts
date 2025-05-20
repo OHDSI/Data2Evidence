@@ -1,6 +1,5 @@
-import crypto from "crypto";
-import PGUserDAO from "./dao/PGUserDAO";
 import PGDBDAO from "./dao/PGDBDAO";
+import PGUserDAO from "./dao/PGUserDAO";
 import * as config from "./utils/config";
 
 type pgUsers = {
@@ -170,11 +169,78 @@ export class App {
         );
       }
 
+      // Create Supabase roles directly with a separate function
+      await this.createSupabaseRoles(client);
+
       await this.dbDao.closeConnection(client);
     } catch (e: any) {
       this.logger.error(e.message);
       await this.dbDao.closeConnection(client);
       throw e;
+    }
+  }
+
+  async createSupabaseRoles(client: any) {
+    this.logger.info("Creating Supabase roles...");
+
+    try {
+      // Create anon role
+      const anonRoleExists = await this.userDao.verifyIfUserExists(client, "anon");
+      if (!anonRoleExists) {
+        await client.query(`CREATE ROLE anon NOLOGIN INHERIT;`);
+        this.logger.info("Created anon role successfully");
+      } else {
+        this.logger.info("anon role already exists");
+      }
+  
+      // Create authenticated role
+      const authenticatedRoleExists = await this.userDao.verifyIfUserExists(client, "authenticated");
+      if (!authenticatedRoleExists) {
+        await client.query(`CREATE ROLE authenticated NOLOGIN INHERIT;`);
+        this.logger.info("Created authenticated role successfully");
+      } else {
+        this.logger.info("authenticated role already exists");
+      }
+  
+      // Create service_role role
+      const serviceRoleExists = await this.userDao.verifyIfUserExists(client, "service_role");
+      if (!serviceRoleExists) {
+        await client.query(`CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`);
+        this.logger.info("Created service_role role successfully");
+      } else {
+        this.logger.info("service_role role already exists");
+      }
+  
+      // Verify roles were created
+      const result = await client.query(`
+        SELECT rolname FROM pg_roles
+        WHERE rolname IN ('anon', 'authenticated', 'service_role')
+      `);
+
+      const existingRoles = result.rows.map((row: any) => row.rolname);
+      this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
+
+      // Grant roles to users
+      const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
+
+      if (existingRoles.includes("service_role")) {
+        await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
+        this.logger.info(
+          `Granted service_role to ${pgUsers.manager}`
+        );
+      }
+
+      if (existingRoles.includes("anon")) {
+        await client.query(`GRANT anon TO "${pgUsers.reader}"`);
+        this.logger.info(`Granted anon to ${pgUsers.reader}`);
+      }
+
+      if (existingRoles.includes("authenticated")) {
+        await client.query(`GRANT authenticated TO "${pgUsers.writer}"`);
+        this.logger.info(`Granted authenticated to ${pgUsers.writer}`);
+      }
+    } catch (error: any) {
+      this.logger.error(`Error in Supabase role creation: ${error.message}`);
     }
   }
 

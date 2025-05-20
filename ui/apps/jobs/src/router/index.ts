@@ -1,10 +1,13 @@
 import { RouteGuardExecutioner, createWorkspaceRouteRecords } from '@prefecthq/prefect-ui-library'
-import { RouteRecordRaw, createRouter, createWebHistory } from 'vue-router'
+import { RouteRecordRaw, createRouter, createWebHistory, RouteComponent } from 'vue-router'
 import { routes, NamedRoute, AppRouteLocation, AppRouteRecord } from '@/router/routes'
 import AppRouterView from '@/views/AppRouterView.vue'
 import Sidebar from '@/components/Sidebar.vue'
 
 const workspaceRoutes = createWorkspaceRouteRecords({
+  artifact: () => import('@/views/Artifact.vue'),
+  artifactKey: () => import('@/views/ArtifactKey.vue'),
+  artifacts: () => import('@/views/Artifacts.vue'),
   deployment: () => import('@/views/Deployment.vue'),
   deployments: () => import('@/views/Deployments.vue'),
   deploymentEdit: () => import('@/views/DeploymentEdit.vue'),
@@ -13,6 +16,7 @@ const workspaceRoutes = createWorkspaceRouteRecords({
   flow: () => import('@/views/Flow.vue'),
   runs: () => import('@/views/FlowRuns.vue'),
   flowRun: () => import('@/views/FlowRun.vue'),
+  taskRun: () => import('@/views/TaskRun.vue'),
   blocks: () => import('@/views/Blocks.vue'),
   blocksCatalog: () => import('@/views/BlocksCatalog.vue'),
   blocksCatalogView: () => import('@/views/BlocksCatalogView.vue'),
@@ -29,6 +33,11 @@ const routeRecords: AppRouteRecord[] = [
     redirect: routes.runs(),
     components: { default: AppRouterView, sidebar: Sidebar },
     children: workspaceRoutes as AppRouteRecord[]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404',
+    component: (): RouteComponent => import('@/views/404.vue')
   }
 ]
 

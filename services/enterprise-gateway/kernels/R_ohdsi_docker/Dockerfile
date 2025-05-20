@@ -80,4 +80,6 @@ WORKDIR /app/rD2E
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
 
 WORKDIR /app
+RUN rm .Renviron
+
 USER jovyan

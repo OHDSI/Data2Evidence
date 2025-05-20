@@ -4,22 +4,14 @@ import { request } from "./request";
 const DEMO_BASE_URL = "demo/";
 
 export class Demo {
-  public setupDb(encryptionKeys: string): Promise<ISetupResponse> {
+  public setup(encryptionKeys: string): Promise<ISetupResponse> {
     return request({
       baseURL: DEMO_BASE_URL,
-      url: "setup-db",
+      url: "setup",
       method: "POST",
       data: {
         encryptionKeys,
       },
-    });
-  }
-
-  public setupDataset(): Promise<ISetupResponse> {
-    return request({
-      baseURL: DEMO_BASE_URL,
-      url: "setup-dataset",
-      method: "POST",
     });
   }
 
