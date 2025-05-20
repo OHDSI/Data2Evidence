@@ -28,7 +28,7 @@ async function initNWConnection() {
 
 async function loadDDLScript() {
   // console.log(`loadDDLScript...`);
-  const sqlScript = fs.readFileSync(`${__dirname}/test.sql`).toString();
+  const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
   const tmp = sqlScript.split(";");
   const tmp2 = tmp.slice(0, tmp.length - 1);
 
