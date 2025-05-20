@@ -3,6 +3,8 @@ const hdb = require("hdb");
 const csv = require("fast-csv");
 const path = require("path");
 
+const { functionsAndProcedures } = require("./db-functions-procedures.js");
+
 const dbCredentials = {
   host: process.env.HANASERVER,
   port: process.env.HANAPORT,
@@ -29,6 +31,7 @@ async function initNWConnection() {
 async function loadDDLScript() {
   // console.log(`loadDDLScript...`);
   const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
+
   const tmp = sqlScript.split(";");
   const tmp2 = tmp.slice(0, tmp.length - 1);
 
@@ -36,34 +39,29 @@ async function loadDDLScript() {
 
   tmp2.forEach((element) => {
     queries.push(
-      element
-        .replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA) // replace with actual schema name
-        .replaceAll("PLACE_HOLDER_STR", ";,.:-") // replace with the actual delimiting characters
+      element.replaceAll("PLACE_HOLDER_STR", ";,.:-") // replace with the actual delimiting characters
     );
   });
 
   return queries;
 }
 
-async function runDDLScript(queries) {
+async function createDBArtefacts(sqlStatements) {
   // console.log(`runDDLScript...`);
   let executeQueries = new Promise((resolve, reject) => {
     client.connect((err) => {
       if (err) {
         reject(err);
       }
-      queries.forEach((query, index) => {
+      sqlStatements.forEach((query, index) => {
         // console.log(`query: ${query}`);
-        client.exec(query, (err) => {
+        client.exec(query.replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA), (err) => {
           if (err) {
             reject(err);
           }
-          if (index === queries.length - 1) {
-            console.log(
-              `All DB artefacts(${queries.length}) are created succussfully...`
-            );
+          if (index === sqlStatements.length - 1) {
             client.end();
-            resolve(null);
+            resolve(sqlStatements.length);
           }
         });
       });
@@ -97,11 +95,16 @@ async function dropTestSchema() {
 async function createTestSchema() {
   console.log(`Creating test schema ...`);
 
-  // load ddl script
+  // load tables & views ddl script
   const queries = await loadDDLScript();
 
-  // run ddl script
-  await runDDLScript(queries);
+  // run tables & views ddl script
+  let result = await createDBArtefacts(queries);
+  console.log(`Created ${result} tables & views succussfully ...`);
+
+  // run functions & procedures ddl script
+  result = await createDBArtefacts(functionsAndProcedures);
+  console.log(`Created ${result} functions & procedures succussfully ...`);
 
   return null;
 }
