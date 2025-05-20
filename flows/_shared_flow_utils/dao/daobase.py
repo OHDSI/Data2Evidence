@@ -313,7 +313,7 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.POSTGRES:
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
-                encrypt = database_credentials.encrypt or "FALSE"
+                encrypt = database_credentials.encrypt or "TRUE"
                 validateCertificate = database_credentials.validateCertificate or "FALSE"
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
                 extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
