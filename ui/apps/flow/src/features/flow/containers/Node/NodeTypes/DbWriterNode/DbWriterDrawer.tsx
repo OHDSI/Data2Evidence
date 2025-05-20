@@ -31,7 +31,7 @@ const EMPTY_FORM_DATA: FormData = {
   description: "",
   database: "",
   schemaname: "",
-  dataframe: [],
+  dataframe: "",
   dbtablename: "",
 };
 
@@ -107,12 +107,8 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
           nodeId={node.id}
           sourceOptions={null}
           label="Dataframe"
-          value={formData.dataframe?.join(".")}
-          onChange={(value: string) =>
-            onFormDataChange({
-              dataframe: value ? value.split(".") : undefined,
-            })
-          }
+          value={formData.dataframe}
+          onChange={(dataframe: string) => onFormDataChange({ dataframe })}
         />
       </Box>
       <Box mb={4}>
