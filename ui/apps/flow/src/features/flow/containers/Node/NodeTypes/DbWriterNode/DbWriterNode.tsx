@@ -12,7 +12,7 @@ import "./DbWriterNode.scss";
 export interface DbWriterNodeData extends NodeDataState {
   database: string;
   schemaname: string;
-  dataframe: string[];
+  dataframe: string;
   dbtablename: string;
 }
 

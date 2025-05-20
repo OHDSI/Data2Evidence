@@ -1,11 +1,8 @@
 <template>
   <p-layout-well v-if="deployment" class="deployment">
     <template #header>
-      <PageHeadingDeployment
-        :deployment="deployment"
-        @update="deploymentSubscription.refresh"
-        @delete="routeToDeployments"
-      />
+      <PageHeadingDeployment :deployment="deployment" @update="deploymentSubscription.refresh"
+        @delete="routeToDeployments" />
     </template>
 
     <p-tabs v-model:selected="tab" :tabs="tabs">
@@ -36,16 +33,12 @@
     </p-tabs>
 
     <template #well>
-      <DeploymentDetails
-        :deployment="deployment"
-        alternate
-        @update="deploymentSubscription.refresh"
-      />
+      <DeploymentDetails :deployment="deployment" alternate @update="deploymentSubscription.refresh" />
     </template>
   </p-layout-well>
 </template>
-  
-  <script lang="ts" setup>
+
+<script lang="ts" setup>
 import { media } from '@prefecthq/prefect-design'
 import {
   FlowRunListItem,
@@ -124,10 +117,17 @@ const { flowRun: nextRun } = useNextFlowRun(() => ({
   }
 }))
 </script>
-  
-  <style>
+
+<style>
 .deployment__infra-overrides {
-  @apply px-4
-    py-3;
+  @apply px-4 py-3;
+}
+
+.deployment-relationships {
+  display: none;
+}
+
+.deployment-details>*:nth-child(-n + 5) {
+  display: none;
 }
 </style>

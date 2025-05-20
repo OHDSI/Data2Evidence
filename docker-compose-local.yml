@@ -41,6 +41,7 @@ services:
           "concept-mapping": false,
           "terminology-svc": false,
           "code-suggestion": false,
+          "data-mapping": false,
           "portal": false,
           "files-manager": false,
           "demo": false,
@@ -150,9 +151,11 @@ services:
   #     - 41130:3000
 
   enterprise-gateway:
-    build: 
+    build:
       context: ./services/enterprise-gateway
       dockerfile: Dockerfile
+    environment:
+      EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-41100}}"
     volumes:
       - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker

@@ -34,11 +34,11 @@ def update_metadata_last_fetched_date(portal_server_api, dataset_id: str, logger
         logger.info(f"Updated attribute 'metadata_last_fetch_date' for dataset '{dataset_id}' with value '{metadata_last_fetch_date}'")
 
 
-def get_entity_value_str(dbdao: DBDao, table_name: str, 
-                         column_name: str, entity_name: str, 
-                         logger) -> str:
+def get_entity_value_str(dbdao: DBDao, schema_name: str,
+                         table_name: str, column_name: str, 
+                         entity_name: str, logger) -> str:
     try:
-        entity_value = dbdao.get_value(table_name, column_name)
+        entity_value = dbdao.get_value(schema_name, table_name, column_name)
         # get date if entity_value is of type datetime
         if isinstance(entity_value, datetime):
             entity_value = str(entity_value).split(" ")[0]
@@ -51,12 +51,13 @@ def get_entity_value_str(dbdao: DBDao, table_name: str,
 def update_entity_value(portal_server_api,
                         dataset_id: str,
                         dbdao: DBDao, 
+                        schema_name: str,
                         table_name: str, 
                         column_name: str, 
                         entity_name: str, 
                         logger) -> str:
     try:
-        entity_value = get_entity_value_str(dbdao, table_name, column_name, entity_name, logger)
+        entity_value = get_entity_value_str(dbdao, schema_name, table_name, column_name, entity_name, logger)
 
         if entity_name == "version" and entity_value[0] in ["v", "V"]: # for cdm versions with a prefix v
             portal_server_api.update_dataset_attributes_table(dataset_id, entity_name, entity_value[1:])
@@ -70,11 +71,11 @@ def update_entity_value(portal_server_api,
     return entity_value
 
 
-def get_entity_count_str(dbdao: DBDao, table_name: str, 
-                         column_name: str, entity_name: str, 
-                         logger) -> str:
+def get_entity_count_str(dbdao: DBDao, schema_name: str, 
+                         table_name: str, column_name: str, 
+                         entity_name: str, logger) -> str:
     try:
-        entity_count = dbdao.get_distinct_count(table_name, column_name)
+        entity_count = dbdao.get_distinct_count(schema_name, table_name, column_name)
     except Exception as e:
         error_msg = f"Error retrieving '{entity_name}'"
         logger.error(f"{error_msg}: {e}")
@@ -85,12 +86,13 @@ def get_entity_count_str(dbdao: DBDao, table_name: str,
 def update_entity_distinct_count(portal_server_api,
                                  dataset_id: str,
                                  dbdao: DBDao, 
+                                 schema_name: str,
                                  table_name: str, 
                                  column_name: str, 
                                  entity_name: str, 
                                  logger) -> str:
     try:
-        entity_distinct_count: str = get_entity_count_str(dbdao, table_name, column_name, entity_name, logger)
+        entity_distinct_count: str = get_entity_count_str(dbdao, schema_name, table_name, column_name, entity_name, logger)
         portal_server_api.update_dataset_attributes_table(dataset_id, entity_name, entity_distinct_count)
     except Exception as e:
         logger.error(f"Failed to update attribute '{entity_name}' for dataset id '{dataset_id}' with value '{entity_distinct_count}' : {e}")
@@ -132,9 +134,10 @@ def get_total_entity_count(entity_count_distribution: dict, logger) -> str:
 def update_entity_count_distribution(portal_server_api,
                                      dataset_id: str, 
                                      dbdao: DBDao, 
+                                     schema_name: str,
                                      logger) -> EntityCountDistributionType:
     try:
-        entity_count_distribution = get_entity_count_distribution(dbdao, logger)
+        entity_count_distribution = get_entity_count_distribution(dbdao, schema_name, logger)
         portal_server_api.update_dataset_attributes_table(dataset_id, 'entity_count_distribution', json.dumps(entity_count_distribution))
     except Exception as e:
         logger.error(f"Failed to update attribute 'entity_count_distribution' for dataset '{dataset_id}' with value '{json.dumps(entity_count_distribution)}': {e}")
@@ -143,12 +146,12 @@ def update_entity_count_distribution(portal_server_api,
     return entity_count_distribution
 
 
-def get_entity_count_distribution(dbdao, logger) -> EntityCountDistributionType:
+def get_entity_count_distribution(dbdao, schema: str, logger) -> EntityCountDistributionType:
     entity_count_distribution = {}
     # retrieve count for each entity table
     for table, unique_id_column in OMOP_NON_PERSON_ENTITIES.items():
         try:
-            entity_count = dbdao.get_distinct_count(table, unique_id_column)
+            entity_count = dbdao.get_distinct_count(schema, table, unique_id_column)
         except Exception as e:
             logger.error(f"Error retrieving entity count for {table}: {e}")
             entity_count = "error"

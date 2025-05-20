@@ -4,6 +4,7 @@ import QueryObject = qo.QueryObject;
 import { Literal } from "./Literal";
 import { Property } from "./Property";
 import { sqlFormat } from "@alp/alp-base-utils";
+import { env } from "../../env";
 
 export class Operator extends AstElement {
     constructor(
@@ -202,7 +203,9 @@ export class Operator extends AstElement {
                         IDCompare = true;
                     }
                 });
-
+                if (env.USE_LIKE_SEARCH === "true") {
+                    this.op = "LIKE"
+                }
                 return QueryObject.format(
                     "(%Q)",
                     QueryObject.format(" " + this.op + " ").join(

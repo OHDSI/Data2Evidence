@@ -28,11 +28,21 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
-  const extractJupyterKernel = `\n# %% [esm]
-  import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
-  a.plugin.register(1, {
+  const setupPYQE = `\n#%% [python]
+import os
+import micropip
+await micropip.install('ssl')
+await micropip.install('pyjwt==2.9.0')
+await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
+os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
+os.environ['TOKEN'] = '${jwtToken}'
+os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
+
+  const extractJupyterKernel = `\n#%% [esm]
+import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
+a.plugin.register(1, {
     serverSettings: {
-      baseUrl: "${uiFilesUrl}/jupyter",
+      baseUrl: "${uiFilesUrl}jupyter",
       token: "${jwtToken}",
       appendToken: true,
       init: {
@@ -45,8 +55,8 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
     )`;
 
   const initialiseJupyterKernel = `\n# %% [jupyter]
-  Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
-  Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
+Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
+Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
   `;
 
   const [runtime, setRuntime] = useState<StarboardEmbed>();
@@ -62,13 +72,14 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
     const token = await getAuthToken(false);
     return `Bearer ${token}`;
   }, []);
+
   useEffect(() => {
     const fetchToken = async () => {
       const bearerToken = await getBearerToken();
       setToken(bearerToken);
     };
     fetchToken();
-  }, []);
+  }, [getBearerToken]);
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -93,7 +104,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         setLoading(false);
       }
     },
-    [setFeedback, getText, updateActiveNotebook]
+    [setFeedback, getText, updateActiveNotebook, activeDatasetId]
   );
 
   useEffect(() => {
@@ -106,7 +117,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-      notebookContent += extractJupyterKernel + initialiseJupyterKernel;
+      notebookContent += setupPYQE + extractJupyterKernel + initialiseJupyterKernel;
 
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
@@ -152,7 +163,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
         message: getText(i18nKeys.STARBOARD__ERROR_CREATE),
       });
     }
-  }, [fetchNotebooks, updateActiveNotebook, setFeedback, getText]);
+  }, [fetchNotebooks, updateActiveNotebook, setFeedback, getText, activeDatasetId]);
 
   // Check Jupyter Notebook Name if it exist in the database
   const checkNotebookName = async (name: string) => {

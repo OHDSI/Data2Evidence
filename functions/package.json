@@ -65,6 +65,11 @@
           "function": "/white-rabbit/src/init",
           "imports": "/white-rabbit/import.json",
           "env": "white-rabbit"
+        },
+        {
+          "function": "/supabase/src/init",
+          "imports": "/supabase/import.json",
+          "env": "supabase-storage"
         }
       ],
       "api": [
@@ -120,6 +125,12 @@
           "function": "/code-suggestion",
           "imports": "/code-suggestion/import.json",
           "env": "code-suggestion"
+        },
+        {
+          "source": "/data-mapping",
+          "function": "/data-mapping",
+          "imports": "/data-mapping/import.json",
+          "env": "data-mapping"
         },
         {
           "source": "/analytics-svc/api/services/bookmark",
@@ -188,11 +199,6 @@
         {
           "source": "/api",
           "service": "logto"
-        },
-        {
-          "source" : "/jupyter",
-          "service":  "jupyter",
-          "rmsrc": true
         },
         {
           "source": "/oidc",
@@ -300,13 +306,16 @@
           "PAConfig.ui",
           "PAConfig.i18n",
           "PAConfig.svc",
+          "PAConfig.svc/read",
           "PSConfig.svc",
           "CDWConfig.ui",
           "CDWConfig.svc",
+          "CDWConfig.svc/read",
           "ConfigAssignment.ui",
           "ConfigAssignment.svc",
           "jobplugins",
           "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
           "usermgmt.dataAdmin.read",
           "usermgmt.group.read",
           "usermgmt.me",
@@ -412,6 +421,7 @@
           "prefect.update",
           "conceptmapping.read",
           "conceptmapping.post",
+          "datamapping.post",
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
@@ -486,6 +496,7 @@
           "portal.userArtifact.atlasCohortDefinitions.write",
           "portal.userArtifact.atlasCohortDefinitions.delete",
           "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
           "d2e.webapi",
           "jupyter",
           "usermgmt.me.jupyter"
@@ -508,6 +519,11 @@
           "filesmanager.post",
           "filesmanager.delete",
           "whiteRabbit.post"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "rD2E.jupyter.kernel.flowRun.add",
+          "dataflowmgmt.dqd.dataQuality.flowRun.add",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
       },
       "scopes": [
@@ -569,6 +585,24 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/(data-characterization|data-quality)/cohort/[a-zA-Z0-9]+/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.execute"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
@@ -637,7 +671,6 @@
         {
           "path": "^/pa-config-svc/enduser(.*)",
           "scopes": [
-            "PAConfig.svc",
             "PAConfig.svc/read"
           ]
         },
@@ -656,8 +689,7 @@
         {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
-            "CDWConfig.svc/read",
-            "CDWConfig.svc"
+            "CDWConfig.svc/read"
           ],
           "httpMethods": [
             "GET"
@@ -1684,10 +1716,12 @@
         {
           "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
           "scopes": [
-            "jupyter",
+            "rD2E.jupyter.kernel.flowRun.add",
             "portal.dataset.read"
           ],
-          "httpMethods": ["POST"]
+          "httpMethods": [
+            "POST"
+          ]
         },
         {
           "path": "^/dataflow-mgmt/prefect/flow$",
@@ -1828,6 +1862,7 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
           "scopes": [
+            "portal.dataset.resource.read",
             "dataflowmgmt.dqd.dataQuality.flowRun.add"
           ],
           "httpMethods": [
@@ -1891,7 +1926,8 @@
         {
           "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
           "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
+            "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
+            "portal.dataset.read"
           ],
           "httpMethods": [
             "POST"
@@ -2236,6 +2272,15 @@
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/data-mapping",
+          "scopes": [
+            "datamapping.post"
           ],
           "httpMethods": [
             "POST"

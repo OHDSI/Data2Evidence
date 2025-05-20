@@ -15,6 +15,7 @@ import {
   DatasetDialects,
   IConceptHierarchy,
   DatasetDB,
+  HybridSearchConfig,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
@@ -26,12 +27,33 @@ export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
   private readonly datasetDB: DatasetDB;
-  private semanticRatio: number;
+  private readonly hybridSearchConfig: HybridSearchConfig;
 
-  constructor(request: Request, datasetDB?: DatasetDB) {
+  constructor(request: Request, datasetDB: DatasetDB, hybridSearchConfig: HybridSearchConfig) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
     this.datasetDB = datasetDB;
+    this.hybridSearchConfig = hybridSearchConfig;
+  }
+
+  /*
+  Initialize in an optimal way
+  */
+  public static async createCacheDBService(request: Request, datasetId: string): CachedbService {
+    const systemPortalApi = new SystemPortalAPI(request);
+    const getDatasetDetails = async () => {
+      const datasetDB = {
+        ...(await systemPortalApi.getDatasetDetails(datasetId)),
+        datasetId,
+      }
+      return datasetDB
+    }
+    const getHybridSearch = async () => {
+      const hybridSearchConfigData = await systemPortalApi.getHybridSearchConfig();
+      return JSON.parse(hybridSearchConfigData.value)
+    }
+    const [datasetDB, hybridSearchConfig] = await Promise.all([getDatasetDetails(), getHybridSearch()])
+    return new CachedbService(request, datasetDB, hybridSearchConfig)
   }
 
   /*
@@ -40,25 +62,26 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode } =
-      this.datasetDB ??
-      (await this.systemPortalApi.getDatasetDetails(datasetId));
-    const hybridSearchConfig =
-      await this.systemPortalApi.getHybridSearchConfig();
-    const enableSemantic = JSON.parse(hybridSearchConfig.value).isEnabled;
-    this.semanticRatio = enableSemantic
-      ? parseFloat(JSON.parse(hybridSearchConfig.value).semanticRatio)
-      : 0;
+    const { dialect, vocabSchemaName, databaseCode, schemaName } = this.datasetDB;
     if (dialect === DatasetDialects.HANA) {
-      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
+        return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
+    if (this.hybridSearchConfig == undefined) {
+      throw new Error("hybridSearchConfig undefined!")
+    }
+    const enableSemantic = this.hybridSearchConfig.isEnabled;
+    const semanticRatio = enableSemantic
+      ? parseFloat(this.hybridSearchConfig.semanticRatio)
+      : 0;
 
     // By default return CachedbDAO
     return new CachedbDAO(
       this.token,
       datasetId,
       vocabSchemaName,
-      this.semanticRatio
+      semanticRatio,
+      databaseCode,
+      schemaName
     );
   }
 
@@ -379,10 +402,18 @@ export class CachedbService {
       code: item.concept_code,
       // The date is stored as seconds from epoch, but new Date() expects ms
       validStartDate: item.valid_start_date
-        ? new Date(item.valid_start_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_start_date * 1000
+              : item.valid_start_date
+          ).toISOString()
         : new Date(0).toISOString(),
       validEndDate: item.valid_end_date
-        ? new Date(item.valid_end_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_end_date * 1000
+              : item.valid_end_date
+          ).toISOString()
         : "",
       validity,
       score: item.score,

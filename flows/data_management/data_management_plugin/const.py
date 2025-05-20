@@ -25,9 +25,9 @@ def get_db_dialect(options):
         return options.dialect
 
 
-def check_table_case(dao_obj: DBDao) -> bool:
+def check_table_case(dao_obj: DBDao, schema_name: str) -> bool:
     # works only for omop, omop5-4 data models
-    table_names = dao_obj.get_table_names()
+    table_names = dao_obj.get_table_names(schema_name)
     if 'person' in table_names:
         return True
     elif 'PERSON' in table_names:

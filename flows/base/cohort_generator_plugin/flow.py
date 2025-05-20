@@ -2,8 +2,6 @@ import json
 from rpy2 import robjects
 
 from prefect import flow, task
-from prefect.variables import Variable
-from prefect_shell import ShellOperation
 from prefect.logging import get_run_logger
 
 from .types import CohortGeneratorOptionsType
@@ -17,7 +15,7 @@ from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
 def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     logger = get_run_logger()
     logger.info('Running Cohort Generator')
-        
+
     database_code = options.databaseCode
     schema_name = options.schemaName
     vocab_schema_name = options.vocabSchemaName
@@ -28,11 +26,10 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     cohort_definition_id = options.cohortDefinitionId
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  schema_name=schema_name)
-    
+                  database_code=database_code)
+
     analytics_svc_api = AnalyticsSvcAPI()
-    
+
     cohort_json_expression = json.dumps(cohort_json.expression)
     cohort_name = cohort_json.name
 
@@ -51,11 +48,12 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
                   schema_name,
                   cohort_definition_id,
                   cohort_json_expression,
-                  cohort_name, 
+                  cohort_name,
                   vocab_schema_name)
-    
+
+
 @task(log_prints=True)
-def create_cohort_definition(analytics_svc_api, dataset_id: str, description: str, 
+def create_cohort_definition(analytics_svc_api, dataset_id: str, description: str,
                              cohort_json_expression: str, cohort_name: str):
 
     result = analytics_svc_api.create_cohort_definition(
@@ -68,16 +66,15 @@ def create_cohort_definition(analytics_svc_api, dataset_id: str, description: st
 
 
 @task(log_prints=True)
-def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int, 
+def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int,
                   cohort_json_expression: str, cohort_name: str, vocab_schema_name: str):
-    
+
     set_db_driver_env_string = dbdao.set_db_driver_env()
-    
+
     set_connection_string = dbdao.get_database_connector_connection_string(
         user_type=admin_user
     )
-   
-    
+
     with robjects.conversion.localconverter(robjects.default_converter):
         robjects.r(f'''
                 library('CohortGenerator')
@@ -87,7 +84,7 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
                 schemaName <- '{schema_name}'
                 vocabSchemaName <- '{vocab_schema_name}'
                 cohortName <- '{cohort_name}'
-                cohortId <- '{cohort_definition_id}'
+                cohortId <- {cohort_definition_id}
                 
                 cat("Generating cohort sql from cohort expression from json")
                 cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)

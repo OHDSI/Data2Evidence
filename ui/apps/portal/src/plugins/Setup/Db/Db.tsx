@@ -18,13 +18,13 @@ import {
   TrashIcon,
 } from "@portal/components";
 import { useDatabases, useDialogHelper } from "../../../hooks";
-import { CloseDialogType, IDatabase } from "../../../types";
+import { CloseDialogType, DB_DIALECTS, IDatabase } from "../../../types";
 import { SaveDbDialog } from "./SaveDbDialog/SaveDbDialog";
 import { EditDbCredentialsDialog } from "./EditDbCredentialsDialog/EditDbCredentialsDialog";
 import { DeleteDbDialog } from "./DeleteDbDialog/DeleteDbDialog";
 import { EditDbDetailsDialog } from "./EditDbDetailsDialog/EditDbDetailsDialog";
-import "./Db.scss";
 import { useTranslation } from "../../../contexts";
+import "./Db.scss";
 
 const styles: SxProps = {
   color: "#000080",
@@ -177,7 +177,7 @@ export const Db: FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{getText(i18nKeys.DB__CODE)}</TableCell>
+              <TableCell>{getText(i18nKeys.DB__ID)}</TableCell>
               <TableCell>{getText(i18nKeys.DB__NAME)}</TableCell>
               <TableCell>{getText(i18nKeys.DB__HOST)}</TableCell>
               <TableCell>{getText(i18nKeys.DB__PORT)}</TableCell>
@@ -210,11 +210,15 @@ export const Db: FC = () => {
                         sx={styles}
                         renderValue={(value) => (value ? value : getText(i18nKeys.DB__EDIT))}
                       >
-                        {actionsList.map((action: Action) => (
-                          <MenuItem value={action.value} key={action.name} sx={styles} disableRipple>
-                            {action.name}
-                          </MenuItem>
-                        ))}
+                        {actionsList
+                          .filter((action: Action) =>
+                            db.dialect === DB_DIALECTS.BIG_QUERY ? action.value !== "credentials" : true
+                          )
+                          .map((action: Action) => (
+                            <MenuItem value={action.value} key={action.name} sx={styles} disableRipple>
+                              {action.name}
+                            </MenuItem>
+                          ))}
                       </Select>
                     </FormControl>
                     <IconButton
