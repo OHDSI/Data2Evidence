@@ -1,6 +1,6 @@
 
 
-#' Start running the Strategus flow in D2E 
+#' Start running the Strategus flow in D2E
 #'
 #' This function creates a flow run in Prefect in D2E.
 #' Internally the flow run starts a network study analysis on the given dataset
