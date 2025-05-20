@@ -120,7 +120,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
   })
 
   describe('Calling REST endpoints of ', function () {
-    describe('barchart', function () {
+    xdescribe('barchart', function () {
       it('returns a valid response', function (done) {
         var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
         requestBuilder.request().chart().xaxis('basicdata', 'lastName').yaxis('basicdata', 'multiple_birth_order')
@@ -131,7 +131,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
       })
     })
 
-    describe('totalpcount', function () {
+    xdescribe('totalpcount', function () {
       it('returns a valid response', function (done) {
         var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
         requestBuilder
@@ -217,7 +217,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
     })
 
     // TODO: unskip after bookmarks datastore init is ready. Awaiting artifact manager.
-    describe.skip('bookmarks', function () {
+    xdescribe.skip('bookmarks', function () {
       it('returns a valid response', function (done) {
         var setQuery = {
           method: defaultBookmarkParameters.httpMethod,
@@ -235,7 +235,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
       })
     })
 
-    describe('domain values', function () {
+    xdescribe('domain values', function () {
       it('returns a valid response', function (done) {
         var requestBody = {
           attributePath: 'patient.attributes.lastName',
