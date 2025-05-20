@@ -869,6 +869,8 @@ services:
       test:
         - CMD
         - wget
+        - --proxy
+        - off
         - -O
         - logto.status
         - http://localhost:3001/api/status
@@ -1215,6 +1217,7 @@ services:
       test:
         - CMD
         - wget
+        - --no-proxy
         - -O
         - fhir.status
         - http://localhost:8103/healthcheck
