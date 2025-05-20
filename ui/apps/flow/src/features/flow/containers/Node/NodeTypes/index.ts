@@ -6,11 +6,9 @@ import { PythonNode } from "./PythonNode/PythonNode";
 import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
 import { RNode } from "./RNode/RNode";
-import { StrategusNode } from "./StrategusNode/StrategusNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
-import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { GroupNode } from "./GroupNode/GroupNode";
 import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
 
@@ -21,9 +19,7 @@ export const NODE_TYPES: {
   python_notebook_node: PythonNotebookNode,
   py2table_node: Py2TableNode,
   r_node: RNode,
-  strategus: StrategusNode,
   sql_node: SqlNode,
-  data_mapping_node: DataMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
@@ -37,9 +33,7 @@ export const NODE_COLORS: {
   python_notebook_node: "#999fcb",
   py2table_node: "#999fcb",
   r_node: "#999fcb",
-  strategus: "#999fcb",
   sql_node: "#999fcb",
-  data_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
@@ -83,23 +77,10 @@ test_exec <- function(myinput) {
 }`,
     },
   },
-  strategus: {
-    title: "Strategus",
-    description: "JSON analysis specification for executing HADES modules",
-    tag: NodeTag.Experimental,
-    defaultData: {},
-  },
   sql_node: {
     title: "SQL",
     description: "Run SQL in a database",
     tag: NodeTag.Stable,
-    defaultData: {},
-  },
-  data_mapping_node: {
-    title: "Data mapping",
-    description:
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium.",
-    tag: NodeTag.Experimental,
     defaultData: {},
   },
   csv_node: {
