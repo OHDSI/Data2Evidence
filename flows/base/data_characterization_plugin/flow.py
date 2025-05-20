@@ -131,16 +131,16 @@ def create_data_characterization_schema(vocab_schema_name: str,
                          )
 
         # task
-        enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
+        # enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
+        #     on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
 
-        enable_audit_policies_wo(results_schema_dao, results_schema)
+        # enable_audit_policies_wo(results_schema_dao, results_schema)
 
-        # task
-        create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
+        # # task
+        # create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
+        #     on_failure=[partial(drop_schema_hook, **dict(dbdao=results_schema_dao, schema=results_schema))])
 
-        create_and_assign_roles_wo(results_schema_dao, results_schema)
+        # create_and_assign_roles_wo(results_schema_dao, results_schema)
 
         logger.info(
             f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
