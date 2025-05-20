@@ -6,6 +6,14 @@ import { env } from "../../env";
 import { CreateBlobData1733383345129} from "./migrations/1733383345129-create-blob-data"
 import { CreateUserData1733383366413 } from "./migrations/1733383366413-create-user-data";
 
+let ssl = JSON.parse(env.PG__SSL.toLowerCase());
+if (env.PG__CA_ROOT_CERT) {
+  ssl = {
+    rejectUnauthorized: true,
+    ca: env.PG__CA_ROOT_CERT,
+  };
+}
+
 export const migrationDataSourceOptions: DataSourceOptions = {
   type: "postgres",
   host: env.PG__HOST,
@@ -14,6 +22,7 @@ export const migrationDataSourceOptions: DataSourceOptions = {
   password: env.PG_ADMIN_PASSWORD,
   database: env.PG__DB_NAME,
   schema: env.PG_SCHEMA,
+  ssl,
   logging: getLogLevels(),
   entities: [UserData, BlobData],
   migrations: [CreateBlobData1733383345129, CreateUserData1733383366413],

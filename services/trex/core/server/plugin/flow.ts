@@ -13,6 +13,7 @@ export async function addPlugin(value: any) {
 			logger.log(`waiting for creation of worker pool ...`)
 			await new Promise(resolve => setTimeout(resolve, 3000));
 		}
+		const custom_image_repo_config = env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG;
 		if(value.flows)
 			value.flows.forEach(async (f: any) => {
 				const res = await fetch(`${env.PREFECT_API_URL}/flows/`, {
@@ -30,6 +31,21 @@ export async function addPlugin(value: any) {
 
 				} else {
 					const jres = await res.json();
+					const getFinalImageName = (valueImage, flowImage) => {
+						let finalImage = flowImage;
+						if (valueImage) {
+							if (custom_image_repo_config.hasOwnProperty("current") && 
+								custom_image_repo_config.hasOwnProperty("new") && 
+								custom_image_repo_config["current"] && 
+								custom_image_repo_config["new"]) {
+									finalImage = `${valueImage.replace(custom_image_repo_config["current"], custom_image_repo_config["new"])}:${env.PLUGINS_IMAGE_TAG}`
+							} else {
+								    finalImage = `${valueImage}:${env.PLUGINS_IMAGE_TAG}`
+							}
+						}
+						logger.log(`Final Flow Image ${finalImage}`);
+						return finalImage;
+					}
 					const body: any = {
 						name: f.name,
 						flow_id: jres.id,
@@ -38,7 +54,7 @@ export async function addPlugin(value: any) {
 						entrypoint: f.entrypoint,
 						enforce_parameter_schema: false,
 						job_variables: {
-							image: value.image ? `${value.image}:${env.PLUGINS_IMAGE_TAG}` : f.image,
+							image: getFinalImageName(value.image, f.image),
 							image_pull_policy: env.PLUGINS_PULL_POLICY,
 							volumes: env.PREFECT_DOCKER_VOLUMES,
 							networks: [env.PREFECT_DOCKER_NETWORK]

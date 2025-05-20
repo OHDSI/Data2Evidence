@@ -28,17 +28,33 @@ export class CohortSurvival {
     outcomeCohortId,
     competingOutcomeCohortId,
     analysisType,
+    strata1,
+    strata2,
+    strata3,
   }: {
     targetCohortId: number;
     outcomeCohortId: number;
     competingOutcomeCohortId?: number;
     analysisType?: "single_event" | "competing_risk";
+    strata1?: { id: number; name: string };
+    strata2?: { id: number; name: string };
+    strata3?: { id: number; name: string };
   }): Promise<{ flowRunId: string }> {
+    const strataCohorts = [strata1, strata2, strata3].filter(Boolean) as {
+      id: number;
+      name: string;
+    }[];
     return request({
       baseURL: MRI_BASE_URL,
       url: `/api/services/kaplan-meier`,
       method: "POST",
-      data: { targetCohortId, outcomeCohortId, competingOutcomeCohortId, analysisType },
+      data: {
+        targetCohortId,
+        outcomeCohortId,
+        competingOutcomeCohortId,
+        analysisType,
+        strataCohorts,
+      },
       params: { datasetId: this.datasetId },
     });
   }

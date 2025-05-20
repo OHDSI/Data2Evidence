@@ -11,8 +11,9 @@ interface CohortSelectorProps {
   cohortTableName: string;
   cohortList: CohortMapping[];
   cohortId: number | null;
-  setCohortId: (cohortId: number) => void;
+  setCohortId: (cohortId: number | null) => void;
   disabled: boolean;
+  allowClear?: boolean;
 }
 
 const styles: SxProps = {
@@ -38,12 +39,23 @@ const styles: SxProps = {
   },
 };
 
-const CohortSelector: FC<CohortSelectorProps> = ({ cohortTableName, cohortList, cohortId, setCohortId, disabled }) => {
+const CohortSelector: FC<CohortSelectorProps> = ({
+  cohortTableName,
+  cohortList,
+  cohortId,
+  setCohortId,
+  disabled,
+  allowClear = false,
+}) => {
   const { getText, i18nKeys } = useTranslation();
 
   const handleCohortSelection = (event: SelectChangeEvent) => {
-    const cohortId = event.target.value;
-    setCohortId(Number(cohortId));
+    const value = event.target.value;
+    if (value === "") {
+      setCohortId(null);
+    } else {
+      setCohortId(Number(value));
+    }
   };
 
   return (
@@ -56,6 +68,11 @@ const CohortSelector: FC<CohortSelectorProps> = ({ cohortTableName, cohortList, 
         onChange={handleCohortSelection}
         label={getText(i18nKeys.DATASET_SELECTOR__SELECT_STUDY)}
       >
+        {allowClear && (
+          <MenuItem value="" sx={styles} disableRipple>
+            <em>None</em>
+          </MenuItem>
+        )}
         {cohortList.map((cohort: CohortMapping) => (
           <MenuItem value={cohort.id} key={cohort.id} sx={styles} disableRipple>
             #{cohort.id} - {cohort.name} ({cohort.patientCount})

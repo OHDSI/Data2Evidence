@@ -14,6 +14,7 @@ import {
 } from "~/features/flow/slices";
 import { selectFlowNodes } from "~/features/flow/selectors";
 import {
+  clearNodesResult,
   selectEdges,
   setFlowRunState,
   setSaveFlowDialog,
@@ -71,6 +72,8 @@ export const RunFlowButton: FC = () => {
   }, [flowRunId]);
 
   const runFlow = useCallback(async () => {
+    dispatch(clearNodesResult());
+
     if (isTestMode) {
       const body = { dataflow: { nodes, edges } };
       await runTestDataflow(body);
@@ -86,7 +89,7 @@ export const RunFlowButton: FC = () => {
     } else {
       await runFlow();
     }
-  }, [dataflowId, runFlow]);
+  }, [dataflowId, runFlow, status]);
 
   const handleCancel = useCallback(async () => {
     await cancelFlowRun(flowRunId);

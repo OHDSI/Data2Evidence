@@ -29,7 +29,8 @@ export const getConcepts = async (
 
     const pageNumber = Math.floor(offset / rowsPerPage);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
+    
     const concepts = await cachedbService.getConcepts(
       pageNumber,
       Number(rowsPerPage),
@@ -55,7 +56,7 @@ export const searchConceptByName = async (
       body: { datasetId, conceptName },
     } = schemas.searchConceptByName.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptName,
       datasetId,
@@ -79,7 +80,7 @@ export const searchConceptById = async (
       body: { datasetId, conceptId },
     } = schemas.searchConceptById.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptId,
       datasetId,
@@ -103,7 +104,7 @@ export const searchConceptByCode = async (
       body: { datasetId, conceptCode },
     } = schemas.searchConceptByCode.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptCode,
       datasetId,
@@ -127,7 +128,7 @@ export const getRecommendedConcepts = async (
       body: { datasetId, conceptIds },
     } = schemas.getRecommendedConcepts.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getRecommendedConcepts(
       conceptIds,
       datasetId
@@ -150,7 +151,7 @@ export const getConceptFilterOptions = async (
       query: { datasetId, searchText, filter },
     } = schemas.getConceptFilterOptions.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const filterOptions = await cachedbService.getConceptFilterOptionsFaceted(
       datasetId,
       searchText,
@@ -173,7 +174,7 @@ export const getTerminologyDetailsWithRelationships = async (
     const {
       query: { datasetId, conceptId },
     } = schemas.getTerminologyDetailsWithRelationships.parse(req);
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const details = await cachedbService.getTerminologyDetailsWithRelationships(
       conceptId,
       datasetId
@@ -193,7 +194,7 @@ export const getConceptHierarchy = async (
     const {
       query: { datasetId, conceptId, depth },
     } = schemas.getConceptHierarchy.parse(req);
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
 
     const promises = [
       // Get first level descendants of concept
@@ -256,8 +257,8 @@ export const getStandardConcepts = async (
         };
 
         try {
+          const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
           if (domainId) {
-            const cachedbService = new CachedbService(req);
             const domainIdFacets = (
               await cachedbService.getConceptFilterOptionsFaceted(
                 datasetId,
@@ -275,7 +276,6 @@ export const getStandardConcepts = async (
             }
           }
 
-          const cachedbService = new CachedbService(req);
           const concepts = await cachedbService.getConcepts(
             0,
             1,
