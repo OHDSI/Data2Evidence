@@ -1089,7 +1089,6 @@ services:
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
-      #- ./scripts/always-initdb.d/change-password.sql:/docker-entrypoint-initdb.d/change-password.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -1097,26 +1096,6 @@ services:
       retries: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [demodb]
-
-  # demodb-post-init:
-  #   container_name: ${PROJECT_NAME:-d2e}-demodb-post-init-1
-  #   depends_on:
-  #     demodb:
-  #       condition: service_healthy
-  #   image: postgres:16-alpine
-  #   networks:
-  #     alp:
-  #       priority: 20
-  #   platform: linux/amd64
-  #   environment:
-  #     PGHOST: demodb
-  #     PGPORT: 5432
-  #     PGDATABASE: postgres
-  #     PGUSER: postgres
-  #     POSTGRES_PASSWORD: mypass
-  #   volumes:
-  #     - ./scripts/always-initdb.d/change-password.sql:/docker-entrypoint-initdb.d/change-password.sql
-  #   profiles: [demodb]
 
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD}
