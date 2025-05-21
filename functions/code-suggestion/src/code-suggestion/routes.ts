@@ -1,4 +1,4 @@
-import { getCodeSuggestion } from "./services";
+import { getCodeSuggestion, getChatResponse } from "./services";
 import express, { Request, Response } from "express";
 import { env } from "../env";
 
@@ -11,7 +11,7 @@ export class CodeSuggestionRouter {
   }
 
   private registerRoutes() {
-    this.router.post("/", async (req: Request, res: Response) => {
+    this.router.post("/code", async (req: Request, res: Response) => {
       req.body.model = AI_MODEL;
       let [rst, status] = await getCodeSuggestion(req.body);
 
@@ -51,6 +51,20 @@ export class CodeSuggestionRouter {
         res.status(200).json({
           error: true,
           message: "Cannot fetch code suggestion",
+          details: rst,
+        });
+      }
+    });
+
+    this.router.post("/chat", async (req: Request, res: Response) => {
+      req.body.model = AI_MODEL;
+      let [rst, status] = await getChatResponse(req.body);
+      if (status === "200") {
+        res.status(200).json(rst);
+      } else if (status === "500") {
+        res.status(200).json({
+          error: true,
+          message: "Cannot fetch chat response",
           details: rst,
         });
       }
