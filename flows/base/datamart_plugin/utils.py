@@ -104,7 +104,7 @@ def get_schema_version(dbdao, schema:str, cdm_version, logger) -> str:
             latest_executed_changeset = dbdao.get_last_executed_changeset(schema)
             current_schema_version = extract_version(latest_executed_changeset)
         else:
-            # copied schema from use omop cdm plugin
+            # copied schema from omop cdm plugin
             current_schema_version = RELEASE_VERSION_MAPPING.get(cdm_version)
             
     except Exception as e:
