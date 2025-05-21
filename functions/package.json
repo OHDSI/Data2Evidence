@@ -2268,7 +2268,17 @@
           ]
         },
         {
-          "path": "^/code-suggestion",
+          "path": "^/code-suggestion/code",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/code-suggestion/chat",
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"
