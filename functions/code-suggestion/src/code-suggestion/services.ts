@@ -5,6 +5,7 @@ import {
   AIMessage,
 } from "@langchain/core/messages";
 import { getModels } from "../utils/prepModels";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -72,9 +73,17 @@ export const getChatResponse = async (uiChat: ChatSnippet) => {
       new HumanMessage(uiChat.userInput),
       new AIMessage(uiChat.AIResponse),
     ];
-    const response = await model.invoke(messages);
-    const codeSuggest = response.content;
-    return [codeSuggest, "200"];
+
+    // streaming
+    const outputParser = new StringOutputParser();
+    const streamingChain = model.pipe(outputParser);
+    const stream = await streamingChain.stream(messages);
+
+    // // one-shot response
+    // const response = await model.invoke(messages);
+
+    // const codeSuggest = response.content;
+    return [stream, "200"];
   } catch (error) {
     return [error, "500"];
   }

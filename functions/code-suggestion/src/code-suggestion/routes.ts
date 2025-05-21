@@ -58,14 +58,22 @@ export class CodeSuggestionRouter {
 
     this.router.post("/chat", async (req: Request, res: Response) => {
       req.body.model = AI_MODEL;
-      let [rst, status] = await getChatResponse(req.body);
+      let [stream, status] = await getChatResponse(req.body);
+      for await (const chunk of stream) {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        // Flush the data immediately
+        res.flush();
+
+        console.log("llmchunk:", chunk); // Log each chunk to console
+        // Send chunks to a UI component
+        // updateUI(chunk);
+      }
       if (status === "200") {
-        res.status(200).json(rst);
+        res.status(200);
       } else if (status === "500") {
         res.status(200).json({
           error: true,
           message: "Cannot fetch chat response",
-          details: rst,
         });
       }
     });
