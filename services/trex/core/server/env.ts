@@ -76,7 +76,7 @@ export const env = {
     PREFECT_POOL: "docker-pool",
     SERVICE_ENV: _env.SERVICE_ENV ? JSON.parse(_env.SERVICE_ENV) : {},
     CADDY__ALP__PUBLIC_FQDN: _env.CADDY__ALP__PUBLIC_FQDN || 'localhost',
-    PREFECT_HEALTH_CHECK: _env.PREFECT_API_URL,
+    PREFECT_HEALTH_CHECK: `${_env.PREFECT_API_URL}/health`,
   
     PG__DB_NAME: _env.PG__DB_NAME,
     PG__HOST: _env.PG__HOST,
@@ -97,6 +97,6 @@ export const env = {
     PLUGINS_INIT: _env.PLUGINS_SEED? JSON.parse(_env.PLUGINS_SEED) : [],
     PLUGINS_SEED_UPDATE: _env.PLUGINS_SEED_UPDATE ? JSON.parse(_env.PLUGINS_SEED_UPDATE) === true : false,
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
-    PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop' 
-
+    PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop',
+    PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: _env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG ? JSON.parse(_env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG) : {},
 }
