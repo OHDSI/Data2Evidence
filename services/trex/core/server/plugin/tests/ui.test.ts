@@ -1,25 +1,21 @@
 //deno test --no-check --allow-env ./core/server/plugin/ui.test.ts
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { updatePluginJson, mergeChildren, mergePluginItem } from "../ui.ts";
-import { env, global } from "../../env.ts";
 import * as data1 from "./test-data-1.ts";
 import * as data2 from "./test-data-2.ts";
 import * as data3 from "./test-data-3.ts";
 
-// Mock env for testing
-const originalEnv = { ...env };
-const originalGlobal = { ...global };
-
-// Mock env configuration
-Object.defineProperty(env, "CADDY__ALP__PUBLIC_FQDN", { value: "example.com" });
+const deepCopy = (obj: any) => {
+  return JSON.parse(JSON.stringify(obj));
+};
 
 Deno.test({
   name: "updatePluginJson - should add new key-value pairs when key does not exist in plugins",
   fn: () => {
-    const plugins = { existingKey: [{ route: "/route1" }] };
-    const uiPlugins = { newKey: [{ route: "/route2" }] };
+    const existing = { existingKey: [{ route: "/route1" }] };
+    const incoming = { newKey: [{ route: "/route2" }] };
 
-    const result = JSON.parse(updatePluginJson(plugins, uiPlugins));
+    const result = JSON.parse(updatePluginJson(existing, incoming));
 
     assertEquals(result, {
       existingKey: [{ route: "/route1" }],
@@ -31,10 +27,10 @@ Deno.test({
 Deno.test({
   name: "updatePluginJson - should concatenate arrays when key exists in plugins",
   fn: () => {
-    const plugins = { key1: [{ route: "/route1" }] };
-    const uiPlugins = { key1: [{ route: "/route2" }] };
+    const existing = { key1: [{ route: "/route1" }] };
+    const incoming = { key1: [{ route: "/route2" }] };
 
-    const result = JSON.parse(updatePluginJson(plugins, uiPlugins));
+    const result = JSON.parse(updatePluginJson(existing, incoming));
 
     assertEquals(result, {
       key1: [{ route: "/route1" }, { route: "/route2" }],
@@ -45,10 +41,10 @@ Deno.test({
 Deno.test({
   name: "updatePluginJson - should remove duplicates by route when concatenating arrays",
   fn: () => {
-    const plugins = { key1: [{ route: "/route1", name: "first" }] };
-    const uiPlugins = { key1: [{ route: "/route1", name: "second" }] };
+    const existing = { key1: [{ route: "/route1", name: "first" }] };
+    const incoming = { key1: [{ route: "/route1", name: "second" }] };
 
-    const result = JSON.parse(updatePluginJson(plugins, uiPlugins));
+    const result = JSON.parse(updatePluginJson(existing, incoming));
 
     assertEquals(result, {
       key1: [{ route: "/route1", name: "second" }],
@@ -59,16 +55,16 @@ Deno.test({
 Deno.test({
   name: "updatePluginJson - should handle multiple keys and preserve existing keys",
   fn: () => {
-    const plugins = {
+    const existing = {
       key1: [{ route: "/route1" }],
       key2: [{ route: "/route2" }],
     };
-    const uiPlugins = {
+    const incoming = {
       key1: [{ route: "/route3" }],
       key3: [{ route: "/route4" }],
     };
 
-    const result = JSON.parse(updatePluginJson(plugins, uiPlugins));
+    const result = JSON.parse(updatePluginJson(existing, incoming));
 
     assertEquals(result, {
       key1: [{ route: "/route1" }, { route: "/route3" }],
@@ -81,39 +77,32 @@ Deno.test({
 Deno.test({
   name: "updatePluginJson - should replace empty json correctly",
   fn: () => {
-    const { plugins, uiPlugins, expected } = data1;
+    const existing = deepCopy(data1.plugins);
+    const incoming = deepCopy(data1.uiPlugins);
+    const result = updatePluginJson(existing, incoming);
 
-    const result = updatePluginJson(data1.plugins, uiPlugins);
-
-    assertEquals(result, JSON.stringify(expected));
+    assertEquals(result, JSON.stringify(data1.expected));
   },
 });
 
 Deno.test({
   name: "updatePluginJson - should update json correctly when plugin is on first level",
   fn: () => {
-    const plugins = JSON.parse(JSON.stringify(data1.plugins));
-    const uiPlugins = JSON.parse(JSON.stringify(data2.uiPlugins));
-    const result = updatePluginJson(plugins, uiPlugins);
-
+    const existing = deepCopy(data2.plugins);
+    const incoming = deepCopy(data2.uiPlugins);
+    const result = updatePluginJson(existing, incoming);
     assertEquals(result, JSON.stringify(data2.expected));
-    // console.log(result);
-    // console.log("=====================");
-    // console.log(JSON.stringify(data2.expected));
   },
 });
 
 Deno.test({
   name: "updatePluginJson - should update json correctly when plugin is on second level",
   fn: () => {
-    const plugins = JSON.parse(JSON.stringify(data1.plugins));
-    const uiPlugins = JSON.parse(JSON.stringify(data3.uiPlugins));
-    const result = updatePluginJson(plugins, uiPlugins);
+    const existing = deepCopy(data3.plugins);
+    const incoming = deepCopy(data3.uiPlugins);
+    const result = updatePluginJson(existing, incoming);
 
     assertEquals(result, JSON.stringify(data3.expected));
-    // console.log(result);
-    // console.log("=====================");
-    // console.log(JSON.stringify(data2.expected));
   },
 });
 
