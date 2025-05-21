@@ -8,7 +8,6 @@ import { Gateway } from "./gateway";
 import { Translation } from "./translation";
 import { Trex } from "./trex";
 import { Demo } from "./demo";
-import { Chat } from "./chat";
 
 export const api = {
   userMgmt: new UserMgmt(),
@@ -21,5 +20,4 @@ export const api = {
   translation: new Translation(),
   trex: new Trex(),
   demo: new Demo(),
-  chat: new Chat(),
 };
