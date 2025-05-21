@@ -143,7 +143,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
-      REP_PG: postgres://postgres:mypass@demodb:5432/postgres
+      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -394,7 +394,7 @@ services:
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",
             "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": [] }",
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
-            "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
+            "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
           },
           "d2e-webapi": {},
@@ -490,6 +490,7 @@ services:
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
+      DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -1048,12 +1049,27 @@ services:
     image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
-    command:
-      - "postgres"
-      - "-c"
-      - "wal_level=logical"
+    command: >
+      sh -c '
+      set -e;
+      echo "Starting PostgreSQL in background via original docker-entrypoint.sh...";
+      /usr/local/bin/docker-entrypoint.sh postgres -c wal_level=logical &
+      PG_PID=$!;
+      echo "Waiting for PostgreSQL to become ready...";
+        until pg_isready -q -U postgres -h localhost -p 5432; do
+          echo "PostgreSQL is unavailable - sleeping for 1 second...";
+          sleep 1;
+        done;
+      echo "PostgreSQL is ready on localhost:5432.";
+      echo "Attempting to change password for user postgres...";
+      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD}'\'';"
+      echo "Password change command executed.";
+      echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
+      wait $PG_PID;
+      echo "PostgreSQL process (PID $PG_PID) has exited.";
+      exit $?;'
     environment:
-      - POSTGRES_PASSWORD=mypass
+      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD}
     networks:
       alp:
         priority: 20
@@ -1062,12 +1078,34 @@ services:
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
+      #- ./scripts/always-initdb.d/change-password.sql:/docker-entrypoint-initdb.d/change-password.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [demodb]
+
+  # demodb-post-init:
+  #   container_name: ${PROJECT_NAME:-d2e}-demodb-post-init-1
+  #   depends_on:
+  #     demodb:
+  #       condition: service_healthy
+  #   image: postgres:16-alpine
+  #   networks:
+  #     alp:
+  #       priority: 20
+  #   platform: linux/amd64
+  #   environment:
+  #     PGHOST: demodb
+  #     PGPORT: 5432
+  #     PGDATABASE: postgres
+  #     PGUSER: postgres
+  #     POSTGRES_PASSWORD: mypass
+  #   volumes:
+  #     - ./scripts/always-initdb.d/change-password.sql:/docker-entrypoint-initdb.d/change-password.sql
+  #   profiles: [demodb]
 
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD}
