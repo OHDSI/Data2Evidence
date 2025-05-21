@@ -136,7 +136,7 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
-        if [ -n "$services" ]; then
+        if [ -n "$services" ]; then      
             cmd="$cmd $services"
         fi
         echo . $cmd
@@ -232,6 +232,7 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
