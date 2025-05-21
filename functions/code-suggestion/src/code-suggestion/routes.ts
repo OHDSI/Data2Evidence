@@ -57,18 +57,15 @@ export class CodeSuggestionRouter {
     });
 
     this.router.post("/chat", async (req: Request, res: Response) => {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
       req.body.model = AI_MODEL;
       let [stream, status] = await getChatResponse(req.body);
       for await (const chunk of stream) {
-        res.write(`${JSON.stringify(chunk)}`);
-        // Flush the data immediately
-        // res.flush();
-
-        console.log("llmchunk:", chunk); // Log each chunk to console
-        // Send chunks to a UI component
-        // updateUI(chunk);
+        res.write(chunk);
       }
-      res.end("Complete the response");
+      res.end();
       if (status === "200") {
         res.status(200);
       } else if (status === "500") {

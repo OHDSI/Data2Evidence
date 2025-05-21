@@ -62,27 +62,34 @@ export const getChatResponse = async (uiChat: ChatSnippet) => {
   try {
     const rolePrompting =
       "You are an experienced professional in the medical research field, with exceptional expertise in coding and analyzing healthcare data. Your background combines deep knowledge of clinical concepts, medical terminologies, and research methodologies with advanced programming skills. We value our users and our goal is to solve the coding problems for them.";
-    // // streaming:
-    // for chunk in model.stream(messages):
-    //   print(chunk)
 
     // chat history: sys;human(code);AI;human;AI....
+    // // system messsage
+    // const messages = [
+    //   new SystemMessage(rolePrompting),
+    //   new HumanMessage(uiChat.userInput),
+    // ];
+
+    // // chat history
+    // JSON.parse(uiChat.chatHistory).forEach((message) => {
+    //   if (message.role === "user") {
+    //     messages.push(new HumanMessage(message.content));
+    //   } else if (message.role === "assistant") {
+    //     messages.push(new AIMessage(message.content));
+    //   }
+    // });
+
+    // // new user input
+    // messages.push(HumanMessage(uiChat.userInput));
+
     const messages = [
-      // needs to enable chat history
       new SystemMessage(rolePrompting),
       new HumanMessage(uiChat.userInput),
-      new AIMessage(uiChat.AIResponse),
     ];
-
     // streaming
     const outputParser = new StringOutputParser();
     const streamingChain = model.pipe(outputParser);
     const stream = await streamingChain.stream(messages);
-
-    // // one-shot response
-    // const response = await model.invoke(messages);
-
-    // const codeSuggest = response.content;
     return [stream, "200"];
   } catch (error) {
     return [error, "500"];
