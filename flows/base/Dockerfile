@@ -144,6 +144,10 @@ RUN chown -R docker:docker /app/synpuf1k
 RUN mkdir -p /app/vocab
 RUN chown -R docker:docker /app/vocab
 
+# Create folder to store data load CSVs
+RUN mkdir -p /app/data_load
+RUN chown -R docker:docker /app/data_load
+
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
 ENV duckdb_version 1.2.1
