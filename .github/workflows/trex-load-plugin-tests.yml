@@ -1,4 +1,4 @@
-name: Run Authorization Tests
+name: Run Load Plugin Tests
 
 on:
   workflow_dispatch: # Allow manual triggering
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Run Authorization Tests
+    name: Run Load Plugin Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +31,6 @@ jobs:
         with:
           deno-version: v1.43.1
 
-      - name: Run UI Plugin Load Tests
+      - name: Run Load UI Plugin Tests
         working-directory: services/trex
         run: deno test --no-check --allow-env ./core/server/plugin/tests/ui.test.ts
