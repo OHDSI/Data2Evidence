@@ -44,7 +44,7 @@ export function addPlugin(app: Hono, value: any, dir: string) {
       JSON.parse(global.PLUGINS_JSON),
       value.uiplugins
     );
-    console.log(global.PLUGINS_JSON);
+    logger.log(global.PLUGINS_JSON);
   }
 }
 
