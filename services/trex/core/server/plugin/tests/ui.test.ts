@@ -1,8 +1,5 @@
 //deno test --no-check --allow-env ./core/server/plugin/ui.test.ts
-import {
-  assertEquals,
-  assertStringIncludes,
-} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { updatePluginJson, mergeChildren, mergePluginItem } from "../ui.ts";
 import { env, global } from "../../env.ts";
 import * as data1 from "./test-data-1.ts";
