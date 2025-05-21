@@ -60,14 +60,15 @@ export class CodeSuggestionRouter {
       req.body.model = AI_MODEL;
       let [stream, status] = await getChatResponse(req.body);
       for await (const chunk of stream) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        res.write(`${JSON.stringify(chunk)}`);
         // Flush the data immediately
-        res.flush();
+        // res.flush();
 
         console.log("llmchunk:", chunk); // Log each chunk to console
         // Send chunks to a UI component
         // updateUI(chunk);
       }
+      res.end("Complete the response");
       if (status === "200") {
         res.status(200);
       } else if (status === "500") {
