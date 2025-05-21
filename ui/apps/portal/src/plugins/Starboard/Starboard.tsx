@@ -15,7 +15,7 @@ import { getAuthToken } from "../../containers/auth/auth";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
-const codeSuggestionUrl = "code-suggestion";
+const codeSuggestionUrl = "code-suggestion/code";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
