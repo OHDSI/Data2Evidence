@@ -5,6 +5,5 @@ export interface IUICodeSnippet {
 export interface ChatSnippet {
   chatHistory: string;
   userInput: string;
-  AIResponse: string;
   model: string;
 }
