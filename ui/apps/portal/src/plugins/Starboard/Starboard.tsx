@@ -12,6 +12,9 @@ import { i18nKeys } from "../../contexts/app-context/states";
 import env from "../../env";
 import "./Starboard.scss";
 import { getAuthToken } from "../../containers/auth/auth";
+import Fab from "@mui/material/Fab";
+import AssistantIcon from "@mui/icons-material/Assistant";
+import Chat from "../../components/Chat/Chat";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
@@ -19,6 +22,7 @@ const codeSuggestionUrl = "code-suggestion";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
+  const [open, setOpen] = useState(false);
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
@@ -240,7 +244,17 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
       />
       <Card>
         <div id="starboard-root" />
+        <Fab
+          color="primary"
+          aria-label="assistant"
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          <AssistantIcon />
+        </Fab>
       </Card>
+      <Chat open={open} onClose={() => setOpen(false)} datasetId={activeDatasetId} />
     </div>
   );
 };
