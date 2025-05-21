@@ -100,11 +100,11 @@ def get_schema_version(dbdao, schema:str, cdm_version, logger) -> str:
     try:
         liquibase_migration = dbdao.check_table_exists(schema, "databasechangelog")
         if liquibase_migration:
-            # data management plugin
+            # copied schema from data management plugin
             latest_executed_changeset = dbdao.get_last_executed_changeset(schema)
             current_schema_version = extract_version(latest_executed_changeset)
         else:
-            # use omop cdm plugin
+            # copied schema from use omop cdm plugin
             current_schema_version = RELEASE_VERSION_MAPPING.get(cdm_version)
             
     except Exception as e:
