@@ -40,7 +40,6 @@ export function addPlugin(app: Hono, value: any, dir: string) {
     serveStatic({ path: `${dir}resources/portal/index.html` })
   );
   if (value.uiplugins) {
-    const tmp = JSON.parse(global.PLUGINS_JSON);
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),
       value.uiplugins
