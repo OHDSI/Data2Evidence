@@ -31,31 +31,25 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
         const { value, done } = await reader.read();
 
         if (done) {
-          if (buffer) {
-            // Process any remaining data in the buffer
-            observer.next(buffer);
-          }
           break;
         }
 
-        // Decode the chunk and add it to our buffer
         const chunk = textDecoder.decode(value, { stream: true });
         buffer += chunk;
-        console.log("Current buffer:", buffer);
 
-        // process multiple lines first
+        // If we have a newline, process the complete lines
         if (buffer.includes("\n")) {
           const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim()) {
-              // Only process non-empty lines
-              observer.next(line);
+            const trimmedLine = line.trim();
+            if (trimmedLine) {
+              observer.next(trimmedLine);
             }
           }
-        } else if (done) {
-          observer.next(buffer); // process single line in buffer
+        } else {
+          observer.next(buffer);
         }
       }
     } finally {
