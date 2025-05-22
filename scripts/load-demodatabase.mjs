@@ -44,7 +44,7 @@ let database_host = `${project_name}-demodb`; //PostgreSQL container name /or/ e
 let DEMO__DB_CODE = 'demo_database'; //display name
 let DEMO__DB_CDM_SCHEMA = 'demo_cdm';
 let DEMO__DB_USER = 'postgres';
-let DEMO__DB_PASSWORD = `${process.env.DEMO__DB_PASSWORD}`;
+let DEMO__DB_PASSWORD = process.env.PROJECT_NAME? process.env.DEMO__DB_PASSWORD : mypass;
 var db_extra = {"max": 50, "schema":DEMO__DB_CDM_SCHEMA, "queryTimeout":60000,"statementTimeout":60000,"idleTimeoutMillis":300000,"connectionTimeoutMillis":60000,"idleInTransactionSessionTimeout":300000};
 
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
