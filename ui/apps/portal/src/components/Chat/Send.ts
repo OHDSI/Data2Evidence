@@ -2,15 +2,14 @@ import env from "../../env";
 import { StreamSend, StreamingAdapterObserver } from "@nlux/react";
 import fetchRequest from "../../fetch/request";
 
-export const createSend = (datasetId: string): StreamSend => {
+export const createSend = (datasetId: string, context: string): StreamSend => {
   return async (prompt: string, observer: StreamingAdapterObserver) => {
     const response = await fetchRequest(`${env.REACT_APP_DN_BASE_URL}/code-suggestion/chat?datasetId=${datasetId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chatHistory: "",
+        context: context,
         userInput: prompt,
-        AIResponse: "",
       }),
     });
 

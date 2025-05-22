@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useMemo } from "react";
 import { AiChat, useAsStreamAdapter } from "@nlux/react";
 import { Drawer } from "@mui/material";
 import "@nlux/themes/nova.css";
@@ -9,11 +9,15 @@ export interface ChatProps {
   open?: boolean;
   onClose?: () => void;
   datasetId?: string;
+  currentContent: () => any;
 }
 
-const Chat: FC<ChatProps> = ({ open, onClose, datasetId }) => {
-  const send = datasetId ? createSend(datasetId) : noOpSend;
-  const adapter = useAsStreamAdapter(send, [datasetId]);
+const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
+  const send = useMemo(() => {
+    return datasetId ? createSend(datasetId, currentContent()) : noOpSend;
+  }, [datasetId, currentContent]);
+
+  const adapter = useAsStreamAdapter(send, [send]);
 
   if (!datasetId) {
     return null;
