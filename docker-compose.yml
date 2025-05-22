@@ -498,6 +498,7 @@ services:
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
+      PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
 
   alp-minerva-pg-mgmt-init:
@@ -729,8 +730,6 @@ services:
       - "apt-get update && apt-get install -y curl && prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       supabase-storage-post-init:
@@ -782,8 +781,6 @@ services:
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       alp-dataflow-gen:
