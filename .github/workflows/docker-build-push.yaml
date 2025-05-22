@@ -46,6 +46,7 @@ jobs:
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
+      rkernel: ${{ steps.file_changes.outputs.rkernel }}
       jenv: ${{  job.environment }}
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +61,9 @@ jobs:
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
+            rkernel:
+              - "./services/enterprise-gateway/r-strategus-lib/**"
+              - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
 
 
   bld:
@@ -136,6 +140,7 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_arg1: true
+            build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
@@ -215,6 +220,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
+        if: ${{matrix.build_disable == 'true' && 'false' || 'true'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
