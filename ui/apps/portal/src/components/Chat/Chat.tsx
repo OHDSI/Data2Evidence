@@ -1,5 +1,5 @@
 import React, { FC, useMemo } from "react";
-import { AiChat, useAsStreamAdapter } from "@nlux/react";
+import { AiChat, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
 import { Drawer } from "@mui/material";
 import "@nlux/themes/nova.css";
 
@@ -13,6 +13,7 @@ export interface ChatProps {
 }
 
 const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
+  const api = useAiChatApi();
   const send = useMemo(() => {
     return datasetId ? createSend(datasetId, currentContent()) : noOpSend;
   }, [datasetId, currentContent()]);
@@ -34,6 +35,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
       }}
     >
       <AiChat
+        api={api}
         adapter={adapter}
         displayOptions={{ colorScheme: "light" }}
         composerOptions={{ placeholder: "Type your query" }}
