@@ -2,9 +2,9 @@ import { body, param } from "express-validator";
 
 // Validation rules for createProject
 export const validateCreateFhirProjectDto = () => [
-  body("name")
+  body("id")
     .isString()
-    .matches(/^[a-zA-Z0-9_]+$/)
+    .matches(/^[a-zA-Z0-9-]+$/)
     .withMessage(
       "Name must be a string and should only contain letters, numbers, and underscores"
     ),
