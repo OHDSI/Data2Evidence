@@ -1,5 +1,5 @@
 import React, { FC, useMemo, useCallback } from "react";
-import { AiChat, ChatItem, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
+import { AiChat, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
 import { Drawer } from "@mui/material";
 import "@nlux/themes/nova.css";
 

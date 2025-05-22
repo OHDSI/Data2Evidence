@@ -24,21 +24,44 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
 
     const reader = response.body.getReader();
     const textDecoder = new TextDecoder();
+    let buffer = "";
 
-    while (true) {
-      const { value, done } = await reader.read();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
 
-      if (done) {
-        break;
+        if (done) {
+          if (buffer) {
+            // Process any remaining data in the buffer
+            observer.next(buffer);
+          }
+          break;
+        }
+
+        // Decode the chunk and add it to our buffer
+        const chunk = textDecoder.decode(value, { stream: true });
+        buffer += chunk;
+        console.log("Current buffer:", buffer);
+
+        // process multiple lines first
+        if (buffer.includes("\n")) {
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // Keep the last incomplete line in the buffer
+
+          for (const line of lines) {
+            if (line.trim()) {
+              // Only process non-empty lines
+              observer.next(line);
+            }
+          }
+        } else if (done) {
+          observer.next(buffer); // process single line in buffer
+        }
       }
-
-      const content = textDecoder.decode(value);
-      if (content) {
-        observer.next(content);
-      }
+    } finally {
+      reader.releaseLock();
+      observer.complete();
     }
-
-    observer.complete();
   };
 };
 
