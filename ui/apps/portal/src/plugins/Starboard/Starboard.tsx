@@ -215,7 +215,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           <AssistantIcon />
         </Fab>
       </Card>
-      <Chat open={open} onClose={() => setOpen(false)} datasetId={activeDatasetId} />
+      <Chat open={open} onClose={() => setOpen(false)} datasetId={activeDatasetId} currentContent={handleReadContent} />
     </div>
   );
 };
