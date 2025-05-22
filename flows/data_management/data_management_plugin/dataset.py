@@ -6,6 +6,7 @@ from prefect.logging import get_run_logger
 
 from .hooks import *
 from .const import *
+from .liquibase import Liquibase
 from .types import FlowActionType
 
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -339,3 +340,8 @@ def create_cdm_schema_tasks(database_code: str,
                 logger.error(
                     f"Failed to create schema {schema_name} in db with code:{database_code}: {e}")
                 return False
+
+@task(log_prints=True)
+def run_liquibase_update_task(**kwargs):
+    liquibase = Liquibase(**kwargs)
+    liquibase.update_schema()
