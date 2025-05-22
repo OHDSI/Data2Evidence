@@ -15,7 +15,7 @@ export interface ChatProps {
 const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   const send = useMemo(() => {
     return datasetId ? createSend(datasetId, currentContent()) : noOpSend;
-  }, [datasetId, currentContent]);
+  }, [datasetId, currentContent()]);
 
   const adapter = useAsStreamAdapter(send, [send]);
 
