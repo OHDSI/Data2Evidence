@@ -5,6 +5,8 @@ import "@nlux/themes/nova.css";
 
 import { createSend, noOpSend } from "./Send";
 import { useConversationHistory } from "../../contexts";
+import "./Chat.scss";
+
 export interface ChatProps {
   open?: boolean;
   onClose?: () => void;

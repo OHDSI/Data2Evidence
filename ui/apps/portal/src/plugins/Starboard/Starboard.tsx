@@ -211,6 +211,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           onClick={() => {
             setOpen(true);
           }}
+          className="chat-button"
         >
           <AssistantIcon />
         </Fab>
