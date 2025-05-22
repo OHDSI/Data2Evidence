@@ -143,7 +143,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
-      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD}@demodb:5432/postgres
+      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -500,7 +500,6 @@ services:
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
-      DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -1073,13 +1072,13 @@ services:
         done;
       echo "PostgreSQL is ready on localhost:5432.";
       echo "Attempting to change password for user postgres...";
-      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD}'\'';";
+      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD:-mypass}'\'';";
       echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
       wait $PG_PID;
       echo "PostgreSQL process (PID $PG_PID) has exited.";
       exit $?;'
     environment:
-      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
     networks:
       alp:
         priority: 20
