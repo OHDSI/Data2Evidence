@@ -20,6 +20,10 @@ export class FeatureService {
     {
       featureFlag: 'fhirServer',
       enabled: false
+    },
+    {
+      featureFlag: 'mappingSuggestion',
+      enabled: false
     }
   ]
 

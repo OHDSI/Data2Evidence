@@ -1,0 +1,22 @@
+Package: rD2E
+Title: D2E Flows in R
+Version: 0.1.0
+Authors@R: c(
+	person("D4L", "SG", email = "we@data4life-asia.care", role = c("aut", "cre")),
+	person("Data4Life", role = c("cph"))
+  )
+Maintainer: D4L SG <we@data4life-asia.care>
+Description: D2E helper functions.
+Depends:
+	R (>= 4.2.0),
+Imports:
+    httr,
+    jsonlite,
+    dplyr,
+    CirceR (>= 1.3.3),
+    ParallelLogger,
+    RJSONIO
+License: Apache License 2.0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

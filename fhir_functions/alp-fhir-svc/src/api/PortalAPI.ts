@@ -1,8 +1,7 @@
 import { Service } from 'typedi'
 import axios, { AxiosRequestConfig } from 'axios'
 import { createLogger } from '../logger'
-import https from 'https'
-import { env, services } from '../env'
+import { services } from '../env'
 import { Dataset } from '../utils/types'
 
 @Service()
@@ -61,6 +60,18 @@ export class PortalAPI {
     } catch (error) {
       this.logger.error('Error while getting dataset')
       throw new Error('Error while getting dataset')
+    }
+  }
+
+  async updateDataset(datasetToUpdate: Dataset){
+    try{
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/dataset`
+      const result = await axios.put(url, datasetToUpdate, options)
+      return result.data
+    }catch(error){
+      this.logger.error('Error while updating dataset')
+      throw new Error('Error while updating dataset')
     }
   }
 }

@@ -68,7 +68,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
         (n) =>
           ({
             key: n.data.name,
-            value: n.data.name,
+            value: n.data.name.replace(SourceTypes.NODE, ""),
             data: NodeChoiceMap[n.type as NodeTypeChoice]?.title?.toLowerCase(),
           } as KeyValueData)
       );
@@ -85,7 +85,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
         (n) =>
           ({
             key: `${n.data.name}.${SourceTypes.SCRIPT_NODE}`,
-            value: `${n.data.name}.${SourceTypes.SCRIPT_NODE}`,
+            value: n.data.name,
             data: NodeChoiceMap[n.type as NodeTypeChoice]?.title?.toLowerCase(),
           } as KeyValueData)
       );
@@ -107,8 +107,8 @@ export const SelectSource: FC<SelectSourceProps> = ({
         onChange={(e: SelectChangeEvent) => onChange(e.target.value)}
         {...props}
       >
-        {filtered.map(({ key, value, data }) => (
-          <MenuItem key={key} value={key}>
+        {filtered.map(({ key, value }) => (
+          <MenuItem key={key} value={value}>
             <Box display="flex" gap={1}>
               {value}
             </Box>

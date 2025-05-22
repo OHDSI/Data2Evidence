@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=~/.cache/yarn yarn install
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
-ENV duckdb_version=1.1.1
+ENV duckdb_version=1.2.1
 WORKDIR /home/docker/duckdb_extensions
 RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
   && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \

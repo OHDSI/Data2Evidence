@@ -11,9 +11,9 @@ import {
   Roles,
   ALP_ROLES,
   ALP_SYSTEM_ADMIN,
-  ALP_SQLEDITOR_ADMIN,
   ALP_USER_ADMIN,
   DATA_ADMIN_ROLES,
+  STUDY_WRITE_DQD_RESEARCHER,
   TENANT_ROLES,
   ALP_DASHBOARD_VIEWER,
 } from "../../../config";
@@ -153,16 +153,16 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       roleList.push(DATA_ADMIN_ROLES[ALP_SYSTEM_ADMIN]);
     }
 
-    if (roles.includes(ALP_SQLEDITOR_ADMIN)) {
-      roleList.push(DATA_ADMIN_ROLES[ALP_SQLEDITOR_ADMIN]);
-    }
-
     if (roles.includes(ALP_USER_ADMIN)) {
       roleList.push(ALP_ROLES[ALP_USER_ADMIN]);
     }
 
     if (roles.includes(ALP_DASHBOARD_VIEWER)) {
       roleList.push(ALP_ROLES[ALP_DASHBOARD_VIEWER]);
+    }
+
+    if(roles.includes(STUDY_WRITE_DQD_RESEARCHER)) {
+      roleList.push(ALP_ROLES[STUDY_WRITE_DQD_RESEARCHER]);
     }
 
     return roleList;

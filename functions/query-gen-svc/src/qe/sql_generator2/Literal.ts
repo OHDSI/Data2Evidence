@@ -1,6 +1,9 @@
 import { AstElement } from "./AstElement";
 import { QueryObject as qo } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 
 export class Literal extends AstElement {
     constructor(public node, public path, public name, public parent) {
@@ -8,7 +11,11 @@ export class Literal extends AstElement {
     }
 
     private _isValidDateString = function (value: string) {
-        return !isNaN(Date.parse(value));
+        const date_formats = [
+            "YYYY-MM-DD", // 2025-05-20
+            "YYYY-MM-DD[T]HH:mm:ss.SSS[Z]", // 2025-05-20T09:36:04.000Z
+        ];
+        return dayjs(value, date_formats, true).isValid();
     };
 
     getSQLNoCase() {
@@ -32,7 +39,11 @@ export class Literal extends AstElement {
             } else if (this._isValidDateString(this.node.value)) {
                 return QueryObject.format("%t", this.node.value);
             } else {
-                return QueryObject.format("UPPER(%s)", this.node.value);
+                let value = this.node.value
+                if (this.parent.op.trim() === "LIKE") {
+                    value = `%${this.node.value}%`
+                }
+                return QueryObject.format("UPPER(%s)", value);
             }
         } else if (typeof this.node.value === "number") {
             return QueryObject.format("%f", this.node.value);

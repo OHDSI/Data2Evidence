@@ -12,6 +12,7 @@ import {
   IHanaConceptRelationship,
   IConcept,
   DatasetDialects,
+  IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
 
@@ -443,32 +444,6 @@ export class CachedbHanaDAO {
     }
   }
 
-  async getExactConceptAncestors(
-    searchConceptIds: number[],
-    level: number
-  ): Promise<IConceptAncestor[]> {
-    const client = this.getCachedbConnection(this.jwt, this.datasetId);
-    try {
-      // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
-      const sql = `
-        select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
-          this.vocabSchemaName
-        }.concept_ancestor WHERE descendant_concept_id IN (${searchConceptIds.join(
-        ", "
-      )}) AND min_levels_of_separation = (?);
-            `;
-      const result = await client.query(sql, [level]);
-      return this.mapHanaConceptsAncestor(result.rows);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    } finally {
-      await client.end();
-    }
-  }
-
   async getConceptRelationship(
     searchConceptIds: number[],
     conceptRelationshipType: "Maps to"
@@ -489,6 +464,130 @@ export class CachedbHanaDAO {
         conceptRelationshipType,
       ]);
       return this.mapHanaConceptsRelationship(result.rows);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyDescendants(
+    searchConceptId: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    try {
+      const sql = `
+        select
+          ca.ancestor_concept_id,
+          ca.descendant_concept_id,
+          -1 as depth,
+          c.concept_id,
+          c.concept_name,
+          c.vocabulary_id,
+          c.concept_class_id
+        from
+          ${this.vocabSchemaName}.concept_ancestor ca
+        join ${this.vocabSchemaName}.concept c on
+          c.concept_id = ca.descendant_concept_id
+        where
+          ca.min_levels_of_separation = 1
+          and ca.ancestor_concept_id = ?;
+            `;
+      const result = await client.query(sql, [searchConceptId]);
+      return result.rows;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyAncestors(
+    searchConceptId: number,
+    maxDepth: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    let conceptAncestors: IConceptHierarchy[] = [];
+
+    try {
+      // Recursively get concept ancesters for concept hierarchy
+      // Get self
+      const sql = `
+                    SELECT
+                      0 AS depth,
+                      ca.ancestor_concept_id,
+                      ca.descendant_concept_id,
+                      c.concept_id,
+                      c.concept_name,
+                      c.vocabulary_id,
+                      c.concept_class_id
+                    FROM
+                    ${this.vocabSchemaName}.concept_ancestor ca
+                    JOIN 
+                      ${this.vocabSchemaName}.concept c ON c.concept_id = ca.ancestor_concept_id
+                    WHERE
+                      ca.descendant_concept_id = ?
+                      AND ca.min_levels_of_separation = 0
+                    ORDER BY 
+                      concept_id, ancestor_concept_id, descendant_concept_id;
+                    `;
+      const result = await client.query<IConceptHierarchy>(sql, [
+        searchConceptId,
+      ]);
+      conceptAncestors = conceptAncestors.concat(result.rows);
+
+      const getAncestors = async (
+        conceptIds: number[],
+        depth: number,
+        maxDepth: number
+      ) => {
+        if (maxDepth < depth || conceptIds.length === 0) {
+          return [];
+        } else {
+          // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
+          // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+          // https://github.com/alp-os/internal/issues/1411
+          const sql = `
+                    SELECT
+                      ${depth} + 1 AS depth,
+                      ca.ancestor_concept_id,
+                      ca.descendant_concept_id,
+                      c.concept_id,
+                      c.concept_name,
+                      c.vocabulary_id,
+                      c.concept_class_id
+                    FROM
+                      ${this.vocabSchemaName}.concept_ancestor ca
+                    JOIN 
+                      ${
+                        this.vocabSchemaName
+                      }.concept c ON c.concept_id = ca.ancestor_concept_id
+                    WHERE
+                      ca.descendant_concept_id IN (${conceptIds.join(", ")}) AND
+                      ca.min_levels_of_separation = 1
+                    ORDER BY 
+                      concept_id, ancestor_concept_id, descendant_concept_id;
+                      `;
+          const result = await client.query<IConceptHierarchy>(sql);
+          conceptAncestors = conceptAncestors.concat(result.rows);
+
+          await getAncestors(
+            result.rows.map((e) => e.concept_id),
+            depth + 1,
+            maxDepth
+          );
+        }
+      };
+
+      await getAncestors(
+        result.rows.map((e) => e.concept_id),
+        0,
+        maxDepth
+      );
+
+      return conceptAncestors;
     } catch (error) {
       console.error(error);
       throw error;

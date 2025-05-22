@@ -1,17 +1,10 @@
-##### Instructions for version upgrade in Logto
-
-- Change the logto version in `services/alp-logto/Dockerfile` and `services/alp-logto/Dockerfile.local`
+Following changes are made to the `data2evidence/logto/Dockerfile` (a slightly modified version of logto/logto Dockerfile).
 ```
-# in Dockerfile
-FROM ghcr.io/logto-io/logto:1.18
-
-# in Dockerfile.local
-RUN git clone --branch v1.18.0 https://github.com/logto-io/logto.git /etc/logto
+- download the source code of d2e
+- replace the to-replace/SignIn/Main.tsx in the path /logto/packages/experience/src/pages/SignIn/Main.tsx
+- copy the folder services/alp-logto/connector-alp-azuread
+- install and build D2E connector
+- link the connector to Logto
 ```
 
-- D2E has a custom version of `experience` package that should replace the original version at the path `/etc/logto/packages/experience`. Steps to generate the custom experience package are as follows:
-    - Go through `Dockerfile.local` and update it with any relevant changes according to the publicly available logto [Dockerfile](https://github.com/logto-io/logto/blob/master/Dockerfile)
-    - Build and run the image locally with the help of [docker-compose.yml](https://github.com/logto-io/logto/blob/master/docker-compose.yml)
-    - copy the experience package from the container (created in the previous step) to the D2E repo replacing the [experience.zip](services/alp-logto/experience.zip)
-
-- With these changes building the [Dockerfile](services/alp-logto/Dockerfile) will ensure Logto is upgraded to the required version as well as custom experience pacakge is available in it
+D2E connector is available alongside other connectors for usage in the admin console. 

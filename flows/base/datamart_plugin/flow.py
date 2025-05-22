@@ -47,28 +47,23 @@ def create_datamart(options: CreateDatamartOptions):
         case _:
             raise ValueError(f"Database dialect {options.dialect} not supported for this plugin")
 
-    source_dbdao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code, 
-                         schema_name=source_schema)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     
-    target_dbdao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code, 
-                         schema_name=target_schema)
-    
-    source_schema_exists = source_dbdao.check_schema_exists()
+    source_schema_exists = dbdao.check_schema_exists(source_schema)
     if not source_schema_exists:
         raise ValueError(f"Source schema '{source_schema}' does not exist in database '{database_code}'")
     
     try:
         
         if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
-            create_schema_task(target_dbdao)
+            create_schema_task(dbdao, target_schema)
     
         
         _, failed_tables = copy_schema(datamart_action,
                                        snapshot_copy_config,
-                                       source_dbdao,
-                                       target_dbdao)
+                                       dbdao,
+                                       source_schema,
+                                       target_schema)
 
         if len(failed_tables) > 0:
             error_message = f"The following tables has failed datamart creation: {failed_tables}"
@@ -80,7 +75,7 @@ def create_datamart(options: CreateDatamartOptions):
         logger.error(error_message)
         if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
             logger.info(f"Cleaning up schema '{target_schema}'")
-            target_dbdao.drop_schema()
+            dbdao.drop_schema(target_schema, cascade=True)
             logger.info(f"Successfully dropped schema '{target_schema}'")
             raise Exception(error_message) from err
     else:
@@ -89,14 +84,14 @@ def create_datamart(options: CreateDatamartOptions):
 
         if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
             try:
-                logger.info(f"Granting read privileges to datamart schema '{target_dbdao.database_code}.{target_dbdao.schema_name}'..")                
-                create_and_assign_roles_task(dbdao=target_dbdao)
-                logger.info(f"Successfully granted read privileges to datamart schema '{target_dbdao.database_code}.{target_dbdao.schema_name}'!")
+                logger.info(f"Granting read privileges to datamart schema '{dbdao.database_code}.{target_schema}'..")                
+                create_and_assign_roles_task(dbdao=dbdao, schema=target_schema)
+                logger.info(f"Successfully granted read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!")
             except Exception as err:
-                error_message = f"Failed to grant read privileges to datamart schema '{target_dbdao.database_code}.{target_dbdao.schema_name}'!"
+                error_message = f"Failed to grant read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!"
                 logger.error(error_message)
                 logger.info(f"Cleaning up schema '{target_schema}'")
-                target_dbdao.drop_schema()
+                dbdao.drop_schema(target_schema, cascade=True)
                 logger.info(f"Successfully dropped schema '{target_schema}'")
                 raise Exception(error_message) from err
 
@@ -104,11 +99,12 @@ def create_datamart(options: CreateDatamartOptions):
 @task(log_prints=True)
 def copy_schema(datamart_action: str,
                 snapshot_copy_config: DatamartCopyConfig,
-                source_dbdao,
-                target_dbdao):
+                dbdao,
+                source_schema: str,
+                target_schema: str):
     logger = get_run_logger()
     date_filter, table_filter, patient_filter = parse_datamart_copy_config(snapshot_copy_config)
-    tables_to_copy = get_tables_to_copy(source_dbdao, table_filter, logger)
+    tables_to_copy = get_tables_to_copy(dbdao, source_schema, table_filter, logger)
     
     successful_tables: list[str] = []
     failed_tables: list[str] = []
@@ -117,78 +113,55 @@ def copy_schema(datamart_action: str,
 
     for table in tables_to_copy:
         # get the columns to copy for each table
-        columns_to_copy = get_columns_to_copy(source_dbdao, table, table_filter)
+        columns_to_copy = get_columns_to_copy(dbdao, source_schema, table, table_filter)
 
         base_config_table = BASE_CONFIG_LIST.get(table, {})
-
-        if source_dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-            filter_conditions = {}
-        else:
-            filter_conditions = []
+        filter_conditions = {}
 
         # Filter by patients if patient_filter and person_id_column is provided
         person_id_column = base_config_table.get("person_id_column", "")
         if len(patient_filter) > 0 and person_id_column:
-            # Ibis implementation            
-            if source_dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-                filter_conditions["patient_filter"] = {
-                    "person_id_column": person_id_column,
-                    "patients_to_filter": patient_filter
-                }
-            
-            else:
-                # SqlAlchemy implmentation
-                person_id_column_obj = source_dbdao.get_sqlalchemy_columns(table_name=table, column_names=[person_id_column])
-                filter_conditions.append(
-                    person_id_column_obj.get(person_id_column).in_(patient_filter)
-                )
+            filter_conditions["patient_filter"] = {
+                "person_id_column": person_id_column,
+                "patients_to_filter": patient_filter
+            }
 
         # Filter by timestamp if date_filter and timestamp_column is provided
         timestamp_column = base_config_table.get("timestamp_column", "")
         if date_filter and timestamp_column:
-            # Ibis implementation
-            if source_dbdao.__class__.__name__ == "IbisDao" and datamart_action == DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-                filter_conditions["date_filter"] = {
-                    "timestamp_column": timestamp_column,
-                    "dates_to_filter": date_filter
-                }
-            else:
-                # SqlAlchemy implementation
-                timestamp_column_obj = source_dbdao.get_sqlalchemy_columns(table_name=table, column_names=[timestamp_column])
-                filter_conditions.append(
-                    date_filter >= timestamp_column_obj.get(timestamp_column)
-                )
+            filter_conditions["date_filter"] = {
+                "timestamp_column": timestamp_column,
+                "dates_to_filter": date_filter
+            }
 
         match datamart_action:
             case DatamartFlowAction.CREATE_SNAPSHOT:
                 try:
-                    # copy from source schema to target schema
-                    rows_copied = source_dbdao.copy_table(source_table_name=table, 
-                                                          target_table_name=table,
-                                                          target_schema_name=target_dbdao.schema_name,
-                                                          columns_to_copy=columns_to_copy,
-                                                          filter_conditions=filter_conditions)
+                    rows_copied = dbdao.copy_table(source_schema_name=source_schema, source_table_name=table,
+                                                   target_table_name=table, target_schema_name=target_schema,
+                                                   columns_to_copy=columns_to_copy, filter_conditions=filter_conditions)
                 except Exception as err:
-                    logger.error(f"""Datamart copying failed from {source_dbdao.schema_name} to {
-                        target_dbdao.schema_name} for table: {table} with Error:{err}""")
+                    logger.error(f"""Datamart copying failed from {source_schema} to {
+                        target_schema} for table: {table} with Error:{err}""")
                     failed_tables.append(table)                    
                 else:
                     logger.info(f"""Succesfully copied {rows_copied} rows from {
-                        source_dbdao.schema_name} to {target_dbdao.schema_name} for table: {table}""")
+                        source_schema} to {target_schema} for table: {table}""")
                     successful_tables.append(table)
             case DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
                 try:
-                    datamart_df = source_dbdao.copy_table_as_dataframe(source_table_name=table, 
-                                                                       columns_to_copy=columns_to_copy, 
-                                                                       filter_conditions=filter_conditions)
-                    upload_df_as_parquet(target_dbdao.schema_name, table, datamart_df, logger)
+                    datamart_df = dbdao.copy_table_as_dataframe(source_schema_name=source_schema,
+                                                                source_table_name=table,
+                                                                columns_to_copy=columns_to_copy, 
+                                                                filter_conditions=filter_conditions)
+                    upload_df_as_parquet(target_schema, table, datamart_df, logger)
                 except Exception as err:
-                    logger.error(f"""Datamart parquet creation failed for {source_dbdao.schema_name} to {
-                        target_dbdao.schema_name} for table: {table} with Error:{err}""")
+                    logger.error(f"""Datamart parquet creation failed for {source_schema} to {
+                        target_schema} for table: {table} with Error:{err}""")
                     failed_tables.append(table)
                 else:
-                    logger.info(f"""Succesfully created parquet file for {source_dbdao.schema_name} to {
-                        target_dbdao.schema_name} for table: {table}""")
+                    logger.info(f"""Succesfully created parquet file for {source_schema} to {
+                        target_schema} for table: {table}""")
                     successful_tables.append(table)
 
                     
@@ -247,13 +220,12 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code, 
-                      schema_name=schema_name)
+                      database_code=database_code)
     
         portal_server_api = PortalServerAPI()
         
         # check if schema exists
-        schema_exists = dbdao.check_schema_exists()
+        schema_exists = dbdao.check_schema_exists(schema_name)
         if schema_exists is False:
             error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
             logger.error(error_msg)
@@ -266,6 +238,7 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_release_date",
                 entity_name="created_date",
@@ -277,6 +250,7 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_release_date",
                 entity_name="updated_date",
@@ -288,6 +262,7 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="person",
                 column_name="person_id",
                 entity_name="patient_count",
@@ -316,6 +291,7 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_version",
                 entity_name="version",
@@ -324,7 +300,7 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
 
             try:
                 # update schema version, latest_schema_version or error msg
-                schema_version = get_schema_version(dbdao, cdm_version, logger)
+                schema_version = get_schema_version(dbdao, schema_name, cdm_version, logger)
                 latest_schema_version = schema_version
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", schema_version)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_schema_version)

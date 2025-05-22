@@ -2,11 +2,10 @@ import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { useNavigate } from "react-router-dom";
 import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
-import { Loader } from "@portal/components";
 import { api } from "../../axios/api";
 import { ScannedSchemaState, TableSourceHandleData, useField, useScannedSchema, useTable } from "../../contexts";
-import { ScanDataProgressLogs, ScanDataSourceTable } from "../../types/scanDataDialog";
-import { buildFieldHandle, getColumns, saveBlobAs, sleep } from "../../utils/utils";
+import { ScanDataSourceTable } from "../../types/scanDataDialog";
+import { buildFieldHandle, getColumns, saveBlobAs } from "../../utils/utils";
 import { CloseDialogType } from "../ScanDataDialog/ScanDataDialog";
 import "./ScanProgressDialog.scss";
 
@@ -15,15 +14,22 @@ interface ScanProgressDialogProps {
   onBack: () => void;
   onClose?: (type: CloseDialogType) => void;
   nodeId: string;
-  scanId: number;
+  scanId: string;
 }
+
+const FLOW_STATE_MAP = {
+  Scheduled: 10,
+  Pending: 25,
+  Running: 50,
+  Completed: 100,
+};
 
 export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, onClose, nodeId, scanId }) => {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [scanCompleted, setScanCompleted] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
   const { setTableSourceHandles } = useTable();
@@ -51,29 +57,8 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const handleLinkTables = useCallback(async () => {
     try {
       setLoading(true);
-      const scanResultResponse = await api.whiteRabbit.getScanResult(scanId);
-      const fileId = scanResultResponse.fileId;
-      const fileName = scanResultResponse.fileName;
 
-      const flowRunResponse = await api.backend.createSourceSchemaByScanReportFlowRun(fileId, fileName);
-      const flowRunId = flowRunResponse.flowRunId;
-
-      let fetchedStatus = false;
-
-      while (!fetchedStatus) {
-        sleep(5000);
-        try {
-          const status = await api.backend.getFlowRunStatus(flowRunId);
-          if (status.state_name === "Completed") {
-            fetchedStatus = true;
-          }
-        } catch (error) {
-          console.error("Failed to check job status", error);
-          setLoading(false);
-          return;
-        }
-      }
-      const scannedResult: ScannedSchemaState = await api.backend.getSourceSchemaByFlowRunId(flowRunId);
+      const scannedResult: ScannedSchemaState = await api.backend.getSourceSchemaByFlowRunId(scanId);
 
       let sourceHandles: Partial<NodeProps<TableSourceHandleData>>[];
       sourceHandles = scannedResult.source_tables.map((table: ScanDataSourceTable, index: number) => ({
@@ -107,14 +92,23 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   const fetchScanProgress = useCallback(async () => {
     try {
-      const response = await api.whiteRabbit.getScanReportProgress(scanId);
-      setLog(response.logs.map((log: ScanDataProgressLogs) => log.message));
-      setProgress(response.logs[response.logs.length - 1].percent);
-      if (response.statusName === "COMPLETED") {
+      const status = await api.whiteRabbit.getFlowRunStatus(scanId);
+
+      if (status.state_name === "Completed") {
         setScanCompleted(true);
-      } else if (response.statusName === "FAILED") {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      } else if (status.state_name === "Failed" || status.state_name === "Crashed") {
         setScanCompleted(true);
         setScanFailed(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      }
+      setLog(status.state_name);
+      if (status.state_name in FLOW_STATE_MAP) {
+        setProgress(FLOW_STATE_MAP[status.state_name as keyof typeof FLOW_STATE_MAP]);
       }
     } catch (e) {
       console.error("Failed to fetch scan progress", e);
@@ -130,20 +124,18 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    setLog([]);
+    setLog("");
     setProgress(0);
     setScanCompleted(false);
   }, []);
 
   useEffect(() => {
-    if (open && scanId !== -1 && !scanCompleted) {
-      intervalRef.current = setInterval(() => {
-        fetchScanProgress();
-        if (scanCompleted) {
-          clearInterval(intervalRef.current!);
-        }
-      }, 1000);
-      // Clear the interval when unmount
+    if (open && scanId !== "" && !scanCompleted) {
+      // Initial fetch
+      fetchScanProgress();
+
+      intervalRef.current = setInterval(fetchScanProgress, 3000);
+
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -154,22 +146,11 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
 
   return (
     <Dialog className="scan-progress-dialog" open={open} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Scan Data
-        {(loading || !scanCompleted) && (
-          <div className="scan-progress-dialog__loader">
-            <Loader />
-          </div>
-        )}
-      </DialogTitle>
+      <DialogTitle>Scan Data</DialogTitle>
       <div className="scan-progress-dialog__content">
         <div className="scan-progress-dialog__status">Scanning... Estimated time depends on selected database</div>
         <LinearProgress variant="determinate" value={progress} />
-        <div className="scan-progress-dialog__log">
-          {log.map((entry, index) => (
-            <div key={index}>{entry}</div>
-          ))}
-        </div>
+        <div className="scan-progress-dialog__log">{log}</div>
       </div>
       <div className="scan-progress-dialog__actions">
         <Button onClick={handleBack} variant="outlined" disabled={!scanCompleted || loading}>
@@ -178,7 +159,12 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         <Button onClick={handleSaveReport} variant="contained" color="primary" disabled={!scanCompleted || scanFailed}>
           Save report
         </Button>
-        <Button onClick={handleLinkTables} variant="contained" color="primary" disabled={!scanCompleted || loading || scanFailed}>
+        <Button
+          onClick={handleLinkTables}
+          variant="contained"
+          color="primary"
+          disabled={!scanCompleted || loading || scanFailed}
+        >
           Link tables
         </Button>
       </div>

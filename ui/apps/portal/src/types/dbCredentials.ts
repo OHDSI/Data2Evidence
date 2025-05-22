@@ -1,5 +1,23 @@
-export const DB_DIALECTS = ["postgres", "hana"];
-export type DbDialect = typeof DB_DIALECTS[number];
+export enum DB_DIALECTS {
+  POSTGRES = "postgres",
+  HANA = "hana",
+  BIG_QUERY = "big_query",
+}
+export type DbDialect = `${DB_DIALECTS}`;
+export const DB_DIALECTS_KEY_VALUE = [
+  {
+    key: DB_DIALECTS.POSTGRES,
+    value: "PostgreSQL",
+  },
+  {
+    key: DB_DIALECTS.HANA,
+    value: "Hana",
+  },
+  {
+    key: DB_DIALECTS.BIG_QUERY,
+    value: "BigQuery (experimental)",
+  },
+];
 
 export enum AUTHENTICATION_MODES {
   PASSWORD = "Password",
@@ -97,4 +115,17 @@ export interface IDatabaseDetailsUpdate
   id: string;
   vocabSchemas: string[];
   extra: { [key: string]: string | number | boolean };
+}
+
+export interface ITestConnection {
+  user: string;
+  password: string;
+  host: string;
+  database: string;
+  port: number;
+}
+
+export interface ITestConnectionResult {
+  success: boolean;
+  message: string;
 }

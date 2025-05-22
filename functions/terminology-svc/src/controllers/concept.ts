@@ -29,7 +29,8 @@ export const getConcepts = async (
 
     const pageNumber = Math.floor(offset / rowsPerPage);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
+    
     const concepts = await cachedbService.getConcepts(
       pageNumber,
       Number(rowsPerPage),
@@ -55,7 +56,7 @@ export const searchConceptByName = async (
       body: { datasetId, conceptName },
     } = schemas.searchConceptByName.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptName,
       datasetId,
@@ -79,7 +80,7 @@ export const searchConceptById = async (
       body: { datasetId, conceptId },
     } = schemas.searchConceptById.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptId,
       datasetId,
@@ -103,7 +104,7 @@ export const searchConceptByCode = async (
       body: { datasetId, conceptCode },
     } = schemas.searchConceptByCode.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getExactConcept(
       conceptCode,
       datasetId,
@@ -127,7 +128,7 @@ export const getRecommendedConcepts = async (
       body: { datasetId, conceptIds },
     } = schemas.getRecommendedConcepts.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const concepts = await cachedbService.getRecommendedConcepts(
       conceptIds,
       datasetId
@@ -150,7 +151,7 @@ export const getConceptFilterOptions = async (
       query: { datasetId, searchText, filter },
     } = schemas.getConceptFilterOptions.parse(req);
 
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const filterOptions = await cachedbService.getConceptFilterOptionsFaceted(
       datasetId,
       searchText,
@@ -173,7 +174,7 @@ export const getTerminologyDetailsWithRelationships = async (
     const {
       query: { datasetId, conceptId },
     } = schemas.getTerminologyDetailsWithRelationships.parse(req);
-    const cachedbService = new CachedbService(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
     const details = await cachedbService.getTerminologyDetailsWithRelationships(
       conceptId,
       datasetId
@@ -193,95 +194,39 @@ export const getConceptHierarchy = async (
     const {
       query: { datasetId, conceptId, depth },
     } = schemas.getConceptHierarchy.parse(req);
-    const edges: ConceptHierarchyEdge[] = [];
-    const nodeLevels: ConceptHierarchyNodeLevel[] = [];
-    const conceptIds: Set<number> = new Set<number>().add(conceptId);
-    nodeLevels.push({ conceptId: conceptId, level: 0 });
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
 
-    const cachedbService = new CachedbService(req);
-    const conceptDescendants = await cachedbService.getDescendants(
-      [conceptId],
-      datasetId
-    );
-    conceptDescendants.forEach((concept_ancestor) => {
-      if (concept_ancestor.descendant_concept_id !== conceptId) {
-        edges.push({
-          source: conceptId,
-          target: concept_ancestor.descendant_concept_id,
-        });
-        conceptIds.add(concept_ancestor.descendant_concept_id);
-        nodeLevels.push({
-          conceptId: concept_ancestor.descendant_concept_id,
-          level: -1,
+    const promises = [
+      // Get first level descendants of concept
+      cachedbService.getHierarchyDescendants(conceptId, datasetId),
+      // Recursively get ancestors of concept depending on depth
+      cachedbService.getHierarchyAncestors(conceptId, datasetId, depth),
+    ];
+    const promiseResults = await Promise.all(promises);
+
+    // Combine both descendants and ancestors results
+    const conceptHierarchy = [...promiseResults[0], ...promiseResults[1]];
+
+    // Map conceptHierarchy to nodes and edges
+    const edges: ConceptHierarchyEdge[] = [];
+    const nodes: ConceptHierarchyNode[] = [];
+    conceptHierarchy.map((e) => {
+      edges.push({
+        source: e.ancestor_concept_id,
+        target: e.descendant_concept_id,
+      });
+
+      // Only push into nodes if it does not contain an object with the same conceptId as the incoming object's conceptId
+      if (
+        !nodes.find((node_element) => node_element.conceptId === e.concept_id)
+      ) {
+        nodes.push({
+          conceptId: e.concept_id,
+          display: e.concept_name,
+          level: e.depth,
         });
       }
     });
-
-    // recursively get the ancestors of the specified conceptId
-    const getAllAncestors = async (
-      conceptId: number,
-      depth: number,
-      maxDepth: number
-    ) => {
-      const conceptAncestors = await cachedbService.getAncestors(
-        [conceptId],
-        datasetId,
-        1
-      );
-
-      if (conceptAncestors.length == 0 || depth <= 0) {
-        return;
-      }
-      for (const concept_ancestor of conceptAncestors) {
-        if (concept_ancestor.ancestor_concept_id !== conceptId) {
-          edges.push({
-            source: concept_ancestor.ancestor_concept_id,
-            target: conceptId,
-          });
-          conceptIds.add(concept_ancestor.ancestor_concept_id);
-
-          // Only push into nodeLevels if it does not contain an object with the same conceptId as the incoming object's conceptId
-          if (
-            !nodeLevels.find(
-              (e) => e.conceptId === concept_ancestor.ancestor_concept_id
-            )
-          ) {
-            nodeLevels.push({
-              conceptId: concept_ancestor.ancestor_concept_id,
-              level: maxDepth - depth + 1,
-            });
-          }
-
-          await getAllAncestors(
-            concept_ancestor.ancestor_concept_id,
-            depth - 1,
-            maxDepth
-          );
-        }
-      }
-    };
-
-    await getAllAncestors(conceptId, depth, depth);
-
-    const concepts = await cachedbService.getConceptsByIds(
-      Array.from(conceptIds),
-      datasetId
-    );
-
-    const nodes: ConceptHierarchyNode[] = nodeLevels.reduce(
-      (acc: ConceptHierarchyNode[], current: ConceptHierarchyNodeLevel) => {
-        const conceptNode = concepts.find(
-          (concept) => concept.conceptId === current.conceptId
-        );
-        acc.push({
-          conceptId: current.conceptId,
-          display: conceptNode?.display ?? "",
-          level: current.level,
-        });
-        return acc;
-      },
-      []
-    );
 
     res.send({ edges, nodes });
   } catch (e) {
@@ -312,8 +257,8 @@ export const getStandardConcepts = async (
         };
 
         try {
+          const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
           if (domainId) {
-            const cachedbService = new CachedbService(req);
             const domainIdFacets = (
               await cachedbService.getConceptFilterOptionsFaceted(
                 datasetId,
@@ -331,7 +276,6 @@ export const getStandardConcepts = async (
             }
           }
 
-          const cachedbService = new CachedbService(req);
           const concepts = await cachedbService.getConcepts(
             0,
             1,

@@ -1,12 +1,3 @@
-export interface MedplumBotConfig {
-  readonly name: string;
-  readonly id: string;
-  readonly description: string;
-  readonly source: string;
-  readonly dist?: string;
-  readonly subscriptionCriteria?: string;
-}
-
 export interface ClientCredentials {
   clientId: string;
   clientSecret: string;
@@ -31,6 +22,7 @@ export interface Dataset {
   plugin: string;
   attributes: string[];
   tags: string[];
+  fhir_project_id?: string;
   dashboards: string[];
   tenant: {
     id: string;

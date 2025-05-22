@@ -1,7 +1,7 @@
 // @ts-types="npm:@types/express"
 import { Request } from "express";
 import axios, { AxiosRequestConfig } from "axios";
-// import { Agent } from "https";
+import { Agent } from "http";
 import { env } from "../env.ts";
 import { ConceptSet } from "../types.ts";
 
@@ -16,10 +16,11 @@ interface UpdateConceptSetDto {
 export class SystemPortalAPI {
   private readonly token: string;
   private readonly url: string;
-  // private readonly httpsAgent: Agent;
+  private readonly agent: Agent;
 
   constructor(request: Request) {
     this.token = request.headers["authorization"]!;
+    this.agent = new Agent({ keepAlive: true });
     if (env.SERVICE_ROUTES.portalServer) {
       this.url = env.SERVICE_ROUTES.portalServer;
       // this.httpsAgent = new Agent({
@@ -34,6 +35,7 @@ export class SystemPortalAPI {
   private async getDataset(datasetId: string): Promise<{
     databaseCode: string;
     dialect: string;
+    schemaName: string;
     vocabSchemaName: string;
   }> {
     console.info(`Portal request to get dataset info for id : ${datasetId}`);
@@ -62,6 +64,10 @@ export class SystemPortalAPI {
       );
     }
 
+    if (!dataset.schemaName) {
+      throw new Error(`schemaName does not exist for datasetId: ${datasetId}`);
+    }
+
     if (!dataset.vocabSchemaName) {
       throw new Error(
         `vocabSchemaName does not exist for datasetId: ${datasetId}`
@@ -70,6 +76,7 @@ export class SystemPortalAPI {
 
     return {
       databaseCode: dataset.databaseCode,
+      schemaName: dataset.schemaName,
       vocabSchemaName: dataset.vocabSchemaName,
       dialect: dataset.dialect,
     };
@@ -184,8 +191,22 @@ export class SystemPortalAPI {
       headers: {
         Authorization: this.token,
       },
-      timeout: 20000,
+      timeout: 30000,
+      httpAgent: this.agent,
     };
     return options;
+  }
+
+  async getHybridSearchConfig() {
+    const errorMessage = `Error getting hybrid search config`;
+    try {
+      const options = await this.createOptions();
+      const url = `${this.url}/config/hybrid-search`;
+      const result = await axios.get(url, options);
+      return result.data;
+    } catch (error) {
+      console.error(`${errorMessage}: ${error}`);
+      throw new Error(errorMessage);
+    }
   }
 }

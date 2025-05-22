@@ -33,6 +33,7 @@ export const oidcLogout = async (): Promise<void> => {
   const oidc = getOidc();
 
   try {
+    sessionStorage.setItem("is_logout", "1");
     await oidc.logoutAsync(`${window.location.origin}/portal`);
   } catch (err) {
     console.error("[oidcLogout]", err);

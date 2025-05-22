@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env.ts";
 import { UserArtifactServiceNames } from "../types.ts";
+import { PortalUserArtifacts, IDataset } from "./types.ts";
 import { IUserArtifactAtlasCohortDefinitionDto } from "../dto/cohortdefinition.ts";
-import { PortalUserArtifacts } from "./types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -22,7 +22,15 @@ export class PortalServerAPI {
     }
   }
 
-  async getStudy(datasetId: string) {
+  async getResearcherDatasets(): Promise<IDataset[]> {
+    const options = await this.getRequestConfig();
+    const params = new URLSearchParams();
+    params.append("role", "researcher");
+    const result = await axios.get(`${this.baseURL}/dataset/list`, options);
+    return result.data;
+  }
+
+  async getStudy(datasetId: string): Promise<IDataset> {
     const options = await this.getRequestConfig();
     const result = await axios.get(
       `${this.baseURL}/dataset?datasetId=${datasetId}`,

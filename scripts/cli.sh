@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.6.0 #default version
+version=0.7.0 #default version
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -39,6 +39,8 @@ context=""
 fhir=""
 demo=""
 dicom=""
+cachedb=""
+jupyter=""
 compose=""
 args=""
 services=""
@@ -49,7 +51,9 @@ while [[ $# -gt 0 ]]; do
         -e|--demo) demo=--profile="demodb" ;;
         -f|--fhir) fhir=--profile="fhir" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
+        -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
+        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -66,20 +70,22 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+
 if [ -n "${function_path:-}" ]; then
     dev="--file $node_modules_path/docker-compose-local.yml --env-file $env"
     export D2E_FUNCTIONS=$function_path
-    export PROJECT_NAME=${PROJECT_NAME:-alp}
 else
     dev="--env-file $env"
 fi
 export ENVFILE=$env
+# export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
   export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
+  #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
@@ -90,10 +96,29 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
+
+generate_random_secret() {
+  LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
+}
+
+generate_jwt() {
+  local secret="$1"
+  local role="$2"
+  local iss="$3"
+  local iat=$(date +%s)
+  local exp=$((iat + 157788000)) # 5 years expiration
+
+  local header=$(echo -n '{"alg":"HS256","typ":"JWT"}' | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+  local payload=$(echo -n "{\"role\":\"$role\",\"iss\":\"$iss\",\"iat\":$iat,\"exp\":$exp}" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+  local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -hmac "$secret" -binary | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+
+  echo "$header.$payload.$signature"
+}
 
 case $cmd in
     start)
+        source "$ENVFILE"
         cmd="$dockerbasecmd up --force-recreate --wait"
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
@@ -111,6 +136,9 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
+        if [ -n "$services" ]; then
+            cmd="$cmd $services"
+        fi
         echo . $cmd
         $cmd
         ;;
@@ -150,6 +178,7 @@ case $cmd in
         $cmd
         ;;
     patchdemodb)
+        source "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
@@ -159,6 +188,7 @@ case $cmd in
         DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
+        PROJECT_NAME=${PROJECT_NAME:-d2e}
         [ -v DOTENV_FILE ] || DOTENV_FILE=$env
         DOTENV_KEYS=$DOTENV_FILE.keys
 
@@ -174,6 +204,13 @@ case $cmd in
         DB_CREDENTIALS__INTERNAL__PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl genpkey -algorithm RSA -aes-256-cbc -pkeyopt rsa_keygen_bits:4096 -pass env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE -quiet)"
         DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
         DB_CREDENTIALS__INTERNAL__PUBLIC_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
+
+        # Generate random supabase JWT secret
+        JWT_SECRET=$(generate_random_secret)
+        # Generate supabase service role JWT token
+        ROLE="service_role"
+        ISSUER="supabase"
+        JWT_TOKEN=$(generate_jwt "$JWT_SECRET" "$ROLE" "$ISSUER")
 
         # action
         echo -n '' > $DOTENV_FILE
@@ -197,8 +234,10 @@ case $cmd in
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo STRATEGUS__KEYRING_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
+        echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
+        echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
+        echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
@@ -219,7 +258,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull ghcr.io/data2evidence/d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -227,8 +266,16 @@ case $cmd in
         $cmd
         ;;
     setupdemo)
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs &&
+        source "$ENVFILE"
+        npx d2e patchdemodb
+        database_host=${PROJECT_NAME:-d2e}-demodb
+        docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demo_database_publication FOR TABLES IN SCHEMA demo_cdm; ALTER TABLE demo_cdm.COHORT REPLICA IDENTITY FULL; ALTER TABLE demo_cdm.COHORT_DEFINITION REPLICA IDENTITY FULL;"
+        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path -n "$ENVFILE" &&
         npx zx $node_modules_path/scripts/load-demodataset.mjs
+        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        ;;
+    checkflow) 
+        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
         ;;
     *)
         if [ -z ${cmd:-} ]; then
@@ -245,13 +292,15 @@ Commands:
   start       Starts d2e services. Requires d2e init and d2e setup to be run.
   stop        Stops d2e services
   clean       Removes d2e docker containers and volumes
-  setupdemo        Load d2e services. Requires d2e init and d2e setup to be run.
+  setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
 
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
+ -h, --cachedb              Include cachedb
+ -j, --jupyter              Include jupyter
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
  -v, --version [VERSION]    Version of the d2e services to use

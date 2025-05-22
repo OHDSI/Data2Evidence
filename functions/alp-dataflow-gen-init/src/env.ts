@@ -3,6 +3,7 @@ const _env = Deno.env.toObject();
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
 export const env = {
   TEST_VALUE: _env.TEST_VALUE,
+  CUSTOM_WORK_POOL_CONFIGURATION: _env.CUSTOM_WORK_POOL_CONFIGURATION ? JSON.parse(_env.CUSTOM_WORK_POOL_CONFIGURATION) : {},
 
   VARIABLES: {
     // Prefect Variables
@@ -46,7 +47,6 @@ export const env = {
     "idp-alp-data-client-id": _env.IDP__ALP_DATA_CLIENT_ID,
     "idp-alp-data-client-secret": _env.IDP__ALP_DATA__CLIENT_SECRET,
     "minio-secret-key": _env.MINIO__SECRET_KEY,
-    "strategus-keyring-password": _env.STRATEGUS__KEYRING_PASSWORD,
     "pg-admin-user": _env.PG_ADMIN_USER,
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
   },
@@ -57,3 +57,4 @@ export const env = {
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
 export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
+export const CUSTOM_WORK_POOL_CONFIGURATION = env.CUSTOM_WORK_POOL_CONFIGURATION;

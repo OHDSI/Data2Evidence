@@ -11,6 +11,8 @@ import {
   IHanaConcept,
   IHanaConceptRelationship,
   IConcept,
+  IConceptHierarchy,
+  IHanaConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
 
@@ -468,32 +470,6 @@ export class HanaHDBDao {
     }
   }
 
-  async getExactConceptAncestors(
-    searchConceptIds: number[],
-    level: number
-  ): Promise<IConceptAncestor[]> {
-    const client = await this.getHanaHDBConnection();
-    try {
-      // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
-      const sql = `
-        select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
-          this.vocabSchemaName
-        }.concept_ancestor WHERE descendant_concept_id IN (${searchConceptIds.join(
-        ", "
-      )}) AND min_levels_of_separation = (?);
-            `;
-      const result = await this.asyncExec(client, sql, [level]);
-      return this.mapHanaConceptsAncestor(result);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    } finally {
-      await client.end();
-    }
-  }
-
   async getConceptRelationship(
     searchConceptIds: number[],
     conceptRelationshipType: "Maps to"
@@ -515,6 +491,138 @@ export class HanaHDBDao {
         conceptRelationshipType,
       ])) as IHanaConceptRelationship[];
       return this.mapHanaConceptsRelationship(result);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyDescendants(
+    searchConceptId: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = await this.getHanaHDBConnection();
+    try {
+      const sql = `
+        select
+          ca.*,
+          -1 as DEPTH,
+          c.concept_id,
+          c.concept_name,
+          c.vocabulary_id,
+          c.concept_class_id
+        from
+          ${this.vocabSchemaName}.concept_ancestor ca
+        join ${this.vocabSchemaName}.concept c on
+          c.concept_id = ca.ancestor_concept_id
+        where
+          ca.min_levels_of_separation = 1
+          and ca.ancestor_concept_id = ?;
+            `;
+
+      const result = (await this.asyncExec(client, sql, [
+        searchConceptId,
+      ])) as IHanaConceptHierarchy[];
+      return this.mapHanaConceptsHierarchy(result);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getHierarchyAncestors(
+    searchConceptId: number,
+    maxDepth: number
+  ): Promise<IConceptHierarchy[]> {
+    const client = await this.getHanaHDBConnection();
+    let conceptAncestors: IConceptHierarchy[] = [];
+
+    try {
+      // Recursively get concept ancesters for concept hierarchy
+      // Get self
+      const sql = `
+                    SELECT
+                      0 AS DEPTH,
+                      ca.ancestor_concept_id AS ANCESTOR_CONCEPT_ID,
+                      ca.descendant_concept_id AS DESCENDANT_CONCEPT_ID,
+                      c.concept_id AS CONCEPT_ID,
+                      c.concept_name AS CONCEPT_NAME,
+                      c.vocabulary_id AS VOCABULARY_ID,
+                      c.concept_class_id AS CONCEPT_CLASS_ID
+                    FROM
+                    ${this.vocabSchemaName}.concept_ancestor ca
+                    JOIN 
+                      ${this.vocabSchemaName}.concept c ON c.concept_id = ca.ancestor_concept_id
+                    WHERE
+                      ca.descendant_concept_id = ?
+                      AND ca.min_levels_of_separation = 0
+                    ORDER BY 
+                      CONCEPT_ID, ANCESTOR_CONCEPT_ID, DESCENDANT_CONCEPT_ID;
+                    `;
+      const result = (await this.asyncExec(client, sql, [
+        searchConceptId,
+      ])) as IHanaConceptHierarchy[];
+      conceptAncestors = conceptAncestors.concat(
+        this.mapHanaConceptsHierarchy(result)
+      );
+
+      const getAncestors = async (
+        conceptIds: number[],
+        depth: number,
+        maxDepth: number
+      ) => {
+        if (maxDepth < depth || conceptIds.length === 0) {
+          return [];
+        } else {
+          // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
+          // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+          // https://github.com/alp-os/internal/issues/1411
+          const sql = `
+                    SELECT
+                      ${depth} + 1 AS DEPTH,
+                      ca.ancestor_concept_id AS ANCESTOR_CONCEPT_ID,
+                      ca.descendant_concept_id AS DESCENDANT_CONCEPT_ID,
+                      c.concept_id AS CONCEPT_ID,
+                      c.concept_name AS CONCEPT_NAME,
+                      c.vocabulary_id AS VOCABULARY_ID,
+                      c.concept_class_id AS CONCEPT_CLASS_ID
+                    FROM
+                      ${this.vocabSchemaName}.concept_ancestor ca
+                    JOIN 
+                      ${
+                        this.vocabSchemaName
+                      }.concept c ON c.concept_id = ca.ancestor_concept_id
+                    WHERE
+                      ca.descendant_concept_id IN (${conceptIds.join(", ")}) AND
+                      ca.min_levels_of_separation = 1
+                    ORDER BY 
+                      CONCEPT_ID, ANCESTOR_CONCEPT_ID, DESCENDANT_CONCEPT_ID;
+                      `;
+          const result = (await this.asyncExec(client, sql, [
+            searchConceptId,
+          ])) as IHanaConceptHierarchy[];
+          conceptAncestors = conceptAncestors.concat(
+            this.mapHanaConceptsHierarchy(result)
+          );
+
+          await getAncestors(
+            this.mapHanaConceptsHierarchy(result).map((e) => e.concept_id),
+            depth + 1,
+            maxDepth
+          );
+        }
+      };
+
+      await getAncestors(
+        this.mapHanaConceptsHierarchy(result).map((e) => e.concept_id),
+        0,
+        maxDepth
+      );
+
+      return conceptAncestors;
     } catch (error) {
       console.error(error);
       throw error;
@@ -592,6 +700,24 @@ export class HanaHDBDao {
     return mappedConcepts;
   };
 
+  // Map IHanaConceptHierarchy to IConceptHierarchy type
+  private mapHanaConceptsHierarchy = (
+    conceptsHierarchy: IHanaConceptHierarchy[]
+  ): IConceptHierarchy[] => {
+    const mappedConcepts = conceptsHierarchy.map((conceptHierarchy) => {
+      return {
+        ancestor_concept_id: parseInt(conceptHierarchy.ANCESTOR_CONCEPT_ID),
+        descendant_concept_id: parseInt(conceptHierarchy.DESCENDANT_CONCEPT_ID),
+        depth: parseInt(conceptHierarchy.DEPTH),
+        concept_id: parseInt(conceptHierarchy.CONCEPT_ID),
+        concept_name: conceptHierarchy.CONCEPT_NAME,
+        vocabulary_id: conceptHierarchy.VOCABULARY_ID,
+        concept_class_: conceptHierarchy.CONCEPT_CLASS_,
+      };
+    });
+    return mappedConcepts;
+  };
+
   private lowercaseArrayObjectKeys = (objectArray: any[]) => {
     return objectArray.map((obj) => {
       return Object.fromEntries(
@@ -615,16 +741,12 @@ export class HanaHDBDao {
           host: datasetDatabaseCredential.host,
           port: datasetDatabaseCredential.port,
           databaseName: datasetDatabaseCredential.databaseName,
-          validate_certificate: datasetDatabaseCredential.validateCertificate,
-          sslTrustStore: datasetDatabaseCredential.sslTrustStore,
-          pooling: datasetDatabaseCredential.pooling,
-          autoCommit: datasetDatabaseCredential.autoCommit,
-          encrypt: datasetDatabaseCredential.encrypt,
-          useTLS: datasetDatabaseCredential.useTLS,
-          rejectUnauthorized: datasetDatabaseCredential.rejectUnauthorized,
+          validate_certificate: datasetDatabaseCredential.db_extra.validateCertificate,
+          pooling: datasetDatabaseCredential.db_extra.pooling,
+          autoCommit: datasetDatabaseCredential.db_extra.autoCommit,
+          useTLS: datasetDatabaseCredential.db_extra.useTLS,
           hostname_in_certificate:
-            datasetDatabaseCredential.hostnameInCertificate,
-          sslCryptoProvider: datasetDatabaseCredential.sslCryptoProvider,
+            datasetDatabaseCredential.db_extra.hostnameInCertificate,
           dialect: datasetDatabaseCredential.dialect,
         };
 

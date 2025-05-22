@@ -159,5 +159,17 @@ watchEffect(() => {
   @apply px-4
     py-3;
 }
+
+.log-row {
+  .log-row__content > span {
+    font-size: 1.1em;
+  }
+  .log-row__leading > span {
+    font-size: 0.7em;
+  }
+  .log-row__trailing {
+    font-size: 0.65em;
+  }
+}
 </style>
   

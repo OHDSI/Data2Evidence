@@ -30,6 +30,7 @@ const initialState: FlowRootState = {
   addGroupDialog: { visible: false },
   saveFlowDialog: { visible: false, dataflowId: null },
   isTestMode: false,
+  hasUnmappedFlowRunResult: false,
 
   status: undefined,
   flowRunState: flowRunStatesInitialState,
@@ -56,10 +57,7 @@ const flowSlice = createSlice({
     ) => {
       state.addNodeTypeDialog = action.payload;
     },
-    setAddGroupDialog: (
-      state,
-      action: PayloadAction<AddGroupDialogState>
-    ) => {
+    setAddGroupDialog: (state, action: PayloadAction<AddGroupDialogState>) => {
       state.addGroupDialog = action.payload;
     },
     setSaveFlowDialog: (state, action: PayloadAction<SaveFlowDialogState>) => {
@@ -85,6 +83,11 @@ const flowSlice = createSlice({
       flowRunStatesAdapter.setAll(state.flowRunState, [action.payload]);
     },
 
+    // Flow run result
+    setHasUnmappedFlowRunResult: (state, action: PayloadAction<boolean>) => {
+      state.hasUnmappedFlowRunResult = action.payload;
+    },
+
     // Nodes
     replaceNodes: <TData extends NodeDataState>(
       state,
@@ -97,6 +100,15 @@ const flowSlice = createSlice({
       action: PayloadAction<NodeState<TData>>
     ) => {
       nodesAdapter.upsertOne(state.nodes, action.payload);
+    },
+    clearNodesResult: (state) => {
+      nodesAdapter.setAll(
+        state.nodes,
+        Object.values(state.nodes.entities).map((n) => ({
+          ...n,
+          data: { ...n.data, result: null, error: null, errorMessage: null },
+        }))
+      );
     },
 
     // Edges
@@ -126,9 +138,13 @@ export const {
   // Flow run state
   setFlowRunState,
 
+  // Flow run result
+  setHasUnmappedFlowRunResult,
+
   // Nodes
   replaceNodes,
   setNode,
+  clearNodesResult,
 
   // Edges
   replaceEdges,

@@ -38,12 +38,11 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code, 
-                      schema_name=schema_name)
+                      database_code=database_code)
         portal_server_api = PortalServerAPI()
         
         # check if schema exists
-        schema_exists = dbdao.check_schema_exists()
+        schema_exists = dbdao.check_schema_exists(schema_name)
         if schema_exists is False:
             error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
             logger.error(error_msg)
@@ -57,6 +56,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_release_date",
                 entity_name="created_date",
@@ -68,6 +68,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_release_date",
                 entity_name="updated_date",
@@ -79,6 +80,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="person",
                 column_name="person_id",
                 entity_name="patient_count",
@@ -90,6 +92,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 logger=logger
             )
             
@@ -106,6 +109,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,
+                schema_name=schema_name,
                 table_name="cdm_source",
                 column_name="cdm_version",
                 entity_name="version",

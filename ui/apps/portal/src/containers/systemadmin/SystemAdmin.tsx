@@ -1,8 +1,9 @@
-import React, { FC, useEffect, useMemo, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Snackbar, ErrorBoundary } from "@portal/components";
 import { Header } from "../../components";
 import { useFeedback } from "../../contexts";
+import { useFeatures } from "../../hooks";
 import { IPluginItem, Plugins } from "../../types";
 import { loadPlugins, sortPluginsByType, getPluginChildPathPattern } from "../../utils";
 import { SystemAdminPluginRenderer } from "../../plugins/core/SystemAdminPluginRenderer";
@@ -27,6 +28,7 @@ const SystemAdmin: FC = () => {
   const feedback = getFeedback();
   const [systemFeatures] = useSystemFeatures();
   const [systemAdminPlugins, setSystemAdminPlugins] = useState<Plugins[]>([]);
+  const [features] = useFeatures();
 
   const defaultRoute = useMemo(() => {
     const firstPlugin = systemAdminPlugins.at(0);
@@ -54,6 +56,25 @@ const SystemAdmin: FC = () => {
     return flatPlugins;
   }, [plugins]);
 
+  const setupFeatureFlag = useCallback(
+    (plugin: IPluginItem) => {
+      // Detect and map the feature flag value (true/false) in the data props if key matched
+      if (plugin.data && Object.keys(plugin.data).length > 0) {
+        Object.keys(plugin.data).forEach((key) => {
+          const feature = features?.find((f) => f.feature === key);
+          if (feature) {
+            plugin.data = {
+              ...plugin.data,
+              [key]: feature.isEnabled || false,
+            };
+          }
+        });
+      }
+      return plugin;
+    },
+    [features]
+  );
+
   useEffect(() => {
     const updateSystemAdminPlugins = () => {
       const displayedSystemAdminPlugins = plugins.systemadmin
@@ -64,11 +85,22 @@ const SystemAdmin: FC = () => {
           if (item.featureFlag) {
             pluginEnv[route] = systemFeatures.includes(item.featureFlag);
           }
+
+          item = setupFeatureFlag(item);
+
           // Allows plugins not specified in pluginEnv to be shown by default
           // Allows plugins which are enabled based on pluginEnv
           if (!(route in pluginEnv) || pluginEnv[route]) {
             if ("children" in item) {
-              acc.push({ ...item, children: item.children?.filter((x) => x.enabled) });
+              acc.push({
+                ...item,
+                children: item.children
+                  ?.map((child) => {
+                    child = setupFeatureFlag(child);
+                    return child;
+                  })
+                  .filter((x) => x.enabled),
+              });
             } else {
               acc.push(item);
             }
@@ -78,7 +110,7 @@ const SystemAdmin: FC = () => {
       setSystemAdminPlugins(displayedSystemAdminPlugins);
     };
     updateSystemAdminPlugins();
-  }, [systemFeatures]);
+  }, [systemFeatures, setupFeatureFlag]);
 
   useEffect(() => {
     if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);

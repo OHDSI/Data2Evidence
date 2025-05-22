@@ -50,7 +50,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            # Run DataNode services without sql-editor
+            # Run DataNode services
             npm run start:ci
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
@@ -71,11 +71,6 @@ jobs:
         if: success() || failure()
         run: |
           yarn ci:logs:minerva
-
-      - name: print logs for alp-logto-seed
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-seed -t
 
       - name: Clean Docker compose
         if: always()

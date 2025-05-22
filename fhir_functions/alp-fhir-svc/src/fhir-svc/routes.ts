@@ -1,10 +1,8 @@
-import express from "npm:express";
-import { validationResult } from "npm:express-validator";
+import express from "express";
+import { validationResult } from "express-validator";
 import {
   createProject,
   forwardRequest,
-  // createResourceInProject,
-  // ingestResourceInCacheDB,
 } from "./services";
 
 import { validateCreateFhirProjectDto, validateProxyDto } from "./middleware";
@@ -20,7 +18,7 @@ export class FhirRouter {
   }
 
   private registerRoutes() {
-    //Endpoint to create a new project for the incoming dataset name in FHIR server
+    //Endpoint to create a new project for the incoming dataset id in FHIR server
     this.router.post(
       "/createProject",
       validateCreateFhirProjectDto(),
@@ -29,11 +27,11 @@ export class FhirRouter {
         if (!errors.isEmpty()) {
           res.status(400).json({ errors: errors.array() });
         }
-
-        const { name, description } = req.body;
+        const token = req.headers.authorization;
+        const { id, description } = req.body;
         try {
-          const projectId = await createProject(name, description);
-          return res.status(200).json(projectId);
+          const status = await createProject(token, id, description);
+          return res.status(200).json(status);
         } catch (error) {
           let log_msg = `Failed to create project in fhir server - ${error.message}`;
           this.logger.error(log_msg);
@@ -170,80 +168,5 @@ export class FhirRouter {
         // }
       }
     );
-
-    // Todo: remove as part of bots and subscription
-    //Endpoint to create resource in FHIR server which triggers the subscription
-    // this.router.post("/ingest/:resource/:projectName?", async (req, res) => {
-    //   try {
-    //     const { resource, projectName } = req.params;
-    //     const token = req.headers.authorization!;
-    //     const response = await createResourceInProject(
-    //       token,
-    //       resource,
-    //       req.body,
-    //       projectName
-    //     );
-    //     this.logger.info(
-    //       `Resource of type '${resource}' successfully ingested into project '${projectName}'!`
-    //     );
-    //     return res.status(200).json(response);
-    //   } catch (error) {
-    //     this.logger.error(error);
-    //     res.status(500).send(error.message);
-    //   }
-    // });
-
-    // Todo: remove as part of bots and subscription
-    //Endpoint to ingest data into fhir data model in cachedb
-    // this.router.post("/ingestResource/:resource", async (req, res) => {
-    //   try {
-    //     this.logger.info("Ingest into FHIR Data model");
-    //     const response = await ingestResourceInCacheDB(req.body);
-    //     if (response) return res.status(200).json(response);
-    //     else return res.status(500).json("Failed to ingest FHIR Resource");
-    //   } catch (error) {
-    //     this.logger.error(
-    //       `Error ingesting resource in cachedb:  ${JSON.stringify(error)}`
-    //     );
-    //     res.status(500).send("Error ingesting resource");
-    //   }
-    // });
-
-    //Need the following for testing
-    //Test
-    //Endpoint to ingest data into fhir data model in cachedb
-    // this.router.post('/getResource/:resource/:datasetId', async(req, res) =>{
-    //   try{
-    //     this.logger.info('Ingest into FHIR Data model')
-    //     let resource = req.params.resource
-    //     let datasetId = req.params.datasetId
-    //     const response = await getResource(resource, datasetId)
-    //     if(response)
-    //       return res.status(200).json(response)
-    //     else
-    //     return res.status(500).json('Failed to ingest FHIR Resource')
-    //   }catch(error){
-    //     this.logger.error(`Error ingesting resource in cachedb:  ${JSON.stringify(error)}`)
-    //     res.status(500).send('Error ingesting resource')
-    //   }
-    // })
-
-    //Test
-    //   this.router.post('/update/:resource', async(req, res) => {
-    //     try{
-    //       this.logger.info('Update resource')
-    //       const clientId = req.body.clientId as string
-    //       const projectId = req.body.projectId as string
-    //       const botId = req.body.botId as string
-    //       let response = await updateResource(clientId, projectId, botId)
-    //       if(response)
-    //         return res.status(200).json('FHIR Resource successfully ingested!')
-    //       else
-    //       return res.status(500).json('Failed to ingest FHIR Resource')
-    //     }catch(err){
-    //       this.logger.error(`Error ingesting resource in cachedb:  ${JSON.stringify(err)}`)
-    //       res.status(500).send('Error ingesting resource in cachedb')
-    //     }
-    //   })
   }
 }

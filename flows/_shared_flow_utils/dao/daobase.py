@@ -8,11 +8,15 @@ from sqlalchemy import text
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from _shared_flow_utils.types import UserType, AuthToken
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_token_value
+from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
 
+# List of system schemas by database
+SYSTEM_SCHEMAS = {
+    "postgres": ["information_schema", "pg_catalog", "public"]
+}
 
 class DialectDrivers(BaseModel):
     class jdbc:
@@ -45,16 +49,12 @@ class DaoBase(ABC):
 
     use_cache_db: bool = False
     database_code: str
-    schema_name: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
-    vocab_schema_name: Optional[str] = ""
 
     def __init__(self,
                  use_cache_db: bool,
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 schema_name: str = None,
-                 vocab_schema_name: str = None,
                  connect_to_duckdb: bool = False):
 
         secret_block = Secret.load("database-credentials").get()
@@ -65,8 +65,6 @@ class DaoBase(ABC):
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
-        self.schema_name = schema_name
-        self.vocab_schema_name = vocab_schema_name
         self.connect_to_duckdb = connect_to_duckdb
 
     # --- Property methods ---
@@ -85,32 +83,30 @@ class DaoBase(ABC):
 
     @property
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
+        return self.__extract_database_credentials()
+    
+    def cachedb_tenant_configs(self,schema_name: str, vocab_schema_name: str) -> DBCredentialsType | CacheDBCredentialsType:
         database_credentials = self.__extract_database_credentials()
-        if self.use_cache_db:
-            if (self.schema_name is None and self.vocab_name is None):
-                raise AttributeError(
-                    f"Schema name and vocab name needs to be set if 'use_cache_db' is True!")
-            if self.connect_to_duckdb == True:
-                database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
-            database_credentials.databaseName = self.__create_cachedb_db_name(
-                database_credentials)
+        if self.connect_to_duckdb == True:
+            database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
+            database_credentials.databaseName = self.__create_cachedb_db_name(database_credentials, 
+                                                                              schema_name, 
+                                                                              vocab_schema_name)
             database_credentials.adminUser = database_credentials.readUser = "Bearer " + \
                 OpenIdAPI().getClientCredentialToken()
             database_credentials.adminPassword = database_credentials.readPassword = "Qwerty"
             database_credentials.host = Variable.get("cachedb_host")
             database_credentials.port = Variable.get("cachedb_port")
-            database_credentials_dict = database_credentials.model_dump()
-            return CacheDBCredentialsType(**database_credentials_dict)
-        return database_credentials
+            return CacheDBCredentialsType(**database_credentials.model_dump())
 
     # --- Create methods ---
 
     @abstractmethod
-    def create_schema(self):
+    def create_schema(self, schema: str):
         pass
 
     @abstractmethod
-    def create_table(self, table_name: str, columns: dict):
+    def create_table(self, schema: str, table: str, columns: dict):
         pass
 
     # --- Read methods ---
@@ -124,63 +120,64 @@ class DaoBase(ABC):
         pass
 
     @abstractmethod
-    def check_table_exists(self, table: str) -> bool:
+    def check_table_exists(self, schema: str, table: str) -> bool:
         pass
 
     @abstractmethod
-    def get_table_names(self, include_views=False) -> list[str]:
+    def get_table_names(self, schema: str, include_views=False) -> list[str]:
         pass
 
     @abstractmethod
-    def get_columns(self, table: str) -> list[str]:
+    def get_columns(self, schema: str, table: str) -> list[str]:
         pass
 
     @abstractmethod
-    def get_table_row_count(self, table: str) -> int:
+    def get_table_row_count(self, schema: str, table: str) -> int:
         pass
 
     @abstractmethod
-    def get_distinct_count(self, table_name: str, column_name: str) -> int:
+    def get_distinct_count(self, schema: str, table: str, column: str) -> int:
         pass
 
     @abstractmethod
-    def get_value(self, table_name: str, column_name: str) -> str:
+    def get_value(self, schema: str, table: str, column: str) -> str:
         pass
 
     @abstractmethod
-    def get_next_record_id(self, table_name: str, id_column_name: int) -> int:
+    def get_next_record_id(self, schema: str, table: str, id_column: int) -> int:
         pass
 
     @abstractmethod
-    def get_last_executed_changeset(self) -> str:
+    def get_last_executed_changeset(self, schema: str) -> str:
         pass
 
     @abstractmethod
-    def get_datamodel_created_date(self) -> datetime:
+    def get_datamodel_created_date(self, schema: str) -> datetime:
         pass
 
     @abstractmethod
-    def get_datamodel_updated_date(self) -> datetime:
+    def get_datamodel_updated_date(self, schema: str) -> datetime:
         pass
 
     # --- Update methods ---
 
     @abstractmethod
-    def update_cdm_version(self, cdm_version: str):
+    def update_cdm_version(self, schema: str, cdm_version: str):
         pass
 
     @abstractmethod
-    def insert_values_into_table(self, table_name: str, column_value_mapping: list[dict]):
+    def insert_values_into_table(self, schema: str, table: str, column_value_mapping: list[dict]):
         pass
 
     # --- Delete methods ---
 
     @abstractmethod
-    def drop_schema(self, cascade: bool = True):
+    def drop_schema(self, schema: str, cascade: bool = False):
         pass
 
     @abstractmethod
-    def truncate_table(self, table_name: str):
+    def truncate_table(self, schema: str, table: str):
+        # Ibis already uses truncate_table
         pass
 
     # --- User methods ---
@@ -206,11 +203,11 @@ class DaoBase(ABC):
         pass
 
     @abstractmethod
-    def grant_read_privileges(self, role_name: str):
+    def grant_read_privileges(self, schema: str, role_name: str):
         pass
 
     @abstractmethod
-    def grant_cohort_write_privileges(self, role_name: str):
+    def grant_cohort_write_privileges(self, schema: str, role_name: str):
         pass
 
     # --- Static methods ---
@@ -254,10 +251,16 @@ class DaoBase(ABC):
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
 
-        if auth_mode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
-            # Prefect task to fetch token
-            auth_token: AuthToken = get_auth_token_from_input()
-            return base_url, {"password": get_token_value(auth_token)}
+        if dialect == SupportedDatabaseDialects.HANA:
+            hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
+            if auth_mode == AuthMode.JWT:
+                # Prefect task to fetch token
+                auth_token: AuthToken = get_auth_token_from_input()
+                hana_connect_args["password"] = get_third_party_token_value(auth_token)
+                return base_url, hana_connect_args
+            
+            if auth_mode == AuthMode.PASSWORD:
+                return base_url, hana_connect_args.update({"user": user, "password": password.get_secret_value()})
 
         return base_url, {"user": user, "password": password.get_secret_value()}
 
@@ -310,7 +313,9 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.POSTGRES:
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?{database_name}"
+                encrypt = database_credentials.encrypt or "TRUE"
+                validateCertificate = database_credentials.validateCertificate or "FALSE"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
                 extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
                 conn_url += extra_config
 
@@ -318,7 +323,7 @@ class DaoBase(ABC):
             user = ""  # Todo: Confirm if can be left blank
             # Prefect task to fetch token
             auth_token: AuthToken = get_auth_token_from_input()
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{get_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         else:
             match user_type:
@@ -372,7 +377,8 @@ class DaoBase(ABC):
                 raise ValueError(dialect_err)
         return database_credentials
 
-    def __create_cachedb_db_name(self, database_credentials: DBCredentialsType) -> str:
+    def __create_cachedb_db_name(self, database_credentials: DBCredentialsType, 
+                                 schema_name: str, vocab_schema_name: str) -> str:
         if database_credentials.dialect == SupportedDatabaseDialects.POSTGRES:
             database_credentials.dialect = "postgresql"
         match self.user_type:
@@ -382,7 +388,7 @@ class DaoBase(ABC):
                 connection_type = "write"
         db_name = f"B|{database_credentials.dialect}|{connection_type}|{self.database_code}"
         if database_credentials.dialect == SupportedDatabaseDialects.DUCKDB:
-            db_name += f"|{self.schema_name}|{self.vocab_schema_name}"
+            db_name += f"|{schema_name}|{vocab_schema_name}"
         return db_name
 
     def __sanitize_inputs(self, input: str):

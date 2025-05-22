@@ -1,0 +1,68 @@
+{
+  "name": "@data2evidence/search-embedding-flow",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-search-embedding:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data2evidence/d2e-flows.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/data2evidence/d2e-flows/issues"
+  },
+  "homepage": "https://github.com/data2evidence/d2e-flows#readme",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/ohdsi/d2e/flow-search-embedding",
+      "flows": [
+        {
+          "name": "search_embedding_plugin",
+          "type": "search",
+          "entrypoint": "flows.search_embedding_plugin.flow.search_embedding_plugin",
+          "tags": [
+            "search_embedding"
+          ],
+          "parameter_openapi_schema": {
+            "type": "object",
+            "title": "Parameters",
+            "required": [
+              "options"
+            ],
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/SearchEmbeddingType",
+                "title": "options",
+                "position": 0
+              }
+            },
+            "definitions": {
+              "SearchEmbeddingType": {
+                "type": "object",
+                "title": "SearchEmbeddingType",
+                "required": [
+                  "database_code",
+                  "schema_name"
+                ],
+                "properties": {
+                  "schema_name": {
+                    "type": "string",
+                    "title": "Schema Name"
+                  },
+                  "database_code": {
+                    "type": "string",
+                    "title": "Database Code"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

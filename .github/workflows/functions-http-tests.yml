@@ -132,8 +132,8 @@ jobs:
       - name: Start system services
         run: |
           yarn start:ci
-          echo "Waiting 120 secs for services to start..."
-          sleep 120
+          echo "Waiting 140 secs for services to start..."
+          sleep 140
 
       - name: Check status of docker containers
         run: |
@@ -323,18 +323,18 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-postgres-1 -t
-      - name: print logs for alp-minerva-s3
+      - name: print logs for alp-supabase-storage-1
         if: ${{ always() || cancelled() || failure() }}
         run: |
-          docker logs alp-minerva-s3 -t
+          docker logs alp-supabase-storage-1 -t
+      - name: print logs for alp-supabase-storage-post-init-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs alp-supabase-storage-post-init-1 -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-trex -t
-      - name: print logs for alp-minio-post-init
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minio-post-init -t
       - name: print logs for alp-minerva-pg-mgmt-init-1
         if: ${{ always() || cancelled() || failure() }}
         run: |
@@ -343,10 +343,10 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
-      - name: print logs for alp-logto-seed
+      - name: print logs for fhir-server
         if: ${{ always() || cancelled() || failure() }}
         run: |
-          docker logs alp-logto-seed -t
+          docker logs alp-minerva-fhir-server-1 -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}

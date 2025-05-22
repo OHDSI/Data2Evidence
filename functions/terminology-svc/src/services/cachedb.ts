@@ -13,21 +13,47 @@ import {
   Filters,
   IDuckdbFacet,
   DatasetDialects,
+  IConceptHierarchy,
+  DatasetDB,
+  HybridSearchConfig,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
 import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
 import { HanaHDBDao } from "./hana-hdb-dao.ts";
 import { SystemPortalAPI } from "../api/portal-api.ts";
 import { groupBy } from "../utils/helperUtil.ts";
-import { env } from "../env.ts";
 
 export class CachedbService {
   private readonly token: string;
   private readonly systemPortalApi: SystemPortalAPI;
+  private readonly datasetDB: DatasetDB;
+  private readonly hybridSearchConfig: HybridSearchConfig;
 
-  constructor(request: Request) {
+  constructor(request: Request, datasetDB: DatasetDB, hybridSearchConfig: HybridSearchConfig) {
     this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
+    this.datasetDB = datasetDB;
+    this.hybridSearchConfig = hybridSearchConfig;
+  }
+
+  /*
+  Initialize in an optimal way
+  */
+  public static async createCacheDBService(request: Request, datasetId: string): CachedbService {
+    const systemPortalApi = new SystemPortalAPI(request);
+    const getDatasetDetails = async () => {
+      const datasetDB = {
+        ...(await systemPortalApi.getDatasetDetails(datasetId)),
+        datasetId,
+      }
+      return datasetDB
+    }
+    const getHybridSearch = async () => {
+      const hybridSearchConfigData = await systemPortalApi.getHybridSearchConfig();
+      return JSON.parse(hybridSearchConfigData.value)
+    }
+    const [datasetDB, hybridSearchConfig] = await Promise.all([getDatasetDetails(), getHybridSearch()])
+    return new CachedbService(request, datasetDB, hybridSearchConfig)
   }
 
   /*
@@ -36,15 +62,27 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode } =
-      await this.systemPortalApi.getDatasetDetails(datasetId);
-
+    const { dialect, vocabSchemaName, databaseCode, schemaName } = this.datasetDB;
     if (dialect === DatasetDialects.HANA) {
-      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
+        return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
+    if (this.hybridSearchConfig == undefined) {
+      throw new Error("hybridSearchConfig undefined!")
+    }
+    const enableSemantic = this.hybridSearchConfig.isEnabled;
+    const semanticRatio = enableSemantic
+      ? parseFloat(this.hybridSearchConfig.semanticRatio)
+      : 0;
 
     // By default return CachedbDAO
-    return new CachedbDAO(this.token, datasetId, vocabSchemaName);
+    return new CachedbDAO(
+      this.token,
+      datasetId,
+      vocabSchemaName,
+      semanticRatio,
+      databaseCode,
+      schemaName
+    );
   }
 
   async getConcepts(
@@ -242,11 +280,13 @@ export class CachedbService {
         return [];
       }
       // Result has to be mapped like this due to expected response from frontend
-      const mappedResults = duckdbMappedResult.expansion.contains.map((mappedResult) => 
-              ({...mappedResult,
-              conceptCode: mappedResult.code,
-              conceptName: mappedResult.display,
-              vocabularyId: mappedResult.system})
+      const mappedResults = duckdbMappedResult.expansion.contains.map(
+        (mappedResult) => ({
+          ...mappedResult,
+          conceptCode: mappedResult.code,
+          conceptName: mappedResult.display,
+          vocabularyId: mappedResult.system,
+        })
       );
       return mappedResults;
     } catch (err) {
@@ -255,21 +295,22 @@ export class CachedbService {
     }
   }
 
-  async getDescendants(conceptIds: number[], datasetId: string) {
-    if (conceptIds.length === 0) {
-      return [];
-    }
+  async getHierarchyDescendants(
+    conceptId: number,
+    datasetId: string
+  ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
-    const result = await cachedbDao.getExactConceptDescendants(conceptIds);
+    const result = await cachedbDao.getHierarchyDescendants(conceptId);
     return result;
   }
 
-  async getAncestors(conceptIds: number[], datasetId: string, depth: number) {
-    if (conceptIds.length === 0) {
-      return [];
-    }
+  async getHierarchyAncestors(
+    conceptId: number,
+    datasetId: string,
+    depth: number
+  ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
-    const result = await cachedbDao.getExactConceptAncestors(conceptIds, depth);
+    const result = await cachedbDao.getHierarchyAncestors(conceptId, depth);
     return result;
   }
 
@@ -361,10 +402,18 @@ export class CachedbService {
       code: item.concept_code,
       // The date is stored as seconds from epoch, but new Date() expects ms
       validStartDate: item.valid_start_date
-        ? new Date(item.valid_start_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_start_date * 1000
+              : item.valid_start_date
+          ).toISOString()
         : new Date(0).toISOString(),
       validEndDate: item.valid_end_date
-        ? new Date(item.valid_end_date * 1000).toISOString()
+        ? new Date(
+            typeof item.valid_start_date === "number"
+              ? item.valid_end_date * 1000
+              : item.valid_end_date
+          ).toISOString()
         : "",
       validity,
       score: item.score,
