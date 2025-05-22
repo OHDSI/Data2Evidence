@@ -18,11 +18,3 @@ class DCOptionsType(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
-    
-    @property
-    def flowName(self) -> str:
-        return FLOW_NAME
-
-    @property
-    def changelogFile(self) -> str:
-        return CHANGELOG_FILE

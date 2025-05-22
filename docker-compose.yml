@@ -498,6 +498,7 @@ services:
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
+      PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
 
   alp-minerva-pg-mgmt-init:
@@ -729,8 +730,6 @@ services:
       - "apt-get update && apt-get install -y curl && prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       supabase-storage-post-init:
@@ -782,8 +781,6 @@ services:
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       alp-dataflow-gen:
@@ -1148,7 +1145,7 @@ services:
       PROJECT_REF: ${PROJECT_REF:-default}
       PORT: 9000
       FILE_SIZE_LIMIT: 52428800
-      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-alp-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:-mysecret}
       SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
       MIGRATIONS_SCHEMA: storage
@@ -1173,7 +1170,7 @@ services:
       alp:
         priority: 20
     environment:
-      PGHOST: ${PG_HOST:-alp-minerva-postgres-1}
+      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
       PGDATABASE: ${PG_DB_NAME:-alp}
       PGUSER: ${PG_SUPER_USER:-postgres}
