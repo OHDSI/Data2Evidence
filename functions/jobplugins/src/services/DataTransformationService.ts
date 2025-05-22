@@ -1,7 +1,7 @@
-import fs from "node:fs";
-import * as path from "node:path";
-import http from "npm:isomorphic-git/http/web/index.js";
-import git from "npm:isomorphic-git@1.27.1";
+import fs from "fs";
+import * as path from "path";
+import http from "http";
+import git from "isomorphic-git";
 import { v4 as uuidv4 } from "uuid";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import dataSource from "../db/datasource.ts";

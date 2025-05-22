@@ -4,21 +4,19 @@ import {
   NotFoundException,
   SCOPE,
 } from "@danet/core";
-import fs from "node:fs";
-import * as path from "node:path";
-import http from "npm:isomorphic-git/http/web/index.js";
-import git from "npm:isomorphic-git@1.27.1";
-import { v4 as uuidv4 } from "npm:uuid";
+import fs from "fs";
+import * as path from "path";
+import http from "http";
+import git from "isomorphic-git";
+import { v4 as uuidv4 } from "uuid";
 import { DEFAULT_ERROR_MESSAGE } from "../common/const.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
-import { createLogger } from "../logger.ts";
 import { INotebook, INotebookBaseDto, INotebookUpdateDto } from "../types.d.ts";
 import { ServiceName } from "../user-artifact/enums/index.ts";
 import { UserArtifactService } from "../user-artifact/user-artifact.service.ts";
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class NotebookService {
-  private readonly logger = createLogger(this.constructor.name);
   private readonly userId: string;
   private readonly gitRepoPath = "./NotebookRepository";
   private readonly gitRemoteUrl =
