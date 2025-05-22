@@ -3,8 +3,7 @@ export interface IUICodeSnippet {
   model: string;
 }
 export interface ChatSnippet {
-  chatHistory: string;
+  context: string;
   userInput: string;
-  AIResponse: string;
   model: string;
 }

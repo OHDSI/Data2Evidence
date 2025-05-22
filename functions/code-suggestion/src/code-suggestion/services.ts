@@ -60,29 +60,23 @@ export const getChatResponse = async (uiChat: ChatSnippet) => {
   }
 
   try {
-    const rolePrompting =
-      "You are an experienced professional in the medical research field, with exceptional expertise in coding and analyzing healthcare data. Your background combines deep knowledge of clinical concepts, medical terminologies, and research methodologies with advanced programming skills. We value our users and our goal is to solve the coding problems for them.";
-    // // streaming:
-    // for chunk in model.stream(messages):
-    //   print(chunk)
+    const rolePrompting = `You are an experienced professional in the medical research field, with exceptional expertise in coding and analyzing healthcare data. Your background combines deep knowledge of clinical concepts, medical terminologies, and research methodologies with advanced programming skills. We value our users and our goal is to solve the coding problems for them. When you deal with the user question, the [context_code] here must be considered.
+      [context_code]: ${uiChat.context}
+      Instructions:
+      step 1: Analyze the relation between the user question and the [context_code]
+      step 2: If the user question is not related to the [context_code], please inform the user and still provide an accurate response to the user question. You could ask for more information if needed.
+      step 3: If the user question is realted to the [context_code]. Provide an accurate response to the user question, ensuring that it is relevant to the [context_code]
+      step 4: If the user question is not clear, before your reply in details you should ask for more information.
+      `;
 
-    // chat history: sys;human(code);AI;human;AI....
     const messages = [
-      // needs to enable chat history
       new SystemMessage(rolePrompting),
       new HumanMessage(uiChat.userInput),
-      new AIMessage(uiChat.AIResponse),
     ];
-
     // streaming
     const outputParser = new StringOutputParser();
     const streamingChain = model.pipe(outputParser);
     const stream = await streamingChain.stream(messages);
-
-    // // one-shot response
-    // const response = await model.invoke(messages);
-
-    // const codeSuggest = response.content;
     return [stream, "200"];
   } catch (error) {
     return [error, "500"];
