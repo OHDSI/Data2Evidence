@@ -38,3 +38,8 @@ export interface UserGroupMetadata {
   alp_role_system_admin: boolean; // alp system admin
   alp_role_dashboard_viewer: boolean; // dashboard viewer
 }
+
+export interface ConversationHistoryState {
+  role: string;
+  message: string;
+}
