@@ -37,4 +37,7 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
   @IsNotEmpty()
   @IsUUID()
   paConfigId: string
+
+  @IsUUID()
+  fhir_project_id?: string
 }
