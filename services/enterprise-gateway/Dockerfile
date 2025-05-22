@@ -18,5 +18,8 @@ RUN R -e "remotes::install_github('IRkernel/repr'); \
 RUN R -e "IRkernel::installspec()"
 
 COPY --chown=jovyan:users kernels/R_ohdsi_docker /usr/local/share/jupyter/kernels/R_ohdsi_docker
+COPY --chown=jovyan:users start-enterprise-gateway.sh /usr/local/bin/start-enterprise-gateway.sh
+COPY --chown=jovyan:users CustomKernelManager /usr/local/lib/CustomKernelManager
+RUN chmod +x /usr/local/bin/start-enterprise-gateway.sh
 
 USER jovyan
