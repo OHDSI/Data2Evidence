@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING
 from prefect import task
 from prefect.logging import get_run_logger
 from prefect.logging.loggers import task_run_logger
-from prefect.server.schemas.states import StateType
 
-from _shared_flow_utils.liquibase import Liquibase
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
@@ -30,12 +28,6 @@ def create_schema_task(dbdao: DaoBase, schema: str):
         error_msg = f"Schema '{schema}' already exists in database '{dbdao.database_code}'"
         get_run_logger().error(error_msg)
         raise Exception(error_msg)
-
-
-@task(log_prints=True)
-def run_liquibase_update_task(**kwargs):
-    liquibase = Liquibase(**kwargs)
-    liquibase.update_schema()
 
     
 @task(log_prints=True)
