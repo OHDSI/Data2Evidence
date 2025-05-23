@@ -55,23 +55,23 @@ export class CodeSuggestionRouter {
         });
       }
     });
-
     this.router.post("/chat", async (req: Request, res: Response) => {
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      req.body.model = AI_MODEL;
-      let [stream, status] = await getChatResponse(req.body);
-      for await (const chunk of stream) {
-        res.write(chunk);
-      }
-      res.end();
-      if (status === "200") {
+      try {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        req.body.model = AI_MODEL;
+
+        let stream = await getChatResponse(req.body);
+        for await (const chunk of stream) {
+          res.write(chunk);
+        }
+        res.end();
         res.status(200);
-      } else if (status === "500") {
-        res.status(200).json({
+      } catch (error) {
+        res.status(500).json({
           error: true,
-          message: "Cannot fetch chat response",
+          message: `Cannot fetch chat response: ${error.message}`,
         });
       }
     });

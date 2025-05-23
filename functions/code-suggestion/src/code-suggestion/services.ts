@@ -1,10 +1,6 @@
-import { IUICodeSnippet, ChatSnippet } from "../type";
-import {
-  HumanMessage,
-  SystemMessage,
-  AIMessage,
-} from "@langchain/core/messages";
-import { getModels } from "../utils/prepModels";
+import { IUICodeSnippet, IChatSnippet } from "../type";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { getModels, getModelsChat } from "../utils/prepModels";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
@@ -48,15 +44,11 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   }
 };
 
-export const getChatResponse = async (uiChat: ChatSnippet) => {
-  const [model, status] = await getModels(uiChat.model);
+export const getChatResponse = async (uiChat: IChatSnippet) => {
+  const model = await getModelsChat(uiChat.model);
 
-  if (status === "501") {
-    return [[model, uiChat.userInput], status];
-  }
-
-  if (status === "201") {
-    return [uiChat.userInput, status];
+  if (model === null) {
+    throw Error(`LLM Model - ${uiChat.model} not found.`);
   }
 
   try {
@@ -77,8 +69,8 @@ export const getChatResponse = async (uiChat: ChatSnippet) => {
     const outputParser = new StringOutputParser();
     const streamingChain = model.pipe(outputParser);
     const stream = await streamingChain.stream(messages);
-    return [stream, "200"];
+    return stream;
   } catch (error) {
-    return [error, "500"];
+    throw error;
   }
 };

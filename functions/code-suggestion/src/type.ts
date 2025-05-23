@@ -2,7 +2,7 @@ export interface IUICodeSnippet {
   code: string;
   model: string;
 }
-export interface ChatSnippet {
+export interface IChatSnippet {
   context: string;
   userInput: string;
   model: string;
