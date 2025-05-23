@@ -83,7 +83,6 @@ export ENVFILE=$env
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -91,7 +90,6 @@ if [[ $version = "develop" ]]; then
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
@@ -185,7 +183,6 @@ case $cmd in
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
         DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-        DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
         PROJECT_NAME=${PROJECT_NAME:-d2e}
@@ -216,7 +213,6 @@ case $cmd in
         echo -n '' > $DOTENV_FILE
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
         echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
-        echo DOCKER_TREX_TAG_NAME=$DOCKER_TREX_TAG_NAME >> $DOTENV_FILE
         echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
         echo FHIR__CLIENT_ID=$(random-uuid) >> $DOTENV_FILE
         echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
