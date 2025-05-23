@@ -8,6 +8,8 @@ import dataSource from "../db/datasource.ts";
 import { Canvas } from "../entities/canvas.ts";
 import { Graph } from "../entities/graph.ts";
 import { IDataflowDto, IDataflowDuplicateDto, NodeData } from "../types.ts";
+import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { JwtPayload, decode } from "jsonwebtoken";
 
 export class TransformationService {
   private readonly logger = console;
@@ -15,12 +17,10 @@ export class TransformationService {
   private graphRepo;
   private prefectApi;
   private readonly gitRepoPath = "./DataTransformation";
-  private readonly gitRemoteUrl =
-    "https://github.com/hengxian-jiang/DataTransformation.git";
   private readonly gitConfig = {
     defaultAuthor: {
       name: "Dataflow System",
-      email: "system@dataflow.example.com",
+      email: "we@data4life-asia.care",
     },
   };
 
@@ -131,6 +131,7 @@ export class TransformationService {
       name: dataflowDto.name,
       type: "datatransformation-flow",
     };
+    const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
 
     console.log(`createCanvas with canvas id: ${id}`);
     let version = 1;
@@ -141,10 +142,10 @@ export class TransformationService {
       version += lastDataflowRevision.version;
       await this.canvasRepo.update(
         dataflowDto.id,
-        this.addOwner(token, canvas)
+        this.addOwner(decodedToken, canvas)
       );
     } else {
-      await this.canvasRepo.insert(this.addOwner(token, canvas, true));
+      await this.canvasRepo.insert(this.addOwner(decodedToken, canvas, true));
     }
 
     const { comment, ...flow } = dataflowDto.dataflow;
@@ -155,7 +156,7 @@ export class TransformationService {
       comment,
       version,
     });
-    await this.graphRepo.insert(this.addOwner(token, graphEntity, true));
+    await this.graphRepo.insert(this.addOwner(decodedToken, graphEntity, true));
     this.logger.info(
       `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`
     );
@@ -163,7 +164,8 @@ export class TransformationService {
     await this.saveToGitRepo(
       canvas.id,
       graphEntity,
-      `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`
+      `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`,
+      token
     );
 
     return {
@@ -173,9 +175,9 @@ export class TransformationService {
     };
   }
 
-  async deleteCanvas(id: string) {
+  async deleteCanvas(id: string, token: string) {
     await this.canvasRepo.delete(id);
-    await this.deleteFromGitRepo(id, `Deleted dataflow with id ${id}`);
+    await this.deleteFromGitRepo(id, `Deleted dataflow with id ${id}`, token);
     return { id };
   }
 
@@ -206,6 +208,7 @@ export class TransformationService {
     dataflowDuplicateDto: IDataflowDuplicateDto,
     token
   ) {
+    const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
     const flowEntity = await this.getCanvas(id);
     if (!flowEntity) {
       throw new Error("Dataflow does not exist");
@@ -218,7 +221,7 @@ export class TransformationService {
       throw new Error("Dataflow Revision does not exist");
     }
     const newDataflowEntity = this.addOwner(
-      token,
+      decodedToken,
       {
         id: uuidv4(),
         name: dataflowDuplicateDto.name,
@@ -228,7 +231,7 @@ export class TransformationService {
     );
 
     const newRevisionEntity = this.addOwner(
-      token,
+      decodedToken,
       {
         id: uuidv4(),
         canvasId: newDataflowEntity.id,
@@ -247,7 +250,8 @@ export class TransformationService {
     await this.saveToGitRepo(
       newDataflowEntity.id,
       newRevisionEntity,
-      `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`
+      `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`,
+      token
     );
 
     return {
@@ -257,7 +261,7 @@ export class TransformationService {
     };
   }
 
-  async deleteGraph(flowId: string, revisionId: string) {
+  async deleteGraph(flowId: string, revisionId: string, token: string) {
     const flowEntity = await this.getCanvas(flowId);
     if (flowEntity && flowEntity.revisions.find((r) => r.id === revisionId)) {
       await this.graphRepo.delete(revisionId);
@@ -271,7 +275,8 @@ export class TransformationService {
       await this.saveToGitRepo(
         flowId,
         lastRev,
-        `Deleted dataflow revision with id ${revisionId}`
+        `Deleted dataflow revision with id ${revisionId}`,
+        token
       );
 
       return {
@@ -321,19 +326,30 @@ export class TransformationService {
   private async saveToGitRepo(
     canvasId: string,
     graphEntity: any,
-    commitMessage: string
+    commitMessage: string,
+    token: string
   ) {
+    const portalServerApi = new PortalServerAPI(token);
+    const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
     const repoDir = this.gitRepoPath; // Use a single repository for all flows
     const fileName = `${canvasId}.json`; // Each flow gets its own file
     const filePath = path.join(repoDir, fileName);
-    const defaultBranch = "main";
+    const gitConfigValue = JSON.parse(gitConfig.value);
+    const defaultBranch = gitConfigValue.branch;
+    const gitRemoteUrl = gitConfigValue.repoUrl;
+    const gitCredentials = gitConfigValue.pat;
 
     const author = {
       name: graphEntity.createdBy || this.gitConfig.defaultAuthor.name,
-      email:
-        graphEntity.createdByEmail ||
-        `${graphEntity.createdBy || "system"}@dataflow.example.com`,
+      email: `we@data4life-asia.care`,
     };
+
+    if (!gitRemoteUrl || !defaultBranch) {
+      this.logger.info(
+        "Git remote URL or default branch not configured, skipping Git operations"
+      );
+      return;
+    }
 
     try {
       // Ensure directory exists
@@ -353,16 +369,18 @@ export class TransformationService {
       if (!isGitRepo) {
         // If not a git repo, clone from remote
         try {
-          this.logger.info(`Cloning repository from ${this.gitRemoteUrl}`);
+          this.logger.info(`Cloning repository from ${gitRemoteUrl}`);
           await git.clone({
             fs,
             http,
             dir: repoDir,
-            url: this.gitRemoteUrl,
+            url: gitRemoteUrl,
             singleBranch: true,
             depth: 1,
             ref: defaultBranch,
-            onAuth: () => this.getGitCredentials(),
+            onAuth: () => ({
+              username: gitCredentials,
+            }),
           });
           this.logger.info(`Successfully cloned repository`);
         } catch (cloneError) {
@@ -371,7 +389,7 @@ export class TransformationService {
             `Failed to clone repository: ${cloneError.message}`
           );
           throw new Error(
-            `Remote repository not found or inaccessible. Please ensure the repository exists at ${this.gitRemoteUrl}`
+            `Remote repository not found or inaccessible. Please ensure the repository exists at ${gitRemoteUrl}`
           );
         }
       } else {
@@ -388,7 +406,9 @@ export class TransformationService {
                 dir: repoDir,
                 remote: "origin",
                 ref: defaultBranch,
-                onAuth: () => this.getGitCredentials(),
+                onAuth: () => ({
+                  username: gitCredentials,
+                }),
               });
               this.logger.info("Fetched latest changes from remote");
 
@@ -431,11 +451,10 @@ export class TransformationService {
                 fs,
                 dir: repoDir,
                 remote: "origin",
-                url: this.gitRemoteUrl,
+                url: gitRemoteUrl,
               });
-              this.logger.info(`Added remote: ${this.gitRemoteUrl}`);
+              this.logger.info(`Added remote: ${gitRemoteUrl}`);
 
-              // Try to fetch after adding remote
               try {
                 await git.fetch({
                   fs,
@@ -443,7 +462,9 @@ export class TransformationService {
                   dir: repoDir,
                   remote: "origin",
                   ref: defaultBranch,
-                  onAuth: () => this.getGitCredentials(),
+                  onAuth: () => ({
+                    username: gitCredentials,
+                  }),
                 });
                 this.logger.info("Fetched latest changes from remote");
               } catch (fetchError) {
@@ -454,7 +475,7 @@ export class TransformationService {
             } catch (remoteError) {
               this.logger.error(`Could not add remote: ${remoteError.message}`);
               throw new Error(
-                `Failed to connect to remote repository at ${this.gitRemoteUrl}`
+                `Failed to connect to remote repository at ${gitRemoteUrl}`
               );
             }
           }
@@ -486,13 +507,15 @@ export class TransformationService {
               dir: repoDir,
               remote: "origin",
               ref: defaultBranch,
-              onAuth: () => this.getGitCredentials(),
+              onAuth: () => ({
+                username: gitCredentials,
+              }),
             });
             this.logger.info(`Pushed changes to origin/${defaultBranch}`);
           } catch (pushError) {
             this.logger.error(`Push failed: ${pushError.message}`);
             throw new Error(
-              `Failed to push changes to remote repository. Please ensure you have write access to ${this.gitRemoteUrl}`
+              `Failed to push changes to remote repository. Please ensure you have write access to ${gitRemoteUrl}`
             );
           }
         } catch (commitError) {
@@ -508,22 +531,17 @@ export class TransformationService {
     }
   }
 
-  private getGitCredentials() {
-    // For GitHub Personal Access Token (PAT)
-    const token = "";
+  private async deleteFromGitRepo(canvasId: string, commitMessage: string, token: string) {
+    const portalServerApi = new PortalServerAPI(token);
+    const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
+    const gitConfigValue = JSON.parse(gitConfig.value);
+    const defaultBranch = gitConfigValue.branch;
+    const gitRemoteUrl = gitConfigValue.repoUrl;
+    const gitCredentials = gitConfigValue.pat;
 
-    if (token) {
-      return {
-        username: token,
-      };
-    }
-    return null;
-  }
-
-  private async deleteFromGitRepo(canvasId: string, commitMessage: string) {
-    if (!this.gitRemoteUrl) {
+    if (!gitRemoteUrl || !defaultBranch) {
       this.logger.info(
-        "Git remote URL not configured, skipping Git operations"
+        "Git remote URL or default branch not configured, skipping Git operations"
       );
       return;
     }
@@ -531,7 +549,6 @@ export class TransformationService {
     const repoDir = this.gitRepoPath;
     const fileName = `${canvasId}.json`;
     const filePath = path.join(repoDir, fileName);
-    const defaultBranch = "main";
 
     const author = this.gitConfig.defaultAuthor;
 
@@ -562,7 +579,9 @@ export class TransformationService {
               dir: repoDir,
               remote: "origin",
               ref: defaultBranch,
-              onAuth: () => this.getGitCredentials(),
+              onAuth: () => ({
+                username: gitCredentials,
+              }),
             });
             this.logger.info("Fetched latest changes from remote");
 
@@ -615,7 +634,9 @@ export class TransformationService {
           dir: repoDir,
           remote: "origin",
           ref: defaultBranch,
-          onAuth: () => this.getGitCredentials(),
+          onAuth: () => ({
+            username: gitCredentials,
+          }),
         });
         this.logger.info(`Pushed deletion to origin/${defaultBranch}`);
       } catch (pushError) {
