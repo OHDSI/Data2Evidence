@@ -42,7 +42,7 @@ export class CodeSuggestionRouter {
           res.status(200).json(rst);
         }
       } catch (error) {
-        res.status(200).json({
+        res.status(500).json({
           error: true,
           message: `Cannot fetch code suggestion: ${error.message}`,
         });
