@@ -1305,11 +1305,12 @@ services:
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
-      KERNEL_USERNAME: jovyan
       EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
       EG_DOCKER_MODE: docker
       EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
       TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+      EG_ENV_WHITELIST: "KERNEL_USERNAME"
+      EG_MAX_KERNELS_PER_USER: 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:

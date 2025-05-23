@@ -137,7 +137,7 @@ const buildUserFromToken = (
     }
     if (userMgmtGroups.alp_role_study_write_dqd_researcher === true) {
       roles.push(ROLES.STUDY_WRITE_DQD_RESEARCHER);
-    } 
+    }
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
       roles.push(ROLES.TENANT_VIEWER);
     }
@@ -423,16 +423,19 @@ const _lookForDatasetIdInBody = async (
 ): Promise<string | null> => {
   let datasetId = null;
 
-  // Return null if body is empty
-  if (!c.req.raw.body) {
-    return null;
-  }
-
   const contentType = c.req.header("Content-Type");
   if (contentType === "application/json") {
     // Clone req is required to not affect request body for downstream services
-    const body = await c.req.raw.clone().json();
-    if (body) {
+    const clonedRequest = await c.req.raw.clone();
+    const text = await clonedRequest.text();
+
+    if (!text) {
+      return null;
+    }
+
+    const body = JSON.parse(text);
+
+    if (body && typeof body === "object" && datasetIdKey in body) {
       datasetId = body[datasetIdKey];
     }
   }
