@@ -2268,7 +2268,7 @@
           ]
         },
         {
-          "path": "^/code-suggestion/code",
+          "path": "^/code-suggestion",
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"
