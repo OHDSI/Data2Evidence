@@ -11,7 +11,7 @@ export class CodeSuggestionRouter {
   }
 
   private registerRoutes() {
-    this.router.post("/code", async (req: Request, res: Response) => {
+    this.router.post("/", async (req: Request, res: Response) => {
       req.body.model = AI_MODEL;
       try {
         let rst = await getCodeSuggestion(req.body);
