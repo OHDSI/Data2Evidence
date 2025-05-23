@@ -2278,16 +2278,6 @@
           ]
         },
         {
-          "path": "^/code-suggestion/chat",
-          "scopes": [
-            "codesuggestion.read",
-            "codesuggestion.tenantview.read"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
           "path": "^/data-mapping",
           "scopes": [
             "datamapping.post"
