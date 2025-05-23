@@ -46,12 +46,11 @@ export default defineConfig(({ command, mode }) => {
         treeshake: true,
         ...(isBuild && isProduction
           ? {
-              external: ["react", "react-dom", "react-router", "react-router-dom"],
+              external: ["react", "react-dom", "react-router"],
               output: {
                 globals: {
                   react: "React",
                   "react-dom": "ReactDom",
-                  "react-router-dom": "ReactRouterDom",
                 },
                 entryFileNames: `module.js`,
                 format: "umd",
