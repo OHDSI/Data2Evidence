@@ -110,7 +110,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
