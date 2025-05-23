@@ -16,7 +16,7 @@ import AssistantIcon from "@mui/icons-material/Assistant";
 import Chat from "../../components/Chat/Chat";
 
 const MRI_ROOT_URL = "analytics-svc";
-const uiFilesUrl = "https://localhost:41100/";
+const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
