@@ -16,7 +16,7 @@ import AssistantIcon from "@mui/icons-material/Assistant";
 import Chat from "../../components/Chat/Chat";
 
 const MRI_ROOT_URL = "analytics-svc";
-const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
+const uiFilesUrl = "https://localhost:41100/";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
@@ -102,7 +102,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
       setRuntime(embedEl);
       setUnsaved(false);
     },
-    [jwtToken, metadata]
+    [jwtToken, metadata, activeDatasetId, setupPYQE]
   );
 
   useEffect(() => {
@@ -204,7 +204,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         activeDatasetId={activeDatasetId}
       />
       <Card>
-        <div id="starboard-root" />
         <Fab
           color="primary"
           aria-label="assistant"
@@ -215,6 +214,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         >
           <AssistantIcon />
         </Fab>
+        <div id="starboard-root" />
       </Card>
       <Chat open={open} onClose={() => setOpen(false)} datasetId={activeDatasetId} currentContent={handleReadContent} />
     </div>
