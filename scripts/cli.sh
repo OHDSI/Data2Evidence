@@ -85,6 +85,7 @@ export ENVFILE=$env
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
+  #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
