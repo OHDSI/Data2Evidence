@@ -15,28 +15,19 @@ export class CodeSuggestionRouter {
       req.body.model = AI_MODEL;
       try {
         let rst = await getCodeSuggestion(req.body);
-
-        // Calling local model
-        if (
-          rst.startsWith(`You are an intelligent code auto-completion tool.`)
-        ) {
-          res.setHeader("Content-Type", "text/plain");
-          const stream = await Trex.ask(rst, {
-            repo: "QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF",
-            model: "Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
-          });
-          const reader = stream.getReader();
+        res.setHeader("Content-Type", "text/plain");
+        if (typeof rst === "object") {
           while (true) {
-            const { done, value } = await reader.read();
+            const { done, value } = await rst.read();
             if (done) {
               break;
             }
-
             res.write(value);
             if (typeof res.flush === "function") {
               res.flush();
             }
           }
+          res.status(200);
           res.end();
         } else {
           res.status(200).json(rst);

@@ -17,16 +17,21 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
           Complete the code (your response MUST start with and be longer than the given code)
   `;
 
-  const query =
-    context +
-    `Here is the code snippet achieved from role of user: '${uiCode.code}'`;
-
   const model = await getModels(uiCode.model);
   if (model === null) {
     throw Error(`LLM Model - ${uiCode.model} not found.`);
   }
   if (model === "local") {
-    return query;
+    const query =
+      context +
+      `Here is the code snippet achieved from role of user: '${uiCode.code}'`;
+    // Calling local model
+    const stream = await Trex.ask(query, {
+      repo: "QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF",
+      model: "Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
+    });
+    const reader = stream.getReader();
+    return reader;
   }
 
   try {
