@@ -11,6 +11,7 @@ import git from "isomorphic-git";
 import { v4 as uuidv4 } from "uuid";
 import { DEFAULT_ERROR_MESSAGE } from "../common/const.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
+import { ConfigService } from "../config/config.service.ts";
 import { INotebook, INotebookBaseDto, INotebookUpdateDto } from "../types.d.ts";
 import { ServiceName } from "../user-artifact/enums/index.ts";
 import { UserArtifactService } from "../user-artifact/user-artifact.service.ts";
@@ -19,24 +20,74 @@ import { UserArtifactService } from "../user-artifact/user-artifact.service.ts";
 export class NotebookService {
   private readonly userId: string;
   private readonly gitRepoPath = "./NotebookRepository";
-  private readonly gitRemoteUrl =
-    "https://github.com/hengxian-jiang/Notebook.git";
   private readonly gitConfig = {
     defaultAuthor: {
       name: "Notebook System",
-      email: "system@notebook.example.com",
+      email: "we@data4life-asia.care",
     },
   };
 
   constructor(
     private readonly userArtifactService: UserArtifactService,
-    private readonly requestContextService: RequestContextService
+    private readonly requestContextService: RequestContextService,
+    private readonly configService: ConfigService
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
 
     // Ensure git repo directory exists
     if (!fs.existsSync(this.gitRepoPath)) {
       fs.mkdirSync(this.gitRepoPath, { recursive: true });
+    }
+  }
+
+  private async getGitConfig(): Promise<{ repoUrl: string; pat: string; branch: string } | null> {
+    try {
+      const config = await this.configService.getConfigByType("notebook-git-config");
+      console.log(`Git config: ${config?.value}`);
+      if (config?.value) {
+        return JSON.parse(config.value);
+      }
+      return null;
+    } catch (error) {
+      console.error(`Failed to get git config from database: ${error}`);
+      return null;
+    }
+  }
+
+  private async getGitRemoteUrl(): Promise<string> {
+    try {
+      const gitConfig = await this.getGitConfig();
+      return gitConfig?.repoUrl || "";
+    } catch (error) {
+      console.error(`Failed to get git remote URL from config ${error}, using default`);
+      return "";
+    }
+  }
+
+  private async getDefaultBranch(): Promise<string> {
+    try {
+      const gitConfig = await this.getGitConfig();
+      return gitConfig?.branch || "main";
+    } catch (error) {
+      console.error(`Failed to get default branch from config ${error}, using default`);
+      return "main";
+    }
+  }
+
+  private async getGitCredentials() {
+    try {
+      const gitConfig = await this.getGitConfig();
+      const token = gitConfig?.pat || "";
+
+      if (token) {
+        return {
+          username: token,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error(`Failed to get git credentials: ${error}`);
+      return null;
     }
   }
 
@@ -70,6 +121,7 @@ export class NotebookService {
       await this.userArtifactService.createServiceArtifact(
         ServiceName.NOTEBOOKS,
         {
+          serviceName: ServiceName.NOTEBOOKS,
           serviceArtifact: notebookEntity,
         }
       );
@@ -200,16 +252,17 @@ export class NotebookService {
     const repoDir = this.gitRepoPath; // Use a single repository for all notebooks
     const fileName = `${notebookId}.json`; // Each notebook gets its own file
     const filePath = path.join(repoDir, fileName);
-    const defaultBranch = "main";
+    const defaultBranch = await this.getDefaultBranch();
+    const gitRemoteUrl = await this.getGitRemoteUrl();
 
-    if (!this.gitRemoteUrl) {
+    if (!gitRemoteUrl) {
       console.log("Git remote URL not configured, skipping Git operations");
       return;
     }
 
     const author = {
       name: notebookEntity.createdBy || this.gitConfig.defaultAuthor.name,
-      email: `${notebookEntity.createdBy || "system"}@notebook.example.com`,
+      email: `we@data4life-asia.care`,
     };
 
     try {
@@ -229,12 +282,12 @@ export class NotebookService {
       if (!isGitRepo) {
         // If not a git repo, clone from remote repo
         try {
-          console.log(`Cloning repository from ${this.gitRemoteUrl}`);
+          console.log(`Cloning repository from ${gitRemoteUrl}`);
           await git.clone({
             fs,
             http,
             dir: repoDir,
-            url: this.gitRemoteUrl,
+            url: gitRemoteUrl,
             singleBranch: true,
             depth: 1,
             ref: defaultBranch,
@@ -242,11 +295,9 @@ export class NotebookService {
           });
           console.log(`Successfully cloned repository`);
         } catch (cloneError) {
-          console.error(
-            `Failed to clone repository: ${cloneError.message}`
-          );
+          console.error(`Failed to clone repository: ${cloneError.message}`);
           throw new Error(
-            `Remote repository not found or inaccessible. Please ensure the repository exists at ${this.gitRemoteUrl}`
+            `Remote repository not found or inaccessible. Please ensure the repository exists at ${gitRemoteUrl}`
           );
         }
       } else {
@@ -301,17 +352,15 @@ export class NotebookService {
               console.log(`Could not fetch: ${fetchError.message}`);
             }
           } else {
-            // If no remote is configured, add it
             try {
               await git.addRemote({
                 fs,
                 dir: repoDir,
                 remote: "origin",
-                url: this.gitRemoteUrl,
+                url: gitRemoteUrl,
               });
-              console.log(`Added remote: ${this.gitRemoteUrl}`);
+              console.log(`Added remote: ${gitRemoteUrl}`);
 
-              // Try to fetch after adding remote
               try {
                 await git.fetch({
                   fs,
@@ -330,7 +379,7 @@ export class NotebookService {
             } catch (remoteError) {
               console.error(`Could not add remote: ${remoteError.message}`);
               throw new Error(
-                `Failed to connect to remote repository at ${this.gitRemoteUrl}`
+                `Failed to connect to remote repository at ${gitRemoteUrl}`
               );
             }
           }
@@ -368,7 +417,7 @@ export class NotebookService {
           } catch (pushError) {
             console.error(`Push failed: ${pushError.message}`);
             throw new Error(
-              `Failed to push changes to remote repository. Please ensure you have write access to ${this.gitRemoteUrl}`
+              `Failed to push changes to remote repository. Please ensure you have write access to ${gitRemoteUrl}`
             );
           }
         } catch (commitError) {
@@ -383,36 +432,21 @@ export class NotebookService {
     }
   }
 
-  private getGitCredentials() {
-    const token = "";
-
-    if (token) {
-      return {
-        username: token,
-      };
-    }
-    return null;
-  }
-
-  private async deleteFromGitRepo(
-    notebookId: string,
-    commitMessage: string
-  ) {
-    if (!this.gitRemoteUrl) {
-      console.log(
-        "Git remote URL not configured, skipping Git operations"
-      );
-      return;
-    }
-
+  private async deleteFromGitRepo(notebookId: string, commitMessage: string) {
     const repoDir = this.gitRepoPath;
     const fileName = `${notebookId}.json`;
     const filePath = path.join(repoDir, fileName);
-    const defaultBranch = "main";
+    const defaultBranch = await this.getDefaultBranch();
+    const gitRemoteUrl = await this.getGitRemoteUrl();
+
+    if (!gitRemoteUrl) {
+      console.log("Git remote URL not configured, skipping Git operations");
+      return;
+    }
 
     const author = {
       name: this.userId || this.gitConfig.defaultAuthor.name,
-      email: `${this.userId || "system"}@notebook.example.com`,
+      email: `we@data4life-asia.care`,
     };
 
     try {
@@ -502,9 +536,7 @@ export class NotebookService {
         console.error(`Push failed: ${pushError.message}`);
       }
     } catch (error) {
-      console.error(
-        `Git operation failed during deletion: ${error.message}`
-      );
+      console.error(`Git operation failed during deletion: ${error.message}`);
     }
   }
 }
