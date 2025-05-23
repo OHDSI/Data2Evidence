@@ -124,6 +124,7 @@ jobs:
           yq -i '.networks.alp.external=true' docker-compose.yml
           # as not required for http tests omit cachedb to limit memory requirements
           yq -i '.services.alp-cachedb.profiles = ["cachedb"]' docker-compose.yml
+          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml
 
       - name: Create network for external to use
         run: |
