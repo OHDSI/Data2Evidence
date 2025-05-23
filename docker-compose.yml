@@ -110,7 +110,7 @@ services:
       alp-minio-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -143,7 +143,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
-      REP_PG: postgres://postgres:mypass@demodb:5432/postgres
+      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -490,6 +490,7 @@ services:
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
+      DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -770,8 +771,6 @@ services:
     depends_on:
       alp-minio-post-init:
         condition: service_completed_successfully
-      trex:
-        condition: service_healthy
       alp-logto-post-init:
         condition: service_completed_successfully
       alp-dataflow-gen:
@@ -860,6 +859,8 @@ services:
       test:
         - CMD
         - wget
+        - --proxy
+        - off
         - -O
         - logto.status
         - http://localhost:3001/api/status
@@ -1048,12 +1049,26 @@ services:
     image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
-    command:
-      - "postgres"
-      - "-c"
-      - "wal_level=logical"
+    command: >
+      sh -c '
+      set -e;
+      echo "Starting PostgreSQL in background via original docker-entrypoint.sh...";
+      /usr/local/bin/docker-entrypoint.sh postgres -c wal_level=logical &
+      PG_PID=$!;
+      echo "Waiting for PostgreSQL to become ready...";
+        until pg_isready -q -U postgres -h localhost -p 5432; do
+          echo "PostgreSQL is unavailable - sleeping for 1 second...";
+          sleep 1;
+        done;
+      echo "PostgreSQL is ready on localhost:5432.";
+      echo "Attempting to change password for user postgres...";
+      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD}'\'';";
+      echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
+      wait $PG_PID;
+      echo "PostgreSQL process (PID $PG_PID) has exited.";
+      exit $?;'
     environment:
-      - POSTGRES_PASSWORD=mypass
+      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD}
     networks:
       alp:
         priority: 20
@@ -1067,6 +1082,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [demodb]
 
   redis:
@@ -1103,6 +1119,7 @@ services:
       test:
         - CMD
         - wget
+        - --no-proxy
         - -O
         - fhir.status
         - http://localhost:8103/healthcheck

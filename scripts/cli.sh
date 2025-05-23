@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default version
+version=0.7.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.7.1-beta
+
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -83,16 +85,14 @@ export ENVFILE=$env
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
-  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
-  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
-  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-${LATEST_DOCKER_TAG_NAME}}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-${LATEST_DOCKER_TAG_NAME}}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
@@ -118,7 +118,7 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
-        if [ -n "$services" ]; then
+        if [ -n "$services" ]; then      
             cmd="$cmd $services"
         fi
         echo . $cmd
@@ -166,8 +166,6 @@ case $cmd in
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
-        DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-        DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
         PROJECT_NAME=${PROJECT_NAME:-d2e}
@@ -177,7 +175,6 @@ case $cmd in
         echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE
 
         # vars
-        [ $ENV_TYPE = local ] && [ -z DOCKER_TAG_NAME ] && DOCKER_TAG_NAME=local
 
         source $node_modules_path/scripts/lib.sh # functions here
 
@@ -191,7 +188,6 @@ case $cmd in
         echo -n '' > $DOTENV_FILE
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
         echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
-        echo DOCKER_TREX_TAG_NAME=$DOCKER_TREX_TAG_NAME >> $DOTENV_FILE
         echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
         echo FHIR__CLIENT_ID=$(random-uuid) >> $DOTENV_FILE
         echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
@@ -207,6 +203,7 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo DEMO__DB_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
@@ -231,7 +228,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
