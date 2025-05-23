@@ -45,11 +45,11 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
           for (const line of lines) {
             const trimmedLine = line.trim();
             if (trimmedLine) {
-              observer.next(trimmedLine);
+              observer.next(trimmedLine + "\n");
             }
           }
         } else {
-          observer.next(buffer);
+          observer.next(buffer + "\n");
         }
       }
     } finally {

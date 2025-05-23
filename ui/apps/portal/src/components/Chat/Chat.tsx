@@ -76,7 +76,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
         displayOptions={{ colorScheme: "light" }}
         composerOptions={{ placeholder: "Type your query" }}
         events={{ messageReceived: onMessageReceived, messageSent: onMessageSent }}
-        messageOptions={{ waitTimeBeforeStreamCompletion: "never" }}
+        messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
         initialConversation={memoizedHistory}
       />
     </Drawer>
