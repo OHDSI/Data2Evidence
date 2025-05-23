@@ -21,14 +21,12 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     context +
     `Here is the code snippet achieved from role of user: '${uiCode.code}'`;
 
-  const [model, status] = await getModels(uiCode.model);
-
-  if (status === "501") {
-    return [[model, query], status];
+  const model = await getModels(uiCode.model);
+  if (model === null) {
+    throw Error(`LLM Model - ${uiCode.model} not found.`);
   }
-
-  if (status === "201") {
-    return [query, status];
+  if (model === "local") {
+    return query;
   }
 
   try {
@@ -38,14 +36,14 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     ];
     const response = await model.invoke(messages);
     const codeSuggest = response.content;
-    return [codeSuggest, "200"];
+    return codeSuggest;
   } catch (error) {
-    return [error, "500"];
+    throw error;
   }
 };
 
 export const getChatResponse = async (uiChat: IChatSnippet) => {
-  const model = await getModelsChat(uiChat.model);
+  const model = await getModels(uiChat.model);
 
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
