@@ -1,6 +1,6 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModels, getModelsChat } from "../utils/prepModels";
+import { getModels } from "../utils/prepModels";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
@@ -55,7 +55,7 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       Instructions:
       step 1: Analyze the relation between the user question and the [context_code]
       step 2: If the user question is not related to the [context_code], please inform the user and still provide an accurate response to the user question. You could ask for more information if needed.
-      step 3: If the user question is realted to the [context_code]. Provide an accurate response to the user question, ensuring that it is relevant to the [context_code]
+      step 3: If the user question is related to the [context_code]. Provide an accurate response to the user question, ensuring that it is relevant to the [context_code]
       step 4: If the user question is not clear, before your reply in details you should ask for more information.
       `;
 
