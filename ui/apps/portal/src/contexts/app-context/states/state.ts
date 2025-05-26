@@ -3,8 +3,7 @@ import { FeedbackState } from "./feedback-state";
 import { TranslationState, i18nDefault } from "./translation-state";
 import { TokenState } from "./token-state";
 import { UserState } from "./user-state";
-import { ConversationHistoryState } from "./user-state";
-
+import { ChatItem } from "@nlux/react";
 export interface AppState {
   feedback: FeedbackState | undefined;
   translation: TranslationState;
@@ -15,7 +14,7 @@ export interface AppState {
   token: TokenState;
   user: UserState;
 
-  conversationHistory: Array<ConversationHistoryState>;
+  conversationHistory: Array<ChatItem>;
 }
 
 export const initialState: AppState = {

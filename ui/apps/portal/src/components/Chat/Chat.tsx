@@ -1,4 +1,4 @@
-import React, { FC, useMemo, useCallback } from "react";
+import React, { FC, useMemo, useCallback, useState } from "react";
 import { AiChat, ChatItem, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
 import { Drawer } from "@mui/material";
 import "@nlux/themes/nova.css";
@@ -9,7 +9,7 @@ import "./Chat.scss";
 
 export interface ChatProps {
   open?: boolean;
-  onClose?: () => void;
+  onClose?: (chatHistory: ChatItem[]) => void;
   datasetId?: string;
   currentContent: () => any;
 }
@@ -17,23 +17,22 @@ export interface ChatProps {
 const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   const api = useAiChatApi();
   const content = currentContent();
+  const [history, setHistory] = useState<ChatItem[]>([]);
 
   const send = useMemo(() => {
     return datasetId ? createSend(datasetId, content) : noOpSend;
   }, [datasetId, content]);
 
   const adapter = useAsStreamAdapter(send, [send]);
-  const { conversationHistory, setConversationHistory } = useConversationHistory();
+  const { conversationHistory } = useConversationHistory();
 
-  const handleMessage = useCallback(
-    (role: "assistant" | "user", message: string | string[]) => {
-      setConversationHistory({
-        role,
-        message: Array.isArray(message) ? message.join("\n") : message,
-      });
-    },
-    [setConversationHistory]
-  );
+  const handleMessage = useCallback((role: "assistant" | "user", message: string | string[]) => {
+    const newMessage = {
+      role,
+      message: Array.isArray(message) ? message.join("\n") : message,
+    };
+    setHistory((prev) => [...prev, newMessage]);
+  }, []);
 
   const onMessageReceived = useCallback(
     (payload: any) => {
@@ -49,9 +48,12 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
     [handleMessage]
   );
 
-  const memoizedHistory = useMemo(() => {
-    return conversationHistory as ChatItem[];
-  }, [open]);
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      setHistory([]);
+      onClose(history);
+    }
+  }, [onClose, history]);
 
   if (!datasetId) {
     return null;
@@ -61,7 +63,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
     <Drawer
       variant="temporary"
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       anchor="right"
       PaperProps={{
         sx: { width: "35%", overflowY: "hidden" },
@@ -74,7 +76,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
         composerOptions={{ placeholder: "Type your query" }}
         events={{ messageReceived: onMessageReceived, messageSent: onMessageSent }}
         messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
-        initialConversation={memoizedHistory}
+        initialConversation={conversationHistory}
       />
     </Drawer>
   );

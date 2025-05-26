@@ -1,9 +1,9 @@
+import { ChatItem } from "@nlux/react";
 import { AppState } from "../states";
-import { ConversationHistoryState } from "../states";
 
-export const setConversationHistory = (state: AppState, payload: ConversationHistoryState): AppState => {
+export const setConversationHistory = (state: AppState, payload: ChatItem[]): AppState => {
   return {
     ...state,
-    conversationHistory: [...state.conversationHistory, payload],
+    conversationHistory: [...state.conversationHistory, ...payload],
   };
 };
