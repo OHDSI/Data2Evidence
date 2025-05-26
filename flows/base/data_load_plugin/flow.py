@@ -111,6 +111,9 @@ def format_vocab_synpuf_data(dbdao, data: pd.DataFrame, table_name: str, logger)
             logger.info(f"Registering '{table_name}' as in-memory ibis table..")
             t = ibis.memtable(data, name=table_name)
             
+            # convert all column names to uppercase
+            t = t.rename({col.upper(): col for col in t.columns})
+            
             if table_name in columns_to_drop.keys():
                 t = t.drop(columns_to_drop.get(table_name))
             
