@@ -33,7 +33,8 @@
       ],
       "roles": {
         "ALP_SYSTEM_ADMIN": [
-          "gateway.fhir.create"
+          "gateway.fhir.create",
+          "gateway.fhir.delete"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "gateway.fhir.create",
@@ -66,7 +67,7 @@
         {
           "path": "^/gateway/api/fhir/deleteProject",
           "scopes": [
-            "gateway.fhir.create"
+            "gateway.fhir.delete"
           ],
           "httpMethods": [
             "DELETE"

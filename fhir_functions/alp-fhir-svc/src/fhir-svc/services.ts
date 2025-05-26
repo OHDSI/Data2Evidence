@@ -142,15 +142,9 @@ export const deleteProject = async(id: string) =>{
   //Authenticate with superadmin credentials
   await fhirApi.clientCredentialsLogin();
 
-  //Get projectId by name
-  const existingProject = await fhirApi.getOneResource(
-    "Project",
-    `name=${id}`
-  );
-
   //Delete project and all its related resources
   return await fhirApi.forwardRequest(
-    `Project/${existingProject.id}/$expunge?everything=true`,
+    `Project/${id}/$expunge?everything=true`,
     fhirApi.getAdminCredentials(),
     HTTPMethod.POST,
     '',
