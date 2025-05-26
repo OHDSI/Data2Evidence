@@ -175,22 +175,30 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         if (err) {
                             return console.error(err);
                         }
+                        let configId = req.paConfigId;
+                        let configVersion = req.paConfigVersion;
                         let configData = Array.isArray(body)
                             ? body[0].configData
                             : body.configData;
-                        if (!configData) {
-                            let configMetadata = Array.isArray(body)
-                                ? body[0].filter.configMetadata
-                                : body.filter.configMetadata;
-                            configData = {
-                                configId: configMetadata.id,
-                                configVersion: configMetadata.version,
-                            };
+    
+                        // if (!configData) {
+                        //     let configMetadata = Array.isArray(body)
+                        //         ? body[0].filter.configMetadata
+                        //         : body.filter.configMetadata;
+                        //     configData = {
+                        //         configId: configMetadata.id,
+                        //         configVersion: configMetadata.version,
+                        //     };
+                        // }
+
+                        if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                            configId = configData.configId;
+                            configVersion = configData.configVersion;
                         }
 
                         try {
-                            const configId = req.paConfigId;
-                            const configVersion = req.paConfigVersion;
+                            // const configId = req.paConfigId;
+                            // const configVersion = req.paConfigVersion;
                             const datasetId = body.datasetId;
 
                             let sFilename: string =
