@@ -348,7 +348,7 @@ export class TransformationService {
       this.logger.info(
         "Git remote URL or default branch not configured, skipping Git operations"
       );
-      return;
+      throw new Error("Git remote URL or default branch not configured");
     }
 
     try {
@@ -440,9 +440,11 @@ export class TransformationService {
                 this.logger.info(`Merged changes from origin/${defaultBranch}`);
               } catch (mergeError) {
                 this.logger.info(`Could not merge: ${mergeError.message}`);
+                throw new Error(`Could not merge: ${mergeError.message}`);
               }
             } catch (fetchError) {
               this.logger.info(`Could not fetch: ${fetchError.message}`);
+              throw new Error(`Could not fetch: ${fetchError.message}`);
             }
           } else {
             // If no remote is configured, add it
@@ -471,6 +473,7 @@ export class TransformationService {
                 this.logger.info(
                   `Could not fetch after adding remote: ${fetchError.message}`
                 );
+                throw new Error(`Could not fetch after adding remote: ${fetchError.message}`);
               }
             } catch (remoteError) {
               this.logger.error(`Could not add remote: ${remoteError.message}`);
@@ -481,6 +484,7 @@ export class TransformationService {
           }
         } catch (remoteError) {
           this.logger.error(`Error checking remotes: ${remoteError.message}`);
+          throw new Error(`Error checking remotes: ${remoteError.message}`);
         }
       }
 
@@ -615,17 +619,23 @@ export class TransformationService {
         return;
       }
 
-      // Remove the file from the filesystem and git
-      fs.unlinkSync(filePath);
-      await git.remove({ fs, dir: repoDir, filepath: fileName });
+      
+      try {
+        // Remove the file from the filesystem and git
+        fs.unlinkSync(filePath);
+        await git.remove({ fs, dir: repoDir, filepath: fileName });
 
-      const commitId = await git.commit({
-        fs,
-        dir: repoDir,
-        author,
-        message: commitMessage,
-      });
-      this.logger.info(`Committed deletion with ID: ${commitId}`);
+        const commitId = await git.commit({
+          fs,
+          dir: repoDir,
+          author,
+          message: commitMessage,
+        });
+        this.logger.info(`Committed deletion with ID: ${commitId}`);
+      } catch (error) {
+        this.logger.error(`Error removing file: ${error.message}`);
+        throw new Error(`Error removing file: ${error.message}`);
+      }
 
       try {
         await git.push({
@@ -641,11 +651,13 @@ export class TransformationService {
         this.logger.info(`Pushed deletion to origin/${defaultBranch}`);
       } catch (pushError) {
         this.logger.error(`Push failed: ${pushError.message}`);
+        throw new Error(`Push failed: ${pushError.message}`);
       }
     } catch (error) {
       this.logger.error(
         `Git operation failed during deletion: ${error.message}`
       );
+      throw new Error(`Git operation failed during deletion: ${error.message}`);
     }
   }
 }

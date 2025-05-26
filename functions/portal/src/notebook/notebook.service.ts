@@ -347,9 +347,11 @@ export class NotebookService {
                 console.log(`Merged changes from origin/${defaultBranch}`);
               } catch (mergeError) {
                 console.log(`Could not merge: ${mergeError.message}`);
+                throw new Error(`Could not merge: ${mergeError.message}`);
               }
             } catch (fetchError) {
               console.log(`Could not fetch: ${fetchError.message}`);
+              throw new Error(`Could not fetch: ${fetchError.message}`);
             }
           } else {
             try {
@@ -385,6 +387,7 @@ export class NotebookService {
           }
         } catch (remoteError) {
           console.error(`Error checking remotes: ${remoteError.message}`);
+          throw new Error(`Error checking remotes: ${remoteError.message}`);
         }
       }
 
@@ -429,6 +432,7 @@ export class NotebookService {
       }
     } catch (error) {
       console.error(`Git operation failed: ${error.message}`);
+      throw new Error(`Git operation failed: ${error.message}`);
     }
   }
 
@@ -460,7 +464,7 @@ export class NotebookService {
 
       if (!isGitRepo) {
         console.error("Not a git repository, cannot delete file");
-        return;
+        throw new Error("Not a git repository, cannot delete file");
       }
 
       // Fetch latest changes
@@ -496,31 +500,40 @@ export class NotebookService {
               console.log(`Merged changes from origin/${defaultBranch}`);
             } catch (mergeError) {
               console.log(`Could not merge: ${mergeError.message}`);
+              throw new Error(`Could not merge: ${mergeError.message}`);
             }
           } catch (fetchError) {
             console.log(`Could not fetch: ${fetchError.message}`);
+            throw new Error(`Could not fetch: ${fetchError.message}`);
           }
         }
       } catch (remoteError) {
         console.error(`Error checking remotes: ${remoteError.message}`);
+        throw new Error(`Error checking remotes: ${remoteError.message}`);
       }
 
       if (!fs.existsSync(filePath)) {
         console.log(`File ${fileName} does not exist in repository`);
-        return;
+        throw new Error(`File ${fileName} does not exist in repository`);
       }
 
-      // Remove the file from the filesystem and git
-      fs.unlinkSync(filePath);
-      await git.remove({ fs, dir: repoDir, filepath: fileName });
 
-      const commitId = await git.commit({
-        fs,
-        dir: repoDir,
-        author,
-        message: commitMessage,
-      });
-      console.log(`Committed deletion with ID: ${commitId}`);
+      try {
+        // Remove the file from the filesystem and git
+        fs.unlinkSync(filePath);
+        await git.remove({ fs, dir: repoDir, filepath: fileName });
+
+        const commitId = await git.commit({
+          fs,
+          dir: repoDir,
+          author,
+          message: commitMessage,
+        });
+        console.log(`Committed deletion with ID: ${commitId}`);
+      } catch (error) {
+        console.error(`Error removing file: ${error.message}`);
+        throw new Error(`Error removing file: ${error.message}`);
+      }
 
       try {
         await git.push({
@@ -534,9 +547,11 @@ export class NotebookService {
         console.log(`Pushed deletion to origin/${defaultBranch}`);
       } catch (pushError) {
         console.error(`Push failed: ${pushError.message}`);
+        throw new Error(`Push failed: ${pushError.message}`);
       }
     } catch (error) {
       console.error(`Git operation failed during deletion: ${error.message}`);
+      throw new Error(`Git operation failed during deletion: ${error.message}`);
     }
   }
 }

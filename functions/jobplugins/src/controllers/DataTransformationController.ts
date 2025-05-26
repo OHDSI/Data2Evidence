@@ -79,7 +79,7 @@ export class DataTransformationController {
       return res.status(201).send(canvas);
     } catch (error) {
       console.error("Error in createCanvas: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -97,7 +97,7 @@ export class DataTransformationController {
       return res.status(201).send(result);
     } catch (error) {
       console.error("Error in duplicateCanvas: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -113,7 +113,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in deleteGraphById: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
