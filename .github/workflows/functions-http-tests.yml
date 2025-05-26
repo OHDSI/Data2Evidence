@@ -52,7 +52,6 @@ jobs:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      DOCKER_TAG_NAME: "local"
       HANASERVER: ${{ secrets.HN_SG_FQDN }} # az-hn-db/SG_FQDN
       HDIPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
       HDIPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
@@ -104,8 +103,9 @@ jobs:
           sed -i "s/CDMDEFAULT/${TESTSCHEMA}/g" $DOTENV_FILE
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
 
-          # HTTP tests use HANA db, hence USE_DUCKDB and USE_CACHEDB must be false
+          # HTTP tests use HANA db, hence the following envs must be false
           # due to logic in analytics service getDBConnections
+          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
@@ -124,7 +124,7 @@ jobs:
           yq -i '.networks.alp.external=true' docker-compose.yml
           # as not required for http tests omit cachedb to limit memory requirements
           yq -i '.services.alp-cachedb.profiles = ["cachedb"]' docker-compose.yml
-          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml
+          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
       - name: Create network for external to use
         run: |
@@ -277,14 +277,14 @@ jobs:
               --header 'Referer: https://localhost:41100/sign-in' \
               --header 'Content-Type: application/json' \
               --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-              --data '{"host":"${HANASERVER}","port":"${TESTPORT}","code":"${TESTSCHEMA}","name":"ALPDEV","dialect":"hana","extra":{"Internal":{"ca":"-----BEGIN CERTIFICATE-----MIIDuTCCAqGgAwIBAgIUX/oNqJTx15vT2SI6fg9bEInu3mAwDQYJKoZIhvcNAQELBQAwIDEMMAoGA1UEChMDU1JFMRAwDgYDVQQDEwdjYS1yb290MB4XDTIwMDkwODEzMzExOFoXDTMwMDkwNjEzMzE0N1owIDEMMAoGA1UEChMDU1JFMRAwDgYDVQQDEwdjYS1yb290MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArf7hNfOgoFzY/Cfk8XrRIq4eG6rsf7o8DZKMCoLnwR+uFtzCXyY8HWsD33Po6azXIaTqhT7JFO9osbK8JhzcgiIhxDLT5y5jx77AwKjqPWezgwuKutNAw2E8U5In+1i4mDwP1jJg2pXSoxUzKYQub03Zt04VzXhUD9HT8E8oON9TgQOFMP2+14zQ8VM1OtDLImOedSmyAtk34Tytu38ra1VRIWAkwz7G2O3O5Lsn2NvljLpSasR1Y3JALN1ePeegDr05mQXnNkRkYa4AutMhbfg+P1elCuJEVKfp+80IMnmJXXHwXXbPg6VqYzZkYZRbob2ESynjy7qUL6W/MJg6JwIDAQABo4HqMIHnMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSFTCgp1EHdFv14efJlS7Pl7xcZjzAfBgNVHSMEGDAWgBSFTCgp1EHdFv14efJlS7Pl7xcZjzA8BggrBgEFBQcBAQQwMC4wLAYIKwYBBQUHMAKGIGh0dHBzOi8vdmF1bHQuaHBzZ2MuZGUvdjEvcGtpL2NhMBIGA1UdEQQLMAmCB2NhLXJvb3QwMgYDVR0fBCswKTAnoCWgI4YhaHR0cHM6Ly92YXVsdC5ocHNnYy5kZS92MS9wa2kvY3JsMA0GCSqGSIb3DQEBCwUAA4IBAQBMhvDhtbWPc8O65zV3I76ecpvIPUY6Rc8aHRRdNzUUu6EgyGnK/KHJ0v3+k5yxP2axbDzcviHcvU/zf64FHoM7j+ObcsfwrmtbD9ZyJUcE2vRyH8yFppnHHIQP1nmVjXzAxWLysnko5D3myLcK5CJzUaTCnAld2R6cj774MyekCytbN4U3VvMKfGBJ544tfMgAPPBGAfPEB6qDBw0S5cLD1tIrsikrx8FReQHU9r+yJl4uRjz4SY/397i9QdzQGlZPpWaw/3GCnBwJiEDCwZnSK14v62LwJVH97JvX4/a5YS+GQpIEwD6cC5Ru1dbCMYTYZAcEcPDJk0ldRnahn/5u-----END CERTIFICATE-----","schema":"CDMDEFAULT","useTLS":false,"encrypt":false,"pooling":true,"cdwSchema":"CDMDEFAULT","autoCommit":true,"probeSchema":"CDMDEFAULT","vocabSchema":"CDMVOCAB","configSchema":"CDMDEFAULT","sslTrustStore":"-----BEGIN CERTIFICATE-----MIIDuTCCAqGgAwIBAgIUX/oNqJTx15vT2SI6fg9bEInu3mAwDQYJKoZIhvcNAQELBQAwIDEMMAoGA1UEChMDU1JFMRAwDgYDVQQDEwdjYS1yb290MB4XDTIwMDkwODEzMzExOFoXDTMwMDkwNjEzMzE0N1owIDEMMAoGA1UEChMDU1JFMRAwDgYDVQQDEwdjYS1yb290MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArf7hNfOgoFzY/Cfk8XrRIq4eG6rsf7o8DZKMCoLnwR+uFtzCXyY8HWsD33Po6azXIaTqhT7JFO9osbK8JhzcgiIhxDLT5y5jx77AwKjqPWezgwuKutNAw2E8U5In+1i4mDwP1jJg2pXSoxUzKYQub03Zt04VzXhUD9HT8E8oON9TgQOFMP2+14zQ8VM1OtDLImOedSmyAtk34Tytu38ra1VRIWAkwz7G2O3O5Lsn2NvljLpSasR1Y3JALN1ePeegDr05mQXnNkRkYa4AutMhbfg+P1elCuJEVKfp+80IMnmJXXHwXXbPg6VqYzZkYZRbob2ESynjy7qUL6W/MJg6JwIDAQABo4HqMIHnMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSFTCgp1EHdFv14efJlS7Pl7xcZjzAfBgNVHSMEGDAWgBSFTCgp1EHdFv14efJlS7Pl7xcZjzA8BggrBgEFBQcBAQQwMC4wLAYIKwYBBQUHMAKGIGh0dHBzOi8vdmF1bHQuaHBzZ2MuZGUvdjEvcGtpL2NhMBIGA1UdEQQLMAmCB2NhLXJvb3QwMgYDVR0fBCswKTAnoCWgI4YhaHR0cHM6Ly92YXVsdC5ocHNnYy5kZS92MS9wa2kvY3JsMA0GCSqGSIb3DQEBCwUAA4IBAQBMhvDhtbWPc8O65zV3I76ecpvIPUY6Rc8aHRRdNzUUu6EgyGnK/KHJ0v3+k5yxP2axbDzcviHcvU/zf64FHoM7j+ObcsfwrmtbD9ZyJUcE2vRyH8yFppnHHIQP1nmVjXzAxWLysnko5D3myLcK5CJzUaTCnAld2R6cj774MyekCytbN4U3VvMKfGBJ544tfMgAPPBGAfPEB6qDBw0S5cLD1tIrsikrx8FReQHU9r+yJl4uRjz4SY/397i9QdzQGlZPpWaw/3GCnBwJiEDCwZnSK14v62LwJVH97JvX4/a5YS+GQpIEwD6cC5Ru1dbCMYTYZAcEcPDJk0ldRnahn/5u-----END CERTIFICATE-----","sslCryptoProvider":"sapcrypto","rejectUnauthorized":false,"enableAuditPolicies":false,"validateCertificate":false,"hostnameInCertificate":"${HANASERVER}"}},"credentials":[{"username":"TENANT_ADMIN_USER","password":"izLc+XGmQCVy9p9Dkch/I8pKY19AtpBQXwM+dOa92mz9pJbwm5HedYIiewwvZAdoU/6RAdReWuLeGK+j9krWlZ1VNkiVDYbN9+GU3EM76gIyIEbttmd3H/A4XAlc157TWSgJruad3SK+aTavSfMp10G44xXQyoT1MZwIGf2HBljxt2AsMh25qalA/4zYVq2deuH8M7QkEwHxkgORH+rgWs7vIvg+RUSX/nJklCAioR1Kz/ue0H3ECWaXo55sc/pCaPs99ZUnKVqjUIVNPCkxNDfs/wh3E7/Q3mH6RE76ez5oa7pLzLgAAgzTR6sfNR/LFZkb/ngsUH20pmnat9SdJzLJSbrakZGaGXSvbPs4Dbx1NYTpDBgoMvhBVt5lJHyHrQSE+L3gg3JJOT+e/gBOULu9YSL53wQEYOFwkTaz65uyda0pXxlTjiwXeAAohkWM+Px/FIcP52/B+1HzVfynO4DJKdnK02w1B+vM2COW1ysT4nbmy4a5whDNtVxmDvC2lV9oz5x0xhZ/QjSRN/TbaDvOqCUdg2sDoBo4bxeFiCYrJFv2Ex7QJkKh3VZXgTE+qWZk4RyRYVLcRVFD4js8bBJ+RKMLcAmTJBtXIuotPQ3uMZEyq53dxbkF+CLvNQaCVoeDJQCHtYQU+NC32dQipT0F5hWdKK3r65cFs50Md8o=","salt":"GVB7oYGyiswVggS1uZm42Q==","userScope":"Admin","serviceScope":"Internal"},{"username":"TENANT_READ_USER","password":"Lh05IaOBUTrZpQ7iCsUsmoud0gKcBQGD0sNnppHInzElzZTpzEcCKlj5hdiHYCRWO4AFaS/slnwjbbAZvhoHSGYD1DqEoxZcL9G/Qk/7zH+2ntlPwMYlQKWGgKKLmPZ+M0fTRmo+kOsheF57hI2fPcBKJ5+MHBu9MlJb5E8MGlRXupY2kvIKwfj6FBGbz+2iiVBizmgbTkyF3d3q+qwMtmgit6M/hcl1vqPre2lA8zCRWQVA05ShO89nIIsP1aY37yrUZnsDFV50I1OgwQ7GKRJESLxkpoyipAvptYGTsPwNMFJuWiuqvT4pmk1pxzPj1svs2HhSGPQXhhOX+kLBSsdV3gGngjP/GibEv2vr2MrGijSF8cFdrNXUdVaodo3buqhbhi6AErAO6n385YaInL5OvHcNSY8vzBanpmLTzSBBhi0yabIwC3cpaJP8Uj+8z6YTHtQKiA3rsZfPeEUUUlEc9GerJUQWS6hYuleJAwo4fnybqfBO1svrz9EMtXyjAlmqpib3cusxKzfwH+HzsQpsiCAW0EF8FAA4PkYyXnMcWqZie/u1JEKrAO5fkCqgVYJOE9rsTs2EG0fMxvDICHzHwpOvrnabYwYH8fWUFlWltvPkEQZ8keyTAyhzLxFsqhNAtyydydkJBbzX6jDBe9yo7cPnhD3sYUWKHhG81Zs=","salt":"xdowTXu8Qkat5gTTj6URuA==","userScope":"Read","serviceScope":"Internal"}],"vocabSchemas":["CDMVOCAB"],"authenticationMode":"Password","publications":[{}]}'
+              --data '{"host":"${HANASERVER}","port":"${TESTPORT}","code":"${TESTSCHEMA}","name":"ALPDEV","dialect":"hana","extra":{"Internal":{"schema":"CDMDEFAULT","useTLS":false,"encrypt":false,"pooling":true,"cdwSchema":"CDMDEFAULT","autoCommit":true,"probeSchema":"CDMDEFAULT","vocabSchema":"CDMVOCAB","configSchema":"CDMDEFAULT","validateCertificate":false,"hostnameInCertificate":"${HANASERVER}"}},"credentials":[{"username":"TENANT_ADMIN_USER","password":"izLc+XGmQCVy9p9Dkch/I8pKY19AtpBQXwM+dOa92mz9pJbwm5HedYIiewwvZAdoU/6RAdReWuLeGK+j9krWlZ1VNkiVDYbN9+GU3EM76gIyIEbttmd3H/A4XAlc157TWSgJruad3SK+aTavSfMp10G44xXQyoT1MZwIGf2HBljxt2AsMh25qalA/4zYVq2deuH8M7QkEwHxkgORH+rgWs7vIvg+RUSX/nJklCAioR1Kz/ue0H3ECWaXo55sc/pCaPs99ZUnKVqjUIVNPCkxNDfs/wh3E7/Q3mH6RE76ez5oa7pLzLgAAgzTR6sfNR/LFZkb/ngsUH20pmnat9SdJzLJSbrakZGaGXSvbPs4Dbx1NYTpDBgoMvhBVt5lJHyHrQSE+L3gg3JJOT+e/gBOULu9YSL53wQEYOFwkTaz65uyda0pXxlTjiwXeAAohkWM+Px/FIcP52/B+1HzVfynO4DJKdnK02w1B+vM2COW1ysT4nbmy4a5whDNtVxmDvC2lV9oz5x0xhZ/QjSRN/TbaDvOqCUdg2sDoBo4bxeFiCYrJFv2Ex7QJkKh3VZXgTE+qWZk4RyRYVLcRVFD4js8bBJ+RKMLcAmTJBtXIuotPQ3uMZEyq53dxbkF+CLvNQaCVoeDJQCHtYQU+NC32dQipT0F5hWdKK3r65cFs50Md8o=","salt":"GVB7oYGyiswVggS1uZm42Q==","userScope":"Admin","serviceScope":"Internal"},{"username":"TENANT_READ_USER","password":"Lh05IaOBUTrZpQ7iCsUsmoud0gKcBQGD0sNnppHInzElzZTpzEcCKlj5hdiHYCRWO4AFaS/slnwjbbAZvhoHSGYD1DqEoxZcL9G/Qk/7zH+2ntlPwMYlQKWGgKKLmPZ+M0fTRmo+kOsheF57hI2fPcBKJ5+MHBu9MlJb5E8MGlRXupY2kvIKwfj6FBGbz+2iiVBizmgbTkyF3d3q+qwMtmgit6M/hcl1vqPre2lA8zCRWQVA05ShO89nIIsP1aY37yrUZnsDFV50I1OgwQ7GKRJESLxkpoyipAvptYGTsPwNMFJuWiuqvT4pmk1pxzPj1svs2HhSGPQXhhOX+kLBSsdV3gGngjP/GibEv2vr2MrGijSF8cFdrNXUdVaodo3buqhbhi6AErAO6n385YaInL5OvHcNSY8vzBanpmLTzSBBhi0yabIwC3cpaJP8Uj+8z6YTHtQKiA3rsZfPeEUUUlEc9GerJUQWS6hYuleJAwo4fnybqfBO1svrz9EMtXyjAlmqpib3cusxKzfwH+HzsQpsiCAW0EF8FAA4PkYyXnMcWqZie/u1JEKrAO5fkCqgVYJOE9rsTs2EG0fMxvDICHzHwpOvrnabYwYH8fWUFlWltvPkEQZ8keyTAyhzLxFsqhNAtyydydkJBbzX6jDBe9yo7cPnhD3sYUWKHhG81Zs=","salt":"xdowTXu8Qkat5gTTj6URuA==","userScope":"Read","serviceScope":"Internal"}],"vocabSchemas":["CDMVOCAB"],"authenticationMode":"Password","publications":[{}]}'
 
       # Restart is required for alp-trex container after seeding database credentials into the db table
       - name: Restart alp-trex service
         run: |
           docker container restart alp-trex
-          echo "Waiting 10 secs for alp-trex to restart..."
-          sleep 10
+          echo "Waiting 60 secs for alp-trex to restart..."
+          sleep 60
 
       - name: Seed dummy dataset
         run: |
