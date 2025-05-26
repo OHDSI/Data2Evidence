@@ -1,5 +1,5 @@
 import React, { FC, useMemo, useCallback } from "react";
-import { AiChat, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
+import { AiChat, ChatItem, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
 import { Drawer } from "@mui/material";
 import "@nlux/themes/nova.css";
 
@@ -50,10 +50,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   );
 
   const memoizedHistory = useMemo(() => {
-    return conversationHistory.map((item) => ({
-      role: item.role as "assistant" | "user",
-      message: item.message,
-    }));
+    return conversationHistory as ChatItem[];
   }, [open]);
 
   if (!datasetId) {
