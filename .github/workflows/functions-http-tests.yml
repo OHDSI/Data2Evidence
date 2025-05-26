@@ -123,7 +123,6 @@ jobs:
         run: |
           yq -i '.networks.alp.external=true' docker-compose.yml
           # as not required for http tests omit cachedb to limit memory requirements
-          yq -i '.services.alp-cachedb.profiles = ["cachedb"]' docker-compose.yml
           yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
       - name: Create network for external to use
@@ -285,8 +284,8 @@ jobs:
       - name: Restart alp-trex service
         run: |
           docker container restart alp-trex
-          echo "Waiting 60 secs for alp-trex to restart..."
-          sleep 60
+          echo "Waiting 10 secs for alp-trex to restart..."
+          sleep 10
 
       - name: Seed dummy dataset
         run: |
