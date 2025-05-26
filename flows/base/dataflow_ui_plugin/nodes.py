@@ -269,7 +269,7 @@ class CsvNode(Node):
 
     def test(self, task_run_context):
         df = self._load_csv_into_dataframe()
-        return ddf
+        return df
 
     def task(self, task_run_context) -> Result:
         try:
