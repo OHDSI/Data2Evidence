@@ -120,7 +120,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
   })
 
   describe('Calling REST endpoints of ', function () {
-    xdescribe('barchart', function () {
+    describe('barchart', function () {
       it('returns a valid response', function (done) {
         var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
         requestBuilder.request().chart().xaxis('basicdata', 'lastName').yaxis('basicdata', 'multiple_birth_order')
@@ -131,7 +131,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
       })
     })
 
-    xdescribe('totalpcount', function () {
+    describe('totalpcount', function () {
       it('returns a valid response', function (done) {
         var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
         requestBuilder
@@ -235,7 +235,7 @@ describe('-- MRI ENDPOINT SMOKE TESTS --', function () {
       })
     })
 
-    xdescribe('domain values', function () {
+    describe('domain values', function () {
       it('returns a valid response', function (done) {
         var requestBody = {
           attributePath: 'patient.attributes.lastName',
