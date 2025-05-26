@@ -69,7 +69,7 @@
 
 - **Description:** Upload CSV File to Supabase storage and read as Pandas DataFrame.
 - **Input Nodes:** None.
-- **Output Data:** Returns only 1 Pandas Dataframe. 
+- **Output Data:** Returns only 1 Pandas DataFrame. 
 - **How To Use:** 
     - Choose File: Name of CSV file to upload.
     - Delimiter: Character that separates the individual values in each row. Use `\t` for tab, `,` for comma, `|` for pipe etc.
