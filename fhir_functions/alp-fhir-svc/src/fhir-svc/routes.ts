@@ -171,7 +171,7 @@ export class FhirRouter {
     );
 
     //Endpoint to delete fhir project
-    this.router.post(
+    this.router.delete(
       "/deleteProject/:id",
       validateDeleteFhirProjectDto(),
       async (req, res) => {
