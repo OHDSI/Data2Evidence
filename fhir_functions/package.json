@@ -69,7 +69,7 @@
             "gateway.fhir.create"
           ],
           "httpMethods": [
-            "POST"
+            "DELETE"
           ]
         }
       ]

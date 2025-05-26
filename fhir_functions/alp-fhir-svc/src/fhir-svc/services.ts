@@ -150,7 +150,7 @@ export const deleteProject = async(id: string) =>{
 
   //Delete project and all its related resources
   return await fhirApi.forwardRequest(
-    `Project/${existingProject.id}/$expunge`,
+    `Project/${existingProject.id}/$expunge?everything=true`,
     fhirApi.getAdminCredentials(),
     HTTPMethod.POST,
     '',
