@@ -23,7 +23,7 @@ export const validateProxyDto = () => [
     ),
 ];
 
-// Validation rules for createProject
+// Validation rules for deleteProject
 export const validateDeleteFhirProjectDto = () => [
   param("id")
     .isString()
