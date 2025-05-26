@@ -62,4 +62,16 @@ export class PortalAPI {
       throw new Error('Error while getting dataset')
     }
   }
+
+  async updateDataset(datasetToUpdate: Dataset){
+    try{
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/dataset`
+      const result = await axios.put(url, datasetToUpdate, options)
+      return result.data
+    }catch(error){
+      this.logger.error('Error while updating dataset')
+      throw new Error('Error while updating dataset')
+    }
+  }
 }

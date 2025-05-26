@@ -14,7 +14,7 @@ const EMPTY_PROGRESS: IProgressResponse = {
 };
 
 interface DemoStepItemProps {
-  no: number;
+  no?: number;
   name: string;
   result?: ISetupResponse;
   onClick?: () => Promise<void>;
@@ -51,29 +51,31 @@ export const DemoSetupItem: FC<DemoStepItemProps> = ({ no, name, result, onClick
   return (
     <div className="demo-setup-item">
       <div className="demo-setup-item__info">
-        <div className="demo-setup-item__no">{no}.</div>
+        {no && <div className="demo-setup-item__no">{no}.</div>}
         <div className="demo-setup-item__title">
           <div>{name}</div>
-          <div className="demo-setup-item__progress">
-            {result?.message && (
-              <div className="demo-setup-item__progress-step">
-                <CheckmarkIcon />
-                {result.message}
-              </div>
-            )}
-            {progress?.steps?.map((step) => (
-              <div key={step.step} className="demo-setup-item__progress-step">
-                {step.status === "inprogress" ? (
-                  <CircularProgress size={24} style={{ padding: 5 }} />
-                ) : step.status === "failed" ? (
-                  <CloseIcon />
-                ) : (
+          {result?.message && (
+            <div className="demo-setup-item__progress">
+              {result?.message && (
+                <div className="demo-setup-item__progress-step">
                   <CheckmarkIcon />
-                )}
-                {step.message}
-              </div>
-            ))}
-          </div>
+                  {result.message}
+                </div>
+              )}
+              {progress?.steps?.map((step) => (
+                <div key={step.step} className="demo-setup-item__progress-step">
+                  {step.status === "inprogress" ? (
+                    <CircularProgress size={24} style={{ padding: 5 }} />
+                  ) : step.status === "failed" ? (
+                    <CloseIcon />
+                  ) : (
+                    <CheckmarkIcon />
+                  )}
+                  {step.message}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       {onClick && (
