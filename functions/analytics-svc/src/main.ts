@@ -156,11 +156,9 @@ const initRoutes = async (app: express.Application) => {
         }
     });
 
-    // if (!envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
-        // Get Analytics Credential for study based on selected study
-        // Otherwise, default it to the first db connection and use default schema in the connection string
-        await app.use(studyDbCredentialMiddleware);
-    // }
+    // Get Analytics Credential for study based on selected study
+    // Otherwise, default it to the first db connection and use default schema in the connection string
+    await app.use(studyDbCredentialMiddleware);
 
     app.use(async (req: IMRIRequest, res, next) => {
         try {
