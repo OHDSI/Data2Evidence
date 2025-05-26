@@ -1,8 +1,10 @@
 import * as utilsLib from "@alp/alp-base-utils";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
-import { getUser } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
 import { IMRIRequest, StudyDbMetadata } from "../../types";
 import * as domainValuesService from "../../mri/endpoint/domain_values_service";
+
+const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 
 export function values(req: IMRIRequest, res, next) {
     function _sendResult(err, result) {
