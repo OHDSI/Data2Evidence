@@ -364,7 +364,8 @@ services:
             "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
             "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
             "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
-            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -432,7 +433,9 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}"
+            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
           },
           "jupyter-gateway": {}
         }

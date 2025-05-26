@@ -12,8 +12,7 @@ export class SupabaseStorageClient {
 
   constructor() {
     this.baseUrl = services.supabaseStorage;
-    this.authToken =
-      env.SUPABASE_STORAGE_JWT_TOKEN
+    this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
@@ -43,7 +42,10 @@ export class SupabaseStorageClient {
     this.pgclient = new pg.Client(this.pgOpt);
     this.initializeDb();
 
-    this.createDefaultBucket();
+    this.createBucket(this.DEFAULT_BUCKET);
+
+    // Create the data transformation bucket to store uploaded files
+    this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
   }
 
   private async initializeDb() {
@@ -55,30 +57,33 @@ export class SupabaseStorageClient {
     }
   }
 
-  private async createDefaultBucket() {
+  private async createBucket(bucketName: string) {
     try {
-      console.info(`Creating default bucket ${this.DEFAULT_BUCKET}...`);
-      
+      console.info(`Creating bucket ${bucketName}...`);
+
       const url = `${this.baseUrl}/bucket`;
       console.log(`Making request to create bucket: ${url}`);
-      
+
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.authToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: this.DEFAULT_BUCKET,
-          public: false
-        })
+          name: bucketName,
+          public: false,
+        }),
       });
-      
-      if (!response.ok && response.status !== 409) { // 409 means bucket already exists
+
+      if (!response.ok && response.status !== 409) {
+        // 409 means bucket already exists
         const errorText = await response.text();
-        console.error(`Error creating bucket: ${response.status} - ${errorText}`);
+        console.error(
+          `Error creating bucket: ${response.status} - ${errorText}`
+        );
       } else {
-        console.info(`Bucket ${this.DEFAULT_BUCKET} created or already exists`);
+        console.info(`Bucket ${bucketName} created or already exists`);
       }
     } catch (e) {
       console.error(`Error creating default bucket: ${e}`);
@@ -89,10 +94,13 @@ export class SupabaseStorageClient {
   // Directly query the database to get the files.
   async list(datasetId: string) {
     try {
-      if (!this.pgclient || this.pgclient.connectionParameters.state === 'closed') {
+      if (
+        !this.pgclient ||
+        this.pgclient.connectionParameters.state === "closed"
+      ) {
         await this.initializeDb();
       }
-      
+
       const folderPath = this.getDatasetFolderPath(datasetId);
       console.log(`Querying database for files in folder: ${folderPath}`);
 
@@ -104,21 +112,26 @@ export class SupabaseStorageClient {
         AND name LIKE $2
         AND name NOT LIKE $3
       `;
-      
+
       const result = await this.pgclient.query(query, [
         this.DEFAULT_BUCKET,
         `${folderPath}/%`,
-        `${folderPath}/%/%` // Exclude nested folders
+        `${folderPath}/%/%`, // Exclude nested folders
       ]);
-      
-      console.log(`Found ${result.rows.length} files in database for dataset ${datasetId}`);
-      
-      return result.rows.map(file => {
+
+      console.log(
+        `Found ${result.rows.length} files in database for dataset ${datasetId}`
+      );
+
+      return result.rows.map((file) => {
         const fullPath = file.name;
-        const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+        const fileName = fullPath.substring(fullPath.lastIndexOf("/") + 1);
         const nameArr = fileName.split(".");
-        const fileType = nameArr.length > 1 ? nameArr[nameArr.length - 1].toUpperCase() : "UNKNOWN";
-        
+        const fileType =
+          nameArr.length > 1
+            ? nameArr[nameArr.length - 1].toUpperCase()
+            : "UNKNOWN";
+
         return {
           name: fileName,
           size: this.formatBytes(file.metadata?.size || 0),
@@ -126,7 +139,9 @@ export class SupabaseStorageClient {
         };
       });
     } catch (e) {
-      console.error(`Error in list method: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(
+        `Error in list method: ${e instanceof Error ? e.message : String(e)}`
+      );
       return [];
     }
   }
@@ -139,28 +154,32 @@ export class SupabaseStorageClient {
       // Direct request to download file
       const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
       console.log(`Making request to: ${url}`);
-      
+
       const response = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${this.authToken}`
-        }
+          Authorization: `Bearer ${this.authToken}`,
+        },
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Error downloading file: ${response.status} - ${errorText}`);
-        
+        console.error(
+          `Error downloading file: ${response.status} - ${errorText}`
+        );
+
         if (response.status === 404) {
           throw new BadRequestException(`Invalid file name: ${fileName}`);
         }
-        
-        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
+
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
       }
-      
+
       const blob = await response.blob();
       const fileExtension = fileName.substring(fileName.lastIndexOf("."));
-      const mimeType = contentType(fileExtension) || 'application/octet-stream';
+      const mimeType = contentType(fileExtension) || "application/octet-stream";
 
       return {
         readStream: blob.stream(),
@@ -174,8 +193,14 @@ export class SupabaseStorageClient {
       ) {
         throw e;
       }
-      console.error(`Error in download method: ${e instanceof Error ? e.message : String(e)}`);
-      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
+      console.error(
+        `Error in download method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      console.error(
+        `Stack trace: ${e instanceof Error ? e.stack : "No stack trace"}`
+      );
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object download: ${fileName}`
       );
@@ -190,31 +215,39 @@ export class SupabaseStorageClient {
 
       const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
       console.log(`Making request to: ${url}`);
-      
+
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.authToken}`,
-          'Content-Type': file.mimetype || 'application/octet-stream',
-          'Cache-Control': '3600',
-          'x-upsert': 'true' // For overwriting existing files
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": file.mimetype || "application/octet-stream",
+          "Cache-Control": "3600",
+          "x-upsert": "true", // For overwriting existing files
         },
-        body: file.buffer
+        body: file.buffer,
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Error uploading file: ${response.status} - ${errorText}`);
-        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
+        console.error(
+          `Error uploading file: ${response.status} - ${errorText}`
+        );
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
       }
-      
+
       console.info(`File ${fileName} successfully uploaded to ${filePath}`);
       return {
         status: "success",
       };
     } catch (e) {
-      console.error(`Error in upload method: ${e instanceof Error ? e.message : String(e)}`);
-      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
+      console.error(
+        `Error in upload method: ${e instanceof Error ? e.message : String(e)}`
+      );
+      console.error(
+        `Stack trace: ${e instanceof Error ? e.stack : "No stack trace"}`
+      );
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object upload: ${fileName}`
       );
@@ -228,27 +261,33 @@ export class SupabaseStorageClient {
 
       const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
       console.log(`Making request to: ${url}`);
-      
+
       const response = await fetch(url, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${this.authToken}`
-        }
+          Authorization: `Bearer ${this.authToken}`,
+        },
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Error deleting file: ${response.status} - ${errorText}`);
-        throw new Error(`Storage service returned ${response.status}: ${errorText}`);
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
       }
-      
+
       console.info(`File ${filePath} successfully deleted`);
       return {
         status: "success",
       };
     } catch (e) {
-      console.error(`Error in delete method: ${e instanceof Error ? e.message : String(e)}`);
-      console.error(`Stack trace: ${e instanceof Error ? e.stack : 'No stack trace'}`);
+      console.error(
+        `Error in delete method: ${e instanceof Error ? e.message : String(e)}`
+      );
+      console.error(
+        `Stack trace: ${e instanceof Error ? e.stack : "No stack trace"}`
+      );
       throw new InternalServerErrorException(
         `Error occurred in Supabase storage object deletion: ${fileName}`
       );
