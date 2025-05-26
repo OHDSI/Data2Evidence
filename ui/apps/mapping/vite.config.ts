@@ -46,7 +46,7 @@ export default defineConfig(({ command, mode }) => {
         treeshake: true,
         ...(isBuild && isProduction
           ? {
-              external: ["react", "react-dom", "react-router"],
+              external: ["react", "react-dom"],
               output: {
                 globals: {
                   react: "React",
