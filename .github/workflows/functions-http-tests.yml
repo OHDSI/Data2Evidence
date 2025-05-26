@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -38,7 +38,7 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
-              - ".github/workflows/http-tests.yml"
+              - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
 
