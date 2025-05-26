@@ -5,7 +5,7 @@ from prefect.blocks.system import Secret
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 
-class SupabaseAPI(BaseAPI):
+class SupabaseStorageAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("supabaseStorage")

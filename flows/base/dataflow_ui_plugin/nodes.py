@@ -17,7 +17,7 @@ from .flowutils import *
 from .types import JoinType
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.api.SupabaseAPI import SupabaseAPI
+from flows._shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 
 
 class Node:
@@ -253,7 +253,7 @@ class CsvNode(Node):
 
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        csv_response = SupabaseAPI().get_csv_file(self.file)
+        csv_response = SupabaseStorageAPI().get_csv_file(self.file)
 
         if self.hasheader:
             df = pd.read_csv(StringIO(csv_response), 
