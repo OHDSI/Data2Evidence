@@ -111,7 +111,7 @@ try {
             --header 'Content-Type: application/x-www-form-urlencoded' \
             --header 'Authorization: Bearer ${BEARER_TOKEN}'`
         const jobs = JSON.parse(resp.stdout);
-        let num_of_jobs = jobs.length;
+        num_of_jobs = jobs.length;
         job_runs = jobs.map(job => `${job.name.replace(/ /g, "_")}\t${job.state_type}`).join('\n');
         const flow_status = jobs.map(job => job.state_type);
         let lines = flow_status;
