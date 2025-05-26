@@ -104,9 +104,9 @@
     - `myinput` is a name list mapping input node names to node output data.
     - Use `myinput$input_node_name` to access the data of a `Result` object.
 
-## Python Nodebook Node (Experimental)
+## Python Notebook Node (Experimental)
 
-- **Description:** Run python nodebook with starboard.
+- **Description:** Run python notebook with starboard.
 - **Input Nodes:** TBD.
 - **Output Data:** TBD. 
 - **How To Use:**  TBD.
