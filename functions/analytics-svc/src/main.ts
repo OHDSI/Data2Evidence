@@ -156,11 +156,11 @@ const initRoutes = async (app: express.Application) => {
         }
     });
 
-    if (!envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
+    // if (!envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
         // Get Analytics Credential for study based on selected study
         // Otherwise, default it to the first db connection and use default schema in the connection string
         await app.use(studyDbCredentialMiddleware);
-    }
+    // }
 
     app.use(async (req: IMRIRequest, res, next) => {
         try {
@@ -190,12 +190,12 @@ const initRoutes = async (app: express.Application) => {
                 }
 
                 let credentials = null;
-                if (envVarUtils.isTestEnv()) {
-                    credentials =
-                        analyticsCredentials[EnvVarUtils.getEnvs().TESTSCHEMA];
-                } else {
+                // if (envVarUtils.isTestEnv()) {
+                //     credentials =
+                //         analyticsCredentials['ALPDEV'];
+                // } else {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
-                }
+                // }
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
