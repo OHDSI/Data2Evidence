@@ -14,7 +14,8 @@ import "./Starboard.scss";
 import Fab from "@mui/material/Fab";
 import AssistantIcon from "@mui/icons-material/Assistant";
 import Chat from "../../components/Chat/Chat";
-
+import { useConversationHistory } from "../../contexts";
+import { ChatItem } from "@nlux/react";
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
@@ -44,6 +45,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
   const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
   const [isShared, setIsShared] = useState<boolean | undefined>();
+  const { setConversationHistory } = useConversationHistory();
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -181,6 +183,14 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     }
   };
 
+  const handleChatClose = useCallback(
+    (chatHistory: ChatItem[]) => {
+      setConversationHistory(chatHistory);
+      setOpen(false);
+    },
+    [setConversationHistory]
+  );
+
   if (loading) {
     return <Loader />;
   }
@@ -216,7 +226,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         </Fab>
         <div id="starboard-root" />
       </Card>
-      <Chat open={open} onClose={() => setOpen(false)} datasetId={activeDatasetId} currentContent={handleReadContent} />
+      <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
     </div>
   );
 };
