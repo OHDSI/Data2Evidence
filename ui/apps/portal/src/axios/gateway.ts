@@ -84,9 +84,8 @@ export class Gateway {
   public deleteFhirStaging(id: string): Promise<any> {
     return request({
       baseURL: GATEWAY_BASE_URL,
-      url: "/fhir/deleteProject",
+      url: `/fhir/deleteProject/${id}`,
       method: "delete",
-      params: { datasetId: id },
     });
   }
 

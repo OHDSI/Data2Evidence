@@ -184,7 +184,7 @@ export class FhirRouter {
           const response = await deleteProject(id);
           return res.status(response.status).json(response.data);
         } catch (error) {
-          let log_msg = `Failed to delete project in fhir server - ${error.message}`;
+          let log_msg = `Failed to delete project in fhir server`;
           this.logger.error(log_msg);
           res.status(500).send(log_msg);
         }
