@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -38,7 +38,7 @@ jobs:
               - "functions/mri-pg-config/**"
               - "functions/query-gen-svc/**"
               - "services/mri-db/**"
-              - ".github/workflows/http-tests.yml"
+              - ".github/workflows/functions-mri-tests.yml"
 
   test-mri:
     # needs: [check_file_changes]
