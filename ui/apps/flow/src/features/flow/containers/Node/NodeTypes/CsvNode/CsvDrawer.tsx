@@ -1,3 +1,12 @@
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  TextField,
+  TextInput,
+} from "@portal/components";
 import React, {
   ChangeEvent,
   FC,
@@ -8,15 +17,6 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Checkbox,
-  Chip,
-  TextField,
-  TextInput,
-} from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
@@ -48,6 +48,7 @@ const EMPTY_FORM_DATA: FormData = {
   delimiter: ",",
   hasheader: true,
   columns: [],
+  encoding: "utf-8",
 };
 
 export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
@@ -69,6 +70,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
         delimiter: node.data.delimiter,
         hasheader: node.data.hasheader,
         columns: node.data.columns,
+        encoding: node.data.encoding || "utf-8",
       });
     } else {
       setFormData({
