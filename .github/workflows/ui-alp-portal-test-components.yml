@@ -25,6 +25,7 @@ jobs:
         filters: |
           portal_components_changed:
             - 'libs/portal-components/**'
+            - '.github/workflows/ui-alp-portal-test-components.yml'
 
     - name: Setup node if files have changed
       uses: actions/setup-node@v4
