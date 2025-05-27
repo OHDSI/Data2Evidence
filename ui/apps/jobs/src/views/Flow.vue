@@ -4,7 +4,7 @@
       <PageHeadingFlow v-if="flow" :flow="flow" @delete="deleteFlow" />
     </template>
 
-    <p-tabs v-model:selected="tab" :tabs="tabs">
+    <p-tabs :selected="tab" :tabs="tabs">
       <template #details>
         <FlowDetails v-if="flow" :flow="flow" />
       </template>
