@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -38,7 +38,7 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
-              - ".github/workflows/http-tests.yml"
+              - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
 
@@ -277,6 +277,7 @@ jobs:
       - name: Seed db credentials
         run: |
           echo "Seed db credentials"
+          
           curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/trex/db/' \
               --header 'Referer: https://localhost:41100/sign-in' \
               --header 'accept: application/json, text/plain, */*' \
