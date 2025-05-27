@@ -1,4 +1,3 @@
-import { JwtPayload, decode } from "jsonwebtoken";
 import { Request, Response, Router } from "express";
 import { TransformationService as DataTransformationService } from "../services/DataTransformationService.ts";
 
@@ -45,7 +44,8 @@ export class DataTransformationController {
   private async deleteCanvas(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const result = await this.dataTransformationService.deleteCanvas(id);
+      const token = req.headers["authorization"];
+      const result = await this.dataTransformationService.deleteCanvas(id, token);
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in deleteCanvas: ", error);
@@ -56,7 +56,6 @@ export class DataTransformationController {
   private async getResultsById(req: Request, res: Response) {
     try {
       const { id: dataflowId } = req.params;
-      // unlike other places, token is a string here
       const token = req.headers["authorization"];
       const result = await this.dataTransformationService.getResultsByCanvasId(
         dataflowId,
@@ -72,9 +71,7 @@ export class DataTransformationController {
   private async createCanvas(req: Request, res: Response) {
     try {
       const dataflowDto = req.body;
-      const token = decode(
-        req.headers["authorization"].replace(/bearer /i, "")
-      ) as JwtPayload;
+      const token = req.headers["authorization"];
       const canvas = await this.dataTransformationService.createCanvas(
         dataflowDto,
         token
@@ -82,7 +79,7 @@ export class DataTransformationController {
       return res.status(201).send(canvas);
     } catch (error) {
       console.error("Error in createCanvas: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -90,9 +87,7 @@ export class DataTransformationController {
     try {
       const { id, revisionId } = req.params;
       const dataflowDto = req.body;
-      const token = decode(
-        req.headers["authorization"].replace(/bearer /i, "")
-      ) as JwtPayload;
+      const token = req.headers["authorization"];
       const result = await this.dataTransformationService.duplicateCanvas(
         id,
         revisionId,
@@ -102,21 +97,23 @@ export class DataTransformationController {
       return res.status(201).send(result);
     } catch (error) {
       console.error("Error in duplicateCanvas: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
   private async deleteGraphById(req: Request, res: Response) {
     try {
       const { id, revisionId } = req.params;
+      const token = req.headers["authorization"];
       const result = await this.dataTransformationService.deleteGraph(
         id,
-        revisionId
+        revisionId,
+        token
       );
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in deleteGraphById: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
