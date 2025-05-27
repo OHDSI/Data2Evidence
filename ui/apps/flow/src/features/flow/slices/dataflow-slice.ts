@@ -72,7 +72,10 @@ export const dataflowApiSlice = createApi({
         const { message } = error.data;
         const nodeDataRegex = /^dataflow.nodes.([0-9]+).data./;
         const dataflowRegex = /^dataflow./;
-        error.data.message = message.map((msg) => {
+
+        const messages = Array.isArray(message) ? message : [message];
+
+        error.data.message = messages.map((msg) => {
           if (nodeDataRegex.test(msg)) {
             return msg.replace(nodeDataRegex, "");
           } else if (dataflowRegex.test(msg)) {
