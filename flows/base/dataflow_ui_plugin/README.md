@@ -4,7 +4,7 @@
 
 ##  Python Node (Stable)
 
-- **Description:** Run Python code inside a node-based workflow.
+- **Description:** Run Python code.
 - **Input Nodes:** Accepts more than one node of any type.
 - **Output Data:** Returns any valid Python object.
 - **How To Use:** 
@@ -92,7 +92,7 @@
 - **Description:** Run R Code within Python.
 - **Input Nodes:** Accepts more than one node of any type.
 - **Output Data:** Returns any R object converted to Python object.
-- **How To Use:**  TBD.
+- **How To Use:**
 
   R Code Example
   ```R
