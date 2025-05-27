@@ -135,7 +135,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         <Snackbar
           type="error"
           message={error?.message}
-          visible={error?.statusCode === 400}
+          visible={error?.statusCode === 400 || !!error?.message}
           handleClose={() => setError(undefined)}
         />
         <Box mb={4}>
