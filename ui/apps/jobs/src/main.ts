@@ -3,6 +3,8 @@ import '@prefecthq/graphs/dist/style.css'
 import 'highlight.js/styles/monokai.css'
 import '@prefecthq/prefect-design/dist/style.css'
 import '@prefecthq/prefect-ui-library/dist/style.css'
+import '@d4l/web-components-library/dist/d4l-ui/d4l-ui.css'
+import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -17,6 +19,14 @@ initColorMode()
 const mountJobs = (addEventListener: boolean = true) => {
   try {
     const app = createApp(App)
+
+    app.config.errorHandler = () => null
+    app.config.warnHandler = () => null
+    app.config.compilerOptions.isCustomElement = (tag: string) => tag.startsWith('d4l-')
+    applyPolyfills().then(() => {
+      defineCustomElements()
+    })
+
     app.use(createPinia())
     app.use(router)
     app.use(PrefectDesign)
