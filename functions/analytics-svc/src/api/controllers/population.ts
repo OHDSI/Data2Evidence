@@ -2,7 +2,7 @@ import { StackedBarchartEndpoint } from "../../mri/endpoint/StackedBarchartEndpo
 import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
 import { Settings } from "../../qe/settings/Settings";
-import { getUser } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types";
 
 import { DBError as dbe } from "@alp/alp-base-utils";
@@ -12,6 +12,7 @@ import { convertZlibBase64ToJson } from "@alp/alp-base-utils";
 import { env } from "../../env";
 
 const sqlReturnOn: boolean = env.SQL_RETURN_ON === "true" ? true : false;
+const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 
 let _stripDbgInfo = (result) => {
     if (typeof result === "string") {
@@ -175,24 +176,25 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         if (err) {
                             return console.error(err);
                         }
-                        let configData = Array.isArray(body)
-                            ? body[0].configData
-                            : body.configData;
-                        if (!configData) {
-                            let configMetadata = Array.isArray(body)
-                                ? body[0].filter.configMetadata
-                                : body.filter.configMetadata;
-                            configData = {
-                                configId: configMetadata.id,
-                                configVersion: configMetadata.version,
-                            };
+                        //Determine config metadata
+                        let configId = req.paConfigId;
+                        let configVersion = req.paConfigVersion;
+                        //Only for tests choose metadata from the request body
+                        if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+                            let configData = Array.isArray(body)
+                                            ? body[0].configData
+                                            : body.configData;
+
+                            if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                                configId = configData.configId;
+                                configVersion = configData.configVersion;
+                            } else {
+                                throw new Error("Config metadata undefined!")
+                            }
                         }
 
                         try {
-                            const configId = req.paConfigId;
-                            const configVersion = req.paConfigVersion;
                             const datasetId = body.datasetId;
-
                             let sFilename: string =
                                 <string>req.query.name ||
                                 "MRI_CSV_" + new Date().toISOString() + ".csv";
