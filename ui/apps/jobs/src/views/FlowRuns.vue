@@ -11,7 +11,7 @@
       <template v-else>
         <p-content>
           <FlowRunsFilterGroup
-            :nameSearch="flowRunNameLike"
+            v-model:nameSearch="flowRunNameLike"
             :filter="dashboardFilter"
             @update:filter="setDashboardFilter"
           />
@@ -20,14 +20,14 @@
               <p-select-all-checkbox
                 v-if="flowRunsAreSelectable"
                 v-model="selectedFlowRuns"
-                :selectable="flowRuns.map((flowRun: any) => flowRun.id)"
+                :selectable="flowRuns.map((flowRun) => flowRun.id)"
                 item-name="flow run"
               />
               <ResultsCount v-if="selectedFlowRuns.length == 0" :count="flowRunCount" label="run" />
               <SelectedCount v-else :count="selectedFlowRuns.length" />
               <FlowRunsDeleteButton
                 v-if="can.delete.flow_run"
-                :selected="selectedFlowRuns"
+                v-model:selected="selectedFlowRuns"
                 @delete="deleteFlowRuns"
               />
 
@@ -82,7 +82,7 @@
         </p-content>
       </template>
     </template>
-    
+
     <template v-else>
       <Loader />
     </template>
