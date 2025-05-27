@@ -1087,6 +1087,15 @@ export const i18nDefault = {
     USER_OVERVIEW__TENANT: "Tenant",
     USER_OVERVIEW__USERNAME: "Username",
     USER_OVERVIEW__USERS: "Users",
+    GIT_CONFIG__TITLE: "Git Repository Configuration",
+    GIT_CONFIG__DATAFLOW_SECTION: "Dataflow Git Configuration",
+    GIT_CONFIG__NOTEBOOK_SECTION: "Notebook Git Configuration",
+    GIT_CONFIG__REPO_URL_LABEL: "Repository URL",
+    GIT_CONFIG__PAT_LABEL: "Personal Access Token (PAT)",
+    GIT_CONFIG__BRANCH_LABEL: "Default Branch",
+    GIT_CONFIG__SAVE: "Save",
+    GIT_CONFIG__SUCCESS: "Git configuration saved successfully",
+    GIT_CONFIG__ERROR: "Failed to save Git configuration",
   },
 };
 
