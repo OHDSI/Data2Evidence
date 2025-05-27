@@ -101,6 +101,15 @@ const flowSlice = createSlice({
     ) => {
       nodesAdapter.upsertOne(state.nodes, action.payload);
     },
+    clearNodesResult: (state) => {
+      nodesAdapter.setAll(
+        state.nodes,
+        Object.values(state.nodes.entities).map((n) => ({
+          ...n,
+          data: { ...n.data, result: null, error: null, errorMessage: null },
+        }))
+      );
+    },
 
     // Edges
     replaceEdges: (state, action: PayloadAction<EdgeState[]>) => {
@@ -135,6 +144,7 @@ export const {
   // Nodes
   replaceNodes,
   setNode,
+  clearNodesResult,
 
   // Edges
   replaceEdges,
