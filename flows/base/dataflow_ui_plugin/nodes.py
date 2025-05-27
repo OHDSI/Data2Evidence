@@ -17,7 +17,7 @@ from .flowutils import *
 from .types import JoinType
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from flows._shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
+from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 
 
 class Node:
