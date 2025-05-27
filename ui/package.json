@@ -220,6 +220,13 @@
             "route": "azure-ad"
           },
           {
+            "description": "Allow user to configure the git information",
+            "enabled": true,
+            "name": "Git Configuration",
+            "pluginPath": "plugins/Setup/GitConfig/module",
+            "route": "git-config"
+          },
+          {
             "description": "Enable / disable feature",
             "enabled": true,
             "name": "Feature flags",
