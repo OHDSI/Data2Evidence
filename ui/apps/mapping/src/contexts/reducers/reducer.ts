@@ -1,5 +1,5 @@
 import { AppState } from "../states";
-import { reset, clearHandles, markAsSaved, load, setVocabularybDatasetId, setMappingSuggestion } from "./app";
+import { reset, clearHandles, markAsSaved, load, setVocabularybDatasetId, setMappingSuggestion, setPage } from "./app";
 import {
   setTableNodes,
   setTableEdges,
@@ -48,6 +48,7 @@ export enum ACTION_TYPES {
   SET_SCANNED_SCHEMA = "SET_SCANNED_SCHEMA",
   SET_CDM_VERSION = "SET_CDM_VERSION",
   SET_CDM_TABLES = "SET_CDM_TABLES",
+  SET_PAGE = "SET_PAGE",
 }
 
 type ActionType = keyof typeof ACTION_TYPES;
@@ -79,6 +80,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.SET_SCANNED_SCHEMA, setScannedSchema],
   [ACTION_TYPES.SET_CDM_VERSION, setCdmVersion],
   [ACTION_TYPES.SET_CDM_TABLES, setCdmTables],
+  [ACTION_TYPES.SET_PAGE, setPage],
 ]);
 
 export interface DispatchType {

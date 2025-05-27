@@ -329,17 +329,9 @@
                 "route": "concept-mapping"
               },
               {
-                "name": "Data mapping",
-                "enabled": true,
-                "pluginPath": "https://$$FQDN$$/mapping/module.js",
-                "route": "data-mapping",
                 "data": {
+                  "dnBaseUrl": "https://$$FQDN$$/",
                   "mappingSuggestion": false
-                }
-              },
-              {
-                "data": {
-                  "dnBaseUrl": "https://$$FQDN$$/"
                 },
                 "name": "Data transformation",
                 "enabled": true,
