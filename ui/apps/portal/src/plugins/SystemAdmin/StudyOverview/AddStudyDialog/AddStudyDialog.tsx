@@ -522,7 +522,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      let datasetId = await api.gateway.createDataset(input);
+      const datasetId = await api.gateway.createDataset(input);
       if (createFhirProject) {
         try {
           const fhirProjectInput: NewFhirProjectInput = {

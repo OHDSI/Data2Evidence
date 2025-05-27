@@ -110,7 +110,7 @@ services:
       alp-logto-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -143,7 +143,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
-      REP_PG: postgres://postgres:mypass@demodb:5432/postgres
+      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -318,6 +318,7 @@ services:
             "PG_SCHEMA": "cdw_config",
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PORT": 41114,
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-false}",
             "USE_CACHEDB": "${USE_CACHEDB:-true}",
             "USE_DUCKDB": "${USE_DUCKDB:-true}",
             "isTestEnv": "${isTestEnv}",
@@ -869,6 +870,8 @@ services:
       test:
         - CMD
         - wget
+        - --proxy
+        - off
         - -O
         - logto.status
         - http://localhost:3001/api/status
@@ -1059,12 +1062,26 @@ services:
     image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
-    command:
-      - "postgres"
-      - "-c"
-      - "wal_level=logical"
+    command: >
+      sh -c '
+      set -e;
+      echo "Starting PostgreSQL in background via original docker-entrypoint.sh...";
+      /usr/local/bin/docker-entrypoint.sh postgres -c wal_level=logical &
+      PG_PID=$!;
+      echo "Waiting for PostgreSQL to become ready...";
+        until pg_isready -q -U postgres -h localhost -p 5432; do
+          echo "PostgreSQL is unavailable - sleeping for 1 second...";
+          sleep 1;
+        done;
+      echo "PostgreSQL is ready on localhost:5432.";
+      echo "Attempting to change password for user postgres...";
+      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD:-mypass}'\'';";
+      echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
+      wait $PG_PID;
+      echo "PostgreSQL process (PID $PG_PID) has exited.";
+      exit $?;'
     environment:
-      - POSTGRES_PASSWORD=mypass
+      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
     networks:
       alp:
         priority: 20
@@ -1078,6 +1095,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [demodb]
 
   redis:
@@ -1200,6 +1218,7 @@ services:
       test:
         - CMD
         - wget
+        - --no-proxy
         - -O
         - fhir.status
         - http://localhost:8103/healthcheck
@@ -1290,11 +1309,12 @@ services:
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
-      KERNEL_USERNAME: jovyan
       EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
       EG_DOCKER_MODE: docker
       EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
       TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+      EG_ENV_WHITELIST: "KERNEL_USERNAME"
+      EG_MAX_KERNELS_PER_USER: 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:
