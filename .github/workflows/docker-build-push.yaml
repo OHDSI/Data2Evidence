@@ -38,19 +38,19 @@ env:
   GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
 
-
 jobs:
   check_file_changes:
-    environment: 'github' # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
+    environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
+      rkernel: ${{ steps.file_changes.outputs.rkernel }}
       jenv: ${{  job.environment }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -60,7 +60,10 @@ jobs:
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
-
+            rkernel:
+              - "./services/enterprise-gateway/r-strategus-lib/**"
+              - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
+              - ".github/workflows/docker-build-push.yaml"
 
   bld:
     needs: [check_file_changes]
@@ -136,6 +139,7 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_arg1: true
+            build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
@@ -195,14 +199,14 @@ jobs:
           echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
           echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: 'Login to GitHub Container Registry'
+      - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
 
-      - name: 'Login to Docker Container Registry'
+      - name: "Login to Docker Container Registry"
         uses: docker/login-action@v3
         if: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' }}
         with:
@@ -215,6 +219,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
+        if: ${{matrix.build_disable == 'true' && 'false' || 'true'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
