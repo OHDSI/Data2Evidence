@@ -19,12 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: check_file_changed
         with:
           filters: |
             env_converter_changed:
               - 'services/envConverter/**'
+              - '.github/workflows/services-env-converter-test.yml'
 
       - name: Determine condition to run
         env:

@@ -156,11 +156,9 @@ const initRoutes = async (app: express.Application) => {
         }
     });
 
-    if (!envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
-        // Get Analytics Credential for study based on selected study
-        // Otherwise, default it to the first db connection and use default schema in the connection string
-        await app.use(studyDbCredentialMiddleware);
-    }
+    // Get Analytics Credential for study based on selected study
+    // Otherwise, default it to the first db connection and use default schema in the connection string
+    await app.use(studyDbCredentialMiddleware);
 
     app.use(async (req: IMRIRequest, res, next) => {
         try {
@@ -189,13 +187,7 @@ const initRoutes = async (app: express.Application) => {
                     return next();
                 }
 
-                let credentials = null;
-                if (envVarUtils.isTestEnv()) {
-                    credentials =
-                        analyticsCredentials[EnvVarUtils.getEnvs().TESTSCHEMA];
-                } else {
-                    credentials = req.dbCredentials.studyAnalyticsCredential;
-                }
+                const credentials = req.dbCredentials.studyAnalyticsCredential;
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
@@ -410,29 +402,31 @@ const initRoutes = async (app: express.Application) => {
                     break;
                 default:
                     try {
-                        let configData = Array.isArray(body)
-                            ? body[0].configData
-                            : body.configData;
-                            if (!configData) {
-                                let configMetadata = Array.isArray(body)
-                                    ? body[0].filter.configMetadata
-                                    : body.filter.configMetadata;
-                                configData = {
-                                    configId: configMetadata.id,
-                                    configVersion: configMetadata.version,
-                                };
-                            }
-                        const configId = configData.configId;
-                        const configVersion = configData.configVersion;
-                        const datasetId = req.body.datasetId;
+                        let configId = req.paConfigId;
+                        let configVersion = req.paConfigVersion;
 
+                        //Only for tests choose metadata from the request body
+                        if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+                            let configData = Array.isArray(body)
+                                            ? body[0].configData
+                                            : body.configData;
+
+                            if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                                configId = configData.configId;
+                                configVersion = configData.configVersion;
+                            } else {
+                                throw new Error("Config metadata undefined!")
+                            }
+                        }
+                      
+                        const datasetId = req.body.datasetId;
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
                                 {
                                     req,
                                     action: "getBackendConfig",
-                                    configId: req.paConfigId,
-                                    configVersion: req.paConfigVersion,
+                                    configId,
+                                    configVersion,
                                     lang: language,
                                     datasetId,
                                 },

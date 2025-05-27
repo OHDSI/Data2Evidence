@@ -1,5 +1,6 @@
 import { Knex } from "knex";
-import { env } from "../../env";
+import { env } from "../../env"
+import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb";
 
 export async function seed(knex: Knex): Promise<void> {
   // Inserts seed entries
@@ -90,6 +91,34 @@ export async function seed(knex: Knex): Promise<void> {
         Created: "2024-06-11 15:30:54",
         Modifier: "ALICE",
         Modified: "2024-06-11 17:56:54",
+      },
+      {
+        Id: "5f83344b-4b1c-43a1-b099-d233a6844bb0",
+        Version: "A",
+        Status: "",
+        Name: "FHIR",
+        Type: "HC/MRI/PA",
+        Data: paFHIRConfigDuckdb,
+        ParentId: "f5f08d4b-669e-485b-89c6-bb684020bfd1",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
+      },
+      {
+        Id: "f5f08d4b-669e-485b-89c6-bb684020bfd1",
+        Version: "1",
+        Status: "A",
+        Name: "FHIR_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwFHIRConfigDuckdb,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
       },
     ])
     .onConflict(["Id", "Version"])

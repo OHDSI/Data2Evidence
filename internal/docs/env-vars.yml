@@ -60,8 +60,6 @@ DOCKER_TAG_NAME:
   comment: default tag
   publish: true
   type: string
-DOCKER_TREX_TAG_NAME:
-  publish: true
 DOCKER__RESTART_POLICY:
   comment: auto restart on issue. logging debug simpler if off
   publish: false
