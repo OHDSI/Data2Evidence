@@ -14,11 +14,6 @@ import {
   Button,
   Checkbox,
   Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   TextField,
   TextInput,
 } from "@portal/components";
@@ -153,22 +148,14 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
         />
       </Box>
       <Box mb={4}>
-        <FormControl variant="standard" fullWidth>
-          <InputLabel shrink>Delimiter</InputLabel>
-          <Select
-            value={formData.delimiter}
-            onChange={(e: SelectChangeEvent) =>
-              onFormDataChange({ delimiter: e.target.value })
-            }
-          >
-            <MenuItem value="">&nbsp;</MenuItem>
-            {DelimiterOptions.map((option) => (
-              <MenuItem key={option.key} value={option.key}>
-                {option.value}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <TextInput
+          label="Delimiter"
+          value={formData.delimiter}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ delimiter: e.target.value })
+          }
+          placeholder="e.g. , or ; or \t"
+        />
       </Box>
       <Box mb={4}>
         <Checkbox
@@ -179,28 +166,30 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
           }
         />
       </Box>
-      <Box mb={4}>
-        <Autocomplete<string, true, undefined, true>
-          multiple
-          freeSolo
-          options={[]}
-          value={formData.columns}
-          onChange={(event, columns: string[]) => onFormDataChange({ columns })}
-          renderInput={(params) => (
-            <TextField {...params} label="Columns" variant="standard" />
-          )}
-          renderTags={(value: string[], getTagProps) =>
-            value.map((option: string, index: number) => (
-              <Chip
-                key={option}
-                variant="filled"
-                label={option}
-                {...getTagProps({ index })}
-              />
-            ))
-          }
-        />
-      </Box>
+      {!formData.hasheader && (
+        <Box mb={4}>
+          <Autocomplete<string, true, undefined, true>
+            multiple
+            freeSolo
+            options={[]}
+            value={formData.columns}
+            onChange={(event, columns: string[]) => onFormDataChange({ columns })}
+            renderInput={(params) => (
+              <TextField {...params} label="Columns" variant="standard" />
+            )}
+            renderTags={(value: string[], getTagProps) =>
+              value.map((option: string, index: number) => (
+                <Chip
+                  key={option}
+                  variant="filled"
+                  label={option}
+                  {...getTagProps({ index })}
+                />
+              ))
+            }
+          />
+        </Box>
+      )}
     </NodeDrawer>
   );
 };
