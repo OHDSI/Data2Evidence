@@ -8,7 +8,7 @@
 
     <p-button v-if="showResultButton" lg @click="displayResultsDialog">View Results</p-button>
 
-    <p-tabs :selected="tab" :tabs="tabs">
+    <p-tabs v-model:selected="tab" tabs="tabs">
       <template #details>
         <FlowRunDetails :flow-run="flowRun" />
       </template>
