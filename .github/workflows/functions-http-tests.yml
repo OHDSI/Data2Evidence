@@ -53,9 +53,9 @@ jobs:
       isTestEnv: "true"
       isHttpTestRun: "true"
       HANASERVER: ${{ secrets.HN_SG_FQDN }} # az-hn-db/SG_FQDN
-      HDIPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
-      HDIPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
-      HDIUSER: ${{ vars.HN_SG_ADMIN_USERNAME }} # az-hn-db/Admin user
+      HANAPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
+      HANAPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
+      HANAUSER: ${{ vars.HN_SG_ADMIN_USERNAME }} # az-hn-db/Admin user
       TESTPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
       TESTSYSTEMPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
 
@@ -67,9 +67,9 @@ jobs:
       - name: Print env vars
         run: |
           echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
-          echo "HDIPORT: ${HDIPORT}"
-          echo "HDIPW: ${HDIPW}"
-          echo "HDIUSER: ${HDIUSER}"
+          echo "HANAPORT: ${HANAPORT}"
+          echo "HANAPW: ${HANAPW}"
+          echo "HANAUSER: ${HANAUSER}"
           echo "HANASERVER: ${HANASERVER}"
           echo "isHttpTestRun: ${isHttpTestRun}"
           echo "isTestEnv: ${isTestEnv:-false}"
@@ -109,6 +109,11 @@ jobs:
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
+
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
 
       - name: Setup Test DB
         run: |
