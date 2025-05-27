@@ -56,22 +56,6 @@ export class PortalServerAPI {
       throw error;
     }
   }
-  // TODO: Comfirm if we no longer save deployment resource to S3
-  async deleteDeploymentFiles(deploymentFolderPath: string) {
-    try {
-      const url = `${this.baseURL}/prefect?filePath=${deploymentFolderPath}&bucketName=${env.ADHOC_DEPLOYMENT_FLOWS_BUCKET_NAME}`;
-      console.info(url);
-      const options = this.createOptions("DELETE");
-      const result = await fetch(url, options);
-      if (!result.ok) {
-        throw new Error("Error while deleting deployment files");
-      }
-      return await result.json();
-    } catch (error) {
-      console.error(`Error while deleting deployment files: ${error}`);
-      throw error;
-    }
-  }
 
   async getFlowRunResults(filePaths) {
     try {
@@ -108,6 +92,21 @@ export class PortalServerAPI {
       console.error(
         `Error while getting flow run results with filePath ${filePaths}: ${error}`
       );
+      throw error;
+    }
+  }
+
+  async getConfigByType(type: string) {
+    try {
+      const url = `${this.baseURL}/config/${type}`;
+      const options = this.createOptions("GET");
+      const result = await fetch(url, options);
+      if (!result.ok) {
+        throw new Error("Error while getting system config");
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while getting system config: ${error}`);
       throw error;
     }
   }
