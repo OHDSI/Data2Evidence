@@ -28,6 +28,7 @@ const moduleNames = [
   "Setup/TrexPlugins",
   "Setup/DemoSetup",
   "Setup/HybridSearch",
+  "Setup/GitConfig",
 ];
 
 const modulePaths = moduleNames.reduce(
