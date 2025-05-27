@@ -1,19 +1,23 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import ReactFlow, { Controls, Edge, PanOnScrollMode, Panel } from "reactflow";
-import { useNavigate } from "react-router-dom";
 import { nodeTypes } from "../Nodes";
-import { useCdmSchema, useField, useScannedSchema, useTable } from "../contexts";
+import { useApp, useCdmSchema, useField, useScannedSchema, useTable } from "../contexts";
 import { Box } from "@portal/components";
 import { MenuButton } from "../components/MenuButton/MenuButton";
+import { pluginMetadata } from "../App";
 import "./TableMapLayout.scss";
 import "reactflow/dist/style.css";
 
 export const TableMapLayout = () => {
+  const { setPage, state } = useApp();
   const { nodes, edges, setTableNodes, setTableEdges, addTableConnection } = useTable();
   const { setActiveSourceTable, setActiveTargetTable } = useField();
   const { sourceTables } = useScannedSchema();
   const { cdmTables } = useCdmSchema();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    pluginMetadata?.data?.onChange(state);
+  }, [state]);
 
   const handleEdgeClick = useCallback(
     (_event: any, edge: Edge) => {
@@ -32,7 +36,7 @@ export const TableMapLayout = () => {
       setActiveSourceTable(sourceTable);
       setActiveTargetTable(targetTable);
 
-      navigate("link-fields");
+      setPage("field");
     },
     [sourceTables, cdmTables]
   );

@@ -2,9 +2,10 @@ import { TableState } from "./table-state";
 import { FieldState } from "./field-state";
 import { ScannedSchemaState, TableSchemaState } from "./scanned-schema-state";
 import { DialogState, INIT_DIALOG_STATE } from "./dialog-state";
-import { FIELD_SOURCE_MENU, FIELD_TARGET_MENU, TABLE_SOURCE_MENU, TABLE_TARGET_MENU } from "../../constants";
+import { FIELD_SOURCE_MENU, FIELD_TARGET_MENU, Page, TABLE_SOURCE_MENU, TABLE_TARGET_MENU } from "../../constants";
 
 export interface AppState {
+  page: Page;
   saved: boolean;
   datasetSelected: string;
   mappingSuggestion: boolean;
@@ -17,6 +18,7 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
+  page: "table",
   saved: true,
   datasetSelected: "",
   mappingSuggestion: false,
@@ -30,7 +32,7 @@ export const initialState: AppState = {
         style: {
           width: "30vw",
           maxWidth: "600px",
-          height: "100vh",
+          height: "calc(100vh - 100px)",
         },
         data: null,
       },
@@ -41,7 +43,7 @@ export const initialState: AppState = {
         style: {
           width: "30vw",
           maxWidth: "600px",
-          height: "100vh",
+          height: "calc(100vh - 100px)",
         },
         data: null,
       },
@@ -59,7 +61,7 @@ export const initialState: AppState = {
         style: {
           width: "30vw",
           maxWidth: "600px",
-          height: "100vh",
+          height: "calc(100vh - 100px)",
         },
         data: { type: "source" },
       },
@@ -70,7 +72,7 @@ export const initialState: AppState = {
         style: {
           width: "30vw",
           maxWidth: "600px",
-          height: "100vh",
+          height: "calc(100vh - 100px)",
         },
         data: { type: "target" },
       },
