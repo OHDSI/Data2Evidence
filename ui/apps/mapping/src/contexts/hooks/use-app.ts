@@ -2,6 +2,7 @@ import { useCallback, useContext } from "react";
 import { AppContext, AppDispatchContext } from "../AppContext";
 import { ACTION_TYPES } from "../reducers/reducer";
 import { AppState } from "../states";
+import { Page } from "../../constants";
 
 export const useApp = () => {
   const dispatch = useContext(AppDispatchContext);
@@ -31,5 +32,18 @@ export const useApp = () => {
     dispatch({ type: ACTION_TYPES.SET_MAPPING_SUGGESTION, payload: data });
   }, []);
 
-  return { reset, load, clearHandles, markAsSaved, setVocabularyDatasetId, setMappingSuggestion, state };
+  const setPage = useCallback((page: Page) => {
+    dispatch({ type: ACTION_TYPES.SET_PAGE, payload: page });
+  }, []);
+
+  return {
+    reset,
+    load,
+    clearHandles,
+    markAsSaved,
+    setVocabularyDatasetId,
+    setMappingSuggestion,
+    setPage,
+    state,
+  };
 };

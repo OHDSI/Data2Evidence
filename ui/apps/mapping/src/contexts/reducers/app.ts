@@ -1,3 +1,4 @@
+import { Page } from "../../constants";
 import { AppState, initialState } from "../states";
 import { INIT_DIALOG_STATE } from "../states/dialog-state";
 
@@ -30,4 +31,9 @@ export const setVocabularybDatasetId = (state: AppState, payload: Partial<AppSta
 export const setMappingSuggestion = (state: AppState, payload: boolean) => ({
   ...state,
   mappingSuggestion: payload,
+});
+
+export const setPage = (state: AppState, payload: Page) => ({
+  ...state,
+  page: payload,
 });
