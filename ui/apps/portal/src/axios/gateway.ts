@@ -80,4 +80,13 @@ export class Gateway {
       data: input,
     });
   }
+
+  public deleteFhirStaging(id: string): Promise<any> {
+    return request({
+      baseURL: GATEWAY_BASE_URL,
+      url: `/fhir/deleteProject/${id}`,
+      method: "delete",
+    });
+  }
+
 }

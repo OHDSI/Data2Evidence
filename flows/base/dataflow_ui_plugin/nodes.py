@@ -4,6 +4,7 @@ import duckdb
 import logging
 import pandas as pd
 import traceback as tb
+from io import StringIO
 from rpy2 import robjects
 from sqlalchemy import text
 from functools import partial
@@ -15,8 +16,8 @@ from .hooks import *
 from .flowutils import *
 from .types import JoinType
 
-from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 
 
 class Node:
@@ -93,12 +94,13 @@ class Py2TableNode(Node):
         path = self.ui_map.get("path")
         result_obj = _input.get(source_node).result
 
-        if isinstance(result_obj, dict):
-            # If result from input node is already a json
+        if isinstance(result_obj, pd.DataFrame):
+            return result_obj
+        elif isinstance(result_obj, dict):
+            # If result from input node is already a json/dict object, use jsonpath to access data
             data = self._get_matches(result_obj, path)
         else:
             # Assume result from input node is an instance of a class
-
             # Remove first element and use it to access the attribute that stores the data
             path_list: list = path.split(".")
             data_attribute = path_list.pop(0)
@@ -235,31 +237,44 @@ class CsvNode(Node):
         super().__init__(name, _node)
         self.file = _node["file"]
         self.delimiter = _node["delimiter"]
-        self.names = _node["columns"]
-        self.hasheader = _node["hasheader"]
-        # self.types = _node["datatypes"]
+
+        self.names = _node["columns"] # Todo: Not inside payload from backend
+        self.hasheader = _node["hasheader"] # Todo: Not inside payload from backend
+        self.encoding = _node.get("encoding", "utf8") # Todo: Not inside payload from backend
+
+    def __resolve_delimiter(self) -> str:
+        match self.delimiter.strip():
+            case "/t" | "\\t" | r"\t":
+                return "\t"
+            case ",":
+                return ","
+            case _:
+                raise ValueError(f"Unsupported delimiter: {self.delimiter}")
+
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        if self.hasheader:
-            # dtype=self.types
-            df = pd.read_csv(self.file, delimiter=self.delimiter)
+        csv_response = SupabaseStorageAPI().get_csv_file(self.file)
 
+        if self.hasheader:
+            df = pd.read_csv(StringIO(csv_response), 
+                             delimiter=self.__resolve_delimiter(), 
+                             encoding=self.encoding)
         else:
-            df = pd.read_csv(self.file, 
-                             header=None, 
-                             names=self.names,
-                             delimiter=self.delimiter)  # dtype=self.types
+            df = pd.read_csv(StringIO(csv_response), 
+                             header=None, names=self.names, 
+                             delimiter=self.__resolve_delimiter(), 
+                             encoding=self.encoding)
         return df
 
 
     def test(self, task_run_context):
-        ddf = self._load_csv_into_dataframe()
-        return ddf
+        df = self._load_csv_into_dataframe()
+        return df
 
     def task(self, task_run_context) -> Result:
         try:
-            ddf = self._load_csv_into_dataframe()
-            return Result(False,  ddf, self, task_run_context)
+            df = self._load_csv_into_dataframe()
+            return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 

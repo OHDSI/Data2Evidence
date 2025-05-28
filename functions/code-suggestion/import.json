@@ -11,6 +11,7 @@
     "./src/utils/prepModels": "./src/utils/prepModels.ts",
     "@langchain/core": "npm:@langchain/core@^0.3.40",
     "@langchain/openai": "npm:@langchain/openai@^0.4.4",
-    "@langchain/core/messages": "npm:@langchain/core/messages"
+    "@langchain/core/messages": "npm:@langchain/core/messages",
+    "@langchain/core/output_parsers": "npm:@langchain/core/output_parsers"
   }
 }
