@@ -20,8 +20,12 @@ const mountJobs = (addEventListener: boolean = true) => {
   try {
     const app = createApp(App)
 
-    app.config.errorHandler = () => null
-    app.config.warnHandler = () => null
+    app.config.errorHandler = (err, vm, info) => {
+      console.error('Error:', err, '\nInfo:', info, '\nComponent:', vm)
+    }
+    app.config.warnHandler = (msg, vm, trace) => {
+      console.warn('Warning:', msg, '\nTrace:', trace, '\nComponent:', vm)
+    }
     app.config.compilerOptions.isCustomElement = (tag: string) => tag.startsWith('d4l-')
     applyPolyfills().then(() => {
       defineCustomElements()
