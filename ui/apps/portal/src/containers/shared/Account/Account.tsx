@@ -9,6 +9,7 @@ import { config } from "../../../config";
 import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
+import { ChangeLanguageDialog } from "./ChangeLanguageDialog/ChangeLanguageDialog";
 import { LegalCard } from "../Legal/LegalCard";
 import "./Account.scss";
 
@@ -28,6 +29,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
   const [myUser, setMyUser] = useState(EMPTY_MY_USER);
   const [showDeleteAccount, openDeleteAccount, closeDeleteAccount] = useDialogHelper(false);
   const [showPwd, openPwdDialog, closePwdDialog] = useDialogHelper(false);
+  const [showLanguage, openLanguageDialog, closeLanguageDialog] = useDialogHelper(false);
   const { user, setUserGroup } = useUser();
   const [loading, setLoading] = useState(false);
 
@@ -98,6 +100,12 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                   <Button
                     block
                     variant="outlined"
+                    text={getText(i18nKeys.ACCOUNT__CHANGE_LANGAUGE)}
+                    onClick={openLanguageDialog}
+                  />
+                  <Button
+                    block
+                    variant="outlined"
                     text={getText(i18nKeys.ACCOUNT__DELETE_ACCOUNT)}
                     onClick={openDeleteAccount}
                   />
@@ -112,6 +120,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
       </div>
       <DeleteAccountDialog open={showDeleteAccount} onClose={closeDeleteAccount} />
       <ChangeMyPasswordDialog open={showPwd} onClose={closePwdDialog} />
+      <ChangeLanguageDialog open={showLanguage} onClose={closeLanguageDialog} />
     </div>
   );
 };
