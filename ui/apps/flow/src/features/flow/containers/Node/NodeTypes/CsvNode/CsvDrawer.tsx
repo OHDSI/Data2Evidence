@@ -23,6 +23,7 @@ import {
   selectNodeById,
   setNode,
 } from "~/features/flow/reducers";
+import { useDeleteNodeCsvFileMutation, useUploadNodeCsvFileMutation } from "~/features/flow/slices/dataflow-slice";
 import { KeyValue, NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
@@ -53,7 +54,11 @@ const EMPTY_FORM_DATA: FormData = {
 
 export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
   const [selectedFile, setSelectedFile] = useState<File>();
+  const [isUploading, setIsUploading] = useState(false);
   const hiddenFileInput = useRef<HTMLInputElement>(null);
+
+  const [uploadCsvFile] = useUploadNodeCsvFileMutation();
+  const [deleteCsvFile] = useDeleteNodeCsvFileMutation();
 
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
@@ -87,14 +92,36 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
   }, [hiddenFileInput]);
 
   const handleFileChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
+    async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length == 0) return;
 
       const file = e.target.files[0];
       setSelectedFile(file);
-      onFormDataChange({ file: file.name });
+      setIsUploading(true);
+
+      try {
+        // If there's an existing file, delete it first
+        if (formData.file) {
+          await deleteCsvFile({
+            nodeId: node.id,
+            fileName: formData.file
+          }).unwrap();
+        }
+
+        await uploadCsvFile({
+          nodeId: node.id,
+          file
+        }).unwrap();
+
+        onFormDataChange({ file: file.name });
+      } catch (error) {
+        console.error("File upload failed:", error);
+        setSelectedFile(undefined);
+      } finally {
+        setIsUploading(false);
+      }
     },
-    [onFormDataChange]
+    [onFormDataChange, formData.file, node.id, uploadCsvFile, deleteCsvFile]
   );
 
   const handleOk = useCallback(() => {
@@ -131,8 +158,9 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
       <Box mb={4} display="flex" alignItems="center">
         <Button
           type="button"
-          text="Choose file"
+          text={isUploading ? "Uploading..." : "Choose file"}
           onClick={handleAddFile}
+          disabled={isUploading}
           style={{ marginRight: 7 }}
         />
         <div>{selectedFile?.name}</div>
@@ -147,6 +175,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
             }
           }}
           style={{ display: "none" }}
+          disabled={isUploading}
         />
       </Box>
       <Box mb={4}>
