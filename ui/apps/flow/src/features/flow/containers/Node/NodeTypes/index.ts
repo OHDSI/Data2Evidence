@@ -7,6 +7,7 @@ import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
 import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
+import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
 import { GroupNode } from "./GroupNode/GroupNode";
@@ -20,6 +21,7 @@ export const NODE_TYPES: {
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
+  data_mapping_node: DataMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
@@ -34,6 +36,7 @@ export const NODE_COLORS: {
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
+  data_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
@@ -81,6 +84,12 @@ test_exec <- function(myinput) {
     title: "SQL",
     description: "Run SQL in a database",
     tag: NodeTag.Stable,
+    defaultData: {},
+  },
+  data_mapping_node: {
+    title: "Data mapping",
+    description: "Map source data to OMOP data model.",
+    tag: NodeTag.Experimental,
     defaultData: {},
   },
   csv_node: {
