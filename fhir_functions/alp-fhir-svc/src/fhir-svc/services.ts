@@ -136,6 +136,22 @@ export const createProject = async (token: string, id: string, description: stri
   return true
 };
 
+export const deleteProject = async(id: string) =>{
+  console.info(`Deleting fhir project with dataset Id '${id}'..`);
+  let fhirApi = new FhirAPI();
+  //Authenticate with superadmin credentials
+  await fhirApi.clientCredentialsLogin();
+
+  //Delete project and all its related resources
+  return await fhirApi.forwardRequest(
+    `Project/${id}/$expunge?everything=true`,
+    fhirApi.getAdminCredentials(),
+    HTTPMethod.POST,
+    '',
+    ''
+  );
+}
+
 export const forwardRequest = async (
   token: string,
   httpMethod: HTTPMethod,
