@@ -315,7 +315,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
                     <InputLabel>Delimiter</InputLabel>
                     <Select value={delimiter} label="Delimiter" onChange={handleDelimiterChange}>
                       {DELIMITERS.map((delimiter) => (
-                        <MenuItem value={delimiter.value}>{delimiter.name}</MenuItem>
+                        <MenuItem key={delimiter.value} value={delimiter.value}>{delimiter.name}</MenuItem>
                       ))}
                     </Select>
                   </FormControl>
