@@ -69,6 +69,9 @@ const actions = {
       commit(types.I18N_ADD_LOCALE, { lang, texts: locale[lang] })
     })
   },
+  setLocale({ commit }: { commit: Commit }, locale: string) {
+    commit(types.I18N_SET_CURRENT_LOCALE, locale)
+  },
 }
 
 // mutations
