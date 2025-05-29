@@ -68,6 +68,7 @@ export default {
       window.d2eListeners['alp-dataset-change'].push(listenerInfo)
     }
     window.addEventListener('alp-dataset-change', datasetChangeHandler)
+    this.setLocale()
   },
   computed: {
     ...mapGetters([
@@ -87,6 +88,7 @@ export default {
       'setFireRequest',
       'refreshPatientCount',
       'requestTotalPatientCount',
+      'setLocale'
     ]),
     ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
     okFatal() {

@@ -1,6 +1,7 @@
 import * as types from '../mutation-types'
 import { i18n } from '../../lib/i18n'
 import { Commit } from 'vuex'
+import { getPortalAPI } from '@/utils/PortalUtils'
 
 type ModuleState = {
   locales: { [key: string]: { [key: string]: string } }
@@ -33,7 +34,7 @@ const getters = {
         text = moduleGetters.getTextFromLocale(key, fallbackLocale)
 
         if (text === '') {
-          text = moduleGetters.getTextFromLocale(key, 'DEFAULT')
+          text = moduleGetters.getTextFromLocale(key, 'en')
         }
         if (text === '') {
           text = key
@@ -69,7 +70,8 @@ const actions = {
       commit(types.I18N_ADD_LOCALE, { lang, texts: locale[lang] })
     })
   },
-  setLocale({ commit }: { commit: Commit }, locale: string) {
+  setLocale({ commit }: { commit: Commit }) {
+    const locale = getPortalAPI().locale
     commit(types.I18N_SET_CURRENT_LOCALE, locale)
   },
 }
