@@ -151,7 +151,7 @@ export interface IFormattedBookmark {
   version: string | null
   user_id: string
   shared: boolean
-  cohortDefinitionId?: number | null
+  cohortDefinitionId?: number | undefined
 }
 export interface IFormattedMaterializedCohort {
   id: number
@@ -181,7 +181,7 @@ export interface IFormattedAtlasCohortDefinition {
   username: string
   createdOn: string
   updatedOn: string
-  cohortDefinitionId?: number | null
+  cohortDefinitionId?: number | undefined
 }
 
 export interface IFrontendBookmark {
