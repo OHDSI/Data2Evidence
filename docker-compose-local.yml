@@ -1,6 +1,7 @@
 services:
   trex:
     command: npm run startdev
+    pull_policy: always
     build:
       context: ./services/trex
       dockerfile: Dockerfile
@@ -69,6 +70,7 @@ services:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
 
   alp-logto:
+    pull_policy: always
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile

@@ -120,6 +120,7 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto
+            pull_base: true
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
@@ -143,6 +144,7 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
+            pull_base: true
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -227,6 +229,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          pull: ${{ matrix.pull_base == 'true' || false }}
           tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           provenance: false
           build-args: |
