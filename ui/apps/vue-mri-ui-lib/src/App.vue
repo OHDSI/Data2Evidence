@@ -47,6 +47,8 @@ export default {
     this.requestMriConfig()
   },
   mounted() {
+    this.setLocale()
+
     const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
@@ -68,7 +70,6 @@ export default {
       window.d2eListeners['alp-dataset-change'].push(listenerInfo)
     }
     window.addEventListener('alp-dataset-change', datasetChangeHandler)
-    this.setLocale()
   },
   computed: {
     ...mapGetters([
