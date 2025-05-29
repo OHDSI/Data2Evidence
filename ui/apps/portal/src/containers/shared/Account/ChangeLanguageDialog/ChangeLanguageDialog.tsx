@@ -47,7 +47,7 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
     } finally {
       setLoading(false);
     }
-  }, [changeLocale, language]);
+  }, [changeLocale, language, getText]);
 
   const handleLanguageChange = useCallback((event: SelectChangeEvent) => {
     setLangauge(event.target.value as string);
@@ -80,14 +80,14 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
       <Divider />
       <div className="button-group-actions">
         <Button
-          text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL)}
+          text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_CANCEL)}
           onClick={handleClose}
           variant="outlined"
           block
           disabled={loading}
         />
         <Button
-          text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE)}
+          text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_UPDATE)}
           onClick={handleUpdate}
           block
           loading={loading}
