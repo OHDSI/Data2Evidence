@@ -30,6 +30,7 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
 
     try {
       setDeleting(true);
+      if (study.fhir_project_id != null) await api.gateway.deleteFhirStaging(study.fhir_project_id);
       await api.systemPortal.deleteDataset(study.id);
       handleClose("success");
     } catch (err: any) {

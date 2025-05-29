@@ -2,16 +2,16 @@ import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
-import { PythonNode } from "./PythonNode/PythonNode";
-import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
-import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
-import { RNode } from "./RNode/RNode";
-import { SqlNode } from "./SqlNode/SqlNode";
 import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
 import { GroupNode } from "./GroupNode/GroupNode";
-import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
+import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
+import { PythonNode } from "./PythonNode/PythonNode";
+import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
+import { RNode } from "./RNode/RNode";
+import { SqlNode } from "./SqlNode/SqlNode";
+import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -96,7 +96,13 @@ test_exec <- function(myinput) {
     title: "CSV",
     description: "Read CSV file from a path with columns specified.",
     tag: NodeTag.Experimental,
-    defaultData: {},
+    defaultData: {
+      file: "",
+      delimiter: ",",
+      hasheader: true,
+      columns: [],
+      encoding: "utf-8",
+    },
   },
   db_reader_node: {
     title: "Database query",
@@ -126,6 +132,6 @@ export const getNodeClassName = (node: Node<NodeDataState>) => {
   return "";
 };
 
-export type { NodeType };
 export * from "./SelectNodeTypes/SelectNodeTypesDialog";
 export * from "./type";
+export type { NodeType };
