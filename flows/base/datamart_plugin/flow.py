@@ -36,7 +36,8 @@ def create_datamart(options: CreateDatamartOptions):
     use_cache_db = options.use_cache_db
     datamart_action = options.flow_action_type
     snapshot_copy_config = options.snapshot_copy_config
-    
+    source_schema = options.source_schema
+    target_schema = options.target_schema
     match options.dialect:
         case SupportedDatabaseDialects.HANA:
             source_schema = options.source_schema.upper() # schema to copy from
