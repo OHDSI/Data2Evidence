@@ -1,17 +1,17 @@
 import { Button } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ReactFlow, { Controls, EdgeChange, PanOnScrollMode } from "reactflow";
 import { nodeTypes } from "../Nodes";
 import { api } from "../axios/api";
 import { useApp, useCdmSchema, useField, useTable } from "../contexts";
 import { transformEtlModel } from "../utils/etl-transformer";
 import { saveBlobAs } from "../utils/utils";
-import "./FieldMapLayout.scss";
 import { TableToTable } from "./TableToTable";
+import { pluginMetadata } from "../App";
+import "./FieldMapLayout.scss";
 
 export const FieldMapLayout = () => {
-  const { state } = useApp();
+  const { setPage, state } = useApp();
   const [loading, setLoading] = useState(false);
   const {
     nodes,
@@ -27,17 +27,19 @@ export const FieldMapLayout = () => {
   const { edges: tableEdges, sourceHandles: sourceTables, targetHandles: targetTables } = useTable();
   const { cdmVersion } = useCdmSchema();
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    pluginMetadata?.data?.onChange(state);
+  }, [state]);
 
   useEffect(() => {
     if (sourceFields?.length == 0 || targetFields?.length === 0) {
-      navigate("/");
+      setPage("table");
     }
   }, [sourceFields, targetFields]);
 
   const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+    setPage("table");
+  }, []);
 
   const sourceTableName = sourceFields?.length ? sourceFields[0].data?.tableName : "";
   const targetTableName = targetFields?.length ? targetFields[0].data?.tableName : "";
