@@ -10,16 +10,17 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
   const token = req.headers.authorization!
   const portalAPI = new PortalAPI(token)
   const analyticsSvcApi = new AnalyticsSvcAPI(token)
-
+  const schemaName = getSchemaCase(cdmSchemaValue, dialect)
+  
   //CDM Schema preparation
-  logger.info('Option for schema: ' + schemaOption + ' with the value: ' + cdmSchemaValue)
+  logger.info('Option for schema: ' + schemaOption + ' with the value: ' + schemaName)
   if (schemaOption === CDMSchemaTypes.CustomCDM || schemaOption === CDMSchemaTypes.ExistingCDM) {
     const datasets = await portalAPI.getStudiesAsSystemAdmin()
 
-    const schemaExists = await analyticsSvcApi.checkIfSchemaExists(dialect, databaseCode, cdmSchemaValue)
+    const schemaExists = await analyticsSvcApi.checkIfSchemaExists(dialect, databaseCode, schemaName)
 
     const foundDataset = datasets.find(
-      dataset => dataset.schemaName === cdmSchemaValue && dataset.databaseCode === databaseCode
+      dataset => dataset.schemaName === schemaName && dataset.databaseCode === databaseCode
     )
 
     if (foundDataset) {
@@ -30,17 +31,17 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
       return badRequest(res, 'This schema does not exist')
     }
 
-    req.body.schemaName = getSchemaCase(cdmSchemaValue, dialect)
+    req.body.schemaName = schemaName
   } else if (schemaOption == CDMSchemaTypes.CreateCDM) {
     const formattedTokenDatasetCode = tokenStudyCode.toUpperCase().replace(/_/g, '')
     if (formattedTokenDatasetCode.length > 48)
       return badRequest(res, 'Token study code must not greater than 48 characters')
 
     const suffix = Math.floor(Date.now() / 1000)
-    let schemaName = getSchemaCase(`CDM_${formattedTokenDatasetCode}_${suffix}`.replace(/-/g, ''), dialect)
-    schemaName = schemaName.substring(0, 63) // truncate to 63 characters
+    let newSchemaName = getSchemaCase(`CDM_${formattedTokenDatasetCode}_${suffix}`.replace(/-/g, ''), dialect)
+    newSchemaName = newSchemaName.substring(0, 63) // truncate to 63 characters
 
-    req.body.schemaName = schemaName
+    req.body.schemaName = newSchemaName
   }
 
   next()
