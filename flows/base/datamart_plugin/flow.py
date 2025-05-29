@@ -38,15 +38,6 @@ def create_datamart(options: CreateDatamartOptions):
     snapshot_copy_config = options.snapshot_copy_config
     source_schema = options.source_schema
     target_schema = options.target_schema
-    match options.dialect:
-        case SupportedDatabaseDialects.HANA:
-            source_schema = options.source_schema.upper() # schema to copy from
-            target_schema = options.schema_name.upper() # schema to copy to
-        case SupportedDatabaseDialects.POSTGRES:
-            source_schema = options.source_schema.lower() # schema to copy from
-            target_schema = options.schema_name.lower() # schema to copy to            
-        case _:
-            raise ValueError(f"Database dialect {options.dialect} not supported for this plugin")
 
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     
