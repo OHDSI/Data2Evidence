@@ -106,7 +106,8 @@ INNER JOIN
     mimic_etl.src_patients pat
         ON  pat.subject_id = src.subject_id
 WHERE
-    EXTRACT(YEAR FROM src.value) >= pat.anchor_year - pat.anchor_age - 1
+    -- Update from OHDSI/MIMIC 2025/4/4
+    EXTRACT(YEAR FROM src.value) >= pat.anchor_year
 ;
 
 
