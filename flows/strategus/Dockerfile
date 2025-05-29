@@ -86,7 +86,6 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v0.6.7")' # https://git
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
 RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
 RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https://github.com/rstudio/reticulate
-RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.3", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 
 # OHDSI HADES
 # private d2e repo auth - ssh key
@@ -99,6 +98,14 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+
+# Verify installation and fail if any are missing
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'Strategus', Characterization, 'CirceR', 'CohortDiagnostics', 'CohortIncidence', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
