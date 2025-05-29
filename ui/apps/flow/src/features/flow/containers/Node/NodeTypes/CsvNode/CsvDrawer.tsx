@@ -20,11 +20,14 @@ import { NodeProps } from "reactflow";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
+  markStatusAsSaved,
+  selectEdges,
   selectNodeById,
   setNode,
 } from "~/features/flow/reducers";
-import { useDeleteNodeCsvFileMutation, useUploadNodeCsvFileMutation } from "~/features/flow/slices/dataflow-slice";
-import { KeyValue, NodeState } from "~/features/flow/types";
+import { selectFlowNodes } from "~/features/flow/selectors";
+import { useDeleteNodeCsvFileMutation, useGetLatestDataflowByIdQuery, useSaveDataflowMutation, useUploadNodeCsvFileMutation } from "~/features/flow/slices/dataflow-slice";
+import { KeyValue, NodeState, SaveDataflowDto } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
@@ -59,6 +62,15 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
 
   const [uploadCsvFile] = useUploadNodeCsvFileMutation();
   const [deleteCsvFile] = useDeleteNodeCsvFileMutation();
+  const [saveDataflow] = useSaveDataflowMutation();
+
+  const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
+  const nodes = useSelector(selectFlowNodes);
+  const edges = useSelector(selectEdges);
+
+  const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
+    skip: !dataflowId,
+  });
 
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
@@ -91,6 +103,27 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
     }
   }, [hiddenFileInput]);
 
+  const autoSaveFlow = useCallback(async () => {
+    if (!dataflowId) return;
+
+    try {
+      const dataflowData: SaveDataflowDto = {
+        id: dataflowId,
+        name: dataflow?.canvas?.name,
+        dataflow: {
+          nodes,
+          edges,
+          comment: 'Auto-saved after CSV upload'
+        },
+      };
+      
+      await saveDataflow(dataflowData);
+      dispatch(markStatusAsSaved());
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    }
+  }, [dataflowId, nodes, edges, saveDataflow, dataflow?.canvas?.name]);
+
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length == 0) return;
@@ -113,7 +146,17 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
           file
         }).unwrap();
 
+        const updatedFormData = { ...formData, file: file.name };
         onFormDataChange({ file: file.name });
+        
+        const updated: NodeState<CsvNodeData> = {
+          ...nodeState,
+          data: updatedFormData,
+        };
+        dispatch(setNode(updated));
+        // Auto-save the flow after successful upload
+        await autoSaveFlow();
+
       } catch (error) {
         console.error("File upload failed:", error);
         setSelectedFile(undefined);
@@ -121,7 +164,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
         setIsUploading(false);
       }
     },
-    [onFormDataChange, formData.file, node.id, uploadCsvFile, deleteCsvFile]
+    [onFormDataChange, formData, node.id, uploadCsvFile, deleteCsvFile, nodeState, autoSaveFlow]
   );
 
   const handleOk = useCallback(() => {
