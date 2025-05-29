@@ -19,6 +19,10 @@
     "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
     "class-validator": "npm:class-validator@0.14.1",
     "class-transformer": "npm:class-transformer@0.5.1",
-    "mime-types": "npm:mime-types@2.1.35"
+    "mime-types": "npm:mime-types@2.1.35",
+    "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "http": "npm:isomorphic-git@1.27.1/http/web/index.js",
+    "fs": "node:fs",
+    "path": "node:path"
   }
 }

@@ -220,6 +220,13 @@
             "route": "azure-ad"
           },
           {
+            "description": "Allow user to configure the git information",
+            "enabled": true,
+            "name": "Git Configuration",
+            "pluginPath": "plugins/Setup/GitConfig/module",
+            "route": "git-config"
+          },
+          {
             "description": "Enable / disable feature",
             "enabled": true,
             "name": "Feature flags",
@@ -322,17 +329,9 @@
                 "route": "concept-mapping"
               },
               {
-                "name": "Data mapping",
-                "enabled": true,
-                "pluginPath": "https://$$FQDN$$/mapping/module.js",
-                "route": "data-mapping",
                 "data": {
+                  "dnBaseUrl": "https://$$FQDN$$/",
                   "mappingSuggestion": false
-                }
-              },
-              {
-                "data": {
-                  "dnBaseUrl": "https://$$FQDN$$/"
                 },
                 "name": "Data transformation",
                 "enabled": true,
