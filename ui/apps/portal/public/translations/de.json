@@ -11,7 +11,7 @@
   "ACCESS_PANEL__SUCCESS_REVOKE": "Sie haben den Zugriff für Benutzer {0} widerrufen",
   "ACCESS_PANEL__SUCCESS": "Sie haben Zugriff für {0} hinzugefügt",
   "ACCOUNT__ACCOUNT": "Konto",
-  "ACCOUNT__CHANGE_LANGAUGE": "Sprache ändern",
+  "ACCOUNT__CHANGE_LANGUAGE": "Sprache ändern",
   "ACCOUNT__EMAIL": "Email",
   "ACCOUNT__IMPRINT": "Impressum",
   "ACCOUNT__LEGAL": "Legal",

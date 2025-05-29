@@ -11,7 +11,7 @@
   "ACCESS_PANEL__SUCCESS_REVOKE": "您已撤销用户 {0} 的访问权限",
   "ACCESS_PANEL__SUCCESS": "您已添加对 {0} 的访问权限",
   "ACCOUNT__ACCOUNT": "帐户",
-  "ACCOUNT__CHANGE_LANGAUGE": "更改语言",
+  "ACCOUNT__CHANGE_LANGUAGE": "更改语言",
   "ACCOUNT__EMAIL": "电子邮件",
   "ACCOUNT__IMPRINT": "印记",
   "ACCOUNT__LEGAL": "合法的",

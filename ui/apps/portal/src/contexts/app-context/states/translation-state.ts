@@ -14,7 +14,7 @@ export const i18nDefault = {
     ACCESS_PANEL__SUCCESS: "You've added access for {0}",
     ACCOUNT__ACCOUNT: "Account",
     ACCOUNT__CHANGE_PASSWORD: "Change password",
-    ACCOUNT__CHANGE_LANGAUGE: "Change language",
+    ACCOUNT__CHANGE_LANGUAGE: "Change language",
     ACCOUNT__DELETE_ACCOUNT: "Delete account",
     ACCOUNT__EMAIL: "Email",
     ACCOUNT__IMPRINT: "Imprint",

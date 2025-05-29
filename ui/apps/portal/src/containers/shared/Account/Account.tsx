@@ -100,7 +100,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                   <Button
                     block
                     variant="outlined"
-                    text={getText(i18nKeys.ACCOUNT__CHANGE_LANGAUGE)}
+                    text={getText(i18nKeys.ACCOUNT__CHANGE_LANGUAGE)}
                     onClick={openLanguageDialog}
                   />
                   <Button
