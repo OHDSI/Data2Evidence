@@ -115,7 +115,12 @@ def format_vocab_synpuf_data(dbdao, data: pd.DataFrame, table_name: str, logger)
             t = t.rename({col.upper(): col for col in t.columns})
             
             if table_name in columns_to_drop.keys():
-                t = t.drop(columns_to_drop.get(table_name))
+                for col in columns_to_drop.get(table_name):
+                    try:
+                        t = t.drop(col)
+                    except Exception as e:
+                        logger.error(f"Skipping dropping of column '{col}' from table '{table_name}' with error: {e}")
+                        continue
             
             # rename columns to lower case
             renamed = t.rename({col.lower(): col for col in t.columns})

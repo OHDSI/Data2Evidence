@@ -26,12 +26,13 @@ jobs:
         run: |
           mkdir $DUCKDB_EXTENSIONS_FOLDER
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: check_file_changed
         with:
           filters: |
             cachedb_changed:
               - 'services/cachedb/**'
+              - '.github/workflows/services-cachedb-test.yml'
 
       - name: Determine condition to run
         env:

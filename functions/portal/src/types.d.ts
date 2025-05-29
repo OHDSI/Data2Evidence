@@ -166,6 +166,7 @@ export interface IDatasetResponseDto {
   totalSubjects?: number
   dataModel: string
   plugin: string
+  fhir_project_id?: string
 }
 
 export interface IDatasetSearchDto {
