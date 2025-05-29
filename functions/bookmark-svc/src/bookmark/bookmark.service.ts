@@ -82,7 +82,7 @@ export function formatUserArtifactData(
       version: row.version,
       user_id: row.user_id,
       shared: row.shared,
-      cohortDefinitionId: _getMaterializedBookmarkCohortDefinitionId(row, datasetId),
+      cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(row, datasetId),
     }))
 }
 
@@ -259,7 +259,7 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
     }
 
     // If bookmark has a cohortDefinitionId in this datasetId, delete cohort before deleting bookmark
-    const materializedBookmarkCohortDefinitionId = _getMaterializedBookmarkCohortDefinitionId(
+    const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
       currentBookmark,
       datasetId
     )
@@ -327,7 +327,7 @@ export async function _renameBookmark(
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
     const updatedBookmark = result.artifacts.bookmarks.find(bookmark => bookmark.id === bookmarkId)
 
-    const materializedBookmarkCohortDefinitionId = _getMaterializedBookmarkCohortDefinitionId(
+    const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
       updatedBookmark,
       datasetId
     )
@@ -592,7 +592,7 @@ const _formatAtlasCohortDefinition = (
   username: atlasCohortDefinition.createdBy,
   createdOn: new Date(atlasCohortDefinition.createdDate).toISOString(),
   updatedOn: new Date(atlasCohortDefinition.modifiedDate).toISOString(),
-  cohortDefinitionId: _getMaterializedBookmarkCohortDefinitionId(atlasCohortDefinition, datasetId),
+  cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(atlasCohortDefinition, datasetId),
 })
 
 /*
@@ -629,7 +629,7 @@ const _filterUntaggedMaterializedCohorts = (
   return filteredMaterializedCohorts
 }
 
-const _getMaterializedBookmarkCohortDefinitionId = (bookmark: any, datasetId: string): number | undefined => {
+const _getBookmarkMaterializedCohortDefinitionId = (bookmark: any, datasetId: string): number | undefined => {
   const materializedBookmarkCohortDefinitions: IMaterializedBookmarkCohortDefinition[] =
     bookmark.materializedCohortDefinitions
   // If bookmark does not have cohortDefinitions key, return undefined

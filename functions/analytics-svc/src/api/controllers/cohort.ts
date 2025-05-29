@@ -208,7 +208,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
 
         // Get bookmark cohort definition id filtered by dataset id
         const bookmarkCohortDefinitionId: number | undefined =
-            _getMaterializedBookmarkCohortDefinitionId(bookmark, datasetId);
+            _getBookmarkMaterializedCohortDefinitionId(bookmark, datasetId);
 
         if (env.USE_EXTENSION_FOR_COHORT_CREATION === "true") {
             const mriConfig = await mriConfigConnection.getStudyConfig(
@@ -548,7 +548,7 @@ async function getCohortFromMriQuery(
     }
 }
 
-const _getMaterializedBookmarkCohortDefinitionId = (
+const _getBookmarkMaterializedCohortDefinitionId = (
     bookmark: any,
     datasetId: string
 ): number | undefined => {
