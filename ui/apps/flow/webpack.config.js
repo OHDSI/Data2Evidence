@@ -8,6 +8,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production'
   const isBuild = env.build
+  const publicPath = isProduction ? '/flow/' : isBuild ? 'https://localhost:4900/flow/' : '/'
 
   const entryFile = isBuild ? 'module.ts' : 'index.tsx'
   const externals = isBuild ? ['react'] : []
@@ -48,7 +49,7 @@ module.exports = (env, argv) => {
       libraryTarget: 'umd',
       umdNamedDefine: true,
       globalObject: 'self',
-      publicPath: '/flow/',
+      publicPath,
     },
     externals,
     target: 'web',
