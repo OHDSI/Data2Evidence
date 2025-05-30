@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useSelector } from "react-redux";
-import { Box, Button } from "@portal/components";
+import { Box, Button, IconButton } from "@portal/components";
 import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { dispatch, RootState } from "../../../store";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
@@ -20,8 +20,9 @@ import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
 import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
-import "./FlowLayout.scss";
 import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
+import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
+import "./FlowLayout.scss";
 
 interface FlowLayoutProps {
   isStandalone: boolean;
@@ -30,9 +31,12 @@ interface FlowLayoutProps {
 export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const { data: dataflows, isLoading } = useGetDataflowsQuery();
-  const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
-    skip: !dataflowId,
-  });
+  const { data: dataflow, isFetching } = useGetLatestDataflowByIdQuery(
+    dataflowId,
+    {
+      skip: !dataflowId,
+    }
+  );
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
 
   const containerStyles: CSSProperties = useMemo(
@@ -82,6 +86,8 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
             <FlowRevisionsButton />
             <DeleteFlowButton />
             <ExportFlowButton />
+            <ImportFlowButton />
+            {isFetching && <IconButton loading />}
           </Box>
         </Box>
         <Box display="flex" gap={1} alignItems="center">
