@@ -88,6 +88,16 @@ export interface DeleteDataflowRevisionResponseDto {
   revisionId: string;
 }
 
+export interface OverwriteFromRemoteResponseDto {
+  message: string;
+  overwritten: boolean;
+  canvasId: string;
+  revisionId?: string;
+  previousVersion?: number;
+  newVersion?: number;
+  localVersion?: number;
+}
+
 interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];

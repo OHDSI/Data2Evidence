@@ -20,6 +20,7 @@ import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
 import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
+import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
 import "./FlowLayout.scss";
 import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
 
@@ -88,6 +89,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
           <SaveFlowButton />
           <Button variant="outlined" text="Add node" onClick={handleAddNode} />
           <CreateGroupButton />
+          <SyncFromRemoteButton />
           <Box display="flex" alignItems="center">
             <FlowSettingsButton />
             <ResultsPolling />

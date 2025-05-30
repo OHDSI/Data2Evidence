@@ -14,6 +14,7 @@ import {
   FlowRunStateDto,
   DeleteDataflowResponseDto,
   DeleteDataflowDto,
+  OverwriteFromRemoteResponseDto,
 } from "../types";
 import { baseQueryFn } from "./base-query";
 
@@ -160,6 +161,20 @@ export const dataflowApiSlice = createApi({
         { type: "DataflowState", id: "LATEST" },
       ],
     }),
+    overwriteCanvasFromRemote: builder.mutation<
+      OverwriteFromRemoteResponseDto,
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `dataflow/${id}/overwrite-from-remote`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+        { type: "Dataflow", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -176,4 +191,5 @@ export const {
   useCancelFlowRunMutation,
   useLazyGetFlowRunResultsByIdQuery,
   useLazyGetFlowRunStateByIdQuery,
+  useOverwriteCanvasFromRemoteMutation,
 } = dataflowApiSlice;
