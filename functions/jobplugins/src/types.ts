@@ -235,10 +235,6 @@ interface IFlowBasicNodeData {
   executorOptions?: IPrefectExecutorOptions;
 }
 
-interface IFlowCsvNodeData extends IFlowBasicNodeData {
-  hasheader: string;
-}
-
 interface IPrefectExecutorOptions {
   executor_type: string;
   executor_address: IPrefectExecutorAddress;
@@ -267,8 +263,12 @@ export interface IDataflowDuplicateDto {
   name: string;
 }
 
-interface IFlowCsvNodeData extends IFlowBasicNodeData {
-  hasheader: string;
+export interface IFlowCsvNodeData extends IFlowBasicNodeData {
+  file: string;
+  delimiter: string;
+  hasheader: boolean;
+  columns: string[];
+  encoding?: string;
 }
 
 interface IPrefectEdge {

@@ -3,7 +3,7 @@ import { FeedbackState } from "./feedback-state";
 import { TranslationState, i18nDefault } from "./translation-state";
 import { TokenState } from "./token-state";
 import { UserState } from "./user-state";
-
+import { ChatItem } from "@nlux/react";
 export interface AppState {
   feedback: FeedbackState | undefined;
   translation: TranslationState;
@@ -13,6 +13,8 @@ export interface AppState {
   // auth data
   token: TokenState;
   user: UserState;
+
+  conversationHistory: Array<ChatItem>;
 }
 
 export const initialState: AppState = {
@@ -48,4 +50,5 @@ export const initialState: AppState = {
     isDashboardViewer: false,
     isDatasetResearcher: {},
   },
+  conversationHistory: [],
 };
