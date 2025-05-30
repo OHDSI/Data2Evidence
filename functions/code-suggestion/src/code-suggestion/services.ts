@@ -1,6 +1,7 @@
-import { IUICodeSnippet } from "../type";
+import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/prepModels";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -15,20 +16,22 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
           
           Complete the code (your response MUST start with and be longer than the given code)
   `;
-  const [model, status] = await getModels(uiCode.model);
 
-  if (status === "501") {
-    const query =
-      context +
-      `Here is the code snippet achieved from role of user: '${uiCode.code}'`;
-    return [[model, query], status];
+  const model = await getModels(uiCode.model);
+  if (model === null) {
+    throw Error(`LLM Model - ${uiCode.model} not found.`);
   }
-
-  if (status === "201") {
+  if (model === "local") {
     const query =
       context +
       `Here is the code snippet achieved from role of user: '${uiCode.code}'`;
-    return [query, status];
+    // Calling local model
+    const stream = await Trex.ask(query, {
+      repo: "QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF",
+      model: "Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
+    });
+    const reader = stream.getReader();
+    return reader;
   }
 
   try {
@@ -38,8 +41,39 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     ];
     const response = await model.invoke(messages);
     const codeSuggest = response.content;
-    return [codeSuggest, "200"];
+    return codeSuggest;
   } catch (error) {
-    return [error, "500"];
+    throw error;
+  }
+};
+
+export const getChatResponse = async (uiChat: IChatSnippet) => {
+  const model = await getModels(uiChat.model);
+
+  if (model === null) {
+    throw Error(`LLM Model - ${uiChat.model} not found.`);
+  }
+
+  try {
+    const rolePrompting = `You are an experienced professional in the medical research field, with exceptional expertise in coding and analyzing healthcare data. Your background combines deep knowledge of clinical concepts, medical terminologies, and research methodologies with advanced programming skills. We value our users and our goal is to solve the coding problems for them. When you deal with the user question, the [context_code] here must be considered.
+      [context_code]: ${uiChat.context}
+      Instructions:
+      step 1: Analyze the relation between the user question and the [context_code]
+      step 2: If the user question is not related to the [context_code], please inform the user and still provide an accurate response to the user question. You could ask for more information if needed.
+      step 3: If the user question is related to the [context_code]. Provide an accurate response to the user question, ensuring that it is relevant to the [context_code]
+      step 4: If the user question is not clear, before your reply in details you should ask for more information.
+      `;
+
+    const messages = [
+      new SystemMessage(rolePrompting),
+      new HumanMessage(uiChat.userInput),
+    ];
+    // streaming
+    const outputParser = new StringOutputParser();
+    const streamingChain = model.pipe(outputParser);
+    const stream = await streamingChain.stream(messages);
+    return stream;
+  } catch (error) {
+    throw error;
   }
 };
