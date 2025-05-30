@@ -11,6 +11,10 @@
       @cancel="goBack"
     />
   </p-layout-default>
+
+  <p-layout-default v-else>
+    <Loader />
+  </p-layout-default>
 </template>
   
   <script lang="ts" setup>
@@ -28,6 +32,7 @@ import { h } from 'vue'
 import { useRouter } from 'vue-router'
 import { routes } from '@/router'
 import { JSONRouteParam } from '@/utils/parameters'
+import Loader from '@/components/Loader.vue'
 
 const api = useWorkspaceApi()
 const deploymentId = useRouteParam('deploymentId')
