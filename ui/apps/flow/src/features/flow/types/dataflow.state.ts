@@ -98,6 +98,12 @@ export interface OverwriteFromRemoteResponseDto {
   localVersion?: number;
 }
 
+export interface RemoteDiffCheckResponseDto {
+  hasDifferences: boolean;
+  reason: string;
+  localVersion?: number;
+}
+
 interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];

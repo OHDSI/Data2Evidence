@@ -336,7 +336,7 @@ export class TransformationService {
       return;
     }
     const repoDir = this.gitRepoPath; // Use a single repository for all flows
-    const subDir = "flows"; // New subfolder
+    const subDir = "flows";
     const fileName = `${canvasId}.json`; // Each flow gets its own file
     const filePath = path.join(repoDir, subDir, fileName);
     const gitConfigValue = JSON.parse(gitConfig.value);
@@ -566,7 +566,7 @@ export class TransformationService {
     }
 
     const repoDir = this.gitRepoPath;
-    const subDir = "flows"; // New subfolder
+    const subDir = "flows";
     const fileName = `${canvasId}.json`;
     const filePath = path.join(repoDir, subDir, fileName);
 
@@ -790,123 +790,6 @@ export class TransformationService {
     }
   }
 
-  async overwriteAllCanvasesFromRemote(token: string) {
-    const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
-    if (!gitConfig) {
-      throw new Error("Git config not set, cannot sync from remote");
-    }
-
-    const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
-    const gitConfigValue = JSON.parse(gitConfig.value);
-    const defaultBranch = gitConfigValue.branch;
-    const gitRemoteUrl = gitConfigValue.repoUrl;
-    const gitCredentials = gitConfigValue.pat;
-
-    if (!gitRemoteUrl || !defaultBranch) {
-      throw new Error("Git remote URL or default branch not configured");
-    }
-
-    const repoDir = this.gitRepoPath;
-    const subDir = "flows"; // New subfolder
-    const subDirPath = path.join(repoDir, subDir);
-
-    try {
-      // Ensure we have the latest from remote
-      await this.ensureLatestFromRemote(repoDir, gitRemoteUrl, defaultBranch, gitCredentials);
-
-      // Clear all local data transformation canvases and their revisions
-      const existingCanvases = await this.canvasRepo
-        .createQueryBuilder("canvas")
-        .where("canvas.type = :type", { type: "datatransformation-flow" })
-        .getMany();
-
-      // Delete all graphs first (due to foreign key constraints)
-      for (const canvas of existingCanvases) {
-        await this.graphRepo
-          .createQueryBuilder()
-          .delete()
-          .where("canvasId = :canvasId", { canvasId: canvas.id })
-          .execute();
-      }
-
-      // Delete all canvases
-      await this.canvasRepo
-        .createQueryBuilder()
-        .delete()
-        .where("type = :type", { type: "datatransformation-flow" })
-        .execute();
-
-      // Read all .json files from the flows subfolder
-      let files = [];
-      if (fs.existsSync(subDirPath)) {
-        files = fs.readdirSync(subDirPath).filter(file => file.endsWith('.json'));
-      } else {
-        this.logger.info(`flows folder does not exist in repository`);
-        return {
-          message: `No flows folder found in remote repository`,
-          processedCount: 0,
-          results: []
-        };
-      }
-
-      const results = [];
-
-      for (const fileName of files) {
-        const canvasId = fileName.replace('.json', '');
-        const filePath = path.join(subDirPath, fileName);
-        
-        try {
-          const remoteFlowData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          
-          // Create canvas
-          const canvasEntity = {
-            id: canvasId,
-            name: remoteFlowData.name || `Canvas ${canvasId}`,
-            type: "datatransformation-flow"
-          };
-          await this.canvasRepo.insert(this.addOwner(decodedToken, canvasEntity, true));
-
-          // Create graph revision
-          const graphEntity = this.graphRepo.create({
-            id: uuidv4(),
-            canvasId: canvasId,
-            flow: remoteFlowData,
-            comment: `Imported from remote repository`,
-            version: 1,
-          });
-          
-          await this.graphRepo.insert(this.addOwner(decodedToken, graphEntity, true));
-          
-          results.push({
-            canvasId: canvasId,
-            revisionId: graphEntity.id,
-            name: canvasEntity.name
-          });
-          
-        } catch (fileError) {
-          this.logger.error(`Failed to process file ${fileName}: ${fileError.message}`);
-          results.push({
-            canvasId: canvasId,
-            error: `Failed to process: ${fileError.message}`
-          });
-        }
-      }
-
-      this.logger.info(`Successfully overwritten all canvases from remote. Processed ${files.length} files`);
-      
-      return {
-        message: `Successfully overwritten all canvases from remote`,
-        processedCount: files.length,
-        results: results
-      };
-
-    } catch (error) {
-      this.logger.error(`Failed to overwrite all canvases from remote: ${error.message}`);
-      throw error;
-    }
-  }
-
   private async ensureLatestFromRemote(
     repoDir: string,
     gitRemoteUrl: string,
@@ -977,6 +860,67 @@ export class TransformationService {
         this.logger.error(`Failed to fetch from remote: ${fetchError.message}`);
         throw new Error(`Failed to fetch from remote: ${fetchError.message}`);
       }
+    }
+  }
+
+  async checkCanvasDiffFromRemote(canvasId: string, token: string) {
+    const portalServerApi = new PortalServerAPI(token);
+    const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
+    if (!gitConfig) {
+      return { hasDifferences: false, reason: "Git config not set" };
+    }
+
+    const gitConfigValue = JSON.parse(gitConfig.value);
+    const defaultBranch = gitConfigValue.branch;
+    const gitRemoteUrl = gitConfigValue.repoUrl;
+    const gitCredentials = gitConfigValue.pat;
+
+    if (!gitRemoteUrl || !defaultBranch) {
+      return { hasDifferences: false, reason: "Git remote URL or default branch not configured" };
+    }
+
+    const repoDir = this.gitRepoPath;
+    const subDir = "flows";
+    const fileName = `${canvasId}.json`;
+    const filePath = path.join(repoDir, subDir, fileName);
+
+    try {
+      await this.ensureLatestFromRemote(repoDir, gitRemoteUrl, defaultBranch, gitCredentials);
+
+      if (!fs.existsSync(filePath)) {
+        return { hasDifferences: false, reason: "Canvas not found in remote repository" };
+      }
+
+      const remoteFlowData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const localCanvas = await this.getCanvas(canvasId);
+      
+      if (!localCanvas || localCanvas.revisions.length === 0) {
+        return { hasDifferences: true, reason: "No local canvas found" };
+      }
+
+      const latestLocalRevision = localCanvas.revisions[0];
+      const normalizeFlow = (flow: any) => ({
+        nodes: flow.nodes || [],
+        edges: flow.edges || []
+      });
+
+      const localFlowNormalized = JSON.stringify(normalizeFlow(latestLocalRevision.flow));
+      const remoteFlowNormalized = JSON.stringify(normalizeFlow(remoteFlowData));
+      
+      const hasDifferences = localFlowNormalized !== remoteFlowNormalized;
+      
+      return {
+        hasDifferences,
+        reason: hasDifferences ? "Content differs from remote" : "Content is identical to remote",
+        localVersion: latestLocalRevision.version
+      };
+
+    } catch (error) {
+      this.logger.error(`Failed to check canvas diff: ${error.message}`);
+      return {
+        hasDifferences: false, 
+        reason: `Error checking differences: ${error.message}`
+      };
     }
   }
 }

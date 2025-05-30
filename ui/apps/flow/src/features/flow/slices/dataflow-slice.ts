@@ -15,6 +15,7 @@ import {
   DeleteDataflowResponseDto,
   DeleteDataflowDto,
   OverwriteFromRemoteResponseDto,
+  RemoteDiffCheckResponseDto,
 } from "../types";
 import { baseQueryFn } from "./base-query";
 
@@ -161,6 +162,13 @@ export const dataflowApiSlice = createApi({
         { type: "DataflowState", id: "LATEST" },
       ],
     }),
+    checkRemoteDiff: builder.query<RemoteDiffCheckResponseDto, string>({
+      query: (id) => `dataflow/${id}/remote-diff-check`,
+      providesTags: (result, error, id) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+      ],
+    }),
     overwriteCanvasFromRemote: builder.mutation<
       OverwriteFromRemoteResponseDto,
       { id: string }
@@ -191,5 +199,6 @@ export const {
   useCancelFlowRunMutation,
   useLazyGetFlowRunResultsByIdQuery,
   useLazyGetFlowRunStateByIdQuery,
+  useCheckRemoteDiffQuery,
   useOverwriteCanvasFromRemoteMutation,
 } = dataflowApiSlice;

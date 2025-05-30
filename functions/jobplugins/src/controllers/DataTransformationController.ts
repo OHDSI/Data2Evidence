@@ -129,13 +129,14 @@ export class DataTransformationController {
     }
   }
 
-  private async overwriteAllCanvasesFromRemote(req: Request, res: Response) {
+  private async checkCanvasDiffFromRemote(req: Request, res: Response) {
     try {
+      const { id } = req.params;
       const token = req.headers["authorization"];
-      const result = await this.dataTransformationService.overwriteAllCanvasesFromRemote(token);
+      const result = await this.dataTransformationService.checkCanvasDiffFromRemote(id, token);
       return res.status(200).send(result);
     } catch (error) {
-      console.error("Error in overwriteAllCanvasesFromRemote: ", error);
+      console.error("Error in checkCanvasDiffFromRemote: ", error);
       return res.status(500).send({ message: error.message });
     }
   }
@@ -153,7 +154,7 @@ export class DataTransformationController {
     this.router.post("/", this.createCanvas.bind(this));
     this.router.get("/:id/flow-run-results", this.getResultsById.bind(this));
     
+    this.router.get("/:id/remote-diff-check", this.checkCanvasDiffFromRemote.bind(this));
     this.router.post("/:id/overwrite-from-remote", this.overwriteCanvasFromRemote.bind(this));
-    this.router.post("/overwrite-all-from-remote", this.overwriteAllCanvasesFromRemote.bind(this));
   }
 }
