@@ -38,7 +38,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     database_code = options.databaseCode
     cdmschema_name = options.cdmschemaName
     cohortschema_name = options.cohortschemaName
-    cohorttable_name = options.cohorttableName
+    cohorttable_name = 'phenotypes' # Fix the prefix of the phenotype result tables
     cohorts_id = options.cohortsId
     vocabschema_name = options.vocabschemaName
     
@@ -104,12 +104,19 @@ def phenotype_plugin(options: PhenotypeOptionsType):
                                         
                     print('Complete creating the cohort tables')
                     # Generate the cohorts
-                    cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
-                                                                        cdmDatabaseSchema = cdmschema,
-                                                                        cohortDatabaseSchema = cohortschema,
-                                                                        cohortTableNames = cohortTableNames,
-                                                                        cohortDefinitionSet = cohortDefinitionSets)
+                    tryCatch({{
+                        cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
+                                                                            cdmDatabaseSchema = cdmschema,
+                                                                            cohortDatabaseSchema = cohortschema,
+                                                                            cohortTableNames = cohortTableNames,
+                                                                            cohortDefinitionSet = cohortDefinitionSets)
 
+                        print('start cohort counts')
+                    }}, error = function(e) {{
+                        print("Error class:", class(e))
+                        print("Error occurred")
+                        print(e)  # This prints the entire structure
+                    }})
                     # Get the cohort counts
                     cohortCounts <- CohortGenerator::getCohortCounts(connection = connection,
                                                                     cohortDatabaseSchema = cohortschema,
@@ -141,7 +148,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
 
                 create_result_tables <- function(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets) {{
                     cohorts_id <- cohortDefinitionSets$cohortId
-                    sql <- paste0("SELECT SUBJECT_ID as person_id, COHORT_DEFINITION_ID as phenotype_id, cohort_start_date, cohort_end_date FROM ", {{cohortschema}},".", {{cohort_table_name}}, " Order by person_id")
+                    sql <- paste0("SELECT ROW_NUMBER() OVER (ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID) AS phenotype_result_id, SUBJECT_ID as person_id, COHORT_DEFINITION_ID as phenotype_id, cohort_start_date, cohort_end_date FROM ", {{cohortschema}},".", {{cohort_table_name}}, " Order by person_id")
                     result_df <- DatabaseConnector::querySql(connection=connection, sql=sql)
                     
                     # remove raw cohort tables
