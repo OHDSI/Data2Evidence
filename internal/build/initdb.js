@@ -7,10 +7,10 @@ const { functionsAndProcedures } = require("./db-functions-procedures.js");
 
 const dbCredentials = {
   host: process.env.HANASERVER,
-  port: process.env.HANAPORT,
+  port: process.env.HDIPORT,
   databaseName: process.env.DATABASE,
-  user: process.env.HANAUSER,
-  password: process.env.HANAPW,
+  user: process.env.HDIUSER,
+  password: process.env.HDIPW,
 };
 const client = hdb.createClient(dbCredentials);
 const TESTSCHEMA = process.env.TESTSCHEMA;
