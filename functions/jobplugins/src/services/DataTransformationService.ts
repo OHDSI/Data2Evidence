@@ -734,8 +734,6 @@ export class TransformationService {
         const localFlowContent = JSON.stringify(normalizeFlow(latestLocalRevision.flow));
         const remoteFlowContent = JSON.stringify(normalizeFlow(remoteFlowData));
         
-        this.logger.info(`Local flow content: ${localFlowContent}`);
-        this.logger.info(`Remote flow conetent: ${remoteFlowContent}`);
         if (localFlowContent === remoteFlowContent) {
           return {
             message: `Canvas ${canvasId} content is identical to remote, no action taken`,
