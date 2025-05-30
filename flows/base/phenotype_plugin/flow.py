@@ -104,19 +104,12 @@ def phenotype_plugin(options: PhenotypeOptionsType):
                                         
                     print('Complete creating the cohort tables')
                     # Generate the cohorts
-                    tryCatch({{
-                        cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
-                                                                            cdmDatabaseSchema = cdmschema,
-                                                                            cohortDatabaseSchema = cohortschema,
-                                                                            cohortTableNames = cohortTableNames,
-                                                                            cohortDefinitionSet = cohortDefinitionSets)
+                    cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
+                                                                        cdmDatabaseSchema = cdmschema,
+                                                                        cohortDatabaseSchema = cohortschema,
+                                                                        cohortTableNames = cohortTableNames,
+                                                                        cohortDefinitionSet = cohortDefinitionSets)
 
-                        print('start cohort counts')
-                    }}, error = function(e) {{
-                        print("Error class:", class(e))
-                        print("Error occurred")
-                        print(e)  # This prints the entire structure
-                    }})
                     # Get the cohort counts
                     cohortCounts <- CohortGenerator::getCohortCounts(connection = connection,
                                                                     cohortDatabaseSchema = cohortschema,
