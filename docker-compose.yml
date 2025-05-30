@@ -403,7 +403,7 @@ services:
           "demo": {
             "DEMO__DB_CODE": "demo_database",
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": [] }",
+            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
@@ -731,7 +731,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && prefect server start"
+      - "prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
       alp-logto-post-init:
@@ -742,11 +742,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://localhost:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/api/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: dataflow-gen-1
     image: prefecthq/prefect:3.0.3-python3.11
@@ -781,7 +782,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker"
+      - "pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -793,11 +794,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: prefecthq/prefect:3.0.3-python3.11
@@ -815,6 +817,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
+      PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:

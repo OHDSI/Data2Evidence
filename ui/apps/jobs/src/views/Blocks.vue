@@ -11,6 +11,10 @@
         <BlockDocumentsTable @delete="subscription.refresh" />
       </template>
     </template>
+
+    <template v-else>
+      <Loader />
+    </template>
   </p-layout-default>
 </template>
 
@@ -18,6 +22,7 @@
   import { PageHeadingBlocks, BlockDocumentsTable, BlocksPageEmptyState, useWorkspaceApi } from '@prefecthq/prefect-ui-library'
   import { useSubscription } from '@prefecthq/vue-compositions'
   import { computed } from 'vue'
+  import Loader from '@/components/Loader.vue'
 
   const api = useWorkspaceApi()
   const subscription = useSubscription(api.blockDocuments.getBlockDocumentsCount)

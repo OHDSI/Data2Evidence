@@ -9,10 +9,15 @@
     <template v-if="artifact">
       <ArtifactTimeline v-if="artifact.key" :artifact-key="artifact.key" />
     </template>
+
+    <template v-else>
+      <Loader/>
+    </template>
   </p-layout-default>
 </template>
 
 <script lang="ts" setup>
+import Loader from '@/components/Loader.vue'
 import {
   PageHeadingArtifactKey,
   ArtifactDescription,
