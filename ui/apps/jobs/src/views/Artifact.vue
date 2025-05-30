@@ -37,6 +37,9 @@
             </template>
         </section>
 
+        <section v-else>
+            <Loader />
+        </section>
         <template #well>
             <ArtifactDetails v-if="artifact" :artifact="artifact" alternate />
         </template>
@@ -55,6 +58,7 @@ import {
 } from '@prefecthq/prefect-ui-library'
 import { useSubscription, useRouteParam, useRouteQueryParam } from '@prefecthq/vue-compositions'
 import { computed, ref } from 'vue'
+import Loader from '@/components/Loader.vue'
 
 const api = useWorkspaceApi()
 const artifactId = useRouteParam('artifactId')
