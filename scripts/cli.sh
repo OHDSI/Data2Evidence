@@ -266,7 +266,6 @@ case $cmd in
         source "$ENVFILE"
         npx d2e patchdemodb -n "$ENVFILE" 
         database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demo_database_publication FOR TABLES IN SCHEMA demo_cdm; ALTER TABLE demo_cdm.COHORT REPLICA IDENTITY FULL; ALTER TABLE demo_cdm.COHORT_DEFINITION REPLICA IDENTITY FULL;"
         npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
         npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
         ;;

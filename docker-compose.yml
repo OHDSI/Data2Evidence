@@ -731,7 +731,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && prefect server start"
+      - "prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
       alp-logto-post-init:
@@ -742,11 +742,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://localhost:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/api/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: dataflow-gen-1
     image: prefecthq/prefect:3.0.3-python3.11
@@ -781,7 +782,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker"
+      - "pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -793,11 +794,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: prefecthq/prefect:3.0.3-python3.11
@@ -815,6 +817,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
+      PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
