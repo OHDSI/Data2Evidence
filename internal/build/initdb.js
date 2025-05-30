@@ -4,12 +4,12 @@ const csv = require("fast-csv");
 const path = require("path");
 
 const { functionsAndProcedures } = require("./db-functions-procedures.js");
-
+const user = process.env.HDIUSER;
 const dbCredentials = {
   host: process.env.HANASERVER,
   port: process.env.HDIPORT,
   databaseName: process.env.DATABASE,
-  user: process.env.HDIUSER,
+  user,
   password: process.env.HDIPW,
 };
 const client = hdb.createClient(dbCredentials);
@@ -55,7 +55,7 @@ async function createDBArtefacts(sqlStatements) {
       }
       sqlStatements.forEach((query, index) => {
         // console.log(`query: ${query}`);
-        client.exec(query.replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA), (err) => {
+        client.exec(query.replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA).replaceAll("HTTPTEST_USER", user), (err) => {
           if (err) {
             reject(err);
           }

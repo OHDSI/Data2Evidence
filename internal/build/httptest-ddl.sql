@@ -1859,3 +1859,12 @@ SELECT "JobProfile_$0"."ProfileID" , "JobProfile_$0"."ExtensionID" , "JobProfile
 
 CREATE VIEW HTTPTEST_SCHEMA."legacy.ots::Views.ConceptTranslation" AS
 SELECT "ConceptTranslation_$0"."TypeVocabularyID" , "ConceptTranslation_$0"."TypeCode" , "ConceptTranslation_$0"."FromVocabularyID" , "ConceptTranslation_$0"."FromCode" , "ConceptTranslation_$0"."ToVocabularyID" , "ConceptTranslation_$0"."ToCode" FROM HTTPTEST_SCHEMA."legacy.ots.internal::Entities.ConceptTranslation" AS "ConceptTranslation_$0";
+
+GRANT SELECT ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+GRANT EXECUTE ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+GRANT "CREATE ANY" ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+GRANT INSERT ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+GRANT UPDATE ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+GRANT DELETE ON SCHEMA HTTPTEST_SCHEMA TO HTTPTEST_USER;
+
+
