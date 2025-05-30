@@ -22,3 +22,13 @@ export const validateProxyDto = () => [
       "Name must be a string and should only contain letters, numbers, and underscores"
     ),
 ];
+
+// Validation rules for deleteProject
+export const validateDeleteFhirProjectDto = () => [
+  param("id")
+    .isString()
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage(
+      "Name must be a string and should only contain letters, numbers, hyphen and underscores"
+    )
+];
