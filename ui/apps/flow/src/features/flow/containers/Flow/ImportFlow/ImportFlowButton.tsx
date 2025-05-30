@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useRef } from "react";
+import React, { ChangeEvent, FC, useCallback, useRef } from "react";
 import { IconButton, Tooltip } from "@portal/components";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { dispatch } from "~/store";
@@ -18,8 +18,8 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
     hiddenFileInput.current && hiddenFileInput.current.click();
   }, [hiddenFileInput]);
 
-  const handleFileOpen = useCallback((event: any) => {
-    const files = Array.from(event.target.files).map((file: any) => file);
+  const handleFileOpen = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []).map((file: any) => file);
     if (files.length >= 1) {
       const file = files[0];
       const reader = new FileReader();
