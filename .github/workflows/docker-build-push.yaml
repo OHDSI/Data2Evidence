@@ -84,21 +84,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-base
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-nlp
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/nlp/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-white-rabbit
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/white_rabbit/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-dicom-etl
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/dicom_etl/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-mimic-omop-conversion
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/mimic_omop_conversion/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
@@ -114,6 +102,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-strategus
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
+          - AZ_REG_REPOSITORY: d2e/flow-data-transformation
+            DOCKER_BUILD_CONTEXT_PATH: ./flows
+            DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile
           - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
