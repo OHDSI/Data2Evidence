@@ -100,12 +100,12 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 # Verify installation and fail if any are missing
-# RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortIncidence', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
-#                 installed <- rownames(installed.packages()); \
-#                 missing <- setdiff(required, installed); \
-#                 if (length(missing) > 0) { \
-#                     stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
-#                 }"
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortIncidence', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
