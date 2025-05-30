@@ -102,12 +102,13 @@ export class PortalServerAPI {
       const options = this.createOptions("GET");
       const result = await fetch(url, options);
       if (!result.ok) {
-        throw new Error("Error while getting system config");
+        console.log(`Config type '${type}' not found or inaccessible`);
+        return null;
       }
       return await result.json();
     } catch (error) {
       console.error(`Error while getting system config: ${error}`);
-      throw error;
+      return null;
     }
   }
 

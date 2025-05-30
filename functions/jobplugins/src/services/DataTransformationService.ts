@@ -331,6 +331,10 @@ export class TransformationService {
   ) {
     const portalServerApi = new PortalServerAPI(token);
     const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
+    if (!gitConfig) {
+      this.logger.info(`Git config not set, skip git operations`);
+      return;
+    }
     const repoDir = this.gitRepoPath; // Use a single repository for all flows
     const fileName = `${canvasId}.json`; // Each flow gets its own file
     const filePath = path.join(repoDir, fileName);
@@ -348,7 +352,7 @@ export class TransformationService {
       this.logger.info(
         "Git remote URL or default branch not configured, skipping Git operations"
       );
-      throw new Error("Git remote URL or default branch not configured");
+      return
     }
 
     try {
@@ -538,6 +542,10 @@ export class TransformationService {
   private async deleteFromGitRepo(canvasId: string, commitMessage: string, token: string) {
     const portalServerApi = new PortalServerAPI(token);
     const gitConfig = await portalServerApi.getConfigByType("dataflow-git-config");
+    if (!gitConfig){
+      this.logger.info(`Git config not set, skip git operations`);
+      return
+    }
     const gitConfigValue = JSON.parse(gitConfig.value);
     const defaultBranch = gitConfigValue.branch;
     const gitRemoteUrl = gitConfigValue.repoUrl;
