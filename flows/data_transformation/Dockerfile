@@ -1,46 +1,22 @@
-FROM python:3.10-slim as base-build
-
-RUN mkdir -p /app
-
-WORKDIR /app
-
 FROM ghcr.io/data2evidence/whiterabbit:master AS base
 
-# installs
+COPY . .
+
+FROM rocker/r-ver:4.4 AS base-build
+
+RUN mkdir -p /app
+WORKDIR /app
+
+COPY --from=base . .
+ENV DISPLAY=:1
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    ca-certificates \
-    cmake \
-    curl \
-    dirmngr \
-    ed \
-    g++ \
-    gcc \
-    git \
-    less \
-    libbz2-dev \
-    libcairo2-dev \
-    libcurl4-gnutls-dev \
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libfribidi-dev \
-    libgit2-dev \
-    libharfbuzz-dev \
-    libicu-dev \
-    libjpeg-dev \
-    libpng-dev \
     libpq5 \
     libpq-dev \
-    libprotobuf-dev \
-    libsodium23 libsodium-dev libsecret-tools \
-    libssh2-1-dev \
-    libssl-dev \
-    libtiff-dev \
-    libxml2-dev \
-    libxt-dev \
-    locales \
-    openssh-client \
-    protobuf-compiler \
+    curl \
+    gcc \
+    g++ \
     python3 \
     python3-dev \
     python3-pip \
@@ -52,13 +28,44 @@ RUN apt-get update && \
     unzip \
     openjdk-17-jdk \
     xvfb \
+    libbz2-dev \
+    libcairo2-dev \
+    libcurl4-gnutls-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libharfbuzz-dev \
+    libicu-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libpq-dev \
+    libprotobuf-dev \
+    libsodium23 libsodium-dev libsecret-tools \
+    libssh2-1-dev \
+    libssl-dev \
+    libtiff-dev \
+    libxml2-dev \
+    libxt-dev \
+    locales \
+    openssh-client \
+    protobuf-compiler \
     && apt-get clean
 
 # Python Library Setup
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20
 RUN python3 -m venv /usr/src/app
-# Enable venv
-ENV PATH="/usr/src/app/bin:$PATH"
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="/usr/src/app/bin:$PATH:JAVA_HOME/bin"
+# ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# Verify the installation
+RUN java -version && R CMD javareconf
+
+# Install Dependencies
+RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
+RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 
 WORKDIR /app
 
@@ -71,7 +78,6 @@ RUN groupadd -g $GID ${USER}
 RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
     && groupadd alp \
     && adduser docker alp
-ENV DISPLAY=:1
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 # COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
@@ -116,6 +122,11 @@ RUN pip install --no-deps https://huggingface.co/kormilitzin/en_core_med7_trf/re
 RUN pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_ner_bc5cdr_md-0.5.1.tar.gz
 RUN pip3 install --upgrade pip
 
+RUN mkdir -p flows/ner_extract_plugin/external/
+RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
+RUN unzip -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip -d flows/ner_extract_plugin/external
+RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
+
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
 ENV duckdb_version 1.2.1
@@ -141,11 +152,6 @@ RUN pip install -r requirements_data_transformation.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
-
-RUN mkdir -p flows/ner_extract_plugin/external/
-RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
-RUN unzip -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip -d flows/ner_extract_plugin/external
-RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
 
 USER docker
 
