@@ -878,9 +878,10 @@ class StrategusNode(Node):
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name):
+def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
+            database_code = dbSettings['database_code']
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -897,15 +898,6 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
                 pathToDriver = databaseConnectorJarFolder
             )
 
-            # TODO: remove hardcode
-            # rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-            #         dbms='postgresql', 
-            #         connectionString=f'jdbc:postgresql://alp-demodb:5432/postgres',
-            #         user='',
-            #         password='',
-            #         pathToDriver = databaseConnectorJarFolder
-            #     )
-
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
@@ -915,6 +907,58 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             print('Error: ', e)
             return RuntimeError('Execution of strategus has failed')
 
+@flow(name="upload-strategus-results",
+      log_prints=True)
+def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
+    with ro.default_converter.context():
+        try:
+            database_code = dbSettings['database_code']
+            schema_name = dbSettings['schema_name']
+            results_schema = f'results_{schema_name}'
+            rStrategus = importr('Strategus')
+            rParallelLogger = importr('ParallelLogger')
+            rDatabaseConnector = importr('DatabaseConnector')
+            databaseConnectorJarFolder = '/app/inst/drivers'
+
+            dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code)
+            db_credentials = dbdao.tenant_configs
+            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+                dbms='postgresql', 
+                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
+                pathToDriver = databaseConnectorJarFolder
+            )
+            rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
+
+            # if schema exists, drop and recreate the schema
+            if(not dbdao.check_schema_exists(results_schema)):
+                dbdao.create_schema(results_schema)
+            else:
+                dbdao.drop_schema(results_schema)
+                dbdao.create_schema(results_schema)
+
+            # create results datamodel settings
+            resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
+                resultsDatabaseSchema = results_schema,
+                resultsFolder = path_to_results,
+            )
+            # create results datamodel 
+            rStrategus.createResultDataModel(
+                analysisSpecifications = rAnalysisSpec,
+                resultsDataModelSettings = resultsDataModelSettings,
+                resultsConnectionDetails = rConnectionDetails
+            )
+            # upload results to the database
+            rStrategus.uploadResults(
+                connectionDetails = rConnectionDetails,
+                analysisSpecifications = rAnalysisSpec,
+                resultsDataModelSettings = resultsDataModelSettings
+            )
+        except Exception as e:
+            print('Error: ', e)
+            return RuntimeError('Uploading results of strategus has failed')
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
