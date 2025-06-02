@@ -30,7 +30,7 @@ const getters = {
       if (text === '') {
         // if key is not in "en_US", use "en" or "DEFAULT" as locale
         const fallbackLocale =
-          moduleState.currentLocale.split('_').length === 2 ? moduleState.currentLocale.split('_')[0] : 'DEFAULT'
+          moduleState.currentLocale.split('_').length === 2 ? moduleState.currentLocale.split('_')[0] : 'en'
         text = moduleGetters.getTextFromLocale(key, fallbackLocale)
 
         if (text === '') {
