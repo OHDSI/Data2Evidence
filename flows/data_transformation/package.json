@@ -1,5 +1,5 @@
 {
-  "name": "@data2evidence/d2e-flows",
+  "name": "@data2evidence/data-transformation-flow",
   "version": "0.0.99",
   "description": "",
   "scripts": {
