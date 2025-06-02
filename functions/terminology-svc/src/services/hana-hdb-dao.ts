@@ -758,6 +758,8 @@ export class HanaHDBDao {
             ];
 
             credentials["token"] = thirdPartyToken;
+            credentials['SESSIONVARIABLE:APPLICATION'] = env.TREX_CURRENT_USER_FUNCTION_NAME;
+            credentials['SESSIONVARIABLE:APPLICATIONUSER'] = decode(thirdPartyToken).oid;
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"

@@ -13,7 +13,7 @@ function initEnv(__env) {
     USE_HANA_JWT_AUTHC: z.string(),
 
     HANA_FTS_FUZZY: z.string().transform(Number),
-
+  
     SERVICE_ROUTES: z
       .string()
       .transform((str, ctx): { [key: string]: string } => {
@@ -24,7 +24,8 @@ function initEnv(__env) {
           throw e;
         }
       }),
-  });
+      TREX_CURRENT_USER_FUNCTION_NAME: z.string().optional(),
+    });
 
   const { success, data, error } = envSchema.safeParse(_env);
 
