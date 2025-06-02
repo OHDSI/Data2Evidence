@@ -6,7 +6,7 @@ from subprocess import PIPE, STDOUT, run, CalledProcessError
 from prefect.variables import Variable
 
 from .types import *
-from .api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
+from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
 
 
 class Liquibase:
