@@ -504,8 +504,7 @@
           "jobplugins.dqd.execute",
           "d2e.webapi",
           "jupyter",
-          "usermgmt.me.jupyter",
-          "mlflow"
+          "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",

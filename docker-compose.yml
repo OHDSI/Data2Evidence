@@ -697,8 +697,6 @@ services:
             reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
           }
 
-          
-
           ## call gateway if there are no matched files
           handle {
             reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
@@ -1355,7 +1353,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:local
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:
@@ -1364,7 +1362,7 @@ services:
     networks:
       alp:
       data:
-    ports:
-      - "5000:5000"
+    # ports:
+    #   - "5000:5000"
     command: mlflow server --host 0.0.0.0 --port 5000
     profiles: [mlflow]
