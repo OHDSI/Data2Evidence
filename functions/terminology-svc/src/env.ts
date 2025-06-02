@@ -10,8 +10,6 @@ function initEnv(__env) {
 
     USE_TREX_DB_CONN: z.string().transform(Boolean),
 
-    USE_HANA_JWT_AUTHC: z.string(),
-
     HANA_FTS_FUZZY: z.string().transform(Number),
   
     SERVICE_ROUTES: z

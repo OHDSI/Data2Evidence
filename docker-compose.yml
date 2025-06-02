@@ -180,7 +180,6 @@ services:
             "PG__DIALECT": "postgresql",
             "LOCAL_DEBUG": "false",
             "isHttpTestRun": "${isHttpTestRun}",
-            "USE_HANA_JWT_AUTHC": "${USE_HANA_JWT_AUTHC:-false}",
             "SERVICE_ROUTES": {
               "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",

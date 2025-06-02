@@ -700,7 +700,7 @@ const getDBConnections = async ({
 
         if (
             analyticsCredentials.dialect === DB.HANA &&
-            env.USE_HANA_JWT_AUTHC === "true"
+            analyticsCredentials.authentication_mode === "JWT"
         ) {
             delete analyticsCredentials.user;
             delete analyticsCredentials.password;
