@@ -108,7 +108,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             
             try:
                 # update with data model last updated date
-                updated_date = get_updated_date(dataset_dao)
+                updated_date = get_updated_date(dataset_dao, schema_name)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "updated_date", updated_date)
             except Exception as e:
                 logger.error(
@@ -219,7 +219,7 @@ def get_latest_available_version(**kwargs) -> str:
 
 def get_current_version(dao_obj: DBDao, schema_name: str) -> str:
     try:
-        latest_executed_changeset = dao_obj.get_last_executed_changeset(schema)
+        latest_executed_changeset = dao_obj.get_last_executed_changeset(schema_name)
         current_version = extract_version(latest_executed_changeset)
     except Exception as e:
         error_msg = f"Error retrieving current version"
@@ -228,7 +228,7 @@ def get_current_version(dao_obj: DBDao, schema_name: str) -> str:
     return current_version
 
 
-def get_updated_date(dao_obj: DBDao) -> str:
+def get_updated_date(dao_obj: DBDao, schema_name: str) -> str:
     try:
         updated_date = str(dao_obj.get_datamodel_updated_date(schema_name)).split(" ")[0]
     except Exception as e:
