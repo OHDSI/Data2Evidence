@@ -102,6 +102,13 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          npm install
+          npm run init
+          npm run test
+
       - name: Stop d2e services
         if: success() || failure()
         id: stop
