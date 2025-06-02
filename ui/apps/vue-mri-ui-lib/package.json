@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "__VUE_PROD_DEVTOOLS__=true vue-cli-service serve --port 8081",
+    "serve:demo": "__VUE_PROD_DEVTOOLS__=true vue-cli-service serve --port 8081 --config vue.config.demo.js",
     "upgrade": "vue-cli-service upgrade",
     "build": "vue-cli-service build",
     "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
