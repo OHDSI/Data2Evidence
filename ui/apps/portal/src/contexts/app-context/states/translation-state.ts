@@ -156,7 +156,6 @@ export const i18nDefault = {
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE: "An error has occurred.",
-    CHANGE_LANGUAGE_DIALOG__SELECT_DEFAULT: "English (default)",
     CHANGE_LANGUAGE_DIALOG__SELECT_GERMAN: "German",
     CHANGE_LANGUAGE_DIALOG__SELECT_CHINESE: "Chinese",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL: "Cancel",

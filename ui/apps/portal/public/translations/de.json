@@ -128,7 +128,6 @@
   "CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED": "Sprache aktualisiert",
   "CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION": "Bitte versuche es erneut. Um den Fehler zu melden, senden Sie bitte eine E-Mail an help@data4life.care.",
   "CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE": "Ein Fehler ist aufgetreten..",
-  "CHANGE_LANGUAGE_DIALOG__SELECT_DEFAULT": "Englisch (Standard)",
   "CHANGE_LANGUAGE_DIALOG__SELECT_GERMAN": "Deutsch",
   "CHANGE_LANGUAGE_DIALOG__SELECT_CHINESE": "chinesisch",
   "CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL": "Stornieren",

@@ -12,18 +12,18 @@ interface ChangeLanguageDialogProps {
   onClose?: () => void;
 }
 
+const SUPPORTED_LANGUAGES = [
+  { name: "English", value: "default" },
+  { name: "Deutsch", value: "de" },
+  { name: "中文", value: "zh" },
+];
+
 export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
-  const { getText, changeLocale } = useTranslation();
+  const { getText, changeLocale, locale } = useTranslation();
 
-  const SUPPORTED_LANGUAGES = [
-    { name: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__SELECT_DEFAULT), value: "default" },
-    { name: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__SELECT_GERMAN), value: "de" },
-    { name: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__SELECT_CHINESE), value: "zh" },
-  ];
-
-  const [language, setLangauge] = useState(SUPPORTED_LANGUAGES[0].value);
+  const [language, setLangauge] = useState(locale);
 
   const handleClose = useCallback(() => {
     setFeedback({});
