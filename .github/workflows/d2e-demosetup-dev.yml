@@ -124,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: error-context
-          path: test-results/**/*.md
+          path: tests/e2e/test-results/**/*.md
 
 
       - name: Stop d2e services
