@@ -159,3 +159,6 @@ services:
     volumes:
       - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
+  mlflow:
+    ports:
+      - "5000:5000"
