@@ -66,8 +66,12 @@ export type IFRContentForComplexFilter = {
 };
 
 export type IFRDefinition = {
-    filter: IFRFilter;
-};
+  filter: IFRFilter
+  chartType?: string
+  axisSelection?: IFRAxisSelection[]
+  metadata?: IFRMetadata
+  datasetId?: string
+}
 
 // *******
 // Types that are part of bookmark, but not for actual filtering
