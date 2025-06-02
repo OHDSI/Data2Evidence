@@ -1,0 +1,205 @@
+// Query Filter Card specific styles
+@import 'variables';
+@import 'mixins';
+
+// Tab navigation styles
+.query-filter-tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+  padding: 4px;
+  margin-bottom: 0;
+  border: 1px solid #e0e0e0;
+  border-bottom: none;
+
+  &__tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    position: relative;
+
+    &:hover:not(.active) {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    &.active {
+      background: white;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    &--earliest {
+      color: #3b82f6;
+      
+      &.active {
+        color: #2563eb;
+      }
+    }
+
+    &--all {
+      color: #666;
+    }
+
+    &--latest {
+      color: #8b5cf6;
+      
+      &.active {
+        color: #7c3aed;
+      }
+    }
+  }
+}
+
+// Container for the filter system
+.query-filter-container {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+
+  &__section {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+  }
+}
+
+// Icon font overrides for query filter specific icons
+.query-filter-card,
+.query-filter-chip {
+  .icon {
+    font-family: 'Font Awesome 5 Free', 'app-icons';
+    font-style: normal;
+    font-weight: 900;
+    
+    &-chevron-down::before { content: '\f078'; }
+    &-chevron-right::before { content: '\f054'; }
+    &-plus-circle::before { content: '\f055'; }
+    &-plus::before { content: '\f067'; }
+    &-times::before { content: '\f00d'; }
+    &-pencil::before { content: '\f303'; }
+    &-copy::before { content: '\f0c5'; }
+    &-ellipsis-v::before { content: '\f142'; }
+  }
+}
+
+// Animation classes
+.query-filter-enter-active,
+.query-filter-leave-active {
+  transition: all 0.3s ease;
+}
+
+.query-filter-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.query-filter-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .query-filter-card {
+    &__sidebar {
+      width: 32px;
+      
+      .sidebar-label {
+        font-size: 11px;
+      }
+    }
+  }
+
+  .query-filter-tabs {
+    &__tab {
+      font-size: 13px;
+      padding: 6px 12px;
+    }
+  }
+}
+
+// Utility classes for query filters
+.query-filter {
+  &--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  &--error {
+    border-color: #ef4444 !important;
+    
+    .query-filter-card__sidebar {
+      background: #ef4444;
+    }
+  }
+}
+
+// Context menu styles for filter operations
+.query-filter-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 180px;
+  z-index: 1000;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+
+    &--danger {
+      color: #ef4444;
+
+      &:hover {
+        background: #fee2e2;
+      }
+    }
+
+    .icon {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+  }
+}
