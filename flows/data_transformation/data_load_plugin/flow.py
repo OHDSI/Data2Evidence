@@ -71,6 +71,7 @@ def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, heade
 def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None, 
               file: FileType, chunksize: int, chunkindex: int, logger):
     try:
+        print(f"Header: {header}")
         if header == 0:
             csv_column_names = df.columns.tolist()
             table_column_names = dbdao.get_columns(schema, file.table_name) # use ibis to get columns from table, raise exception if table is empty
