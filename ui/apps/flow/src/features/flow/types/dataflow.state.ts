@@ -104,6 +104,17 @@ export interface RemoteDiffCheckResponseDto {
   localVersion?: number;
 }
 
+export interface OverwriteAllFromRemoteResponseDto {
+  message: string;
+  processedCount: number;
+  results: Array<{
+    canvasId: string;
+    revisionId?: string;
+    name?: string;
+    error?: string;
+  }>;
+}
+
 interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];

@@ -78,3 +78,7 @@ export enum FlowRunState {
   FAILED = "Failed",
   TIMED_OUT = "TimedOut",
 }
+
+export const GIT_REPO_CONSTANTS = {
+  FLOWS_SUBDIR: "flows",
+};
