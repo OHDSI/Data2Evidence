@@ -57,6 +57,7 @@ function initEnv(__env) {
         NODE_ENV: z.string().optional(),
         ENV_MOUNT_PATH: z.string().optional(),
         TESTSCHEMA: z.string().optional(),
+        TREX_CURRENT_USER_FUNCTION_NAME: z.string().optional(),
         //DATABASE_CREDENTIALS: z.array().optional(),
         MINIO__ENDPOINT: z.string().optional(),
         MINIO__PORT: z
