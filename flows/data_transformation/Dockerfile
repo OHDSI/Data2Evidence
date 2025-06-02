@@ -7,7 +7,17 @@ FROM rocker/r-ver:4.4 AS base-build
 RUN mkdir -p /app
 WORKDIR /app
 
-COPY --from=base . .
+ARG BUILD_TYPE
+ARG USER=docker
+ENV USER=${USER}
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g $GID ${USER}
+RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
+    && groupadd alp \
+    && adduser docker alp
+
+COPY --chown=docker:docker --chmod=711 --from=base . .
 ENV DISPLAY=:1
 
 RUN apt-get update && \
@@ -68,16 +78,6 @@ RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 
 WORKDIR /app
-
-ARG BUILD_TYPE
-ARG USER=docker
-ENV USER=${USER}
-ARG UID=1000
-ARG GID=1000
-RUN groupadd -g $GID ${USER}
-RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
-    && groupadd alp \
-    && adduser docker alp
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 # COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
