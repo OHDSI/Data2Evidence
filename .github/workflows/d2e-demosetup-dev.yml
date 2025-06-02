@@ -104,11 +104,10 @@ jobs:
 
       - name: Restart d2e services
         if: success() || failure()
-        id: stop
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions start
-          
+
       - name: e2e tests
         run: |
           cd ./tests/e2e
