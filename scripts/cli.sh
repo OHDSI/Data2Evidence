@@ -43,6 +43,7 @@ demo=""
 dicom=""
 cachedb=""
 jupyter=""
+mlflow=""
 compose=""
 args=""
 services=""
@@ -62,6 +63,7 @@ while [[ $# -gt 0 ]]; do
         -n|--env-file) env="$2"; shift ;;
         -p|--port) export PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
+        -m|--mlflow) mlflow=--profile="mlflow" ;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -96,7 +98,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $mlflow $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -296,6 +298,7 @@ Options:
  -i, --dicom                Include DICOM Server
  -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
+ -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
  -v, --version [VERSION]    Version of the d2e services to use

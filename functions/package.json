@@ -264,6 +264,10 @@
           "function": "/d2e-webapi",
           "env": "d2e-webapi",
           "imports": "/d2e-webapi/deno.json"
+        },
+        {
+          "source": "/mlflow*",
+          "service": "mlflow"
         }
       ],
       "roles": {
@@ -428,7 +432,8 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup"
+          "demo.setup",
+          "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -499,7 +504,8 @@
           "jobplugins.dqd.execute",
           "d2e.webapi",
           "jupyter",
-          "usermgmt.me.jupyter"
+          "usermgmt.me.jupyter",
+          "mlflow"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -2322,6 +2328,12 @@
           "path": "^/jupyter",
           "scopes": [
             "jupyter"
+          ]
+        },
+        {
+          "path": "^/mlflow(.*)",
+          "scopes": [
+            "mlflow"
           ]
         }
       ]
