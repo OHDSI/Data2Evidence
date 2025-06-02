@@ -19,7 +19,6 @@ import https from "https";
 import helmet from "helmet";
 import path from "path";
 import yaml from "npm:yaml";
-import { decode } from "jsonwebtoken";
 import { access, constants } from "node:fs/promises";
 import * as mri2 from "./mri/endpoint/analytics";
 import * as xsenv from "@sap/xsenv";
@@ -712,7 +711,7 @@ const getDBConnections = async ({
                 );
             }
             analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = env.TREX_CURRENT_USER_FUNCTION_NAME;
-            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = decode(userObj.thirdPartyToken).name;
+            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
         }
 
         analyticsConnectionPromise =
