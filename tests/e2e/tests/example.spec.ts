@@ -15,4 +15,5 @@ test('example', async ({ page }) => {
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' });
   await page.locator('#patient').getByText('MALE - MALE').click();
   await expect(page.getByText('1321 / 2694')).toBeVisible();
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
 });
