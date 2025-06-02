@@ -17,7 +17,7 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
     && groupadd alp \
     && adduser docker alp
 
-COPY --chown=docker:docker --chmod=711 --from=base . .
+COPY --chown=docker:docker --chmod=711 --from=base . /app/
 ENV DISPLAY=:1
 
 RUN apt-get update && \
@@ -126,6 +126,7 @@ RUN pip install -r requirements_data_transformation.txt
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 
-USER docker
+#White rabbit need to run as root user
+#USER docker
 
 ENTRYPOINT []
