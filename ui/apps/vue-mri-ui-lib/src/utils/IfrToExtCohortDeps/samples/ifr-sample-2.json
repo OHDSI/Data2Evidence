@@ -1,0 +1,141 @@
+{
+    "filter": {
+        "configMetadata": {
+            "id": "4fce3cb7-32bf-4b46-8cba-32e4f77a14dd",
+            "version": "A"
+        },
+        "cards": {
+            "content": [
+                {
+                    "content": [
+                        {
+                            "configPath": "patient",
+                            "instanceNumber": 0,
+                            "instanceID": "patient",
+                            "name": "Basic Data",
+                            "inactive": false,
+                            "isEntry": false,
+                            "isExit": false,
+                            "type": "FilterCard",
+                            "attributes": {
+                                "content": [
+                                    {
+                                        "configPath": "patient.attributes.Age",
+                                        "instanceID": "patient.attributes.Age",
+                                        "type": "Attribute",
+                                        "constraints": {
+                                            "content": [
+                                                {
+                                                    "type": "Expression",
+                                                    "operator": ">",
+                                                    "value": 60
+                                                }
+                                            ],
+                                            "type": "BooleanContainer",
+                                            "op": "OR"
+                                        }
+                                    },
+                                    {
+                                        "configPath": "patient.attributes.Gender_concept_name",
+                                        "instanceID": "patient.attributes.Gender_concept_name",
+                                        "type": "Attribute",
+                                        "constraints": {
+                                            "content": [
+                                                {
+                                                    "type": "Expression",
+                                                    "operator": "=",
+                                                    "value": "MALE"
+                                                }
+                                            ],
+                                            "type": "BooleanContainer",
+                                            "op": "OR"
+                                        }
+                                    }
+                                ],
+                                "type": "BooleanContainer",
+                                "op": "AND"
+                            },
+                            "advanceTimeFilter": null
+                        }
+                    ],
+                    "type": "BooleanContainer",
+                    "op": "OR"
+                },
+                {
+                    "content": [
+                        {
+                            "configPath": "patient.interactions.conditionoccurrence",
+                            "instanceNumber": 1,
+                            "instanceID": "patient.interactions.conditionoccurrence.1",
+                            "name": "Condition Occurrence A",
+                            "inactive": false,
+                            "isEntry": false,
+                            "isExit": false,
+                            "type": "FilterCard",
+                            "attributes": {
+                                "content": [
+                                    {
+                                        "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+                                        "instanceID": "patient.interactions.conditionoccurrence.1.attributes.condition_occ_concept_name",
+                                        "type": "Attribute",
+                                        "constraints": {
+                                            "content": [
+                                                {
+                                                    "type": "Expression",
+                                                    "operator": "=",
+                                                    "value": "Type 2 diabetes mellitus"
+                                                }
+                                            ],
+                                            "type": "BooleanContainer",
+                                            "op": "OR"
+                                        }
+                                    }
+                                ],
+                                "type": "BooleanContainer",
+                                "op": "AND"
+                            },
+                            "advanceTimeFilter": null
+                        }
+                    ],
+                    "type": "BooleanContainer",
+                    "op": "OR"
+                }
+            ],
+            "type": "BooleanContainer",
+            "op": "AND"
+        },
+        "sort": "MRI_PA_CHART_SORT_DEFAULT"
+    },
+    "chartType": "stacked",
+    "axisSelection": [
+        {
+            "attributeId": "n/a",
+            "binsize": "n/a",
+            "categoryId": "x1"
+        },
+        {
+            "attributeId": "n/a",
+            "binsize": "n/a",
+            "categoryId": "x2"
+        },
+        {
+            "attributeId": "n/a",
+            "binsize": "n/a",
+            "categoryId": "x3"
+        },
+        {
+            "attributeId": "n/a",
+            "binsize": "n/a",
+            "categoryId": "x4"
+        },
+        {
+            "attributeId": "patient.attributes.pcount",
+            "binsize": "n/a",
+            "categoryId": "y1"
+        }
+    ],
+    "metadata": {
+        "version": 3
+    },
+    "datasetId": "180792d3-e654-4d6c-bae6-8965504a6c9c"
+}

@@ -1,0 +1,206 @@
+{
+    "id": 2,
+    "name": "New cohort",
+    "description": "Generated from a D2E Cohort Definition",
+    "expressionType": "SIMPLE_EXPRESSION",
+    "expression": {
+        "ConceptSets": [
+            {
+                "id": 0,
+                "name": "patient.interactions.conditionoccurrence.1.attributes.conditionconceptset",
+                "expression": {
+                    "items": [
+                        {
+                            "concept": {
+                                "DOMAIN_ID": "Condition",
+                                "CONCEPT_ID": 201826,
+                                "CONCEPT_CODE": "44054006",
+                                "CONCEPT_NAME": "Type 2 diabetes mellitus",
+                                "VOCABULARY_ID": "SNOMED",
+                                "VALID_END_DATE": "2099-12-31",
+                                "CONCEPT_CLASS_ID": "Disorder",
+                                "STANDARD_CONCEPT": "S",
+                                "VALID_START_DATE": "2002-01-31",
+                                "STANDARD_CONCEPT_CAPTION": "Standard"
+                            },
+                            "includeMapped": false,
+                            "includeDescendants": false
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 1,
+                "name": "patient.interactions.conditionoccurrence.2.attributes.conditionconceptset",
+                "expression": {
+                    "items": [
+                        {
+                            "concept": {
+                                "DOMAIN_ID": "Condition",
+                                "CONCEPT_ID": 37018196,
+                                "CONCEPT_CODE": "714628002",
+                                "CONCEPT_NAME": "Prediabetes",
+                                "VOCABULARY_ID": "SNOMED",
+                                "VALID_END_DATE": "2099-12-31",
+                                "CONCEPT_CLASS_ID": "Clinical Finding",
+                                "STANDARD_CONCEPT": "S",
+                                "VALID_START_DATE": "2016-01-31",
+                                "STANDARD_CONCEPT_CAPTION": "Standard"
+                            },
+                            "includeMapped": false,
+                            "includeDescendants": false
+                        }
+                    ]
+                }
+            }
+        ],
+        "CensorWindow": {},
+        "InclusionRules": [
+            {
+                "name": "Inclusion Criteria 1",
+                "expression": {
+                    "Type": "ALL",
+                    "Groups": [],
+                    "CriteriaList": [],
+                    "DemographicCriteriaList": [
+                        {
+                            "Age": {
+                                "Op": "gt",
+                                "Value": 60
+                            },
+                            "Gender": [
+                                {
+                                    "DOMAIN_ID": "Gender",
+                                    "CONCEPT_ID": 8507,
+                                    "CONCEPT_CODE": "M",
+                                    "CONCEPT_NAME": "MALE",
+                                    "VOCABULARY_ID": "Gender"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Inclusion Criteria 2",
+                "expression": {
+                    "Type": "ANY",
+                    "Groups": [],
+                    "CriteriaList": [
+                        {
+                            "Criteria": {
+                                "ConditionOccurrence": {
+                                    "CodesetId": 0
+                                }
+                            },
+                            "Occurrence": {
+                                "Type": 2,
+                                "Count": 1
+                            },
+                            "StartWindow": {
+                                "End": {
+                                    "Coeff": 1
+                                },
+                                "Start": {
+                                    "Coeff": -1
+                                },
+                                "UseEventEnd": false
+                            }
+                        },
+                        {
+                            "Criteria": {
+                                "Death": {}
+                            },
+                            "Occurrence": {
+                                "Type": 2,
+                                "Count": 1
+                            },
+                            "StartWindow": {
+                                "End": {
+                                    "Coeff": 1
+                                },
+                                "Start": {
+                                    "Coeff": -1
+                                },
+                                "UseEventEnd": false
+                            }
+                        }
+                    ],
+                    "DemographicCriteriaList": []
+                }
+            },
+            {
+                "name": "Inclusion Criteria 3",
+                "expression": {
+                    "Type": "ANY",
+                    "Groups": [],
+                    "CriteriaList": [
+                        {
+                            "Criteria": {
+                                "ConditionOccurrence": {
+                                    "CodesetId": 1
+                                }
+                            },
+                            "Occurrence": {
+                                "Type": 2,
+                                "Count": 1
+                            },
+                            "StartWindow": {
+                                "End": {
+                                    "Coeff": 1
+                                },
+                                "Start": {
+                                    "Coeff": -1
+                                },
+                                "UseEventEnd": false
+                            }
+                        }
+                    ],
+                    "DemographicCriteriaList": []
+                }
+            }
+        ],
+        "QualifiedLimit": {
+            "Type": "First"
+        },
+        "ExpressionLimit": {
+            "Type": "First"
+        },
+        "PrimaryCriteria": {
+            "CriteriaList": [
+                {
+                    "ObservationPeriod": {
+                        "PeriodEndDate": {
+                            "Op": "lt",
+                            "Value": "2999-01-01"
+                        },
+                        "PeriodStartDate": {
+                            "Op": "gt",
+                            "Value": "1800-01-01"
+                        }
+                    }
+                }
+            ],
+            "ObservationWindow": {
+                "PostDays": 0,
+                "PriorDays": 0
+            },
+            "PrimaryCriteriaLimit": {
+                "Type": "First"
+            }
+        },
+        "cdmVersionRange": ">=5.0.0",
+        "CollapseSettings": {
+            "EraPad": 0,
+            "CollapseType": "ERA"
+        },
+        "CensoringCriteria": []
+    },
+    "createdBy": "admin",
+    "createdDate": 1748238049095,
+    "modifiedBy": "admin",
+    "modifiedDate": 1748238049095,
+    "tags": [],
+    "hasWriteAccess": true,
+    "hasReadAccess": true
+}
