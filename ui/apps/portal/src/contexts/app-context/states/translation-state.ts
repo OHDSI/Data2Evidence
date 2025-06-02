@@ -943,6 +943,7 @@ export const i18nDefault = {
     STUDY_OVERVIEW__UPDATE_DATASET_METADATA: "Update dataset metadata",
     STUDY_OVERVIEW__DATA_MODEL: "Data model",
     STUDY_OVERVIEW__DATASETS: "Datasets",
+    STUDY_OVERVIEW__FHIR_SERVER: "FHIR server",
     STUDY_OVERVIEW__LATEST_AVAILABLE: "Latest available schema version",
     STUDY_OVERVIEW__NAME: "Name",
     STUDY_OVERVIEW__NO_DATA: "No data available",

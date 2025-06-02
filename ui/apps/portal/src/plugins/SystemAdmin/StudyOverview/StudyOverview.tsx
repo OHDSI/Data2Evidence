@@ -398,7 +398,7 @@ const StudyOverview: FC = () => {
                         ? `${dataset.dataModel} [${dataset.plugin}]`
                         : dataset.fhir_project_id && (
                             <Tooltip placement="top" title={dataset.fhir_project_id}>
-                              <span>FHIR server</span>
+                              <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
                             </Tooltip>
                           )}
                     </TableCell>
