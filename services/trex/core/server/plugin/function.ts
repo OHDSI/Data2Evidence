@@ -13,7 +13,8 @@ const headers = new Headers({
 
 
 async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: string, dir: string) {
-	const myenv = Object.assign({}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv])
+	const function_name = fnEnv.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase()) ? fnEnv : `${env.PROJECT_NAME}-${fnEnv}` // Add Project prefix if not exists
+	const myenv = Object.assign({"TREX_CURRENT_USER_FUNCTION_NAME": function_name}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv])
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
@@ -41,7 +42,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 }
     
 async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string) {
-	const myenv = Object.assign({}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY})
+	const function_name = fncfg.env.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase()) ? fncfg.env : `${env.PROJECT_NAME}-${fncfg.env}` // Add Project prefix if not exists
+	const myenv = Object.assign({"TREX_CURRENT_USER_FUNCTION_NAME": function_name}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY})
 	const _myenv = Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fncfg.env] || false; 
 
