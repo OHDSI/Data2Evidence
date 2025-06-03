@@ -35,8 +35,10 @@ def scan_report_db_flow(options: WhiteRabbitRequestType):
 def scan_report_file_flow(options: WhiteRabbitRequestType):
     start_awt_display()
     file_contents = options.data.get('files', [])
+    settings = options.data.get('settings', {})
     generate_csv_files_from_json(file_contents)
-    create_white_rabbit_settings({'data_type': "Delimited text files"})
+    create_white_rabbit_settings(
+        {'data_type': "Delimited text files", **settings})
     create_scan_report()
     save_response: FileSaveResponse = save_scan_report_conversion(
         options.username)

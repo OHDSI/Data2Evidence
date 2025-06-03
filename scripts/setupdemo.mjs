@@ -1,16 +1,14 @@
 #!/usr/bin/env zx
-
-import crypto from 'crypto';
 import dotenv from 'dotenv';
 
 const args = process.argv.slice(2); 
 const vIndex_envfile = args.indexOf("-n");
+let envfile;
 if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
     envfile = (args[vIndex_envfile + 1]);
 } else {
-    var envfile = ".env";
+    envfile = ".env";
 }
-console.log(`ENVFILE: ${envfile}`);
 try {
     await $`test -f ${envfile}`;
     dotenv.config({ path: `${envfile}` });
@@ -19,55 +17,11 @@ try {
     process.exit(1)
 }
 
-const vIndex_version = args.indexOf("-v");
-if (vIndex_version !== -1 && !args[vIndex_version + 1].startsWith('-')) {
-    version = (args[vIndex_version + 1]);
-} else {
-    version = "0.7.0"; //default version
-}
-console.log(`Version: ${version}`);
-
-const vIndex_dev_mode = args.indexOf("-d");
-if (vIndex_dev_mode !== -1 && !args[vIndex_dev_mode + 1].startsWith('-') ) {
-    var dev_mode = true;
-    path = (args[vIndex_dev_mode + 1]);
-    console.log(`Dev Mode: ${dev_mode}, function path: ${path}`);
-} else {
-    var dev_mode = false;
-}
-
-
-// Database variables
-let project_name = process.env.PROJECT_NAME ? `${process.env.PROJECT_NAME}` : 'd2e';
-let database_name = 'postgres'; // actual name of database in database_host
-let database_host = `${project_name}-demodb`; //PostgreSQL container name /or/ external database FQDN
-let DEMO__DB_CODE = 'demo_database'; //display name
-let DEMO__DB_CDM_SCHEMA = 'demo_cdm';
-let DEMO__DB_USER = 'postgres';
-let DEMO__DB_PASSWORD = process.env.DEMO__DB_PASSWORD ?? 'mypass';
-var db_extra = {"max": 50, "schema":DEMO__DB_CDM_SCHEMA, "queryTimeout":60000,"statementTimeout":60000,"idleTimeoutMillis":300000,"connectionTimeoutMillis":60000,"idleInTransactionSessionTimeout":300000};
-
-const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
+const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
-async function createCredentials (password,public_key) {
-    try {
-        const salt = crypto.randomBytes(16).toString("base64");
-        var passwordSalt = password.concat(salt);
-        var encryptedCredential = crypto.publicEncrypt({
-            key: String(public_key).replace(/\\n/g, "\n"),
-            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-            oaepHash: "sha256"
-        },Buffer.from(passwordSalt));
-        return [encryptedCredential.toString("base64"),salt];
-    } catch {
-        console.log(chalk.red('Error in creating credentials'));
-    }
-}; 
-let [encryptedCredentialsRead, saltRead] = await createCredentials(DEMO__DB_PASSWORD, public_key); // read scope
-let [encryptedCredentialsAdmin, saltAdmin] = await createCredentials(DEMO__DB_PASSWORD, public_key); // admin scope
 
 var response= await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256"`
 
@@ -146,68 +100,77 @@ var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/oauth/token' 
 
 var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\\([^"]*\\)"/\\1/'`
 
-var payload = JSON.stringify({
-    "host": database_host,
-    "port": 5432,
-    "code": DEMO__DB_CODE,
-    "name": database_name,
-    "dialect": "postgres",
-    "extra": {
-        "Internal": db_extra
-    },
-    "credentials": [
-        {
-            "username": DEMO__DB_USER,
-            "password": encryptedCredentialsAdmin,
-            "salt": saltAdmin,
-            "userScope": "Admin",
-            "serviceScope": "Internal"
-        },
-        {
-            "username": DEMO__DB_USER,
-            "password": encryptedCredentialsRead,
-            "salt": saltRead,
-            "userScope": "Read",
-            "serviceScope": "Internal"
-        }
-    ],
-    "vocabSchemas": [
-        DEMO__DB_CDM_SCHEMA
-    ], 
-    "authenticationMode": "Password",
-    "publications" : [
-       { 
-            "slot": "data2evidence",
-            "publication": `${DEMO__DB_CODE}_publication`,
-       }
-    ]
-})
-try { 
-    var resp = await $`(curl -ks -w "status_code:%{http_code}" --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/trex/db/' \
-    --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
+// Setup demo dataset
+const encryptionKeysObj = {
+    DataPlatform: "",
+    Internal: public_key
+};
+const payload = JSON.stringify({
+    encryptionKeys: JSON.stringify(encryptionKeysObj)
+});
+
+var resp = await $`curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
     --header 'Content-Type: application/json' \
     --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-    --data ${payload})`
+    --data ${payload}`;
+
+var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"message":"\\([^"]*\\)"/\\1/'`
+var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`
+console.log(chalk.blue(`${resp_message}`));       
+var progress_status = "inprogress";
+
+try { 
+    while (progress_status == "inprogress") {
+        var resp = await $`curl -ks --location --request GET 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/progress/${progress_id}' \
+        --header 'Content-Type: application/x-www-form-urlencoded' \
+        --header 'Authorization: Bearer ${BEARER_TOKEN}'`
+        const data = JSON.parse(resp);
+        for (const step of data.steps) {
+            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`)
+        }
+        var progress_status = await $`echo ${resp} | grep -o '"status":"[^"]*"' | tail -n 1 | sed 's/"status":"\\([^"]*\\)"/\\1/'`
+        console.log(`progress_status: ${progress_status}\n`);
+        if (progress_status == "inprogress") { 
+            console.log(`Setup in progress...`);  
+           await $`sleep 15`
+        } else if (progress_status == "completed") {
+            console.log(chalk.green(`Setup completed succcessfully. Go to Job Runs to view the result.\n`));
+        }
+        else {
+            console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
+            process.exit(1)
+        }
+    }
 } catch (error) { 
     console.error(error);
-}
-var resp_status_code = await $`echo ${resp} | grep -o 'status_code:[0-9]*' | awk -F':' '{print $2}'`
-
-if (resp_status_code == '200') { 
-    console.log(chalk.green(`Setup database completed successfully.`));
-} else {
-    console.log(chalk.red(`Setup database unsuccessful.`));
-    console.log(`resp: ${resp}`)
     process.exit(1)
 }
 
-/*
-if (dev_mode) {
-    console.log(`Restarting services with ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`);
-    await $`ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} stop`
-    await $`ENV_TYPE=${ENV_TYPE} CADDY__CONFIG=${CADDY__CONFIG} npx d2e -e -v ${version} -d ${path} start`
-} else { 
-    console.log(`Restarting services with d2e -e -v ${version} stop`);
-    await $`d2e -e -v ${version} stop`
-    await $`d2e -e -v ${version} start`
-}*/
+if (progress_status == "completed") {
+    // Adding admin user access permissions to demo dataset  
+    console.log(chalk.blue(`Adding admin user access permissions to demo dataset...\n`));
+    var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list/systemadmin' \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --header 'Authorization: Bearer ${BEARER_TOKEN}'`    
+    var resp = JSON.parse(resp);
+    for (var i = 0; i < resp.length; i++) {
+        var data = resp[i];
+        var databaseName = data['databaseName'];
+        if (databaseName == "demo_database") {
+            var studyId = data['id'];
+            var tenantId = data['tenant']['id'];
+        }
+    }
+    var response = await $`curl -iks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/usermgmt/api/user-group/register-study-roles' \
+            --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
+            --header 'client_id: ${app_client_id}' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer ${BEARER_TOKEN}' \
+            --data '{
+            "userIds": ["a6660e40-261e-4782-873e-f76b4328aecf"],
+            "tenantId": "${tenantId}",
+            "studyId": "${studyId}",
+            "roles": ["RESEARCHER"]
+            }'`
+    console.log(chalk.green(`Completed adding admin user access permissions to demo dataset.`));
+} 
