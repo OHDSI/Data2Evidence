@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { FC } from "react";
+import { useTranslation } from "../../../contexts";
 import "./OverwriteAllConfirmDialog.scss";
 
 interface OverwriteAllConfirmDialogProps {
@@ -26,13 +27,15 @@ export const OverwriteAllConfirmDialog: FC<OverwriteAllConfirmDialogProps> = ({
   onConfirm,
   loading,
 }) => {
+  const { getText, i18nKeys } = useTranslation();
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth className="overwrite-dialog">
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             <Warning color="warning" />
-            Overwrite All Local Flows
+            {getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_TITLE)}
           </Box>
           <IconButton
             onClick={onClose}
@@ -51,34 +54,36 @@ export const OverwriteAllConfirmDialog: FC<OverwriteAllConfirmDialogProps> = ({
 
       <DialogContent>
         <Typography variant="body1" paragraph>
-          This operation will:
+          {getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_DESCRIPTION)}
         </Typography>
         <Box component="ul" sx={{ pl: 2, mb: 2 }}>
           <Typography component="li" variant="body2">
-            <strong>Delete all existing local data transformation flows</strong>
+            <strong>{getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_DELETE_FLOWS)}</strong>
           </Typography>
           <Typography component="li" variant="body2">
-            <strong>Delete all local flow revisions and history</strong>
+            <strong>{getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_DELETE_HISTORY)}</strong>
           </Typography>
           <Typography component="li" variant="body2">
-            Import all flows from the remote Git repository
+            {getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_IMPORT_FLOWS)}
           </Typography>
           <Typography component="li" variant="body2">
-            Create new local flows with version 1
+            {getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_CREATE_NEW)}
           </Typography>
         </Box>
 
         <Alert severity="error">
           <Typography variant="body2">
-            <strong>Warning:</strong> All local changes not synchronized to the remote repository will be permanently
-            lost.
+            <strong>{getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_WARNING_TITLE)}</strong>{" "}
+            {getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_WARNING_MESSAGE)}
           </Typography>
         </Alert>
       </DialogContent>
 
       <DialogActions className="overwrite-dialog__actions">
         <Button onClick={onConfirm} variant="contained" color="primary" disabled={loading} sx={{ minWidth: 120 }}>
-          {loading ? "Processing..." : "Overwrite All"}
+          {loading
+            ? getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_PROCESSING)
+            : getText(i18nKeys.GIT_CONFIG__OVERWRITE_DIALOG_CONFIRM)}
         </Button>
       </DialogActions>
     </Dialog>

@@ -881,5 +881,15 @@
   "GIT_CONFIG__SYNC_ALL_FLOWS": "Alle Flows von Remote synchronisieren",
   "GIT_CONFIG__CONFIGURE_FIRST": "Bitte konfigurieren Sie zuerst die Datenfluss-Git-Repository-URL und den Branch.",
   "GIT_CONFIG__SYNC_SUCCESS": "{0} Flows erfolgreich aus Remote-Repository importiert",
-  "GIT_CONFIG__SYNC_ERROR": "Synchronisierung der Flows aus Remote-Repository fehlgeschlagen"
+  "GIT_CONFIG__SYNC_ERROR": "Synchronisierung der Flows aus Remote-Repository fehlgeschlagen",
+  "GIT_CONFIG__OVERWRITE_DIALOG_TITLE": "Alle lokalen Flows überschreiben",
+  "GIT_CONFIG__OVERWRITE_DIALOG_DESCRIPTION": "Diese Operation wird:",
+  "GIT_CONFIG__OVERWRITE_DIALOG_DELETE_FLOWS": "Alle bestehenden lokalen Datentransformations-Flows löschen",
+  "GIT_CONFIG__OVERWRITE_DIALOG_DELETE_HISTORY": "Alle lokalen Flow-Revisionen und Historie löschen",
+  "GIT_CONFIG__OVERWRITE_DIALOG_IMPORT_FLOWS": "Alle Flows aus dem Remote-Git-Repository importieren",
+  "GIT_CONFIG__OVERWRITE_DIALOG_CREATE_NEW": "Neue lokale Flows mit Version 1 erstellen",
+  "GIT_CONFIG__OVERWRITE_DIALOG_WARNING_TITLE": "Warnung:",
+  "GIT_CONFIG__OVERWRITE_DIALOG_WARNING_MESSAGE": "Alle lokalen Änderungen, die nicht mit dem Remote-Repository synchronisiert wurden, gehen dauerhaft verloren.",
+  "GIT_CONFIG__OVERWRITE_DIALOG_PROCESSING": "Verarbeitung...",
+  "GIT_CONFIG__OVERWRITE_DIALOG_CONFIRM": "Alle überschreiben"
 }
