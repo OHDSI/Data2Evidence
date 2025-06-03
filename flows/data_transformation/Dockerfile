@@ -49,7 +49,6 @@ RUN apt-get update && \
     libicu-dev \
     libjpeg-dev \
     libpng-dev \
-    libpq-dev \
     libprotobuf-dev \
     libsodium23 libsodium-dev libsecret-tools \
     libssh2-1-dev \
