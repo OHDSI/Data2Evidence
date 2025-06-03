@@ -266,8 +266,9 @@
           "imports": "/d2e-webapi/deno.json"
         },
         {
-          "source": "/mlflow*",
-          "service": "mlflow"
+          "source": "/mlflow",
+          "service": "mlflow",
+          "rmsrc": true
         }
       ],
       "roles": {
