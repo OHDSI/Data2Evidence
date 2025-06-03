@@ -142,7 +142,7 @@ jobs:
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
+            DOCKER_BUILD_CONTEXT_PATH: .
 
     steps:
       - name: Free Disk Space (Ubuntu)

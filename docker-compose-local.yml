@@ -2,8 +2,8 @@ services:
   trex:
     command: npm run startdev
     build:
-      context: ./services/trex
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/trex/Dockerfile
     ports:
       - 9229:9229
       - 25432:5432
