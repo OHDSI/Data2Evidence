@@ -33,6 +33,10 @@
             <TaskRunDetails alternate :task-run="taskRun" />
         </template>
     </p-layout-well>
+
+    <p-layout-well v-else>
+        <Loader/>
+    </p-layout-well>
 </template>
 
 <script lang="ts" setup>
@@ -42,6 +46,7 @@ import { useRouteParam, useRouteQueryParam, useSubscriptionWithDependencies } fr
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { routes } from '@/router'
+import Loader from '@/components/Loader.vue'
 
 const router = useRouter()
 const taskRunId = useRouteParam('taskRunId')
