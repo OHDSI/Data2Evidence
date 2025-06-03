@@ -16,8 +16,6 @@ export interface SourceToTableMap {
 }
 
 export interface SqlNodeData extends NodeDataState {
-  tables: { [key: string]: string[] };
-  uiTables: SourceToTableMap[];
   sql: string;
 }
 
