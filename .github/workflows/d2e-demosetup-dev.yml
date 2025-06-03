@@ -102,6 +102,31 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions start
+
+      - name: e2e tests setup
+        run: |
+          cd ./tests/e2e
+          npm install
+          npm run init
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          npm run test
+
+      - name: Upload Error Context
+        if: always()  # Always run, even if the previous step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context
+          path: tests/e2e/test-results/**/*
+
+
       - name: Stop d2e services
         if: success() || failure()
         id: stop
