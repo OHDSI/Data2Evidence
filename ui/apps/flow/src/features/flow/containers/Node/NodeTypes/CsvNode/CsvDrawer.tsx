@@ -26,7 +26,12 @@ import {
   setNode,
 } from "~/features/flow/reducers";
 import { selectFlowNodes } from "~/features/flow/selectors";
-import { useDeleteNodeCsvFileMutation, useGetLatestDataflowByIdQuery, useSaveDataflowMutation, useUploadNodeCsvFileMutation } from "~/features/flow/slices/dataflow-slice";
+import {
+  useDeleteNodeCsvFileMutation,
+  useGetLatestDataflowByIdQuery,
+  useSaveDataflowMutation,
+  useUploadNodeCsvFileMutation,
+} from "~/features/flow/slices/dataflow-slice";
 import { KeyValue, NodeState, SaveDataflowDto } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
@@ -103,27 +108,6 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
     }
   }, [hiddenFileInput]);
 
-  const autoSaveFlow = useCallback(async () => {
-    if (!dataflowId) return;
-
-    try {
-      const dataflowData: SaveDataflowDto = {
-        id: dataflowId,
-        name: dataflow?.canvas?.name,
-        dataflow: {
-          nodes,
-          edges,
-          comment: 'Auto-saved after CSV upload'
-        },
-      };
-      
-      await saveDataflow(dataflowData);
-      dispatch(markStatusAsSaved());
-    } catch (error) {
-      console.error("Auto-save failed:", error);
-    }
-  }, [dataflowId, nodes, edges, saveDataflow, dataflow?.canvas?.name]);
-
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files || e.target.files.length == 0) return;
@@ -137,26 +121,41 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
         if (formData.file) {
           await deleteCsvFile({
             nodeId: node.id,
-            fileName: formData.file
+            fileName: formData.file,
           }).unwrap();
         }
 
         await uploadCsvFile({
           nodeId: node.id,
-          file
+          file,
         }).unwrap();
 
         const updatedFormData = { ...formData, file: file.name };
         onFormDataChange({ file: file.name });
-        
-        const updated: NodeState<CsvNodeData> = {
+
+        const updatedNode: NodeState<CsvNodeData> = {
           ...nodeState,
           data: updatedFormData,
         };
-        dispatch(setNode(updated));
-        // Auto-save the flow after successful upload
-        await autoSaveFlow();
+        dispatch(setNode(updatedNode));
 
+        // Auto-save with the updated node data
+        const updatedNodes = nodes.map((n) =>
+          n.id === node.id ? updatedNode : n
+        );
+
+        const dataflowData: SaveDataflowDto = {
+          id: dataflowId,
+          name: dataflow?.canvas?.name,
+          dataflow: {
+            nodes: updatedNodes,
+            edges,
+            comment: "Auto-saved after CSV upload",
+          },
+        };
+
+        await saveDataflow(dataflowData);
+        dispatch(markStatusAsSaved());
       } catch (error) {
         console.error("File upload failed:", error);
         setSelectedFile(undefined);
@@ -164,7 +163,19 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
         setIsUploading(false);
       }
     },
-    [onFormDataChange, formData, node.id, uploadCsvFile, deleteCsvFile, nodeState, autoSaveFlow]
+    [
+      onFormDataChange,
+      formData,
+      node.id,
+      uploadCsvFile,
+      deleteCsvFile,
+      nodeState,
+      nodes,
+      edges,
+      dataflowId,
+      saveDataflow,
+      dataflow?.canvas?.name,
+    ]
   );
 
   const handleOk = useCallback(() => {
@@ -177,6 +188,8 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
 
     typeof onClose === "function" && onClose();
   }, [formData]);
+
+  const displayFileName = selectedFile?.name || formData.file;
 
   return (
     <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
@@ -206,7 +219,11 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
           disabled={isUploading}
           style={{ marginRight: 7 }}
         />
-        <div>{selectedFile?.name}</div>
+        {displayFileName && (
+          <div>
+            {displayFileName}
+          </div>
+        )}
         <input
           type="file"
           accept=".csv"
@@ -247,7 +264,9 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
             freeSolo
             options={[]}
             value={formData.columns}
-            onChange={(event, columns: string[]) => onFormDataChange({ columns })}
+            onChange={(event, columns: string[]) =>
+              onFormDataChange({ columns })
+            }
             renderInput={(params) => (
               <TextField {...params} label="Columns" variant="standard" />
             )}

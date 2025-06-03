@@ -366,3 +366,9 @@ export interface NodeData {
   errorMessage: string | null;
   nodeName: string;
 }
+
+export interface CsvFileOperationResponse {
+  status: "success";
+  filePath: string;
+  bucket: string;
+}
