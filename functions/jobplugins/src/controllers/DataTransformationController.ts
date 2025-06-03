@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import multer from "multer";
-import { TransformationService as DataTransformationService } from "../services/DataTransformationService.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { TransformationService as DataTransformationService } from "../services/DataTransformationService.ts";
 
 const upload = multer({ storage: multer.memoryStorage() });
 export class DataTransformationController {
@@ -48,7 +48,10 @@ export class DataTransformationController {
     try {
       const { id } = req.params;
       const token = req.headers["authorization"];
-      const result = await this.dataTransformationService.deleteCanvas(id, token);
+      const result = await this.dataTransformationService.deleteCanvas(
+        id,
+        token
+      );
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in deleteCanvas: ", error);
@@ -126,11 +129,15 @@ export class DataTransformationController {
       const authHeader = req.headers["authorization"];
 
       if (!authHeader) {
-        return res.status(401).json({ message: "Authorization header is required" });
+        return res
+          .status(401)
+          .json({ message: "Authorization header is required" });
       }
 
       if (!nodeId) {
-        return res.status(400).json({ message: "nodeId query parameter is required" });
+        return res
+          .status(400)
+          .json({ message: "nodeId query parameter is required" });
       }
 
       if (!req.file) {
@@ -138,17 +145,17 @@ export class DataTransformationController {
       }
 
       // Validate CSV file type
-      if (!req.file.originalname.toLowerCase().endsWith('.csv')) {
+      if (!req.file.originalname.toLowerCase().endsWith(".csv")) {
         return res.status(400).json({ message: "Only CSV files are allowed" });
       }
 
       const file = new File([req.file.buffer], req.file.originalname, {
-        type: req.file.mimetype || 'text/csv'
+        type: req.file.mimetype || "text/csv",
       });
 
       const portalAPI = new PortalServerAPI(authHeader);
       const result = await portalAPI.uploadCsvFile(nodeId as string, file);
-      
+
       return res.status(200).json(result);
     } catch (error) {
       console.error("Error in uploadCsvFile: ", error);
@@ -162,20 +169,73 @@ export class DataTransformationController {
       const authHeader = req.headers["authorization"];
 
       if (!authHeader) {
-        return res.status(401).json({ message: "Authorization header is required" });
+        return res
+          .status(401)
+          .json({ message: "Authorization header is required" });
       }
 
       if (!nodeId || !fileName) {
-        return res.status(400).json({ message: "nodeId and fileName query parameters are required" });
+        return res.status(400).json({
+          message: "nodeId and fileName query parameters are required",
+        });
       }
 
       const portalAPI = new PortalServerAPI(authHeader);
-      const result = await portalAPI.deleteCsvFile(nodeId as string, fileName as string);
-      
+      const result = await portalAPI.deleteCsvFile(
+        nodeId as string,
+        fileName as string
+      );
+
       return res.status(200).json(result);
     } catch (error) {
       console.error("Error in deleteCsvFile: ", error);
       return res.status(500).json({ message: error.message });
+    }
+  }
+
+  private async overwriteCanvasFromRemote(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const token = req.headers["authorization"];
+      const result =
+        await this.dataTransformationService.overwriteCanvasFromRemote(
+          id,
+          token
+        );
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error("Error in overwriteCanvasFromRemote: ", error);
+      return res.status(500).send({ message: error.message });
+    }
+  }
+
+  private async checkCanvasDiffFromRemote(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const token = req.headers["authorization"];
+      const result =
+        await this.dataTransformationService.checkCanvasDiffFromRemote(
+          id,
+          token
+        );
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error("Error in checkCanvasDiffFromRemote: ", error);
+      return res.status(500).send({ message: error.message });
+    }
+  }
+
+  private async overwriteAllCanvasesFromRemote(req: Request, res: Response) {
+    try {
+      const token = req.headers["authorization"];
+      const result =
+        await this.dataTransformationService.overwriteAllCanvasesFromRemote(
+          token
+        );
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error("Error in overwriteAllCanvasesFromRemote: ", error);
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -190,8 +250,25 @@ export class DataTransformationController {
     );
     this.router.post("/", this.createCanvas.bind(this));
     this.router.get("/:id/flow-run-results", this.getResultsById.bind(this));
-    this.router.post("/file/csv", upload.single("file"), this.uploadCsvFile.bind(this));
+    this.router.post(
+      "/file/csv",
+      upload.single("file"),
+      this.uploadCsvFile.bind(this)
+    );
     this.router.delete("/file/csv", this.deleteCsvFile.bind(this));
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));
+
+    this.router.get(
+      "/:id/remote-diff-check",
+      this.checkCanvasDiffFromRemote.bind(this)
+    );
+    this.router.post(
+      "/:id/overwrite-from-remote",
+      this.overwriteCanvasFromRemote.bind(this)
+    );
+    this.router.post(
+      "/overwrite-all-from-remote",
+      this.overwriteAllCanvasesFromRemote.bind(this)
+    );
   }
 }
