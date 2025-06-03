@@ -146,6 +146,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     centerViewport(savedNodes);
   }, [dataflow, centerViewport]);
 
+  const handleNodesDelete = useCallback(() => {
+    dispatch(markStatusAsDraft());
+  }, []);
+
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const updates = applyNodeChanges(changes, nodes);
@@ -445,6 +449,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         fitView
         fitViewOptions={fitViewOptions}
         nodeTypes={NODE_TYPES}
+        onNodesDelete={handleNodesDelete}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
