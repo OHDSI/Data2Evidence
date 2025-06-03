@@ -1096,6 +1096,21 @@ export const i18nDefault = {
     GIT_CONFIG__SAVE: "Save",
     GIT_CONFIG__SUCCESS: "Git configuration saved successfully",
     GIT_CONFIG__ERROR: "Failed to save Git configuration",
+    GIT_CONFIG__SYNC_ALL_FLOWS: "Synchronize all flows from remote",
+    GIT_CONFIG__CONFIGURE_FIRST: "Please configure the dataflow Git repository URL and branch first.",
+    GIT_CONFIG__SYNC_SUCCESS: "Successfully imported {0} flows from remote repository.",
+    GIT_CONFIG__SYNC_ERROR: "Failed to import flows from remote repository.",
+    GIT_CONFIG__OVERWRITE_DIALOG_TITLE: "Overwrite All Local Flows",
+    GIT_CONFIG__OVERWRITE_DIALOG_DESCRIPTION: "This operation will:",
+    GIT_CONFIG__OVERWRITE_DIALOG_DELETE_FLOWS: "Delete all existing local data transformation flows",
+    GIT_CONFIG__OVERWRITE_DIALOG_DELETE_HISTORY: "Delete all local flow revisions and history",
+    GIT_CONFIG__OVERWRITE_DIALOG_IMPORT_FLOWS: "Import all flows from the remote Git repository",
+    GIT_CONFIG__OVERWRITE_DIALOG_CREATE_NEW: "Create new local flows with version 1",
+    GIT_CONFIG__OVERWRITE_DIALOG_WARNING_TITLE: "Warning:",
+    GIT_CONFIG__OVERWRITE_DIALOG_WARNING_MESSAGE:
+      "All local changes not synchronized to the remote repository will be permanently lost.",
+    GIT_CONFIG__OVERWRITE_DIALOG_PROCESSING: "Processing...",
+    GIT_CONFIG__OVERWRITE_DIALOG_CONFIRM: "Overwrite All",
   },
 };
 
