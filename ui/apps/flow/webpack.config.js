@@ -31,6 +31,11 @@ module.exports = (env, argv) => {
           context: ['/dataflow-mgmt'],
           target: 'https://localhost:41100',
           secure: false
+        },
+        {
+          context: ['/mapping'],
+          target: 'https://localhost:41100',
+          secure: false
         }
       ]
     },

@@ -1,9 +1,15 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
-import { useNavigate } from "react-router-dom";
 import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
 import { api } from "../../axios/api";
-import { ScannedSchemaState, TableSourceHandleData, useField, useScannedSchema, useTable } from "../../contexts";
+import {
+  ScannedSchemaState,
+  TableSourceHandleData,
+  useApp,
+  useField,
+  useScannedSchema,
+  useTable,
+} from "../../contexts";
 import { ScanDataSourceTable } from "../../types/scanDataDialog";
 import { buildFieldHandle, getColumns, saveBlobAs } from "../../utils/utils";
 import { CloseDialogType } from "../ScanDataDialog/ScanDataDialog";
@@ -32,10 +38,10 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const [log, setLog] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
+  const { setPage } = useApp();
   const { setTableSourceHandles } = useTable();
   const { setFieldSourceHandles } = useField();
   const { setScannedSchema } = useScannedSchema();
-  const navigate = useNavigate();
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -84,11 +90,11 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
       setScannedSchema(scannedResult);
       updateNodeInternals(nodeId);
       handleClose("success");
-      navigate("");
+      setPage("table");
     } catch (error) {
       console.log(`Error creating source schema`);
     }
-  }, [scanId, nodeId, navigate]);
+  }, [scanId, nodeId]);
 
   const fetchScanProgress = useCallback(async () => {
     try {

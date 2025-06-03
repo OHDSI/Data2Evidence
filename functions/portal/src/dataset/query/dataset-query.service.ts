@@ -105,7 +105,7 @@ export class DatasetQueryService {
     }
 
     const datasets = await query.getMany()
-    const tenant = this.tenantService.getTenant()
+        const tenant = this.tenantService.getTenant()
 
     let dbFilterResults
     if (isResearcher && hasFilterParams) {
@@ -171,7 +171,7 @@ export class DatasetQueryService {
   private getDatasetsColumns(role?: string) {
     const baseColumns = [...this.getDatasetBaseColumns(), 'dataset.tokenDatasetCode']
     if (role === 'systemAdmin') {
-      return baseColumns.concat(['dataset.paConfigId', 'dataset.type', 'dataset.visibilityStatus'])
+      return baseColumns.concat(['dataset.paConfigId', 'dataset.type', 'dataset.visibilityStatus', 'dataset.fhir_project_id'])
     }
     return baseColumns
   }

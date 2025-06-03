@@ -1,29 +1,33 @@
 import { FC, useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
 import { TableMapLayout } from "./Table/TableMapLayout";
 import { FieldMapLayout } from "./Field/FieldMapLayout";
 import { MappingFileDialogController } from "./components/MappingFileDialogController";
-import { useApp } from "./contexts";
+import { AppState, useApp } from "./contexts";
 import "./MappingLayout.css";
 
 interface MappingLayoutProps {
   mappingSuggestion?: boolean;
+  data?: AppState;
 }
 
-export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion }) => {
-  const { setMappingSuggestion } = useApp();
+export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, data }) => {
+  const { load, reset, setMappingSuggestion, setPage, state } = useApp();
 
   useEffect(() => {
+    if (data) {
+      load(data);
+    } else {
+      reset();
+    }
+    setPage("table");
     setMappingSuggestion(mappingSuggestion || false);
-  }, [mappingSuggestion]);
+  }, [mappingSuggestion, data]);
 
   return (
     <div className="mapping-layout">
       <div className="content-container">
-        <Routes>
-          <Route index element={<TableMapLayout />} />
-          <Route path="link-fields" element={<FieldMapLayout />} />
-        </Routes>
+        {state.page === "table" && <TableMapLayout />}
+        {state.page === "field" && <FieldMapLayout />}
         <MappingFileDialogController />
       </div>
     </div>
