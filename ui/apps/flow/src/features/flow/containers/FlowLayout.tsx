@@ -1,3 +1,4 @@
+import { Box, Button, IconButton } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -6,23 +7,23 @@ import React, {
   useMemo,
 } from "react";
 import { useSelector } from "react-redux";
-import { Box, Button } from "@portal/components";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { dispatch, RootState } from "../../../store";
+import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
-import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
-import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
-import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
+import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
+import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
+import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
 import { FlowListSelect } from "./Flow/FlowList/FlowListSelect";
 import { FlowPanel } from "./Flow/FlowPanel/FlowPanel";
 import { FlowRevisionsButton } from "./Flow/FlowRevisions/FlowRevisionsButton";
-import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
-import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
-import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
+import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
+import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
+import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
+import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
 import "./FlowLayout.scss";
-import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
+import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
 
 interface FlowLayoutProps {
   isStandalone: boolean;
@@ -31,9 +32,12 @@ interface FlowLayoutProps {
 export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const { data: dataflows, isLoading } = useGetDataflowsQuery();
-  const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
-    skip: !dataflowId,
-  });
+  const { data: dataflow, isFetching } = useGetLatestDataflowByIdQuery(
+    dataflowId,
+    {
+      skip: !dataflowId,
+    }
+  );
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
 
   const containerStyles: CSSProperties = useMemo(
@@ -83,6 +87,8 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
             <FlowRevisionsButton />
             <DeleteFlowButton />
             <ExportFlowButton />
+            <ImportFlowButton />
+            {isFetching && <IconButton loading />}
           </Box>
         </Box>
         <Box display="flex" gap={1} alignItems="center">

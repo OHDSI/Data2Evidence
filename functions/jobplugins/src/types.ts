@@ -368,10 +368,16 @@ export interface NodeData {
 }
 
 export type CanvasResult = {
-  canvasId: string;
-  revisionId: string;
-  name: string;
+      canvasId: string;
+      revisionId: string;
+      name: string;
 } | {
-  canvasId: string;
-  error: string;
-};
+      canvasId: string;
+      error: string;
+    };
+
+export interface CsvFileOperationResponse {
+  status: "success";
+  filePath: string;
+  bucket: string;
+}
