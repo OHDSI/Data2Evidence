@@ -1,3 +1,35 @@
+<script lang="ts">
+export default {
+  name: 'QueryFilterChip'
+}
+</script>
+
+<script setup lang="ts">
+import { computed, defineProps, defineEmits } from 'vue'
+import { QueryFilterChip } from '../lib/models/QueryFilterModel'
+
+const props = defineProps<{
+  chip: QueryFilterChip
+  removable?: boolean
+  variant?: 'default' | 'primary' | 'secondary'
+}>()
+
+const emit = defineEmits(['remove'])
+
+const chipClasses = computed(() => {
+  const classes: Record<string, boolean> = {
+    [`query-filter-chip--${props.variant || 'default'}`]: true,
+    'query-filter-chip--removable': props.removable ?? true,
+  }
+
+  if (props.chip.color) {
+    classes[`query-filter-chip--${props.chip.color}`] = true
+  }
+
+  return classes
+})
+</script>
+
 <template>
   <div class="query-filter-chip" :class="chipClasses">
     <span class="query-filter-chip__label">{{ chip.label }}</span>
@@ -11,48 +43,6 @@
     </button>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent, PropType, computed } from 'vue'
-import { QueryFilterChip } from '../lib/models/QueryFilterModel'
-
-export default defineComponent({
-  name: 'QueryFilterChip',
-  props: {
-    chip: {
-      type: Object as PropType<QueryFilterChip>,
-      required: true,
-    },
-    removable: {
-      type: Boolean,
-      default: true,
-    },
-    variant: {
-      type: String as PropType<'default' | 'primary' | 'secondary'>,
-      default: 'default',
-    },
-  },
-  emits: ['remove'],
-  setup(props) {
-    const chipClasses = computed(() => {
-      const classes: Record<string, boolean> = {
-        [`query-filter-chip--${props.variant}`]: true,
-        'query-filter-chip--removable': props.removable,
-      }
-
-      if (props.chip.color) {
-        classes[`query-filter-chip--${props.chip.color}`] = true
-      }
-
-      return classes
-    })
-
-    return {
-      chipClasses,
-    }
-  },
-})
-</script>
 
 <style lang="scss" scoped>
 .query-filter-chip {
@@ -179,4 +169,3 @@ export default defineComponent({
   }
 }
 </style>
-
