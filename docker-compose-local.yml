@@ -162,3 +162,6 @@ services:
   mlflow:
     ports:
       - "5000:5000"
+    build:
+      context: ./flows/base
+      dockerfile: Dockerfile

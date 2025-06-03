@@ -105,10 +105,6 @@ RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-Datab
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-# mlflow
-ARG mlflow_version=3.0.0rc3
-RUN pip install --no-cache-dir mlflow==$mlflow_version
-RUN pip install openai==0.28
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
