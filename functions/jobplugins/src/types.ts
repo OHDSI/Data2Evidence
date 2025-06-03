@@ -367,11 +367,13 @@ export interface NodeData {
   nodeName: string;
 }
 
-export type CanvasResult = {
+export type CanvasResult =
+  | {
       canvasId: string;
       revisionId: string;
       name: string;
-} | {
+    }
+  | {
       canvasId: string;
       error: string;
     };

@@ -175,11 +175,9 @@ export class DataTransformationController {
       }
 
       if (!nodeId || !fileName) {
-        return res
-          .status(400)
-          .json({
-            message: "nodeId and fileName query parameters are required",
-          });
+        return res.status(400).json({
+          message: "nodeId and fileName query parameters are required",
+        });
       }
 
       const portalAPI = new PortalServerAPI(authHeader);
