@@ -9,6 +9,7 @@ from pyqe.api.pa_config import PAConfig
 from pyqe.api.result import Result
 from pyqe.api.cohort import Cohort
 from pyqe.api.concept_query import ConceptQuery, ConceptSet, Concept
+from pyqe.api.concept_set_query import ConceptSetQuery
 from pyqe.api.datasource import DataSource
 from pyqe.ql.person import Person
 from pyqe.ql.interaction import Interactions
@@ -29,6 +30,7 @@ __all__ = [
     'Cohort',
     # pyqe.api.concept_query
     'ConceptQuery',
+    'ConceptSetQuery',
     'ConceptSet',
     'Concept',
     # pyqe.api.datasource
