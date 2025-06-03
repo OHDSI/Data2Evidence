@@ -219,11 +219,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
           disabled={isUploading}
           style={{ marginRight: 7 }}
         />
-        {displayFileName && (
-          <div>
-            {displayFileName}
-          </div>
-        )}
+        {displayFileName && <div>{displayFileName}</div>}
         <input
           type="file"
           accept=".csv"
