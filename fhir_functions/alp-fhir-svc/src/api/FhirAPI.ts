@@ -63,7 +63,7 @@ export class FhirAPI {
     httpMethod: HTTPMethod,
     queryParams: any,
     resourceDetails: any,
-    fhirHeaders: Headers
+    fhirHeaders?: Headers
   ) {
     const resourceUrl = `${this.baseUrl}/${resourcePath}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
@@ -203,6 +203,13 @@ export class FhirAPI {
   private async getBasicAuthHeader(clientCredentials: ClientCredentials) {
     const temp = `${clientCredentials.clientId}:${clientCredentials.clientSecret}`;
     return `Basic ${Buffer.from(temp).toString("base64")}`;
+  }
+
+  getAdminCredentials(): ClientCredentials{
+    return {
+      clientId: this.clientId,
+      clientSecret: this.clientSecret
+    };
   }
 }
 

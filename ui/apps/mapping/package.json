@@ -11,12 +11,12 @@
     "preview": "tsc -b && vite build && vite preview"
   },
   "dependencies": {
+    "axios": "^1.7.3",
+    "buffer": "^6.0.3",
     "classnames": "^2.5.1",
     "lodash": "^4.17.21",
-    "reactflow": "^11.11.4",
-    "axios": "^1.7.3",
     "pako": "^2.1.0",
-    "buffer": "^6.0.3"
+    "reactflow": "^11.11.4"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5.8.3",
@@ -24,11 +24,11 @@
     "@portal/components": "^1.0.0",
     "@portal/plugin": "^1.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.24.1"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.6",
+    "@types/pako": "^2.0.3",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -38,7 +38,6 @@
     "sass": "^1.77.8",
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
-    "vite-plugin-css-injected-by-js": "^3.5.1",
-    "@types/pako": "^2.0.3"
+    "vite-plugin-css-injected-by-js": "^3.5.1"
   }
 }

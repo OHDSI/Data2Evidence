@@ -33,25 +33,46 @@ patients.add_age([constraint_age_greater_than_60_years])
 patients.add_age([constraint_age_lesser_than_90_years])
 # %% [python]
 exclude_death = Interactions.Death("Death", CardType.EXCLUDED)
+
+# %% [markdown]
+Use get_all_concept_sets() method to fetch all available concept sets that you have access to.
+Use show_concept_set_list() method to print out each concept set's ID and name.
+
+# %% [python]
+conceptSetQuery = ConceptSetQuery(total_patients_query._selectedStudyId)
+await conceptSetQuery.get_all_concept_sets()
+conceptSetQuery.show_concept_set_list()
+
+# %% [markdown]
+Use get_concepts_in_concept_set() method to see all concepts in a particular concept set with concept_set_id
+
+# %% [python]
+# conceptSetQuery.get_concepts_in_concept_set(44)
+
 # %% [python]
 # Condition Concept IDs for Diabetes Mellitus 2
 
-diabetes2_condition_occ = Interactions.ConditionOccurrence("Type 2 Diabetes condition")
-diabetes2_condition_concepts = ConceptSet(
-                           'Conditions',
-                            Domain.CONDITION, 
-                           ['44054006', '8801005', '190331003', '421326000', '443694000', '422014003', '421326000']) 
+# Add in the concept set id as the comparison operator's value
+CONCEPT_SET_ID = 
 
-diabetes2_condition_occ.add_concept_set(diabetes2_condition_concepts)
+diabetes2_condition_occ = Interactions.ConditionOccurrence("Type 2 Diabetes condition")
+
+diabetes2_condition_concepts = Constraint()
+diabetes2_condition_concepts.add(Expression(ComparisonOperator.EQUAL, CONCEPT_SET_ID))
+diabetes2_condition_occ.add_condition_concept_set([diabetes2_condition_concepts])
+
 # %% [python]
 # Diabetes type 1
 
+# Add in the concept set id as the comparison operator's value
+CONCEPT_SET_ID = 
+
 diabetes1_condition_occ = Interactions.ConditionOccurrence("Type 1 Diabetes condition")
-diabetes1_condition_concepts = ConceptSet(
-                           'Conditions',
-                            Domain.CONDITION, 
-                           ['201254', '318712', '435216', '40484648', '200687', '377821']) 
-diabetes1_condition_occ.add_concept_set(diabetes1_condition_concepts)
+
+diabetes1_condition_concepts = Constraint()
+diabetes1_condition_concepts.add(Expression(ComparisonOperator.EQUAL, CONCEPT_SET_ID))
+diabetes1_condition_occ.add_condition_concept_set([diabetes1_condition_concepts])
+
 # %% [python]
 patient_criteria_group = CriteriaGroup(MatchCriteria.ALL, [patients, exclude_death])
 
