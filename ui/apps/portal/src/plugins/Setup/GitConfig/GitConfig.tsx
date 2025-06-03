@@ -1,12 +1,12 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { Box, Button, Loader, TextField, Title } from "@portal/components";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../axios/api";
-import { useConfigsByTypes, useOverwriteAllCanvasesFromRemote } from "../../../hooks";
-import { useFeedback, useTranslation } from "../../../contexts";
-import { Config } from "../../../types";
 import { ConfigTypes } from "../../../constant";
-import { OverwriteAllConfirmDialog } from "./OverwriteAllConfirmDialog";
+import { useFeedback, useTranslation } from "../../../contexts";
+import { useConfigsByTypes, useOverwriteAllCanvasesFromRemote } from "../../../hooks";
+import { Config } from "../../../types";
 import "./GitConfig.scss";
+import { OverwriteAllConfirmDialog } from "./OverwriteAllConfirmDialog";
 
 interface DataflowGitConfig {
   repoUrl: string;
@@ -135,19 +135,19 @@ export const GitConfig: FC = () => {
     setFeedback,
     getText,
     i18nKeys.GIT_CONFIG__SUCCESS,
-    i18nKeys.GIT_CONFIG__ERROR
+    i18nKeys.GIT_CONFIG__ERROR,
   ]);
 
   const handleOverwriteAllClick = useCallback(() => {
     if (!formData.dataflow.repoUrl || !formData.dataflow.branch) {
       setFeedback({
         type: "error",
-        message: "Please configure the dataflow Git repository URL and branch first.",
+        message: getText(i18nKeys.GIT_CONFIG__CONFIGURE_FIRST),
       });
       return;
     }
     setShowOverwriteDialog(true);
-  }, [formData.dataflow, setFeedback]);
+  }, [formData.dataflow, setFeedback, getText, i18nKeys]);
 
   const handleOverwriteConfirm = useCallback(async () => {
     try {
@@ -155,7 +155,7 @@ export const GitConfig: FC = () => {
 
       setFeedback({
         type: "success",
-        message: `Successfully imported ${result.processedCount} flows from remote repository.`,
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_SUCCESS).replace("{0}", result.processedCount.toString()),
         autoClose: 8000,
       });
       setShowOverwriteDialog(false);
@@ -163,10 +163,10 @@ export const GitConfig: FC = () => {
       console.error("Failed to overwrite all flows:", error);
       setFeedback({
         type: "error",
-        message: error?.message || "Failed to import flows from remote repository.",
+        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_ERROR),
       });
     }
-  }, [overwriteAllFromRemote, setFeedback]);
+  }, [overwriteAllFromRemote, setFeedback, getText, i18nKeys]);
 
   const handleOverwriteCancel = useCallback(() => {
     setShowOverwriteDialog(false);
@@ -225,7 +225,7 @@ export const GitConfig: FC = () => {
 
             <Box mb={4}>
               <Button
-                text="Synchronize All Flows from Remote"
+                text={getText(i18nKeys.GIT_CONFIG__SYNC_ALL_FLOWS)}
                 variant="contained"
                 color="primary"
                 onClick={handleOverwriteAllClick}

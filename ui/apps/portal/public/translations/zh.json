@@ -868,5 +868,18 @@
   "USER_OVERVIEW__ROLE": "角色",
   "USER_OVERVIEW__TENANT": "租户",
   "USER_OVERVIEW__USERNAME": "用户名",
-  "USER_OVERVIEW__USERS": "用户"
+  "USER_OVERVIEW__USERS": "用户",
+  "GIT_CONFIG__TITLE": "Git 仓库配置",
+  "GIT_CONFIG__DATAFLOW_SECTION": "数据流 Git 配置",
+  "GIT_CONFIG__NOTEBOOK_SECTION": "笔记本 Git 配置",
+  "GIT_CONFIG__REPO_URL_LABEL": "仓库 URL",
+  "GIT_CONFIG__PAT_LABEL": "个人访问令牌 (PAT)",
+  "GIT_CONFIG__BRANCH_LABEL": "默认分支",
+  "GIT_CONFIG__SAVE": "保存",
+  "GIT_CONFIG__SUCCESS": "Git 配置保存成功",
+  "GIT_CONFIG__ERROR": "Git 配置保存失败",
+  "GIT_CONFIG__SYNC_ALL_FLOWS": "从远程同步所有流程",
+  "GIT_CONFIG__CONFIGURE_FIRST": "请先配置数据流 Git 仓库 URL 和分支。",
+  "GIT_CONFIG__SYNC_SUCCESS": "成功从远程仓库导入 {0} 个流程",
+  "GIT_CONFIG__SYNC_ERROR": "从远程仓库同步流程失败"
 }

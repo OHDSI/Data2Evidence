@@ -1096,6 +1096,10 @@ export const i18nDefault = {
     GIT_CONFIG__SAVE: "Save",
     GIT_CONFIG__SUCCESS: "Git configuration saved successfully",
     GIT_CONFIG__ERROR: "Failed to save Git configuration",
+    GIT_CONFIG__SYNC_ALL_FLOWS: "Synchronize all flows from remote",
+    GIT_CONFIG__CONFIGURE_FIRST: "Please configure the dataflow Git repository URL and branch first.",
+    GIT_CONFIG__SYNC_SUCCESS: "Successfully imported {0} flows from remote repository.",
+    GIT_CONFIG__SYNC_ERROR: "Failed to import flows from remote repository.",
   },
 };
 
