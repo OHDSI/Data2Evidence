@@ -8,7 +8,7 @@ from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 from .types import PortalDatasetType, ExtractDatasetSchemaType
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from .liquibase import *
+from .liquibase import extract_db_schema, get_and_update_attributes, get_latest_available_version
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 from _shared_flow_utils.types import LiquibaseAction, EntityCountDistributionType
