@@ -11,6 +11,10 @@
         <VariablesTable ref="table" @delete="refresh" @update="refresh" />
       </template>
     </template>
+
+    <template v-else>
+      <Loader />
+    </template>
   </p-layout-default>
 </template>
 
@@ -18,6 +22,7 @@
   import { PageHeadingVariables, VariablesTable, VariablesPageEmptyState, useWorkspaceApi } from '@prefecthq/prefect-ui-library'
   import { useSubscription } from '@prefecthq/vue-compositions'
   import { ref, computed } from 'vue'
+  import Loader from '@/components/Loader.vue'
 
   const table = ref<typeof VariablesTable>()
   const refresh = (): void => {
