@@ -11,6 +11,8 @@ import {
   FlowRunStateDto,
   LatestDataflowItemDto,
   NodeResultDto,
+  OverwriteFromRemoteResponseDto,
+  RemoteDiffCheckResponseDto,
   SaveDataflowDto,
   SaveDataflowResponseDto,
   TestDataflowDto,
@@ -167,7 +169,7 @@ export const dataflowApiSlice = createApi({
       query: ({ nodeId, file }) => {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         return {
           url: `dataflow/file/csv?nodeId=${nodeId}`,
           method: "POST",
@@ -185,6 +187,27 @@ export const dataflowApiSlice = createApi({
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    checkRemoteDiff: builder.query<RemoteDiffCheckResponseDto, string>({
+      query: (id) => `dataflow/${id}/remote-diff-check`,
+      providesTags: (result, error, id) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+      ],
+    }),
+    overwriteCanvasFromRemote: builder.mutation<
+      OverwriteFromRemoteResponseDto,
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `dataflow/${id}/overwrite-from-remote`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+        { type: "Dataflow", id: "LIST" },
+      ],
     }),
   }),
 });
@@ -204,4 +227,6 @@ export const {
   useLazyGetFlowRunStateByIdQuery,
   useUploadNodeCsvFileMutation,
   useDeleteNodeCsvFileMutation,
+  useCheckRemoteDiffQuery,
+  useOverwriteCanvasFromRemoteMutation,
 } = dataflowApiSlice;
