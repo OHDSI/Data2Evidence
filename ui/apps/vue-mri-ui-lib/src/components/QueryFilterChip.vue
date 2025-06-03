@@ -1,7 +1,7 @@
 <template>
   <div class="query-filter-chip" :class="chipClasses">
     <span class="query-filter-chip__label">{{ chip.label }}</span>
-    <button 
+    <button
       v-if="removable"
       class="query-filter-chip__remove"
       @click="$emit('remove')"
@@ -13,50 +13,48 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, computed } from 'vue';
-import { QueryFilterChip } from '../lib/models/QueryFilterModel';
+import { defineComponent, PropType, computed } from 'vue'
+import { QueryFilterChip } from '../lib/models/QueryFilterModel'
 
 export default defineComponent({
   name: 'QueryFilterChip',
   props: {
     chip: {
       type: Object as PropType<QueryFilterChip>,
-      required: true
+      required: true,
     },
     removable: {
       type: Boolean,
-      default: true
+      default: true,
     },
     variant: {
       type: String as PropType<'default' | 'primary' | 'secondary'>,
-      default: 'default'
-    }
+      default: 'default',
+    },
   },
   emits: ['remove'],
   setup(props) {
     const chipClasses = computed(() => {
       const classes: Record<string, boolean> = {
         [`query-filter-chip--${props.variant}`]: true,
-        'query-filter-chip--removable': props.removable
-      };
-      
-      if (props.chip.color) {
-        classes[`query-filter-chip--${props.chip.color}`] = true;
+        'query-filter-chip--removable': props.removable,
       }
-      
-      return classes;
-    });
+
+      if (props.chip.color) {
+        classes[`query-filter-chip--${props.chip.color}`] = true
+      }
+
+      return classes
+    })
 
     return {
-      chipClasses
-    };
-  }
-});
+      chipClasses,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
-@import '../styles/variables';
-
 .query-filter-chip {
   display: inline-flex;
   align-items: center;
@@ -181,3 +179,4 @@ export default defineComponent({
   }
 }
 </style>
+

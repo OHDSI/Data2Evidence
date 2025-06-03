@@ -46,6 +46,7 @@
           @add-chip="handleAddChip"
           @remove-chip="handleRemoveChip"
           @show-menu="handleShowMenu"
+          @remove-filter="handleRemoveFilter"
         />
 
         <button class="btn btn-link btn-add-filter" @click="addInclusionFilter">
@@ -71,6 +72,7 @@
           @add-chip="handleAddChip"
           @remove-chip="handleRemoveChip"
           @show-menu="handleShowMenu"
+          @remove-filter="handleRemoveFilter"
         />
 
         <button class="btn btn-link btn-add-filter" @click="addExclusionFilter">
@@ -103,14 +105,24 @@
 
     <!-- Debug Output -->
     <div class="query-filter-demo__debug" v-if="showDebug">
-      <h4>Filter Configuration:</h4>
-      <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
+      <h3>Debug Information</h3>
+      <div class="debug-columns">
+        <div class="debug-column">
+          <h4>UI State JSON:</h4>
+          <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
+        </div>
+        
+        <div class="debug-column">
+          <h4>Atlas JSON:</h4>
+          <pre>{{ JSON.stringify(convertToAtlasFormat(), null, 2) }}</pre>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, reactive } from 'vue';
 import QueryFilterCard from './QueryFilterCard.vue';
 import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from '../lib/models/QueryFilterModel';
 
@@ -123,7 +135,7 @@ export default defineComponent({
     const activeTab = ref('all');
     const showExclusionSection = ref(false);
     const showDebug = ref(false);
-    const filterManager = new QueryFilterManager();
+    const filterManager = reactive(new QueryFilterManager());
 
     // Initialize with sample data
     const initializeSampleData = () => {
@@ -282,7 +294,7 @@ export default defineComponent({
 
     const clearFilters = () => {
       if (confirm('Are you sure you want to clear all filters?')) {
-        filterManager.filters = [];
+        filterManager.clearAllFilters();
         showExclusionSection.value = false;
       }
     };
@@ -296,6 +308,103 @@ export default defineComponent({
 
     const getAllFilters = () => {
       return filterManager.getAllFilters().map(f => f.toJSON());
+    };
+
+    const convertToAtlasFormat = () => {
+      // Convert UI state to Atlas cohort definition format
+      const filters = filterManager.getAllFilters();
+      
+      // Separate inclusion and exclusion filters
+      const inclusionFilters = filters.filter(f => f.type === 'inclusion');
+      const exclusionFilters = filters.filter(f => f.type === 'exclusion');
+      
+      // Build concept sets from all filters
+      const conceptSets: any[] = [];
+      let conceptSetId = 0;
+      
+      filters.forEach(filter => {
+        filter.conditions.forEach(condition => {
+          if (condition.chips.length > 0) {
+            conceptSets.push({
+              id: conceptSetId++,
+              name: condition.conceptSet || `Concept Set ${conceptSetId}`,
+              expression: {
+                items: condition.chips.map(chip => ({
+                  concept: {
+                    CONCEPT_ID: parseInt(chip.value) || 0,
+                    CONCEPT_NAME: chip.label,
+                    CONCEPT_CODE: chip.value,
+                    VOCABULARY_ID: "ICD10CM", // Default, would be dynamic in real app
+                    DOMAIN_ID: "Condition"    // Default, would be dynamic in real app
+                  },
+                  isExcluded: false,
+                  includeDescendants: true
+                }))
+              }
+            });
+          }
+        });
+      });
+      
+      // Build Atlas cohort definition
+      const atlasDef = {
+        name: "Demo Cohort",
+        description: "Cohort created from Query Filter UI",
+        expressionType: "SIMPLE_EXPRESSION",
+        ConceptSets: conceptSets,
+        PrimaryCriteria: {
+          CriteriaList: inclusionFilters.length > 0 ? 
+            inclusionFilters[0].conditions.map((condition, index) => ({
+              ConditionOccurrence: {
+                CodesetId: index,
+                First: true
+              }
+            })) : [],
+          ObservationWindow: {
+            PriorDays: 0,
+            PostDays: 0
+          }
+        },
+        InclusionRules: inclusionFilters.slice(1).map((filter, filterIndex) => ({
+          name: filter.title,
+          expression: {
+            Type: "ALL",
+            CriteriaList: [{
+              CriteriaList: filter.conditions.map((condition, condIndex) => ({
+                ConditionOccurrence: {
+                  CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
+                }
+              }))
+            }]
+          }
+        })),
+        ExclusionRules: exclusionFilters.map((filter, filterIndex) => ({
+          name: filter.title,
+          expression: {
+            Type: "ALL",
+            CriteriaList: [{
+              CriteriaList: filter.conditions.map((condition, condIndex) => ({
+                ConditionOccurrence: {
+                  CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
+                }
+              }))
+            }]
+          }
+        }))
+      };
+      
+      return atlasDef;
+    };
+
+    const handleRemoveFilter = (filterId: string) => {
+      const removed = filterManager.removeFilter(filterId);
+      if (removed) {
+        console.log('Filter removed:', filterId);
+        // Check if we should hide the exclusion section
+        if (filterManager.getExclusionFilters().length === 0) {
+          showExclusionSection.value = false;
+        }
+      }
     };
 
     return {
@@ -315,10 +424,12 @@ export default defineComponent({
       handleAddChip,
       handleRemoveChip,
       handleShowMenu,
+      handleRemoveFilter,
       applyFilters,
       clearFilters,
       exportFilters,
-      getAllFilters
+      getAllFilters,
+      convertToAtlasFormat
     };
   }
 });
@@ -352,18 +463,38 @@ export default defineComponent({
     border: 1px solid #e0e0e0;
     border-radius: 8px;
 
-    h4 {
-      margin-bottom: 12px;
-      color: #666;
+    h3 {
+      margin-bottom: 16px;
+      color: #333;
+      font-size: 18px;
     }
 
-    pre {
-      background: white;
-      padding: 16px;
-      border-radius: 4px;
-      overflow-x: auto;
-      font-size: 12px;
-      line-height: 1.5;
+    .debug-columns {
+      display: flex;
+      gap: 16px;
+      
+      .debug-column {
+        flex: 1;
+        min-width: 0; // Prevent flex items from growing beyond container
+        
+        h4 {
+          margin-bottom: 12px;
+          color: #666;
+          font-size: 14px;
+        }
+
+        pre {
+          background: white;
+          padding: 16px;
+          border-radius: 4px;
+          overflow-x: auto;
+          font-size: 12px;
+          line-height: 1.5;
+          border: 1px solid #e0e0e0;
+          max-height: 600px;
+          overflow-y: auto;
+        }
+      }
     }
   }
 }

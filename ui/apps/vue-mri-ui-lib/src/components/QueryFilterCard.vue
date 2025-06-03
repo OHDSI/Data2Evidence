@@ -2,7 +2,7 @@
   <div class="query-filter-card" :class="{ 'is-exclusion': filter.type === 'exclusion' }">
     <div class="query-filter-card__header">
       <div class="query-filter-card__header-content">
-        <button 
+        <button
           class="query-filter-card__toggle"
           @click="toggleExpanded"
           :aria-expanded="filter.isExpanded"
@@ -10,7 +10,7 @@
         >
           <i class="icon" :class="filter.isExpanded ? 'icon-chevron-down' : 'icon-chevron-right'"></i>
         </button>
-        
+
         <div class="query-filter-card__add-button">
           <button class="btn-add-event" @click="$emit('add-event')">
             <i class="icon icon-plus-circle"></i>
@@ -21,32 +21,41 @@
     </div>
 
     <div v-if="filter.isExpanded" class="query-filter-card__content">
-      <div 
-        v-for="condition in filter.conditions" 
-        :key="condition.id"
-        class="query-filter-condition"
-      >
+      <div v-for="condition in filter.conditions" :key="condition.id" class="query-filter-condition">
         <div class="query-filter-condition__header">
-          <span class="query-filter-condition__label">Condition concept set</span>
+          <span class="query-filter-condition__label">
+            {{ condition.conceptSet || 'Condition concept set' }}
+          </span>
           <div class="query-filter-condition__actions">
-            <button 
+            <button
               class="btn-icon"
               @click="editCondition(condition.id)"
               aria-label="Edit condition"
+              title="Edit condition"
             >
               <i class="icon icon-pencil"></i>
             </button>
-            <button 
+            <button
               class="btn-icon"
               @click="duplicateCondition(condition.id)"
               aria-label="Duplicate condition"
+              title="Duplicate condition"
             >
               <i class="icon icon-copy"></i>
             </button>
-            <button 
+            <button
+              class="btn-icon btn-icon--danger"
+              @click="removeCondition(condition.id)"
+              aria-label="Remove condition"
+              title="Remove condition"
+            >
+              <i class="icon icon-trash"></i>
+            </button>
+            <button
               class="btn-icon btn-icon--more"
               @click="showConditionMenu(condition.id)"
               aria-label="More options"
+              title="More options"
             >
               <i class="icon icon-ellipsis-v"></i>
             </button>
@@ -61,11 +70,7 @@
             :removable="true"
             @remove="removeChip(condition.id, chip.id)"
           />
-          <button 
-            class="btn-add-chip"
-            @click="addChip(condition.id)"
-            aria-label="Add filter"
-          >
+          <button class="btn-add-chip" @click="addChip(condition.id)" aria-label="Add filter">
             <i class="icon icon-plus"></i>
           </button>
         </div>
@@ -87,20 +92,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, computed } from 'vue';
-import { QueryFilterCardModel } from '../lib/models/QueryFilterModel';
-import QueryFilterChip from './QueryFilterChip.vue';
+import { defineComponent, PropType, computed } from 'vue'
+import { QueryFilterCardModel, QueryFilterChip as QueryFilterChipType } from '../lib/models/QueryFilterModel'
+import QueryFilterChip from './QueryFilterChip.vue'
 
 export default defineComponent({
   name: 'QueryFilterCard',
   components: {
-    QueryFilterChip
+    QueryFilterChip,
   },
   props: {
     filter: {
       type: Object as PropType<QueryFilterCardModel>,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: [
     'update:filter',
@@ -111,43 +116,98 @@ export default defineComponent({
     'remove-condition',
     'add-chip',
     'remove-chip',
-    'show-menu'
+    'show-menu',
+    'remove-filter',
   ],
   setup(props, { emit }) {
     const sidebarLabel = computed(() => {
-      return props.filter.type === 'inclusion' ? 'All Patients' : 'Exclusion';
-    });
+      return props.filter.type === 'inclusion' ? 'All Patients' : 'Exclusion'
+    })
 
     const toggleExpanded = () => {
-      props.filter.toggle();
-      emit('update:filter', props.filter);
-    };
+      props.filter.toggle()
+      emit('update:filter', props.filter)
+    }
 
     const addCondition = () => {
-      emit('add-condition', props.filter.id);
-    };
+      // Use the model's method to add a new condition
+      const newCondition = props.filter.addCondition({
+        conceptSet: 'New Concept Set',
+        chips: [],
+      })
+      emit('update:filter', props.filter)
+      emit('add-condition', props.filter.id, newCondition.id)
+    }
 
     const editCondition = (conditionId: string) => {
-      emit('edit-condition', props.filter.id, conditionId);
-    };
+      emit('edit-condition', props.filter.id, conditionId)
+    }
 
     const duplicateCondition = (conditionId: string) => {
-      emit('duplicate-condition', props.filter.id, conditionId);
-    };
+      const condition = props.filter.getCondition(conditionId)
+      if (condition) {
+        // Create a duplicate of the condition
+        const duplicatedCondition = props.filter.addCondition({
+          conceptSet: `${condition.conceptSet} (Copy)`,
+          conceptSetId: condition.conceptSetId,
+          chips: condition.chips.map(chip => ({
+            ...chip,
+            id: `chip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          })),
+          operator: condition.operator,
+        })
+        emit('update:filter', props.filter)
+        emit('duplicate-condition', props.filter.id, conditionId, duplicatedCondition.id)
+      }
+    }
+
+    const removeCondition = (conditionId: string) => {
+      const removed = props.filter.removeCondition(conditionId)
+      if (removed) {
+        emit('update:filter', props.filter)
+        emit('remove-condition', props.filter.id, conditionId)
+      }
+    }
 
     const showConditionMenu = (conditionId: string) => {
-      emit('show-menu', props.filter.id, conditionId);
-    };
+      emit('show-menu', props.filter.id, conditionId)
+    }
 
     const addChip = (conditionId: string) => {
-      emit('add-chip', props.filter.id, conditionId);
-    };
+      // For now, emit to parent to handle chip selection
+      // In real implementation, this would open a concept selector
+      emit('add-chip', props.filter.id, conditionId)
+    }
 
     const removeChip = (conditionId: string, chipId: string) => {
-      props.filter.removeChipFromCondition(conditionId, chipId);
-      emit('update:filter', props.filter);
-      emit('remove-chip', props.filter.id, conditionId, chipId);
-    };
+      const removed = props.filter.removeChipFromCondition(conditionId, chipId)
+      if (removed) {
+        emit('update:filter', props.filter)
+        emit('remove-chip', props.filter.id, conditionId, chipId)
+      }
+    }
+
+    const removeFilter = () => {
+      emit('remove-filter', props.filter.id)
+    }
+
+    // Helper to add a chip programmatically (can be called from parent)
+    const addChipToCondition = (conditionId: string, chip: Partial<QueryFilterChipType>) => {
+      const newChip: QueryFilterChipType = {
+        id: chip.id || `chip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        label: chip.label || 'New Chip',
+        value: chip.value || '',
+        color: chip.color,
+        conceptId: chip.conceptId,
+        domainId: chip.domainId,
+      }
+
+      const added = props.filter.addChipToCondition(conditionId, newChip)
+      if (added) {
+        emit('update:filter', props.filter)
+      }
+      return added
+    }
 
     return {
       sidebarLabel,
@@ -155,18 +215,18 @@ export default defineComponent({
       addCondition,
       editCondition,
       duplicateCondition,
+      removeCondition,
       showConditionMenu,
       addChip,
-      removeChip
-    };
-  }
-});
+      removeChip,
+      removeFilter,
+      addChipToCondition,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
-@import '../styles/variables';
-@import '../styles/mixins';
-
 .query-filter-card {
   position: relative;
   background: white;
@@ -197,7 +257,7 @@ export default defineComponent({
     padding: 4px;
     cursor: pointer;
     color: #666;
-    
+
     &:hover {
       color: #333;
     }
@@ -336,6 +396,13 @@ export default defineComponent({
   &:hover {
     background: #e5e7eb;
     color: #333;
+  }
+
+  &--danger {
+    &:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
   }
 
   &--more {
