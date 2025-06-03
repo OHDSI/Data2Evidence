@@ -3,6 +3,9 @@ const _env = Deno.env.toObject();
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
 export const env = {
   TEST_VALUE: _env.TEST_VALUE,
+  CUSTOM_WORK_POOL_CONFIGURATION: _env.CUSTOM_WORK_POOL_CONFIGURATION
+    ? JSON.parse(_env.CUSTOM_WORK_POOL_CONFIGURATION)
+    : {},
 
   VARIABLES: {
     // Prefect Variables
@@ -33,6 +36,7 @@ export const env = {
     pg_db_host: _env.PG__HOST,
     pg_db_port: _env.PG__PORT,
     perseus_host: _env.PERSEUS__FILES_MANAGER_HOST,
+    data_transformation_bucket: _env.DATA_TRANSFORMATION_BUCKET,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
@@ -48,6 +52,7 @@ export const env = {
     "minio-secret-key": _env.MINIO__SECRET_KEY,
     "pg-admin-user": _env.PG_ADMIN_USER,
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
+    "supabase-storage-jwt-token": _env.SUPABASE_STORAGE_JWT_TOKEN,
   },
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
@@ -56,3 +61,5 @@ export const env = {
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
 export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
+export const CUSTOM_WORK_POOL_CONFIGURATION =
+  env.CUSTOM_WORK_POOL_CONFIGURATION;

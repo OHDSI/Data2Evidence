@@ -1,16 +1,14 @@
 import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
-import { EdgeState, NodeDataState } from "../../../../types";
+import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { DataMappingDrawer } from "./DataMappingDrawer";
 import "./DataMappingNode.scss";
 
 export interface DataMappingNodeData extends NodeDataState {
-  edges?: EdgeState[];
-  data_model?: string;
-  data_map?: {};
+  data: any;
 }
 
 export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {

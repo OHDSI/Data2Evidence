@@ -84,7 +84,7 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
                 schemaName <- '{schema_name}'
                 vocabSchemaName <- '{vocab_schema_name}'
                 cohortName <- '{cohort_name}'
-                cohortId <- '{cohort_definition_id}'
+                cohortId <- {cohort_definition_id}
                 
                 cat("Generating cohort sql from cohort expression from json")
                 cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)

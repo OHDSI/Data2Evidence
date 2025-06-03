@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default version
+version=0.7.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.7.1-beta
+
 
 cmd=""
 script_full_path=$(dirname "$0")
@@ -83,20 +85,36 @@ export ENVFILE=$env
 if [[ $version = "develop" ]]; then
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-latest}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
-  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
   DOCKER_LOG_LEVEL=INFO
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
-  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-$version-beta}
-  export DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-$version-beta}
-  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-$version-beta}
+  export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-${LATEST_DOCKER_TAG_NAME}}
+  export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-${LATEST_DOCKER_TAG_NAME}}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
 dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
+
+generate_random_secret() {
+  LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
+}
+
+generate_jwt() {
+  local secret="$1"
+  local role="$2"
+  local iss="$3"
+  local iat=$(date +%s)
+  local exp=$((iat + 157788000)) # 5 years expiration
+
+  local header=$(echo -n '{"alg":"HS256","typ":"JWT"}' | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+  local payload=$(echo -n "{\"role\":\"$role\",\"iss\":\"$iss\",\"iat\":$iat,\"exp\":$exp}" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+  local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -hmac "$secret" -binary | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+
+  echo "$header.$payload.$signature"
+}
 
 case $cmd in
     start)
@@ -118,7 +136,7 @@ case $cmd in
         ;;
     build)
         cmd="$dockerbasecmd build"
-        if [ -n "$services" ]; then
+        if [ -n "$services" ]; then      
             cmd="$cmd $services"
         fi
         echo . $cmd
@@ -166,8 +184,6 @@ case $cmd in
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
-        DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-develop}
-        DOCKER_TREX_TAG_NAME=${DOCKER_TREX_TAG_NAME:-develop}
         ENV_TYPE=${ENV_TYPE:-local}
         TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
         PROJECT_NAME=${PROJECT_NAME:-d2e}
@@ -177,7 +193,6 @@ case $cmd in
         echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE
 
         # vars
-        [ $ENV_TYPE = local ] && [ -z DOCKER_TAG_NAME ] && DOCKER_TAG_NAME=local
 
         source $node_modules_path/scripts/lib.sh # functions here
 
@@ -187,11 +202,17 @@ case $cmd in
         DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
         DB_CREDENTIALS__INTERNAL__PUBLIC_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
 
+        # Generate random supabase JWT secret
+        JWT_SECRET=$(generate_random_secret)
+        # Generate supabase service role JWT token
+        ROLE="service_role"
+        ISSUER="supabase"
+        JWT_TOKEN=$(generate_jwt "$JWT_SECRET" "$ROLE" "$ISSUER")
+
         # action
         echo -n '' > $DOTENV_FILE
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
         echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
-        echo DOCKER_TREX_TAG_NAME=$DOCKER_TREX_TAG_NAME >> $DOTENV_FILE
         echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
         echo FHIR__CLIENT_ID=$(random-uuid) >> $DOTENV_FILE
         echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
@@ -207,9 +228,12 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
+        echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
+        echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
         echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
@@ -231,7 +255,7 @@ case $cmd in
         wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
         ;;
     pull)
-        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}" # not part of dc.yml
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
         cmd="$dockerbasecmd pull"
@@ -240,12 +264,10 @@ case $cmd in
         ;;
     setupdemo)
         source "$ENVFILE"
-        npx d2e patchdemodb
+        npx d2e patchdemodb -n "$ENVFILE" 
         database_host=${PROJECT_NAME:-d2e}-demodb
-        docker exec $database_host psql -h localhost -U postgres -d postgres -c "CREATE PUBLICATION demo_database_publication FOR TABLES IN SCHEMA demo_cdm; ALTER TABLE demo_cdm.COHORT REPLICA IDENTITY FULL; ALTER TABLE demo_cdm.COHORT_DEFINITION REPLICA IDENTITY FULL;"
-        npx zx $node_modules_path/scripts/load-demodatabase.mjs -v $version -d $function_path -n "$ENVFILE" &&
-        npx zx $node_modules_path/scripts/load-demodataset.mjs
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
+        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
         ;;
     checkflow) 
         npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs

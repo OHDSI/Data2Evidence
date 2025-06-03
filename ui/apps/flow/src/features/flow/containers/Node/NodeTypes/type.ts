@@ -3,7 +3,6 @@ export type NodeType =
   | "python_notebook_node"
   | "py2table_node"
   | "r_node"
-  | "strategus"
   | "sql_node"
   | "data_mapping_node"
   | "csv_node"
