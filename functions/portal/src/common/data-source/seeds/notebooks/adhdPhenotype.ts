@@ -13,35 +13,45 @@ patient_data = Person.Patient()
 constraint_age_greater_than_4_years = Constraint()
 constraint_age_greater_than_4_years.add(Expression(ComparisonOperator.MORE_THAN_EQUAL, 4))
 patient_data.add_age([constraint_age_greater_than_4_years])
+
+# %% [markdown]
+Use get_all_concept_sets() method to fetch all available concept sets that you have access to.
+Use show_concept_set_list() method to print out each concept set's ID and name.
+
+# %% [python]
+conceptSetQuery = ConceptSetQuery(total_patients_query._selectedStudyId)
+await conceptSetQuery.get_all_concept_sets()
+conceptSetQuery.show_concept_set_list()
+
+# %% [markdown]
+Use get_concepts_in_concept_set() method to see all concepts in a particular concept set with concept_set_id
+
+# %% [python]
+# conceptSetQuery.get_concepts_in_concept_set(44)
+
 # %% [python]
 # Patients who are diagnosed with ADHD conditions
-adhd_condition_occ = Interactions.ConditionOccurrence("ADHD conditions Interaction")
-adhd_condition_concepts = ConceptSet(
-                           'Conditions',
-                            Domain.CONDITION, 
-                           ['406506008', '192132008', '192131001']) 
-adhd_condition_occ.add_concept_set(adhd_condition_concepts)
 
-# Add Patients who are prescribed with ADHD medications
-adhd_drug_concepts  = ConceptSet('ADHD Medications',
-                            Domain.DRUG, 
-                           ['1091497', '2599', '725', '40114', '308979', '308976', '308973', 
-                            '2598', '4493', '36437', '35636', '32937', '10737',
-                            '310384', '313990','310385', '313989', '312938', 
-                            '312940', '312941', '374185'])
+# Add in the concept set id as the comparison operator's value
+CONCEPT_SET_ID = 
 
-adhd_drug_exposure = Interactions.DrugExposure("ADHD Medications Interaction")
-adhd_drug_exposure.add_concept_set(adhd_drug_concepts)
+adhd_condition_occ = Interactions.ConditionOccurrence("ADHD Medications")
 
+adhd_drug_concepts = Constraint()
+adhd_drug_concepts.add(Expression(ComparisonOperator.EQUAL, CONCEPT_SET_ID))
+adhd_condition_occ.add_condition_concept_set([adhd_drug_concepts])
 
 # Exclusion of Certain Conditions like Dementia
-exclude_other_condition_occ = Interactions.ConditionOccurrence("Other Disorders", CardType.EXCLUDED)
-exclude_condition_concepts = ConceptSet('Conditions',
-                            Domain.CONDITION, 
-                           ['191449005', '397923000', '31297008', '18393005', 
-                            '50705009', '5507002', '86765009', '110359009', 
-                            '40700009', '31216003', '61152003'])
-exclude_other_condition_occ.add_concept_set(exclude_condition_concepts)
+
+# Add in the concept set id as the comparison operator's value
+CONCEPT_SET_ID = 
+
+exclude_other_condition_occ = Interactions.ConditionOccurrence("Other Disorders")
+
+exclude_condition_concepts = Constraint()
+exclude_condition_concepts.add(Expression(ComparisonOperator.EQUAL, CONCEPT_SET_ID))
+exclude_other_condition_occ.add_condition_concept_set([exclude_condition_concepts])
+
 # %% [python]
 # Combine the criteria for demographic data, ADHD conditions & medications
 adhd_group = CriteriaGroup(
@@ -181,4 +191,4 @@ print('probability=%.3f, critical=%.3f, stat=%.3f' % (prob, co_critical, co_stat
 if abs(co_stat) >= co_critical:
 	print('Result: Dependent - Reject Null Hypothesis (Stress & Anxiety Disorders and Gender are dependent)')
 else:
-	print('Result: Independent - Accept Null Hypothesis (Stress & Anxiety Disorders and Gender are independent)')`
+	print('Result: Independent - Accept Null Hypothesis (Stress & Anxiety Disorders and Gender are independent)')`;
