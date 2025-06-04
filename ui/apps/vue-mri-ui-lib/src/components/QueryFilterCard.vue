@@ -468,7 +468,7 @@ defineExpose({
 .query-filter-condition {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 0 6px 6px 0;
   padding: 8px 6px;
   margin-bottom: 8px;
   position: relative;
@@ -481,8 +481,8 @@ defineExpose({
   &__at-least {
     position: absolute;
     left: -30px;
-    top: 0;
-    bottom: 0;
+    top: -1px;
+    bottom: -1px;
     width: 30px;
     background: #ddd6fe;
     display: flex;
