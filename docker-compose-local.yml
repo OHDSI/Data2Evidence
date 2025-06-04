@@ -20,7 +20,7 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
