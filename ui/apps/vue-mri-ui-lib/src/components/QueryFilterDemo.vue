@@ -194,6 +194,18 @@ const convertToAtlasFormat = () => {
   const inclusionFilters = filters.filter(f => f.type === 'inclusion');
   const exclusionFilters = filters.filter(f => f.type === 'exclusion');
   
+  // Map tab selection to Atlas occurrence type
+  const getOccurrenceType = () => {
+    switch (activeTab.value) {
+      case 'earliest': return 'First';
+      case 'all': return 'All';
+      case 'latest': return 'Last';
+      default: return 'First';
+    }
+  };
+  
+  const occurrenceType = getOccurrenceType();
+  
   // Build concept sets from all filters
   const conceptSets: any[] = [];
   let conceptSetId = 0;
@@ -232,14 +244,22 @@ const convertToAtlasFormat = () => {
       CriteriaList: inclusionFilters.length > 0 ? 
         inclusionFilters[0].conditions.map((condition, index) => ({
           ConditionOccurrence: {
-            CodesetId: index,
-            First: true
+            CodesetId: index
           }
         })) : [],
       ObservationWindow: {
         PriorDays: 0,
         PostDays: 0
+      },
+      PrimaryCriteriaLimit: {
+        Type: occurrenceType
       }
+    },
+    QualifiedLimit: {
+      Type: occurrenceType
+    },
+    ExpressionLimit: {
+      Type: occurrenceType
     },
     InclusionRules: inclusionFilters.slice(1).map((filter, filterIndex) => ({
       name: filter.title,
