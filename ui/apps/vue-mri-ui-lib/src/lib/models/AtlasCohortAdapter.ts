@@ -228,20 +228,18 @@ export class AtlasCohortAdapter {
     // Extract from main criteria list
     if (rule.expression.CriteriaList) {
       rule.expression.CriteriaList.forEach(group => {
-        if (group.CriteriaList) {
-          group.CriteriaList.forEach(item => {
-            const type = getCriteriaType(item)
-            const criteria = getCriteriaObject(item)
+        if (group.Criteria) {
+          const type = getCriteriaType(group.Criteria)
+          const criteria = getCriteriaObject(group.Criteria)
 
-            if (type && criteria) {
-              criteriaList.push({
-                type,
-                conceptSetId: criteria.CodesetId || 0,
-                isTypeExcluded: this.isExcluded(criteria),
-                additionalCriteria: this.extractAdditionalCriteria(criteria),
-              })
-            }
-          })
+          if (type && criteria) {
+            criteriaList.push({
+              type,
+              conceptSetId: criteria.CodesetId || 0,
+              isTypeExcluded: this.isExcluded(criteria),
+              additionalCriteria: this.extractAdditionalCriteria(criteria),
+            })
+          }
         }
       })
     }

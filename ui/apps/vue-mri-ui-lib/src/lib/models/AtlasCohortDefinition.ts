@@ -14,6 +14,8 @@ export interface Concept {
   DOMAIN_ID: string;
   VOCABULARY_ID: string;
   CONCEPT_CLASS_ID: string;
+  VALID_START_DATE: string;
+  VALID_END_DATE: string;
 }
 
 // Individual concept set item
@@ -154,8 +156,8 @@ export interface Measurement {
 }
 
 export interface Death {
-  CodesetId: number;
-  DeathTypeExclude: boolean;
+  CodesetId?: number;
+  DeathTypeExclude?: boolean;
   OccurrenceStartDate?: DateRange;
   DeathType?: ConceptSet[];
   DeathSourceConcept?: ConceptSet[];
@@ -163,16 +165,37 @@ export interface Death {
   Age?: NumericRange;
 }
 
+export interface DrugEra {
+  CodesetId?: number;
+  EraStartDate?: DateRange;
+  EraEndDate?: DateRange;
+  EraLength?: NumericRange;
+  AgeAtStart?: NumericRange;
+  AgeAtEnd?: NumericRange;
+  Gender?: ConceptSet[];
+}
+
+export interface ObservationPeriod {
+  PeriodStartDate?: DateRange;
+  PeriodEndDate?: DateRange;
+  PeriodLength?: NumericRange;
+  AgeAtStart?: NumericRange;
+  AgeAtEnd?: NumericRange;
+  Gender?: ConceptSet[];
+}
+
 // Criteria list item (union of all possible criteria types)
 export interface CriteriaListItem {
   ConditionOccurrence?: ConditionOccurrence;
   DrugExposure?: DrugExposure;
+  DrugEra?: DrugEra;
   ProcedureOccurrence?: ProcedureOccurrence;
   Observation?: Observation;
   VisitOccurrence?: VisitOccurrence;
   DeviceExposure?: DeviceExposure;
   Measurement?: Measurement;
   Death?: Death;
+  ObservationPeriod?: ObservationPeriod;
 }
 
 // Date and numeric range types
@@ -196,7 +219,7 @@ export interface ObservationWindow {
 
 // Primary criteria limit
 export interface PrimaryCriteriaLimit {
-  Type: 'First' | 'All';
+  Type: 'First' | 'All' | 'Last';
 }
 
 // Primary criteria
@@ -208,12 +231,12 @@ export interface PrimaryCriteria {
 
 // Qualified limit
 export interface QualifiedLimit {
-  Type: 'First' | 'All';
+  Type: 'First' | 'All' | 'Last';
 }
 
 // Expression limit
 export interface ExpressionLimit {
-  Type: 'First' | 'All' | number;
+  Type: 'First' | 'All' | 'Last';
 }
 
 // Date offset for end strategy
@@ -261,14 +284,11 @@ export interface InclusionRule {
 
 // Criteria group for inclusion rules
 export interface CriteriaGroup {
-  Type?: string;
-  CriteriaList: CriteriaListItem[];
-  DemographicCriteriaList?: DemographicCriteria[];
-  Groups?: GroupCriteria[];
-  Count?: number;
+  Criteria?: CriteriaListItem;
   StartWindow?: Window;
   EndWindow?: Window;
   Occurrence?: OccurrenceSettings;
+  RestrictVisit?: boolean;
 }
 
 // Window settings
@@ -361,19 +381,29 @@ export function isMeasurement(criteria: any): criteria is Measurement {
 }
 
 export function isDeath(criteria: any): criteria is Death {
-  return criteria && typeof criteria.CodesetId === 'number' && 'DeathTypeExclude' in criteria;
+  return criteria && (typeof criteria.CodesetId === 'number' || 'DeathTypeExclude' in criteria);
+}
+
+export function isDrugEra(criteria: any): criteria is DrugEra {
+  return criteria && ('EraStartDate' in criteria || 'EraEndDate' in criteria || typeof criteria.CodesetId === 'number');
+}
+
+export function isObservationPeriod(criteria: any): criteria is ObservationPeriod {
+  return criteria && ('PeriodStartDate' in criteria || 'PeriodEndDate' in criteria);
 }
 
 // Helper to get criteria type from a criteria list item
 export function getCriteriaType(item: CriteriaListItem): string | null {
   if (item.ConditionOccurrence) return 'ConditionOccurrence';
   if (item.DrugExposure) return 'DrugExposure';
+  if (item.DrugEra) return 'DrugEra';
   if (item.ProcedureOccurrence) return 'ProcedureOccurrence';
   if (item.Observation) return 'Observation';
   if (item.VisitOccurrence) return 'VisitOccurrence';
   if (item.DeviceExposure) return 'DeviceExposure';
   if (item.Measurement) return 'Measurement';
   if (item.Death) return 'Death';
+  if (item.ObservationPeriod) return 'ObservationPeriod';
   return null;
 }
 
@@ -381,11 +411,13 @@ export function getCriteriaType(item: CriteriaListItem): string | null {
 export function getCriteriaObject(item: CriteriaListItem): any {
   return item.ConditionOccurrence ||
          item.DrugExposure ||
+         item.DrugEra ||
          item.ProcedureOccurrence ||
          item.Observation ||
          item.VisitOccurrence ||
          item.DeviceExposure ||
          item.Measurement ||
          item.Death ||
+         item.ObservationPeriod ||
          null;
 }
