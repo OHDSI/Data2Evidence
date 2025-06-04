@@ -34,6 +34,7 @@ const initializeSampleData = () => {
   const cardiovascularFilter = new QueryFilterCardModel({
     title: 'Cardiovascular disease',
     type: 'inclusion',
+    operator: 'OR', // Set to OR so we can see the ANY sidebar
     conditions: [
       {
         id: 'cond2',
@@ -272,7 +273,7 @@ const convertToAtlasFormat = () => {
     InclusionRules: inclusionFilters.slice(1).map((filter, filterIndex) => ({
       name: filter.title,
       expression: {
-        Type: "ALL",
+        Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
         CriteriaList: [{
           CriteriaList: filter.conditions.map((condition, condIndex) => ({
             ConditionOccurrence: {
@@ -285,7 +286,7 @@ const convertToAtlasFormat = () => {
     ExclusionRules: exclusionFilters.map((filter, filterIndex) => ({
       name: filter.title,
       expression: {
-        Type: "ALL",
+        Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
         CriteriaList: [{
           CriteriaList: filter.conditions.map((condition, condIndex) => ({
             ConditionOccurrence: {

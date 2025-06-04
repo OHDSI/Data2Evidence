@@ -100,6 +100,11 @@ const removeFilter = () => {
   emit('remove-filter', props.filter.id)
 }
 
+const toggleOperator = () => {
+  props.filter.operator = props.filter.operator === 'OR' ? 'AND' : 'OR'
+  emit('update:filter', props.filter)
+}
+
 // Helper to add a chip programmatically (can be called from parent)
 const addChipToCondition = (conditionId: string, chip: Partial<QueryFilterChipType>) => {
   const newChip: QueryFilterChipType = {
@@ -148,13 +153,22 @@ defineExpose({
     </div>
 
     <div v-if="filter.isExpanded" class="query-filter-card__content">
-      <!-- ANY sidebar positioned relative to content -->
+      <!-- ANY/ALL sidebar positioned relative to content -->
       <div
         v-if="filter.conditions.length > 1"
         class="query-filter-card__content-sidebar"
-        :class="{ 'content-sidebar-any': true }"
+        :class="{ 
+          'content-sidebar-any': filter.operator === 'OR',
+          'content-sidebar-all': filter.operator === 'AND'
+        }"
       >
-        <span class="content-sidebar-label">ANY</span>
+        <button 
+          class="content-sidebar-toggle" 
+          @click="toggleOperator"
+          :title="`Click to switch to ${filter.operator === 'OR' ? 'ALL' : 'ANY'}`"
+        >
+          <span class="content-sidebar-label">{{ filter.operator === 'OR' ? 'ANY' : 'ALL' }}</span>
+        </button>
       </div>
 
       <!-- Add event button for ANY section (multiple conditions) -->
@@ -413,7 +427,6 @@ defineExpose({
     top: 0;
     bottom: 0;
     width: 32px;
-    background: #ef4444;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -425,12 +438,34 @@ defineExpose({
       background: #ef4444;
     }
 
+    &.content-sidebar-all {
+      background: #8b5cf6;
+    }
+
+    .content-sidebar-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
     .content-sidebar-label {
       color: white;
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 1px;
       text-transform: uppercase;
+      pointer-events: none;
     }
   }
 
