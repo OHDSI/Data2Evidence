@@ -319,26 +319,41 @@ const handleRemoveFilter = (filterId: string) => {
           </div>
         </div>
         
-        <query-filter-card
-          v-for="filter in inclusionFilters"
-          :key="filter.id"
-          :filter="filter"
-          @update:filter="updateFilter"
-          @add-event="handleAddEvent(filter.id)"
-          @add-condition="handleAddCondition"
-          @edit-condition="handleEditCondition"
-          @duplicate-condition="handleDuplicateCondition"
-          @remove-condition="handleRemoveCondition"
-          @add-chip="handleAddChip"
-          @remove-chip="handleRemoveChip"
-          @show-menu="handleShowMenu"
-          @remove-filter="handleRemoveFilter"
-        />
+        <!-- ALL 9 Container -->
+        <div class="query-filter-group">
+          <div class="query-filter-group__sidebar">
+            <span class="sidebar-label">ALL 9</span>
+          </div>
+          
+          <div class="query-filter-group__content">
+            <!-- Add event button for adding new sections -->
+            <div class="add-section-container">
+              <button class="btn-add-section" @click="addInclusionFilter">
+                <span>Add event</span>
+              </button>
+            </div>
 
-        <button class="btn btn-link btn-add-filter" @click="addInclusionFilter">
-          <i class="icon icon-plus"></i>
-          Add Inclusion Filter
-        </button>
+            <query-filter-card
+              v-for="filter in inclusionFilters"
+              :key="filter.id"
+              :filter="filter"
+              :hide-group-label="true"
+              :show-add-event-in-any="true"
+              @update:filter="updateFilter"
+              @add-event="handleAddEvent(filter.id)"
+              @add-condition="handleAddCondition"
+              @edit-condition="handleEditCondition"
+              @duplicate-condition="handleDuplicateCondition"
+              @remove-condition="handleRemoveCondition"
+              @add-chip="handleAddChip"
+              @remove-chip="handleRemoveChip"
+              @show-menu="handleShowMenu"
+              @remove-filter="handleRemoveFilter"
+              @add-any-event="addInclusionFilter"
+            />
+          </div>
+        </div>
+
       </div>
 
       <!-- Removed exclusion criteria section as requested -->
@@ -382,6 +397,7 @@ const handleRemoveFilter = (filterId: string) => {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 
   &__actions {
     display: flex;
@@ -484,11 +500,80 @@ const handleRemoveFilter = (filterId: string) => {
   }
 }
 
+.add-section-container {
+  margin-bottom: 12px;
+  margin-left: 2px; // Align with the cards below
+}
+
+.btn-add-section {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: center;
+
+  &:hover {
+    background: #2563eb;
+  }
+}
+
 .icon {
   font-family: 'Font Awesome 5 Free', 'app-icons';
   font-style: normal;
   font-weight: 900;
   
   &-plus::before { content: '\f067'; }
+}
+
+.query-filter-group {
+  position: relative;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding-left: 40px;
+  min-height: 100px;
+
+  &__sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: #1e40af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: sideways-lr;
+    text-orientation: mixed;
+    border-radius: 8px 0 0 8px;
+
+    .sidebar-label {
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+  }
+
+  &__content {
+    padding: 6px 4px;
+    
+    .query-filter-card {
+      margin-bottom: 8px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 }
 </style>

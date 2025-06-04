@@ -11,6 +11,8 @@ import QueryFilterChip from './QueryFilterChip.vue'
 
 const props = defineProps<{
   filter: QueryFilterCardModel
+  hideGroupLabel?: boolean
+  showAddEventInAny?: boolean
 }>()
 
 const emit = defineEmits([
@@ -24,10 +26,11 @@ const emit = defineEmits([
   'remove-chip',
   'show-menu',
   'remove-filter',
+  'add-any-event',
 ])
 
 const sidebarLabel = computed(() => {
-  return props.filter.type === 'inclusion' ? 'ALL 9 (nested)' : 'Exclusion'
+  return props.filter.type === 'inclusion' ? 'ALL 9' : 'Exclusion'
 })
 
 const toggleExpanded = () => {
@@ -122,7 +125,11 @@ defineExpose({
 </script>
 
 <template>
-  <div class="query-filter-card" :class="{ 'is-exclusion': filter.type === 'exclusion' }">
+  <div class="query-filter-card" :class="{ 
+    'is-exclusion': filter.type === 'exclusion', 
+    'no-sidebar': hideGroupLabel,
+    'has-any-sidebar': hideGroupLabel && filter.conditions.length > 1 && filter.isExpanded
+  }">
     <div class="query-filter-card__header">
       <div class="query-filter-card__header-content">
         <button
@@ -136,15 +143,34 @@ defineExpose({
 
         <div class="query-filter-card__info">
           <h4 class="query-filter-card__title">{{ filter.title || 'Untitled Filter' }}</h4>
-          <button class="btn-add-event" @click="$emit('add-event')">
-            <i class="icon icon-plus-circle"></i>
-            <span>Add event</span>
-          </button>
         </div>
       </div>
     </div>
 
     <div v-if="filter.isExpanded" class="query-filter-card__content">
+      <!-- ANY sidebar positioned relative to content -->
+      <div
+        v-if="filter.conditions.length > 1"
+        class="query-filter-card__content-sidebar"
+        :class="{ 'content-sidebar-any': true }"
+      >
+        <span class="content-sidebar-label">ANY</span>
+      </div>
+
+      <!-- Add event button for ANY section (multiple conditions) -->
+      <div v-if="filter.conditions.length > 1 && showAddEventInAny" class="add-any-event-container">
+        <button class="btn-add-any-event" @click="$emit('add-any-event')" title="Add event to ANY section">
+          <span>Add event</span>
+        </button>
+      </div>
+
+      <!-- Add event button for single condition cards -->
+      <div v-if="filter.conditions.length <= 1 && showAddEventInAny" class="add-single-event-container">
+        <button class="btn-add-single-event" @click="$emit('add-event')" title="Add event">
+          <span>Add event</span>
+        </button>
+      </div>
+      
       <div
         v-for="(condition, index) in filter.conditions"
         :key="condition.id"
@@ -217,15 +243,8 @@ defineExpose({
       </div>
     </div>
 
-    <div class="query-filter-card__sidebar" :class="{ 'sidebar-exclusion': filter.type === 'exclusion' }">
+    <div v-if="!hideGroupLabel" class="query-filter-card__sidebar" :class="{ 'sidebar-exclusion': filter.type === 'exclusion' }">
       <span class="sidebar-label">{{ sidebarLabel }}</span>
-    </div>
-    <div
-      v-if="filter.conditions.length > 1"
-      class="query-filter-card__condition-sidebar"
-      :class="{ 'sidebar-any': true }"
-    >
-      <span class="condition-sidebar-label">ANY</span>
     </div>
   </div>
 </template>
@@ -236,29 +255,52 @@ defineExpose({
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   padding-left: 110px;
   overflow: visible;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 
   &.is-exclusion {
     border-color: #ff6b6b;
   }
 
+  &.no-sidebar {
+    padding-left: 0;
+    
+    .query-filter-card__header {
+      padding-left: 4px;
+    }
+    
+    .query-filter-card__content {
+      padding-left: 4px;
+    }
+  }
+
+  &.has-any-sidebar {
+    .query-filter-card__header {
+      padding-left: 4px;
+    }
+    
+    .query-filter-card__content {
+      padding-left: 36px; // Space for the ANY sidebar when it exists
+    }
+  }
+
   &__header {
-    padding: 12px 16px;
+    padding: 8px 6px;
     border-bottom: 1px solid #f0f0f0;
   }
 
   &__header-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
 
   &__info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     flex: 1;
   }
 
@@ -309,16 +351,17 @@ defineExpose({
   }
 
   &__content {
-    padding: 16px;
+    padding: 8px 6px;
+    position: relative;
   }
 
   &__empty {
     text-align: center;
-    padding: 32px;
+    padding: 20px;
     color: #666;
 
     p {
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .btn-link {
@@ -364,29 +407,60 @@ defineExpose({
     }
   }
 
-  &__condition-sidebar {
+  &__content-sidebar {
     position: absolute;
-    left: 60px;
+    left: 0;
     top: 0;
     bottom: 0;
-    width: 50px;
+    width: 32px;
     background: #ef4444;
     display: flex;
     align-items: center;
     justify-content: center;
     writing-mode: sideways-lr;
     text-orientation: mixed;
+    border-radius: 0 0 0 6px;
 
-    &.sidebar-any {
+    &.content-sidebar-any {
       background: #ef4444;
     }
 
-    .condition-sidebar-label {
+    .content-sidebar-label {
       color: white;
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 1px;
       text-transform: uppercase;
+    }
+  }
+
+  .add-any-event-container {
+    margin-bottom: 8px;
+    margin-left: 2px; // Align with the conditions left edge
+  }
+
+  .add-single-event-container {
+    margin-bottom: 8px;
+    margin-left: 2px; // Align with the conditions left edge
+  }
+
+  .btn-add-any-event,
+  .btn-add-single-event {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+
+    &:hover {
+      background: #2563eb;
     }
   }
 }
@@ -395,10 +469,10 @@ defineExpose({
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 8px 6px;
+  margin-bottom: 8px;
   position: relative;
-  margin-left: 40px;
+  margin-left: 30px;
 
   &:last-child {
     margin-bottom: 0;
@@ -406,10 +480,10 @@ defineExpose({
 
   &__at-least {
     position: absolute;
-    left: -40px;
+    left: -30px;
     top: 0;
     bottom: 0;
-    width: 40px;
+    width: 30px;
     background: #ddd6fe;
     display: flex;
     align-items: center;
@@ -430,7 +504,7 @@ defineExpose({
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   &__label {
