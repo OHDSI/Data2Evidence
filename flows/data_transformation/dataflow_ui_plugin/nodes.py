@@ -422,7 +422,9 @@ class DataMappingNode(Node):
                                 expr=source_table_obj[source_column_name],
                                 table_columns=target_column_properties,
                                 target_column=target_column_name
-                            ).name(target_column_name)
+                            ) \
+                            .cast(convert_column_type(target_column_name, target_column_properties)) \
+                            .name(target_column_name)
                         )
                         
                 # Select target columns with a constant value
@@ -442,8 +444,8 @@ class DataMappingNode(Node):
                 unmapped_target_columns: set[str] = set(target_column_names) - mapped_target_columns
                 selected_columns.extend(
                     ibis.null() \
-                        .cast(convert_column_type(col, target_column_properties)) \
-                        .name(col) for col in unmapped_target_columns
+                        .cast(convert_column_type(col_name, target_column_properties)) \
+                        .name(col_name) for col_name in unmapped_target_columns
                 )
 
                 query = source_table_obj.select(selected_columns)
