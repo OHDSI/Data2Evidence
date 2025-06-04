@@ -38,7 +38,7 @@ import {
   DB_DIALECTS,
 } from "../../../../types";
 import { api } from "../../../../axios/api";
-import { validateCredentials } from "../CredentialValidator";
+import { validateCredentials, isValidDbCode } from "../CredentialValidator";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
 import { useTranslation } from "../../../../contexts";
@@ -194,6 +194,9 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         formData.port = 0;
       }
 
+      if(!isValidDbCode(formData.code, setFeedback)) {
+        return;
+      }
       const encryptedCredentials = formData.credentials
         .filter((cred) => Boolean(cred.username))
         .map(async (cred: IDbCredential) => dbCredentialProcessor.encryptDbCredential(cred));

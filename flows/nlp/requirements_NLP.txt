@@ -1,9 +1,6 @@
 prefect==3.0.3
-prefect[dask]==3.0.3
-prefect[shell]==3.0.3
-prefect[docker]==3.0.3
+prefect[dask, docker, shell]==3.0.3
 pydantic==2.10.6
-minio==7.2.5
 debugpy==1.8.1
 sqlalchemy==2.0.38
 sqlalchemy-hana==2.2.0

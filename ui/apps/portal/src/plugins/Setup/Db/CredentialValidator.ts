@@ -22,3 +22,16 @@ export function validateCredentials(
   }
   return true;
 }
+
+export function isValidDbCode(code: string, setFeedback: React.Dispatch<React.SetStateAction<Feedback>>) {
+  const r = RegExp(/^[A-Za-z0-9_]+$/)
+
+  if (r.test(code)) {
+    return true;
+  }
+  setFeedback({
+    type: "error",
+    message: "Database code is invalid; lowercase and uppercase letters, numbers and underscore are valid characters",
+  });
+  return false;
+}
