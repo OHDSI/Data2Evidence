@@ -1,17 +1,17 @@
 <script lang="ts">
 export default {
-  name: 'QueryFilterDemo'
+  name: 'QueryFilterDemo',
 }
 </script>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue';
-import QueryFilterCard from './QueryFilterCard.vue';
-import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from './QueryFilterModel';
+import { ref, computed, reactive, onMounted } from 'vue'
+import QueryFilterCard from './QueryFilterCard.vue'
+import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from './QueryFilterModel'
 
-const activeTab = ref('all');
-const showDebug = ref(false);
-const filterManager = reactive(new QueryFilterManager());
+const activeTab = ref('all')
+const showDebug = ref(false)
+const filterManager = reactive(new QueryFilterManager())
 
 // Initialize with sample data
 const initializeSampleData = () => {
@@ -23,12 +23,10 @@ const initializeSampleData = () => {
       {
         id: 'cond1',
         conceptSet: 'Condition concept set',
-        chips: [
-          { id: 'chip1', label: 'Diabetes Type 2', value: 'E11' }
-        ]
-      }
-    ]
-  });
+        chips: [{ id: 'chip1', label: 'Diabetes Type 2', value: 'E11' }],
+      },
+    ],
+  })
 
   const cardiovascularFilter = new QueryFilterCardModel({
     title: 'Cardiovascular disease',
@@ -38,162 +36,162 @@ const initializeSampleData = () => {
       {
         id: 'cond2',
         conceptSet: 'Condition concept set',
-        chips: [
-          { id: 'chip2', label: 'Atrial Fib A', value: 'I48.0' }
-        ]
+        chips: [{ id: 'chip2', label: 'Atrial Fib A', value: 'I48.0' }],
       },
       {
         id: 'cond3',
         conceptSet: 'Condition concept set',
-        chips: [
-          { id: 'chip3', label: 'Atrial Fib B', value: 'I48.1' }
-        ]
-      }
-    ]
-  });
+        chips: [{ id: 'chip3', label: 'Atrial Fib B', value: 'I48.1' }],
+      },
+    ],
+  })
 
   // Expand both filters by default
-  diabetesFilter.isExpanded = true;
-  cardiovascularFilter.isExpanded = true;
-  
-  filterManager.addFilter(diabetesFilter);
-  filterManager.addFilter(cardiovascularFilter);
-};
+  diabetesFilter.isExpanded = true
+  cardiovascularFilter.isExpanded = true
+
+  filterManager.addFilter(diabetesFilter)
+  filterManager.addFilter(cardiovascularFilter)
+}
 
 // Initialize sample data on mount
 onMounted(() => {
-  initializeSampleData();
-});
+  initializeSampleData()
+})
 
-const inclusionFilters = computed(() => filterManager.getInclusionFilters());
-const exclusionFilters = computed(() => filterManager.getExclusionFilters());
+const inclusionFilters = computed(() => filterManager.getInclusionFilters())
+const exclusionFilters = computed(() => filterManager.getExclusionFilters())
 
 const updateFilter = (filter: QueryFilterCardModel) => {
   // In a real app, this would update the store
-  console.log('Filter updated:', filter);
-};
+  console.log('Filter updated:', filter)
+}
 
 const addInclusionFilter = () => {
   const newFilter = new QueryFilterCardModel({
     title: 'New Inclusion Filter',
     type: 'inclusion',
-    conditions: []
-  });
-  filterManager.addFilter(newFilter);
-};
+    conditions: [],
+  })
+  filterManager.addFilter(newFilter)
+}
 
 const handleAddCondition = (filterId: string) => {
-  const filter = filterManager.getFilter(filterId);
+  const filter = filterManager.getFilter(filterId)
   if (filter) {
     const newCondition: QueryFilterCondition = {
       id: `cond_${Date.now()}`,
       conceptSet: 'Condition concept set',
-      chips: []
-    };
-    filter.addCondition(newCondition);
+      chips: [],
+    }
+    filter.addCondition(newCondition)
   }
-};
+}
 
 const handleEditCondition = (filterId: string, conditionId: string) => {
-  console.log('Edit condition:', filterId, conditionId);
+  console.log('Edit condition:', filterId, conditionId)
   // Would open edit dialog
-};
+}
 
 const handleDuplicateCondition = (filterId: string, conditionId: string) => {
-  const filter = filterManager.getFilter(filterId);
+  const filter = filterManager.getFilter(filterId)
   if (filter) {
-    const condition = filter.conditions.find(c => c.id === conditionId);
+    const condition = filter.conditions.find(c => c.id === conditionId)
     if (condition) {
       const duplicated: QueryFilterCondition = {
         id: `cond_${Date.now()}`,
         conceptSet: condition.conceptSet,
         chips: condition.chips.map(chip => ({
           ...chip,
-          id: `chip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }))
-      };
-      filter.addCondition(duplicated);
+          id: `chip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        })),
+      }
+      filter.addCondition(duplicated)
     }
   }
-};
+}
 
 const handleRemoveCondition = (filterId: string, conditionId: string) => {
-  const filter = filterManager.getFilter(filterId);
+  const filter = filterManager.getFilter(filterId)
   if (filter) {
-    filter.removeCondition(conditionId);
+    filter.removeCondition(conditionId)
   }
-};
+}
 
 const handleAddChip = (filterId: string, conditionId: string) => {
-  console.log('Add chip to condition:', filterId, conditionId);
+  console.log('Add chip to condition:', filterId, conditionId)
   // Would open chip selection dialog
   // For demo, add a sample chip
-  const filter = filterManager.getFilter(filterId);
+  const filter = filterManager.getFilter(filterId)
   if (filter) {
     const sampleChip: QueryFilterChip = {
       id: `chip_${Date.now()}`,
       label: 'New Condition',
-      value: 'NEW001'
-    };
-    filter.addChipToCondition(conditionId, sampleChip);
+      value: 'NEW001',
+    }
+    filter.addChipToCondition(conditionId, sampleChip)
   }
-};
+}
 
 const handleRemoveChip = (filterId: string, conditionId: string, chipId: string) => {
-  console.log('Chip removed:', filterId, conditionId, chipId);
-};
+  console.log('Chip removed:', filterId, conditionId, chipId)
+}
 
 const handleShowMenu = (filterId: string, conditionId: string) => {
-  console.log('Show menu for condition:', filterId, conditionId);
+  console.log('Show menu for condition:', filterId, conditionId)
   // Would show context menu
-};
+}
 
 const applyFilters = () => {
-  console.log('Applying filters:', getAllFilters());
-  alert('Filters applied! Check console for configuration.');
-};
+  console.log('Applying filters:', getAllFilters())
+  alert('Filters applied! Check console for configuration.')
+}
 
 const clearFilters = () => {
   if (confirm('Are you sure you want to clear all filters?')) {
-    filterManager.clearAllFilters();
+    filterManager.clearAllFilters()
   }
-};
+}
 
 const exportFilters = () => {
-  const config = JSON.stringify(getAllFilters(), null, 2);
-  console.log('Exported configuration:', config);
+  const config = JSON.stringify(getAllFilters(), null, 2)
+  console.log('Exported configuration:', config)
   // In real app, would download as file
-  showDebug.value = !showDebug.value;
-};
+  showDebug.value = !showDebug.value
+}
 
 const getAllFilters = () => {
-  return filterManager.getAllFilters().map(f => f.toJSON());
-};
+  return filterManager.getAllFilters().map(f => f.toJSON())
+}
 
 const convertToAtlasFormat = () => {
   // Convert UI state to Atlas cohort definition format
-  const filters = filterManager.getAllFilters();
-  
+  const filters = filterManager.getAllFilters()
+
   // Separate inclusion and exclusion filters
-  const inclusionFilters = filters.filter(f => f.type === 'inclusion');
-  const exclusionFilters = filters.filter(f => f.type === 'exclusion');
-  
+  const inclusionFilters = filters.filter(f => f.type === 'inclusion')
+  const exclusionFilters = filters.filter(f => f.type === 'exclusion')
+
   // Map tab selection to Atlas occurrence type
   const getOccurrenceType = () => {
     switch (activeTab.value) {
-      case 'earliest': return 'First';
-      case 'all': return 'All';
-      case 'latest': return 'Last';
-      default: return 'First';
+      case 'earliest':
+        return 'First'
+      case 'all':
+        return 'All'
+      case 'latest':
+        return 'Last'
+      default:
+        return 'First'
     }
-  };
-  
-  const occurrenceType = getOccurrenceType();
-  
+  }
+
+  const occurrenceType = getOccurrenceType()
+
   // Build concept sets from all filters
-  const conceptSets: any[] = [];
-  let conceptSetId = 0;
-  
+  const conceptSets: any[] = []
+  let conceptSetId = 0
+
   filters.forEach(filter => {
     filter.conditions.forEach(condition => {
       if (condition.chips.length > 0) {
@@ -203,28 +201,28 @@ const convertToAtlasFormat = () => {
           expression: {
             items: condition.chips.map(chip => ({
               concept: {
-                CONCEPT_CLASS_ID: "Clinical Finding",
+                CONCEPT_CLASS_ID: 'Clinical Finding',
                 CONCEPT_CODE: chip.value,
                 CONCEPT_ID: parseInt(chip.value) || 0,
                 CONCEPT_NAME: chip.label,
-                DOMAIN_ID: "Condition",
-                INVALID_REASON: "V",
-                INVALID_REASON_CAPTION: "Valid",
-                STANDARD_CONCEPT: "S",
-                STANDARD_CONCEPT_CAPTION: "Standard",
-                VOCABULARY_ID: "ICD10CM",
-                VALID_START_DATE: "1970-01-01",
-                VALID_END_DATE: "2099-12-31"
+                DOMAIN_ID: 'Condition',
+                INVALID_REASON: 'V',
+                INVALID_REASON_CAPTION: 'Valid',
+                STANDARD_CONCEPT: 'S',
+                STANDARD_CONCEPT_CAPTION: 'Standard',
+                VOCABULARY_ID: 'ICD10CM',
+                VALID_START_DATE: '1970-01-01',
+                VALID_END_DATE: '2099-12-31',
               },
               includeDescendants: false,
-              includeMapped: false
-            }))
-          }
-        });
+              includeMapped: false,
+            })),
+          },
+        })
       }
-    });
-  });
-  
+    })
+  })
+
   // Build Atlas cohort definition
   const atlasDef = {
     ConceptSets: conceptSets,
@@ -233,29 +231,29 @@ const convertToAtlasFormat = () => {
         {
           ObservationPeriod: {
             PeriodStartDate: {
-              Value: "1800-01-01",
-              Op: "gt"
+              Value: '1800-01-01',
+              Op: 'gt',
             },
             PeriodEndDate: {
-              Value: "2999-01-01", 
-              Op: "lt"
-            }
-          }
-        }
+              Value: '2999-01-01',
+              Op: 'lt',
+            },
+          },
+        },
       ],
       ObservationWindow: {
         PriorDays: 0,
-        PostDays: 0
+        PostDays: 0,
       },
       PrimaryCriteriaLimit: {
-        Type: occurrenceType
-      }
+        Type: occurrenceType,
+      },
     },
     QualifiedLimit: {
-      Type: occurrenceType
+      Type: occurrenceType,
     },
     ExpressionLimit: {
-      Type: occurrenceType
+      Type: occurrenceType,
     },
     InclusionRules: inclusionFilters.map((filter, filterIndex) => ({
       name: filter.title,
@@ -264,60 +262,62 @@ const convertToAtlasFormat = () => {
         CriteriaList: filter.conditions.map((condition, condIndex) => ({
           Criteria: {
             ConditionOccurrence: {
-              CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
-            }
+              CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet),
+            },
           },
           StartWindow: {
             Start: {
-              Coeff: -1
+              Coeff: -1,
             },
             End: {
-              Coeff: 1
+              Coeff: 1,
             },
-            UseEventEnd: false
+            UseEventEnd: false,
           },
           Occurrence: {
             Type: 2,
-            Count: 1
-          }
+            Count: 1,
+          },
         })),
         DemographicCriteriaList: [],
-        Groups: []
-      }
+        Groups: [],
+      },
     })),
     ExclusionRules: exclusionFilters.map((filter, filterIndex) => ({
       name: filter.title,
       expression: {
         Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-        CriteriaList: [{
-          CriteriaList: filter.conditions.map((condition, condIndex) => ({
-            ConditionOccurrence: {
-              CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
-            }
-          }))
-        }],
+        CriteriaList: [
+          {
+            CriteriaList: filter.conditions.map((condition, condIndex) => ({
+              ConditionOccurrence: {
+                CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet),
+              },
+            })),
+          },
+        ],
         DemographicCriteriaList: [],
-        Groups: []
-      }
+        Groups: [],
+      },
     })),
     CensoringCriteria: [],
     CollapseSettings: {
-      CollapseType: "ERA",
-      EraPad: 0
+      CollapseType: 'ERA',
+      EraPad: 0,
     },
     CensorWindow: {},
-    cdmVersionRange: ">=5.0.0"
-  };
-  
-  return atlasDef;
-};
+    cdmVersionRange: '>=5.0.0',
+  }
+
+  return atlasDef
+}
 
 const handleRemoveFilter = (filterId: string) => {
-  const removed = filterManager.removeFilter(filterId);
+  const removed = filterManager.removeFilter(filterId)
   if (removed) {
-    console.log('Filter removed:', filterId);
+    console.log('Filter removed:', filterId)
   }
-};
+}
 </script>
 
 <template>
@@ -328,24 +328,24 @@ const handleRemoveFilter = (filterId: string) => {
       <div class="query-filter-container__section">
         <div class="query-filter-container__header">
           <h3 class="query-filter-container__section-title">Inclusion Criterias</h3>
-          
+
           <!-- Tab Navigation -->
           <div class="query-filter-tabs">
-            <button 
+            <button
               class="query-filter-tabs__tab query-filter-tabs__tab--earliest"
               :class="{ active: activeTab === 'earliest' }"
               @click="activeTab = 'earliest'"
             >
               Earliest
             </button>
-            <button 
+            <button
               class="query-filter-tabs__tab query-filter-tabs__tab--all"
               :class="{ active: activeTab === 'all' }"
               @click="activeTab = 'all'"
             >
               All
             </button>
-            <button 
+            <button
               class="query-filter-tabs__tab query-filter-tabs__tab--latest"
               :class="{ active: activeTab === 'latest' }"
               @click="activeTab = 'latest'"
@@ -354,13 +354,13 @@ const handleRemoveFilter = (filterId: string) => {
             </button>
           </div>
         </div>
-        
+
         <!-- ALL 9 Container -->
         <div class="query-filter-group">
           <div class="query-filter-group__sidebar">
             <span class="sidebar-label">ALL 9</span>
           </div>
-          
+
           <div class="query-filter-group__content">
             <!-- Add event button for adding new sections -->
             <div class="add-section-container">
@@ -389,7 +389,6 @@ const handleRemoveFilter = (filterId: string) => {
             />
           </div>
         </div>
-
       </div>
 
       <!-- Removed exclusion criteria section as requested -->
@@ -397,15 +396,9 @@ const handleRemoveFilter = (filterId: string) => {
 
     <!-- Action Buttons -->
     <div class="query-filter-demo__actions">
-      <button class="btn btn-primary" @click="applyFilters">
-        Apply Filters
-      </button>
-      <button class="btn btn-secondary" @click="clearFilters">
-        Clear All
-      </button>
-      <button class="btn btn-link" @click="exportFilters">
-        Export Configuration
-      </button>
+      <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
+      <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
+      <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
     <!-- Debug Output -->
@@ -416,7 +409,7 @@ const handleRemoveFilter = (filterId: string) => {
           <h4>UI State JSON:</h4>
           <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
         </div>
-        
+
         <div class="debug-column">
           <h4>Atlas JSON:</h4>
           <pre>{{ JSON.stringify(convertToAtlasFormat(), null, 2) }}</pre>
@@ -427,13 +420,14 @@ const handleRemoveFilter = (filterId: string) => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/queryFilterCard';
+@import './queryFilterCard';
 
 .query-filter-demo {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+    'Droid Sans', 'Helvetica Neue', sans-serif;
 
   &__actions {
     display: flex;
@@ -459,11 +453,11 @@ const handleRemoveFilter = (filterId: string) => {
     .debug-columns {
       display: flex;
       gap: 16px;
-      
+
       .debug-column {
         flex: 1;
         min-width: 0; // Prevent flex items from growing beyond container
-        
+
         h4 {
           margin-bottom: 12px;
           color: #666;
@@ -564,8 +558,10 @@ const handleRemoveFilter = (filterId: string) => {
   font-family: 'Font Awesome 5 Free', 'app-icons';
   font-style: normal;
   font-weight: 900;
-  
-  &-plus::before { content: '\f067'; }
+
+  &-plus::before {
+    content: '\f067';
+  }
 }
 
 .query-filter-group {
@@ -602,10 +598,10 @@ const handleRemoveFilter = (filterId: string) => {
 
   &__content {
     padding: 12px 8px;
-    
+
     .query-filter-card {
       margin-bottom: 8px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
