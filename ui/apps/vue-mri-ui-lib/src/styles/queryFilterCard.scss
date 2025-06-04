@@ -1,13 +1,15 @@
 // Tab navigation styles
 .query-filter-tabs {
-  display: inline-flex;
+  display: flex;
   background: white;
   border-radius: 8px;
-  padding: 2px;
-  border: 1px solid #e0e0e0;
+  padding: 0;
+  border: 1px solid #1e3a8a;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  overflow: hidden;
+  width: 240px;
 
   &__tab {
     background: white;
@@ -15,21 +17,79 @@
     padding: 6px 20px;
     font-size: 13px;
     font-weight: 500;
-    color: #3b82f6;
+    color: #1e3a8a;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 0;
     transition: all 0.2s;
     position: relative;
     white-space: nowrap;
+    flex: 1;
+    text-align: center;
 
-    &:hover:not(.active) {
-      background: rgba(59, 130, 246, 0.1);
+    // Add separator line after each tab except the last
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #1e3a8a;
+      transition: opacity 0.2s;
+    }
+
+    // Hide separator when this tab is active
+    &.active::after {
+      opacity: 0;
+    }
+    
+    // Hide separator on the tab before the active one
+    &:has(+ .active)::after {
+      opacity: 0;
     }
 
     &.active {
-      background: #3b82f6;
+      background: #1e3a8a;
       color: white;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    // Special border radius handling
+    &--earliest {
+      border-radius: 6px 0 0 6px;
+      
+      &.active {
+        border-radius: 6px 0 0 6px;
+        // Extend slightly to the left to cover any gap
+        margin-left: -1px;
+        padding-left: 21px;
+      }
+    }
+
+    &--all {
+      &.active {
+        border-radius: 0;
+      }
+    }
+
+    &--latest {
+      border-radius: 0 6px 6px 0;
+      
+      &.active {
+        border-radius: 0 6px 6px 0;
+      }
+    }
+
+    // When middle tab is active, adjust neighbors
+    &--all.active {
+      & ~ .query-filter-tabs__tab--latest {
+        border-radius: 0 6px 6px 0;
+      }
+    }
+
+    &--earliest.active ~ &--all {
+      border-radius: 0;
     }
   }
 }
