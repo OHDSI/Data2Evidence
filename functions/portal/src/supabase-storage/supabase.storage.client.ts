@@ -1,8 +1,13 @@
-import { BadRequestException, InternalServerErrorException } from "@danet/core";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from "@danet/core";
 import { contentType } from "mime-types";
-import { env, services } from "../env.ts";
 import pg from "npm:pg";
+import { env, services } from "../env.ts";
 
+@Injectable()
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
@@ -207,13 +212,20 @@ export class SupabaseStorageClient {
     }
   }
 
-  async upload(datasetId: string, file: Multer.File) {
+  async upload(
+    id: string,
+    file: Multer.File,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
     const fileName = file.originalname;
-    try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Uploading file: ${filePath}`);
+    const targetBucket = bucketName || this.DEFAULT_BUCKET;
 
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+    try {
+      const filePath = this.getFilePath(id, fileName, pathType);
+      console.log(`Uploading file: ${filePath} to bucket: ${targetBucket}`);
+
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -240,6 +252,8 @@ export class SupabaseStorageClient {
       console.info(`File ${fileName} successfully uploaded to ${filePath}`);
       return {
         status: "success",
+        filePath,
+        bucket: targetBucket,
       };
     } catch (e) {
       console.error(
@@ -254,12 +268,19 @@ export class SupabaseStorageClient {
     }
   }
 
-  async delete(datasetId: string, fileName: string) {
-    try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Deleting file: ${filePath}`);
+  async delete(
+    id: string,
+    fileName: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
+    const targetBucket = bucketName || this.DEFAULT_BUCKET;
 
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+    try {
+      const filePath = this.getFilePath(id, fileName, pathType);
+      console.log(`Deleting file: ${filePath} from bucket: ${targetBucket}`);
+
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -277,9 +298,13 @@ export class SupabaseStorageClient {
         );
       }
 
-      console.info(`File ${filePath} successfully deleted`);
+      console.info(
+        `File ${filePath} successfully deleted from ${targetBucket}`
+      );
       return {
         status: "success",
+        filePath,
+        bucket: targetBucket,
       };
     } catch (e) {
       console.error(
@@ -298,8 +323,20 @@ export class SupabaseStorageClient {
     return `datasets/${datasetId}`;
   }
 
-  private getFilePath(datasetId: string, fileName: string) {
-    return `${this.getDatasetFolderPath(datasetId)}/${fileName}`;
+  private getDataTransformationFolderPath(nodeId: string) {
+    return `data-transformation/${nodeId}`;
+  }
+
+  private getFilePath(
+    id: string,
+    fileName: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
+    if (pathType === "data-transformation") {
+      return `${this.getDataTransformationFolderPath(id)}/${fileName}`;
+    } else {
+      return `${this.getDatasetFolderPath(id)}/${fileName}`;
+    }
   }
 
   private formatBytes(bytes, decimals = 1) {
