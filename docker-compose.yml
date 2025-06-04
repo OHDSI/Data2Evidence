@@ -339,7 +339,9 @@ services:
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}"
+            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+            "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/flows.git}",
+            "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}"
           },
           "dataset": {
             "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
@@ -504,6 +506,8 @@ services:
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}' #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
+      DATAFLOW_TEMPLATE_REPO_URL: ${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/flows.git}
+      DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
