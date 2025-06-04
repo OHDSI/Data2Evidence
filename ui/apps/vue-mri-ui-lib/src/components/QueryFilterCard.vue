@@ -149,6 +149,15 @@ defineExpose({
         <div class="query-filter-card__info">
           <h4 class="query-filter-card__title">{{ filter.title || 'Untitled Filter' }}</h4>
         </div>
+        
+        <button
+          class="btn-remove-filter"
+          @click="removeFilter"
+          aria-label="Remove filter"
+          title="Remove filter"
+        >
+          ×
+        </button>
       </div>
     </div>
 
@@ -230,6 +239,14 @@ defineExpose({
               title="More options"
             >
               =
+            </button>
+            <button
+              class="btn-remove-condition"
+              @click="removeCondition(condition.id)"
+              aria-label="Remove condition"
+              title="Remove condition"
+            >
+              ×
             </button>
           </div>
         </div>
@@ -627,6 +644,43 @@ defineExpose({
 
   .icon {
     font-size: 12px;
+  }
+}
+
+.btn-remove-condition {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #dc2626;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+
+  &:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.btn-remove-filter {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: #dc2626;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  margin-left: auto;
+
+  &:hover {
+    background: #fee2e2;
+    color: #b91c1c;
   }
 }
 </style>
