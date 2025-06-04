@@ -163,29 +163,20 @@ def runStrategus(json_graph, options):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
-    executionSettings = json_graph.get('executionSettings', {
+    defaultExecutionSettings = json.dumps({
         "workDatabaseSchema": schema_name,
         "cdmDatabaseSchema": schema_name,
-        "cohortTableNames": {
-            "cohortTable": "cohort",
-            "cohortSampleTable": "cohort",
-            "cohortInclusionTable": "cohort_inclusion",
-            "cohortInclusionResultTable": "cohort_inclusion_result",
-            "cohortInclusionStatsTable": "cohort_inclusion_stats",
-            "cohortSummaryStatsTable": "cohort_summary_stats",
-            "cohortCensorStatsTable": "cohort_censor_stats"
-        },
-        "workFolder": f'{work_folder}',
-        "resultsFolder": f'{path_to_results}',
-        "logFileName": f'{log_file_name}',
+        "workFolder": work_folder,
+        "resultsFolder": path_to_results,
+        "logFileName": log_file_name,
         "minCellCount": 5,
-        "incremental": True, # TODO: check again
         "maxCores": 8,
         "attr_class": [
             "CdmExecutionSettings",
             "ExecutionSettings"
         ]
     })
+    executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     if(upload_results):

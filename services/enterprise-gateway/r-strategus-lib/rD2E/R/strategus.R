@@ -11,20 +11,25 @@
 #' @return Response object with flow run details, id and status
 #' @export
 run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, options = list()) {
-  # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   url <- paste0(host, "/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus")
+  json_graph = list()
   
-  analysisSpec <- ParallelLogger::convertSettingsToJson(analysisSpecification)
-  execSettings <- ParallelLogger::convertSettingsToJson(executionSettings)
-  json_graph = list(
-    analysisSpecification = analysisSpec,
-    executionSettings = execSettings
-  )
+  if (!is.null(analysisSpecification)) {
+    json_graph$analysisSpecification <- ParallelLogger::convertSettingsToJson(
+      analysisSpecification
+    )
+  }
+  if (!is.null(executionSettings)) {
+    json_graph$executionSettings <- ParallelLogger::convertSettingsToJson(
+      executionSettings
+    )
+  }
   if (length(options) == 0) {
     options <- create_options()
   }
+
   parameters <- list(
     json_graph = json_graph,
     options = options
@@ -84,9 +89,9 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #' @export
 create_options <- function(upload_results = FALSE) {
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  return(options = list(
+  return(list(
       mode = 'kernel',
       datasetId = dataset_id,
-      uploadResults = upload_results,
+      uploadResults = upload_results
   ))
 }

@@ -905,7 +905,7 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
         except Exception as e:
             print('Error: ', e)
-            return RuntimeError('Execution of strategus has failed')
+            raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
       log_prints=True)
@@ -936,7 +936,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             if(not dbdao.check_schema_exists(results_schema)):
                 dbdao.create_schema(results_schema)
             else:
-                dbdao.drop_schema(results_schema)
+                dbdao.drop_schema(results_schema, True)
                 dbdao.create_schema(results_schema)
 
             # create results datamodel settings
@@ -952,13 +952,13 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             )
             # upload results to the database
             rStrategus.uploadResults(
-                connectionDetails = rConnectionDetails,
+                resultsConnectionDetails = rConnectionDetails,
                 analysisSpecifications = rAnalysisSpec,
                 resultsDataModelSettings = resultsDataModelSettings
             )
         except Exception as e:
             print('Error: ', e)
-            return RuntimeError('Uploading results of strategus has failed')
+            raise RuntimeError('Uploading results of strategus has failed')
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
