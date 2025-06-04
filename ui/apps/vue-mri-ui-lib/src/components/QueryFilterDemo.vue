@@ -93,8 +93,16 @@ const addExclusionFilter = () => {
 };
 
 const handleAddEvent = (filterId: string) => {
-  console.log('Add event to filter:', filterId);
-  // Would open a dialog to add new event/condition
+  // Add a new condition to the existing filter (same as handleAddCondition)
+  const filter = filterManager.getFilter(filterId);
+  if (filter) {
+    const newCondition: QueryFilterCondition = {
+      id: `cond_${Date.now()}`,
+      conceptSet: 'Condition concept set',
+      chips: []
+    };
+    filter.addCondition(newCondition);
+  }
 };
 
 const handleAddCondition = (filterId: string) => {
@@ -369,7 +377,7 @@ const handleRemoveFilter = (filterId: string) => {
               @remove-chip="handleRemoveChip"
               @show-menu="handleShowMenu"
               @remove-filter="handleRemoveFilter"
-              @add-any-event="addInclusionFilter"
+              @add-any-event="handleAddCondition(filter.id)"
             />
           </div>
         </div>
