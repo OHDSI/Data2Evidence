@@ -1210,45 +1210,22 @@ export class TransformationService {
       }
 
       const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
 
-      const canvasId = uuidv4();
-      const canvas = {
-        id: canvasId,
+      const dataflowDto: IDataflowDto = {
         name,
-        type: "datatransformation-flow",
+        dataflow: {
+          ...templateData,
+          comment: comment || `Created from template: ${templateId}`,
+        },
       };
 
-      await this.canvasRepo.insert(this.addOwner(decodedToken, canvas, true));
-
-      const graphEntity = this.graphRepo.create({
-        id: uuidv4(),
-        canvasId: canvas.id,
-        flow: templateData,
-        comment: comment || `Created from template: ${templateId}`,
-        version: 1,
-      });
-
-      await this.graphRepo.insert(
-        this.addOwner(decodedToken, graphEntity, true)
-      );
+      const result = await this.createCanvas(dataflowDto, token);
 
       this.logger.info(
-        `Created new canvas from template ${templateId} with id ${graphEntity.id}`
+        `Created new canvas from template ${templateId} with id ${result.revisionId}`
       );
 
-      await this.saveToGitRepo(
-        canvas.id,
-        graphEntity,
-        `Created new canvas from template ${templateId}: ${canvas.name}`,
-        token
-      );
-
-      return {
-        id: canvas.id,
-        revisionId: graphEntity.id,
-        version: graphEntity.version,
-      };
+      return result;
     } catch (error) {
       this.logger.error(
         `Failed to create template flow from remote: ${error.message}`
