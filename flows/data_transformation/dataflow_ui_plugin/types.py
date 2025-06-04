@@ -21,7 +21,7 @@ class DataflowUITraceConfigType(BaseModel):
     trace_mode: bool
     
     @property
-    def use_cache_db(self) -> str:
+    def use_cache_db(self) -> bool:
         return False
 
 
