@@ -36,6 +36,10 @@
       <DeploymentDetails :deployment="deployment" alternate @update="deploymentSubscription.refresh" />
     </template>
   </p-layout-well>
+
+  <p-layout-well v-else>
+    <Loader />
+  </p-layout-well>
 </template>
 
 <script lang="ts" setup>
@@ -57,6 +61,7 @@ import { useRouteParam, useRouteQueryParam, useSubscription } from '@prefecthq/v
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { routes } from '@/router'
+import Loader from '@/components/Loader.vue'
 
 const deploymentId = useRouteParam('deploymentId')
 const deploymentIds = computed(() => [deploymentId.value])

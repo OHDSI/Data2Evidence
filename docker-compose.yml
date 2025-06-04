@@ -110,7 +110,7 @@ services:
       alp-logto-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TREX_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
@@ -143,7 +143,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
-      REP_PG: postgres://postgres:mypass@demodb:5432/postgres
+      REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
           "_shared": {
@@ -318,6 +318,7 @@ services:
             "PG_SCHEMA": "cdw_config",
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PORT": 41114,
+            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-false}",
             "USE_CACHEDB": "${USE_CACHEDB:-true}",
             "USE_DUCKDB": "${USE_DUCKDB:-true}",
             "isTestEnv": "${isTestEnv}",
@@ -364,7 +365,8 @@ services:
             "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
             "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
             "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
-            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -401,7 +403,7 @@ services:
           "demo": {
             "DEMO__DB_CODE": "demo_database",
             "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": [] }",
+            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
             "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
             "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
             "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
@@ -432,7 +434,9 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}"
+            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
+            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
           },
           "jupyter-gateway": {}
         }
@@ -493,7 +497,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas"]'
+      PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "white-rabbit-flow"]'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -727,7 +731,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && prefect server start"
+      - "prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
       alp-logto-post-init:
@@ -738,11 +742,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://localhost:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/api/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: dataflow-gen-1
     image: prefecthq/prefect:3.0.3-python3.11
@@ -777,7 +782,7 @@ services:
     command:
       - sh
       - -c
-      - "apt-get update && apt-get install -y curl && pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker"
+      - "pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -789,11 +794,12 @@ services:
       interval: 30s
       retries: 30
       start_period: 30s
-      test:
-        - CMD
-        - curl
-        - -f
-        - http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api/health
+      test: [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)"
+      ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: prefecthq/prefect:3.0.3-python3.11
@@ -811,6 +817,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
+      PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
@@ -869,6 +876,8 @@ services:
       test:
         - CMD
         - wget
+        - --proxy
+        - off
         - -O
         - logto.status
         - http://localhost:3001/api/status
@@ -1059,12 +1068,26 @@ services:
     image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
     mem_limit: "2G"
-    command:
-      - "postgres"
-      - "-c"
-      - "wal_level=logical"
+    command: >
+      sh -c '
+      set -e;
+      echo "Starting PostgreSQL in background via original docker-entrypoint.sh...";
+      /usr/local/bin/docker-entrypoint.sh postgres -c wal_level=logical &
+      PG_PID=$!;
+      echo "Waiting for PostgreSQL to become ready...";
+        until pg_isready -q -U postgres -h localhost -p 5432; do
+          echo "PostgreSQL is unavailable - sleeping for 1 second...";
+          sleep 1;
+        done;
+      echo "PostgreSQL is ready on localhost:5432.";
+      echo "Attempting to change password for user postgres...";
+      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD:-mypass}'\'';";
+      echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
+      wait $PG_PID;
+      echo "PostgreSQL process (PID $PG_PID) has exited.";
+      exit $?;'
     environment:
-      - POSTGRES_PASSWORD=mypass
+      POSTGRES_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
     networks:
       alp:
         priority: 20
@@ -1078,6 +1101,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     profiles: [demodb]
 
   redis:
@@ -1200,6 +1224,7 @@ services:
       test:
         - CMD
         - wget
+        - --no-proxy
         - -O
         - fhir.status
         - http://localhost:8103/healthcheck
@@ -1290,11 +1315,12 @@ services:
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
-      KERNEL_USERNAME: jovyan
       EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
       EG_DOCKER_MODE: docker
       EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
       TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+      EG_ENV_WHITELIST: "KERNEL_USERNAME"
+      EG_MAX_KERNELS_PER_USER: 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:

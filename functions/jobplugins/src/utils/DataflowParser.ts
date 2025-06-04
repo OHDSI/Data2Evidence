@@ -48,7 +48,19 @@ export class PrefectParamsTransformer {
       const { id, type, parentNode } = node;
       const { name, description, executorOptions, ...prefectVars } = node.data;
       if (isCsv(node)) {
-        delete (<IFlowCsvNodeData>prefectVars).hasheader;
+        // For CSV nodes, ensure all required fields are included and add encoding with default value
+        const csvData = node.data as IFlowCsvNodeData;
+        acc[name] = {
+          id: id,
+          type: type,
+          file: csvData.file,
+          delimiter: csvData.delimiter,
+          hasheader: csvData.hasheader,
+          columns: csvData.hasheader ? [] : csvData.columns || [],
+          encoding: csvData.encoding || "utf-8",
+          parentNode: parentNode,
+        };
+        return acc;
       }
       // construct prefect subflow
       if (type === "subflow") {
@@ -130,9 +142,20 @@ export class PrefectParamsTransformer {
       const { id, type } = obj;
       const { name, description, ...prefectVars } = obj.data;
       if (isCsv(obj)) {
-        delete (<IFlowCsvNodeData>prefectVars).hasheader;
+        // For CSV nodes, ensure all required fields are included and add encoding with default value
+        const csvData = obj.data as IFlowCsvNodeData;
+        acc[name] = {
+          id: id,
+          type: type,
+          file: csvData.file,
+          delimiter: csvData.delimiter,
+          hasheader: csvData.hasheader,
+          columns: csvData.hasheader ? [] : csvData.columns || [],
+          encoding: csvData.encoding || "utf-8",
+        };
+      } else {
+        acc[name] = { ...prefectVars, id: id, type: type };
       }
-      acc[name] = { ...prefectVars, id: id, type: type };
       return acc;
     }, {});
   }
@@ -160,14 +183,24 @@ export class PrefectAnalysisParamsTransformer {
 
       const { name, description, ...prefectVars } = node.data;
       if (isCsv(node)) {
-        delete (<IFlowCsvNodeData>prefectVars).hasheader;
+        // For CSV nodes, ensure all required fields are included and add encoding with default value
+        const csvData = node.data as IFlowCsvNodeData;
+        acc[name] = {
+          id: id,
+          type: type,
+          file: csvData.file,
+          delimiter: csvData.delimiter,
+          hasheader: csvData.hasheader,
+          columns: csvData.hasheader ? [] : csvData.columns || [],
+          encoding: csvData.encoding || "utf-8",
+        };
+      } else {
+        acc[name] = {
+          ...prefectVars,
+          id: id,
+          type: type,
+        };
       }
-
-      acc[name] = {
-        ...prefectVars,
-        id: id,
-        type: type,
-      };
       return acc;
     }, {});
     return {

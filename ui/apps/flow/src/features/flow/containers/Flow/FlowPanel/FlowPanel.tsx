@@ -146,6 +146,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     centerViewport(savedNodes);
   }, [dataflow, centerViewport]);
 
+  const handleNodesDelete = useCallback(() => {
+    dispatch(markStatusAsDraft());
+  }, []);
+
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const updates = applyNodeChanges(changes, nodes);
@@ -206,7 +210,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         type,
         data: {
           name: `${type}_${nodeCount}`,
-          description: `Describe the task of node ${id.substring(0, 8)}`,
+          description: `Describe the task of node ${type}_${nodeCount}`,
           ...NodeChoiceMap[type].defaultData,
         },
         position,
@@ -445,6 +449,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         fitView
         fitViewOptions={fitViewOptions}
         nodeTypes={NODE_TYPES}
+        onNodesDelete={handleNodesDelete}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

@@ -1,10 +1,19 @@
 #!/usr/bin/env zx
 import dotenv from 'dotenv';
 
-if ( await $`[ -f .env ]` ) {  
-    dotenv.config('.env');
-} else { 
-    console.log(chalk.red(`FATAL .env file not found`));
+const args = process.argv.slice(2); 
+const vIndex_envfile = args.indexOf("-n");
+let envfile;
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
+    envfile = (args[vIndex_envfile + 1]);
+} else {
+    envfile = ".env";
+}
+try {
+    await $`test -f ${envfile}`;
+    dotenv.config({ path: `${envfile}` });
+} catch (error) {
+    console.log(chalk.red(`FATAL ${envfile} not found`));
     process.exit(1)
 }
 
@@ -93,17 +102,19 @@ var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | s
 
 const start = Date.now();
 const duration = 900000; // 15mins
+let job_runs = '';
+let num_of_jobs = 0; 
 try {
     var running_count=1;
     while (running_count>0 && Date.now() < duration + start) { 
         var resp = await $`curl -ks --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/prefect/api/flow_runs/filter' \
             --header 'Content-Type: application/x-www-form-urlencoded' \
             --header 'Authorization: Bearer ${BEARER_TOKEN}'`
-        var num_of_jobs = await $`echo ${resp} | jq length`
-        var job_runs = await $`echo ${resp} | jq '.[] | ((.name | gsub(" "; "_")), .state_type)' | xargs -n 2 | column -t`
-        var result = await $`echo ${resp} |jq -r '.[] | {(.name|tostring):.state_type}'`
-        var flow_status = await $`echo ${result} | jq -r 'to_entries|.[] | .value '`
-        let lines = flow_status.stdout.trim().split('\n')
+        const jobs = JSON.parse(resp.stdout);
+        num_of_jobs = jobs.length;
+        job_runs = jobs.map(job => `${job.name.replace(/ /g, "_")}\t${job.state_type}`).join('\n');
+        const flow_status = jobs.map(job => job.state_type);
+        let lines = flow_status;
         var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED').length;
         var success_count = lines.filter(line => line === 'COMPLETED'|| line === 'SCHEDULED' || line === 'PAUSED').length;
         var cancelled_count = lines.filter(line => line === 'CANCELLED' || line === 'CANCELLING').length;

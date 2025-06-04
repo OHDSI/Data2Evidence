@@ -1,5 +1,6 @@
-import { env, services } from "../env.ts";
+import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
+import { CsvFileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -56,22 +57,6 @@ export class PortalServerAPI {
       throw error;
     }
   }
-  // TODO: Comfirm if we no longer save deployment resource to S3
-  async deleteDeploymentFiles(deploymentFolderPath: string) {
-    try {
-      const url = `${this.baseURL}/prefect?filePath=${deploymentFolderPath}&bucketName=${env.ADHOC_DEPLOYMENT_FLOWS_BUCKET_NAME}`;
-      console.info(url);
-      const options = this.createOptions("DELETE");
-      const result = await fetch(url, options);
-      if (!result.ok) {
-        throw new Error("Error while deleting deployment files");
-      }
-      return await result.json();
-    } catch (error) {
-      console.error(`Error while deleting deployment files: ${error}`);
-      throw error;
-    }
-  }
 
   async getFlowRunResults(filePaths) {
     try {
@@ -108,6 +93,77 @@ export class PortalServerAPI {
       console.error(
         `Error while getting flow run results with filePath ${filePaths}: ${error}`
       );
+      throw error;
+    }
+  }
+
+  async getConfigByType(type: string) {
+    try {
+      const url = `${this.baseURL}/config/${type}`;
+      const options = this.createOptions("GET");
+      const result = await fetch(url, options);
+      if (!result.ok) {
+        console.log(`Config type '${type}' not found or inaccessible`);
+        return null;
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while getting system config: ${error}`);
+      return null;
+    }
+  }
+
+  async uploadCsvFile(
+    nodeId: string,
+    file: File
+  ): Promise<CsvFileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/upload/csv`;
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+
+      const options = {
+        method: "POST",
+        headers: {
+          Authorization: this.token,
+        },
+        body: formData,
+      };
+
+      const result = await fetch(`${url}?nodeId=${nodeId}`, options);
+      if (!result.ok) {
+        const errorText = await result.text();
+        throw new Error(
+          `Error while uploading CSV file: ${result.status} - ${errorText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while uploading CSV file: ${error}`);
+      throw error;
+    }
+  }
+
+  async deleteCsvFile(
+    nodeId: string,
+    fileName: string
+  ): Promise<CsvFileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/delete/csv`;
+      const options = this.createOptions("DELETE");
+      const result = await fetch(
+        `${url}?nodeId=${nodeId}&fileName=${fileName}`,
+        options
+      );
+      if (!result.ok) {
+        const errorText = await result.text();
+        throw new Error(
+          `Error while deleting CSV file: ${result.status} - ${errorText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while deleting CSV file: ${error}`);
       throw error;
     }
   }

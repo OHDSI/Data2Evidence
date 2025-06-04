@@ -4,27 +4,28 @@ import { StarboardNotebook } from "./utils/notebook";
 import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
 import { Card, Loader } from "@portal/components";
 import { api } from "../../axios/api";
-import { useActiveDataset, useFeedback, useTranslation } from "../../contexts";
+import { useFeedback, useTranslation } from "../../contexts";
 import { EmptyNotebook } from "./components/EmptyNotebook";
 import { Header } from "./components/NotebookHeader/NotebookHeader";
 import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
 import { i18nKeys } from "../../contexts/app-context/states";
 import env from "../../env";
 import "./Starboard.scss";
-import { getAuthToken } from "../../containers/auth/auth";
-
+import Fab from "@mui/material/Fab";
+import AssistantIcon from "@mui/icons-material/Assistant";
+import Chat from "../../components/Chat/Chat";
+import { useConversationHistory } from "../../contexts";
+import { ChatItem } from "@nlux/react";
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
-const codeSuggestionUrl = "code-suggestion";
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
+  const [open, setOpen] = useState(false);
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const { activeDataset } = useActiveDataset();
-  const activeDatasetId = activeDataset.id;
-
+  const activeDatasetId = metadata?.studyId!;
   // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
 
@@ -38,48 +39,13 @@ os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
 os.environ['TOKEN'] = '${jwtToken}'
 os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
 
-  const extractJupyterKernel = `\n#%% [esm]
-import * as a from "${uiFilesUrl}starboard-jupyter/index.js"
-a.plugin.register(1, {
-    serverSettings: {
-      baseUrl: "${uiFilesUrl}jupyter",
-      token: "${jwtToken}",
-      appendToken: true,
-      init: {
-          headers: {
-            datasetId: "${activeDatasetId}",
-            }
-          }
-        }
-      }
-    )`;
-
-  const initialiseJupyterKernel = `\n# %% [jupyter]
-Sys.setenv(TREX__AUTHORIZATION_TOKEN = "${jwtToken}")
-Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
-  `;
-
   const [runtime, setRuntime] = useState<StarboardEmbed>();
   const [unsaved, setUnsaved] = useState(false);
 
   const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
   const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
   const [isShared, setIsShared] = useState<boolean | undefined>();
-
-  // Get Bearer Token for code-suggestion
-  const [accessToken, setToken] = useState("");
-  const getBearerToken = useCallback(async () => {
-    const token = await getAuthToken(false);
-    return `Bearer ${token}`;
-  }, []);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      const bearerToken = await getBearerToken();
-      setToken(bearerToken);
-    };
-    fetchToken();
-  }, [getBearerToken]);
+  const { setConversationHistory } = useConversationHistory();
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -117,8 +83,7 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-      notebookContent += setupPYQE + extractJupyterKernel + initialiseJupyterKernel;
-
+      notebookContent += setupPYQE;
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
         mount.removeChild(mount.firstChild);
@@ -128,8 +93,10 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         notebookContent: notebookContent || "",
         src: `${uiFilesUrl}starboard-notebook-base/index.html`,
         preventNavigationWithUnsavedChanges: true,
-        suggestionUrl: `${uiFilesUrl}${codeSuggestionUrl}?datasetId=${activeDatasetId}`,
-        bearerToken: accessToken,
+        serverUrl: uiFilesUrl,
+        token: jwtToken,
+        userId: metadata?.userId,
+        datasetId: activeDatasetId,
         onUnsavedChangesStatusChange: () => setUnsaved(true),
       });
 
@@ -137,7 +104,7 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
       setRuntime(embedEl);
       setUnsaved(false);
     },
-    [jwtToken, metadata]
+    [jwtToken, metadata, activeDatasetId, setupPYQE]
   );
 
   useEffect(() => {
@@ -216,6 +183,14 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
     }
   };
 
+  const handleChatClose = useCallback(
+    (chatHistory: ChatItem[]) => {
+      setConversationHistory(chatHistory);
+      setOpen(false);
+    },
+    [setConversationHistory]
+  );
+
   if (loading) {
     return <Loader />;
   }
@@ -239,8 +214,19 @@ Sys.setenv(TREX__DATASET_ID = "${activeDatasetId}")
         activeDatasetId={activeDatasetId}
       />
       <Card>
+        <Fab
+          color="primary"
+          aria-label="assistant"
+          onClick={() => {
+            setOpen(true);
+          }}
+          className="chat-button"
+        >
+          <AssistantIcon />
+        </Fab>
         <div id="starboard-root" />
       </Card>
+      <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
     </div>
   );
 };

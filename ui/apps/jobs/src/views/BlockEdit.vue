@@ -8,6 +8,10 @@
       <BlockSchemaEditForm v-model:data="data" v-bind="{ name, blockSchema }" v-on="{ submit, cancel }" />
     </BlockTypeCardLayout>
   </p-layout-default>
+
+  <p-layout-default v-else>
+    <Loader/>
+  </p-layout-default>
 </template>
 
 <script lang="ts" setup>
@@ -17,6 +21,7 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { routes } from '@/router/routes'
+  import Loader from '@/components/Loader.vue'
 
   const api = useWorkspaceApi()
   const router = useRouter()
