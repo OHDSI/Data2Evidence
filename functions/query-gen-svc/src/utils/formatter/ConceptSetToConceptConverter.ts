@@ -150,16 +150,28 @@ const findConceptSetsInIfr = (config: Config, ifr: Ifr): IfrConceptSet[] => {
         ({ obj }) =>
             configJsonWalker(obj._configPath)[0]?.obj?.type === "conceptSet"
     );
-    const conceptSetIds = conceptSetAttributes.map(({ path, obj }) => {
+
+    const conceptSetIds = conceptSetAttributes
+    .map(({ path, obj }) => {
+        // Json walk over concept set attributes as content could be nested
+        const conceptSetJsonWalker = getJsonWalkFunction(obj)
+        const conceptSetContent = conceptSetJsonWalker("**.content").reduce((acc, obj) => {
+            if (obj.obj.filter(o => o.hasOwnProperty("_value")).length > 0){
+                acc.push(...(obj.obj))
+            }
+            return acc
+        }, [])
+
         return {
             conceptSetAttr: configJsonWalker(obj._configPath)[0]?.obj
-                ?.conceptSetAttr,
+            ?.conceptSetAttr,
             path,
             instanceId: obj._instanceID,
-            conceptSetIds: obj._constraints.content.map((c) => c._value),
+            conceptSetIds: conceptSetContent.map((c) => c._value),
         };
-    }).filter((el) => el.conceptSetIds.length > 0);
-
+    })
+    .filter((el) => el.conceptSetIds.length > 0);
+    
     return conceptSetIds;
 };
 

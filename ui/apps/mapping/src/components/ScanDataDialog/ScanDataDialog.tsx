@@ -38,6 +38,29 @@ const EMPTY_DBCONNECTION_FORM_DATA = {
   schema: "",
 };
 
+const DELIMITERS = [
+  {
+    name: ",",
+    value: ",",
+  },
+  {
+    name: ";",
+    value: ";",
+  },
+  {
+    name: "|",
+    value: "|",
+  },
+  {
+    name: "Tab",
+    value: "tab",
+  },
+  {
+    name: "Space",
+    value: " ",
+  },
+];
+
 export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScanId }) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [availableTables, setAvailableTables] = useState<string[]>([]);
@@ -45,7 +68,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const [dataType, setDataType] = useState("");
   const [loading, setLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
-  const [delimiter, setDelimiter] = useState(",");
+  const [delimiter, setDelimiter] = useState(DELIMITERS[0].value);
   const [dbConnectionForm, setDbConnectionForm] = useState<ScanDataDBConnectionForm>(EMPTY_DBCONNECTION_FORM_DATA);
   const [canConnect, setCanConnect] = useState(false);
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
@@ -111,7 +134,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     setUploadedFiles(files);
   }, []);
 
-  const handleDelimiterChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDelimiterChange = useCallback((event: SelectChangeEvent<string>) => {
     setDelimiter(event.target.value as string);
   }, []);
 
@@ -159,7 +182,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
       setSelectedTables([]);
       setAvailableTables([]);
       setUploadedFiles([]);
-      setDelimiter(",");
+      setDelimiter(DELIMITERS[0].value);
     } else {
       setDbConnectionForm(EMPTY_DBCONNECTION_FORM_DATA);
     }
@@ -289,12 +312,12 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
                   </FormControl>
 
                   <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                    <TextField
-                      label="Delimiter"
-                      value={delimiter}
-                      onChange={handleDelimiterChange}
-                      variant="standard"
-                    />
+                    <InputLabel>Delimiter</InputLabel>
+                    <Select value={delimiter} label="Delimiter" onChange={handleDelimiterChange}>
+                      {DELIMITERS.map((delimiter) => (
+                        <MenuItem key={delimiter.value} value={delimiter.value}>{delimiter.name}</MenuItem>
+                      ))}
+                    </Select>
                   </FormControl>
                   <Button onClick={handleClear}>Clear all</Button>
                 </>
