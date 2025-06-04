@@ -11,9 +11,10 @@ import { TenantModule } from './tenant/tenant.module.ts';
 import { GroupModule } from './user-artifact/group/group.module.ts';
 import { UserArtifactModule } from './user-artifact/user-artifact.module.ts';
 import { UserMgmtModule } from './user-mgmt/user-mgmt.module.ts';
+import { SupabaseStorageModule } from './supabase-storage/supabase.storage.module.ts';
 @Module({
   controllers: [],
-  imports: [TenantModule, SystemModule, FeatureModule, ConfigModule, DatabaseModule, UserMgmtModule, UserArtifactModule, GroupModule, DatasetModule, NotebookModule, PaConfigModule],
+  imports: [TenantModule, SystemModule, FeatureModule, ConfigModule, DatabaseModule, UserMgmtModule, UserArtifactModule, GroupModule, DatasetModule, NotebookModule, PaConfigModule, SupabaseStorageModule],
   injectables: [RequestContextMiddleware]
 })
 export class AppModule { }

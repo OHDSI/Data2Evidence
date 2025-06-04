@@ -81,6 +81,15 @@ RUN Rscript -e "remotes::install_version('duckdb', version='1.2.1', quiet=FALSE,
 RUN Rscript -e "remotes::install_version('visOmopResults', version='0.3.0', quiet=TRUE, upgrade='never', force=TRUE, dependencies=TRUE, repos='https://cloud.r-project.org')" 
 RUN Rscript -e "remotes::install_version('omopgenerics', version='0.2.1', quiet=TRUE, upgrade='never', force=TRUE, dependencies=FALSE, repos='https://cloud.r-project.org')"
 
+# Verify installation and fail if any are missing
+RUN Rscript -e "required <- c('CDMConnector', 'PatientProfiles', 'CohortSurvival', 'RPostgres', 'duckdb', 'visOmopResults', 'omopgenerics'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
+
+
 ### END COHORT SURVIVAL ###
 
 RUN useradd docker -u 1001 \
