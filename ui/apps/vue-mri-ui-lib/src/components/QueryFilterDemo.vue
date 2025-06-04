@@ -536,7 +536,7 @@ const handleRemoveFilter = (filterId: string) => {
   position: relative;
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   margin-bottom: 20px;
   padding-left: 40px;
   min-height: 100px;
@@ -553,7 +553,7 @@ const handleRemoveFilter = (filterId: string) => {
     justify-content: center;
     writing-mode: sideways-lr;
     text-orientation: mixed;
-    border-radius: 8px 0 0 8px;
+    border-radius: 0 0 0 8px;
 
     .sidebar-label {
       color: white;
@@ -565,7 +565,7 @@ const handleRemoveFilter = (filterId: string) => {
   }
 
   &__content {
-    padding: 6px 4px;
+    padding: 12px 8px;
     
     .query-filter-card {
       margin-bottom: 8px;

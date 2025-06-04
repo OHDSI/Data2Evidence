@@ -210,12 +210,12 @@ defineExpose({
               <i class="icon icon-trash"></i>
             </button>
             <button
-              class="btn-icon btn-icon--more"
+              class="btn-hamburger-menu"
               @click="showConditionMenu(condition.id)"
               aria-label="More options"
               title="More options"
             >
-              <i class="icon icon-ellipsis-v"></i>
+              =
             </button>
           </div>
         </div>
@@ -550,6 +550,25 @@ defineExpose({
     .icon {
       font-size: 16px;
     }
+  }
+
+  .icon {
+    font-size: 14px;
+  }
+}
+
+.btn-hamburger-menu {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+    color: #333;
   }
 
   .icon {

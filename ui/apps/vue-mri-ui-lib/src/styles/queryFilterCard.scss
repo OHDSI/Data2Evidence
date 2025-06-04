@@ -37,10 +37,10 @@
 // Container for the filter system
 .query-filter-container {
   background: white;
-  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 16px;
+  padding: 16px 0;
   margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   &__section {
     margin-bottom: 24px;
@@ -55,10 +55,11 @@
     align-items: center;
     margin-bottom: 16px;
     position: relative;
+    padding-left: 16px;
   }
 
   &__section-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
     color: #ef4444;
     margin: 0;
@@ -96,6 +97,9 @@
     }
     &-ellipsis-v::before {
       content: '\f142';
+    }
+    &-hamburger::before {
+      content: '\f0c9';
     }
   }
 }
