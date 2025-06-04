@@ -2,15 +2,7 @@
  * Adapter to convert between OHDSI Atlas Cohort Definition JSON and simplified Query Filter Model
  */
 
-import {
-  AtlasCohortDefinition,
-  ConceptSet,
-  ConceptSetItem,
-  CriteriaListItem,
-  getCriteriaType,
-  getCriteriaObject,
-  InclusionRule,
-} from './AtlasCohortDefinition'
+import { AtlasCohortDefinition, getCriteriaType, getCriteriaObject, InclusionRule } from './AtlasCohortDefinition'
 
 import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip } from './QueryFilterModel'
 
@@ -270,14 +262,5 @@ export class AtlasCohortAdapter {
     }
 
     return colorMap[domainId] || '#7f8c8d' // Default gray
-  }
-
-  /**
-   * Convert Query Filter Models back to Atlas Cohort Definition
-   * (For future implementation when saving back to Atlas format)
-   */
-  static queryFiltersToAtlas(filters: QueryFilterCardModel[]): Partial<AtlasCohortDefinition> {
-    // This would be implemented when you need to save filters back to Atlas format
-    throw new Error('Not implemented yet')
   }
 }

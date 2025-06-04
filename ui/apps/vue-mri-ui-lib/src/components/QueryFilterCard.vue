@@ -225,14 +225,6 @@ defineExpose({
               <i class="icon icon-copy"></i>
             </button>
             <button
-              class="btn-icon btn-icon--danger"
-              @click="removeCondition(condition.id)"
-              aria-label="Remove condition"
-              title="Remove condition"
-            >
-              <i class="icon icon-trash"></i>
-            </button>
-            <button
               class="btn-hamburger-menu"
               @click="showConditionMenu(condition.id)"
               aria-label="More options"
@@ -589,13 +581,6 @@ defineExpose({
   &:hover {
     background: #e5e7eb;
     color: #333;
-  }
-
-  &--danger {
-    &:hover {
-      background: #fee2e2;
-      color: #dc2626;
-    }
   }
 
   &--more {

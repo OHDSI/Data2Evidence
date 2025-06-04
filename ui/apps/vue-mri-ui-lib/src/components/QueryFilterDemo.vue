@@ -10,7 +10,6 @@ import QueryFilterCard from './QueryFilterCard.vue';
 import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from '../lib/models/QueryFilterModel';
 
 const activeTab = ref('all');
-const showExclusionSection = ref(false);
 const showDebug = ref(false);
 const filterManager = reactive(new QueryFilterManager());
 
@@ -81,29 +80,6 @@ const addInclusionFilter = () => {
     conditions: []
   });
   filterManager.addFilter(newFilter);
-};
-
-const addExclusionFilter = () => {
-  const newFilter = new QueryFilterCardModel({
-    title: 'New Exclusion Filter',
-    type: 'exclusion',
-    conditions: []
-  });
-  filterManager.addFilter(newFilter);
-  showExclusionSection.value = true;
-};
-
-const handleAddEvent = (filterId: string) => {
-  // Add a new condition to the existing filter (same as handleAddCondition)
-  const filter = filterManager.getFilter(filterId);
-  if (filter) {
-    const newCondition: QueryFilterCondition = {
-      id: `cond_${Date.now()}`,
-      conceptSet: 'Condition concept set',
-      chips: []
-    };
-    filter.addCondition(newCondition);
-  }
 };
 
 const handleAddCondition = (filterId: string) => {
@@ -180,7 +156,6 @@ const applyFilters = () => {
 const clearFilters = () => {
   if (confirm('Are you sure you want to clear all filters?')) {
     filterManager.clearAllFilters();
-    showExclusionSection.value = false;
   }
 };
 
@@ -341,10 +316,6 @@ const handleRemoveFilter = (filterId: string) => {
   const removed = filterManager.removeFilter(filterId);
   if (removed) {
     console.log('Filter removed:', filterId);
-    // Check if we should hide the exclusion section
-    if (filterManager.getExclusionFilters().length === 0) {
-      showExclusionSection.value = false;
-    }
   }
 };
 </script>
@@ -405,7 +376,7 @@ const handleRemoveFilter = (filterId: string) => {
               :hide-group-label="true"
               :show-add-event-in-any="true"
               @update:filter="updateFilter"
-              @add-event="handleAddEvent(filter.id)"
+              @add-event="handleAddCondition(filter.id)"
               @add-condition="handleAddCondition"
               @edit-condition="handleEditCondition"
               @duplicate-condition="handleDuplicateCondition"
