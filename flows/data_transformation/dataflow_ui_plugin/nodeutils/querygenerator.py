@@ -69,7 +69,7 @@ def apply_datepart(expr, datepart_value: dict[str, DatePartType]) -> ibis.expr.t
         case DatePartType.SECOND:
             return expr.second()
         case _:
-            raise ValueError(f"Unsupported date part type: {datepart_value.get("part")}")
+            raise ValueError(f"Unsupported date part type: {datepart_value.get('part')}")
 
 
 def apply_ibis_func(expr, 
