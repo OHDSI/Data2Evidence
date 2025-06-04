@@ -228,14 +228,21 @@ const convertToAtlasFormat = () => {
           expression: {
             items: condition.chips.map(chip => ({
               concept: {
+                CONCEPT_CLASS_ID: "Clinical Finding",
+                CONCEPT_CODE: chip.value,
                 CONCEPT_ID: parseInt(chip.value) || 0,
                 CONCEPT_NAME: chip.label,
-                CONCEPT_CODE: chip.value,
-                VOCABULARY_ID: "ICD10CM", // Default, would be dynamic in real app
-                DOMAIN_ID: "Condition"    // Default, would be dynamic in real app
+                DOMAIN_ID: "Condition",
+                INVALID_REASON: "V",
+                INVALID_REASON_CAPTION: "Valid",
+                STANDARD_CONCEPT: "S",
+                STANDARD_CONCEPT_CAPTION: "Standard",
+                VOCABULARY_ID: "ICD10CM",
+                VALID_START_DATE: "1970-01-01",
+                VALID_END_DATE: "2099-12-31"
               },
-              isExcluded: false,
-              includeDescendants: true
+              includeDescendants: false,
+              includeMapped: false
             }))
           }
         });
@@ -245,17 +252,22 @@ const convertToAtlasFormat = () => {
   
   // Build Atlas cohort definition
   const atlasDef = {
-    name: "Demo Cohort",
-    description: "Cohort created from Query Filter UI",
-    expressionType: "SIMPLE_EXPRESSION",
     ConceptSets: conceptSets,
     PrimaryCriteria: {
-      CriteriaList: inclusionFilters.length > 0 ? 
-        inclusionFilters[0].conditions.map((condition, index) => ({
-          ConditionOccurrence: {
-            CodesetId: index
+      CriteriaList: [
+        {
+          ObservationPeriod: {
+            PeriodStartDate: {
+              Value: "1800-01-01",
+              Op: "gt"
+            },
+            PeriodEndDate: {
+              Value: "2999-01-01", 
+              Op: "lt"
+            }
           }
-        })) : [],
+        }
+      ],
       ObservationWindow: {
         PriorDays: 0,
         PostDays: 0
@@ -270,17 +282,32 @@ const convertToAtlasFormat = () => {
     ExpressionLimit: {
       Type: occurrenceType
     },
-    InclusionRules: inclusionFilters.slice(1).map((filter, filterIndex) => ({
+    InclusionRules: inclusionFilters.map((filter, filterIndex) => ({
       name: filter.title,
       expression: {
         Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-        CriteriaList: [{
-          CriteriaList: filter.conditions.map((condition, condIndex) => ({
+        CriteriaList: filter.conditions.map((condition, condIndex) => ({
+          Criteria: {
             ConditionOccurrence: {
               CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
             }
-          }))
-        }]
+          },
+          StartWindow: {
+            Start: {
+              Coeff: -1
+            },
+            End: {
+              Coeff: 1
+            },
+            UseEventEnd: false
+          },
+          Occurrence: {
+            Type: 2,
+            Count: 1
+          }
+        })),
+        DemographicCriteriaList: [],
+        Groups: []
       }
     })),
     ExclusionRules: exclusionFilters.map((filter, filterIndex) => ({
@@ -293,9 +320,18 @@ const convertToAtlasFormat = () => {
               CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet)
             }
           }))
-        }]
+        }],
+        DemographicCriteriaList: [],
+        Groups: []
       }
-    }))
+    })),
+    CensoringCriteria: [],
+    CollapseSettings: {
+      CollapseType: "ERA",
+      EraPad: 0
+    },
+    CensorWindow: {},
+    cdmVersionRange: ">=5.0.0"
   };
   
   return atlasDef;
