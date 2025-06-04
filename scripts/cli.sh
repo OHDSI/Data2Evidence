@@ -216,7 +216,7 @@ case $cmd in
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
         echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
         echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-        echo FHIR__CLIENT_ID=$(random-uuid) >> $DOTENV_FILE
+        echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
         echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
@@ -226,12 +226,12 @@ case $cmd in
         echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
         echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo MINIO__SECRET_KEY=$(random-uuid) >> $DOTENV_FILE
+        echo MINIO__SECRET_KEY=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
-        echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
+        echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
         echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
