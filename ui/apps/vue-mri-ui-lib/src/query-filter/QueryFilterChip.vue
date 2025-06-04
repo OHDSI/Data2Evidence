@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, defineProps, defineEmits } from 'vue'
-import { QueryFilterChip } from '../lib/models/QueryFilterModel'
+import { QueryFilterChip } from './QueryFilterModel'
 
 const props = defineProps<{
   chip: QueryFilterChip

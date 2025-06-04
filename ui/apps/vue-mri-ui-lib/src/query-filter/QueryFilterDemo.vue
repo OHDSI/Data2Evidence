@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue';
 import QueryFilterCard from './QueryFilterCard.vue';
-import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from '../lib/models/QueryFilterModel';
+import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from './QueryFilterModel';
 
 const activeTab = ref('all');
 const showDebug = ref(false);
