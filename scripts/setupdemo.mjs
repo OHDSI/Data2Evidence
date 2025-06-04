@@ -1,14 +1,24 @@
 #!/usr/bin/env zx
 import dotenv from 'dotenv';
 
-if ( await $`[ -f .env ]` ) {  
-    dotenv.config('.env');
-} else { 
-    console.log(chalk.red(`FATAL .env file not found`));
+const args = process.argv.slice(2); 
+const vIndex_envfile = args.indexOf("-n");
+let envfile;
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
+    envfile = (args[vIndex_envfile + 1]);
+} else {
+    envfile = ".env";
+}
+try {
+    await $`test -f ${envfile}`;
+    dotenv.config({ path: `${envfile}` });
+} catch (error) {
+    console.log(chalk.red(`FATAL ${envfile} not found`));
     process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
+const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
@@ -91,25 +101,37 @@ var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/oauth/token' 
 var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\\([^"]*\\)"/\\1/'`
 
 // Setup demo dataset
-var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup-dataset' \
-        --header 'Content-Type: application/x-www-form-urlencoded' \
-        --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-        --data-urlencode 'client_id=${app_client_id}'`
+const encryptionKeysObj = {
+    DataPlatform: "",
+    Internal: public_key
+};
+const payload = JSON.stringify({
+    encryptionKeys: JSON.stringify(encryptionKeysObj)
+});
+
+var resp = await $`curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
+    --header 'Content-Type: application/json' \
+    --header 'Authorization: Bearer ${BEARER_TOKEN}' \
+    --data ${payload}`;
+
 var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"message":"\\([^"]*\\)"/\\1/'`
 var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`
-console.log(chalk.blue(`${resp_message}`));        
+console.log(chalk.blue(`${resp_message}`));       
 var progress_status = "inprogress";
 
 try { 
     while (progress_status == "inprogress") {
         var resp = await $`curl -ks --location --request GET 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/progress/${progress_id}' \
         --header 'Content-Type: application/x-www-form-urlencoded' \
-        --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-        --data-urlencode 'client_id=${app_client_id}'`
+        --header 'Authorization: Bearer ${BEARER_TOKEN}'`
+        const data = JSON.parse(resp);
+        for (const step of data.steps) {
+            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`)
+        }
         var progress_status = await $`echo ${resp} | grep -o '"status":"[^"]*"' | tail -n 1 | sed 's/"status":"\\([^"]*\\)"/\\1/'`
         console.log(`progress_status: ${progress_status}\n`);
         if (progress_status == "inprogress") { 
-            console.log(`Setting up demo dataset...\n`);
+            console.log(`Setup in progress...`);  
            await $`sleep 15`
         } else if (progress_status == "completed") {
             console.log(chalk.green(`Setup completed succcessfully. Go to Job Runs to view the result.\n`));
@@ -151,4 +173,4 @@ if (progress_status == "completed") {
             "roles": ["RESEARCHER"]
             }'`
     console.log(chalk.green(`Completed adding admin user access permissions to demo dataset.`));
-}
+} 

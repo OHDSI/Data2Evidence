@@ -1,0 +1,12 @@
+.overwrite-dialog {
+  &__actions {
+    justify-content: flex-end;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: 16px;
+    
+    .MuiButton-root:first-child {
+      margin-right: 8px;
+    }
+  }
+}

@@ -350,7 +350,7 @@ export class CohortEndpoint {
             const rowCount = await this.executeCohortQuery(insertQuery);
             return rowCount;
         } catch (err) {
-            logger.error(`Failed to insert cohort with data: ${cohort}`);
+            logger.error(`Failed to insert cohort with data: ${JSON.stringify(cohort)}`);
             // Cleanup previously inserted cohort definition and cohort rows
             await this.deleteCohortDefinitionFromDb(cohortDefinitionId);
             await this.deleteCohortFromDb(cohortDefinitionId);

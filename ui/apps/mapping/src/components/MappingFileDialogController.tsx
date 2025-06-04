@@ -1,15 +1,13 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { CloseDialogType, SaveMappingDialog } from "./SaveMappingDialog/SaveMappingDialog";
 import { useApp, useDialog } from "../contexts/hooks";
-import { useNavigate } from "react-router-dom";
 
 export const MappingFileDialogController: FC = () => {
-  const { load, state } = useApp();
+  const { load, setPage, state } = useApp();
   const { saveMappingDialogVisible, loadMappingDialogVisible, openSaveMappingDialog, openLoadMappingDialog } =
     useDialog();
   const [nextAction, setNextAction] = useState<string | undefined>();
   const hiddenFileInput = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
 
   const handleOpenSaveDialog = useCallback(
     (nextAction?: string) => {
@@ -48,7 +46,7 @@ export const MappingFileDialogController: FC = () => {
             const json = JSON.parse(jsonData);
             console.debug("JSON content:", json);
             load(json);
-            navigate("");
+            setPage("table");
             window.location.reload();
           } catch (err) {
             console.error("Error parsing JSON:", err);
@@ -57,7 +55,7 @@ export const MappingFileDialogController: FC = () => {
         reader.readAsText(file);
       }
     },
-    [openLoadMappingDialog, load, navigate]
+    [openLoadMappingDialog, load]
   );
 
   const handleCloseSaveDialog = useCallback(

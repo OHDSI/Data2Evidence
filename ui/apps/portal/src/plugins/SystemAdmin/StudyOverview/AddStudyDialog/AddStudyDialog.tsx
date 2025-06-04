@@ -493,24 +493,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     let fhirProjectId;
 
-    if (createFhirProject) {
-      try {
-        const fhirProjectInput: NewFhirProjectInput = {
-          name: tokenStudyCode,
-          description: description,
-        };
-        const { id } = await api.gateway.createFhirStaging(fhirProjectInput);
-        fhirProjectId = id;
-      } catch (err: any) {
-        setFeedback({
-          type: "error",
-          message: `[FHIR Project] ${err.data?.message || err.data}`,
-        });
-        console.error(err);
-        return;
-      }
-    }
-
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
       detail: {
@@ -540,7 +522,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      await api.gateway.createDataset(input);
+      const datasetId = await api.gateway.createDataset(input);
+      if (createFhirProject) {
+        try {
+          const fhirProjectInput: NewFhirProjectInput = {
+            id: datasetId.id,
+            description: description,
+          };
+          await api.gateway.createFhirStaging(fhirProjectInput);
+        } catch (err: any) {
+          setFeedback({
+            type: "error",
+            message: `[FHIR Project] ${err.data?.message || err.data}`,
+          });
+          console.error(err);
+          //return;
+        }
+      }
       handleClose("success");
     } catch (err: any) {
       setFeedback({

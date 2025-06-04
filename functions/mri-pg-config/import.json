@@ -20,10 +20,11 @@
   "./src/db/migrations/20220913175044_alter_table_add_pkey_constraint_ConfigDbModels_AssignmentDetail": "./src/db/migrations/20220913175044_alter_table_add_pkey_constraint_ConfigDbModels_AssignmentDetail.ts",
   "./src/db/migrations/20220128065537_create_function_ConfigDbProcedures_GetAssignedConfigurations": "./src/db/migrations/20220128065537_create_function_ConfigDbProcedures_GetAssignedConfigurations.ts",
   "./src/db/knex": "./src/db/knex.ts",
-  "./src/db/seeds/03_Config": "./src/db/seeds/03_Config.ts",
-  "./src/db/seeds/04_UserDefaultConfig": "./src/db/seeds/04_UserDefaultConfig.ts",
   "./src/db/seeds/01_AssignmentDetail": "./src/db/seeds/01_AssignmentDetail.ts",
   "./src/db/seeds/02_AssignmentHeader": "./src/db/seeds/02_AssignmentHeader.ts",
+  "./src/db/seeds/03_Config": "./src/db/seeds/03_Config.ts",
+  "./src/db/seeds/04_UserDefaultConfig": "./src/db/seeds/04_UserDefaultConfig.ts",
+  "./src/db/configs/fhirConfigDuckdb": "./src/db/configs/fhirConfigDuckdb.ts",
   "./src/db/knexfile": "./src/db/knexfile.ts",
   "./src/db/knexfile-admin": "./src/db/knexfile-admin.ts",
   "./src/env": "./src/env.ts"

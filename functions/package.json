@@ -34,7 +34,7 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/import.json",
           "env": "alp-dataflow-gen-init",
-          "waitfor": "http://dataflow-gen-1:41120/api/health"
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
           "function": "/files-manager/src/init",
@@ -359,6 +359,9 @@
           "portal.userArtifact.delete",
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -1432,6 +1435,24 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/csv",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/csv",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
           "scopes": [
             "gateway.dashboardGate.content"
@@ -1612,6 +1633,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/dataflow-mgmt/dataflow/file/csv$",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {
@@ -2269,6 +2299,16 @@
         },
         {
           "path": "^/code-suggestion",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/code-suggestion/chat",
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"

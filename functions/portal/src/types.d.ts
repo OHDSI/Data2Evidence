@@ -33,6 +33,7 @@ export interface IDataset {
     description: string
   }
   tenant?: ITenant
+  fhir_project_id?: string
 }
 
 // TODO: Remove when we switch from study to dataset entirely
@@ -121,6 +122,7 @@ export interface IDatasetDetailMetadataUpdateDto {
   tokenDatasetCode: string
   visibilityStatus: string
   paConfigId: string
+  fhir_project_id?: string
 }
 
 export interface IDatasetMetadataUpdateDto {
@@ -164,6 +166,7 @@ export interface IDatasetResponseDto {
   totalSubjects?: number
   dataModel: string
   plugin: string
+  fhir_project_id?: string
 }
 
 export interface IDatasetSearchDto {
