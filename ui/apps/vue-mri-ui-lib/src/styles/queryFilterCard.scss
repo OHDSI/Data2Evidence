@@ -1,25 +1,26 @@
 // Tab navigation styles
 .query-filter-tabs {
-  display: flex;
-  background: #f8f9fa;
-  border-radius: 8px 8px 0 0;
-  padding: 4px;
-  margin-bottom: 0;
+  display: inline-flex;
+  background: white;
+  border-radius: 8px;
+  padding: 2px;
   border: 1px solid #e0e0e0;
-  border-bottom: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 
   &__tab {
-    flex: 1;
     background: transparent;
     border: none;
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 6px 20px;
+    font-size: 13px;
     font-weight: 500;
     color: #666;
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s;
     position: relative;
+    white-space: nowrap;
 
     &:hover:not(.active) {
       background: rgba(0, 0, 0, 0.05);
@@ -57,7 +58,7 @@
 .query-filter-container {
   background: white;
   border: 1px solid #e0e0e0;
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
 
@@ -69,11 +70,18 @@
     }
   }
 
+  &__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
   &__section-title {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 12px;
+    color: #ef4444;
+    margin: 0;
   }
 }
 

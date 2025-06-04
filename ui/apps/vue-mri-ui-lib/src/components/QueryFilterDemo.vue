@@ -16,8 +16,8 @@ const filterManager = reactive(new QueryFilterManager());
 
 // Initialize with sample data
 const initializeSampleData = () => {
-  // Sample inclusion filter
-  const inclusionFilter = new QueryFilterCardModel({
+  // Sample inclusion filters matching the screenshot
+  const diabetesFilter = new QueryFilterCardModel({
     title: 'Diabetes Type 2',
     type: 'inclusion',
     conditions: [
@@ -25,12 +25,25 @@ const initializeSampleData = () => {
         id: 'cond1',
         conceptSet: 'Condition concept set',
         chips: [
-          { id: 'chip1', label: 'Diabetes Type 2', value: 'E11' },
+          { id: 'chip1', label: 'Diabetes Type 2', value: 'E11' }
+        ]
+      }
+    ]
+  });
+
+  const cardiovascularFilter = new QueryFilterCardModel({
+    title: 'Cardiovascular disease',
+    type: 'inclusion',
+    conditions: [
+      {
+        id: 'cond2',
+        conceptSet: 'Condition concept set',
+        chips: [
           { id: 'chip2', label: 'Atrial Fib A', value: 'I48.0' }
         ]
       },
       {
-        id: 'cond2',
+        id: 'cond3',
         conceptSet: 'Condition concept set',
         chips: [
           { id: 'chip3', label: 'Atrial Fib B', value: 'I48.1' }
@@ -39,28 +52,12 @@ const initializeSampleData = () => {
     ]
   });
 
-  // Sample exclusion filter
-  const exclusionFilter = new QueryFilterCardModel({
-    title: 'Cardiovascular disease',
-    type: 'exclusion',
-    conditions: [
-      {
-        id: 'cond3',
-        conceptSet: 'Condition concept set',
-        chips: [
-          { id: 'chip4', label: 'Atrial Fib A', value: 'I48.0' },
-          { id: 'chip5', label: 'Atrial Fib B', value: 'I48.1' }
-        ]
-      }
-    ]
-  });
-
-  filterManager.addFilter(inclusionFilter);
-  filterManager.addFilter(exclusionFilter);
+  // Expand both filters by default
+  diabetesFilter.isExpanded = true;
+  cardiovascularFilter.isExpanded = true;
   
-  if (exclusionFilter) {
-    showExclusionSection.value = true;
-  }
+  filterManager.addFilter(diabetesFilter);
+  filterManager.addFilter(cardiovascularFilter);
 };
 
 // Initialize sample data on mount
@@ -289,38 +286,38 @@ const handleRemoveFilter = (filterId: string) => {
 
 <template>
   <div class="query-filter-demo">
-    <h2>Query Filter UI Demo</h2>
-    
-    <!-- Tab Navigation -->
-    <div class="query-filter-tabs">
-      <button 
-        class="query-filter-tabs__tab query-filter-tabs__tab--earliest"
-        :class="{ active: activeTab === 'earliest' }"
-        @click="activeTab = 'earliest'"
-      >
-        Earliest
-      </button>
-      <button 
-        class="query-filter-tabs__tab query-filter-tabs__tab--all"
-        :class="{ active: activeTab === 'all' }"
-        @click="activeTab = 'all'"
-      >
-        All
-      </button>
-      <button 
-        class="query-filter-tabs__tab query-filter-tabs__tab--latest"
-        :class="{ active: activeTab === 'latest' }"
-        @click="activeTab = 'latest'"
-      >
-        Latest
-      </button>
-    </div>
-
     <!-- Filter Container -->
     <div class="query-filter-container">
       <!-- Inclusion Criteria Section -->
       <div class="query-filter-container__section">
-        <h3 class="query-filter-container__section-title">Inclusion Criterias</h3>
+        <div class="query-filter-container__header">
+          <h3 class="query-filter-container__section-title">Inclusion Criterias</h3>
+          
+          <!-- Tab Navigation -->
+          <div class="query-filter-tabs">
+            <button 
+              class="query-filter-tabs__tab query-filter-tabs__tab--earliest"
+              :class="{ active: activeTab === 'earliest' }"
+              @click="activeTab = 'earliest'"
+            >
+              Earliest
+            </button>
+            <button 
+              class="query-filter-tabs__tab query-filter-tabs__tab--all"
+              :class="{ active: activeTab === 'all' }"
+              @click="activeTab = 'all'"
+            >
+              All
+            </button>
+            <button 
+              class="query-filter-tabs__tab query-filter-tabs__tab--latest"
+              :class="{ active: activeTab === 'latest' }"
+              @click="activeTab = 'latest'"
+            >
+              Latest
+            </button>
+          </div>
+        </div>
         
         <query-filter-card
           v-for="filter in inclusionFilters"
@@ -344,39 +341,7 @@ const handleRemoveFilter = (filterId: string) => {
         </button>
       </div>
 
-      <!-- Exclusion Criteria Section -->
-      <div class="query-filter-container__section" v-if="exclusionFilters.length > 0 || showExclusionSection">
-        <h3 class="query-filter-container__section-title">Exclusion Criterias</h3>
-        
-        <query-filter-card
-          v-for="filter in exclusionFilters"
-          :key="filter.id"
-          :filter="filter"
-          @update:filter="updateFilter"
-          @add-event="handleAddEvent(filter.id)"
-          @add-condition="handleAddCondition"
-          @edit-condition="handleEditCondition"
-          @duplicate-condition="handleDuplicateCondition"
-          @remove-condition="handleRemoveCondition"
-          @add-chip="handleAddChip"
-          @remove-chip="handleRemoveChip"
-          @show-menu="handleShowMenu"
-          @remove-filter="handleRemoveFilter"
-        />
-
-        <button class="btn btn-link btn-add-filter" @click="addExclusionFilter">
-          <i class="icon icon-plus"></i>
-          Add Exclusion Filter
-        </button>
-      </div>
-
-      <button 
-        v-if="!showExclusionSection && exclusionFilters.length === 0"
-        class="btn btn-secondary"
-        @click="showExclusionSection = true"
-      >
-        Add Exclusion Criteria
-      </button>
+      <!-- Removed exclusion criteria section as requested -->
     </div>
 
     <!-- Action Buttons -->
@@ -417,11 +382,6 @@ const handleRemoveFilter = (filterId: string) => {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-
-  h2 {
-    margin-bottom: 24px;
-    color: #333;
-  }
 
   &__actions {
     display: flex;

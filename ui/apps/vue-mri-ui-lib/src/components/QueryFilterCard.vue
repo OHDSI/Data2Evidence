@@ -1,6 +1,6 @@
 <script lang="ts">
 export default {
-  name: 'QueryFilterCard'
+  name: 'QueryFilterCard',
 }
 </script>
 
@@ -27,7 +27,7 @@ const emit = defineEmits([
 ])
 
 const sidebarLabel = computed(() => {
-  return props.filter.type === 'inclusion' ? 'All Patients' : 'Exclusion'
+  return props.filter.type === 'inclusion' ? 'ALL 9 (nested)' : 'Exclusion'
 })
 
 const toggleExpanded = () => {
@@ -117,7 +117,7 @@ const addChipToCondition = (conditionId: string, chip: Partial<QueryFilterChipTy
 
 // Expose the addChipToCondition method for parent access if needed
 defineExpose({
-  addChipToCondition
+  addChipToCondition,
 })
 </script>
 
@@ -134,7 +134,8 @@ defineExpose({
           <i class="icon" :class="filter.isExpanded ? 'icon-chevron-down' : 'icon-chevron-right'"></i>
         </button>
 
-        <div class="query-filter-card__add-button">
+        <div class="query-filter-card__info">
+          <h4 class="query-filter-card__title">{{ filter.title || 'Untitled Filter' }}</h4>
           <button class="btn-add-event" @click="$emit('add-event')">
             <i class="icon icon-plus-circle"></i>
             <span>Add event</span>
@@ -144,7 +145,15 @@ defineExpose({
     </div>
 
     <div v-if="filter.isExpanded" class="query-filter-card__content">
-      <div v-for="condition in filter.conditions" :key="condition.id" class="query-filter-condition">
+      <div
+        v-for="(condition, index) in filter.conditions"
+        :key="condition.id"
+        class="query-filter-condition"
+        :class="{ 'has-nested': filter.conditions.length > 1 }"
+      >
+        <div class="query-filter-condition__at-least">
+          <span>At least 1</span>
+        </div>
         <div class="query-filter-condition__header">
           <span class="query-filter-condition__label">
             {{ condition.conceptSet || 'Condition concept set' }}
@@ -211,6 +220,13 @@ defineExpose({
     <div class="query-filter-card__sidebar" :class="{ 'sidebar-exclusion': filter.type === 'exclusion' }">
       <span class="sidebar-label">{{ sidebarLabel }}</span>
     </div>
+    <div
+      v-if="filter.conditions.length > 1"
+      class="query-filter-card__condition-sidebar"
+      :class="{ 'sidebar-any': true }"
+    >
+      <span class="condition-sidebar-label">ANY</span>
+    </div>
   </div>
 </template>
 
@@ -221,8 +237,8 @@ defineExpose({
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   margin-bottom: 16px;
-  padding-left: 40px;
-  overflow: hidden;
+  padding-left: 110px;
+  overflow: visible;
 
   &.is-exclusion {
     border-color: #ff6b6b;
@@ -237,6 +253,21 @@ defineExpose({
     display: flex;
     align-items: center;
     gap: 12px;
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    flex: 1;
   }
 
   &__toggle {
@@ -255,27 +286,25 @@ defineExpose({
     }
   }
 
-  &__add-button {
-    .btn-add-event {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.2s;
+  .btn-add-event {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 
-      &:hover {
-        background: #2563eb;
-      }
+    &:hover {
+      background: #2563eb;
+    }
 
-      .icon {
-        font-size: 16px;
-      }
+    .icon {
+      font-size: 16px;
     }
   }
 
@@ -314,12 +343,12 @@ defineExpose({
     left: 0;
     top: 0;
     bottom: 0;
-    width: 40px;
-    background: #3b82f6;
+    width: 60px;
+    background: #1e40af;
     display: flex;
     align-items: center;
     justify-content: center;
-    writing-mode: vertical-rl;
+    writing-mode: sideways-lr;
     text-orientation: mixed;
 
     &.sidebar-exclusion {
@@ -328,9 +357,35 @@ defineExpose({
 
     .sidebar-label {
       color: white;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+  }
+
+  &__condition-sidebar {
+    position: absolute;
+    left: 60px;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    background: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: sideways-lr;
+    text-orientation: mixed;
+
+    &.sidebar-any {
+      background: #ef4444;
+    }
+
+    .condition-sidebar-label {
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
       text-transform: uppercase;
     }
   }
@@ -342,9 +397,33 @@ defineExpose({
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 12px;
+  position: relative;
+  margin-left: 40px;
 
   &:last-child {
     margin-bottom: 0;
+  }
+
+  &__at-least {
+    position: absolute;
+    left: -40px;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: #ddd6fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: sideways-lr;
+    text-orientation: mixed;
+    border-radius: 6px 0 0 6px;
+
+    span {
+      font-size: 11px;
+      font-weight: 500;
+      color: #5b21b6;
+      white-space: nowrap;
+    }
   }
 
   &__header {
