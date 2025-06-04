@@ -1,3 +1,4 @@
+import { Box, Button, IconButton } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -6,23 +7,23 @@ import React, {
   useMemo,
 } from "react";
 import { useSelector } from "react-redux";
-import { Box, Button, IconButton } from "@portal/components";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { dispatch, RootState } from "../../../store";
+import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
-import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
-import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
-import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
+import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
+import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
+import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
 import { FlowListSelect } from "./Flow/FlowList/FlowListSelect";
 import { FlowPanel } from "./Flow/FlowPanel/FlowPanel";
 import { FlowRevisionsButton } from "./Flow/FlowRevisions/FlowRevisionsButton";
-import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
-import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
-import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
-import { ExportFlowButton } from "./Flow/ExportFlow/ExportFlowButton";
+import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
 import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
+import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
+import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
+import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
 import "./FlowLayout.scss";
+import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
 
 interface FlowLayoutProps {
   isStandalone: boolean;
@@ -94,6 +95,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
           <SaveFlowButton />
           <Button variant="outlined" text="Add node" onClick={handleAddNode} />
           <CreateGroupButton />
+          <SyncFromRemoteButton />
           <Box display="flex" alignItems="center">
             <FlowSettingsButton />
             <ResultsPolling />
