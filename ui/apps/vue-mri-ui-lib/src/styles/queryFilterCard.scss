@@ -10,12 +10,12 @@
   transform: translateX(-50%);
 
   &__tab {
-    background: transparent;
+    background: white;
     border: none;
     padding: 6px 20px;
     font-size: 13px;
     font-weight: 500;
-    color: #666;
+    color: #3b82f6;
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s;
@@ -23,33 +23,13 @@
     white-space: nowrap;
 
     &:hover:not(.active) {
-      background: rgba(0, 0, 0, 0.05);
+      background: rgba(59, 130, 246, 0.1);
     }
 
     &.active {
-      background: white;
-      color: #333;
+      background: #3b82f6;
+      color: white;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    &--earliest {
-      color: #3b82f6;
-
-      &.active {
-        color: #2563eb;
-      }
-    }
-
-    &--all {
-      color: #666;
-    }
-
-    &--latest {
-      color: #8b5cf6;
-
-      &.active {
-        color: #7c3aed;
-      }
     }
   }
 }
