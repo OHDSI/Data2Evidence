@@ -1353,7 +1353,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
+    image: d2e/flow-base:local
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:
@@ -1362,7 +1362,5 @@ services:
     networks:
       alp:
       data:
-    # ports:
-    #   - "5000:5000"
     command: mlflow server --host 0.0.0.0 --port 5000
     profiles: [mlflow]
