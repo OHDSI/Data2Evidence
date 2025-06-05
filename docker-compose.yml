@@ -1165,7 +1165,7 @@ services:
       - supabase-storage-data:/var/lib/storage
     entrypoint: ["/bin/sh", "-c"]
     command: > # Wait 30 seconds for trex to finish migrations
-      "echo 'Waiting 30 seconds before starting...' && sleep 80 && echo 'Starting server now' && node dist/start/server.js"
+      "echo 'Waiting 30 seconds before starting...' && sleep 30 && echo 'Starting server now' && node dist/start/server.js"
 
     environment:
       <<:
