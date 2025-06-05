@@ -11,12 +11,13 @@ import criteriaConfigLoader, { type AttributeConfig } from './CriteriaConfigLoad
 interface Props {
   criteriaType: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
   disabled?: boolean
-  selectedAttributes?: string[] // Currently selected attribute IDs
+  conditionId: string // The condition ID for which this dropdown is shown
+  allConditions: any[] // All conditions in the filter to check which attributes are already selected
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  selectedAttributes: () => []
+  allConditions: () => []
 })
 
 const emit = defineEmits<{
@@ -53,10 +54,25 @@ const attributesByCategory = computed(() => {
   return grouped
 })
 
-// Check if an attribute is currently selected
+// Check if an attribute is currently selected by looking for existing attribute-based conditions
 const isAttributeSelected = (attributeId: string) => {
-  return props.selectedAttributes.includes(attributeId)
+  return props.allConditions.some(condition => 
+    condition.isAttributeBased && 
+    condition.parentConditionId === props.conditionId && 
+    condition.attributeConfig?.id === attributeId
+  )
 }
+
+// Get currently selected attributes for the button label
+const selectedAttributeIds = computed(() => {
+  return props.allConditions
+    .filter(condition => 
+      condition.isAttributeBased && 
+      condition.parentConditionId === props.conditionId
+    )
+    .map(condition => condition.attributeConfig?.id)
+    .filter(id => id)
+})
 
 const toggleDropdown = () => {
   if (!props.disabled) {
@@ -96,10 +112,10 @@ onUnmounted(() => {
 
 // Button label based on selection state
 const buttonLabel = computed(() => {
-  if (props.selectedAttributes.length === 0) {
+  if (selectedAttributeIds.value.length === 0) {
     return '='
   }
-  return `= (${props.selectedAttributes.length})`
+  return `= (${selectedAttributeIds.value.length})`
 })
 
 const hasAttributes = computed(() => availableAttributes.value.length > 0)
@@ -112,7 +128,7 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
       :class="{ 
         'is-open': isOpen,
         'is-disabled': disabled || !hasAttributes,
-        'has-selections': selectedAttributes.length > 0
+        'has-selections': selectedAttributeIds.length > 0
       }"
       @click="toggleDropdown"
       :disabled="disabled || !hasAttributes"

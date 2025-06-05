@@ -20,6 +20,15 @@ export interface QueryFilterCondition {
   operator?: 'AND' | 'OR' // For combining chips
   criteriaType?: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
   selectedAttributes?: string[] // Selected attribute IDs
+  isAttributeBased?: boolean // True if this condition was created from an attribute selection
+  parentConditionId?: string // Reference to the parent condition if this is attribute-based
+  attributeConfig?: { // Store the original attribute config for attribute-based conditions
+    id: string
+    name: string
+    description: string
+    type: string
+    category: string
+  }
 }
 
 export class QueryFilterCardModel {
@@ -52,9 +61,81 @@ export class QueryFilterCardModel {
       chips: condition?.chips || [],
       isEditing: condition?.isEditing || false,
       operator: condition?.operator || 'OR',
+      criteriaType: condition?.criteriaType,
+      selectedAttributes: condition?.selectedAttributes,
+      isAttributeBased: condition?.isAttributeBased || false,
+      parentConditionId: condition?.parentConditionId,
+      attributeConfig: condition?.attributeConfig,
     }
     this.conditions.push(newCondition)
     return newCondition
+  }
+
+  // Add attribute-based condition
+  addAttributeCondition(parentConditionId: string, attributeConfig: any): QueryFilterCondition {
+    const parentCondition = this.getCondition(parentConditionId)
+    if (!parentCondition) {
+      throw new Error(`Parent condition ${parentConditionId} not found`)
+    }
+
+    // Remove "Add " prefix from the title for display
+    const displayTitle = (attributeConfig.title || attributeConfig.name).replace(/^Add\s+/, '')
+    
+    const newCondition: QueryFilterCondition = {
+      id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      conceptSet: displayTitle,
+      chips: [],
+      isEditing: false,
+      operator: 'OR',
+      criteriaType: parentCondition.criteriaType,
+      isAttributeBased: true,
+      parentConditionId: parentConditionId,
+      attributeConfig: {
+        id: attributeConfig.id,
+        name: displayTitle,
+        description: attributeConfig.description || attributeConfig.defaultDescription || '',
+        type: attributeConfig.type,
+        category: attributeConfig.category || 'criteria-specific'
+      }
+    }
+    
+    // Find the insert position (after parent and its existing attribute children)
+    const parentIndex = this.conditions.findIndex(c => c.id === parentConditionId)
+    let insertIndex = parentIndex + 1
+    
+    // Find the last attribute condition that belongs to this parent
+    while (insertIndex < this.conditions.length && 
+           this.conditions[insertIndex].isAttributeBased && 
+           this.conditions[insertIndex].parentConditionId === parentConditionId) {
+      insertIndex++
+    }
+    
+    this.conditions.splice(insertIndex, 0, newCondition)
+    return newCondition
+  }
+
+  // Get all conditions that belong to a parent (including the parent itself)
+  getConditionGroup(parentConditionId: string): QueryFilterCondition[] {
+    const conditions: QueryFilterCondition[] = []
+    const parent = this.getCondition(parentConditionId)
+    if (parent) {
+      conditions.push(parent)
+      conditions.push(...this.conditions.filter(c => c.parentConditionId === parentConditionId))
+    }
+    return conditions
+  }
+
+  // Check if a condition can be deleted (not the parent condition or has no attribute children)
+  canDeleteCondition(conditionId: string): boolean {
+    const condition = this.getCondition(conditionId)
+    if (!condition) return false
+    
+    // Can't delete if it's a parent condition with attribute children
+    if (!condition.isAttributeBased && this.conditions.some(c => c.parentConditionId === conditionId)) {
+      return false
+    }
+    
+    return true
   }
 
   removeCondition(conditionId: string): boolean {

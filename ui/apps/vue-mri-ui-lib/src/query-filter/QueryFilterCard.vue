@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, defineProps, defineEmits } from 'vue'
-import { QueryFilterCardModel, QueryFilterChip as QueryFilterChipType } from './QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterChip as QueryFilterChipType, QueryFilterCondition } from './QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import { type AttributeConfig } from './CriteriaConfigLoader'
@@ -129,30 +129,49 @@ const addChipToCondition = (conditionId: string, chip: Partial<QueryFilterChipTy
 
 // Handle attribute selection and removal
 const handleAttributeSelected = (conditionId: string, attribute: AttributeConfig & { category: string }) => {
-  const condition = props.filter.getCondition(conditionId)
-  if (condition) {
-    if (!condition.selectedAttributes) {
-      condition.selectedAttributes = []
-    }
-    if (!condition.selectedAttributes.includes(attribute.id)) {
-      condition.selectedAttributes.push(attribute.id)
-      emit('update:filter', props.filter)
-      emit('attribute-selected', props.filter.id, conditionId, attribute)
-    }
-  }
+  // Create a new attribute-based condition instead of just tracking selection
+  const newCondition = props.filter.addAttributeCondition(conditionId, attribute)
+  emit('update:filter', props.filter)
+  emit('attribute-selected', props.filter.id, conditionId, attribute, newCondition.id)
 }
 
 const handleAttributeRemoved = (conditionId: string, attributeId: string) => {
-  const condition = props.filter.getCondition(conditionId)
-  if (condition && condition.selectedAttributes) {
-    const index = condition.selectedAttributes.indexOf(attributeId)
-    if (index > -1) {
-      condition.selectedAttributes.splice(index, 1)
+  // Find and remove the attribute-based condition with this attributeId
+  const attributeCondition = props.filter.conditions.find(c => 
+    c.isAttributeBased && 
+    c.parentConditionId === conditionId && 
+    c.attributeConfig?.id === attributeId
+  )
+  
+  if (attributeCondition) {
+    const removed = props.filter.removeCondition(attributeCondition.id)
+    if (removed) {
       emit('update:filter', props.filter)
       emit('attribute-removed', props.filter.id, conditionId, attributeId)
     }
   }
 }
+
+// Group conditions by their parent relationships
+const conditionGroups = computed(() => {
+  const groups: Array<{
+    parentCondition: QueryFilterCondition,
+    attributeConditions: QueryFilterCondition[]
+  }> = []
+  
+  // Find all parent conditions (non-attribute-based)
+  const parentConditions = props.filter.conditions.filter(c => !c.isAttributeBased)
+  
+  parentConditions.forEach(parent => {
+    const attributeConditions = props.filter.conditions.filter(c => c.parentConditionId === parent.id)
+    groups.push({
+      parentCondition: parent,
+      attributeConditions
+    })
+  })
+  
+  return groups
+})
 
 // Expose the addChipToCondition method for parent access if needed
 defineExpose({
@@ -226,63 +245,108 @@ defineExpose({
       </div>
       
       <div
-        v-for="(condition, index) in filter.conditions"
-        :key="condition.id"
-        class="query-filter-condition"
-        :class="{ 'has-nested': filter.conditions.length > 1 }"
+        v-for="(group, groupIndex) in conditionGroups"
+        :key="group.parentCondition.id"
+        class="query-filter-condition-group"
       >
-        <div class="query-filter-condition__at-least">
+        <!-- At least 1 sidebar that spans the parent condition and all its attributes -->
+        <div class="query-filter-condition__at-least-group">
           <span>At least 1</span>
         </div>
-        <div class="query-filter-condition__header">
-          <span class="query-filter-condition__label">
-            {{ condition.conceptSet || 'Condition concept set' }}
-          </span>
-          <div class="query-filter-condition__actions">
-            <button
-              class="btn-icon"
-              @click="editCondition(condition.id)"
-              aria-label="Edit condition"
-              title="Edit condition"
-            >
-              <i class="icon icon-pencil"></i>
-            </button>
-            <button
-              class="btn-icon"
-              @click="duplicateCondition(condition.id)"
-              aria-label="Duplicate condition"
-              title="Duplicate condition"
-            >
-              <i class="icon icon-copy"></i>
-            </button>
-            <attributes-dropdown
-              :criteria-type="condition.criteriaType || 'conditionOccurrence'"
-              :selected-attributes="condition.selectedAttributes || []"
-              @attribute-selected="(attr) => handleAttributeSelected(condition.id, attr)"
-              @attribute-removed="(attrId) => handleAttributeRemoved(condition.id, attrId)"
+
+        <!-- Parent condition -->
+        <div
+          class="query-filter-condition query-filter-condition--parent"
+          :class="{ 'has-nested': filter.conditions.length > 1 }"
+        >
+          <div class="query-filter-condition__header">
+            <span class="query-filter-condition__label">
+              {{ group.parentCondition.conceptSet || 'Condition concept set' }}
+            </span>
+            <div class="query-filter-condition__actions">
+              <button
+                class="btn-icon"
+                @click="editCondition(group.parentCondition.id)"
+                aria-label="Edit condition"
+                title="Edit condition"
+              >
+                <i class="icon icon-pencil"></i>
+              </button>
+              <button
+                class="btn-icon"
+                @click="duplicateCondition(group.parentCondition.id)"
+                aria-label="Duplicate condition"
+                title="Duplicate condition"
+              >
+                <i class="icon icon-copy"></i>
+              </button>
+              <attributes-dropdown
+                :criteria-type="group.parentCondition.criteriaType || 'conditionOccurrence'"
+                :condition-id="group.parentCondition.id"
+                :all-conditions="filter.conditions"
+                @attribute-selected="(attr) => handleAttributeSelected(group.parentCondition.id, attr)"
+                @attribute-removed="(attrId) => handleAttributeRemoved(group.parentCondition.id, attrId)"
+              />
+              <!-- No remove button for parent conditions -->
+            </div>
+          </div>
+
+          <div class="query-filter-condition__chips">
+            <query-filter-chip
+              v-for="chip in group.parentCondition.chips"
+              :key="chip.id"
+              :chip="chip"
+              :removable="true"
+              @remove="removeChip(group.parentCondition.id, chip.id)"
             />
-            <button
-              class="btn-remove-condition"
-              @click="removeCondition(condition.id)"
-              aria-label="Remove condition"
-              title="Remove condition"
-            >
-              ×
+            <button class="btn-add-chip" @click="addChip(group.parentCondition.id)" aria-label="Add filter">
+              <i class="icon icon-plus"></i>
             </button>
           </div>
         </div>
 
-        <div class="query-filter-condition__chips">
-          <query-filter-chip
-            v-for="chip in condition.chips"
-            :key="chip.id"
-            :chip="chip"
-            :removable="true"
-            @remove="removeChip(condition.id, chip.id)"
-          />
-          <button class="btn-add-chip" @click="addChip(condition.id)" aria-label="Add filter">
-            <i class="icon icon-plus"></i>
-          </button>
+        <!-- Attribute-based conditions -->
+        <div
+          v-for="attrCondition in group.attributeConditions"
+          :key="attrCondition.id"
+          class="query-filter-condition query-filter-condition--attribute"
+        >
+          <div class="query-filter-condition__header">
+            <span class="query-filter-condition__label query-filter-condition__label--attribute">
+              {{ attrCondition.conceptSet }}
+            </span>
+            <div class="query-filter-condition__actions">
+              <button
+                class="btn-icon"
+                @click="editCondition(attrCondition.id)"
+                aria-label="Edit attribute condition"
+                title="Edit attribute condition"
+              >
+                <i class="icon icon-pencil"></i>
+              </button>
+              <button
+                class="btn-remove-condition"
+                @click="removeCondition(attrCondition.id)"
+                aria-label="Remove attribute condition"
+                title="Remove attribute condition"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div class="query-filter-condition__chips">
+            <query-filter-chip
+              v-for="chip in attrCondition.chips"
+              :key="chip.id"
+              :chip="chip"
+              :removable="true"
+              @remove="removeChip(attrCondition.id, chip.id)"
+            />
+            <button class="btn-add-chip" @click="addChip(attrCondition.id)" aria-label="Add filter">
+              <i class="icon icon-plus"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -538,6 +602,38 @@ defineExpose({
   }
 }
 
+.query-filter-condition-group {
+  position: relative;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .query-filter-condition__at-least-group {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: #ddd6fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: sideways-lr;
+    text-orientation: mixed;
+    border-radius: 6px 0 0 6px;
+    z-index: 1;
+
+    span {
+      font-size: 11px;
+      font-weight: 500;
+      color: #5b21b6;
+      white-space: nowrap;
+    }
+  }
+}
+
 .query-filter-condition {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -549,6 +645,16 @@ defineExpose({
 
   &:last-child {
     margin-bottom: 0;
+  }
+
+  &--parent {
+    // Parent condition styles
+    background: #f9fafb;
+  }
+
+  &--attribute {
+    // Attribute condition styles - slightly different to distinguish
+    background: #f3f4f6;
   }
 
   &__at-least {
@@ -583,6 +689,13 @@ defineExpose({
   &__label {
     font-size: 14px;
     color: #666;
+
+    &--attribute {
+      // Same styling as regular concept set labels
+      color: #666;
+      font-weight: normal;
+      font-style: normal;
+    }
   }
 
   &__actions {
