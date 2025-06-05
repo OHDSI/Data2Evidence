@@ -3,6 +3,28 @@ import { request } from "./request";
 
 const STUDY_NOTEBOOK_BASE_URL = "system-portal/notebook";
 
+export interface RemoteDiffCheckResponse {
+  hasDifferences: boolean;
+  reason: string;
+}
+
+export interface OverwriteFromRemoteResponse {
+  message: string;
+  overwritten: boolean;
+  notebookId: string;
+}
+
+export interface OverwriteAllFromRemoteResponse {
+  success: boolean;
+  message?: string;
+  processedCount: number;
+  results: Array<{
+    notebookId: string;
+    name?: string;
+    error?: string;
+  }>;
+}
+
 export class StudyNotebook {
   public getNotebookList(datasetId?: string): Promise<StarboardNotebook[]> {
     const notebookList = request({
@@ -50,6 +72,32 @@ export class StudyNotebook {
       url: `/${id}`,
       method: "DELETE",
       params: { datasetId },
+    });
+  }
+
+  public checkRemoteDiff(id: string, datasetId: string): Promise<RemoteDiffCheckResponse> {
+    return request({
+      baseURL: STUDY_NOTEBOOK_BASE_URL,
+      url: `/${id}/remote-diff-check`,
+      method: "GET",
+      params: { datasetId },
+    });
+  }
+
+  public overwriteFromRemote(id: string, datasetId: string): Promise<OverwriteFromRemoteResponse> {
+    return request({
+      baseURL: STUDY_NOTEBOOK_BASE_URL,
+      url: `/${id}/overwrite-from-remote`,
+      method: "POST",
+      data: { datasetId },
+    });
+  }
+
+  public overwriteAllFromRemote(): Promise<OverwriteAllFromRemoteResponse> {
+    return request({
+      baseURL: STUDY_NOTEBOOK_BASE_URL,
+      url: `/overwrite-all-from-remote`,
+      method: "POST",
     });
   }
 }

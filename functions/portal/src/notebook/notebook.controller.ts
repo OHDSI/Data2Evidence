@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from "@danet/core";
 import { NotebookBaseDto, NotebookUpdateDto } from "./dto/index.ts";
 import { NotebookService } from "./notebook.service.ts";
@@ -39,5 +40,26 @@ export class NotebookController {
   @Delete(":id")
   async deleteNotebook(@Param("id") id: string) {
     return await this.notebookService.deleteNotebook(id);
+  }
+
+  @Get(":id/remote-diff-check")
+  async checkNotebookDiffFromRemote(
+    @Param("id") id: string,
+    @Query("datasetId") datasetId: string
+  ) {
+    return await this.notebookService.checkNotebookDiffFromRemote(id);
+  }
+
+  @Post(":id/overwrite-from-remote")
+  async overwriteNotebookFromRemote(
+    @Param("id") id: string,
+    @Body() body: { datasetId: string }
+  ) {
+    return await this.notebookService.overwriteNotebookFromRemote(id);
+  }
+
+  @Post("overwrite-all-from-remote")
+  async overwriteAllNotebooksFromRemote() {
+    return await this.notebookService.overwriteAllNotebooksFromRemote();
   }
 }

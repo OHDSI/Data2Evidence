@@ -4,9 +4,11 @@ import { api } from "../../../axios/api";
 import { ConfigTypes } from "../../../constant";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { useConfigsByTypes, useOverwriteAllCanvasesFromRemote } from "../../../hooks";
+import { useOverwriteAllNotebooksFromRemote } from "../../../hooks/useOverwriteAllNotebooksFromRemote";
 import { Config } from "../../../types";
 import "./GitConfig.scss";
 import { OverwriteAllConfirmDialog } from "./OverwriteAllConfirmDialog";
+import { OverwriteAllNotebooksDialog } from "./OverwriteAllNotebooksDialog";
 
 interface DataflowGitConfig {
   repoUrl: string;
@@ -43,6 +45,7 @@ export const GitConfig: FC = () => {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [saving, setSaving] = useState(false);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+  const [showOverwriteNotebooksDialog, setShowOverwriteNotebooksDialog] = useState(false);
   const { setFeedback } = useFeedback();
   const [configs, loading, error] = useConfigsByTypes([
     ConfigTypes.DATAFLOW_GIT_CONFIG,
@@ -50,6 +53,8 @@ export const GitConfig: FC = () => {
   ]);
 
   const [overwriteAllFromRemote, isOverwriting, overwriteError] = useOverwriteAllCanvasesFromRemote();
+  const [overwriteAllNotebooksFromRemote, isOverwritingNotebooks, overwriteNotebooksError] =
+    useOverwriteAllNotebooksFromRemote();
 
   useEffect(() => {
     let dataflowConfig: DataflowGitConfig | null = null;
@@ -172,10 +177,46 @@ export const GitConfig: FC = () => {
     setShowOverwriteDialog(false);
   }, []);
 
+  const handleOverwriteAllNotebooksClick = useCallback(() => {
+    if (!formData.notebook.repoUrl || !formData.notebook.branch) {
+      setFeedback({
+        type: "error",
+        message: getText(i18nKeys.GIT_CONFIG__CONFIGURE_FIRST),
+      });
+      return;
+    }
+    setShowOverwriteNotebooksDialog(true);
+  }, [formData.notebook, setFeedback, getText, i18nKeys]);
+
+  const handleOverwriteNotebooksConfirm = useCallback(async () => {
+    try {
+      const result = await overwriteAllNotebooksFromRemote();
+
+      setFeedback({
+        type: "success",
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_SUCCESS).replace("{0}", result.processedCount.toString()),
+        autoClose: 8000,
+      });
+      setShowOverwriteNotebooksDialog(false);
+    } catch (error: any) {
+      console.error("Failed to overwrite all notebooks:", error);
+      setFeedback({
+        type: "error",
+        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_ERROR),
+      });
+    }
+  }, [overwriteAllNotebooksFromRemote, setFeedback, getText, i18nKeys]);
+
+  const handleOverwriteNotebooksCancel = useCallback(() => {
+    setShowOverwriteNotebooksDialog(false);
+  }, []);
+
   if (error) console.error(error.message);
   if (overwriteError) console.error(overwriteError.message);
+  if (overwriteNotebooksError) console.error(overwriteNotebooksError.message);
 
   const isDataflowConfigValid = formData.dataflow.repoUrl && formData.dataflow.branch && formData.dataflow.pat;
+  const isNotebookConfigValid = formData.notebook.repoUrl && formData.notebook.branch && formData.notebook.pat;
 
   return (
     <>
@@ -268,6 +309,17 @@ export const GitConfig: FC = () => {
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleNotebookChange("branch", event.target.value)}
               />
             </Box>
+
+            <Box mb={4}>
+              <Button
+                text={getText(i18nKeys.GIT_CONFIG__SYNC_ALL_NOTEBOOKS)}
+                variant="contained"
+                color="primary"
+                onClick={handleOverwriteAllNotebooksClick}
+                disabled={!isNotebookConfigValid || isOverwritingNotebooks}
+                loading={isOverwritingNotebooks}
+              />
+            </Box>
           </div>
 
           <div className="git-config__footer">
@@ -283,6 +335,13 @@ export const GitConfig: FC = () => {
         onClose={handleOverwriteCancel}
         onConfirm={handleOverwriteConfirm}
         loading={isOverwriting}
+      />
+
+      <OverwriteAllNotebooksDialog
+        open={showOverwriteNotebooksDialog}
+        onClose={handleOverwriteNotebooksCancel}
+        onConfirm={handleOverwriteNotebooksConfirm}
+        loading={isOverwritingNotebooks}
       />
     </>
   );

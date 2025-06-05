@@ -1002,7 +1002,6 @@ export const i18nDefault = {
     TERMS_OF_USE__DISABLE: "Disable",
     TERMS_OF_USE__TITLE: "Terms of use",
     TERMS_OF_USE__SAVE: "Save",
-    TERMS_OF_USE__SUCCESS_MESSAGE: "Changes saved",
     TEST_KEY: "default",
     TREE_MAP_CHART__CHART_LEGEND: "Box Size: Prevalence, Color: Records per person (Green to Grey = High to Low)",
     TREE_MAP_CHART__NUMBER_OF_PEOPLE: "Number of people",
@@ -1097,6 +1096,7 @@ export const i18nDefault = {
     GIT_CONFIG__SUCCESS: "Git configuration saved successfully",
     GIT_CONFIG__ERROR: "Failed to save Git configuration",
     GIT_CONFIG__SYNC_ALL_FLOWS: "Synchronize all flows from remote",
+    GIT_CONFIG__SYNC_ALL_NOTEBOOKS: "Synchronize all notebooks from remote",
     GIT_CONFIG__CONFIGURE_FIRST: "Please configure the dataflow Git repository URL and branch first.",
     GIT_CONFIG__SYNC_SUCCESS: "Successfully imported {0} flows from remote repository.",
     GIT_CONFIG__SYNC_ERROR: "Failed to import flows from remote repository.",
@@ -1111,6 +1111,17 @@ export const i18nDefault = {
       "All local changes not synchronized to the remote repository will be permanently lost.",
     GIT_CONFIG__OVERWRITE_DIALOG_PROCESSING: "Processing...",
     GIT_CONFIG__OVERWRITE_DIALOG_CONFIRM: "Overwrite All",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_TITLE: "Overwrite All Local Notebooks",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_DESCRIPTION: "This operation will:",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_DELETE_NOTEBOOKS: "Delete all existing local notebooks",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_DELETE_CONTENT: "Delete all local notebook content",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_IMPORT_NOTEBOOKS: "Import all notebooks from the remote Git repository",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_CREATE_NEW: "Create new local notebooks with version 1",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_WARNING_TITLE: "Warning:",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_WARNING_MESSAGE:
+      "All local changes not synchronized to the remote repository will be permanently lost.",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_PROCESSING: "Processing...",
+    GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_CONFIRM: "Overwrite All",
   },
 };
 
