@@ -318,6 +318,12 @@
             "route": "jobs"
           },
           {
+            "name": "AI Models",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/AiModels/module",
+            "route": "aimodels"
+          },
+          {
             "name": "ETL",
             "enabled": true,
             "route": "etl",
