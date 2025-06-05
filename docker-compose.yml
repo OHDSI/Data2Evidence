@@ -1353,7 +1353,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: d2e/flow-base:local
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:
