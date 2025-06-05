@@ -40,6 +40,11 @@ export class SplitUserArtifact1749110029676 implements MigrationInterface {
     await queryRunner.query(
       `DELETE from "portal"."user_artifact" where service_name = 'MIGRATION_STEP_SPLIT';`
     );
+
+    // Drop default value from service_name column
+    await queryRunner.query(
+      `ALTER TABLE "portal"."user_artifact" ALTER COLUMN service_name DROP default;`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
