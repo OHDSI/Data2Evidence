@@ -124,7 +124,7 @@ export class PrefectAPI {
   }
 
   async getFlowRunsArtifacts(ids: string[]) {
-    const errorMessage = `Error while getting prefect flow run artifacts by ids: ${ids}`;
+    const errorMessage = `Error while getting prefect artifacts by flow run ids: ${ids}`;
     try {
       const data: Record<string, string | object> = {
         artifacts: {
