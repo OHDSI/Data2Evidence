@@ -913,8 +913,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
-            schema_name = dbSettings['schema_name']
-            results_schema = f'results_{schema_name}'
+            results_schema = f'results_{dbSettings["dataset_id"]}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')

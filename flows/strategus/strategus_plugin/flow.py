@@ -146,7 +146,7 @@ def runStrategus(json_graph, options):
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
 
-    dbSettings = { "database_code": database_code, "schema_name": schema_name }
+    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId }
     base_path = f'/tmp/{flow_run_id}'
     work_folder = f'{base_path}/work'
     path_to_results = f'{base_path}/results'
