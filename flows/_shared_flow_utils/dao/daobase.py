@@ -28,6 +28,7 @@ class DialectDrivers(BaseModel):
         postgres: str = "postgresql+psycopg2"
         hana: str = "hana+hdbcli"
         duckdb: str = "duckdb"
+        bigquery: str = "bigquery"
 
     class ibis:
         # Used for ibis
@@ -245,11 +246,17 @@ class DaoBase(ABC):
                                          host: str = None,
                                          port: int = None) -> Tuple[str, dict]:
 
+        connect_args={}
+        credentials_path = "/app/key.json"
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
+                connect_args = {"user": user, "password": password.get_secret_value()}
+            case SupportedDatabaseDialects.BIGQUERY:
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={credentials_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
+                connect_args = {"user": user, "password": password.get_secret_value()}
 
         if dialect == SupportedDatabaseDialects.HANA:
             hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
@@ -262,7 +269,7 @@ class DaoBase(ABC):
             if auth_mode == AuthMode.PASSWORD:
                 return base_url, hana_connect_args.update({"user": user, "password": password.get_secret_value()})
 
-        return base_url, {"user": user, "password": password.get_secret_value()}
+        return base_url, connect_args
 
     def create_cachedb_connection_url(self,
                                       database_name: str = None,
@@ -370,7 +377,7 @@ class DaoBase(ABC):
         match database_credentials.dialect:
             case SupportedDatabaseDialects.HANA:
                 database_credentials.readRole = "TENANT_READ_ROLE"
-            case SupportedDatabaseDialects.POSTGRES:
+            case SupportedDatabaseDialects.POSTGRES | SupportedDatabaseDialects.BIGQUERY:
                 database_credentials.readRole = "postgres_tenant_read_role"
             case _:
                 dialect_err = f"Dialect {self.values['dialect']} not supported. Unable to find corresponding dialect read role."
