@@ -30,22 +30,24 @@ const dropdownRef = ref<HTMLElement>()
 // Get available attributes for this criteria type
 const availableAttributes = computed(() => {
   try {
-    return criteriaConfigLoader.getAttributesForCriteria(props.criteriaType)
+    // Get criteria-specific attributes (like nested, stop reason, etc.)
+    const criteriaAttributes = criteriaConfigLoader.getCriteriaAttributeOptions(props.criteriaType)
+    return criteriaAttributes
   } catch (error) {
     console.warn(`Failed to load attributes for criteria ${props.criteriaType}:`, error)
     return []
   }
 })
 
-// Group attributes by category
+// Group attributes by type for better organization
 const attributesByCategory = computed(() => {
-  const grouped: Record<string, Array<AttributeConfig & { category: string }>> = {}
+  const grouped: Record<string, Array<any>> = {
+    'Criteria-specific': []
+  }
   
   availableAttributes.value.forEach(attr => {
-    if (!grouped[attr.category]) {
-      grouped[attr.category] = []
-    }
-    grouped[attr.category].push(attr)
+    // All criteria-specific attributes go into one category for now
+    grouped['Criteria-specific'].push(attr)
   })
   
   return grouped
@@ -62,11 +64,13 @@ const toggleDropdown = () => {
   }
 }
 
-const selectAttribute = (attribute: AttributeConfig & { category: string }) => {
+const selectAttribute = (attribute: any) => {
   if (isAttributeSelected(attribute.id)) {
     emit('attribute-removed', attribute.id)
   } else {
-    emit('attribute-selected', attribute)
+    // Add category property for compatibility
+    const attributeWithCategory = { ...attribute, category: 'criteria-specific' }
+    emit('attribute-selected', attributeWithCategory)
   }
   // Keep dropdown open for multiple selections
 }
@@ -155,12 +159,12 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
                 class="attributes-dropdown__checkbox"
               />
               <div class="attributes-dropdown__attribute-content">
-                <span class="attributes-dropdown__attribute-name">{{ attribute.name }}</span>
+                <span class="attributes-dropdown__attribute-name">{{ attribute.title || attribute.name }}</span>
                 <span 
-                  v-if="attribute.description"
+                  v-if="attribute.description || attribute.defaultDescription"
                   class="attributes-dropdown__attribute-description"
                 >
-                  {{ attribute.description }}
+                  {{ attribute.description || attribute.defaultDescription }}
                 </span>
               </div>
             </label>

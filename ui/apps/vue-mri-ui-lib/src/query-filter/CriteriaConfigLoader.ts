@@ -76,10 +76,20 @@ export interface OccurrenceOperator {
   symbol: string
 }
 
+export interface CriteriaAttributeConfig {
+  id: string
+  name: string
+  description: string
+  type: string
+  atlasKey: string
+  special?: boolean
+}
+
 export interface CriteriaConfig {
   criteriaTypes: Record<string, CriteriaType>
   sections: Record<string, ConfigSection>
   attributes: Record<string, AttributeCategory>
+  criteriaAttributes: Record<string, CriteriaAttributeConfig[]>
   temporalWindows: {
     types: TemporalWindow[]
   }
@@ -126,9 +136,7 @@ export class CriteriaConfigLoader {
           return null
         }
 
-        const description = criteriaType.descriptions[descriptionType] || 
-                          criteriaType.descriptions.group || 
-                          ''
+        const description = criteriaType.descriptions[descriptionType] || criteriaType.descriptions.group || ''
 
         const displayTitle = this.getDisplayTitle(criteriaType.id, descriptionType)
 
@@ -141,7 +149,7 @@ export class CriteriaConfigLoader {
           icon: criteriaType.icon,
           class: criteriaType.class,
           atlasKey: criteriaType.atlasKey,
-          special: criteriaType.special || false
+          special: criteriaType.special || false,
         }
       })
       .filter((option): option is CriteriaOption => option !== null)
@@ -155,8 +163,8 @@ export class CriteriaConfigLoader {
    * @returns Action function to create the criteria
    */
   createActionFunction(
-    criteriaTypeId: string, 
-    expression: CohortExpression, 
+    criteriaTypeId: string,
+    expression: CohortExpression,
     targetList: string = 'PrimaryCriteria'
   ): () => any {
     const criteriaType = this.criteriaTypes[criteriaTypeId]
@@ -185,11 +193,11 @@ export class CriteriaConfigLoader {
 
     return () => {
       console.log(`Creating new ${criteriaType.class} criteria for ${targetList}`)
-      
+
       // Create new criteria instance
       const criteria = {
         type: criteriaType.class,
-        conceptSets: expression.ConceptSets
+        conceptSets: expression.ConceptSets,
       }
 
       // Add to appropriate list
@@ -244,20 +252,19 @@ export class CriteriaConfigLoader {
    * @returns Array of dropdown options with action functions
    */
   generateDropdownOptions(
-    sectionId: string, 
-    expression: CohortExpression, 
+    sectionId: string,
+    expression: CohortExpression,
     targetList: string = 'PrimaryCriteria'
   ): DropdownOption[] {
-    const descriptionType = sectionId === 'initialEvents' ? 'initial' : 
-                           sectionId === 'censoringEvents' ? 'censoring' : 
-                           'group'
+    const descriptionType =
+      sectionId === 'initialEvents' ? 'initial' : sectionId === 'censoringEvents' ? 'censoring' : 'group'
 
     const options = this.getCriteriaOptions(sectionId, descriptionType as keyof CriteriaType['descriptions'])
 
     return options.map(option => ({
       ...option,
       selected: false,
-      action: this.createActionFunction(option.id, expression, targetList)
+      action: this.createActionFunction(option.id, expression, targetList),
     }))
   }
 
@@ -271,14 +278,95 @@ export class CriteriaConfigLoader {
 
     Object.entries(this.attributes).forEach(([category, config]) => {
       if (config.domains.includes(criteriaTypeId)) {
-        attributes.push(...config.attributes.map(attr => ({
-          ...attr,
-          category: category
-        })))
+        attributes.push(
+          ...config.attributes.map(attr => ({
+            ...attr,
+            category: category,
+          }))
+        )
       }
     })
 
     return attributes
+  }
+
+  /**
+   * Get criteria-specific attribute options (like Add Nested Criteria, Add Stop Reason)
+   */
+  getCriteriaAttributeOptions(criteriaTypeId: string): Array<any> {
+    const criteriaAttributes = this.config.criteriaAttributes
+    if (!criteriaAttributes || !criteriaAttributes[criteriaTypeId]) {
+      return []
+    }
+
+    return criteriaAttributes[criteriaTypeId].map(attr => {
+      const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
+
+      return {
+        id: attr.id,
+        title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
+        defaultTitle: displayTitle,
+        description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description),
+        defaultDescription: attr.description,
+        type: attr.type,
+        atlasKey: attr.atlasKey,
+        special: attr.special || false,
+        action: this.createAttributeActionFunction(attr, criteriaTypeId),
+      }
+    })
+  }
+
+  /**
+   * Create action function for attribute-level options
+   */
+  createAttributeActionFunction(attribute: CriteriaAttributeConfig, _criteriaTypeId: string) {
+    return function (_criteriaInstance: any) {
+      if (attribute.special && attribute.id === 'nested') {
+        // Add nested criteria group
+        console.log('Adding nested criteria group...')
+        // This would create a new nested criteria group
+        return { type: 'NestedCriteria', criteria: [] }
+      }
+
+      // For other attributes, this would trigger the appropriate editor
+      // The actual implementation depends on the attribute type
+      switch (attribute.type) {
+        case 'text':
+          // Would open text filter editor
+          console.log(`Adding text filter: ${attribute.id}`)
+          break
+        case 'numericRange':
+          // Would open numeric range editor
+          console.log(`Adding numeric range: ${attribute.id}`)
+          break
+        case 'conceptSet':
+          // Would open concept set selector
+          console.log(`Adding concept set: ${attribute.id}`)
+          break
+        case 'dateRange':
+          // Would open date range picker
+          console.log(`Adding date range: ${attribute.id}`)
+          break
+        case 'dateAdjustment':
+          // Would open date adjustment editor
+          console.log(`Adding date adjustment: ${attribute.id}`)
+          break
+        case 'boolean':
+          // Would toggle boolean flag
+          console.log(`Toggling boolean: ${attribute.id}`)
+          break
+        default:
+          console.log(`Unknown attribute type: ${attribute.type}`)
+      }
+    }
+  }
+
+  /**
+   * Get display title for attribute with "Add" prefix
+   */
+  getAttributeDisplayTitle(_attributeId: string, baseName: string): string {
+    // Always add "Add" prefix for attribute options
+    return baseName.startsWith('Add') ? baseName : `Add ${baseName}`
   }
 
   /**
@@ -312,3 +400,4 @@ export class CriteriaConfigLoader {
 const criteriaConfigLoader = new CriteriaConfigLoader()
 export { criteriaConfigLoader }
 export default criteriaConfigLoader
+

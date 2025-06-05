@@ -300,9 +300,321 @@
       ]
     }
   },
+  "criteriaAttributes": {
+    "conditionOccurrence": [
+      {
+        "id": "firstDiagnosis",
+        "name": "First Diagnosis",
+        "description": "Limit to first diagnosis in history",
+        "type": "boolean",
+        "atlasKey": "addFirstDiagnosis"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of diagnosis",
+        "type": "numericRange",
+        "atlasKey": "addAge"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "conceptSet",
+        "atlasKey": "addGender"
+      },
+      {
+        "id": "genderCS",
+        "name": "Gender Concept Set",
+        "description": "Filter by patient gender using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addGenderCS"
+      },
+      {
+        "id": "conditionStatus",
+        "name": "Condition Status",
+        "description": "Filter by condition status",
+        "type": "conceptSet",
+        "atlasKey": "addConditionStatus"
+      },
+      {
+        "id": "conditionStatusCS",
+        "name": "Condition Status Concept Set",
+        "description": "Filter by condition status using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addConditionStatusCS"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by diagnosis start date",
+        "type": "dateRange",
+        "atlasKey": "addStartDate"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by diagnosis end date",
+        "type": "dateRange",
+        "atlasKey": "addEndDate"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment",
+        "atlasKey": "addDateAdjustment"
+      },
+      {
+        "id": "type",
+        "name": "Type",
+        "description": "Filter by condition type",
+        "type": "conceptSet",
+        "atlasKey": "addType"
+      },
+      {
+        "id": "typeCS",
+        "name": "Type Concept Set",
+        "description": "Filter by condition type using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addTypeCS"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "conceptSet",
+        "atlasKey": "addVisit"
+      },
+      {
+        "id": "visitCS",
+        "name": "Visit Concept Set",
+        "description": "Filter based on visit occurrence using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addVisitCS"
+      },
+      {
+        "id": "stopReason",
+        "name": "Stop Reason",
+        "description": "Filter by stop reason text",
+        "type": "text",
+        "atlasKey": "addStopReason"
+      },
+      {
+        "id": "sourceConcept",
+        "name": "Source Concept",
+        "description": "Filter by source concept",
+        "type": "conceptSet",
+        "atlasKey": "addSourceConcept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "conceptSet",
+        "atlasKey": "addProviderSpecialty"
+      },
+      {
+        "id": "providerSpecialtyCS",
+        "name": "Provider Specialty Concept Set",
+        "description": "Filter by provider specialty using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addProviderSpecialtyCS"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested",
+        "special": true,
+        "atlasKey": "addNested"
+      }
+    ],
+    "drugExposure": [
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment",
+        "atlasKey": "addDateAdjustment"
+      },
+      {
+        "id": "firstExposure",
+        "name": "First Exposure",
+        "description": "Limit to first drug exposure in history",
+        "type": "boolean",
+        "atlasKey": "addFirstDiagnosis"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of exposure",
+        "type": "numericRange",
+        "atlasKey": "addAge"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "conceptSet",
+        "atlasKey": "addGender"
+      },
+      {
+        "id": "genderCS",
+        "name": "Gender Concept Set",
+        "description": "Filter by patient gender using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addGenderCS"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by exposure start date",
+        "type": "dateRange",
+        "atlasKey": "addStartDate"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by exposure end date",
+        "type": "dateRange",
+        "atlasKey": "addEndDate"
+      },
+      {
+        "id": "type",
+        "name": "Type",
+        "description": "Filter by drug type",
+        "type": "conceptSet",
+        "atlasKey": "addType"
+      },
+      {
+        "id": "typeCS",
+        "name": "Type Concept Set",
+        "description": "Filter by drug type using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addTypeCS"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "conceptSet",
+        "atlasKey": "addVisit"
+      },
+      {
+        "id": "visitCS",
+        "name": "Visit Concept Set",
+        "description": "Filter based on visit occurrence using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addVisitCS"
+      },
+      {
+        "id": "stopReason",
+        "name": "Stop Reason",
+        "description": "Filter by stop reason text",
+        "type": "text",
+        "atlasKey": "addStopReason"
+      },
+      {
+        "id": "refills",
+        "name": "Refills",
+        "description": "Filter by number of refills",
+        "type": "numericRange",
+        "atlasKey": "addRefills"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by drug quantity",
+        "type": "numericRange",
+        "atlasKey": "addQuantity"
+      },
+      {
+        "id": "daysSupply",
+        "name": "Days Supply",
+        "description": "Filter by days of drug supply",
+        "type": "numericRange",
+        "atlasKey": "addDaysSupply"
+      },
+      {
+        "id": "route",
+        "name": "Route",
+        "description": "Filter by route of administration",
+        "type": "conceptSet",
+        "atlasKey": "addRoute"
+      },
+      {
+        "id": "routeCS",
+        "name": "Route Concept Set",
+        "description": "Filter by route of administration using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addRouteCS"
+      },
+      {
+        "id": "effective",
+        "name": "Effective Drug Dose",
+        "description": "Filter by effective drug dose",
+        "type": "numericRange",
+        "atlasKey": "addEffective"
+      },
+      {
+        "id": "unit",
+        "name": "Unit",
+        "description": "Filter by drug unit",
+        "type": "conceptSet",
+        "atlasKey": "addUnit"
+      },
+      {
+        "id": "unitCS",
+        "name": "Unit Concept Set",
+        "description": "Filter by drug unit using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addUnitCS"
+      },
+      {
+        "id": "lotNumber",
+        "name": "Lot Number",
+        "description": "Filter by lot number",
+        "type": "text",
+        "atlasKey": "addLotNumber"
+      },
+      {
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
+        "type": "text",
+        "atlasKey": "addSource"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "conceptSet",
+        "atlasKey": "addProviderSpecialty"
+      },
+      {
+        "id": "providerSpecialtyCS",
+        "name": "Provider Specialty Concept Set",
+        "description": "Filter by provider specialty using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addProviderSpecialtyCS"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested",
+        "special": true,
+        "atlasKey": "addNested"
+      }
+    ]
+  },
   "attributes": {
     "condition": {
-      "domains": ["conditionEra", "conditionOccurrence"],
+      "domains": [
+        "conditionEra",
+        "conditionOccurrence"
+      ],
       "attributes": [
         {
           "id": "firstDiagnosis",
@@ -342,7 +654,11 @@
       ]
     },
     "drug": {
-      "domains": ["drugEra", "drugExposure", "doseEra"],
+      "domains": [
+        "drugEra",
+        "drugExposure",
+        "doseEra"
+      ],
       "attributes": [
         {
           "id": "firstExposure",
@@ -392,7 +708,9 @@
       ]
     },
     "procedure": {
-      "domains": ["procedureOccurrence"],
+      "domains": [
+        "procedureOccurrence"
+      ],
       "attributes": [
         {
           "id": "firstProcedure",
@@ -432,7 +750,9 @@
       ]
     },
     "measurement": {
-      "domains": ["measurement"],
+      "domains": [
+        "measurement"
+      ],
       "attributes": [
         {
           "id": "firstMeasurement",
@@ -492,7 +812,9 @@
       ]
     },
     "observation": {
-      "domains": ["observation"],
+      "domains": [
+        "observation"
+      ],
       "attributes": [
         {
           "id": "firstObservation",
@@ -547,7 +869,10 @@
       ]
     },
     "visit": {
-      "domains": ["visit", "visitDetail"],
+      "domains": [
+        "visit",
+        "visitDetail"
+      ],
       "attributes": [
         {
           "id": "firstVisit",
@@ -592,7 +917,9 @@
       ]
     },
     "device": {
-      "domains": ["deviceExposure"],
+      "domains": [
+        "deviceExposure"
+      ],
       "attributes": [
         {
           "id": "firstExposure",
@@ -637,7 +964,9 @@
       ]
     },
     "specimen": {
-      "domains": ["specimen"],
+      "domains": [
+        "specimen"
+      ],
       "attributes": [
         {
           "id": "firstOccurrence",
@@ -682,7 +1011,9 @@
       ]
     },
     "death": {
-      "domains": ["death"],
+      "domains": [
+        "death"
+      ],
       "attributes": [
         {
           "id": "age",
@@ -702,7 +1033,9 @@
       ]
     },
     "observationPeriod": {
-      "domains": ["observationPeriod"],
+      "domains": [
+        "observationPeriod"
+      ],
       "attributes": [
         {
           "id": "firstPeriod",
@@ -732,7 +1065,9 @@
       ]
     },
     "payerPlan": {
-      "domains": ["payerPlanPeriod"],
+      "domains": [
+        "payerPlanPeriod"
+      ],
       "attributes": [
         {
           "id": "firstPeriod",
