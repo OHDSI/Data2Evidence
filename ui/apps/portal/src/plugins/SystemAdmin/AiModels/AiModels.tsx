@@ -1,6 +1,7 @@
 import React, { FC, useState, useEffect } from "react";
 import { loadStyleSheet, loadScript } from "../../../utils/loadScript";
 import { getAuthToken } from "../../../containers/auth";
+import { Loader } from "@portal/components";
 
 const MLFLOW_ASSETS_URL = "aimodels/build/assets.json";
 
@@ -16,7 +17,6 @@ const AiModels: FC = () => {
     fetch(MLFLOW_ASSETS_URL)
       .then((response) => response.json())
       .then(({ js, css }) => {
-        console.log(addPrefix(css));
         const styleSheetCallbacks = addPrefix(css).map((url: string) => loadStyleSheet(url));
         const scriptCallbacks = addPrefix(js).map((url: string) => loadScript(url));
 
@@ -24,6 +24,7 @@ const AiModels: FC = () => {
       });
 
     return () => {
+      window.dispatchEvent(new CustomEvent("unmount-aimodels"));
       callbacks.forEach((callback) => callback());
     };
   }, [isLocalDev]);
@@ -40,7 +41,9 @@ const AiModels: FC = () => {
           };
         }
       }}
-    ></div>
+    >
+      {isLoading && <Loader />}
+    </div>
   );
 };
 
