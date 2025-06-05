@@ -34,6 +34,7 @@ const AiModels: FC = () => {
       className="aimodels"
       id="mlflow-root"
       ref={(node: any) => {
+        setIsLoading(false);
         if (node) {
           node.portalAPI = {
             getAuthToken,
