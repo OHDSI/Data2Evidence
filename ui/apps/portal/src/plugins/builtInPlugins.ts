@@ -11,6 +11,7 @@ const moduleNames = [
   "SystemAdmin/NifiRegistry",
   "SystemAdmin/DQD",
   "SystemAdmin/Jobs",
+  "SystemAdmin/AiModels",
   "SystemAdmin/Terminology",
   "SystemAdmin/Athena",
   "SystemAdmin/FlowOverview",
