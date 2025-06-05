@@ -2,11 +2,13 @@ import React, { FC, useState, useEffect } from "react";
 import { loadStyleSheet, loadScript } from "../../../utils/loadScript";
 import { getAuthToken } from "../../../containers/auth";
 import { Loader } from "@portal/components";
+import "./AiModels.scss";
 
 const MLFLOW_ASSETS_URL = "aimodels/build/assets.json";
 
 const AiModels: FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchError, setIsFetchError] = useState(false);
   const isLocalDev = window.location.hostname === "localhost";
 
   const addPrefix = (arr: string[]) => arr.map((path) => `aimodels/build/${path}`);
@@ -21,6 +23,13 @@ const AiModels: FC = () => {
         const scriptCallbacks = addPrefix(js).map((url: string) => loadScript(url));
 
         callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
+      })
+      .catch((error) => {
+        setIsFetchError(true);
+        console.error("Error loading mlflow ui: ", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
 
     return () => {
@@ -43,6 +52,9 @@ const AiModels: FC = () => {
         }
       }}
     >
+      {isFetchError && (
+        <div className="aimodels__error">Error loading ai models. Please check that the plugin is installed.</div>
+      )}
       {isLoading && <Loader />}
     </div>
   );
