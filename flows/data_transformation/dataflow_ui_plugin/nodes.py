@@ -287,7 +287,9 @@ class DbWriter(Node):
             result = df_to_write.to_sql(self.table_name, 
                                         dbconn, 
                                         schema=self.schema_name, 
-                                        if_exists='replace')
+                                        if_exists='append',
+                                        index=False)
+            
             return Result(False,  result, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
