@@ -7,7 +7,9 @@ export default {
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import QueryFilterCard from './QueryFilterCard.vue'
+import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from './QueryFilterModel'
+import { type CriteriaOption } from './CriteriaConfigLoader'
 
 const activeTab = ref('all')
 const showDebug = ref(false)
@@ -67,6 +69,26 @@ const updateFilter = (filter: QueryFilterCardModel) => {
   console.log('Filter updated:', filter)
 }
 
+// Handle criteria selection for new filters
+const handleCriteriaSelected = (option: CriteriaOption) => {
+  console.log('Selected criteria:', option)
+  
+  const newFilter = new QueryFilterCardModel({
+    title: option.title.replace('Add ', ''), // Remove "Add" prefix for title
+    type: 'inclusion',
+    conditions: [{
+      id: `cond_${Date.now()}`,
+      conceptSet: `${option.title.replace('Add ', '')} concept set`,
+      chips: [],
+      criteriaType: option.id, // Store the criteria type for attributes
+    }],
+  })
+  
+  // Expand the new filter by default
+  newFilter.isExpanded = true
+  filterManager.addFilter(newFilter)
+}
+
 const addInclusionFilter = () => {
   const newFilter = new QueryFilterCardModel({
     title: 'New Inclusion Filter',
@@ -83,6 +105,23 @@ const handleAddCondition = (filterId: string) => {
       id: `cond_${Date.now()}`,
       conceptSet: 'Condition concept set',
       chips: [],
+      criteriaType: 'conditionOccurrence', // Default to condition occurrence
+      selectedAttributes: []
+    }
+    filter.addCondition(newCondition)
+  }
+}
+
+// Handle criteria selection for existing filters (add condition to filter)
+const handleCriteriaSelectedForFilter = (filterId: string, option: CriteriaOption) => {
+  const filter = filterManager.getFilter(filterId)
+  if (filter) {
+    const newCondition: QueryFilterCondition = {
+      id: `cond_${Date.now()}`,
+      conceptSet: `${option.title.replace('Add ', '')} concept set`,
+      chips: [],
+      criteriaType: option.id,
+      selectedAttributes: []
     }
     filter.addCondition(newCondition)
   }
@@ -140,6 +179,14 @@ const handleRemoveChip = (filterId: string, conditionId: string, chipId: string)
 const handleShowMenu = (filterId: string, conditionId: string) => {
   console.log('Show menu for condition:', filterId, conditionId)
   // Would show context menu
+}
+
+const handleAttributeSelected = (filterId: string, conditionId: string, attribute: any) => {
+  console.log('Attribute selected:', filterId, conditionId, attribute)
+}
+
+const handleAttributeRemoved = (filterId: string, conditionId: string, attributeId: string) => {
+  console.log('Attribute removed:', filterId, conditionId, attributeId)
 }
 
 const applyFilters = () => {
@@ -362,11 +409,13 @@ const handleRemoveFilter = (filterId: string) => {
           </div>
 
           <div class="query-filter-group__content">
-            <!-- Add event button for adding new sections -->
+            <!-- Criteria selector for adding new sections -->
             <div class="add-section-container">
-              <button class="btn-add-section" @click="addInclusionFilter">
-                <span>Add event</span>
-              </button>
+              <criteria-selector-dropdown
+                section-id="initialEvents"
+                button-text="Add event"
+                @criteria-selected="handleCriteriaSelected"
+              />
             </div>
 
             <query-filter-card
@@ -386,6 +435,8 @@ const handleRemoveFilter = (filterId: string) => {
               @show-menu="handleShowMenu"
               @remove-filter="handleRemoveFilter"
               @add-any-event="handleAddCondition(filter.id)"
+              @attribute-selected="handleAttributeSelected"
+              @attribute-removed="handleAttributeRemoved"
             />
           </div>
         </div>

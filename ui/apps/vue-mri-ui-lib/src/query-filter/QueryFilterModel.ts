@@ -18,6 +18,8 @@ export interface QueryFilterCondition {
   chips: QueryFilterChip[]
   isEditing?: boolean
   operator?: 'AND' | 'OR' // For combining chips
+  criteriaType?: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
+  selectedAttributes?: string[] // Selected attribute IDs
 }
 
 export class QueryFilterCardModel {

@@ -8,6 +8,8 @@ export default {
 import { computed, defineProps, defineEmits } from 'vue'
 import { QueryFilterCardModel, QueryFilterChip as QueryFilterChipType } from './QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
+import AttributesDropdown from './AttributesDropdown.vue'
+import { type AttributeConfig } from './CriteriaConfigLoader'
 
 const props = defineProps<{
   filter: QueryFilterCardModel
@@ -27,6 +29,8 @@ const emit = defineEmits([
   'show-menu',
   'remove-filter',
   'add-any-event',
+  'attribute-selected',
+  'attribute-removed',
 ])
 
 const sidebarLabel = computed(() => {
@@ -121,6 +125,33 @@ const addChipToCondition = (conditionId: string, chip: Partial<QueryFilterChipTy
     emit('update:filter', props.filter)
   }
   return added
+}
+
+// Handle attribute selection and removal
+const handleAttributeSelected = (conditionId: string, attribute: AttributeConfig & { category: string }) => {
+  const condition = props.filter.getCondition(conditionId)
+  if (condition) {
+    if (!condition.selectedAttributes) {
+      condition.selectedAttributes = []
+    }
+    if (!condition.selectedAttributes.includes(attribute.id)) {
+      condition.selectedAttributes.push(attribute.id)
+      emit('update:filter', props.filter)
+      emit('attribute-selected', props.filter.id, conditionId, attribute)
+    }
+  }
+}
+
+const handleAttributeRemoved = (conditionId: string, attributeId: string) => {
+  const condition = props.filter.getCondition(conditionId)
+  if (condition && condition.selectedAttributes) {
+    const index = condition.selectedAttributes.indexOf(attributeId)
+    if (index > -1) {
+      condition.selectedAttributes.splice(index, 1)
+      emit('update:filter', props.filter)
+      emit('attribute-removed', props.filter.id, conditionId, attributeId)
+    }
+  }
 }
 
 // Expose the addChipToCondition method for parent access if needed
@@ -224,14 +255,12 @@ defineExpose({
             >
               <i class="icon icon-copy"></i>
             </button>
-            <button
-              class="btn-hamburger-menu"
-              @click="showConditionMenu(condition.id)"
-              aria-label="More options"
-              title="More options"
-            >
-              =
-            </button>
+            <attributes-dropdown
+              :criteria-type="condition.criteriaType || 'conditionOccurrence'"
+              :selected-attributes="condition.selectedAttributes || []"
+              @attribute-selected="(attr) => handleAttributeSelected(condition.id, attr)"
+              @attribute-removed="(attrId) => handleAttributeRemoved(condition.id, attrId)"
+            />
             <button
               class="btn-remove-condition"
               @click="removeCondition(condition.id)"

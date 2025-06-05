@@ -1,0 +1,833 @@
+{
+  "criteriaTypes": {
+    "conditionEra": {
+      "id": "conditionEra",
+      "name": "Condition Era",
+      "class": "ConditionEra",
+      "icon": "fa-heartbeat",
+      "atlasKey": "addConditionEra",
+      "descriptions": {
+        "initial": "Find patients with specific diagnosis era.",
+        "censoring": "Exit cohort based on diagnosis era.",
+        "group": "Find patients with specific condition era."
+      }
+    },
+    "conditionOccurrence": {
+      "id": "conditionOccurrence",
+      "name": "Condition Occurrence",
+      "class": "ConditionOccurrence",
+      "icon": "fa-stethoscope",
+      "atlasKey": "addConditionOccurrence",
+      "descriptions": {
+        "initial": "Find patients with specific diagnoses.",
+        "censoring": "Exit cohort based on diagnoses.",
+        "group": "Find patients with specific conditions."
+      }
+    },
+    "death": {
+      "id": "death",
+      "name": "Death",
+      "class": "Death",
+      "icon": "fa-times-circle",
+      "atlasKey": "addDeath",
+      "descriptions": {
+        "initial": "Find patients based on death.",
+        "censoring": "Exit cohort based on death.",
+        "group": "Find patients based on death."
+      }
+    },
+    "deviceExposure": {
+      "id": "deviceExposure",
+      "name": "Device Exposure",
+      "class": "DeviceExposure",
+      "icon": "fa-medkit",
+      "atlasKey": "addDeviceExposure",
+      "descriptions": {
+        "initial": "Find patients based on device exposure.",
+        "censoring": "Exit cohort based on device exposure.",
+        "group": "Find patients based on device exposure."
+      }
+    },
+    "doseEra": {
+      "id": "doseEra",
+      "name": "Dose Era",
+      "class": "DoseEra",
+      "icon": "fa-prescription",
+      "atlasKey": "addDoseEra",
+      "descriptions": {
+        "initial": "Find patients with dose eras.",
+        "censoring": "Exit cohort based on dose eras.",
+        "group": "Find patients with dose eras."
+      }
+    },
+    "drugEra": {
+      "id": "drugEra",
+      "name": "Drug Era",
+      "class": "DrugEra",
+      "icon": "fa-pills",
+      "atlasKey": "addDrugEra",
+      "descriptions": {
+        "initial": "Find patients with exposure to drugs over time.",
+        "censoring": "Exit cohort based on drugs over time.",
+        "group": "Find patients with drug eras."
+      }
+    },
+    "drugExposure": {
+      "id": "drugExposure",
+      "name": "Drug Exposure",
+      "class": "DrugExposure",
+      "icon": "fa-capsules",
+      "atlasKey": "addDrugExposure",
+      "descriptions": {
+        "initial": "Find patients with exposure to specific drugs or drug classes.",
+        "censoring": "Exit cohort based on exposure to specific drugs or drug classes.",
+        "group": "Find patients with exposure to specific drugs or drug classes."
+      }
+    },
+    "measurement": {
+      "id": "measurement",
+      "name": "Measurement",
+      "class": "Measurement",
+      "icon": "fa-thermometer",
+      "atlasKey": "addMeasurement",
+      "descriptions": {
+        "initial": "Find patients based on measurement.",
+        "censoring": "Exit cohort based on measurement.",
+        "group": "Find patients based on measurements."
+      }
+    },
+    "observation": {
+      "id": "observation",
+      "name": "Observation",
+      "class": "Observation",
+      "icon": "fa-eye",
+      "atlasKey": "addObservation",
+      "descriptions": {
+        "initial": "Find patients based on observation.",
+        "censoring": "Exit cohort based on lab tests or other observations.",
+        "group": "Find patients based on observations."
+      }
+    },
+    "observationPeriod": {
+      "id": "observationPeriod",
+      "name": "Observation Period",
+      "class": "ObservationPeriod",
+      "icon": "fa-calendar",
+      "atlasKey": "addObservationPeriod",
+      "descriptions": {
+        "initial": "Find patients based on observation period.",
+        "censoring": "Exit cohort based on observation period.",
+        "group": "Find patients based on observation period."
+      }
+    },
+    "payerPlanPeriod": {
+      "id": "payerPlanPeriod",
+      "name": "Payer Plan Period",
+      "class": "PayerPlanPeriod",
+      "icon": "fa-id-card",
+      "atlasKey": "addPayerPlanPeriod",
+      "descriptions": {
+        "initial": "Find patients based on payer plan period.",
+        "censoring": "Exit cohort based on payer plan period.",
+        "group": "Find patients based on payer plan period."
+      }
+    },
+    "procedureOccurrence": {
+      "id": "procedureOccurrence",
+      "name": "Procedure Occurrence",
+      "class": "ProcedureOccurrence",
+      "icon": "fa-procedures",
+      "atlasKey": "addProcedureOccurrence",
+      "descriptions": {
+        "initial": "Find patients that experienced a specific procedure.",
+        "censoring": "Exit cohort based on procedure.",
+        "group": "Find patients based on procedures."
+      }
+    },
+    "specimen": {
+      "id": "specimen",
+      "name": "Specimen",
+      "class": "Specimen",
+      "icon": "fa-vial",
+      "atlasKey": "addSpecimen",
+      "descriptions": {
+        "initial": "Find patients based on specimen.",
+        "censoring": "Exit cohort based on specimen.",
+        "group": "Find patients based on specimen."
+      }
+    },
+    "visit": {
+      "id": "visit",
+      "name": "Visit Occurrence",
+      "class": "VisitOccurrence",
+      "icon": "fa-hospital",
+      "atlasKey": "addVisit",
+      "descriptions": {
+        "initial": "Find patients based on visit information.",
+        "censoring": "Exit cohort based on visit information.",
+        "group": "Find patients based on visit information."
+      }
+    },
+    "visitDetail": {
+      "id": "visitDetail",
+      "name": "Visit Detail",
+      "class": "VisitDetail",
+      "icon": "fa-clipboard",
+      "atlasKey": "addVisitDetail",
+      "descriptions": {
+        "initial": "Find patients based on visit detail information.",
+        "censoring": "Exit cohort based on visit detail information.",
+        "group": "Find patients based on visit detail information."
+      }
+    },
+    "demographic": {
+      "id": "demographic",
+      "name": "Demographic",
+      "class": "Demographic",
+      "icon": "fa-user",
+      "atlasKey": "addDemographic",
+      "descriptions": {
+        "group": "Filter events based on demographic criteria."
+      },
+      "groupOnly": true
+    },
+    "locationRegion": {
+      "id": "locationRegion",
+      "name": "Location Region",
+      "class": "LocationRegion",
+      "icon": "fa-map-marker",
+      "atlasKey": "addLocationRegion",
+      "descriptions": {
+        "group": "Find patients within geographical area."
+      },
+      "groupOnly": true
+    },
+    "group": {
+      "id": "group",
+      "name": "Group",
+      "class": "Group",
+      "icon": "fa-object-group",
+      "atlasKey": "addGroup",
+      "descriptions": {
+        "group": "Add a nested group to combine criteria using and/or relationships."
+      },
+      "groupOnly": true
+    },
+    "fromReusable": {
+      "id": "fromReusable",
+      "name": "From Reusable",
+      "class": "Reusable",
+      "icon": "fa-recycle",
+      "descriptions": {
+        "initial": "Add criteria from list of reusables.",
+        "censoring": "Add criteria from list of reusables.",
+        "group": "Add criteria from list of reusables."
+      },
+      "special": true
+    }
+  },
+  "sections": {
+    "initialEvents": {
+      "id": "initialEvents",
+      "name": "Cohort Entry Events",
+      "buttonText": "Add Initial Event",
+      "criteriaTypes": [
+        "conditionEra",
+        "conditionOccurrence",
+        "death",
+        "deviceExposure",
+        "doseEra",
+        "drugEra",
+        "drugExposure",
+        "measurement",
+        "observation",
+        "observationPeriod",
+        "payerPlanPeriod",
+        "procedureOccurrence",
+        "specimen",
+        "visit",
+        "visitDetail",
+        "fromReusable"
+      ]
+    },
+    "censoringEvents": {
+      "id": "censoringEvents",
+      "name": "Cohort Exit",
+      "buttonText": "Add Censoring Event",
+      "criteriaTypes": [
+        "conditionEra",
+        "conditionOccurrence",
+        "death",
+        "deviceExposure",
+        "doseEra",
+        "drugEra",
+        "drugExposure",
+        "measurement",
+        "observation",
+        "observationPeriod",
+        "payerPlanPeriod",
+        "procedureOccurrence",
+        "specimen",
+        "visit",
+        "visitDetail",
+        "fromReusable"
+      ]
+    },
+    "criteriaGroup": {
+      "id": "criteriaGroup",
+      "name": "Criteria Group",
+      "buttonText": "Add criteria to group...",
+      "criteriaTypes": [
+        "demographic",
+        "conditionEra",
+        "conditionOccurrence",
+        "death",
+        "deviceExposure",
+        "doseEra",
+        "drugEra",
+        "drugExposure",
+        "locationRegion",
+        "measurement",
+        "observation",
+        "observationPeriod",
+        "payerPlanPeriod",
+        "procedureOccurrence",
+        "specimen",
+        "visit",
+        "visitDetail",
+        "group",
+        "fromReusable"
+      ]
+    }
+  },
+  "attributes": {
+    "condition": {
+      "domains": ["conditionEra", "conditionOccurrence"],
+      "attributes": [
+        {
+          "id": "firstDiagnosis",
+          "name": "First Diagnosis",
+          "description": "Limit to first diagnosis in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Occurrence",
+          "description": "Filter by age at time of diagnosis"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "providerSpecialty",
+          "name": "Provider Specialty",
+          "description": "Filter by provider specialty"
+        },
+        {
+          "id": "conditionStatus",
+          "name": "Condition Status",
+          "description": "Filter by condition status"
+        },
+        {
+          "id": "conditionType",
+          "name": "Condition Type",
+          "description": "Filter by condition type"
+        }
+      ]
+    },
+    "drug": {
+      "domains": ["drugEra", "drugExposure", "doseEra"],
+      "attributes": [
+        {
+          "id": "firstExposure",
+          "name": "First Exposure",
+          "description": "Limit to first exposure in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Exposure",
+          "description": "Filter by age at time of exposure"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "daysSupply",
+          "name": "Days Supply",
+          "description": "Filter by days of drug supply"
+        },
+        {
+          "id": "quantity",
+          "name": "Quantity",
+          "description": "Filter by drug quantity"
+        },
+        {
+          "id": "refills",
+          "name": "Refills",
+          "description": "Filter by number of refills"
+        },
+        {
+          "id": "drugType",
+          "name": "Drug Type",
+          "description": "Filter by drug type"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "providerSpecialty",
+          "name": "Provider Specialty",
+          "description": "Filter by provider specialty"
+        }
+      ]
+    },
+    "procedure": {
+      "domains": ["procedureOccurrence"],
+      "attributes": [
+        {
+          "id": "firstProcedure",
+          "name": "First Procedure",
+          "description": "Limit to first procedure in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Procedure",
+          "description": "Filter by age at time of procedure"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "providerSpecialty",
+          "name": "Provider Specialty",
+          "description": "Filter by provider specialty"
+        },
+        {
+          "id": "procedureType",
+          "name": "Procedure Type",
+          "description": "Filter by procedure type"
+        },
+        {
+          "id": "modifier",
+          "name": "Modifier",
+          "description": "Filter by procedure modifier"
+        }
+      ]
+    },
+    "measurement": {
+      "domains": ["measurement"],
+      "attributes": [
+        {
+          "id": "firstMeasurement",
+          "name": "First Measurement",
+          "description": "Limit to first measurement in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Measurement",
+          "description": "Filter by age at time of measurement"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "valueAsNumber",
+          "name": "Value as Number",
+          "description": "Filter by numeric measurement value"
+        },
+        {
+          "id": "valueAsConcept",
+          "name": "Value as Concept",
+          "description": "Filter by categorical measurement value"
+        },
+        {
+          "id": "unit",
+          "name": "Unit",
+          "description": "Filter by measurement unit"
+        },
+        {
+          "id": "rangeLow",
+          "name": "Range Low",
+          "description": "Filter by lower range"
+        },
+        {
+          "id": "rangeHigh",
+          "name": "Range High",
+          "description": "Filter by upper range"
+        },
+        {
+          "id": "abnormal",
+          "name": "Abnormal",
+          "description": "Filter for abnormal results"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "measurementType",
+          "name": "Measurement Type",
+          "description": "Filter by measurement type"
+        }
+      ]
+    },
+    "observation": {
+      "domains": ["observation"],
+      "attributes": [
+        {
+          "id": "firstObservation",
+          "name": "First Observation",
+          "description": "Limit to first observation in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Observation",
+          "description": "Filter by age at time of observation"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "valueAsNumber",
+          "name": "Value as Number",
+          "description": "Filter by numeric observation value"
+        },
+        {
+          "id": "valueAsString",
+          "name": "Value as String",
+          "description": "Filter by text observation value"
+        },
+        {
+          "id": "valueAsConcept",
+          "name": "Value as Concept",
+          "description": "Filter by categorical observation value"
+        },
+        {
+          "id": "qualifier",
+          "name": "Qualifier",
+          "description": "Filter by observation qualifier"
+        },
+        {
+          "id": "unit",
+          "name": "Unit",
+          "description": "Filter by observation unit"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "observationType",
+          "name": "Observation Type",
+          "description": "Filter by observation type"
+        }
+      ]
+    },
+    "visit": {
+      "domains": ["visit", "visitDetail"],
+      "attributes": [
+        {
+          "id": "firstVisit",
+          "name": "First Visit",
+          "description": "Limit to first visit in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Visit",
+          "description": "Filter by age at time of visit"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "visitType",
+          "name": "Visit Type",
+          "description": "Filter by visit type"
+        },
+        {
+          "id": "visitLength",
+          "name": "Visit Length",
+          "description": "Filter by length of visit"
+        },
+        {
+          "id": "placeOfService",
+          "name": "Place of Service",
+          "description": "Filter by place of service"
+        },
+        {
+          "id": "caresite",
+          "name": "Care Site",
+          "description": "Filter by care site"
+        },
+        {
+          "id": "providerSpecialty",
+          "name": "Provider Specialty",
+          "description": "Filter by provider specialty"
+        }
+      ]
+    },
+    "device": {
+      "domains": ["deviceExposure"],
+      "attributes": [
+        {
+          "id": "firstExposure",
+          "name": "First Exposure",
+          "description": "Limit to first device exposure in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Exposure",
+          "description": "Filter by age at time of exposure"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "quantity",
+          "name": "Quantity",
+          "description": "Filter by device quantity"
+        },
+        {
+          "id": "deviceType",
+          "name": "Device Type",
+          "description": "Filter by device type"
+        },
+        {
+          "id": "uniqueDeviceId",
+          "name": "Unique Device ID",
+          "description": "Filter by unique device identifier"
+        },
+        {
+          "id": "visitOccurrence",
+          "name": "Visit",
+          "description": "Filter based on visit occurrence"
+        },
+        {
+          "id": "providerSpecialty",
+          "name": "Provider Specialty",
+          "description": "Filter by provider specialty"
+        }
+      ]
+    },
+    "specimen": {
+      "domains": ["specimen"],
+      "attributes": [
+        {
+          "id": "firstOccurrence",
+          "name": "First Occurrence",
+          "description": "Limit to first specimen in history"
+        },
+        {
+          "id": "age",
+          "name": "Age at Collection",
+          "description": "Filter by age at time of collection"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "quantity",
+          "name": "Quantity",
+          "description": "Filter by specimen quantity"
+        },
+        {
+          "id": "unit",
+          "name": "Unit",
+          "description": "Filter by specimen unit"
+        },
+        {
+          "id": "anatomicSite",
+          "name": "Anatomic Site",
+          "description": "Filter by anatomic site"
+        },
+        {
+          "id": "diseaseStatus",
+          "name": "Disease Status",
+          "description": "Filter by disease status"
+        },
+        {
+          "id": "specimenType",
+          "name": "Specimen Type",
+          "description": "Filter by specimen type"
+        }
+      ]
+    },
+    "death": {
+      "domains": ["death"],
+      "attributes": [
+        {
+          "id": "age",
+          "name": "Age at Death",
+          "description": "Filter by age at time of death"
+        },
+        {
+          "id": "gender",
+          "name": "Gender",
+          "description": "Filter by patient gender"
+        },
+        {
+          "id": "deathType",
+          "name": "Death Type",
+          "description": "Filter by death type"
+        }
+      ]
+    },
+    "observationPeriod": {
+      "domains": ["observationPeriod"],
+      "attributes": [
+        {
+          "id": "firstPeriod",
+          "name": "First Period",
+          "description": "Limit to first observation period in history"
+        },
+        {
+          "id": "ageAtStart",
+          "name": "Age at Start",
+          "description": "Filter by age at period start"
+        },
+        {
+          "id": "ageAtEnd",
+          "name": "Age at End",
+          "description": "Filter by age at period end"
+        },
+        {
+          "id": "periodLength",
+          "name": "Period Length",
+          "description": "Filter by length of observation period"
+        },
+        {
+          "id": "periodType",
+          "name": "Period Type",
+          "description": "Filter by observation period type"
+        }
+      ]
+    },
+    "payerPlan": {
+      "domains": ["payerPlanPeriod"],
+      "attributes": [
+        {
+          "id": "firstPeriod",
+          "name": "First Period",
+          "description": "Limit to first payer plan period in history"
+        },
+        {
+          "id": "ageAtStart",
+          "name": "Age at Start",
+          "description": "Filter by age at period start"
+        },
+        {
+          "id": "ageAtEnd",
+          "name": "Age at End",
+          "description": "Filter by age at period end"
+        },
+        {
+          "id": "periodLength",
+          "name": "Period Length",
+          "description": "Filter by length of payer plan period"
+        },
+        {
+          "id": "payerConcept",
+          "name": "Payer",
+          "description": "Filter by payer concept"
+        },
+        {
+          "id": "planConcept",
+          "name": "Plan",
+          "description": "Filter by plan concept"
+        },
+        {
+          "id": "sponsorConcept",
+          "name": "Sponsor",
+          "description": "Filter by sponsor concept"
+        },
+        {
+          "id": "stopReasonConcept",
+          "name": "Stop Reason",
+          "description": "Filter by stop reason"
+        }
+      ]
+    }
+  },
+  "temporalWindows": {
+    "types": [
+      {
+        "id": "all",
+        "name": "All",
+        "description": "Anytime in the person's history"
+      },
+      {
+        "id": "before",
+        "name": "Before",
+        "description": "Before the index date"
+      },
+      {
+        "id": "after",
+        "name": "After",
+        "description": "After the index date"
+      },
+      {
+        "id": "between",
+        "name": "Between",
+        "description": "Between specified dates"
+      },
+      {
+        "id": "withinDays",
+        "name": "Within Days",
+        "description": "Within a specified number of days"
+      }
+    ]
+  },
+  "occurrenceCount": {
+    "operators": [
+      {
+        "id": "exactly",
+        "name": "exactly",
+        "symbol": "="
+      },
+      {
+        "id": "atLeast",
+        "name": "at least",
+        "symbol": ">="
+      },
+      {
+        "id": "atMost",
+        "name": "at most",
+        "symbol": "<="
+      },
+      {
+        "id": "between",
+        "name": "between",
+        "symbol": "between"
+      }
+    ]
+  }
+}
