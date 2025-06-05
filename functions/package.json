@@ -363,6 +363,9 @@
           "portal.userArtifact.delete",
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -1437,6 +1440,24 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/csv",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/csv",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
           "scopes": [
             "gateway.dashboardGate.content"
@@ -1617,6 +1638,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/dataflow-mgmt/dataflow/file/csv$",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {

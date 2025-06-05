@@ -1,5 +1,5 @@
 import React, { FC, ReactNode, useEffect } from "react";
-import { useToken } from "../../../contexts";
+import { useToken, useTranslation } from "../../../contexts";
 import env from "../../../env";
 
 interface PluginContainerProps {
@@ -22,6 +22,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
   toggleAtlas,
 }) => {
   const { idTokenClaims } = useToken();
+  const { locale } = useTranslation();
 
   useEffect(() => {
     const pluginEvent = new CustomEvent("alp-dataset-change");
@@ -40,6 +41,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
             releaseId,
             username: idTokenClaims[nameProp],
             toggleAtlas,
+            locale,
           };
         }
       }}
