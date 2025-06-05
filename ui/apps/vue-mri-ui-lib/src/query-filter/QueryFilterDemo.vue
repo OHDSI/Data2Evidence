@@ -98,7 +98,13 @@ const addInclusionFilter = () => {
   filterManager.addFilter(newFilter)
 }
 
-const handleAddCondition = (filterId: string) => {
+const handleAddCondition = (filterId: string, conditionId?: string) => {
+  // Only handle this for main filter actions, not for nested conditions
+  if (conditionId) {
+    // This is a nested condition being added - ignore it since it's handled internally
+    return
+  }
+  
   const filter = filterManager.getFilter(filterId)
   if (filter) {
     const newCondition: QueryFilterCondition = {

@@ -9,7 +9,8 @@ import { computed, defineProps, defineEmits } from 'vue'
 import { QueryFilterCardModel, QueryFilterChip as QueryFilterChipType, QueryFilterCondition } from './QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
-import { type AttributeConfig } from './CriteriaConfigLoader'
+import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
+import { type AttributeConfig, type CriteriaOption } from './CriteriaConfigLoader'
 
 const props = defineProps<{
   filter: QueryFilterCardModel
@@ -173,6 +174,102 @@ const conditionGroups = computed(() => {
   return groups
 })
 
+// Get all conditions that are related to a nested condition (for AttributesDropdown)
+const getNestedConditionGroup = (conditionId: string) => {
+  const relatedConditions: QueryFilterCondition[] = []
+  
+  // Find all conditions in nested structures that are related to this condition
+  props.filter.conditions.forEach(condition => {
+    if (condition.isNested && condition.nestedConditions) {
+      condition.nestedConditions.forEach(nestedCond => {
+        if (nestedCond.id === conditionId) {
+          // Add the condition itself
+          relatedConditions.push(nestedCond)
+        }
+        // Add any attribute-based conditions that belong to this condition
+        if (nestedCond.isAttributeBased && nestedCond.parentConditionId === conditionId) {
+          relatedConditions.push(nestedCond)
+        }
+      })
+    }
+  })
+  
+  return relatedConditions
+}
+
+// Group nested conditions by their parent relationships
+const getNestedConditionGroups = (nestedContainer: QueryFilterCondition) => {
+  if (!nestedContainer.nestedConditions) return []
+  
+  const groups: Array<{
+    parent: QueryFilterCondition,
+    attributes: QueryFilterCondition[]
+  }> = []
+  
+  // Find all parent conditions (non-attribute-based) in the nested structure
+  const parentConditions = nestedContainer.nestedConditions.filter(c => !c.isAttributeBased)
+  
+  parentConditions.forEach(parent => {
+    const attributeConditions = nestedContainer.nestedConditions?.filter(c => 
+      c.isAttributeBased && c.parentConditionId === parent.id
+    ) || []
+    
+    groups.push({
+      parent,
+      attributes: attributeConditions
+    })
+  })
+  
+  return groups
+}
+
+// Handle nested criteria selection
+const handleNestedCriteriaSelected = (nestedConditionId: string, option: CriteriaOption) => {
+  const newCondition = props.filter.addNestedCondition(nestedConditionId, {
+    conceptSet: option.title,
+    criteriaType: option.id,
+    chips: []
+  })
+  emit('update:filter', props.filter)
+  // Don't emit add-condition for nested conditions - they're handled internally
+}
+
+// Handle nested condition removal
+const removeNestedCondition = (nestedConditionId: string, conditionId: string) => {
+  const removed = props.filter.removeNestedCondition(nestedConditionId, conditionId)
+  if (removed) {
+    emit('update:filter', props.filter)
+    emit('remove-condition', props.filter.id, conditionId)
+  }
+}
+
+// Handle attribute selection for nested conditions
+const handleNestedAttributeSelected = (conditionId: string, attribute: AttributeConfig & { category: string }) => {
+  // Use the new nested attribute handling
+  const newCondition = props.filter.addNestedAttributeCondition(conditionId, attribute)
+  emit('update:filter', props.filter)
+  emit('attribute-selected', props.filter.id, conditionId, attribute, newCondition.id)
+}
+
+const handleNestedAttributeRemoved = (conditionId: string, attributeId: string) => {
+  // Find and remove the attribute-based condition from nested structures
+  props.filter.conditions.forEach(condition => {
+    if (condition.isNested && condition.nestedConditions) {
+      const attributeConditionIndex = condition.nestedConditions.findIndex(c => 
+        c.isAttributeBased && 
+        c.parentConditionId === conditionId && 
+        c.attributeConfig?.id === attributeId
+      )
+      
+      if (attributeConditionIndex > -1) {
+        condition.nestedConditions.splice(attributeConditionIndex, 1)
+        emit('update:filter', props.filter)
+        emit('attribute-removed', props.filter.id, conditionId, attributeId)
+      }
+    }
+  })
+}
+
 // Expose the addChipToCondition method for parent access if needed
 defineExpose({
   addChipToCondition,
@@ -310,6 +407,7 @@ defineExpose({
           v-for="attrCondition in group.attributeConditions"
           :key="attrCondition.id"
           class="query-filter-condition query-filter-condition--attribute"
+          :class="{ 'query-filter-condition--nested': attrCondition.isNested }"
         >
           <div class="query-filter-condition__header">
             <span class="query-filter-condition__label query-filter-condition__label--attribute">
@@ -317,6 +415,7 @@ defineExpose({
             </span>
             <div class="query-filter-condition__actions">
               <button
+                v-if="!attrCondition.isNested"
                 class="btn-icon"
                 @click="editCondition(attrCondition.id)"
                 aria-label="Edit attribute condition"
@@ -335,7 +434,8 @@ defineExpose({
             </div>
           </div>
 
-          <div class="query-filter-condition__chips">
+          <!-- Regular attribute condition chips -->
+          <div v-if="!attrCondition.isNested" class="query-filter-condition__chips">
             <query-filter-chip
               v-for="chip in attrCondition.chips"
               :key="chip.id"
@@ -346,6 +446,148 @@ defineExpose({
             <button class="btn-add-chip" @click="addChip(attrCondition.id)" aria-label="Add filter">
               <i class="icon icon-plus"></i>
             </button>
+          </div>
+
+          <!-- Nested criteria content -->
+          <div v-if="attrCondition.isNested" class="query-filter-condition__nested-content">
+            <!-- Add event button for nested criteria -->
+            <div class="nested-add-event-container">
+              <criteria-selector-dropdown
+                section-id="initialEvents"
+                button-text="Add event"
+                @criteria-selected="(option) => handleNestedCriteriaSelected(attrCondition.id, option)"
+              />
+            </div>
+
+            <!-- Nested conditions grouped by parent -->
+            <div 
+              v-for="nestedGroup in getNestedConditionGroups(attrCondition)"
+              :key="nestedGroup.parent.id"
+              class="query-filter-nested-group"
+            >
+              <!-- Parent nested condition -->
+              <div class="query-filter-nested-condition query-filter-nested-condition--parent">
+                <div class="query-filter-nested-condition__header">
+                  <span class="query-filter-nested-condition__label">
+                    {{ nestedGroup.parent.conceptSet || 'Nested Condition' }}
+                  </span>
+                  <div class="query-filter-nested-condition__actions">
+                    <button
+                      class="btn-icon"
+                      @click="editCondition(nestedGroup.parent.id)"
+                      aria-label="Edit nested condition"
+                      title="Edit nested condition"
+                    >
+                      <i class="icon icon-pencil"></i>
+                    </button>
+                    <button
+                      class="btn-icon"
+                      @click="duplicateCondition(nestedGroup.parent.id)"
+                      aria-label="Duplicate nested condition"
+                      title="Duplicate nested condition"
+                    >
+                      <i class="icon icon-copy"></i>
+                    </button>
+                    <attributes-dropdown
+                      :criteria-type="nestedGroup.parent.criteriaType || 'conditionOccurrence'"
+                      :condition-id="nestedGroup.parent.id"
+                      :all-conditions="getNestedConditionGroup(nestedGroup.parent.id)"
+                      @attribute-selected="(attr) => handleNestedAttributeSelected(nestedGroup.parent.id, attr)"
+                      @attribute-removed="(attrId) => handleNestedAttributeRemoved(nestedGroup.parent.id, attrId)"
+                    />
+                    <button
+                      class="btn-remove-condition"
+                      @click="removeNestedCondition(attrCondition.id, nestedGroup.parent.id)"
+                      aria-label="Remove nested condition"
+                      title="Remove nested condition"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="query-filter-nested-condition__chips">
+                  <query-filter-chip
+                    v-for="chip in nestedGroup.parent.chips"
+                    :key="chip.id"
+                    :chip="chip"
+                    :removable="true"
+                    @remove="removeChip(nestedGroup.parent.id, chip.id)"
+                  />
+                  <button class="btn-add-chip" @click="addChip(nestedGroup.parent.id)" aria-label="Add filter">
+                    <i class="icon icon-plus"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nested attribute conditions -->
+              <div
+                v-for="attrCond in nestedGroup.attributes"
+                :key="attrCond.id"
+                class="query-filter-nested-condition query-filter-nested-condition--attribute"
+              >
+                <div class="query-filter-nested-condition__header">
+                  <span class="query-filter-nested-condition__label query-filter-nested-condition__label--attribute">
+                    {{ attrCond.conceptSet }}
+                  </span>
+                  <div class="query-filter-nested-condition__actions">
+                    <button
+                      v-if="!attrCond.isNested"
+                      class="btn-icon"
+                      @click="editCondition(attrCond.id)"
+                      aria-label="Edit nested attribute condition"
+                      title="Edit nested attribute condition"
+                    >
+                      <i class="icon icon-pencil"></i>
+                    </button>
+                    <button
+                      class="btn-remove-condition"
+                      @click="removeNestedCondition(attrCondition.id, attrCond.id)"
+                      aria-label="Remove nested attribute condition"
+                      title="Remove nested attribute condition"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Regular attribute condition chips -->
+                <div v-if="!attrCond.isNested" class="query-filter-nested-condition__chips">
+                  <query-filter-chip
+                    v-for="chip in attrCond.chips"
+                    :key="chip.id"
+                    :chip="chip"
+                    :removable="true"
+                    @remove="removeChip(attrCond.id, chip.id)"
+                  />
+                  <button class="btn-add-chip" @click="addChip(attrCond.id)" aria-label="Add filter">
+                    <i class="icon icon-plus"></i>
+                  </button>
+                </div>
+
+                <!-- Recursively nested criteria (if this attribute is itself nested) -->
+                <div v-if="attrCond.isNested" class="query-filter-nested-condition__nested-content">
+                  <!-- Add event button for deeply nested criteria -->
+                  <div class="nested-add-event-container">
+                    <criteria-selector-dropdown
+                      section-id="initialEvents"
+                      button-text="Add event"
+                      @criteria-selected="(option) => handleNestedCriteriaSelected(attrCond.id, option)"
+                    />
+                  </div>
+
+                  <!-- Show any conditions inside this deeply nested criteria -->
+                  <div v-if="!attrCond.nestedConditions?.length" class="nested-empty-state">
+                    <p>No nested conditions added yet</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty state for nested criteria -->
+            <div v-if="!attrCondition.nestedConditions?.length" class="nested-empty-state">
+              <p>No nested conditions added yet</p>
+            </div>
           </div>
         </div>
       </div>
@@ -657,6 +899,12 @@ defineExpose({
     background: #f3f4f6;
   }
 
+  &--nested {
+    // Nested condition styles
+    background: #fefce8;
+    border: 2px solid #facc15;
+  }
+
   &__at-least {
     position: absolute;
     left: -30px;
@@ -708,6 +956,100 @@ defineExpose({
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+  }
+
+  &__nested-content {
+    padding: 12px;
+    background: #fffbeb;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+}
+
+.nested-add-event-container {
+  margin-bottom: 12px;
+}
+
+.query-filter-nested-group {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.query-filter-nested-condition {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &--parent {
+    // Main nested condition style
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+  }
+
+  &--attribute {
+    // Nested attribute condition style
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin-left: 16px;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  &__label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+
+    &--attribute {
+      color: #666;
+      font-weight: normal;
+      font-style: normal;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  &__nested-content {
+    padding: 8px;
+    background: #fef3c7;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+}
+
+.nested-empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
+  
+  p {
+    margin: 0;
+    font-size: 14px;
   }
 }
 
