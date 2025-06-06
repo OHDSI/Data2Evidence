@@ -264,6 +264,11 @@
           "function": "/d2e-webapi",
           "env": "d2e-webapi",
           "imports": "/d2e-webapi/deno.json"
+        },
+        {
+          "source": "/mlflow",
+          "service": "mlflow",
+          "rmsrc": true
         }
       ],
       "roles": {
@@ -431,7 +436,8 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup"
+          "demo.setup",
+          "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -2352,6 +2358,12 @@
           "path": "^/jupyter",
           "scopes": [
             "jupyter"
+          ]
+        },
+        {
+          "path": "^/mlflow(.*)",
+          "scopes": [
+            "mlflow"
           ]
         }
       ]
