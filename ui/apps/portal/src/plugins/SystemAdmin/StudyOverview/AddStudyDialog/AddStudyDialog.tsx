@@ -1,4 +1,13 @@
-import React, { FC, useCallback, useState, useEffect, ChangeEvent, SetStateAction, useMemo } from "react";
+import React, {
+  FC,
+  useCallback,
+  useState,
+  useEffect,
+  ChangeEvent,
+  SetStateAction,
+  useMemo,
+  SyntheticEvent,
+} from "react";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
@@ -6,7 +15,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
-import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box } from "@portal/components";
+import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
 import {
   NewStudyInput,
   Feedback,
@@ -204,7 +213,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [formMetadataErrorIndex, setFormMetadataErrorIndex] = useState<Array<Number>>([]);
   const featureFlags = useEnabledFeatures();
 
-  const noSchema = [SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption);
   const SchemaOptions: dropdownOption[] = useMemo(() => {
     const result: dropdownOption[] = [
       {
@@ -228,11 +236,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, [featureFlags]);
 
   const displayDatabases = useMemo(
-    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
+    () =>
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(
+        formData.schemaOption
+      ),
     [formData.schemaOption]
   );
 
-  const displayDataModels = useMemo(() => formData.databaseCode && !noSchema, [noSchema, formData.databaseCode]);
+  const displayDataModels = useMemo(
+    () => formData.databaseCode && ![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption),
+    [formData.schemaOption, formData.databaseCode]
+  );
 
   const displayCustomDataModelInput = useMemo(
     () => formData.dataModel.split(" ")[0] === customDataModelOption.datamodel,
@@ -258,7 +272,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displaySchemaNameInput = useMemo(
-    () => formData.schemaOption === SchemaTypes.CustomCDM || formData.schemaOption === SchemaTypes.ExistingCDM,
+    () =>
+      formData.schemaOption === SchemaTypes.CustomCDM ||
+      formData.schemaOption === SchemaTypes.ExistingCDM ||
+      formData.schemaOption === SchemaTypes.FHIR,
     [formData.schemaOption]
   );
 
@@ -293,13 +310,13 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, [formData.schemaOption]);
 
   useEffect(() => {
-    if (!noSchema && formData.databaseCode) {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && formData.databaseCode) {
       const db = databases.find((db) => db.code === formData.databaseCode);
       if (db) {
         getDataModels();
       }
     }
-  }, [databases, formData.databaseCode, noSchema, getDataModels]);
+  }, [databases, formData.databaseCode, formData.schemaOption, getDataModels]);
 
   useEffect(() => {
     const getSchemas = () => {
@@ -381,7 +398,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, tokenStudyCode: { valid: true } };
     }
 
-    if (!noSchema && !databaseCode) {
+    if (![SchemaTypes.NoCDM].includes(formData.schemaOption) && !databaseCode) {
       formError = { ...formError, databaseCode: { required: true } };
     }
 
@@ -393,11 +410,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if (schemaOption == SchemaTypes.ExistingCDM && cdmSchemaValue == "") {
+    if ([SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(schemaOption) && cdmSchemaValue == "") {
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if (!noSchema && dataModel == "") {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && dataModel == "") {
       formError = { ...formError, dataModel: { required: true } };
     }
 
@@ -430,7 +447,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       return true;
     }
     return false;
-  }, [formData, schemas, noSchema, tokenIsValid]);
+  }, [formData, schemas, tokenIsValid]);
 
   const isFormMetadataError = useCallback(() => {
     const indexError: Number[] = [];
@@ -463,6 +480,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const {
       type,
       tokenStudyCode,
+      schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
       cleansedSchemaOption,
@@ -479,10 +497,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     } = formData;
 
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
-    let schemaOption = formData.schemaOption;
-    if (noSchema) {
-      schemaOption = SchemaTypes.NoCDM;
-    }
 
     const dataModelDetails = parseDatamodelOption(dataModel);
     let fhirProjectId;
@@ -545,7 +559,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     }
   }, [
     formData,
-    noSchema,
     tenant,
     studyMetadata,
     studyTagsData,
@@ -690,44 +703,82 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         )}
 
         {/* Custom Schema Input */}
-        {displaySchemaNameInput && formData.schemaOption === SchemaTypes.ExistingCDM && (
-          <Box mb={4}>
-            <TextField
-              fullWidth
-              variant="standard"
-              label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
-              value={formData.cdmSchemaValue}
-              onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
-              error={formError.cdmSchemaValue.required}
-            />
-            {formError.cdmSchemaValue.required && (
-              <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-            )}
-          </Box>
-          // ) : (
-          //   formData.schemaOption === SchemaTypes.CustomCDM && (
-          //     <Box mb={4}>
-          //       <Autocomplete
-          //         freeSolo
-          //         sx={styles}
-          //         id="autocomplete-schemas"
-          //         options={schemas}
-          //         renderInput={(params) => <TextField {...params} label="Schemas" variant="standard" />}
-          //         value={formData?.cdmSchemaValue}
-          //         onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) =>
-          //           handleFormDataChange({ cdmSchemaValue })
-          //         }
-          //         disabled={schemas.length === 0}
-          //       />
-          //       {schemas.length === 0 && (
-          //         <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__NO_AVAILABLE_SCHEMA)}</FormHelperText>
-          //       )}
-          //       {formError.cdmSchemaValue.required && (
-          //         <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME)}</FormHelperText>
-          //       )}
-          //     </Box>
-          //   )
-        )}
+        {displaySchemaNameInput &&
+          (formData.schemaOption === SchemaTypes.ExistingCDM ? (
+            <Box mb={4}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
+                value={formData.cdmSchemaValue}
+                onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
+                error={formError.cdmSchemaValue.required}
+              />
+              {formError.cdmSchemaValue.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </Box>
+          ) : formData.schemaOption === SchemaTypes.CustomCDM ? (
+            <Box mb={4}>
+              <Autocomplete
+                freeSolo
+                sx={styles}
+                id="autocomplete-schemas"
+                options={schemas}
+                renderInput={(params) => (
+                  <TextField {...params} label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)} variant="standard" />
+                )}
+                value={formData?.cdmSchemaValue}
+                onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) =>
+                  handleFormDataChange({ cdmSchemaValue })
+                }
+                disabled={schemas.length === 0}
+              />
+              {schemas.length === 0 && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__NO_AVAILABLE_SCHEMA)}</FormHelperText>
+              )}
+              {formError.cdmSchemaValue.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME)}</FormHelperText>
+              )}
+            </Box>
+          ) : (
+            formData.schemaOption === SchemaTypes.FHIR && (
+              <Box mb={4}>
+                <FormControl
+                  sx={styles}
+                  className="select"
+                  variant="standard"
+                  fullWidth
+                  {...(formError.cdmSchemaValue.required ? { error: true } : {})}
+                >
+                  <InputLabel htmlFor="cdm-schema-option">{getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}</InputLabel>
+                  <Select
+                    sx={styles}
+                    value={formData.cdmSchemaValue}
+                    onChange={(event: SelectChangeEvent<string>) =>
+                      handleFormDataChange({ cdmSchemaValue: event.target.value })
+                    }
+                    inputProps={{
+                      name: "cdmSchemaOption",
+                      id: "cdm-schema-option",
+                    }}
+                  >
+                    <MenuItem sx={styles} value="">
+                      &nbsp;
+                    </MenuItem>
+                    {vocabSchemas[formData.databaseCode]?.map((vocabSchema) => (
+                      <MenuItem sx={styles} key={vocabSchema} value={vocabSchema}>
+                        {vocabSchema}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formError.cdmSchemaValue.required && (
+                    <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                  )}
+                </FormControl>
+              </Box>
+            )
+          ))}
 
         {displaySameCdmVocabSchemaCheckbox && (
           <Box mb={4}>
