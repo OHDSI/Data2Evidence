@@ -12,6 +12,7 @@ import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
+import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -22,6 +23,7 @@ export const NODE_TYPES: {
   r_node: RNode,
   sql_node: SqlNode,
   data_mapping_node: DataMappingNode,
+  concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
@@ -37,6 +39,7 @@ export const NODE_COLORS: {
   r_node: "#999fcb",
   sql_node: "#999fcb",
   data_mapping_node: "#999fcb",
+  concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
@@ -89,6 +92,12 @@ test_exec <- function(myinput) {
   data_mapping_node: {
     title: "Data mapping",
     description: "Map source data to OMOP data model.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
+  },
+  concept_mapping_node: {
+    title: "Concept mapping",
+    description: "Map source concept to standard.",
     tag: NodeTag.Experimental,
     defaultData: {},
   },

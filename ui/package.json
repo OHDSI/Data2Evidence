@@ -52,6 +52,10 @@
           "target": "/resources/mapping"
         },
         {
+          "source": "/concept-mapping",
+          "target": "/resources/concept-mapping"
+        },
+        {
           "source": "/jobs",
           "target": "/resources/jobs"
         },
