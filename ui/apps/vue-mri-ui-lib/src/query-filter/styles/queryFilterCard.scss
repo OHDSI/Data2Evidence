@@ -126,43 +126,7 @@
   }
 }
 
-// Icon font overrides for query filter specific icons
-.query-filter-card,
-.query-filter-chip {
-  .icon {
-    font-family: 'Font Awesome 5 Free', 'app-icons';
-    font-style: normal;
-    font-weight: 900;
-
-    &-chevron-down::before {
-      content: '\f078';
-    }
-    &-chevron-right::before {
-      content: '\f054';
-    }
-    &-plus-circle::before {
-      content: '\f055';
-    }
-    &-plus::before {
-      content: '\f067';
-    }
-    &-times::before {
-      content: '\f00d';
-    }
-    &-pencil::before {
-      content: '\f303';
-    }
-    &-copy::before {
-      content: '\f0c5';
-    }
-    &-ellipsis-v::before {
-      content: '\f142';
-    }
-    &-hamburger::before {
-      content: '\f0c9';
-    }
-  }
-}
+@import 'icons';
 
 // Animation classes
 .query-filter-enter-active,

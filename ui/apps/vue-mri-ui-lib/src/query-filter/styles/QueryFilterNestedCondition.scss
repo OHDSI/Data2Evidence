@@ -1,0 +1,120 @@
+.query-filter-nested-condition {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &--parent {
+    // Main nested condition style
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+  }
+
+  &--attribute {
+    // Nested attribute condition style
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin-left: 16px;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  &__label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+
+    &--attribute {
+      color: #666;
+      font-weight: normal;
+      font-style: normal;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  &__nested-content {
+    padding: 8px;
+    background: #fef3c7;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+    color: #333;
+  }
+
+  .icon {
+    font-size: 14px;
+  }
+}
+
+.btn-add-chip {
+  background: white;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  .icon {
+    font-size: 12px;
+  }
+}
+
+.btn-remove-condition {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #dc2626;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+
+  &:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+@import 'icons';

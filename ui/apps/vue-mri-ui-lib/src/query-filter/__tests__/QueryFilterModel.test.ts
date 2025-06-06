@@ -1,4 +1,4 @@
-import { QueryFilterCardModel, QueryFilterManager, QueryFilterChip, QueryFilterCondition } from '../QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterManager, QueryFilterChip, QueryFilterCondition } from '../models/QueryFilterModel'
 
 describe('QueryFilterCardModel', () => {
   let model: QueryFilterCardModel

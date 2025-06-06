@@ -3,7 +3,7 @@
  */
 
 // Import JSON configuration
-import criteriaConfigData from './cohort-criteria-config.json'
+import criteriaConfigData from '../config/cohort-criteria-config.json'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {

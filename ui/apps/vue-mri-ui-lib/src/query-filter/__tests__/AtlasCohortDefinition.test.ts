@@ -22,7 +22,7 @@ import {
   Death,
   DrugEra,
   ObservationPeriod,
-} from '../AtlasCohortDefinition'
+} from '../models/AtlasCohortDefinition'
 
 describe('AtlasCohortDefinition Type Guards', () => {
   describe('isConditionOccurrence', () => {

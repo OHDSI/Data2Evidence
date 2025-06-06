@@ -1,6 +1,6 @@
-import { AtlasCohortAdapter, SimplifiedCohortDefinition } from '../AtlasCohortAdapter'
-import { AtlasCohortDefinition } from '../AtlasCohortDefinition'
-import { QueryFilterCardModel } from '../QueryFilterModel'
+import { AtlasCohortAdapter, SimplifiedCohortDefinition } from '../models/AtlasCohortAdapter'
+import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
+import { QueryFilterCardModel } from '../models/QueryFilterModel'
 
 // Mock Atlas cohort definition for testing
 const createMockAtlasCohortDefinition = (): AtlasCohortDefinition => ({
