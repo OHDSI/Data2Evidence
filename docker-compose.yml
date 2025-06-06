@@ -169,6 +169,7 @@ services:
             "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
             "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
             "NODE_ENV": "${NODE_ENV:-development}",
+            "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
             "PG__DB_NAME": "alp",
             "PG__FHIR_DB_NAME": "alp_fhir",
             "PG__DEBUG": "${PG_DEBUG:-1}",
