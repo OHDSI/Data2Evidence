@@ -266,7 +266,7 @@ case $cmd in
         ;;
     setupdemo)
         source "$ENVFILE"
-        npx d2e patchdemodb -n "$ENVFILE" 
+        $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
         npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
         npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
