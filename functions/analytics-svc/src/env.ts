@@ -36,6 +36,8 @@ function initEnv(__env) {
             .string()
             .refine((val) => !isNaN(parseInt(val)))
             .transform(Number),
+            
+        PROJECT_NAME: z.string(),
 
         CACHEDB__HOST: z.string(),
         CACHEDB__PORT: z

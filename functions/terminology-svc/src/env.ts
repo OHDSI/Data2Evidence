@@ -11,6 +11,8 @@ function initEnv(__env) {
     USE_TREX_DB_CONN: z.string().transform(Boolean),
 
     HANA_FTS_FUZZY: z.string().transform(Number),
+
+    PROJECT_NAME: z.string(),
   
     SERVICE_ROUTES: z
       .string()

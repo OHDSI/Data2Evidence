@@ -710,7 +710,7 @@ const getDBConnections = async ({
                     "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
                 );
             }
-            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = env.TREX_CURRENT_USER_FUNCTION_NAME;
+            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-cohorts`;
             analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
         }
 
