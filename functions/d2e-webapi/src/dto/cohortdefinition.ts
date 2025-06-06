@@ -17,9 +17,19 @@ export type IAtlasCohortDefinitionDto = z.infer<
   typeof AtlasCohortDefinitionDto
 >;
 
+export const MaterializedBookmarkCohortDefinition = z.object({
+  datasetId: z.string(),
+  cohortDefinitionId: z.number(),
+});
+export type IMaterializedBookmarkCohortDefinition = z.infer<
+  typeof MaterializedBookmarkCohortDefinition
+>;
+
 export const UserArtifactAtlasCohortDefinitionDto =
   AtlasCohortDefinitionDto.extend({
-    materializedCohortDefinitionIds: z.array(z.number()),
+    materializedCohortDefinitions: z.array(
+      MaterializedBookmarkCohortDefinition
+    ),
   });
 export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
   typeof UserArtifactAtlasCohortDefinitionDto

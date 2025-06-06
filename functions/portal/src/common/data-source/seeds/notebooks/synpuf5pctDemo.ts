@@ -3,14 +3,14 @@ export default `# %% [markdown]
 # 
 # Setup the imports.
 
-# %%
+# %% [python]
 from pyqe import *
 import pandas as pd
 
 # %% [markdown]
 # Always start with creating a query object.
 
-# %%
+# %% [python]
 # Always begin your script by creating Query object
 
 total_patients_query = Query('Total_Participants')
@@ -20,14 +20,14 @@ total_patients_query = Query('Total_Participants')
 # 
 # Use set_study() method to select a study that you are interested in (by passing the study ID).
 
-# %%
+# %% [python]
 await total_patients_query.get_study_list()
 
 # any STUDY_ID from above list
 
 total_patients_query.set_study('1fe550a9-115e-4c91-bb26-9d4505b93d88')
 
-# %%
+# %% [python]
 patients = Person.Patient()
 
 constraint_age_greater_than_60_years = Constraint()
@@ -39,10 +39,10 @@ constraint_age_lesser_than_90_years.add(Expression(ComparisonOperator.LESS_THAN_
 patients.add_age([constraint_age_greater_than_60_years])
 patients.add_age([constraint_age_lesser_than_90_years])
 
-# %%
+# %% [python]
 exclude_death = Interactions.Death("Death", CardType.EXCLUDED)
 
-# %%
+# %% [python]
 # Condition Concept IDs for Diabetes Mellitus 2
 
 diabetes2_condition_occ = Interactions.ConditionOccurrence("Type 2 Diabetes condition")
@@ -51,7 +51,7 @@ constraint_type2_diabetes_mellitus = Constraint()
 constraint_type2_diabetes_mellitus.add(Expression(ComparisonOperator.EQUAL, 201826))
 diabetes2_condition_occ.add_condition_concept_id([constraint_type2_diabetes_mellitus])
 
-# %%
+# %% [python]
 # Diabetes type 1
 
 diabetes1_condition_occ = Interactions.ConditionOccurrence("Type 1 Diabetes condition")
@@ -60,7 +60,7 @@ constraint_type1_diabetes_mellitus = Constraint()
 constraint_type1_diabetes_mellitus.add(Expression(ComparisonOperator.EQUAL, 201254))
 diabetes1_condition_occ.add_condition_concept_id([constraint_type1_diabetes_mellitus])
 
-# %%
+# %% [python]
 patient_criteria_group = CriteriaGroup(MatchCriteria.ALL, [patients, exclude_death])
 
 diabetes_criteria_group = CriteriaGroup(
@@ -72,7 +72,7 @@ total_patients_query.add_criteria_group(patient_criteria_group)
 # %% [markdown]
 # With the query object created in the previous step, call the method get_patient_count_filter() to create a request object.
 
-# %%
+# %% [python]
 # create Result object and fetch the patient count
 total_patients_req = total_patients_query.get_patient_count_filter()
 
@@ -83,27 +83,27 @@ total_patients_req = total_patients_query.get_patient_count_filter()
 # 
 # Returned result will be the patient count as integer value.
 
-# %%
+# %% [python]
 total_patients = await Result().get_patient_count(total_patients_req)
 print(f'Total participants: {total_patients}')
 
-# %%
+# %% [python]
 # Generate Request for Dataframe cohort
 request_df = await total_patients_query.get_dataframe_cohort([],'Patient')
 
 # Get Patient Dataframe. Select (1) Patient
 patient_df = await Result().download_dataframe(request_df)
 
-# %%
+# %% [python]
 patient_df.head(3)
 
-# %%
+# %% [python]
 # # Peek Into the Patient Demographics Data
 # selective_patient_df = patient_df[['pid', 'gender_concept_name', 'yearofbirth', 'ethnicityname', 'racename']]
 
 # selective_patient_df.head(10)
 
-# %%
+# %% [python]
 import gc
 
 # Wrapper method to fetch the dataframes in chunks
@@ -131,16 +131,16 @@ async def fetchDataframesInChunks(entityName, chunk_size=15, query=total_patient
 
 
 
-# %%
+# %% [python]
 # Generate Request for Dataframe cohort and get condition occurences
 cond_occ_df = await fetchDataframesInChunks('ConditionOccurrence')
 cond_occ_df.head(10)
 
-# %%
+# %% [python]
 # selective_cond_occ_df = cond_occ_df[['conditionoccurrenceid', 'pid', 'conditionname','conditiontype','startdate','enddate','condconceptcode', 'conditionconceptid']]
 # selective_cond_occ_df.head(10)
 
-# %%
+# %% [python]
 specific_columns = total_patients_query.get_entities_dataframe_cohort(['patient.attributes.pid','patient.attributes.Gender', 
                                                                        'patient.attributes.dateOfBirth',
                                                                        'patient.interactions.conditionoccurrence.attributes.conditionname', 
@@ -148,7 +148,7 @@ specific_columns = total_patients_query.get_entities_dataframe_cohort(['patient.
                                                                        'patient.interactions.visit.attributes.visitname',
                                                                        'patient.interactions.proc.attributes.procname'])
 
-# %%
+# %% [python]
 from IPython.display import display, HTML
 
 def printer2(title: str = "", d: dict = {}):
@@ -160,7 +160,7 @@ def printer2(title: str = "", d: dict = {}):
 ")
         display(HTML(r[entity_name][:10].to_html()))
 
-# %%
+# %% [python]
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -190,7 +190,7 @@ ax.title.set_size(25)
 #     plt.text(df['Year'][i], value, str(value), ha='center', va='bottom')
 
 plt.grid(True)
- 
+
 # Display the chart
 plt.show()
 
@@ -205,18 +205,18 @@ plt.show()
 
 
 # plt.bar(count_df['gender_concept_name'], count_df['count'], width=0.5, color="orange")
- 
+
 # # Set the chart title and labels
 # plt.title('Gender Distribution')
 # plt.xlabel('Gender')
 # plt.ylabel('Count')
- 
+
 # # Add data labels to the bars
 # for i, value in enumerate(count_df['gender_concept_name']):
 #     plt.text(count_df['count'][i], value, str(value), ha='center', va='bottom')
- 
+
 # # # plt.grid(True)
- 
+
 # # # # Display the chart
 # # # plt.show()
 
@@ -237,7 +237,7 @@ plt.show()
 # el2.src = 'data:image/png;base64' + pltbs64;
 # el2.width = 500
 
-# %%
+# %% [python]
 import matplotlib.pyplot as plt
 
 # Group Data by Conditions
@@ -264,7 +264,7 @@ plt.show()
 # 
 # ### Coronary Disorders and Gender are independent of each other.
 
-# %%
+# %% [python]
 import pandas as pd
 import numpy as np
 
@@ -296,7 +296,8 @@ del lst
 joined_df2['Have Coronary Issues'] = np.where(joined_df2['Have Coronary Issues'] != True, False, joined_df2['Have Coronary Issues'])
 joined_df2.head(10)
 
-# %%
+# %% [python]
+
 from scipy.stats import chi2_contingency 
 import numpy as np
 
@@ -312,7 +313,7 @@ print('p-value=%.10f, degrees of freedom=%i, statistics=%.3f' % (co_p, co_dof, c
 # %% [markdown]
 # ### Test Null Hypothesis
 
-# %%
+# %% [python]
 significance = 0.05
 
 if co_p <= significance:
