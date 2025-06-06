@@ -766,6 +766,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     <MenuItem sx={styles} value="">
                       &nbsp;
                     </MenuItem>
+                    {/* Use vocab schemas defined in the database as the schema options  */}
                     {vocabSchemas[formData.databaseCode]?.map((vocabSchema) => (
                       <MenuItem sx={styles} key={vocabSchema} value={vocabSchema}>
                         {vocabSchema}
