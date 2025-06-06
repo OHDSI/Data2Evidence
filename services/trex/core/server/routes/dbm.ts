@@ -3,6 +3,7 @@ import {authz} from "../auth/authz.ts"
 import { Hono, Context } from "npm:hono";
 
 import { DatabaseManager } from '../lib/dbm.ts';
+import { isValidDbDto } from '../middleware/dbm.ts'
 import { logger } from '../env.ts';
 import * as _ from "npm:lodash-es";
 
@@ -26,7 +27,7 @@ export function addRoutes(app: Hono) {
         }
     })
 
-    app.post('/trex/db/', authn, authz, async (c: Context) => {
+    app.post('/trex/db/', authn, authz, isValidDbDto, async (c: Context) => {
         const body = await c.req.json();
         try {
             const id = await (await DatabaseManager.get()).setCredentials(body);
