@@ -22,7 +22,6 @@ class DatamartOptionsType(BaseModel):
 
 class DatamartFlowAction(str, Enum):
     CREATE_SNAPSHOT = "create_snapshot"  # Copy as a new db schema
-    CREATE_PARQUET_SNAPSHOT = "create_parquet_snapshot"  # Copy as parquet file
     GET_VERSION_INFO = "get_version_info" 
 
 

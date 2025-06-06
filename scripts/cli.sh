@@ -43,6 +43,7 @@ demo=""
 dicom=""
 cachedb=""
 jupyter=""
+mlflow=""
 compose=""
 args=""
 services=""
@@ -62,6 +63,7 @@ while [[ $# -gt 0 ]]; do
         -n|--env-file) env="$2"; shift ;;
         -p|--port) export PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
+        -m|--mlflow) mlflow=--profile="mlflow" ;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -96,7 +98,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $mlflow $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -214,7 +216,7 @@ case $cmd in
         echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
         echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
         echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-        echo FHIR__CLIENT_ID=$(random-uuid) >> $DOTENV_FILE
+        echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
         echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
@@ -224,12 +226,12 @@ case $cmd in
         echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
         echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
         echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo MINIO__SECRET_KEY=$(random-uuid) >> $DOTENV_FILE
+        echo MINIO__SECRET_KEY=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
-        echo REDIS_PASSWORD=$(random-uuid) >> $DOTENV_FILE
+        echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
         echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
@@ -296,6 +298,7 @@ Options:
  -i, --dicom                Include DICOM Server
  -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
+ -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
  -v, --version [VERSION]    Version of the d2e services to use
