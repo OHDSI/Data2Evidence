@@ -244,7 +244,7 @@ class CsvNode(Node):
 
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        csv_response = SupabaseStorageAPI().get_csv_file(self.file)
+        csv_response = SupabaseStorageAPI().get_csv_file(self.id, self.file)
 
         return convert_csv_to_dataframe(
             csv_response, 
@@ -383,7 +383,7 @@ class DataMappingNode(Node):
                 if table_source == TableSourceType.CSV:
                     # Register source table from CSV
                     csv_file_name = source_table_name + ".csv"
-                    csv_response = SupabaseStorageAPI().get_csv_file(csv_file_name)
+                    csv_response = SupabaseStorageAPI().get_csv_file(self.id, csv_file_name)
                     source_df = convert_csv_to_dataframe(
                         csv_response,
                         hasheader=hasheader,
