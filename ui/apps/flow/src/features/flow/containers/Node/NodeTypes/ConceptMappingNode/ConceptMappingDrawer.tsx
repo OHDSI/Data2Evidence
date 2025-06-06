@@ -78,7 +78,13 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
   }, [node.data.data, pluginMetadata.data.mappingSuggestion]);
 
   return (
-    <NodeDrawer {...props} width="1400px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer
+      {...props}
+      disableEnforceFocus
+      width="1400px"
+      onOk={handleOk}
+      onClose={onClose}
+    >
       <PluginRenderer
         path="/concept-mapping/module.js"
         userId={pluginMetadata.userId}
