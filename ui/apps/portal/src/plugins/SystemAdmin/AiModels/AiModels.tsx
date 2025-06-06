@@ -1,4 +1,6 @@
 import React, { FC, useState, useEffect } from "react";
+import { useTranslation } from "../../../contexts";
+import { i18nKeys } from "../../../contexts/app-context/states";
 import { loadStyleSheet, loadScript } from "../../../utils/loadScript";
 import { getAuthToken } from "../../../containers/auth";
 import { Loader } from "@portal/components";
@@ -9,6 +11,7 @@ const MLFLOW_ASSETS_URL = "aimodels/build/assets.json";
 const AiModels: FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchError, setIsFetchError] = useState(false);
+  const { getText } = useTranslation();
   const isLocalDev = window.location.hostname === "localhost";
 
   const addPrefix = (arr: string[]) => arr.map((path) => `aimodels/build/${path}`);
@@ -52,9 +55,7 @@ const AiModels: FC = () => {
         }
       }}
     >
-      {isFetchError && (
-        <div className="aimodels__error">Error loading ai models. Please check that the plugin is installed.</div>
-      )}
+      {isFetchError && <div className="aimodels__error">{getText(i18nKeys.AI_MODELS__ERROR)}</div>}
       {isLoading && <Loader />}
     </div>
   );
