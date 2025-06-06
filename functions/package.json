@@ -362,6 +362,7 @@
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -431,8 +432,7 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup",
-          "portal.notebook.admin.syncAll"
+          "demo.setup"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -1135,6 +1135,15 @@
           ]
         },
         {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/notebook",
           "scopes": [
             "portal.notebook.add"
@@ -1174,15 +1183,6 @@
           "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
           "scopes": [
             "portal.notebook.update"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
-          "scopes": [
-            "portal.notebook.admin.syncAll"
           ],
           "httpMethods": [
             "POST"
