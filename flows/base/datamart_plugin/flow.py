@@ -30,7 +30,7 @@ def create_datamart(options: CreateDatamartOptions):
     use_cache_db = options.use_cache_db
     snapshot_copy_config = options.snapshot_copy_config
     source_schema = options.source_schema
-    target_schema = options.target_schema
+    target_schema = options.schema_name
 
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     
