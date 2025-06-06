@@ -53,7 +53,7 @@ def update_concept_class_table(dbdao, schema_name: str, to_truncate: bool, logge
 
     if to_truncate:
         logger.info(f"Truncating '{schema_name}.{concept_class_table}' table..")
-        dbdao.truncate_table(concept_class_table)
+        dbdao.truncate_table(schema_name, concept_class_table)
     try:
         logger.info(f"Populating '{schema_name}.{concept_class_table}' table..")
         values_to_insert = [
@@ -78,7 +78,7 @@ def update_concept_relationship_table(dbdao, schema_name: str, to_truncate: bool
 
     if to_truncate:
         logger.info(f"Truncating '{schema_name}.{concept_relationship_table}' table..")
-        dbdao.truncate_table(concept_relationship_table)
+        dbdao.truncate_table(schema_name, concept_relationship_table)
 
     try:
         logger.info(f"Populating '{schema_name}.{concept_relationship_table}' table..")
@@ -126,7 +126,7 @@ def update_concept_table(dbdao, schema_name: str, to_truncate: bool, logger):
     concept_table = "concept"
 
     if to_truncate:
-        dbdao.truncate_table(concept_table)
+        dbdao.truncate_table(schema_name, concept_table)
 
 
     logger.info(f"Populating '{schema_name}.{concept_table}' table..")
