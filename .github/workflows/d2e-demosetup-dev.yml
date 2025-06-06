@@ -27,13 +27,13 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v develop init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
 
       - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v develop -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -46,7 +46,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }}  -d ./functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -65,7 +65,7 @@ jobs:
       - name: Logs 
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Setupdemo
         if: success() || failure()
@@ -77,7 +77,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -86,7 +86,7 @@ jobs:
       - name: Logs 
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Checkflow
         if: success() || failure()
@@ -98,15 +98,15 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
 
       - name: e2e tests setup
         run: |
@@ -131,9 +131,9 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
       - name: Clean d2e services
         if: success() || failure()
         id: clean
         run: |
-          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config npx d2e -e -v ${{ env.VERSION }} -d ./functions clean
+          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions clean
