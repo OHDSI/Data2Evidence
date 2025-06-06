@@ -160,7 +160,7 @@ export const GitConfig: FC = () => {
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.GIT_CONFIG__SYNC_SUCCESS).replace("{0}", result.processedCount.toString()),
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_FLOWS_SUCCESS).replace("{0}", result.processedCount.toString()),
         autoClose: 8000,
       });
       setShowOverwriteDialog(false);
@@ -168,7 +168,7 @@ export const GitConfig: FC = () => {
       console.error("Failed to overwrite all flows:", error);
       setFeedback({
         type: "error",
-        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_ERROR),
+        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_FLOWS_ERROR),
       });
     }
   }, [overwriteAllFromRemote, setFeedback, getText, i18nKeys]);
@@ -194,7 +194,7 @@ export const GitConfig: FC = () => {
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.GIT_CONFIG__SYNC_SUCCESS).replace("{0}", result.processedCount.toString()),
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_NOTEBOOKS_SUCCESS).replace("{0}", result.processedCount.toString()),
         autoClose: 8000,
       });
       setShowOverwriteNotebooksDialog(false);
@@ -202,7 +202,7 @@ export const GitConfig: FC = () => {
       console.error("Failed to overwrite all notebooks:", error);
       setFeedback({
         type: "error",
-        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_ERROR),
+        message: error?.message || getText(i18nKeys.GIT_CONFIG__SYNC_NOTEBOOKS_ERROR),
       });
     }
   }, [overwriteAllNotebooksFromRemote, setFeedback, getText, i18nKeys]);
