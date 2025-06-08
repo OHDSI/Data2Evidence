@@ -36,7 +36,8 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     use_cache_db = options.use_cache_db
 
     omop_cdm_dao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code)
+                         database_code=database_code, 
+                         plugin_name="omop_cdm_plugin")
     
     # Create schema if there is no existing schema first
     create_schema_task(omop_cdm_dao, schema_name)

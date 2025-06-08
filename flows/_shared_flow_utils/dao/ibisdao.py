@@ -15,11 +15,14 @@ class IbisDao(SqlAlchemyDao):
     - tables are referred to as schemas
     """
     
-    def __init__(self, use_cache_db: bool, database_code: str,
+    def __init__(self, use_cache_db: bool, 
+                 database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb = False, metadata = None):
+                 plugin_name: str = "flow-plugin",
+                 connect_to_duckdb = False, 
+                 metadata = None):
 
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
+        super().__init__(use_cache_db, database_code, user_type, plugin_name, connect_to_duckdb)
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:

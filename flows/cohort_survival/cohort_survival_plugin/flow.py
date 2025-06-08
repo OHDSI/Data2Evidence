@@ -27,7 +27,7 @@ def cohort_survival_plugin(options: CohortSurvivalOptionsType):
     )
     strata_cohorts = options.strataCohorts
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code,plugin_name="cohort_survival_plugin")
 
     generate_cohort_survival_data(
         dbdao,

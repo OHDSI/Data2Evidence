@@ -42,7 +42,8 @@ def create_i2b2_dataset_flow(options: i2b2PluginType):
     use_cache_db = options.use_cache_db
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  plugin_name="i2b2_plugin")
 
     # Create schema if there is no existing schema first
     create_schema_task(dbdao, schema_name)
@@ -194,7 +195,8 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+                      database_code=database_code,
+                      plugin_name="i2b2_plugin")
         portal_server_api = PortalServerAPI()
 
         # check if schema exists

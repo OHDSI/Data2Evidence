@@ -50,10 +50,11 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     use_cache_db = options.use_cache_db
     user = UserType.ADMIN_USER
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, plugin_name="phenotype_plugin")
     set_db_driver_env_string = dbdao.set_db_driver_env()
     set_connection_string = dbdao.get_database_connector_connection_string(
-        user_type=user
+        user_type=user,
+        plugin_name="phenotype_plugin",
     )
    
 

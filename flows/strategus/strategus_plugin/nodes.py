@@ -855,7 +855,7 @@ class StrategusNode(Node):
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
                 db_credentials = DBDao(use_cache_db=self.use_cache_db,
-                                       database_code=self.database).tenant_configs
+                                       database_code=self.database, plugin_name='strategus_plugin').tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
                 rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                     dbms='postgresql', 
@@ -887,7 +887,8 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code)
+                  database_code=database_code,
+                  plugin_name='strategus_plugin')
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 

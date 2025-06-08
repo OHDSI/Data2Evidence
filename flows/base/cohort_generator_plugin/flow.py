@@ -26,7 +26,8 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     cohort_definition_id = options.cohortDefinitionId
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  plugin_name="cohort_generator_plugin")
 
     analytics_svc_api = AnalyticsSvcAPI()
 

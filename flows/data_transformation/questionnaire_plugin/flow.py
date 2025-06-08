@@ -23,7 +23,8 @@ def questionnaire_plugin(options: QuestionnaireOptionsType):
     use_cache_db = options.use_cache_db
     
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  plugin_name="questionnaire_plugin")
     
     match options.flow_action_type:
         case FlowActionType.CREATE_QUESTIONNAIRE_DEFINITION:

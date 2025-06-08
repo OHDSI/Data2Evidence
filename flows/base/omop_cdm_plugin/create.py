@@ -70,7 +70,8 @@ def create_cdm_tables(dbdao: DaoBase, schema_name: str, cdm_version: str, logger
     # currently only supports pg dialect
     admin_user =  UserType.ADMIN_USER
     set_connection_string = dbdao.get_database_connector_connection_string(
-        user_type=admin_user
+        user_type=admin_user,
+        plugin_name="omop_cdm_plugin",
     )
     set_db_driver_env_string = dbdao.set_db_driver_env()
     

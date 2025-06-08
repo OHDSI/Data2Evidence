@@ -40,7 +40,7 @@ def create_datamart(options: CreateDatamartOptions):
         case _:
             raise ValueError(f"Database dialect {options.dialect} not supported for this plugin")
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, plugin_name="datamart_plugin")
     
     source_schema_exists = dbdao.check_schema_exists(source_schema)
     if not source_schema_exists:
@@ -169,7 +169,8 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+                      database_code=database_code,
+                      plugin_name="datamart_plugin")
     
         portal_server_api = PortalServerAPI()
         

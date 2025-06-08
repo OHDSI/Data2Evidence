@@ -38,7 +38,8 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+                      database_code=database_code,
+                      plugin_name="omop_cdm_plugin")
         portal_server_api = PortalServerAPI()
         
         # check if schema exists

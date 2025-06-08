@@ -44,7 +44,8 @@ def data_characterization_plugin(options: DCOptionsType):
     read_user = UserType.READ_USER
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  plugin_name="data_characterization_plugin")
 
     match dbdao.dialect:
         case SupportedDatabaseDialects.POSTGRES:
@@ -64,12 +65,14 @@ def data_characterization_plugin(options: DCOptionsType):
     if dc_schema:
         set_admin_connection_string = dbdao.get_database_connector_connection_string(
             user_type=admin_user,
-            release_date=release_date
+            release_date=release_date,
+            plugin_name="data_characterization_plugin"
         )
 
         set_read_connection_string = dbdao.get_database_connector_connection_string(
             user_type=read_user,
-            release_date=release_date
+            release_date=release_date,
+            plugin_name="data_characterization_plugin"
         )
 
         dc_status = execute_data_characterization(schema_name=schema_name,

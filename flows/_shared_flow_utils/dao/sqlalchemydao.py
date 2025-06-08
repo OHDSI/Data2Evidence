@@ -21,11 +21,13 @@ class SqlAlchemyDao(DaoBase):
     Using SQLAlchemy for implementation
     """
 
-    def __init__(self, use_cache_db: bool, database_code: str,
+    def __init__(self, use_cache_db: bool, 
+                 database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
+                 plugin_name: str = "flow-plugin",
                  connect_to_duckdb=False):
 
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
+        super().__init__(use_cache_db, database_code, user_type, plugin_name, connect_to_duckdb)
 
     # --- Property methods ---
 
@@ -57,7 +59,8 @@ class SqlAlchemyDao(DaoBase):
             password=configs.adminPassword,
             host=configs.host,
             port=configs.port,
-            database_name=database_name
+            database_name=database_name,
+            plugin_name= self.plugin_name
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 

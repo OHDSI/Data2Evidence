@@ -292,7 +292,7 @@ class DbWriter(Node):
         return False
 
     def task(self, _input: dict[str, Result], task_run_context):        
-        dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
+        dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database, plugin_name="dataflow_ui_plugin")
         dbconn = dbutils.engine
 
         try:
@@ -317,7 +317,7 @@ class DBReader(Node):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(use_cache_db=False, database_code=self.database) 
+        dbutils = DBDao(use_cache_db=False, database_code=self.database, plugin_name="dataflow_ui_plugin") 
         dbconn = dbutils.engine
 
         try:
@@ -369,7 +369,7 @@ class SqlQueryNode(Node):
         try:
             # Todo: Connect to db without specifying schema
             tenant_configs = DBDao(use_cache_db=self.use_cache_db, 
-                                   database_code=self.database).tenant_configs
+                                   database_code=self.database, plugin_name="dataflow_ui_plugin").tenant_configs
             con = ibis.postgres.connect(database=self.database,
                                         host=tenant_configs.host,
                                         user=tenant_configs.adminUser,
