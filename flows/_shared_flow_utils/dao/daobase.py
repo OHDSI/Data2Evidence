@@ -251,8 +251,6 @@ class DaoBase(ABC):
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
-            case SupportedDatabaseDialects.HANA:
-                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
 
