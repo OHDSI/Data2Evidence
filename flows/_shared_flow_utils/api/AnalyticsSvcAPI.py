@@ -46,5 +46,4 @@ class AnalyticsSvcAPI(BaseAPI):
                 f"AnalyticsSvcAPI Failed to get get_db_owner_schema, {result.content}")
         else:
             dbOwnerSchemaName = json.loads(result.content)['data'][0]['DB_USER_NAME']
-            print(f"Inside analyticssvcapi {dbOwnerSchemaName}")
             return dbOwnerSchemaName
