@@ -15,7 +15,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings) {
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  url <- paste0(host, "/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus")
+  url <- paste0(host, "/jobplugins/prefect/jupyter-kernel/flow-run/strategus")
   
   analysisSpec <- ParallelLogger::convertSettingsToJson(analysisSpecification)
   execSettings <- ParallelLogger::convertSettingsToJson(executionSettings)
