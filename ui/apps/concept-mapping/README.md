@@ -1,40 +1,9 @@
-# Data Mapping
+# Concept Mapping
 ## Development setup
 - `yarn` to install dependencies
-- `yarn dev` to start development server
+- `yarn build` to build and copy to resources folder, which later will be served via dataflow UI in concept mapping node
+- Add volume mapping at docker-compose-local.yml for concept-mapping:
+  - ./ui/resources/concept-mapping:/usr/src/data/plugins/node_modules/@data2evidence/d2e-ui/resources/concept-mapping
 
 ## CSV Upload
-- CSV upload does not work as of now. Only dummy data is used to simulate CSV upload
 - Sample CSV's can be found in `sampleCSV` folder
-
-
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list

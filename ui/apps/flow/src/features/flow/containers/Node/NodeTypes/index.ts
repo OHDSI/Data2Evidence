@@ -97,7 +97,7 @@ test_exec <- function(myinput) {
   },
   concept_mapping_node: {
     title: "Concept mapping",
-    description: "Map source concept to standard.",
+    description: "Map source to vocabulary standard concepts.",
     tag: NodeTag.Experimental,
     defaultData: {},
   },
