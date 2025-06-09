@@ -1150,7 +1150,7 @@ services:
       timeout: 30s
       interval: 5s
       retries: 10
-      start_period: 15s
+      start_period: 35s
     image: supabase/storage-api:v1.14.5
     logging:
       options:
