@@ -20,7 +20,7 @@ def hana_to_postgres(table_name: str) -> str:
 
 def get_db_dialect(options):
     if options.flow_name in InternalPluginType.values():
-        return DBDao(use_cache_db=False, database_code=options.database_code,plugin_name='data_management_plugin').dialect
+        return DBDao(use_cache_db=False, database_code=options.database_code).dialect
     else:
         return options.dialect
 

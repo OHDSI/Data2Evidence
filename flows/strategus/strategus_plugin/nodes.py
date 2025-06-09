@@ -17,6 +17,7 @@ from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 
+os.environ['plugin_name'] = 'strategus_plugin'
 class Node:
     def __init__(self, node):
         self.id = node["id"]
@@ -855,7 +856,7 @@ class StrategusNode(Node):
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
                 db_credentials = DBDao(use_cache_db=self.use_cache_db,
-                                       database_code=self.database, plugin_name='strategus_plugin').tenant_configs
+                                       database_code=self.database).tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
                 rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                     dbms='postgresql', 
@@ -887,8 +888,7 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code,
-                  plugin_name='strategus_plugin')
+                  database_code=database_code)
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 

@@ -13,7 +13,7 @@ from .utils import remove_existing_file_if_exists, check_supported_duckdb_dialec
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.dao.daobase import SYSTEM_SCHEMAS
-
+os.environ['plugin_name'] = 'create_cachedb_file_plugin'
 
 @flow(log_prints=True)
 def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
@@ -24,8 +24,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=duckdb_database_name,
-                  plugin_name="create_cachedb_file_plugin")
+                  database_code=duckdb_database_name)
 
     # Check if dialect is supported by duckdb
     check_supported_duckdb_dialects(dbdao.dialect, logger)
@@ -64,7 +63,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     use_cache_db = options.use_cache_db
 
     duckdb_database_name = "cdw_config_svc_validation_schema"
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code,plugin_name="create_cachedb_file_plugin")
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, True)
 
     # Check if dialect is supported by duckdb

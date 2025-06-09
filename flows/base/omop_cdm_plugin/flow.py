@@ -10,8 +10,8 @@ from .create import create_datamodel_parent_task
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-
-
+import os
+os.environ['plugin_name'] = 'omop_cdm_plugin'
 
 @flow(log_prints=True)
 def omop_cdm_plugin(options: OmopCDMPluginOptions):
@@ -36,8 +36,7 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     use_cache_db = options.use_cache_db
 
     omop_cdm_dao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code, 
-                         plugin_name="omop_cdm_plugin")
+                         database_code=database_code)
     
     # Create schema if there is no existing schema first
     create_schema_task(omop_cdm_dao, schema_name)

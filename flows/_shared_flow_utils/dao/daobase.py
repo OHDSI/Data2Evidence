@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Optional, Tuple
 from datetime import datetime
@@ -50,13 +51,11 @@ class DaoBase(ABC):
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
-    plugin_name: str
 
     def __init__(self,
                  use_cache_db: bool,
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 plugin_name: str = "flow-plugin",
                  connect_to_duckdb: bool = False):
 
         secret_block = Secret.load("database-credentials").get()
@@ -68,8 +67,6 @@ class DaoBase(ABC):
         self.database_code = database_code
         self.user_type = user_type
         self.connect_to_duckdb = connect_to_duckdb
-        self.plugin_name = plugin_name
-
     # --- Property methods ---
 
     @property
@@ -241,7 +238,6 @@ class DaoBase(ABC):
 
     @staticmethod
     def create_sqlalchemy_connection_url(dialect: SupportedDatabaseDialects,
-                                         plugin_name:str,
                                          database_name: str = None,
                                          auth_mode: AuthMode = AuthMode.PASSWORD,
                                          user: str = None,
@@ -262,7 +258,7 @@ class DaoBase(ABC):
                 hana_connect_args["password"] = get_third_party_token_value(auth_token)
                 
                 # Add APPLICATION and APPLICATIONUSER as session variables for JWT
-                app_name = f"d2e-{plugin_name}"
+                app_name = f"d2e-{os.environ.get('plugin_name')}"
                 token_user = buildUserFromToken(auth_token.token.get_secret_value())
                 base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
                 return base_url, hana_connect_args
@@ -283,7 +279,6 @@ class DaoBase(ABC):
     def get_database_connector_connection_string(
         self,
         user_type: UserType,
-        plugin_name: str,
         release_date: str = None,
     ):
         """
@@ -314,7 +309,7 @@ class DaoBase(ABC):
             auth_token: AuthToken = get_auth_token_from_input()
             
             # Add APPLICATION and APPLICATIONUSER as session variables for JWT
-            app_name = f"d2e-{plugin_name}"
+            app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = buildUserFromToken(auth_token.token.get_secret_value())
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
             

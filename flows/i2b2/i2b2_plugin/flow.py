@@ -26,6 +26,7 @@ from _shared_flow_utils.create_dataset_tasks import (create_schema_task,
 if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
 
+os.environ['plugin_name'] = 'i2b2_plugin'
 
 @flow(log_prints=True)
 def i2b2_plugin(options: i2b2PluginType):
@@ -42,9 +43,7 @@ def create_i2b2_dataset_flow(options: i2b2PluginType):
     use_cache_db = options.use_cache_db
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="i2b2_plugin")
-
+                  database_code=database_code)
     # Create schema if there is no existing schema first
     create_schema_task(dbdao, schema_name)
 
@@ -195,8 +194,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code,
-                      plugin_name="i2b2_plugin")
+                      database_code=database_code)
         portal_server_api = PortalServerAPI()
 
         # check if schema exists

@@ -1,6 +1,6 @@
 from .types import *
 from .features import *
-
+import os
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
@@ -11,6 +11,7 @@ from sqlalchemy import String
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
+os.environ['plugin_name'] = 'loyalty_score_plugin'
 
 @flow(log_prints=True)
 def loyalty_score_plugin(options:LoyaltyPluginType):
@@ -50,8 +51,7 @@ def calculate_loyalty_score(options:CalculateConfig):
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="loyalty_score_plugin")
+                  database_code=database_code)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, cal_st, cal_ed, database_code, schema_name, use_cache_db)
         coef, feature = load_coef_table(conn, coeff_table_name, schema_name)
@@ -83,8 +83,7 @@ def retrain_algo(options:RetrainConfig):
     train_st = index_datetime.replace(year=index_datetime.year-train_years-return_years).strftime("%Y-%m-%d")
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="loyalty_score_plugin")
+                  database_code=database_code)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, train_st, train_ed, database_code, schema_name, use_cache_db)
         feature = list(set(data.columns) - set(['person_id']))

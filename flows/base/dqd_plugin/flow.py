@@ -1,7 +1,7 @@
 import sys
 import json
 from rpy2 import robjects
-
+import os
 from prefect import flow, task
 from prefect_shell import ShellOperation
 from prefect.context import FlowRunContext
@@ -13,6 +13,7 @@ from .types import DqdOptionsType, DQD_THREAD_COUNT
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 
+os.environ['plugin_name'] = 'dqd_plugin'
 
 @flow(log_prints=True, timeout_seconds=3600)
 def dqd_plugin(options: DqdOptionsType):
@@ -84,13 +85,11 @@ def execute_dqd(
     read_user = UserType.READ_USER
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="dqd_plugin")
+                  database_code=database_code)
 
     set_db_driver_env = dbdao.set_db_driver_env()
     set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
-                                                                              release_date=release_date,
-                                                                              plugin_name="dqd_plugin")
+                                                                              release_date=release_date)
 
     logger.info(f'''Running DQD with input parameters:
                     schemaName: {schema_name},

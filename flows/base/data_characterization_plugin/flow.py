@@ -18,6 +18,7 @@ from .types import *
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType
+os.environ['plugin_name'] = 'data_characterization_plugin'
 
 @flow(log_prints=True,
       timeout_seconds=3600
@@ -44,8 +45,7 @@ def data_characterization_plugin(options: DCOptionsType):
     read_user = UserType.READ_USER
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="data_characterization_plugin")
+                  database_code=database_code)
 
     match dbdao.dialect:
         case SupportedDatabaseDialects.POSTGRES:
@@ -65,14 +65,11 @@ def data_characterization_plugin(options: DCOptionsType):
     if dc_schema:
         set_admin_connection_string = dbdao.get_database_connector_connection_string(
             user_type=admin_user,
-            release_date=release_date,
-            plugin_name="data_characterization_plugin"
-        )
+            release_date=release_date)
 
         set_read_connection_string = dbdao.get_database_connector_connection_string(
             user_type=read_user,
-            release_date=release_date,
-            plugin_name="data_characterization_plugin"
+            release_date=release_date
         )
 
         dc_status = execute_data_characterization(schema_name=schema_name,
@@ -117,8 +114,7 @@ def create_data_characterization_schema(results_schema: str,
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
-        plugin_name = "data_characterization_plugin"
-        migration_script_filepath = f"flows/{plugin_name}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
 
         with open(migration_script_filepath, 'r') as f:
             sql_template = Template(f.read())

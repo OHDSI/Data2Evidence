@@ -24,7 +24,7 @@ def create_datamodel(database_code: str,
                      count: int = 0,
                      cleansed_schema_option: bool = False):
 
-    dbdao = DBDao(use_cache_db=False, database_code=database_code,plugin_name="data_management_plugin")
+    dbdao = DBDao(use_cache_db=False, database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
     task_status = create_schema_tasks(
@@ -64,7 +64,7 @@ def create_schema_tasks(dialect: str,
                         plugin_classpath: str,
                         count: int) -> bool:
     try:
-        schema_dao = DBDao(database_code=database_code, use_cache_db=False, plugin_name="data_management_plugin")
+        schema_dao = DBDao(database_code=database_code, use_cache_db=False)
         
         create_db_schema_wo = create_schema_task.with_options(
             on_completion=[partial(create_dataset_schema_hook,
@@ -133,7 +133,7 @@ def update_datamodel(flow_action_type: str,
 
     logger = get_run_logger()
     
-    schema_dao = DBDao(use_cache_db=False, database_code=database_code, schema_name=schema_name, plugin_name="data_management_plugin")
+    schema_dao = DBDao(use_cache_db=False, database_code=database_code, schema_name=schema_name)
     tenant_configs = schema_dao.tenant_configs
 
     
@@ -194,8 +194,7 @@ def rollback_count_task(use_cache_db: bool,
                         rollback_count: int):
 
     dbdao = DBDao(use_cache_db=use_cache_db, 
-                  database_code=database_code,
-                  plugin_name="data_management_plugin")
+                  database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
     try:
@@ -232,8 +231,7 @@ def rollback_tag_task(use_cache_db: bool,
                       rollback_tag: str):
 
     dbdao = DBDao(use_cache_db=use_cache_db, 
-                  database_code=database_code,
-                  plugin_name="data_management_plugin")
+                  database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
 
@@ -305,8 +303,7 @@ def create_cdm_schema_tasks(database_code: str,
     # Begin by checking if the vocab schema exists or not
     vocab_schema_dao = DBDao(use_cache_db=False, 
                              database_code=database_code, 
-                             schema_name=vocab_schema,
-                             plugin_name="data_management_plugin")
+                             schema_name=vocab_schema)
     
     vocab_schema_exists = vocab_schema_dao.check_schema_exists(schema_name)
     
@@ -327,7 +324,7 @@ def create_cdm_schema_tasks(database_code: str,
 
     if (schema_name != vocab_schema):
         # Check if the incoming schema_name exists or not
-        cdm_schema_dao = DBDao(database_code=database_code, schema_name=schema_name, use_cache_db=False, plugin_name="data_management_plugin")
+        cdm_schema_dao = DBDao(database_code=database_code, schema_name=schema_name, use_cache_db=False)
         cdm_schema_exists = cdm_schema_dao.check_schema_exists(schema_name)
         if (cdm_schema_exists == False):
             try:

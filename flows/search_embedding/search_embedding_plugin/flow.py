@@ -3,10 +3,11 @@ import duckdb
 from prefect import flow
 from prefect.logging import get_run_logger
 from prefect.variables import Variable
-
+import os
 from .types import *
 from .utils import *
 from _shared_flow_utils.dao.DBDao import DBDao
+os.environ['plugin_name'] = 'search_embedding_plugin'
 
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
@@ -16,8 +17,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     schema_name = options.schema_name
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code, 
-                  connect_to_duckdb=True,
-                  plugin_name="search_embedding_plugin")
+                  connect_to_duckdb=True)
     
     duckdb_database_name = f"{database_code}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"

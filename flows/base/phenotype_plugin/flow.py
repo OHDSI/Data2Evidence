@@ -11,7 +11,8 @@ from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 import logging
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
-
+import os
+os.environ['plugin_name'] = 'phenotype_plugin'
 
 @task
 def validate_integer_string(input_string):
@@ -50,11 +51,10 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     use_cache_db = options.use_cache_db
     user = UserType.ADMIN_USER
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, plugin_name="phenotype_plugin")
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     set_db_driver_env_string = dbdao.set_db_driver_env()
     set_connection_string = dbdao.get_database_connector_connection_string(
-        user_type=user,
-        plugin_name="phenotype_plugin",
+        user_type=user
     )
    
 

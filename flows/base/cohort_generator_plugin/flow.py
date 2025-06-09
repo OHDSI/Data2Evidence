@@ -1,6 +1,6 @@
 import json
 from rpy2 import robjects
-
+import os
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
@@ -9,7 +9,7 @@ from .types import CohortGeneratorOptionsType
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-
+os.environ['plugin_name'] = 'cohort_generator_plugin'
 
 @flow(log_prints=True, persist_result=True)
 def cohort_generator_plugin(options: CohortGeneratorOptionsType):
@@ -24,10 +24,9 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     description = options.description
     use_cache_db = options.use_cache_db
     cohort_definition_id = options.cohortDefinitionId
-
+    
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
-                  plugin_name="cohort_generator_plugin")
+                  database_code=database_code)
 
     analytics_svc_api = AnalyticsSvcAPI()
 
