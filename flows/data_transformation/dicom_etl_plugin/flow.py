@@ -82,8 +82,11 @@ def dicom_etl_plugin(options: DICOMETLOptions):
                 new_image_occurrence_id, new_procedure_occurrence_id, new_visit_occurrence_id)
 
             # Transform for image occurrence
-            image_occurrence_df = transform_for_image_occurrence(mapped_concepts_df, dbdao,
-                                                                 mapping_dbdao, person_patient_mapping, next_record_ids)
+            image_occurrence_df = transform_for_image_occurrence(mapped_concepts_df, 
+                                                                 vocab_schema,
+                                                                 dbdao, 
+                                                                 person_patient_mapping, 
+                                                                 next_record_ids)
 
             new_image_feature_id = dbdao.get_next_record_id(
                 medical_imaging_schema, "image_feature", "image_feature_id")
