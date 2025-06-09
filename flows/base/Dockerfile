@@ -96,7 +96,6 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.1.1", upgrade="never")'
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
 
 # D2E packages
 RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-SqlRender.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
@@ -145,18 +144,6 @@ RUN chown -R docker:docker ./liquibase/
 RUN mkdir /output
 RUN chown -R docker:docker /output
 
-# Create folder to store synpuf1k CSVs
-RUN mkdir -p /app/synpuf1k
-RUN chown -R docker:docker /app/synpuf1k
-
-# Create folder to store vocab CSVs
-RUN mkdir -p /app/vocab
-RUN chown -R docker:docker /app/vocab
-
-# Create folder to store data load CSVs
-RUN mkdir -p /app/data_load
-RUN chown -R docker:docker /app/data_load
-
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
 ENV duckdb_version 1.2.1
@@ -183,8 +170,6 @@ RUN pip install -r requirements_base.txt
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base flows
 
-# Change the ownership of /app folder to docker user for CohortGen error logs 
-RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
