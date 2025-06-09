@@ -53,9 +53,11 @@ export class AnalyticsSvcAPI {
       const url = `${this.baseURL}/cohort-definition`;
       console.log(`Calling ${url} to create cohort definition`);
       const options = this.getRequestConfig();
+
       const data = {
         datasetId,
         ...cohortDefinition,
+        syntax: JSON.stringify(cohortDefinition.syntax),
       };
       const result = await axios.post(url, data, options);
 
