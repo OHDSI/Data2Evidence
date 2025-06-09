@@ -70,7 +70,7 @@ export class Dataflow {
 
   public getFlowRuns(filter: string, extraFilters: FlowRunFilters = {}) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "job-history/flow-runs",
       method: "GET",
       params: {
