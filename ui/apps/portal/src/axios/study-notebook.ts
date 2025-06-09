@@ -25,6 +25,13 @@ export interface OverwriteAllFromRemoteResponse {
   }>;
 }
 
+export interface NotebookTemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  notebookContent: string;
+}
+
 export class StudyNotebook {
   public getNotebookList(datasetId?: string): Promise<StarboardNotebook[]> {
     const notebookList = request({
@@ -36,11 +43,29 @@ export class StudyNotebook {
     return notebookList;
   }
 
+  public getTemplates(datasetId?: string): Promise<NotebookTemplateDto[]> {
+    return request({
+      baseURL: STUDY_NOTEBOOK_BASE_URL,
+      url: `/templates`,
+      method: "GET",
+      params: { datasetId },
+    });
+  }
+
   public createNotebook(datasetId: string, name?: string, notebookContent?: string): Promise<StarboardNotebook> {
     return request({
       baseURL: STUDY_NOTEBOOK_BASE_URL,
       url: ``,
       data: { name, notebookContent, datasetId },
+      method: "POST",
+    });
+  }
+
+  public createNotebookFromTemplate(templateId: string, name: string, datasetId?: string): Promise<StarboardNotebook> {
+    return request({
+      baseURL: STUDY_NOTEBOOK_BASE_URL,
+      url: `/templates/${templateId}`,
+      data: { name, datasetId },
       method: "POST",
     });
   }

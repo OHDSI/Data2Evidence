@@ -15,11 +15,14 @@ import { ConfigService } from "../config/config.service.ts";
 import { INotebook, INotebookBaseDto, INotebookUpdateDto } from "../types.d.ts";
 import { ServiceName } from "../user-artifact/enums/index.ts";
 import { UserArtifactService } from "../user-artifact/user-artifact.service.ts";
+import { NotebookTemplateDto } from "./dto/notebook-template.dto.ts";
+import { env } from "../env.ts";
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class NotebookService {
   private readonly userId: string;
   private readonly gitRepoPath = "./NotebookRepository";
+  private readonly templateRepoPath = "./NotebookTemplateRepository";
   private readonly notebooksFolder = "notebooks";
   private readonly gitConfig = {
     defaultAuthor: {
@@ -35,9 +38,12 @@ export class NotebookService {
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
 
-    // Ensure git repo directory exists
+    // Ensure git repo directories exist
     if (!fs.existsSync(this.gitRepoPath)) {
       fs.mkdirSync(this.gitRepoPath, { recursive: true });
+    }
+    if (!fs.existsSync(this.templateRepoPath)) {
+      fs.mkdirSync(this.templateRepoPath, { recursive: true });
     }
   }
 
@@ -950,6 +956,154 @@ export class NotebookService {
       console.error(
         `Failed to overwrite all notebooks from remote: ${error.message}`
       );
+      throw error;
+    }
+  }
+
+  async getTemplates(): Promise<NotebookTemplateDto[]> {
+    try {
+      const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;
+      const templateBranch = env.NOTEBOOK_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = this.notebooksFolder;
+      const subDirPath = path.join(repoDir, subDir);
+
+      await this.ensureLatestFromTemplateRemote(
+        repoDir,
+        templateRepoUrl,
+        templateBranch,
+      );
+
+      let files: string[] = [];
+      if (fs.existsSync(subDirPath)) {
+        files = fs
+          .readdirSync(subDirPath)
+          .filter((file) => file.endsWith(".json"));
+      } else {
+        console.log(`Template notebooks folder does not exist in repository`);
+        return [];
+      }
+
+      const templates: NotebookTemplateDto[] = [];
+
+      for (const fileName of files) {
+        const templateId = fileName.replace(".json", "");
+        const filePath = path.join(subDirPath, fileName);
+
+        try {
+          const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+          templates.push({
+            id: templateId,
+            name: templateData.name || templateId,
+            description: templateData.description || `Template: ${templateId}`,
+            notebookContent: templateData.notebookContent || templateData,
+          });
+        } catch (fileError) {
+          console.error(
+            `Failed to process template file ${fileName}: ${fileError.message}`
+          );
+        }
+      }
+
+      console.log(`Found ${templates.length} notebook templates`);
+      return templates;
+    } catch (error) {
+      console.error(`Failed to fetch notebook templates: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async createNotebookFromTemplate(
+    templateId: string,
+    name: string,
+  ): Promise<INotebook> {
+    try {
+      const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;
+      const templateBranch = env.NOTEBOOK_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = this.notebooksFolder;
+      const fileName = `${templateId}.json`;
+      const filePath = path.join(repoDir, subDir, fileName);
+
+      await this.ensureLatestFromTemplateRemote(
+        repoDir,
+        templateRepoUrl,
+        templateBranch
+      );
+
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`Template ${templateId} not found`);
+      }
+
+      const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      const notebookDto: INotebookBaseDto = {
+        name,
+        notebookContent: templateData.notebookContent || templateData,
+      };
+
+      const result = await this.createNotebook(notebookDto);
+
+      console.log(
+        `Created new notebook from template ${templateId} with id ${result.id}`
+      );
+
+      return result;
+    } catch (error) {
+      console.error(
+        `Failed to create notebook from template: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
+  private async ensureLatestFromTemplateRemote(
+    repoDir: string,
+    gitRemoteUrl: string,
+    defaultBranch: string,
+    gitCredentials?: string
+  ) {
+    try {
+      if (!gitRemoteUrl) {
+        throw new Error("Git remote URL is not configured");
+      }
+
+      const isRepo = fs.existsSync(path.join(repoDir, ".git"));
+      const authConfig = gitCredentials
+        ? { onAuth: () => ({ username: gitCredentials }) }
+        : {};
+
+      if (isRepo) {
+        // Repository exists, pull latest changes
+        console.log(`Pulling latest changes for template repo...`);
+        await git.pull({
+          fs,
+          http,
+          dir: repoDir,
+          author: this.gitConfig.defaultAuthor,
+          ...authConfig,
+        });
+        console.log(`Successfully pulled latest changes for template repo`);
+      } else {
+        // Repository doesn't exist, clone it
+        console.log(`Cloning template repository from ${gitRemoteUrl}...`);
+        await git.clone({
+          fs,
+          http,
+          dir: repoDir,
+          url: gitRemoteUrl,
+          ref: defaultBranch,
+          singleBranch: true,
+          depth: 1,
+          ...authConfig,
+        });
+        console.log(`Successfully cloned template repository`);
+      }
+    } catch (error) {
+      console.error(`Failed to sync with template remote: ${error.message}`);
       throw error;
     }
   }
