@@ -141,7 +141,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
 
                 create_result_tables <- function(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets) {{
                     cohorts_id <- cohortDefinitionSets$cohortId
-                    sql <- paste0("SELECT ROW_NUMBER() OVER (ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID) AS phenotype_result_id, SUBJECT_ID as person_id, COHORT_DEFINITION_ID as phenotype_id, cohort_start_date, cohort_end_date FROM ", {{cohortschema}},".", {{cohort_table_name}}, " Order by phenotype_result_id")
+                    sql <- paste0("SELECT ROW_NUMBER() OVER (ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID) AS phenotype_result_id, SUBJECT_ID as person_id, COHORT_DEFINITION_ID as phenotype_id, cohort_start_date, cohort_end_date FROM ", {{cohortschema}},".", {{cohort_table_name}}, " ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID")
                     result_df <- DatabaseConnector::querySql(connection=connection, sql=sql)
                     
                     # remove raw cohort tables
