@@ -26,6 +26,7 @@ def dqd_plugin(options: DqdOptionsType):
     release_date = options.releaseDate
     use_cache_db = options.use_cache_db
     dataset_id = options.datasetId
+    cohort_database_schema = None
 
     if options.cohortDefinitionId:
         cohort_definition_id = f"c({options.cohortDefinitionId})"
@@ -54,7 +55,7 @@ def dqd_plugin(options: DqdOptionsType):
             analytics_svc_api = AnalyticsSvcAPI()
             cohort_database_schema = analytics_svc_api.get_db_owner_schema(dataset_id)
             if not cohort_database_schema:
-                error_message = "cohort_database_schema cannot be undefined for Hana Jwt mode!"
+                error_message = "Unable to fetch cohort_database_schema from analytics api for Hana Jwt mode!"
                 logger.error(error_message)
                 raise ValueError(error_message)
         else: # If still none, fallback to default schema
