@@ -57,10 +57,24 @@ export const generateCohort = async (
   ).getCohortDefinition(datasetId, cdmCohortDefinitionId);
 
   // Update atlas cohort definition user artifact with newly materialized cdm cohort definition id
-  // materializedCohortDefinitionIds
-  userArtifactAtlasCohortDefinition.materializedCohortDefinitionIds.push(
-    cdmCohortDefinitionId
-  );
+  // materializedCohortDefinitions
+  if (
+    userArtifactAtlasCohortDefinition.materializedCohortDefinitions ===
+    undefined
+  ) {
+    // If this is the first materialized cohort for atlas cohort definition, create array with materialized cohort definition id and dataset id
+    userArtifactAtlasCohortDefinition.materializedCohortDefinitions = [
+      {
+        datasetId,
+        cohortDefinitionId: cdmCohortDefinitionId,
+      },
+    ];
+  } else {
+    userArtifactAtlasCohortDefinition.materializedCohortDefinitions.push({
+      datasetId,
+      cohortDefinitionId: cdmCohortDefinitionId,
+    });
+  }
   // Create atlas_cohort_definition in user artifact
   await portalServerApi.updateAtlasCohortDefinition(
     datasetId,
@@ -134,7 +148,7 @@ export const createCohortDefinition = async (
     {
       ...cohortDefinitionDto,
       id: atlasCohortDefinitionId,
-      materializedCohortDefinitionIds: [], // Sets as empty array as no cohort definitions are materialized yet
+      materializedCohortDefinitions: [], // Sets as empty array as no cohort definitions are materialized yet
     };
   // Create atlas_cohort_definition in user artifact
   const portalUserArtifacts = await portalServerApi.createAtlasCohortDefinition(
@@ -261,14 +275,17 @@ export const deleteCohortDefinition = async (
   const portalServerApi = new PortalServerAPI(token);
 
   // Delete all materialized cohorts of atlas cohort definition
-  const { materializedCohortDefinitionIds } =
+  const { materializedCohortDefinitions } =
     await portalServerApi.getAtlasCohortDefinition(
       datasetId,
       cohortDefinitionId
     );
   const analyticsSvcApi = new AnalyticsSvcAPI(token);
-  for (const id of materializedCohortDefinitionIds) {
-    await analyticsSvcApi.deleteCohort(datasetId, id);
+  for (const materializedCohortDefinition of materializedCohortDefinitions) {
+    await analyticsSvcApi.deleteCohort(
+      datasetId,
+      materializedCohortDefinition.cohortDefinitionId
+    );
   }
 
   // Delete atlas cohort definition from user artifacts

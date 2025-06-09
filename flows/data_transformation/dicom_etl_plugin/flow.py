@@ -49,15 +49,15 @@ def dicom_etl_plugin(options: DICOMETLOptions):
 
             if to_truncate:
                 # Truncate medical imaging schema
-                dbdao.truncate_table("procedure_occurrence")
-                dbdao.truncate_table("visit_occurrence")
-                dbdao.truncate_table("image_occurrence")
+                dbdao.truncate_table(cdm_schema, "procedure_occurrence")
+                dbdao.truncate_table(cdm_schema, "visit_occurrence")
+                dbdao.truncate_table(medical_imaging_schema,"image_occurrence")
 
                 if ingest_eav_table == True:
-                    dbdao.truncate_table("dicom_file_metadata")
+                    dbdao.truncate_table(medical_imaging_schema, "dicom_file_metadata")
                 else:
-                    dbdao.truncate_table("image_feature")
-                    dbdao.truncate_table("measurement")
+                    dbdao.truncate_table(medical_imaging_schema, "image_feature")
+                    dbdao.truncate_table(cdm_schema, "measurement")
 
             root_dir = Path(dicom_files_abs_path)
             dcm_files = list(root_dir.rglob('*.dcm')) + \
