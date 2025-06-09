@@ -91,6 +91,7 @@ RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https:/
 # private d2e repo auth - ssh key
 # public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
 RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
+RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.1.1", upgrade="never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
