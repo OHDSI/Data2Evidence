@@ -10,18 +10,22 @@ from prefect.artifacts import create_markdown_artifact
 
 from .types import DqdOptionsType, DQD_THREAD_COUNT
 
-from _shared_flow_utils.types import UserType
+from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
+
 
 
 @flow(log_prints=True, timeout_seconds=3600)
 def dqd_plugin(options: DqdOptionsType):
+    logger = get_run_logger()
     schema_name = options.schemaName
     database_code = options.databaseCode
     cdm_version_number = options.cdmVersionNumber
     vocab_schema_name = options.vocabSchemaName
     release_date = options.releaseDate
     use_cache_db = options.use_cache_db
+    dataset_id = options.datasetId
 
     if options.cohortDefinitionId:
         cohort_definition_id = f"c({options.cohortDefinitionId})"
@@ -40,7 +44,21 @@ def dqd_plugin(options: DqdOptionsType):
     if options.cohortDatabaseSchema:
         cohort_database_schema = options.cohortDatabaseSchema
     else:
-        cohort_database_schema = schema_name
+        # If cohortDefinitionId exists, DQD is run on materialized cohorts (CQD)
+        # check hana and dialect
+        dbdao = DBDao(use_cache_db=use_cache_db,
+                database_code=database_code)
+        database_credentials = dbdao.tenant_configs
+        # If Hana and Jwt Mode, get db owner schema name where materialized cohorts are stored
+        if options.cohortDefinitionId and database_credentials.dialect == SupportedDatabaseDialects.HANA and database_credentials.authMode == AuthMode.JWT:
+            analytics_svc_api = AnalyticsSvcAPI()
+            cohort_database_schema = analytics_svc_api.get_db_owner_schema(dataset_id)
+            if not cohort_database_schema:
+                error_message = "cohort_database_schema cannot be undefined for Hana Jwt mode!"
+                logger.error(error_message)
+                raise ValueError(error_message)
+        else: # If still none, fallback to default schema
+            cohort_database_schema = schema_name
 
     if options.cohortTableName:
         cohort_table_name = options.cohortTableName
@@ -98,9 +116,9 @@ def execute_dqd(
                     releaseDate: {release_date},
                     cohortDefinitionId: {cohort_definition_id},
                     outputFolder: {output_folder},
-                    checkNames: {check_names}
-                    cohortDatabaseSchema: {cohort_database_schema}
-                    cohortTableName: {cohort_table_name}
+                    checkNames: {check_names},
+                    cohortDatabaseSchema: {cohort_database_schema},
+                    cohortTableName: {cohort_table_name},
                 '''
                 )
 
