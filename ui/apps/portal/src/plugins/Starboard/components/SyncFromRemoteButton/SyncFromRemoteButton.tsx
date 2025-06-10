@@ -1,5 +1,5 @@
 import { Button } from "@portal/components";
-import { FC, useCallback, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { RemoteDiffCheckResponse } from "../../../../axios/study-notebook";
 import { useFeedback, useTranslation } from "../../../../contexts";

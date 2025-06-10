@@ -1,5 +1,5 @@
 import { Box, Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
-import { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { NotebookTemplateDto } from "../../../../axios/study-notebook";
 import { useFeedback, useTranslation } from "../../../../contexts";
