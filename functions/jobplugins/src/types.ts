@@ -383,3 +383,11 @@ export interface CsvFileOperationResponse {
   filePath: string;
   bucket: string;
 }
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  nodes: IReactFlowNode[];
+  edges: IReactFlowEdge[];
+}
