@@ -255,8 +255,8 @@ export class NotebookService {
     const defaultBranch = await this.getDefaultBranch();
     const gitRemoteUrl = await this.getGitRemoteUrl();
 
-    if (!gitRemoteUrl) {
-      console.log("Git remote URL not configured, skipping Git operations");
+    if (!gitRemoteUrl || !defaultBranch) {
+      console.log("Git remote URL or default branch not configured, skipping Git operations");
       return;
     }
 
@@ -443,8 +443,8 @@ export class NotebookService {
     const defaultBranch = await this.getDefaultBranch();
     const gitRemoteUrl = await this.getGitRemoteUrl();
 
-    if (!gitRemoteUrl) {
-      console.log("Git remote URL not configured, skipping Git operations");
+    if (!gitRemoteUrl || !defaultBranch) {
+      console.log("Git remote URL or default branch not configured, skipping Git operations");
       return;
     }
 
