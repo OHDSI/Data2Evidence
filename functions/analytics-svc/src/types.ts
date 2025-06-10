@@ -467,3 +467,9 @@ export interface IDatasetFilterParamsDto {
 export interface IDatasetSchemaFilterResultDto {
     [datasetSchema: string]: { isMatched: boolean };
 }
+
+// Bookmark materialized cohort definitions are tagged to a datasetId
+export interface IMaterializedBookmarkCohortDefinition {
+    datasetId: string;
+    cohortDefinitionId: number;
+}

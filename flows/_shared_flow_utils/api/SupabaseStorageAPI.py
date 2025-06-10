@@ -16,11 +16,11 @@ class SupabaseStorageAPI(BaseAPI):
         return {"Authorization": f"Bearer {Secret.load("supabase-storage-jwt-token").get()}"}
 
     
-    def get_csv_file(self, filename: str) -> str:
+    def get_csv_file(self, node_id: str, filename: str) -> str:
         csv_node_bucket = Variable.get("data_transformation_bucket")
 
         # Todo: Filename to be flow or revision id + csv file name
-        request_url = f"{self.url}object/{csv_node_bucket}/{filename}"
+        request_url = f"{self.url}object/{csv_node_bucket}/data-transformation/{node_id}/{filename}"
         response = requests.get(request_url, headers=self.get_options())
 
         # raise error if status code is >400
