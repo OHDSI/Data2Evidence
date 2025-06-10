@@ -1,0 +1,64 @@
+.import-dialog__container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 10px;
+  width: 100%;
+  overflow: auto;
+  scrollbar-color: #C7C7C7 transparent;
+  min-height: 200px;
+  .u-padding-vertical--normal {
+    padding-right: 20px;
+  }
+
+  .import-dialog__table {
+    width:100%;
+    padding:20px;
+  }
+
+  .import-dialog-selection__container {
+    display: flex;
+    justify-content: center;
+    padding: 0px 20px;
+    width: 100%;
+    gap: 20px;
+  }
+
+  .import-dialog-selection__header {
+    background-color: #ebf1f8;
+    padding: 10px 0px 10px 8px;
+  }
+  
+  .import-dialog-selection__columns {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ebf1f8;;
+    min-width: 500px;
+  }
+  
+  .import-dialog-selection__checkbox {
+    margin-top: 1em;
+    margin: 1em 0 0 0.5em
+  }
+
+  .import-dialog__selector {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 5px;
+  }
+
+  .import-dialog-selection__filters {
+    display: grid;
+    border: 1px solid blue;
+  }
+}
+
+.import-dialog-selection__buttons {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  justify-content: center;
+}
