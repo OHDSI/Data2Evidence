@@ -105,6 +105,15 @@ RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-Datab
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
+
+# Verify installation and fail if any are missing
+RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
+
 RUN useradd docker -u 1001 \
     && groupadd alp \
     && mkdir /home/docker \
