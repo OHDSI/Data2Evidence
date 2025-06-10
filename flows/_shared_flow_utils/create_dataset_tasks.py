@@ -7,7 +7,7 @@ from prefect import task
 from prefect.logging import get_run_logger
 from prefect.logging.loggers import task_run_logger
 
-from _shared_flow_utils.types import SupportedDatabaseDialects
+from _shared_flow_utils.types import SupportedDatabaseDialects, AuthMode
 
 
 if TYPE_CHECKING:
@@ -66,9 +66,11 @@ def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
     logger.info(f"Granting read privileges to '{schema_read_role}'")
     dbdao.grant_read_privileges(schema, schema_read_role)
 
-    # Grant read role read privileges
-    logger.info(f"Granting read privileges to '{dbdao.read_role}' role")
-    dbdao.grant_read_privileges(schema, dbdao.read_role)
+    if not (dbdao.dialect == SupportedDatabaseDialects.HANA and 
+       dbdao.tenant_configs.authMode == AuthMode.JWT):
+        # Grant read role read privileges
+        logger.info(f"Granting read privileges to '{dbdao.read_role}' role")
+        dbdao.grant_read_privileges(schema, dbdao.read_role)
 
 
 def drop_schema_hook(task, task_run, state, dbdao: DaoBase, schema: str):
