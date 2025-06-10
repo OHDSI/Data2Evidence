@@ -1,17 +1,17 @@
 import json
-from datetime import datetime
 from typing import List, Dict
+
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .const import OMOP_DATA_MODELS, check_table_case, convert_case
+from .liquibase import Liquibase
 from .types import PortalDatasetType, ExtractDatasetSchemaType
+from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from .liquibase import extract_db_schema, get_and_update_attributes, get_latest_available_version
+from _shared_flow_utils.types import EntityCountDistributionType
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
-from _shared_flow_utils.types import LiquibaseAction, EntityCountDistributionType
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
