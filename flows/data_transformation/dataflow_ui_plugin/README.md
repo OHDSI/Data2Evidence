@@ -44,7 +44,7 @@
 ## Database Query Node (Stable)
 
 - **Description:** Executes SQL statements to fetch data from a database.
-- **Input Nodes:** None.
+- **Input Nodes:** This node does not accept any input nodes.
 - **Output Data:** Returns 1 Pandas DataFrame.
 - **How To Use:** 
     - Database: Database code configured during setup.
@@ -68,7 +68,7 @@
 ## CSV Node (Experimental)
 
 - **Description:** Upload CSV File to Supabase storage and read as Pandas DataFrame.
-- **Input Nodes:** None.
+- **Input Nodes:** This node does not accept any input nodes.
 - **Output Data:** Returns only 1 Pandas DataFrame. 
 - **How To Use:** 
     - Choose File: Name of CSV file to upload.
@@ -81,8 +81,8 @@
 ## Data Mapping Node (Experimental)
 
 - **Description:** Create White Rabbit ETL mapping for ingesting source data into an OMOP Common Data Model (v5.4 or v6.0).
-- **Input Nodes:** TBD.
-- **Output Data:** TBD. 
+- **Input Nodes:** This node does not accept any input nodes.
+- **Output Data:** Returns a dictionary where each key is an OMOP CDM table name and each value is a DataFrame generated from source data of a White Rabbit ETL scan report.
 - **How To Use:**  TBD.
 
 
