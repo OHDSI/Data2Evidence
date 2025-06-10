@@ -22,8 +22,9 @@ import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
 import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
 import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
-import "./FlowLayout.scss";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
+import { selectFlowNodes } from "../selectors";
+import "./FlowLayout.scss";
 
 interface FlowLayoutProps {
   isStandalone: boolean;
@@ -39,6 +40,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
     }
   );
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
+  const nodes = useSelector(selectFlowNodes);
 
   const containerStyles: CSSProperties = useMemo(
     () =>
@@ -64,8 +66,9 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
   }, [dataflow, revisionId]);
 
   const handleAddNode = useCallback(() => {
+    dispatch(replaceNodes(nodes.map((node) => ({ ...node, selected: false }))));
     dispatch(setAddNodeTypeDialog({ visible: true }));
-  }, []);
+  }, [nodes]);
 
   if (!dataflows || isLoading) return null;
 
