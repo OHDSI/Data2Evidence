@@ -239,7 +239,48 @@ export class DataTransformationController {
     }
   }
 
+  private async getTemplates(req: Request, res: Response) {
+    try {
+      const result = await this.dataTransformationService.getTemplates();
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error("Error in getTemplates: ", error);
+      return res.status(500).send({ message: error.message });
+    }
+  }
+
+  private async createCanvasFromTemplate(req: Request, res: Response) {
+    try {
+      const { templateId } = req.params;
+      const { name, comment } = req.body;
+      const token = req.headers["authorization"];
+
+      if (!templateId || !name) {
+        return res
+          .status(400)
+          .send({ message: "Template ID and name are required" });
+      }
+
+      const result =
+        await this.dataTransformationService.createCanvasFromTemplate(
+          templateId,
+          name,
+          comment || "",
+          token
+        );
+      return res.status(201).send(result);
+    } catch (error) {
+      console.error("Error in createCanvasFromTemplate: ", error);
+      return res.status(500).send({ message: error.message });
+    }
+  }
+
   private registerRoutes() {
+    this.router.get("/templates", this.getTemplates.bind(this));
+    this.router.post(
+      "/templates/:templateId",
+      this.createCanvasFromTemplate.bind(this)
+    );
     this.router.get("/list", this.getCanvasList.bind(this));
     this.router.get("/:id", this.getCanvasById.bind(this));
     this.router.get("/:id/latest", this.getGraph.bind(this));
