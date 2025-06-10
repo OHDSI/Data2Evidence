@@ -1,8 +1,8 @@
 import { Box, Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { NotebookTemplateDto } from "../../../../axios/study-notebook";
-import { useFeedback } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
 import "./NotebookTemplateDialog.scss";
 
 interface NotebookTemplateDialogProps {
@@ -31,6 +31,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
   activeDatasetId,
 }) => {
   const { setFeedback } = useFeedback();
+  const { getText, i18nKeys } = useTranslation();
   const [templates, setTemplates] = useState<NotebookTemplateDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
@@ -51,7 +52,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       console.error("Failed to load templates:", error);
       setFeedback({
         type: "error",
-        message: "Failed to load notebook templates",
+        message: getText(i18nKeys.STARBOARD__ERROR_LOAD_TEMPLATES),
       });
     } finally {
       setLoading(false);
@@ -66,7 +67,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
     if (!formData.name.trim()) {
       setFeedback({
         type: "error",
-        message: "Please enter a notebook name",
+        message: getText(i18nKeys.STARBOARD__ERROR_NOTEBOOK_NAME_REQUIRED),
       });
       return;
     }
@@ -87,7 +88,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
   return (
     <Dialog
       className="notebook-template-dialog"
-      title="New notebook"
+      title={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_DIALOG_TITLE)}
       closable
       open={open}
       onClose={onClose}
@@ -96,16 +97,16 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       <div className="notebook-template-dialog__content">
         <Box mb={4}>
           <TextField
-            label="Name"
+            label={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_LABEL)}
             sx={{ width: "100%" }}
             variant="standard"
             value={formData.name}
             onChange={(e: ChangeEvent<HTMLInputElement>) => onFormDataChange({ name: e.target.value })}
-            placeholder="Enter notebook name"
+            placeholder={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER)}
           />
         </Box>
         <Box mb={4}>
-          <InputLabel sx={{ mb: 1 }}>Template (Optional)</InputLabel>
+          <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL)}</InputLabel>
           <Select
             sx={{ width: "100%" }}
             variant="standard"
@@ -115,7 +116,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             disabled={loading}
           >
             <MenuItem value="">
-              <em>No template</em>
+              <em>{getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NO_TEMPLATE)}</em>
             </MenuItem>
             {templates.map((template) => (
               <MenuItem key={template.id} value={template.id}>
@@ -127,8 +128,12 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       </div>
       <div className="notebook-template-dialog__footer">
         <Box display="flex" gap={1} className="notebook-template-dialog__footer-actions">
-          <Button text="Cancel" variant="outlined" onClick={handleClose} />
-          <Button text="Create" onClick={handleCreate} disabled={!formData.name.trim()} />
+          <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
+          <Button
+            text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
+            onClick={handleCreate}
+            disabled={!formData.name.trim()}
+          />
         </Box>
       </div>
     </Dialog>

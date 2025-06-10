@@ -4,7 +4,7 @@ import Fab from "@mui/material/Fab";
 import { ChatItem } from "@nlux/react";
 import { Card, Loader } from "@portal/components";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import React, { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../axios/api";
 import Chat from "../../components/Chat/Chat";
 import { useConversationHistory, useFeedback, useTranslation } from "../../contexts";
@@ -133,7 +133,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         updateActiveNotebook(newNotebook);
         setFeedback({
           type: "success",
-          message: `Created notebook "${notebookName}"`,
+          message: getText(i18nKeys.STARBOARD__SUCCESS_CREATE_NOTEBOOK, [notebookName]),
         });
       } catch (err) {
         console.error(err);
@@ -158,13 +158,13 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         updateActiveNotebook(newNotebook);
         setFeedback({
           type: "success",
-          message: `Created notebook "${name}" from template`,
+          message: getText(i18nKeys.STARBOARD__SUCCESS_CREATE_FROM_TEMPLATE, [name]),
         });
       } catch (err) {
         console.error(err);
         setFeedback({
           type: "error",
-          message: "Failed to create notebook from template",
+          message: getText(i18nKeys.STARBOARD__ERROR_CREATE_FROM_TEMPLATE),
         });
       }
     },

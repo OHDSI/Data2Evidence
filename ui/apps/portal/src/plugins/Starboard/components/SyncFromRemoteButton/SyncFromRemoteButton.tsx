@@ -1,8 +1,8 @@
 import { Button } from "@portal/components";
-import React, { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { RemoteDiffCheckResponse } from "../../../../axios/study-notebook";
-import { useFeedback } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
 import { StarboardNotebook } from "../../utils/notebook";
 
 interface SyncFromRemoteButtonProps {
@@ -17,6 +17,7 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = ({
   activeDatasetId,
 }) => {
   const { setFeedback } = useFeedback();
+  const { getText, i18nKeys } = useTranslation();
   const [diffCheck, setDiffCheck] = useState<RemoteDiffCheckResponse | null>(null);
   const [isCheckingDiff, setIsCheckingDiff] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -58,7 +59,7 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = ({
       await fetchNotebooks();
       setFeedback({
         type: "success",
-        message: "Successfully synced notebook from remote",
+        message: getText(i18nKeys.STARBOARD__SUCCESS_SYNC_FROM_REMOTE),
       });
       // Refresh diff check after sync
       checkDiff();
@@ -66,7 +67,7 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = ({
       console.error("Failed to sync from remote:", error);
       setFeedback({
         type: "error",
-        message: error?.response?.data?.message || error.message || "Failed to sync from remote",
+        message: error?.response?.data?.message || error.message || getText(i18nKeys.STARBOARD__ERROR_SYNC_FROM_REMOTE),
       });
     } finally {
       setIsSyncing(false);
@@ -82,7 +83,9 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = ({
 
   return (
     <Button
-      text={isSyncing ? "Syncing..." : "Sync from Remote"}
+      text={
+        isSyncing ? getText(i18nKeys.STARBOARD__SYNCING_BUTTON) : getText(i18nKeys.STARBOARD__SYNC_FROM_REMOTE_BUTTON)
+      }
       onClick={handleSyncClick}
       disabled={isDisabled}
       loading={isSyncing}
