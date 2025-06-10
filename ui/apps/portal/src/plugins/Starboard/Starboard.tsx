@@ -4,7 +4,7 @@ import Fab from "@mui/material/Fab";
 import { ChatItem } from "@nlux/react";
 import { Card, Loader } from "@portal/components";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import { FC, useCallback, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../axios/api";
 import Chat from "../../components/Chat/Chat";
 import { useConversationHistory, useFeedback, useTranslation } from "../../contexts";

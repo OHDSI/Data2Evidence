@@ -160,7 +160,7 @@ export const GitConfig: FC = () => {
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.GIT_CONFIG__SYNC_FLOWS_SUCCESS).replace("{0}", result.processedCount.toString()),
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_FLOWS_SUCCESS, [result.processedCount.toString()]),
         autoClose: 8000,
       });
       setShowOverwriteDialog(false);
@@ -194,7 +194,7 @@ export const GitConfig: FC = () => {
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.GIT_CONFIG__SYNC_NOTEBOOKS_SUCCESS).replace("{0}", result.processedCount.toString()),
+        message: getText(i18nKeys.GIT_CONFIG__SYNC_NOTEBOOKS_SUCCESS, [result.processedCount.toString()]),
         autoClose: 8000,
       });
       setShowOverwriteNotebooksDialog(false);
