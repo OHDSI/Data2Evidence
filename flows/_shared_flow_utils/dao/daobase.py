@@ -259,7 +259,7 @@ class DaoBase(ABC):
                 
                 # Add APPLICATION and APPLICATIONUSER as session variables for JWT
                 app_name = f"d2e-{os.environ.get('plugin_name')}"
-                token_user = buildUserFromToken(auth_token.token.get_secret_value())
+                token_user = buildUserFromToken(get_third_party_token_value(auth_token=auth_token))
                 base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
                 return base_url, hana_connect_args
             if auth_mode == AuthMode.PASSWORD:
@@ -310,7 +310,7 @@ class DaoBase(ABC):
             
             # Add APPLICATION and APPLICATIONUSER as session variables for JWT
             app_name = f"d2e-{os.environ.get('plugin_name')}"
-            token_user = buildUserFromToken(auth_token.token.get_secret_value())
+            token_user = buildUserFromToken(get_third_party_token_value(auth_token=auth_token))
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
             
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
