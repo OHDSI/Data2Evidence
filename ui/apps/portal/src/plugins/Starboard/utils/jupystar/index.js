@@ -8167,6 +8167,10 @@ function convertStarboardCellTypeIntoJupyterCellType(cell) {
         cell.cellType = "code";
         cell.textContent = "%%latex\n" + cell.textContent;
     }
+    else if (ct === "jupyter") {
+        cell.cellType = "code";
+        cell.textContent = "%%jupyter\n" + cell.textContent;
+    }
     else {
         console.error(`Cell type \"${ct}\" can not be translated from Starboard Cell to Jupyter, it will be converted to a raw cell`);
         cell.cellType = "raw";

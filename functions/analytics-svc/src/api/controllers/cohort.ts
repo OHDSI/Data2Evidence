@@ -4,6 +4,7 @@ import {
     IMRIRequest,
     CohortType,
     CohortDefinitionTableType,
+    IMaterializedBookmarkCohortDefinition,
 } from "../../types";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import { Logger, getUser, User } from "@alp/alp-base-utils";
@@ -204,8 +205,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         }
         // Assuming all bookmarks with the same bookmark_id are the same
         const bookmark = bookmarks[0];
+
+        // Get bookmark cohort definition id filtered by dataset id
         const bookmarkCohortDefinitionId: number | undefined =
-            bookmark.cohortDefinitionId;
+            _getBookmarkMaterializedCohortDefinitionId(bookmark, datasetId);
+
         if (env.USE_EXTENSION_FOR_COHORT_CREATION === "true") {
             const mriConfig = await mriConfigConnection.getStudyConfig(
                 {
@@ -318,7 +322,21 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 cohort,
                 queryResponse.queryObject
             );
-            bookmark.cohortDefinitionId = cohortDefinitionId;
+
+            // If this is the first materialized cohort for bookmark, create array with materialized cohort definition id and dataset id
+            if (bookmark.materializedCohortDefinitions === undefined) {
+                bookmark.materializedCohortDefinitions = [
+                    {
+                        datasetId,
+                        cohortDefinitionId,
+                    },
+                ];
+            } else {
+                bookmark.materializedCohortDefinitions.push({
+                    datasetId,
+                    cohortDefinitionId,
+                });
+            }
 
             // Update bookmark with new cohort definition id
             await portalServerAPI.updateBookmark(token, bookmark, datasetId);
@@ -529,3 +547,27 @@ async function getCohortFromMriQuery(
         throw err;
     }
 }
+
+const _getBookmarkMaterializedCohortDefinitionId = (
+    bookmark: any,
+    datasetId: string
+): number | undefined => {
+    const materializedBookmarkCohortDefinitions: IMaterializedBookmarkCohortDefinition[] =
+        bookmark.materializedCohortDefinitions;
+    // If bookmark does not have cohortDefinitions key, return undefined
+    if (materializedBookmarkCohortDefinitions === undefined) {
+        return undefined;
+    }
+
+    // Find materializedBookmarkCohortDefinition with datasetId
+    const materializedBookmarkCohortDefinition =
+        materializedBookmarkCohortDefinitions.find(
+            (e) => e.datasetId === datasetId
+        );
+
+    if (materializedBookmarkCohortDefinition === undefined) {
+        return undefined;
+    } else {
+        return materializedBookmarkCohortDefinition.cohortDefinitionId;
+    }
+};

@@ -82,16 +82,14 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./base/
-          - PKGPATH: ./cohort_survival/
-          - PKGPATH: ./dicom_etl/
-          - PKGPATH: ./mimic_omop_conversion/
           - PKGPATH: ./nlp/
-          - PKGPATH: ./white_rabbit/
+          - PKGPATH: ./cohort_survival/
           - PKGPATH: ./i2b2/
           - PKGPATH: ./search_embedding/
           - PKGPATH: ./data_management/
           - PKGPATH: ./strategus/
           - PKGPATH: ./loyalty_score/
+          - PKGPATH: ./data_transformation/
 
     steps:
       - uses: actions/checkout@v4
