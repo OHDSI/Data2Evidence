@@ -14,4 +14,3 @@ export * from './models/AtlasCohortAdapter'
 
 // Utils
 export * from './utils/CriteriaConfigLoader'
-export * from './utils/InitialCriteriaEditorConfigBased'
