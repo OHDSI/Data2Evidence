@@ -1,13 +1,23 @@
 import os
 from re import sub
+from enum import Enum
 from typing import List
 from subprocess import PIPE, STDOUT, run, CalledProcessError
 
 from prefect.variables import Variable
 
-from .types import *
-from .api.PrefectAPI import get_auth_token_from_input, get_third_party_token_value
+from _shared_flow_utils.types import DBCredentialsType, SupportedDatabaseDialects, AuthMode
+from _shared_flow_utils.api.PrefectAPI import AuthToken, get_auth_token_from_input, get_third_party_token_value
+from .const import OMOP_DATA_MODELS, CHANGESET_AVAILABLE_REGEX, LB_ERROR_MESSAGE_REGEX, PASSWORD_REGEX, SSL_TRUST_STORE_REGEX
 
+class LiquibaseAction(str, Enum):
+    UPDATE = "update"  # Create and update schema
+    UPDATECOUNT = "updateCount"  # Create schema with count
+    STATUS = "status"  # Get Version Info
+    ROLLBACK_COUNT = "rollbackCount"  # Rollback on n changesets
+    ROLLBACK_TAG = "rollback"  # Rollback on tag
+    # mark all changesets in databasechangelog table as executed
+    CHANGELOG_SYNC = "changelog-sync"
 
 class Liquibase:
     def __init__(self,
@@ -111,10 +121,6 @@ class Liquibase:
 
         if self.data_model in OMOP_DATA_MODELS:
             params.append(f"-DVOCAB_SCHEMA={self.vocab_schema}")
-
-        if self.data_model == CHARACTERIZATION_DATA_MODEL:
-            params.append(f"-DVOCAB_SCHEMA={self.vocab_schema}")
-            params.append(f"-DDATA_CHARACTERIZATION_SCHEMA={self.schema_name}")
 
         return params
 
