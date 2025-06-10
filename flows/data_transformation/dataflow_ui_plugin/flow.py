@@ -13,6 +13,7 @@ from prefect.artifacts import create_markdown_artifact
 from .hooks import *
 from .flowutils import *
 from .nodes import generate_nodes_flow
+from .types import NodeType
 
 
 @flow(log_prints=True)
@@ -150,21 +151,10 @@ def execute_nodes_flow(graph, sorted_nodes, test):
         for nodename in sorted_nodes:
             node = graph["nodes"][nodename]
             _input = get_incoming_edges(graph, nodes, nodename)
-            if node["type"] not in [
-                "csv_node",
-                "sql_node",
-                "python_node",
-                "py2table_node",
-                "db_reader_node",
-                "db_writer_node",
-                "sql_query_node",
-                "r_node",
-                "data_mapping_node",
-                "subflow"
-            ]:
+            if node["type"] not in [node_type.value for node_type in NodeType]:
                 get_run_logger().error(f"gen.py: execute_nodes: {node['type']} Node Type not known")
             else: 
-                if node["type"] == "subflow":
+                if node["type"] == NodeType.SUBFLOW:
                     # execute as a subflow with runner
                     result_of_subflow = execute_subflow_cluster(
                         node, _input, test)
@@ -203,7 +193,8 @@ def execute_node_task(nodename, node_type, node, input, test):
         result = _node.test(task_run_context)
     else:
         match node_type:
-            case 'csv_node' | 'db_reader_node':
+            # Nodes that do not accept input
+            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING:
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
