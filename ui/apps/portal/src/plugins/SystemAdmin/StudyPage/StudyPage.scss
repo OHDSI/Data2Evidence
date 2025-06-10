@@ -1,0 +1,76 @@
+.study-page {
+  padding: 32px 120px;
+  max-width: 1000px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 24px 32px;
+  }
+
+  &__header {
+    margin-bottom: 32px;
+  }
+
+  &__dataset-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__dataset-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000080;
+    margin: 0;
+  }
+
+  &__dataset-select {
+    .MuiOutlinedInput-root {
+      border-radius: 6px;
+      
+      &:hover .MuiOutlinedInput-notchedOutline {
+        border-color: #000080;
+      }
+      
+      &.Mui-focused .MuiOutlinedInput-notchedOutline {
+        border-color: #000080;
+      }
+    }
+  }
+
+  &__content {
+    margin-top: 32px;
+  }
+
+  &__section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000080;
+    margin: 0 0 24px 0;
+  }
+
+  &__studies {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    color: #666;
+    font-size: 16px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px dashed #ddd;
+  }
+
+  &__error {
+    padding: 16px;
+    background-color: #fee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+    border-radius: 6px;
+    margin: 16px 0;
+  }
+}

@@ -312,6 +312,12 @@
             "route": "dataset-overview"
           },
           {
+            "name": "Studies",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/StudyPage/module",
+            "route": "study-page"
+          },
+          {
             "name": "Jobs",
             "enabled": true,
             "pluginPath": "plugins/SystemAdmin/Jobs/module",
