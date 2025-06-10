@@ -69,17 +69,16 @@ def phenotype_plugin(options: PhenotypeOptionsType):
 
                 create_cohort_definitionsets <- function(cohorts_ID, vocabschema_name) {{
                     # For multiple cohorts
+                    # CirceR version 1.1.1 does not support cohort 344, and CirceR version 1.3.3 (currently used) does not support cohort 921
                     if (is.character(cohorts_ID) && cohorts_ID == 'default') {{
                         cohorts <- PhenotypeLibrary::getPhenotypeLog()  # showHidden=FALSE
                         cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(cohorts$cohortId[1:nrow(cohorts)])
-                        # To solve the 921.json problem
                         cohortDefinitionSets <- cohortDefinitionSets[cohortDefinitionSets$cohortId!=921,]
                         for (i in 1:nrow(cohortDefinitionSets)) {{
                             cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschema_name))
                         }}
                         print('Complete creating cohortDefinitionSets')
                     }} else if (class(cohorts_ID) == "integer") {{
-                        # TODO check why 921 doesn't run through
                         if (921 %in% cohorts_ID) {{
                             print(paste0(c("Phenotype 921 is not supported currrently, only the following phenotype id will run through:", cohorts_ID), collapse=" "))
                             cohorts_ID <- cohorts_ID[cohorts_ID!=921]
@@ -95,6 +94,20 @@ def phenotype_plugin(options: PhenotypeOptionsType):
                     return(cohortDefinitionSets)
                 }}
 
+                create_replica <- function(connection, cohortschema, cohort_table_name) {{
+                    # Get table names first
+                    getTablesSQL <- paste0("SELECT tablename FROM pg_tables WHERE schemaname = '", cohortschema, "' AND tablename LIKE '", cohort_table_name, "%'")
+                    tables <- DatabaseConnector::querySql(connection, getTablesSQL)
+
+                    # Set replica identity for each table individually
+                    for(i in 1:nrow(tables)) {{
+                        tableName <- tables$TABLENAME[i]
+                        replicaSql <- paste0("ALTER TABLE ", cohortschema, ".", tableName, " REPLICA IDENTITY FULL")
+                        DatabaseConnector::executeSql(connection, replicaSql)
+                    }}
+                    print('Complete setting replica identity for phenotype tables')
+                }}
+
                 create_cohorts <- function(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets) {{
                     # Create the cohort tables to hold the cohort generation results
                     cohortTableNames <- CohortGenerator::getCohortTableNames(cohortTable = cohort_table_name)
@@ -102,7 +115,8 @@ def phenotype_plugin(options: PhenotypeOptionsType):
                                                         cohortDatabaseSchema = cohortschema,
                                                         cohortTableNames = cohortTableNames)
                                         
-                    print('Complete creating the cohort tables')
+                    create_replica(connection, cohortschema, cohort_table_name)
+
                     # Generate the cohorts
                     cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
                                                                         cdmDatabaseSchema = cdmschema,
@@ -160,6 +174,8 @@ def phenotype_plugin(options: PhenotypeOptionsType):
                         createTable = TRUE,
                         tempTable = FALSE
                     )
+                    sql <- paste0("ALTER TABLE ", {{cohortschema}}, ".", {{cohort_table_name}}, "_result_all ADD PRIMARY KEY (phenotype_result_id);")
+                    DatabaseConnector::executeSql(connection=connection, sql=sql)
 
                     # Save master table, showHidden=TRUE, display each required cohort in master table
                     master_table <- data.frame(getPhenotypeLog(cohorts_id, showHidden=TRUE)) 
@@ -176,7 +192,6 @@ def phenotype_plugin(options: PhenotypeOptionsType):
 
                 # Connect to Postgres database using hostname
                 connection <- DatabaseConnector::connect(connectionDetails)
-                print('Complete connecting to Database')
                                 
                 cdmschema <- '{cdmschema_name}'
                 cohortschema <- '{cohortschema_name}'
