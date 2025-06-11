@@ -11,7 +11,7 @@ export interface QueryFilterChip {
   domainId?: string
 }
 
-export interface QueryFilterCondition {
+export interface QueryFilterEvent {
   id: string
   conceptSet: string
   conceptSetId?: string
@@ -20,9 +20,9 @@ export interface QueryFilterCondition {
   operator?: 'AND' | 'OR' // For combining chips
   criteriaType?: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
   selectedAttributes?: string[] // Selected attribute IDs
-  isAttributeBased?: boolean // True if this condition was created from an attribute selection
-  parentConditionId?: string // Reference to the parent condition if this is attribute-based
-  attributeConfig?: { // Store the original attribute config for attribute-based conditions
+  isAttributeBased?: boolean // True if this event was created from an attribute selection
+  parentEventId?: string // Reference to the parent event if this is attribute-based
+  attributeConfig?: { // Store the original attribute config for attribute-based events
     id: string
     name: string
     description: string
@@ -30,23 +30,23 @@ export interface QueryFilterCondition {
     category: string
   }
   isNested?: boolean // True if this is a nested criteria group
-  nestedConditions?: QueryFilterCondition[] // Child conditions for nested groups
-  nestedOperator?: 'AND' | 'OR' // Operator for combining nested conditions
+  nestedEvents?: QueryFilterEvent[] // Child events for nested groups
+  nestedOperator?: 'AND' | 'OR' // Operator for combining nested events
 }
 
 export class QueryFilterCardModel {
   id: string
   title: string
   type: 'inclusion' | 'exclusion'
-  conditions: QueryFilterCondition[]
+  events: QueryFilterEvent[]
   isExpanded: boolean
-  operator: 'AND' | 'OR' // For combining conditions
+  operator: 'AND' | 'OR' // For combining events
 
   constructor(data: Partial<QueryFilterCardModel> = {}) {
     this.id = data.id || this.generateId()
     this.title = data.title || ''
     this.type = data.type || 'inclusion'
-    this.conditions = data.conditions || []
+    this.events = data.events || []
     this.isExpanded = data.isExpanded !== undefined ? data.isExpanded : true
     this.operator = data.operator || 'AND'
   }
@@ -55,33 +55,33 @@ export class QueryFilterCardModel {
     return `filter_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
-  // Condition management
-  addCondition(condition?: Partial<QueryFilterCondition>): QueryFilterCondition {
-    const newCondition: QueryFilterCondition = {
-      id: condition?.id || `condition_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      conceptSet: condition?.conceptSet || '',
-      conceptSetId: condition?.conceptSetId,
-      chips: condition?.chips || [],
-      isEditing: condition?.isEditing || false,
-      operator: condition?.operator || 'OR',
-      criteriaType: condition?.criteriaType,
-      selectedAttributes: condition?.selectedAttributes,
-      isAttributeBased: condition?.isAttributeBased || false,
-      parentConditionId: condition?.parentConditionId,
-      attributeConfig: condition?.attributeConfig,
-      isNested: condition?.isNested || false,
-      nestedConditions: condition?.nestedConditions || [],
-      nestedOperator: condition?.nestedOperator || 'AND',
+  // Event management
+  addEvent(event?: Partial<QueryFilterEvent>): QueryFilterEvent {
+    const newEvent: QueryFilterEvent = {
+      id: event?.id || `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      conceptSet: event?.conceptSet || '',
+      conceptSetId: event?.conceptSetId,
+      chips: event?.chips || [],
+      isEditing: event?.isEditing || false,
+      operator: event?.operator || 'OR',
+      criteriaType: event?.criteriaType,
+      selectedAttributes: event?.selectedAttributes,
+      isAttributeBased: event?.isAttributeBased || false,
+      parentEventId: event?.parentEventId,
+      attributeConfig: event?.attributeConfig,
+      isNested: event?.isNested || false,
+      nestedEvents: event?.nestedEvents || [],
+      nestedOperator: event?.nestedOperator || 'AND',
     }
-    this.conditions.push(newCondition)
-    return newCondition
+    this.events.push(newEvent)
+    return newEvent
   }
 
-  // Add attribute-based condition
-  addAttributeCondition(parentConditionId: string, attributeConfig: any): QueryFilterCondition {
-    const parentCondition = this.getCondition(parentConditionId)
-    if (!parentCondition) {
-      throw new Error(`Parent condition ${parentConditionId} not found`)
+  // Add attribute-based event
+  addAttributeEvent(parentEventId: string, attributeConfig: any): QueryFilterEvent {
+    const parentEvent = this.getEvent(parentEventId)
+    if (!parentEvent) {
+      throw new Error(`Parent event ${parentEventId} not found`)
     }
 
     // Remove "Add " prefix from the title for display
@@ -89,17 +89,17 @@ export class QueryFilterCardModel {
     
     // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
-      const nestedCondition: QueryFilterCondition = {
+      const nestedEvent: QueryFilterEvent = {
         id: `nested_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         conceptSet: displayTitle,
         chips: [],
         isEditing: false,
         operator: 'OR',
-        criteriaType: parentCondition.criteriaType,
+        criteriaType: parentEvent.criteriaType,
         isAttributeBased: true,
-        parentConditionId: parentConditionId,
+        parentEventId: parentEventId,
         isNested: true,
-        nestedConditions: [],
+        nestedEvents: [],
         nestedOperator: 'AND',
         attributeConfig: {
           id: attributeConfig.id,
@@ -111,30 +111,30 @@ export class QueryFilterCardModel {
       }
       
       // Find the insert position (after parent and its existing attribute children)
-      const parentIndex = this.conditions.findIndex(c => c.id === parentConditionId)
+      const parentIndex = this.events.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
       
-      // Find the last attribute condition that belongs to this parent
-      while (insertIndex < this.conditions.length && 
-             this.conditions[insertIndex].isAttributeBased && 
-             this.conditions[insertIndex].parentConditionId === parentConditionId) {
+      // Find the last attribute event that belongs to this parent
+      while (insertIndex < this.events.length && 
+             this.events[insertIndex].isAttributeBased && 
+             this.events[insertIndex].parentEventId === parentEventId) {
         insertIndex++
       }
       
-      this.conditions.splice(insertIndex, 0, nestedCondition)
-      return nestedCondition
+      this.events.splice(insertIndex, 0, nestedEvent)
+      return nestedEvent
     }
     
-    // Regular attribute condition
-    const newCondition: QueryFilterCondition = {
+    // Regular attribute event
+    const newEvent: QueryFilterEvent = {
       id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       conceptSet: displayTitle,
       chips: [],
       isEditing: false,
       operator: 'OR',
-      criteriaType: parentCondition.criteriaType,
+      criteriaType: parentEvent.criteriaType,
       isAttributeBased: true,
-      parentConditionId: parentConditionId,
+      parentEventId: parentEventId,
       attributeConfig: {
         id: attributeConfig.id,
         name: displayTitle,
@@ -145,113 +145,113 @@ export class QueryFilterCardModel {
     }
     
     // Find the insert position (after parent and its existing attribute children)
-    const parentIndex = this.conditions.findIndex(c => c.id === parentConditionId)
+    const parentIndex = this.events.findIndex(e => e.id === parentEventId)
     let insertIndex = parentIndex + 1
     
-    // Find the last attribute condition that belongs to this parent
-    while (insertIndex < this.conditions.length && 
-           this.conditions[insertIndex].isAttributeBased && 
-           this.conditions[insertIndex].parentConditionId === parentConditionId) {
+    // Find the last attribute event that belongs to this parent
+    while (insertIndex < this.events.length && 
+           this.events[insertIndex].isAttributeBased && 
+           this.events[insertIndex].parentEventId === parentEventId) {
       insertIndex++
     }
     
-    this.conditions.splice(insertIndex, 0, newCondition)
-    return newCondition
+    this.events.splice(insertIndex, 0, newEvent)
+    return newEvent
   }
 
-  // Get all conditions that belong to a parent (including the parent itself)
-  getConditionGroup(parentConditionId: string): QueryFilterCondition[] {
-    const conditions: QueryFilterCondition[] = []
-    const parent = this.getCondition(parentConditionId)
+  // Get all events that belong to a parent (including the parent itself)
+  getEventGroup(parentEventId: string): QueryFilterEvent[] {
+    const events: QueryFilterEvent[] = []
+    const parent = this.getEvent(parentEventId)
     if (parent) {
-      conditions.push(parent)
-      conditions.push(...this.conditions.filter(c => c.parentConditionId === parentConditionId))
+      events.push(parent)
+      events.push(...this.events.filter(e => e.parentEventId === parentEventId))
     }
-    return conditions
+    return events
   }
 
-  // Check if a condition can be deleted (not the parent condition or has no attribute children)
-  canDeleteCondition(conditionId: string): boolean {
-    const condition = this.getCondition(conditionId)
-    if (!condition) return false
+  // Check if an event can be deleted (not the parent event or has no attribute children)
+  canDeleteEvent(eventId: string): boolean {
+    const event = this.getEvent(eventId)
+    if (!event) return false
     
-    // Can't delete if it's a parent condition with attribute children
-    if (!condition.isAttributeBased && this.conditions.some(c => c.parentConditionId === conditionId)) {
+    // Can't delete if it's a parent event with attribute children
+    if (!event.isAttributeBased && this.events.some(e => e.parentEventId === eventId)) {
       return false
     }
     
     return true
   }
 
-  // Add condition to nested criteria
-  addNestedCondition(nestedConditionId: string, condition: Partial<QueryFilterCondition>): QueryFilterCondition {
-    const nestedCondition = this.getCondition(nestedConditionId)
-    if (!nestedCondition || !nestedCondition.isNested) {
-      throw new Error(`Nested condition ${nestedConditionId} not found`)
+  // Add event to nested criteria
+  addNestedEvent(nestedEventId: string, event: Partial<QueryFilterEvent>): QueryFilterEvent {
+    const nestedEvent = this.getEvent(nestedEventId)
+    if (!nestedEvent || !nestedEvent.isNested) {
+      throw new Error(`Nested event ${nestedEventId} not found`)
     }
 
-    const newCondition: QueryFilterCondition = {
-      id: condition.id || `nested_child_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      conceptSet: condition.conceptSet || '',
-      conceptSetId: condition.conceptSetId,
-      chips: condition.chips || [],
-      isEditing: condition.isEditing || false,
-      operator: condition.operator || 'OR',
-      criteriaType: condition.criteriaType,
-      selectedAttributes: condition.selectedAttributes,
+    const newEvent: QueryFilterEvent = {
+      id: event.id || `nested_child_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      conceptSet: event.conceptSet || '',
+      conceptSetId: event.conceptSetId,
+      chips: event.chips || [],
+      isEditing: event.isEditing || false,
+      operator: event.operator || 'OR',
+      criteriaType: event.criteriaType,
+      selectedAttributes: event.selectedAttributes,
       isAttributeBased: false,
-      parentConditionId: nestedConditionId,
+      parentEventId: nestedEventId,
       isNested: false,
-      nestedConditions: [],
+      nestedEvents: [],
       nestedOperator: 'AND',
     }
 
     // Use the recursive container logic to ensure we add to the correct nested level
-    this.addConditionToNestedContainer(nestedConditionId, newCondition)
-    return newCondition
+    this.addEventToNestedContainer(nestedEventId, newEvent)
+    return newEvent
   }
 
-  // Helper method to add a condition to the correct nested container
-  private addConditionToNestedContainer(nestedConditionId: string, newCondition: QueryFilterCondition) {
-    // First, try to find it in main conditions
-    const mainNestedCondition = this.conditions.find(c => c.id === nestedConditionId && c.isNested)
-    if (mainNestedCondition) {
-      if (!mainNestedCondition.nestedConditions) {
-        mainNestedCondition.nestedConditions = []
+  // Helper method to add an event to the correct nested container
+  private addEventToNestedContainer(nestedEventId: string, newEvent: QueryFilterEvent) {
+    // First, try to find it in main events
+    const mainNestedEvent = this.events.find(e => e.id === nestedEventId && e.isNested)
+    if (mainNestedEvent) {
+      if (!mainNestedEvent.nestedEvents) {
+        mainNestedEvent.nestedEvents = []
       }
-      mainNestedCondition.nestedConditions.push(newCondition)
+      mainNestedEvent.nestedEvents.push(newEvent)
       return
     }
 
-    // If not found in main conditions, search recursively in nested structures
-    for (const condition of this.conditions) {
-      if (condition.isNested && condition.nestedConditions) {
-        if (this.addToNestedConditionRecursive(nestedConditionId, newCondition, condition)) {
+    // If not found in main events, search recursively in nested structures
+    for (const event of this.events) {
+      if (event.isNested && event.nestedEvents) {
+        if (this.addToNestedEventRecursive(nestedEventId, newEvent, event)) {
           return
         }
       }
     }
 
-    throw new Error(`Could not find nested condition ${nestedConditionId} to add to`)
+    throw new Error(`Could not find nested event ${nestedEventId} to add to`)
   }
 
-  private addToNestedConditionRecursive(targetId: string, newCondition: QueryFilterCondition, container: QueryFilterCondition): boolean {
-    if (!container.nestedConditions) return false
+  private addToNestedEventRecursive(targetId: string, newEvent: QueryFilterEvent, container: QueryFilterEvent): boolean {
+    if (!container.nestedEvents) return false
 
     // Check if target is directly in this container
-    const targetCondition = container.nestedConditions.find(c => c.id === targetId && c.isNested)
-    if (targetCondition) {
-      if (!targetCondition.nestedConditions) {
-        targetCondition.nestedConditions = []
+    const targetEvent = container.nestedEvents.find(e => e.id === targetId && e.isNested)
+    if (targetEvent) {
+      if (!targetEvent.nestedEvents) {
+        targetEvent.nestedEvents = []
       }
-      targetCondition.nestedConditions.push(newCondition)
+      targetEvent.nestedEvents.push(newEvent)
       return true
     }
 
     // Recursively search deeper
-    for (const nestedCondition of container.nestedConditions) {
-      if (nestedCondition.isNested && nestedCondition.nestedConditions) {
-        if (this.addToNestedConditionRecursive(targetId, newCondition, nestedCondition)) {
+    for (const nestedEvent of container.nestedEvents) {
+      if (nestedEvent.isNested && nestedEvent.nestedEvents) {
+        if (this.addToNestedEventRecursive(targetId, newEvent, nestedEvent)) {
           return true
         }
       }
@@ -260,18 +260,18 @@ export class QueryFilterCardModel {
     return false
   }
 
-  // Add attribute-based condition to nested criteria
-  addNestedAttributeCondition(parentConditionId: string, attributeConfig: any): QueryFilterCondition {
-    // Find the parent condition using recursive search
-    const parentCondition = this.getCondition(parentConditionId)
-    if (!parentCondition) {
-      throw new Error(`Parent condition ${parentConditionId} not found`)
+  // Add attribute-based event to nested criteria
+  addNestedAttributeEvent(parentEventId: string, attributeConfig: any): QueryFilterEvent {
+    // Find the parent event using recursive search
+    const parentEvent = this.getEvent(parentEventId)
+    if (!parentEvent) {
+      throw new Error(`Parent event ${parentEventId} not found`)
     }
 
-    // Find which nested container holds this parent condition
-    const { container, containerPath } = this.findNestedContainer(parentConditionId)
+    // Find which nested container holds this parent event
+    const { container, containerPath } = this.findNestedContainer(parentEventId)
     if (!container) {
-      throw new Error(`Could not find container for condition ${parentConditionId}`)
+      throw new Error(`Could not find container for event ${parentEventId}`)
     }
 
     // Remove "Add " prefix from the title for display
@@ -279,17 +279,17 @@ export class QueryFilterCardModel {
     
     // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
-      const nestedCondition: QueryFilterCondition = {
+      const nestedEvent: QueryFilterEvent = {
         id: `nested_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         conceptSet: displayTitle,
         chips: [],
         isEditing: false,
         operator: 'OR',
-        criteriaType: parentCondition.criteriaType,
+        criteriaType: parentEvent.criteriaType,
         isAttributeBased: true,
-        parentConditionId: parentConditionId,
+        parentEventId: parentEventId,
         isNested: true,
-        nestedConditions: [],
+        nestedEvents: [],
         nestedOperator: 'AND',
         attributeConfig: {
           id: attributeConfig.id,
@@ -300,20 +300,20 @@ export class QueryFilterCardModel {
         }
       }
       
-      this.insertConditionInContainer(nestedCondition, parentConditionId, container)
-      return nestedCondition
+      this.insertEventInContainer(nestedEvent, parentEventId, container)
+      return nestedEvent
     }
     
-    // Regular attribute condition
-    const newCondition: QueryFilterCondition = {
+    // Regular attribute event
+    const newEvent: QueryFilterEvent = {
       id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       conceptSet: displayTitle,
       chips: [],
       isEditing: false,
       operator: 'OR',
-      criteriaType: parentCondition.criteriaType,
+      criteriaType: parentEvent.criteriaType,
       isAttributeBased: true,
-      parentConditionId: parentConditionId,
+      parentEventId: parentEventId,
       attributeConfig: {
         id: attributeConfig.id,
         name: displayTitle,
@@ -323,52 +323,52 @@ export class QueryFilterCardModel {
       }
     }
     
-    this.insertConditionInContainer(newCondition, parentConditionId, container)
-    return newCondition
+    this.insertEventInContainer(newEvent, parentEventId, container)
+    return newEvent
   }
 
-  // Remove condition from nested criteria
-  removeNestedCondition(nestedConditionId: string, conditionId: string): boolean {
-    const nestedCondition = this.getCondition(nestedConditionId)
-    if (!nestedCondition || !nestedCondition.isNested || !nestedCondition.nestedConditions) {
+  // Remove event from nested criteria
+  removeNestedEvent(nestedEventId: string, eventId: string): boolean {
+    const nestedEvent = this.getEvent(nestedEventId)
+    if (!nestedEvent || !nestedEvent.isNested || !nestedEvent.nestedEvents) {
       return false
     }
 
-    const index = nestedCondition.nestedConditions.findIndex(c => c.id === conditionId)
+    const index = nestedEvent.nestedEvents.findIndex(e => e.id === eventId)
     if (index > -1) {
-      nestedCondition.nestedConditions.splice(index, 1)
+      nestedEvent.nestedEvents.splice(index, 1)
       return true
     }
     return false
   }
 
-  removeCondition(conditionId: string): boolean {
-    const index = this.conditions.findIndex(c => c.id === conditionId)
+  removeEvent(eventId: string): boolean {
+    const index = this.events.findIndex(e => e.id === eventId)
     if (index > -1) {
-      this.conditions.splice(index, 1)
+      this.events.splice(index, 1)
       return true
     }
     return false
   }
 
-  updateCondition(conditionId: string, updates: Partial<QueryFilterCondition>): boolean {
-    const condition = this.conditions.find(c => c.id === conditionId)
-    if (condition) {
-      Object.assign(condition, updates)
+  updateEvent(eventId: string, updates: Partial<QueryFilterEvent>): boolean {
+    const event = this.events.find(e => e.id === eventId)
+    if (event) {
+      Object.assign(event, updates)
       return true
     }
     return false
   }
 
-  getCondition(conditionId: string): QueryFilterCondition | undefined {
-    // First check main conditions
-    const mainCondition = this.conditions.find(c => c.id === conditionId)
-    if (mainCondition) return mainCondition
+  getEvent(eventId: string): QueryFilterEvent | undefined {
+    // First check main events
+    const mainEvent = this.events.find(e => e.id === eventId)
+    if (mainEvent) return mainEvent
     
-    // Recursively search in nested conditions
-    for (const condition of this.conditions) {
-      if (condition.isNested && condition.nestedConditions) {
-        const found = this.findConditionInNested(conditionId, condition.nestedConditions)
+    // Recursively search in nested events
+    for (const event of this.events) {
+      if (event.isNested && event.nestedEvents) {
+        const found = this.findEventInNested(eventId, event.nestedEvents)
         if (found) return found
       }
     }
@@ -376,31 +376,31 @@ export class QueryFilterCardModel {
     return undefined
   }
 
-  // Helper method to recursively search nested conditions
-  private findConditionInNested(conditionId: string, nestedConditions: QueryFilterCondition[]): QueryFilterCondition | undefined {
-    for (const condition of nestedConditions) {
-      if (condition.id === conditionId) return condition
+  // Helper method to recursively search nested events
+  private findEventInNested(eventId: string, nestedEvents: QueryFilterEvent[]): QueryFilterEvent | undefined {
+    for (const event of nestedEvents) {
+      if (event.id === eventId) return event
       
-      // Recursively search deeper if this condition also has nested conditions
-      if (condition.isNested && condition.nestedConditions) {
-        const found = this.findConditionInNested(conditionId, condition.nestedConditions)
+      // Recursively search deeper if this event also has nested events
+      if (event.isNested && event.nestedEvents) {
+        const found = this.findEventInNested(eventId, event.nestedEvents)
         if (found) return found
       }
     }
     return undefined
   }
 
-  // Find which nested container holds a specific condition
-  private findNestedContainer(conditionId: string): { container: QueryFilterCondition | null, containerPath: string[] } {
-    // Check if it's in main conditions
-    if (this.conditions.find(c => c.id === conditionId)) {
+  // Find which nested container holds a specific event
+  private findNestedContainer(eventId: string): { container: QueryFilterEvent | null, containerPath: string[] } {
+    // Check if it's in main events
+    if (this.events.find(e => e.id === eventId)) {
       return { container: null, containerPath: [] } // Main level
     }
 
     // Recursively search in nested structures
-    for (const condition of this.conditions) {
-      if (condition.isNested && condition.nestedConditions) {
-        const result = this.findNestedContainerRecursive(conditionId, condition, [condition.id])
+    for (const event of this.events) {
+      if (event.isNested && event.nestedEvents) {
+        const result = this.findNestedContainerRecursive(eventId, event, [event.id])
         if (result.container) return result
       }
     }
@@ -408,18 +408,18 @@ export class QueryFilterCardModel {
     return { container: null, containerPath: [] }
   }
 
-  private findNestedContainerRecursive(conditionId: string, container: QueryFilterCondition, path: string[]): { container: QueryFilterCondition | null, containerPath: string[] } {
-    if (!container.nestedConditions) return { container: null, containerPath: [] }
+  private findNestedContainerRecursive(eventId: string, container: QueryFilterEvent, path: string[]): { container: QueryFilterEvent | null, containerPath: string[] } {
+    if (!container.nestedEvents) return { container: null, containerPath: [] }
 
-    // Check if the condition is directly in this container
-    if (container.nestedConditions.find(c => c.id === conditionId)) {
+    // Check if the event is directly in this container
+    if (container.nestedEvents.find(e => e.id === eventId)) {
       return { container, containerPath: path }
     }
 
     // Recursively search deeper
-    for (const nestedCondition of container.nestedConditions) {
-      if (nestedCondition.isNested && nestedCondition.nestedConditions) {
-        const result = this.findNestedContainerRecursive(conditionId, nestedCondition, [...path, nestedCondition.id])
+    for (const nestedEvent of container.nestedEvents) {
+      if (nestedEvent.isNested && nestedEvent.nestedEvents) {
+        const result = this.findNestedContainerRecursive(eventId, nestedEvent, [...path, nestedEvent.id])
         if (result.container) return result
       }
     }
@@ -427,69 +427,69 @@ export class QueryFilterCardModel {
     return { container: null, containerPath: [] }
   }
 
-  // Helper method to insert a condition in the correct container (main or nested)
-  private insertConditionInContainer(newCondition: QueryFilterCondition, parentConditionId: string, container: QueryFilterCondition | null) {
+  // Helper method to insert an event in the correct container (main or nested)
+  private insertEventInContainer(newEvent: QueryFilterEvent, parentEventId: string, container: QueryFilterEvent | null) {
     if (container === null) {
-      // Insert in main conditions
-      const parentIndex = this.conditions.findIndex(c => c.id === parentConditionId)
+      // Insert in main events
+      const parentIndex = this.events.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
       
-      while (insertIndex < this.conditions.length && 
-             this.conditions[insertIndex].isAttributeBased && 
-             this.conditions[insertIndex].parentConditionId === parentConditionId) {
+      while (insertIndex < this.events.length && 
+             this.events[insertIndex].isAttributeBased && 
+             this.events[insertIndex].parentEventId === parentEventId) {
         insertIndex++
       }
       
-      this.conditions.splice(insertIndex, 0, newCondition)
+      this.events.splice(insertIndex, 0, newEvent)
     } else {
       // Insert in nested container
-      if (!container.nestedConditions) {
-        container.nestedConditions = []
+      if (!container.nestedEvents) {
+        container.nestedEvents = []
       }
       
-      const parentIndex = container.nestedConditions.findIndex(c => c.id === parentConditionId)
+      const parentIndex = container.nestedEvents.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
       
-      while (insertIndex < container.nestedConditions.length && 
-             container.nestedConditions[insertIndex].isAttributeBased && 
-             container.nestedConditions[insertIndex].parentConditionId === parentConditionId) {
+      while (insertIndex < container.nestedEvents.length && 
+             container.nestedEvents[insertIndex].isAttributeBased && 
+             container.nestedEvents[insertIndex].parentEventId === parentEventId) {
         insertIndex++
       }
       
-      container.nestedConditions.splice(insertIndex, 0, newCondition)
+      container.nestedEvents.splice(insertIndex, 0, newEvent)
     }
   }
 
   // Chip management
-  addChipToCondition(conditionId: string, chip: QueryFilterChip): boolean {
-    const condition = this.getCondition(conditionId)
-    if (condition) {
+  addChipToEvent(eventId: string, chip: QueryFilterChip): boolean {
+    const event = this.getEvent(eventId)
+    if (event) {
       // Ensure unique chip IDs
       if (!chip.id) {
         chip.id = `chip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
       }
-      condition.chips.push(chip)
+      event.chips.push(chip)
       return true
     }
     return false
   }
 
-  removeChipFromCondition(conditionId: string, chipId: string): boolean {
-    const condition = this.getCondition(conditionId)
-    if (condition) {
-      const chipIndex = condition.chips.findIndex(chip => chip.id === chipId)
+  removeChipFromEvent(eventId: string, chipId: string): boolean {
+    const event = this.getEvent(eventId)
+    if (event) {
+      const chipIndex = event.chips.findIndex(chip => chip.id === chipId)
       if (chipIndex > -1) {
-        condition.chips.splice(chipIndex, 1)
+        event.chips.splice(chipIndex, 1)
         return true
       }
     }
     return false
   }
 
-  updateChipInCondition(conditionId: string, chipId: string, updates: Partial<QueryFilterChip>): boolean {
-    const condition = this.getCondition(conditionId)
-    if (condition) {
-      const chip = condition.chips.find(c => c.id === chipId)
+  updateChipInEvent(eventId: string, chipId: string, updates: Partial<QueryFilterChip>): boolean {
+    const event = this.getEvent(eventId)
+    if (event) {
+      const chip = event.chips.find(c => c.id === chipId)
       if (chip) {
         Object.assign(chip, updates)
         return true
@@ -503,21 +503,21 @@ export class QueryFilterCardModel {
     this.isExpanded = !this.isExpanded
   }
 
-  hasConditions(): boolean {
-    return this.conditions.length > 0
+  hasEvents(): boolean {
+    return this.events.length > 0
   }
 
   hasChips(): boolean {
-    return this.conditions.some(c => c.chips.length > 0)
+    return this.events.some(e => e.chips.length > 0)
   }
 
   getChipCount(): number {
-    return this.conditions.reduce((sum, c) => sum + c.chips.length, 0)
+    return this.events.reduce((sum, e) => sum + e.chips.length, 0)
   }
 
   clearAllChips(): void {
-    this.conditions.forEach(c => {
-      c.chips = []
+    this.events.forEach(e => {
+      e.chips = []
     })
   }
 
@@ -534,9 +534,9 @@ export class QueryFilterCardModel {
       id: this.id,
       title: this.title,
       type: this.type,
-      conditions: this.conditions.map(c => ({
-        ...c,
-        chips: [...c.chips], // Deep copy chips
+      events: this.events.map(e => ({
+        ...e,
+        chips: [...e.chips], // Deep copy chips
       })),
       isExpanded: this.isExpanded,
       operator: this.operator,
@@ -607,29 +607,29 @@ export class QueryFilterManager {
     return this.filters.length
   }
 
-  // Condition management across filters
-  addConditionToFilter(filterId: string, condition?: Partial<QueryFilterCondition>): QueryFilterCondition | null {
+  // Event management across filters
+  addEventToFilter(filterId: string, event?: Partial<QueryFilterEvent>): QueryFilterEvent | null {
     const filter = this.getFilter(filterId)
     if (filter) {
-      return filter.addCondition(condition)
+      return filter.addEvent(event)
     }
     return null
   }
 
-  removeConditionFromFilter(filterId: string, conditionId: string): boolean {
+  removeEventFromFilter(filterId: string, eventId: string): boolean {
     const filter = this.getFilter(filterId)
-    return filter ? filter.removeCondition(conditionId) : false
+    return filter ? filter.removeEvent(eventId) : false
   }
 
   // Chip management across filters
-  addChipToCondition(filterId: string, conditionId: string, chip: QueryFilterChip): boolean {
+  addChipToEvent(filterId: string, eventId: string, chip: QueryFilterChip): boolean {
     const filter = this.getFilter(filterId)
-    return filter ? filter.addChipToCondition(conditionId, chip) : false
+    return filter ? filter.addChipToEvent(eventId, chip) : false
   }
 
-  removeChipFromCondition(filterId: string, conditionId: string, chipId: string): boolean {
+  removeChipFromEvent(filterId: string, eventId: string, chipId: string): boolean {
     const filter = this.getFilter(filterId)
-    return filter ? filter.removeChipFromCondition(conditionId, chipId) : false
+    return filter ? filter.removeChipFromEvent(eventId, chipId) : false
   }
 
   // Bulk operations
@@ -638,12 +638,12 @@ export class QueryFilterManager {
   }
 
   clearEmptyFilters(): void {
-    this.filters = this.filters.filter(f => f.hasConditions())
+    this.filters = this.filters.filter(f => f.hasEvents())
   }
 
-  clearEmptyConditions(): void {
+  clearEmptyEvents(): void {
     this.filters.forEach(filter => {
-      filter.conditions = filter.conditions.filter(c => c.chips.length > 0)
+      filter.events = filter.events.filter(e => e.chips.length > 0)
     })
   }
 
@@ -663,12 +663,12 @@ export class QueryFilterManager {
       if (!filter.title) {
         errors.push(`Filter ${filter.id} has no title`)
       }
-      if (!filter.hasConditions()) {
-        errors.push(`Filter "${filter.title}" has no conditions`)
+      if (!filter.hasEvents()) {
+        errors.push(`Filter "${filter.title}" has no events`)
       }
-      filter.conditions.forEach(condition => {
-        if (!condition.conceptSet) {
-          errors.push(`Condition ${condition.id} in filter "${filter.title}" has no concept set`)
+      filter.events.forEach(event => {
+        if (!event.conceptSet) {
+          errors.push(`Event ${event.id} in filter "${filter.title}" has no concept set`)
         }
       })
     })
@@ -700,17 +700,17 @@ export class QueryFilterManager {
     totalFilters: number
     inclusionFilters: number
     exclusionFilters: number
-    totalConditions: number
+    totalEvents: number
     totalChips: number
   } {
-    const totalConditions = this.filters.reduce((sum, f) => sum + f.conditions.length, 0)
+    const totalEvents = this.filters.reduce((sum, f) => sum + f.events.length, 0)
     const totalChips = this.filters.reduce((sum, f) => sum + f.getChipCount(), 0)
 
     return {
       totalFilters: this.filters.length,
       inclusionFilters: this.getInclusionFilters().length,
       exclusionFilters: this.getExclusionFilters().length,
-      totalConditions,
+      totalEvents,
       totalChips,
     }
   }

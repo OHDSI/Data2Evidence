@@ -1,4 +1,4 @@
-.query-filter-nested-condition {
+.query-filter-nested-event {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -10,13 +10,13 @@
   }
 
   &--parent {
-    // Main nested condition style
+    // Main nested event style
     background: #ffffff;
     border: 1px solid #d1d5db;
   }
 
   &--attribute {
-    // Nested attribute condition style
+    // Nested attribute event style
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     margin-left: 16px;
@@ -99,7 +99,7 @@
   }
 }
 
-.btn-remove-condition {
+.btn-remove-event {
   background: none;
   border: none;
   padding: 6px;

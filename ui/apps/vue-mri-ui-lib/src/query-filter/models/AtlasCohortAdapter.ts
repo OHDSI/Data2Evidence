@@ -4,7 +4,7 @@
 
 import { AtlasCohortDefinition, getCriteriaType, getCriteriaObject, InclusionRule } from './AtlasCohortDefinition'
 
-import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip } from './QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip } from './QueryFilterModel'
 
 export interface SimplifiedConcept {
   id: number
@@ -121,8 +121,8 @@ export class AtlasCohortAdapter {
       const primaryFilter = new QueryFilterCardModel({
         title: 'Primary Events',
         type: 'inclusion',
-        conditions: simplified.primaryCriteria.criteriaList.map(criteria =>
-          this.criteriaToCondition(criteria, simplified.conceptSets)
+        events: simplified.primaryCriteria.criteriaList.map(criteria =>
+          this.criteriaToEvent(criteria, simplified.conceptSets)
         ),
       })
       filters.push(primaryFilter)
@@ -133,7 +133,7 @@ export class AtlasCohortAdapter {
       const inclusionFilter = new QueryFilterCardModel({
         title: rule.name,
         type: 'inclusion',
-        conditions: rule.criteriaList.map(criteria => this.criteriaToCondition(criteria, simplified.conceptSets)),
+        events: rule.criteriaList.map(criteria => this.criteriaToEvent(criteria, simplified.conceptSets)),
       })
       filters.push(inclusionFilter)
     })
@@ -144,7 +144,7 @@ export class AtlasCohortAdapter {
         const exclusionFilter = new QueryFilterCardModel({
           title: rule.name,
           type: 'exclusion',
-          conditions: rule.criteriaList.map(criteria => this.criteriaToCondition(criteria, simplified.conceptSets)),
+          events: rule.criteriaList.map(criteria => this.criteriaToEvent(criteria, simplified.conceptSets)),
         })
         filters.push(exclusionFilter)
       })
@@ -161,10 +161,10 @@ export class AtlasCohortAdapter {
     return this.toQueryFilterModel(simplified)
   }
 
-  private static criteriaToCondition(
+  private static criteriaToEvent(
     criteria: SimplifiedCriteria,
     conceptSets: SimplifiedConceptSet[]
-  ): QueryFilterCondition {
+  ): QueryFilterEvent {
     const conceptSet = conceptSets.find(cs => cs.id === criteria.conceptSetId)
 
     // Create chips from concepts
@@ -179,7 +179,7 @@ export class AtlasCohortAdapter {
         })) || []
 
     return {
-      id: `condition_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       conceptSet: conceptSet?.name || `Concept Set ${criteria.conceptSetId}`,
       conceptSetId: criteria.conceptSetId.toString(),
       chips,

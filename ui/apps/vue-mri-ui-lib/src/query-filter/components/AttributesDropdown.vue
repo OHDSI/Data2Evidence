@@ -11,13 +11,13 @@ import criteriaConfigLoader, { type AttributeConfig } from '../utils/CriteriaCon
 interface Props {
   criteriaType: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
   disabled?: boolean
-  conditionId: string // The condition ID for which this dropdown is shown
-  allConditions: any[] // All conditions in the filter to check which attributes are already selected
+  eventId: string // The event ID for which this dropdown is shown
+  allEvents: any[] // All events in the filter to check which attributes are already selected
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  allConditions: () => []
+  allEvents: () => []
 })
 
 const emit = defineEmits<{
@@ -54,23 +54,23 @@ const attributesByCategory = computed(() => {
   return grouped
 })
 
-// Check if an attribute is currently selected by looking for existing attribute-based conditions
+// Check if an attribute is currently selected by looking for existing attribute-based events
 const isAttributeSelected = (attributeId: string) => {
-  return props.allConditions.some(condition => 
-    condition.isAttributeBased && 
-    condition.parentConditionId === props.conditionId && 
-    condition.attributeConfig?.id === attributeId
+  return props.allEvents.some(event => 
+    event.isAttributeBased && 
+    event.parentEventId === props.eventId && 
+    event.attributeConfig?.id === attributeId
   )
 }
 
 // Get currently selected attributes for the button label
 const selectedAttributeIds = computed(() => {
-  return props.allConditions
-    .filter(condition => 
-      condition.isAttributeBased && 
-      condition.parentConditionId === props.conditionId
+  return props.allEvents
+    .filter(event => 
+      event.isAttributeBased && 
+      event.parentEventId === props.eventId
     )
-    .map(condition => condition.attributeConfig?.id)
+    .map(event => event.attributeConfig?.id)
     .filter(id => id)
 })
 

@@ -1,9 +1,4 @@
-import {
-  QueryFilterCardModel,
-  QueryFilterManager,
-  QueryFilterChip,
-  QueryFilterCondition,
-} from '../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterManager, QueryFilterChip, QueryFilterEvent } from '../models/QueryFilterModel'
 
 describe('QueryFilterCardModel', () => {
   let model: QueryFilterCardModel
@@ -17,7 +12,7 @@ describe('QueryFilterCardModel', () => {
       expect(model.id).toBeDefined()
       expect(model.title).toBe('')
       expect(model.type).toBe('inclusion')
-      expect(model.conditions).toEqual([])
+      expect(model.events).toEqual([])
       expect(model.isExpanded).toBe(true)
       expect(model.operator).toBe('AND')
     })
@@ -46,90 +41,90 @@ describe('QueryFilterCardModel', () => {
     })
   })
 
-  describe('condition management', () => {
-    it('should add condition with default values', () => {
-      const condition = model.addCondition()
+  describe('event management', () => {
+    it('should add event with default values', () => {
+      const event = model.addEvent()
 
-      expect(condition.id).toBeDefined()
-      expect(condition.conceptSet).toBe('')
-      expect(condition.chips).toEqual([])
-      expect(condition.isEditing).toBe(false)
-      expect(condition.operator).toBe('OR')
-      expect(model.conditions).toHaveLength(1)
+      expect(event.id).toBeDefined()
+      expect(event.conceptSet).toBe('')
+      expect(event.chips).toEqual([])
+      expect(event.isEditing).toBe(false)
+      expect(event.operator).toBe('OR')
+      expect(model.events).toHaveLength(1)
     })
 
-    it('should add condition with custom values', () => {
-      const conditionData = {
+    it('should add event with custom values', () => {
+      const eventData = {
         conceptSet: 'Test Concept Set',
         conceptSetId: 'cs-123',
         operator: 'AND' as const,
       }
-      const condition = model.addCondition(conditionData)
+      const event = model.addEvent(eventData)
 
-      expect(condition.conceptSet).toBe('Test Concept Set')
-      expect(condition.conceptSetId).toBe('cs-123')
-      expect(condition.operator).toBe('AND')
+      expect(event.conceptSet).toBe('Test Concept Set')
+      expect(event.conceptSetId).toBe('cs-123')
+      expect(event.operator).toBe('AND')
     })
 
-    it('should remove condition by ID', () => {
-      const condition = model.addCondition()
-      expect(model.conditions).toHaveLength(1)
+    it('should remove event by ID', () => {
+      const event = model.addEvent()
+      expect(model.events).toHaveLength(1)
 
-      const removed = model.removeCondition(condition.id)
+      const removed = model.removeEvent(event.id)
       expect(removed).toBe(true)
-      expect(model.conditions).toHaveLength(0)
+      expect(model.events).toHaveLength(0)
     })
 
-    it('should return false when removing non-existent condition', () => {
-      const removed = model.removeCondition('non-existent')
+    it('should return false when removing non-existent event', () => {
+      const removed = model.removeEvent('non-existent')
       expect(removed).toBe(false)
     })
 
-    it('should update condition', () => {
-      const condition = model.addCondition()
-      const updated = model.updateCondition(condition.id, {
+    it('should update event', () => {
+      const event = model.addEvent()
+      const updated = model.updateEvent(event.id, {
         conceptSet: 'Updated Concept Set',
         isEditing: true,
       })
 
       expect(updated).toBe(true)
-      expect(condition.conceptSet).toBe('Updated Concept Set')
-      expect(condition.isEditing).toBe(true)
+      expect(event.conceptSet).toBe('Updated Concept Set')
+      expect(event.isEditing).toBe(true)
     })
 
-    it('should return false when updating non-existent condition', () => {
-      const updated = model.updateCondition('non-existent', { conceptSet: 'test' })
+    it('should return false when updating non-existent event', () => {
+      const updated = model.updateEvent('non-existent', { conceptSet: 'test' })
       expect(updated).toBe(false)
     })
 
-    it('should get condition by ID', () => {
-      const condition = model.addCondition()
-      const found = model.getCondition(condition.id)
-      expect(found).toBe(condition)
+    it('should get event by ID', () => {
+      const event = model.addEvent()
+      const found = model.getEvent(event.id)
+      expect(found).toBe(event)
 
-      const notFound = model.getCondition('non-existent')
+      const notFound = model.getEvent('non-existent')
       expect(notFound).toBeUndefined()
     })
   })
 
   describe('chip management', () => {
-    let condition: QueryFilterCondition
+    let event: QueryFilterEvent
 
     beforeEach(() => {
-      condition = model.addCondition()
+      event = model.addEvent()
     })
 
-    it('should add chip to condition', () => {
+    it('should add chip to event', () => {
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test-value',
       }
 
-      const added = model.addChipToCondition(condition.id, chip)
+      const added = model.addChipToEvent(event.id, chip)
       expect(added).toBe(true)
-      expect(condition.chips).toHaveLength(1)
-      expect(condition.chips[0]).toBe(chip)
+      expect(event.chips).toHaveLength(1)
+      expect(event.chips[0]).toBe(chip)
     })
 
     it('should generate ID for chip if not provided', () => {
@@ -139,51 +134,51 @@ describe('QueryFilterCardModel', () => {
         value: 'test-value',
       }
 
-      model.addChipToCondition(condition.id, chip)
+      model.addChipToEvent(event.id, chip)
       expect(chip.id).toBeDefined()
       expect(chip.id).not.toBe('')
     })
 
-    it('should return false when adding chip to non-existent condition', () => {
+    it('should return false when adding chip to non-existent event', () => {
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test-value',
       }
 
-      const added = model.addChipToCondition('non-existent', chip)
+      const added = model.addChipToEvent('non-existent', chip)
       expect(added).toBe(false)
     })
 
-    it('should remove chip from condition', () => {
+    it('should remove chip from event', () => {
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test-value',
       }
 
-      model.addChipToCondition(condition.id, chip)
-      expect(condition.chips).toHaveLength(1)
+      model.addChipToEvent(event.id, chip)
+      expect(event.chips).toHaveLength(1)
 
-      const removed = model.removeChipFromCondition(condition.id, chip.id)
+      const removed = model.removeChipFromEvent(event.id, chip.id)
       expect(removed).toBe(true)
-      expect(condition.chips).toHaveLength(0)
+      expect(event.chips).toHaveLength(0)
     })
 
     it('should return false when removing non-existent chip', () => {
-      const removed = model.removeChipFromCondition(condition.id, 'non-existent')
+      const removed = model.removeChipFromEvent(event.id, 'non-existent')
       expect(removed).toBe(false)
     })
 
-    it('should update chip in condition', () => {
+    it('should update chip in event', () => {
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test-value',
       }
 
-      model.addChipToCondition(condition.id, chip)
-      const updated = model.updateChipInCondition(condition.id, chip.id, {
+      model.addChipToEvent(event.id, chip)
+      const updated = model.updateChipInEvent(event.id, chip.id, {
         label: 'Updated Chip',
         color: 'red',
       })
@@ -193,8 +188,8 @@ describe('QueryFilterCardModel', () => {
       expect(chip.color).toBe('red')
     })
 
-    it('should return false when updating chip in non-existent condition', () => {
-      const updated = model.updateChipInCondition('non-existent', 'chip-1', { label: 'test' })
+    it('should return false when updating chip in non-existent event', () => {
+      const updated = model.updateChipInEvent('non-existent', 'chip-1', { label: 'test' })
       expect(updated).toBe(false)
     })
   })
@@ -208,19 +203,19 @@ describe('QueryFilterCardModel', () => {
       expect(model.isExpanded).toBe(true)
     })
 
-    it('should check if has conditions', () => {
-      expect(model.hasConditions()).toBe(false)
-      model.addCondition()
-      expect(model.hasConditions()).toBe(true)
+    it('should check if has events', () => {
+      expect(model.hasEvents()).toBe(false)
+      model.addEvent()
+      expect(model.hasEvents()).toBe(true)
     })
 
     it('should check if has chips', () => {
       expect(model.hasChips()).toBe(false)
 
-      const condition = model.addCondition()
+      const event = model.addEvent()
       expect(model.hasChips()).toBe(false)
 
-      model.addChipToCondition(condition.id, {
+      model.addChipToEvent(event.id, {
         id: 'chip-1',
         label: 'Test',
         value: 'test',
@@ -228,25 +223,25 @@ describe('QueryFilterCardModel', () => {
       expect(model.hasChips()).toBe(true)
     })
 
-    it('should count chips across all conditions', () => {
+    it('should count chips across all events', () => {
       expect(model.getChipCount()).toBe(0)
 
-      const condition1 = model.addCondition()
-      const condition2 = model.addCondition()
+      const event1 = model.addEvent()
+      const event2 = model.addEvent()
 
-      model.addChipToCondition(condition1.id, { id: 'chip-1', label: 'Test 1', value: 'test1' })
-      model.addChipToCondition(condition1.id, { id: 'chip-2', label: 'Test 2', value: 'test2' })
-      model.addChipToCondition(condition2.id, { id: 'chip-3', label: 'Test 3', value: 'test3' })
+      model.addChipToEvent(event1.id, { id: 'chip-1', label: 'Test 1', value: 'test1' })
+      model.addChipToEvent(event1.id, { id: 'chip-2', label: 'Test 2', value: 'test2' })
+      model.addChipToEvent(event2.id, { id: 'chip-3', label: 'Test 3', value: 'test3' })
 
       expect(model.getChipCount()).toBe(3)
     })
 
     it('should clear all chips', () => {
-      const condition1 = model.addCondition()
-      const condition2 = model.addCondition()
+      const event1 = model.addEvent()
+      const event2 = model.addEvent()
 
-      model.addChipToCondition(condition1.id, { id: 'chip-1', label: 'Test 1', value: 'test1' })
-      model.addChipToCondition(condition2.id, { id: 'chip-2', label: 'Test 2', value: 'test2' })
+      model.addChipToEvent(event1.id, { id: 'chip-1', label: 'Test 1', value: 'test1' })
+      model.addChipToEvent(event2.id, { id: 'chip-2', label: 'Test 2', value: 'test2' })
 
       expect(model.getChipCount()).toBe(2)
       model.clearAllChips()
@@ -254,18 +249,18 @@ describe('QueryFilterCardModel', () => {
     })
   })
 
-  describe('nested conditions', () => {
-    let parentCondition: QueryFilterCondition
+  describe('nested events', () => {
+    let parentEvent: QueryFilterEvent
 
     beforeEach(() => {
-      parentCondition = model.addCondition({
-        conceptSet: 'Parent Condition',
+      parentEvent = model.addEvent({
+        conceptSet: 'Parent Event',
         criteriaType: 'conditionOccurrence',
       })
     })
 
-    describe('adding nested conditions', () => {
-      it('should add a nested condition via addAttributeCondition with nested type', () => {
+    describe('adding nested events', () => {
+      it('should add a nested event via addAttributeEvent with nested type', () => {
         const attributeConfig = {
           id: 'nested-criteria',
           name: 'Nested Criteria Group',
@@ -274,190 +269,190 @@ describe('QueryFilterCardModel', () => {
           category: 'criteria-specific',
         }
 
-        const nestedCondition = model.addAttributeCondition(parentCondition.id, attributeConfig)
+        const nestedEvent = model.addAttributeEvent(parentEvent.id, attributeConfig)
 
-        expect(nestedCondition.isNested).toBe(true)
-        expect(nestedCondition.nestedConditions).toEqual([])
-        expect(nestedCondition.nestedOperator).toBe('AND')
-        expect(nestedCondition.conceptSet).toBe('Nested Criteria Group')
-        expect(nestedCondition.parentConditionId).toBe(parentCondition.id)
-        expect(nestedCondition.isAttributeBased).toBe(true)
-        expect(model.conditions).toHaveLength(2) // Parent + nested
+        expect(nestedEvent.isNested).toBe(true)
+        expect(nestedEvent.nestedEvents).toEqual([])
+        expect(nestedEvent.nestedOperator).toBe('AND')
+        expect(nestedEvent.conceptSet).toBe('Nested Criteria Group')
+        expect(nestedEvent.parentEventId).toBe(parentEvent.id)
+        expect(nestedEvent.isAttributeBased).toBe(true)
+        expect(model.events).toHaveLength(2) // Parent + nested
       })
 
-      it('should insert nested condition after parent and its existing attribute children', () => {
-        // Add a regular attribute condition first
+      it('should insert nested event after parent and its existing attribute children', () => {
+        // Add a regular attribute event first
         const regularAttr = {
           id: 'regular-attr',
           name: 'Regular Attribute',
           type: 'text',
         }
-        model.addAttributeCondition(parentCondition.id, regularAttr)
+        model.addAttributeEvent(parentEvent.id, regularAttr)
 
-        // Then add a nested condition
+        // Then add a nested event
         const nestedAttr = {
           id: 'nested-attr',
           name: 'Nested Attribute',
           type: 'nested',
         }
-        const nestedCondition = model.addAttributeCondition(parentCondition.id, nestedAttr)
+        const nestedEvent = model.addAttributeEvent(parentEvent.id, nestedAttr)
 
-        expect(model.conditions).toHaveLength(3) // Parent + regular attr + nested
-        expect(model.conditions[1].id).not.toBe(nestedCondition.id) // Regular attr comes first
-        expect(model.conditions[2].id).toBe(nestedCondition.id) // Nested comes after
+        expect(model.events).toHaveLength(3) // Parent + regular attr + nested
+        expect(model.events[1].id).not.toBe(nestedEvent.id) // Regular attr comes first
+        expect(model.events[2].id).toBe(nestedEvent.id) // Nested comes after
       })
 
-      it('should add conditions to nested containers', () => {
-        const nestedCondition = model.addAttributeCondition(parentCondition.id, {
+      it('should add events to nested containers', () => {
+        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
           id: 'nested-1',
           name: 'Nested Container',
           type: 'nested',
         })
 
-        const childCondition = model.addNestedCondition(nestedCondition.id, {
-          conceptSet: 'Child Condition',
+        const childEvent = model.addNestedEvent(nestedEvent.id, {
+          conceptSet: 'Child Event',
         })
 
-        expect(nestedCondition.nestedConditions).toHaveLength(1)
-        expect(nestedCondition.nestedConditions![0]).toBe(childCondition)
-        expect(childCondition.parentConditionId).toBe(nestedCondition.id)
-        expect(childCondition.conceptSet).toBe('Child Condition')
+        expect(nestedEvent.nestedEvents).toHaveLength(1)
+        expect(nestedEvent.nestedEvents![0]).toBe(childEvent)
+        expect(childEvent.parentEventId).toBe(nestedEvent.id)
+        expect(childEvent.conceptSet).toBe('Child Event')
       })
 
-      it('should throw error when adding to non-existent nested condition', () => {
+      it('should throw error when adding to non-existent nested event', () => {
         expect(() => {
-          model.addNestedCondition('non-existent', { conceptSet: 'Test' })
-        }).toThrow('Nested condition non-existent not found')
+          model.addNestedEvent('non-existent', { conceptSet: 'Test' })
+        }).toThrow('Nested event non-existent not found')
       })
     })
 
     describe('multi-level nesting', () => {
       it('should support multiple levels of nesting', () => {
-        // Level 1: Add nested condition to parent
-        const level1Nested = model.addAttributeCondition(parentCondition.id, {
+        // Level 1: Add nested event to parent
+        const level1Nested = model.addAttributeEvent(parentEvent.id, {
           id: 'level-1',
           name: 'Level 1 Nested',
           type: 'nested',
         })
 
-        // Level 2: Add a regular child condition to level 1
-        const level2Child = model.addNestedCondition(level1Nested.id, {
+        // Level 2: Add a regular child event to level 1
+        const level2Child = model.addNestedEvent(level1Nested.id, {
           conceptSet: 'Level 2 Child',
         })
 
-        // Level 3: Add another nested condition to level 1, then add a child to it
-        const level2Nested = model.addNestedAttributeCondition(level2Child.id, {
+        // Level 3: Add another nested event to level 1, then add a child to it
+        const level2Nested = model.addNestedAttributeEvent(level2Child.id, {
           id: 'level-2-nested',
           name: 'Level 2 Nested',
-          type: 'nested'
+          type: 'nested',
         })
 
-        const level3Child = model.addNestedCondition(level2Nested.id, {
+        const level3Child = model.addNestedEvent(level2Nested.id, {
           conceptSet: 'Level 3 Child',
         })
 
         // Based on the actual implementation, level1Nested contains both the child and the nested attribute
-        expect(level1Nested.nestedConditions).toHaveLength(2) // level2Child + level2Nested (both added to level1)
-        expect(level1Nested.nestedConditions).toContain(level2Child)
-        
-        // level2Nested should be created and linked to level2Child, but may not be in level2Child's nestedConditions
+        expect(level1Nested.nestedEvents).toHaveLength(2) // level2Child + level2Nested (both added to level1)
+        expect(level1Nested.nestedEvents).toContain(level2Child)
+
+        // level2Nested should be created and linked to level2Child, but may not be in level2Child's nestedEvents
         // The implementation might be adding it to the parent container instead
-        expect(level2Nested.nestedConditions).toHaveLength(1)
+        expect(level2Nested.nestedEvents).toHaveLength(1)
         expect(level3Child.conceptSet).toBe('Level 3 Child')
-        expect(level3Child.parentConditionId).toBe(level2Nested.id)
+        expect(level3Child.parentEventId).toBe(level2Nested.id)
       })
 
-      it('should find conditions at any nesting level', () => {
-        const level1Nested = model.addAttributeCondition(parentCondition.id, {
+      it('should find events at any nesting level', () => {
+        const level1Nested = model.addAttributeEvent(parentEvent.id, {
           name: 'Level 1',
           type: 'nested',
         })
 
-        const level2Child = model.addNestedCondition(level1Nested.id, {
+        const level2Child = model.addNestedEvent(level1Nested.id, {
           conceptSet: 'Level 2',
         })
 
-        const level2Nested = model.addNestedAttributeCondition(level2Child.id, {
+        const level2Nested = model.addNestedAttributeEvent(level2Child.id, {
           name: 'Level 2 Nested',
-          type: 'nested'
+          type: 'nested',
         })
 
-        const level3Child = model.addNestedCondition(level2Nested.id, {
+        const level3Child = model.addNestedEvent(level2Nested.id, {
           conceptSet: 'Level 3',
         })
 
-        // Should find all conditions regardless of nesting level
-        expect(model.getCondition(parentCondition.id)).toBe(parentCondition)
-        expect(model.getCondition(level1Nested.id)).toBe(level1Nested)
-        expect(model.getCondition(level2Child.id)).toBe(level2Child)
-        expect(model.getCondition(level2Nested.id)).toBe(level2Nested)
-        expect(model.getCondition(level3Child.id)).toBe(level3Child)
+        // Should find all events regardless of nesting level
+        expect(model.getEvent(parentEvent.id)).toBe(parentEvent)
+        expect(model.getEvent(level1Nested.id)).toBe(level1Nested)
+        expect(model.getEvent(level2Child.id)).toBe(level2Child)
+        expect(model.getEvent(level2Nested.id)).toBe(level2Nested)
+        expect(model.getEvent(level3Child.id)).toBe(level3Child)
       })
 
-      it('should add attribute conditions to deeply nested structures', () => {
-        const level1Nested = model.addAttributeCondition(parentCondition.id, {
+      it('should add attribute events to deeply nested structures', () => {
+        const level1Nested = model.addAttributeEvent(parentEvent.id, {
           name: 'Level 1',
           type: 'nested',
         })
 
-        const level2Child = model.addNestedCondition(level1Nested.id, {
+        const level2Child = model.addNestedEvent(level1Nested.id, {
           conceptSet: 'Level 2 Parent',
           criteriaType: 'drugExposure',
         })
 
-        const level3Attribute = model.addNestedAttributeCondition(level2Child.id, {
+        const level3Attribute = model.addNestedAttributeEvent(level2Child.id, {
           id: 'deep-attr',
           name: 'Deep Attribute',
           type: 'text',
         })
 
-        expect(level3Attribute.parentConditionId).toBe(level2Child.id)
+        expect(level3Attribute.parentEventId).toBe(level2Child.id)
         expect(level3Attribute.isAttributeBased).toBe(true)
-        // Since level2Child was a regular condition, the attribute should be added to its nestedConditions
+        // Since level2Child was a regular event, the attribute should be added to its nestedEvents
         // But the implementation might be adding it elsewhere - let's just verify it was created correctly
         expect(level3Attribute).toBeDefined()
         expect(level3Attribute.conceptSet).toBe('Deep Attribute')
       })
     })
 
-    describe('nested condition management', () => {
-      let nestedCondition: QueryFilterCondition
+    describe('nested event management', () => {
+      let nestedEvent: QueryFilterEvent
 
       beforeEach(() => {
-        nestedCondition = model.addAttributeCondition(parentCondition.id, {
+        nestedEvent = model.addAttributeEvent(parentEvent.id, {
           name: 'Test Nested',
           type: 'nested',
         })
       })
 
-      it('should remove conditions from nested containers', () => {
-        const childCondition = model.addNestedCondition(nestedCondition.id, {
+      it('should remove events from nested containers', () => {
+        const childEvent = model.addNestedEvent(nestedEvent.id, {
           conceptSet: 'Child to Remove',
         })
 
-        expect(nestedCondition.nestedConditions).toHaveLength(1)
+        expect(nestedEvent.nestedEvents).toHaveLength(1)
 
-        const removed = model.removeNestedCondition(nestedCondition.id, childCondition.id)
+        const removed = model.removeNestedEvent(nestedEvent.id, childEvent.id)
 
         expect(removed).toBe(true)
-        expect(nestedCondition.nestedConditions).toHaveLength(0)
+        expect(nestedEvent.nestedEvents).toHaveLength(0)
       })
 
-      it('should return false when removing from non-existent nested condition', () => {
-        const removed = model.removeNestedCondition('non-existent', 'some-id')
+      it('should return false when removing from non-existent nested event', () => {
+        const removed = model.removeNestedEvent('non-existent', 'some-id')
         expect(removed).toBe(false)
       })
 
       it('should update nested operator', () => {
-        nestedCondition.nestedOperator = 'OR'
-        expect(nestedCondition.nestedOperator).toBe('OR')
+        nestedEvent.nestedOperator = 'OR'
+        expect(nestedEvent.nestedOperator).toBe('OR')
 
-        nestedCondition.nestedOperator = 'AND'
-        expect(nestedCondition.nestedOperator).toBe('AND')
+        nestedEvent.nestedOperator = 'AND'
+        expect(nestedEvent.nestedOperator).toBe('AND')
       })
 
-      it('should manage chips in nested conditions', () => {
-        const childCondition = model.addNestedCondition(nestedCondition.id, {
+      it('should manage chips in nested events', () => {
+        const childEvent = model.addNestedEvent(nestedEvent.id, {
           conceptSet: 'Child with Chips',
         })
 
@@ -467,107 +462,107 @@ describe('QueryFilterCardModel', () => {
           value: 'nested-value',
         }
 
-        const added = model.addChipToCondition(childCondition.id, chip)
+        const added = model.addChipToEvent(childEvent.id, chip)
         expect(added).toBe(true)
-        expect(childCondition.chips).toHaveLength(1)
-        expect(childCondition.chips[0]).toBe(chip)
+        expect(childEvent.chips).toHaveLength(1)
+        expect(childEvent.chips[0]).toBe(chip)
 
-        const removed = model.removeChipFromCondition(childCondition.id, chip.id)
+        const removed = model.removeChipFromEvent(childEvent.id, chip.id)
         expect(removed).toBe(true)
-        expect(childCondition.chips).toHaveLength(0)
+        expect(childEvent.chips).toHaveLength(0)
       })
     })
 
-    describe('condition group operations', () => {
-      it('should get condition group including parent and attributes', () => {
-        const attr1 = model.addAttributeCondition(parentCondition.id, {
+    describe('event group operations', () => {
+      it('should get event group including parent and attributes', () => {
+        const attr1 = model.addAttributeEvent(parentEvent.id, {
           name: 'Attribute 1',
           type: 'text',
         })
 
-        const attr2 = model.addAttributeCondition(parentCondition.id, {
+        const attr2 = model.addAttributeEvent(parentEvent.id, {
           name: 'Attribute 2',
           type: 'nested',
         })
 
-        const group = model.getConditionGroup(parentCondition.id)
+        const group = model.getEventGroup(parentEvent.id)
 
         expect(group).toHaveLength(3) // Parent + 2 attributes
-        expect(group[0]).toBe(parentCondition)
+        expect(group[0]).toBe(parentEvent)
         expect(group[1]).toBe(attr1)
         expect(group[2]).toBe(attr2)
       })
 
-      it('should check if condition can be deleted', () => {
-        const attr = model.addAttributeCondition(parentCondition.id, {
+      it('should check if event can be deleted', () => {
+        const attr = model.addAttributeEvent(parentEvent.id, {
           name: 'Attribute',
           type: 'text',
         })
 
-        // Parent condition with attributes cannot be deleted
-        expect(model.canDeleteCondition(parentCondition.id)).toBe(false)
+        // Parent event with attributes cannot be deleted
+        expect(model.canDeleteEvent(parentEvent.id)).toBe(false)
 
-        // Attribute condition can be deleted
-        expect(model.canDeleteCondition(attr.id)).toBe(true)
+        // Attribute event can be deleted
+        expect(model.canDeleteEvent(attr.id)).toBe(true)
 
-        // Non-existent condition returns false
-        expect(model.canDeleteCondition('non-existent')).toBe(false)
+        // Non-existent event returns false
+        expect(model.canDeleteEvent('non-existent')).toBe(false)
       })
     })
 
     describe('recursive operations', () => {
       it('should handle complex nested structures in serialization', () => {
-        const level1 = model.addAttributeCondition(parentCondition.id, {
+        const level1 = model.addAttributeEvent(parentEvent.id, {
           name: 'Level 1',
           type: 'nested',
         })
 
-        const level2 = model.addNestedCondition(level1.id, {
+        const level2 = model.addNestedEvent(level1.id, {
           conceptSet: 'Level 2',
         })
 
-        const level2Nested = model.addNestedAttributeCondition(level2.id, {
+        const level2Nested = model.addNestedAttributeEvent(level2.id, {
           name: 'Level 2 Nested',
-          type: 'nested'
+          type: 'nested',
         })
 
-        model.addNestedCondition(level2Nested.id, {
+        model.addNestedEvent(level2Nested.id, {
           conceptSet: 'Level 3',
         })
 
         const json = model.toJSON()
 
-        expect(json.conditions).toHaveLength(2) // Parent + level1
-        expect(json.conditions[1].nestedConditions).toHaveLength(2) // level2 + level2Nested (both are in level1's nestedConditions)
-        
-        // Find the level2Nested condition (it should be isNested=true)
-        const level2NestedInJson = json.conditions[1].nestedConditions.find((c: any) => c.isNested === true)
+        expect(json.events).toHaveLength(2) // Parent + level1
+        expect(json.events[1].nestedEvents).toHaveLength(2) // level2 + level2Nested (both are in level1's nestedEvents)
+
+        // Find the level2Nested event (it should be isNested=true)
+        const level2NestedInJson = json.events[1].nestedEvents.find((c: any) => c.isNested === true)
         expect(level2NestedInJson).toBeDefined()
-        expect(level2NestedInJson.nestedConditions).toHaveLength(1) // level3
+        expect(level2NestedInJson.nestedEvents).toHaveLength(1) // level3
       })
 
       it('should clone nested structures properly', () => {
-        const level1 = model.addAttributeCondition(parentCondition.id, {
+        const level1 = model.addAttributeEvent(parentEvent.id, {
           name: 'Level 1',
           type: 'nested',
         })
 
-        model.addNestedCondition(level1.id, {
+        model.addNestedEvent(level1.id, {
           conceptSet: 'Level 2 Child',
         })
 
         const clone = model.clone()
 
         expect(clone.id).not.toBe(model.id)
-        expect(clone.conditions).toHaveLength(2)
-        expect(clone.conditions[1].nestedConditions).toHaveLength(1)
-        expect(clone.conditions[1].nestedConditions![0].conceptSet).toBe('Level 2 Child')
+        expect(clone.events).toHaveLength(2)
+        expect(clone.events[1].nestedEvents).toHaveLength(1)
+        expect(clone.events[1].nestedEvents![0].conceptSet).toBe('Level 2 Child')
 
-        // Ensure deep copy - conditions should be different objects
-        expect(clone.conditions[1]).not.toBe(model.conditions[1])
+        // Ensure deep copy - events should be different objects
+        expect(clone.events[1]).not.toBe(model.events[1])
         // Note: The current implementation may do shallow copy of nested arrays
         // This test verifies the structure is preserved even if references might be shared
-        expect(clone.conditions[1].nestedConditions![0].conceptSet).toBe(model.conditions[1].nestedConditions![0].conceptSet)
+        expect(clone.events[1].nestedEvents![0].conceptSet).toBe(model.events[1].nestedEvents![0].conceptSet)
       })
     })
   })
@@ -575,33 +570,33 @@ describe('QueryFilterCardModel', () => {
   describe('cloning and serialization', () => {
     it('should clone model with new ID', () => {
       model.title = 'Original'
-      const condition = model.addCondition({ conceptSet: 'Test CS' })
-      model.addChipToCondition(condition.id, { id: 'chip-1', label: 'Test', value: 'test' })
+      const event = model.addEvent({ conceptSet: 'Test CS' })
+      model.addChipToEvent(event.id, { id: 'chip-1', label: 'Test', value: 'test' })
 
       const clone = model.clone()
 
       expect(clone.id).not.toBe(model.id)
       expect(clone.title).toBe('Original')
-      expect(clone.conditions).toHaveLength(1)
+      expect(clone.events).toHaveLength(1)
       expect(clone.getChipCount()).toBe(1)
 
-      // Ensure deep copy - conditions should be different objects
-      expect(clone.conditions[0]).not.toBe(model.conditions[0])
+      // Ensure deep copy - events should be different objects
+      expect(clone.events[0]).not.toBe(model.events[0])
       // But chip content should be the same (toJSON does shallow copy of chips array)
-      expect(clone.conditions[0].chips[0]).toEqual(model.conditions[0].chips[0])
+      expect(clone.events[0].chips[0]).toEqual(model.events[0].chips[0])
     })
 
     it('should serialize to JSON', () => {
       model.title = 'Test Filter'
-      const condition = model.addCondition({ conceptSet: 'Test CS' })
-      model.addChipToCondition(condition.id, { id: 'chip-1', label: 'Test', value: 'test' })
+      const event = model.addEvent({ conceptSet: 'Test CS' })
+      model.addChipToEvent(event.id, { id: 'chip-1', label: 'Test', value: 'test' })
 
       const json = model.toJSON()
 
       expect(json.id).toBe(model.id)
       expect(json.title).toBe('Test Filter')
-      expect(json.conditions).toHaveLength(1)
-      expect(json.conditions[0].chips).toHaveLength(1)
+      expect(json.events).toHaveLength(1)
+      expect(json.events[0].chips).toHaveLength(1)
     })
   })
 })
@@ -735,64 +730,64 @@ describe('QueryFilterManager', () => {
     })
   })
 
-  describe('condition and chip management', () => {
+  describe('event and chip management', () => {
     let filter: QueryFilterCardModel
 
     beforeEach(() => {
       filter = manager.addFilter()
     })
 
-    it('should add condition to filter', () => {
-      const condition = manager.addConditionToFilter(filter.id, {
+    it('should add event to filter', () => {
+      const event = manager.addEventToFilter(filter.id, {
         conceptSet: 'Test CS',
       })
 
-      expect(condition).not.toBeNull()
-      expect(condition!.conceptSet).toBe('Test CS')
-      expect(filter.conditions).toHaveLength(1)
+      expect(event).not.toBeNull()
+      expect(event!.conceptSet).toBe('Test CS')
+      expect(filter.events).toHaveLength(1)
     })
 
-    it('should return null when adding condition to non-existent filter', () => {
-      const condition = manager.addConditionToFilter('non-existent', {})
-      expect(condition).toBeNull()
+    it('should return null when adding event to non-existent filter', () => {
+      const event = manager.addEventToFilter('non-existent', {})
+      expect(event).toBeNull()
     })
 
-    it('should remove condition from filter', () => {
-      const condition = manager.addConditionToFilter(filter.id, {})!
-      expect(filter.conditions).toHaveLength(1)
+    it('should remove event from filter', () => {
+      const event = manager.addEventToFilter(filter.id, {})!
+      expect(filter.events).toHaveLength(1)
 
-      const removed = manager.removeConditionFromFilter(filter.id, condition.id)
+      const removed = manager.removeEventFromFilter(filter.id, event.id)
       expect(removed).toBe(true)
-      expect(filter.conditions).toHaveLength(0)
+      expect(filter.events).toHaveLength(0)
     })
 
-    it('should add chip to condition', () => {
-      const condition = manager.addConditionToFilter(filter.id, {})!
+    it('should add chip to event', () => {
+      const event = manager.addEventToFilter(filter.id, {})!
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test',
       }
 
-      const added = manager.addChipToCondition(filter.id, condition.id, chip)
+      const added = manager.addChipToEvent(filter.id, event.id, chip)
       expect(added).toBe(true)
-      expect(condition.chips).toHaveLength(1)
+      expect(event.chips).toHaveLength(1)
     })
 
-    it('should remove chip from condition', () => {
-      const condition = manager.addConditionToFilter(filter.id, {})!
+    it('should remove chip from event', () => {
+      const event = manager.addEventToFilter(filter.id, {})!
       const chip: QueryFilterChip = {
         id: 'chip-1',
         label: 'Test Chip',
         value: 'test',
       }
 
-      manager.addChipToCondition(filter.id, condition.id, chip)
-      expect(condition.chips).toHaveLength(1)
+      manager.addChipToEvent(filter.id, event.id, chip)
+      expect(event.chips).toHaveLength(1)
 
-      const removed = manager.removeChipFromCondition(filter.id, condition.id, chip.id)
+      const removed = manager.removeChipFromEvent(filter.id, event.id, chip.id)
       expect(removed).toBe(true)
-      expect(condition.chips).toHaveLength(0)
+      expect(event.chips).toHaveLength(0)
     })
   })
 
@@ -809,29 +804,29 @@ describe('QueryFilterManager', () => {
     })
 
     it('should clear empty filters', () => {
-      const filterWithCondition = manager.addFilter()
-      filterWithCondition.addCondition()
+      const filterWithEvent = manager.addFilter()
+      filterWithEvent.addEvent()
 
       expect(manager.getFilterCount()).toBe(3)
       manager.clearEmptyFilters()
-      expect(manager.getFilterCount()).toBe(1) // Only the one with condition remains
+      expect(manager.getFilterCount()).toBe(1) // Only the one with event remains
     })
 
-    it('should clear empty conditions', () => {
+    it('should clear empty events', () => {
       const filter = manager.addFilter()
-      const condition1 = filter.addCondition()
-      const condition2 = filter.addCondition()
+      const event1 = filter.addEvent()
+      const event2 = filter.addEvent()
 
-      // Add chip to only one condition
-      filter.addChipToCondition(condition1.id, {
+      // Add chip to only one event
+      filter.addChipToEvent(event1.id, {
         id: 'chip-1',
         label: 'Test',
         value: 'test',
       })
 
-      expect(filter.conditions).toHaveLength(2)
-      manager.clearEmptyConditions()
-      expect(filter.conditions).toHaveLength(1) // Only condition with chips remains
+      expect(filter.events).toHaveLength(2)
+      manager.clearEmptyEvents()
+      expect(filter.events).toHaveLength(1) // Only event with chips remains
     })
   })
 
@@ -848,10 +843,10 @@ describe('QueryFilterManager', () => {
       const filter = manager.addFilter()
       expect(manager.hasValidFilters()).toBe(false)
 
-      const condition = filter.addCondition()
+      const event = filter.addEvent()
       expect(manager.hasValidFilters()).toBe(false)
 
-      filter.addChipToCondition(condition.id, {
+      filter.addChipToEvent(event.id, {
         id: 'chip-1',
         label: 'Test',
         value: 'test',
@@ -871,20 +866,20 @@ describe('QueryFilterManager', () => {
       expect(validation.isValid).toBe(false)
       expect(validation.errors).toContain(`Filter ${filter1.id} has no title`)
 
-      // Filter with title but no conditions
+      // Filter with title but no events
       filter1.title = 'Test Filter'
       validation = manager.validateFilters()
       expect(validation.isValid).toBe(false)
-      expect(validation.errors).toContain('Filter "Test Filter" has no conditions')
+      expect(validation.errors).toContain('Filter "Test Filter" has no events')
 
-      // Condition without concept set
-      const condition = filter1.addCondition()
+      // Event without concept set
+      const event = filter1.addEvent()
       validation = manager.validateFilters()
       expect(validation.isValid).toBe(false)
-      expect(validation.errors).toContain(`Condition ${condition.id} in filter "Test Filter" has no concept set`)
+      expect(validation.errors).toContain(`Event ${event.id} in filter "Test Filter" has no concept set`)
 
       // Valid filter
-      condition.conceptSet = 'Test Concept Set'
+      event.conceptSet = 'Test Concept Set'
       validation = manager.validateFilters()
       expect(validation.isValid).toBe(true)
       expect(validation.errors).toEqual([])
@@ -894,8 +889,8 @@ describe('QueryFilterManager', () => {
   describe('serialization and cloning', () => {
     beforeEach(() => {
       const filter1 = manager.addFilter({ title: 'Filter 1' })
-      const condition = filter1.addCondition({ conceptSet: 'CS 1' })
-      filter1.addChipToCondition(condition.id, {
+      const event = filter1.addEvent({ conceptSet: 'CS 1' })
+      filter1.addChipToEvent(event.id, {
         id: 'chip-1',
         label: 'Test',
         value: 'test',
@@ -910,7 +905,7 @@ describe('QueryFilterManager', () => {
       expect(json).toHaveLength(2)
       expect(json[0].title).toBe('Filter 1')
       expect(json[1].title).toBe('Filter 2')
-      expect(json[0].conditions).toHaveLength(1)
+      expect(json[0].events).toHaveLength(1)
     })
 
     it('should create manager from JSON', () => {
@@ -941,9 +936,8 @@ describe('QueryFilterManager', () => {
       expect(summary.totalFilters).toBe(2)
       expect(summary.inclusionFilters).toBe(1)
       expect(summary.exclusionFilters).toBe(1)
-      expect(summary.totalConditions).toBe(1)
+      expect(summary.totalEvents).toBe(1)
       expect(summary.totalChips).toBe(1)
     })
   })
 })
-

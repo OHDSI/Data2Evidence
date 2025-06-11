@@ -8,7 +8,7 @@ export default {
 import { ref, computed, reactive, onMounted } from 'vue'
 import QueryFilterCard from './QueryFilterCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import { QueryFilterCardModel, QueryFilterCondition, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 const activeTab = ref('all')
@@ -21,10 +21,10 @@ const initializeSampleData = () => {
   const diabetesFilter = new QueryFilterCardModel({
     title: 'Diabetes Type 2',
     type: 'inclusion',
-    conditions: [
+    events: [
       {
-        id: 'cond1',
-        conceptSet: 'Condition concept set',
+        id: 'event1',
+        conceptSet: 'Event concept set',
         chips: [{ id: 'chip1', label: 'Diabetes Type 2', value: 'E11' }],
       },
     ],
@@ -34,15 +34,15 @@ const initializeSampleData = () => {
     title: 'Cardiovascular disease',
     type: 'inclusion',
     operator: 'OR', // Set to OR so we can see the ANY sidebar
-    conditions: [
+    events: [
       {
-        id: 'cond2',
-        conceptSet: 'Condition concept set',
+        id: 'event2',
+        conceptSet: 'Event concept set',
         chips: [{ id: 'chip2', label: 'Atrial Fib A', value: 'I48.0' }],
       },
       {
-        id: 'cond3',
-        conceptSet: 'Condition concept set',
+        id: 'event3',
+        conceptSet: 'Event concept set',
         chips: [{ id: 'chip3', label: 'Atrial Fib B', value: 'I48.1' }],
       },
     ],
@@ -76,8 +76,8 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   const newFilter = new QueryFilterCardModel({
     title: option.title.replace('Add ', ''), // Remove "Add" prefix for title
     type: 'inclusion',
-    conditions: [{
-      id: `cond_${Date.now()}`,
+    events: [{
+      id: `event_${Date.now()}`,
       conceptSet: `${option.title.replace('Add ', '')} concept set`,
       chips: [],
       criteriaType: option.id, // Store the criteria type for attributes
@@ -93,106 +93,106 @@ const addInclusionFilter = () => {
   const newFilter = new QueryFilterCardModel({
     title: 'New Inclusion Filter',
     type: 'inclusion',
-    conditions: [],
+    events: [],
   })
   filterManager.addFilter(newFilter)
 }
 
-const handleAddCondition = (filterId: string, conditionId?: string) => {
-  // Only handle this for main filter actions, not for nested conditions
-  if (conditionId) {
-    // This is a nested condition being added - ignore it since it's handled internally
+const handleAddEvent = (filterId: string, eventId?: string) => {
+  // Only handle this for main filter actions, not for nested events
+  if (eventId) {
+    // This is a nested event being added - ignore it since it's handled internally
     return
   }
   
   const filter = filterManager.getFilter(filterId)
   if (filter) {
-    const newCondition: QueryFilterCondition = {
-      id: `cond_${Date.now()}`,
-      conceptSet: 'Condition concept set',
+    const newEvent: QueryFilterEvent = {
+      id: `event_${Date.now()}`,
+      conceptSet: 'Event concept set',
       chips: [],
       criteriaType: 'conditionOccurrence', // Default to condition occurrence
       selectedAttributes: []
     }
-    filter.addCondition(newCondition)
+    filter.addEvent(newEvent)
   }
 }
 
-// Handle criteria selection for existing filters (add condition to filter)
+// Handle criteria selection for existing filters (add event to filter)
 const handleCriteriaSelectedForFilter = (filterId: string, option: CriteriaOption) => {
   const filter = filterManager.getFilter(filterId)
   if (filter) {
-    const newCondition: QueryFilterCondition = {
-      id: `cond_${Date.now()}`,
+    const newEvent: QueryFilterEvent = {
+      id: `event_${Date.now()}`,
       conceptSet: `${option.title.replace('Add ', '')} concept set`,
       chips: [],
       criteriaType: option.id,
       selectedAttributes: []
     }
-    filter.addCondition(newCondition)
+    filter.addEvent(newEvent)
   }
 }
 
-const handleEditCondition = (filterId: string, conditionId: string) => {
-  console.log('Edit condition:', filterId, conditionId)
+const handleEditEvent = (filterId: string, eventId: string) => {
+  console.log('Edit event:', filterId, eventId)
   // Would open edit dialog
 }
 
-const handleDuplicateCondition = (filterId: string, conditionId: string) => {
+const handleDuplicateEvent = (filterId: string, eventId: string) => {
   const filter = filterManager.getFilter(filterId)
   if (filter) {
-    const condition = filter.conditions.find(c => c.id === conditionId)
-    if (condition) {
-      const duplicated: QueryFilterCondition = {
-        id: `cond_${Date.now()}`,
-        conceptSet: condition.conceptSet,
-        chips: condition.chips.map(chip => ({
+    const event = filter.events.find(e => e.id === eventId)
+    if (event) {
+      const duplicated: QueryFilterEvent = {
+        id: `event_${Date.now()}`,
+        conceptSet: event.conceptSet,
+        chips: event.chips.map(chip => ({
           ...chip,
-          id: `chip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `chip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         })),
       }
-      filter.addCondition(duplicated)
+      filter.addEvent(duplicated)
     }
   }
 }
 
-const handleRemoveCondition = (filterId: string, conditionId: string) => {
+const handleRemoveEvent = (filterId: string, eventId: string) => {
   const filter = filterManager.getFilter(filterId)
   if (filter) {
-    filter.removeCondition(conditionId)
+    filter.removeEvent(eventId)
   }
 }
 
-const handleAddChip = (filterId: string, conditionId: string) => {
-  console.log('Add chip to condition:', filterId, conditionId)
+const handleAddChip = (filterId: string, eventId: string) => {
+  console.log('Add chip to event:', filterId, eventId)
   // Would open chip selection dialog
   // For demo, add a sample chip
   const filter = filterManager.getFilter(filterId)
   if (filter) {
     const sampleChip: QueryFilterChip = {
       id: `chip_${Date.now()}`,
-      label: 'New Condition',
+      label: 'New Event',
       value: 'NEW001',
     }
-    filter.addChipToCondition(conditionId, sampleChip)
+    filter.addChipToEvent(eventId, sampleChip)
   }
 }
 
-const handleRemoveChip = (filterId: string, conditionId: string, chipId: string) => {
-  console.log('Chip removed:', filterId, conditionId, chipId)
+const handleRemoveChip = (filterId: string, eventId: string, chipId: string) => {
+  console.log('Chip removed:', filterId, eventId, chipId)
 }
 
-const handleShowMenu = (filterId: string, conditionId: string) => {
-  console.log('Show menu for condition:', filterId, conditionId)
+const handleShowMenu = (filterId: string, eventId: string) => {
+  console.log('Show menu for event:', filterId, eventId)
   // Would show context menu
 }
 
-const handleAttributeSelected = (filterId: string, conditionId: string, attribute: any) => {
-  console.log('Attribute selected:', filterId, conditionId, attribute)
+const handleAttributeSelected = (filterId: string, eventId: string, attribute: any) => {
+  console.log('Attribute selected:', filterId, eventId, attribute)
 }
 
-const handleAttributeRemoved = (filterId: string, conditionId: string, attributeId: string) => {
-  console.log('Attribute removed:', filterId, conditionId, attributeId)
+const handleAttributeRemoved = (filterId: string, eventId: string, attributeId: string) => {
+  console.log('Attribute removed:', filterId, eventId, attributeId)
 }
 
 const applyFilters = () => {
@@ -246,13 +246,13 @@ const convertToAtlasFormat = () => {
   let conceptSetId = 0
 
   filters.forEach(filter => {
-    filter.conditions.forEach(condition => {
-      if (condition.chips.length > 0) {
+    filter.events.forEach(event => {
+      if (event.chips.length > 0) {
         conceptSets.push({
           id: conceptSetId++,
-          name: condition.conceptSet || `Concept Set ${conceptSetId}`,
+          name: event.conceptSet || `Concept Set ${conceptSetId}`,
           expression: {
-            items: condition.chips.map(chip => ({
+            items: event.chips.map(chip => ({
               concept: {
                 CONCEPT_CLASS_ID: 'Clinical Finding',
                 CONCEPT_CODE: chip.value,
@@ -312,10 +312,10 @@ const convertToAtlasFormat = () => {
       name: filter.title,
       expression: {
         Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-        CriteriaList: filter.conditions.map((condition, condIndex) => ({
+        CriteriaList: filter.events.map((event, eventIndex) => ({
           Criteria: {
             ConditionOccurrence: {
-              CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet),
+              CodesetId: conceptSets.findIndex(cs => cs.name === event.conceptSet),
             },
           },
           StartWindow: {
@@ -342,9 +342,9 @@ const convertToAtlasFormat = () => {
         Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
         CriteriaList: [
           {
-            CriteriaList: filter.conditions.map((condition, condIndex) => ({
+            CriteriaList: filter.events.map((event, eventIndex) => ({
               ConditionOccurrence: {
-                CodesetId: conceptSets.findIndex(cs => cs.name === condition.conceptSet),
+                CodesetId: conceptSets.findIndex(cs => cs.name === event.conceptSet),
               },
             })),
           },
@@ -431,16 +431,15 @@ const handleRemoveFilter = (filterId: string) => {
               :hide-group-label="true"
               :show-add-event-in-any="true"
               @update:filter="updateFilter"
-              @add-event="handleAddCondition(filter.id)"
-              @add-condition="handleAddCondition"
-              @edit-condition="handleEditCondition"
-              @duplicate-condition="handleDuplicateCondition"
-              @remove-condition="handleRemoveCondition"
+              @add-event="handleAddEvent(filter.id)"
+              @edit-event="handleEditEvent"
+              @duplicate-event="handleDuplicateEvent"
+              @remove-event="handleRemoveEvent"
               @add-chip="handleAddChip"
               @remove-chip="handleRemoveChip"
               @show-menu="handleShowMenu"
               @remove-filter="handleRemoveFilter"
-              @add-any-event="handleAddCondition(filter.id)"
+              @add-any-event="handleAddEvent(filter.id)"
               @attribute-selected="handleAttributeSelected"
               @attribute-removed="handleAttributeRemoved"
             />

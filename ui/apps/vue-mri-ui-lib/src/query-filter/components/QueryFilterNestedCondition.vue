@@ -6,22 +6,22 @@ export default {
 
 <script setup lang="ts">
 import { computed, defineProps, defineEmits } from 'vue'
-import { QueryFilterCondition } from '../models/QueryFilterModel'
+import { QueryFilterEvent } from '../models/QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import { type AttributeConfig, type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 const props = defineProps<{
-  condition: QueryFilterCondition
-  parentConditionId?: string
+  event: QueryFilterEvent
+  parentEventId?: string
   level?: number
 }>()
 
 const emit = defineEmits([
-  'edit-condition',
-  'duplicate-condition',
-  'remove-condition',
+  'edit-event',
+  'duplicate-event',
+  'remove-event',
   'add-chip',
   'remove-chip',
   'attribute-selected',
@@ -31,121 +31,121 @@ const emit = defineEmits([
 
 const currentLevel = computed(() => props.level || 0)
 
-// Group nested conditions by their parent relationships
-const nestedConditionGroups = computed(() => {
-  if (!props.condition.nestedConditions) return []
+// Group nested events by their parent relationships
+const nestedEventGroups = computed(() => {
+  if (!props.event.nestedEvents) return []
 
   const groups: Array<{
-    parent: QueryFilterCondition
-    attributes: QueryFilterCondition[]
+    parent: QueryFilterEvent
+    attributes: QueryFilterEvent[]
   }> = []
 
-  // Find all parent conditions (non-attribute-based) in the nested structure
-  const parentConditions = props.condition.nestedConditions.filter(c => !c.isAttributeBased)
+  // Find all parent events (non-attribute-based) in the nested structure
+  const parentEvents = props.event.nestedEvents.filter(e => !e.isAttributeBased)
 
-  parentConditions.forEach(parent => {
-    const attributeConditions =
-      props.condition.nestedConditions?.filter(c => c.isAttributeBased && c.parentConditionId === parent.id) || []
+  parentEvents.forEach(parent => {
+    const attributeEvents =
+      props.event.nestedEvents?.filter(e => e.isAttributeBased && e.parentEventId === parent.id) || []
 
     groups.push({
       parent,
-      attributes: attributeConditions,
+      attributes: attributeEvents,
     })
   })
 
   return groups
 })
 
-// Get all conditions that are related to a nested condition (for AttributesDropdown)
-const getNestedConditionGroup = (conditionId: string) => {
-  const relatedConditions: QueryFilterCondition[] = []
+// Get all events that are related to a nested event (for AttributesDropdown)
+const getNestedEventGroup = (eventId: string) => {
+  const relatedEvents: QueryFilterEvent[] = []
 
-  if (props.condition.nestedConditions) {
-    props.condition.nestedConditions.forEach(nestedCond => {
-      if (nestedCond.id === conditionId) {
-        relatedConditions.push(nestedCond)
+  if (props.event.nestedEvents) {
+    props.event.nestedEvents.forEach(nestedEvent => {
+      if (nestedEvent.id === eventId) {
+        relatedEvents.push(nestedEvent)
       }
-      if (nestedCond.isAttributeBased && nestedCond.parentConditionId === conditionId) {
-        relatedConditions.push(nestedCond)
+      if (nestedEvent.isAttributeBased && nestedEvent.parentEventId === eventId) {
+        relatedEvents.push(nestedEvent)
       }
     })
   }
 
-  return relatedConditions
+  return relatedEvents
 }
 
 // Event handlers - these all bubble up to the parent component
-const handleEditCondition = (conditionId: string) => {
-  emit('edit-condition', conditionId)
+const handleEditEvent = (eventId: string) => {
+  emit('edit-event', eventId)
 }
 
-const handleDuplicateCondition = (conditionId: string) => {
-  emit('duplicate-condition', conditionId)
+const handleDuplicateEvent = (eventId: string) => {
+  emit('duplicate-event', eventId)
 }
 
-const handleRemoveCondition = (conditionId: string) => {
-  emit('remove-condition', props.condition.id, conditionId)
+const handleRemoveEvent = (eventId: string) => {
+  emit('remove-event', props.event.id, eventId)
 }
 
-const handleAddChip = (conditionId: string) => {
-  emit('add-chip', conditionId)
+const handleAddChip = (eventId: string) => {
+  emit('add-chip', eventId)
 }
 
-const handleRemoveChip = (conditionId: string, chipId: string) => {
-  emit('remove-chip', conditionId, chipId)
+const handleRemoveChip = (eventId: string, chipId: string) => {
+  emit('remove-chip', eventId, chipId)
 }
 
-const handleAttributeSelected = (conditionId: string, attribute: AttributeConfig & { category: string }) => {
-  emit('attribute-selected', conditionId, attribute)
+const handleAttributeSelected = (eventId: string, attribute: AttributeConfig & { category: string }) => {
+  emit('attribute-selected', eventId, attribute)
 }
 
-const handleAttributeRemoved = (conditionId: string, attributeId: string) => {
-  emit('attribute-removed', conditionId, attributeId)
+const handleAttributeRemoved = (eventId: string, attributeId: string) => {
+  emit('attribute-removed', eventId, attributeId)
 }
 
 const handleCriteriaSelected = (option: CriteriaOption) => {
-  emit('criteria-selected', props.condition.id, option)
+  emit('criteria-selected', props.event.id, option)
 }
 </script>
 
 <template>
-  <div class="query-filter-nested-condition" :class="`query-filter-nested-condition--level-${currentLevel}`">
-    <!-- Handle regular nested conditions (not deeply nested) -->
-    <template v-if="!condition.isNested">
-      <div>{{ condition.id }}</div>
-      <div class="query-filter-nested-condition__header">
-        <span class="query-filter-nested-condition__label">
-          {{ condition.conceptSet || 'Nested Condition' }}
+  <div class="query-filter-nested-event" :class="`query-filter-nested-event--level-${currentLevel}`">
+    <!-- Handle regular nested events (not deeply nested) -->
+    <template v-if="!event.isNested">
+      <div>{{ event.id }}</div>
+      <div class="query-filter-nested-event__header">
+        <span class="query-filter-nested-event__label">
+          {{ event.conceptSet || 'Nested Event' }}
         </span>
-        <div class="query-filter-nested-condition__actions">
+        <div class="query-filter-nested-event__actions">
           <button
             class="btn-icon"
-            @click="handleEditCondition(condition.id)"
-            aria-label="Edit nested condition"
-            title="Edit nested condition"
+            @click="handleEditEvent(event.id)"
+            aria-label="Edit nested event"
+            title="Edit nested event"
           >
             <i class="icon icon-pencil"></i>
           </button>
           <button
             class="btn-icon"
-            @click="handleDuplicateCondition(condition.id)"
-            aria-label="Duplicate nested condition"
-            title="Duplicate nested condition"
+            @click="handleDuplicateEvent(event.id)"
+            aria-label="Duplicate nested event"
+            title="Duplicate nested event"
           >
             <i class="icon icon-copy"></i>
           </button>
           <attributes-dropdown
-            :criteria-type="condition.criteriaType || 'conditionOccurrence'"
-            :condition-id="condition.id"
-            :all-conditions="getNestedConditionGroup(condition.id)"
-            @attribute-selected="attr => handleAttributeSelected(condition.id, attr)"
-            @attribute-removed="attrId => handleAttributeRemoved(condition.id, attrId)"
+            :criteria-type="event.criteriaType || 'conditionOccurrence'"
+            :event-id="event.id"
+            :all-events="getNestedEventGroup(event.id)"
+            @attribute-selected="attr => handleAttributeSelected(event.id, attr)"
+            @attribute-removed="attrId => handleAttributeRemoved(event.id, attrId)"
           />
           <button
-            class="btn-remove-condition"
-            @click="handleRemoveCondition(condition.id)"
-            aria-label="Remove nested condition"
-            title="Remove nested condition"
+            class="btn-remove-event"
+            @click="handleRemoveEvent(event.id)"
+            aria-label="Remove nested event"
+            title="Remove nested event"
           >
             ×
           </button>
@@ -154,23 +154,23 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
 
       <div class="query-filter-nested-condition__chips">
         <query-filter-chip
-          v-for="chip in condition.chips"
+          v-for="chip in event.chips"
           :key="chip.id"
           :chip="chip"
           :removable="true"
-          @remove="handleRemoveChip(condition.id, chip.id)"
+          @remove="handleRemoveChip(event.id, chip.id)"
         />
-        <button class="btn-add-chip" @click="handleAddChip(condition.id)" aria-label="Add filter">
+        <button class="btn-add-chip" @click="handleAddChip(event.id)" aria-label="Add filter">
           <i class="icon icon-plus"></i>
         </button>
       </div>
     </template>
 
-    <!-- Handle deeply nested conditions (recursive case) -->
+    <!-- Handle deeply nested events (recursive case) -->
     <template v-else>
-      <div class="query-filter-nested-condition__nested-content">
+      <div class="query-filter-nested-event__nested-content">
         <div>JEROME</div>
-        <div>{{ condition.id }}</div>
+        <div>{{ event.id }}</div>
         <!-- Add event button for nested criteria -->
         <div class="nested-add-event-container">
           <criteria-selector-dropdown
@@ -180,27 +180,27 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
           />
         </div>
 
-        <!-- Recursive rendering of nested conditions -->
+        <!-- Recursive rendering of nested events -->
         <query-filter-nested-condition
-          v-for="nestedCondition in condition.nestedConditions"
-          :key="nestedCondition.id"
-          :condition="nestedCondition"
-          :parent-condition-id="condition.id"
+          v-for="nestedEvent in event.nestedEvents"
+          :key="nestedEvent.id"
+          :event="nestedEvent"
+          :parent-event-id="event.id"
           :level="currentLevel + 1"
-          :class="{ 'query-filter-nested-condition--attribute': nestedCondition.isAttributeBased }"
-          @edit-condition="handleEditCondition"
-          @duplicate-condition="handleDuplicateCondition"
-          @remove-condition="handleRemoveCondition"
+          :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
+          @edit-event="handleEditEvent"
+          @duplicate-event="handleDuplicateEvent"
+          @remove-event="handleRemoveEvent"
           @add-chip="handleAddChip"
           @remove-chip="handleRemoveChip"
-          @attribute-selected="(conditionId, attribute) => emit('attribute-selected', conditionId, attribute)"
-          @attribute-removed="(conditionId, attributeId) => emit('attribute-removed', conditionId, attributeId)"
+          @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
+          @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
           @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
         />
 
         <!-- Empty state for nested criteria -->
-        <div v-if="!condition.nestedConditions?.length" class="nested-empty-state">
-          <p>No nested conditions added yet</p>
+        <div v-if="!event.nestedEvents?.length" class="nested-empty-state">
+          <p>No nested events added yet</p>
         </div>
       </div>
     </template>
@@ -208,7 +208,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
 </template>
 
 <style lang="scss" scoped>
-.query-filter-nested-condition {
+.query-filter-nested-event {
   &--level-0 {
     margin-left: 0;
   }
@@ -227,14 +227,14 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
 
   // Add more levels as needed
   &--attribute {
-    .query-filter-nested-condition__label {
+    .query-filter-nested-event__label {
       font-style: italic;
       color: #666;
     }
   }
 }
 
-.query-filter-nested-condition__header {
+.query-filter-nested-event__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -245,7 +245,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   margin-bottom: 0.5rem;
 }
 
-.query-filter-nested-condition__label {
+.query-filter-nested-event__label {
   font-weight: 500;
   color: #333;
 
@@ -255,13 +255,13 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   }
 }
 
-.query-filter-nested-condition__actions {
+.query-filter-nested-event__actions {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.query-filter-nested-condition__chips {
+.query-filter-nested-event__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -269,7 +269,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   margin-bottom: 1rem;
 }
 
-.query-filter-nested-condition__nested-content {
+.query-filter-nested-event__nested-content {
   padding: 1rem;
   border: 1px dashed #ccc;
   border-radius: 4px;
@@ -299,7 +299,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   }
 }
 
-.btn-remove-condition {
+.btn-remove-event {
   background: none;
   border: none;
   color: #dc3545;

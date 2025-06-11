@@ -234,7 +234,7 @@
   }
 }
 
-.query-filter-condition-group {
+.query-filter-event-group {
   position: relative;
   margin-bottom: 8px;
 
@@ -242,7 +242,7 @@
     margin-bottom: 0;
   }
 
-  .query-filter-condition__at-least-group {
+  .query-filter-event__at-least-group {
     position: absolute;
     left: 0;
     top: 0;
@@ -266,7 +266,7 @@
   }
 }
 
-.query-filter-condition {
+.query-filter-event {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0 6px 6px 0;
@@ -280,17 +280,17 @@
   }
 
   &--parent {
-    // Parent condition styles
+    // Parent event styles
     background: #f9fafb;
   }
 
   &--attribute {
-    // Attribute condition styles - slightly different to distinguish
+    // Attribute event styles - slightly different to distinguish
     background: #f3f4f6;
   }
 
   &--nested {
-    // Nested condition styles
+    // Nested event styles
     background: #fefce8;
     border: 2px solid #facc15;
   }
@@ -386,7 +386,7 @@
   }
 
   &--attribute {
-    // Nested attribute condition style
+    // Nested attribute event style
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     margin-left: 16px;
@@ -506,7 +506,7 @@
   }
 }
 
-.btn-remove-condition {
+.btn-remove-event {
   background: none;
   border: none;
   padding: 6px;
