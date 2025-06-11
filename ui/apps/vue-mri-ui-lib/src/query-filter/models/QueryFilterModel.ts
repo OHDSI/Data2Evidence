@@ -816,26 +816,36 @@ export class QueryFilterManager {
         name: filter.title,
         expression: {
           Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-          CriteriaList: filter.events.map(event => ({
-            Criteria: {
-              ConditionOccurrence: {
-                CodesetId: conceptSets.findIndex(cs => cs.name === event.conceptSet),
+          CriteriaList: filter.events.map(event => {
+            const criteria: any = {
+              Criteria: {
+                ConditionOccurrence: {},
               },
-            },
-            StartWindow: {
-              Start: {
-                Coeff: -1,
+              StartWindow: {
+                Start: {
+                  Coeff: -1,
+                },
+                End: {
+                  Coeff: 1,
+                },
+                UseEventEnd: false,
               },
-              End: {
-                Coeff: 1,
+              Occurrence: {
+                Type: 2,
+                Count: 1,
               },
-              UseEventEnd: false,
-            },
-            Occurrence: {
-              Type: 2,
-              Count: 1,
-            },
-          })),
+            }
+
+            // Only add CodesetId if the event has chips (i.e., a corresponding concept set exists)
+            if (event.chips.length > 0) {
+              const codesetIndex = conceptSets.findIndex(cs => cs.name === event.conceptSet)
+              if (codesetIndex >= 0) {
+                criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
+              }
+            }
+
+            return criteria
+          }),
           DemographicCriteriaList: [],
           Groups: [],
         },
@@ -869,8 +879,8 @@ export class QueryFilterManager {
       }))
     }
 
-    // Only add primary criteria if there are inclusion filters with events
-    if (inclusionFilters.length > 0 && inclusionFilters.some(f => f.events.length > 0)) {
+    // Only add primary criteria if there are inclusion filters with events that have chips
+    if (inclusionFilters.length > 0 && inclusionFilters.some(f => f.events.some(e => e.chips.length > 0))) {
       atlasDef.PrimaryCriteria.CriteriaList = [
         {
           ObservationPeriod: {

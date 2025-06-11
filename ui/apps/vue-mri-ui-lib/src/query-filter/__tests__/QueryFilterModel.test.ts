@@ -1,6 +1,10 @@
 import { QueryFilterCardModel, QueryFilterManager, QueryFilterChip, QueryFilterEvent } from '../models/QueryFilterModel'
 import sample1Input from './data/sample1-input'
 import sample1Expected from './data/sample1-expected'
+import sample2Input from './data/sample2-input'
+import sample2Expected from './data/sample2-expected'
+import sample3Input from './data/sample3-input'
+import sample3Expected from './data/sample3-expected'
 
 describe('QueryFilterCardModel', () => {
   let model: QueryFilterCardModel
@@ -943,12 +947,18 @@ describe('QueryFilterManager', () => {
     })
   })
 
-  describe('convertToAtlasFormat', () => {
-    it('should convert empty manager to basic Atlas format', () => {
+  describe.only('convertToAtlasFormat', () => {
+    it('should work for sample 1', () => {
       const manager = QueryFilterManager.fromJSON(sample1Input)
       const atlasFormat = manager.convertToAtlasFormat('ALL')
 
       expect(atlasFormat).toEqual(sample1Expected)
+    })
+    it('should work for sample 2', () => {
+      const manager = QueryFilterManager.fromJSON(sample2Input)
+      const atlasFormat = manager.convertToAtlasFormat('ALL')
+
+      expect(atlasFormat).toEqual(sample2Expected)
     })
   })
 })
