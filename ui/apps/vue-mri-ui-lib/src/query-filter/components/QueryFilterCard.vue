@@ -289,9 +289,12 @@ const handleToggleNestedOperator = (eventId: string) => {
 
 // Handle criteria selection for ANY section
 const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
+  // Remove "Add " prefix from the title for display
+  const displayTitle = option.title.replace(/^Add\s+/, '')
+  
   // Create a new event with the selected criteria type
   const newEvent = props.filter.addEvent({
-    conceptSet: option.title,
+    conceptSet: displayTitle,
     criteriaType: option.id,
     chips: [],
   })
@@ -415,7 +418,16 @@ defineExpose({
                 @attribute-selected="attr => handleAttributeSelected(group.parentEvent.id, attr)"
                 @attribute-removed="attrId => handleAttributeRemoved(group.parentEvent.id, attrId)"
               />
-              <!-- No remove button for parent conditions -->
+              <!-- Add remove button for parent events when there are multiple events -->
+              <button
+                v-if="filter.events.length > 1"
+                class="btn-remove-event"
+                @click="removeEvent(group.parentEvent.id)"
+                aria-label="Remove event"
+                title="Remove event"
+              >
+                ×
+              </button>
             </div>
           </div>
 
