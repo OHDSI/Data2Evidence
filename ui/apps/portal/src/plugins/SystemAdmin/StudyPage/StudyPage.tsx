@@ -1,87 +1,129 @@
 import { Loader, MenuItem, Select, SelectChangeEvent } from "@portal/components";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
-import React, { FC, useCallback, useMemo, useState } from "react";
-import { useTranslation } from "../../../contexts";
-import { useDataset, useDatasets } from "../../../hooks";
-import { Study } from "../../../types";
+import React, { FC, useCallback, useEffect, useState } from "react";
+import { api } from "../../../axios/api";
+import { useFeedback, useTranslation } from "../../../contexts";
+import { useDatasets } from "../../../hooks";
+import { StrategusStudy } from "../../../types";
 import { StudyCard } from "./StudyCard";
 import "./StudyPage.scss";
 
 interface StudyPageProps extends PageProps<SystemAdminPageMetadata> {}
 
-export const StudyPage: FC<StudyPageProps> = ({ metadata }) => {
+interface StrategusStudiesData {
+  [studyId: string]: StrategusStudy;
+}
+
+export const StudyPage: FC<StudyPageProps> = () => {
+  // TODO: Add translation
   const { getText, i18nKeys } = useTranslation();
+  const { setFeedback } = useFeedback();
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
-
-  const [selectedDataset] = useDataset(selectedDatasetId);
+  const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
+  const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
+  const [studiesError, setStudiesError] = useState<string | null>(null);
+  const [runningStudyId, setRunningStudyId] = useState<string | null>(null);
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
   }, []);
 
-  const studies = useMemo(() => {
-    if (!selectedDataset) return [];
+  useEffect(() => {
+    if (!selectedDatasetId) {
+      setStrategusStudies([]);
+      return;
+    }
 
-    const baseStudy = selectedDataset;
-    return [
-      {
-        ...baseStudy,
-        id: `${baseStudy.id}-study-a`,
-        studyDetail: {
-          ...baseStudy.studyDetail,
-          name: "Study A",
-          summary:
-            "This demo dataset contains 5% the Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF) based on deidentified metadata from the Center's for Medicare & Medicaid Services (CMS) claims data.",
-        },
-      },
-      {
-        ...baseStudy,
-        id: `${baseStudy.id}-study-b`,
-        studyDetail: {
-          ...baseStudy.studyDetail,
-          name: "Study B",
-          summary:
-            "This demo dataset contains 5% the Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF) based on deidentified metadata from the Center's for Medicare & Medicaid Services (CMS) claims data.",
-        },
-      },
-      {
-        ...baseStudy,
-        id: `${baseStudy.id}-study-c`,
-        studyDetail: {
-          ...baseStudy.studyDetail,
-          name: "Study C",
-          summary:
-            "This demo dataset contains 5% the Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF) based on deidentified metadata from the Center's for Medicare & Medicaid Services (CMS) claims data.",
-        },
-      },
-      {
-        ...baseStudy,
-        id: `${baseStudy.id}-study-d`,
-        studyDetail: {
-          ...baseStudy.studyDetail,
-          name: "Study D",
-          summary:
-            "This demo dataset contains 5% the Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF) based on deidentified metadata from the Center's for Medicare & Medicaid Services (CMS) claims data.",
-        },
-      },
-    ] as Study[]; // TODO: Fix the type here
-  }, [selectedDataset]);
+    const fetchStudies = async () => {
+      setLoadingStudies(true);
+      setStudiesError(null);
 
-  const handleRunStudy = useCallback((study: Study) => {
-    console.log("Running study:", study.studyDetail?.name);
+      try {
+        const studiesData = (await api.systemPortal.getStudiesFromRepo()) as StrategusStudiesData;
+        const convertedStudies: StrategusStudy[] = Object.entries(studiesData).map(
+          ([studyId, strategusStudy]: [string, StrategusStudy]) => ({
+            ...strategusStudy,
+            id: studyId,
+            name: strategusStudy.name || studyId,
+          })
+        );
+
+        setStrategusStudies(convertedStudies);
+      } catch (error) {
+        console.error("Error fetching studies from repository:", error);
+        setStudiesError("Failed to fetch studies from repository");
+        setStrategusStudies([]);
+      } finally {
+        setLoadingStudies(false);
+      }
+    };
+
+    fetchStudies();
+  }, [selectedDatasetId, setFeedback]);
+
+  const handleRunStudy = useCallback(
+    async (study: StrategusStudy) => {
+      if (runningStudyId) {
+        return;
+      }
+      setRunningStudyId(study.id!);
+
+      try {
+        console.log("Running study:", study.name || study.id);
+
+        let strategusJson;
+        try {
+          strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+        } catch (error) {
+          console.error("Could not fetch strategus JSON from repository:", error);
+          setFeedback({
+            type: "error",
+            message: "Could not fetch strategus JSON from repository",
+            description: "Please check if the study configuration is available.",
+            autoClose: 5000,
+          });
+          return;
+        }
+
+        const requestData = {
+          json_graph: {
+            analysisSpecification: JSON.stringify(strategusJson),
+          },
+          options: {
+            mode: "kernel",
+            datasetId: selectedDatasetId,
+          },
+        };
+
+        const response = await api.dataflow.createStudyAnalysisRun(requestData);
+
+        setFeedback({
+          type: "success",
+          message: `Study "${study.name || study.id}" started successfully`,
+          description: `Flow run ID: ${response.flowrunId || response.flowRunId}`,
+          autoClose: 5000,
+        });
+      } catch (error) {
+        console.error("Error running study:", error);
+        setFeedback({
+          type: "error",
+          message: `Failed to start study "${study.name || study.id}"`,
+          autoClose: 5000,
+        });
+      } finally {
+        setRunningStudyId(null);
+      }
+    },
+    [selectedDatasetId, setFeedback, runningStudyId]
+  );
+
+  const handleDownloadResults = useCallback((study: StrategusStudy) => {
+    console.log("Downloading results for study:", study.name || study.id);
   }, []);
 
-  const handleDownloadResults = useCallback((study: Study) => {
-    console.log("Downloading results for study:", study.studyDetail?.name);
-  }, []);
-
-  const handleUserResults = useCallback((study: Study) => {
-    console.log("Viewing user results for study:", study.studyDetail?.name);
-  }, []);
-
-  const handleShareResults = useCallback((study: Study) => {
-    console.log("Sharing results for study:", study.studyDetail?.name);
+  const handleShareResults = useCallback((study: StrategusStudy) => {
+    console.log("Sharing results for study:", study.name || study.id);
   }, []);
 
   if (loadingDatasets) return <Loader />;
@@ -128,18 +170,28 @@ export const StudyPage: FC<StudyPageProps> = ({ metadata }) => {
         {selectedDatasetId && (
           <>
             <h2 className="study-page__section-title">Study list</h2>
-            <div className="study-page__studies">
-              {studies.map((study) => (
-                <StudyCard
-                  key={study.id}
-                  study={study}
-                  onRunStudy={handleRunStudy}
-                  onDownloadResults={handleDownloadResults}
-                  onUserResults={handleUserResults}
-                  onShareResults={handleShareResults}
-                />
-              ))}
-            </div>
+            {loadingStudies && <Loader />}
+            {studiesError && <div className="study-page__error">Repository service issue: {studiesError}</div>}
+            {!loadingStudies && (
+              <div className="study-page__studies">
+                {strategusStudies.length > 0 ? (
+                  strategusStudies.map((study) => (
+                    <StudyCard
+                      key={study.id}
+                      study={study}
+                      isRunning={runningStudyId === study.id}
+                      onRunStudy={handleRunStudy}
+                      onDownloadResults={handleDownloadResults}
+                      onShareResults={handleShareResults}
+                    />
+                  ))
+                ) : (
+                  <div className="study-page__empty-state">
+                    {studiesError ? "No studies available due to repository error" : "No studies found in repository"}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 

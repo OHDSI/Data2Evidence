@@ -14,6 +14,7 @@ export * from "./dbCredentials";
 export * from "./config";
 export * from "./trex";
 export * from "./demo";
+export * from "./strategusStudy";
 
 export interface NavLink {
   id: string;

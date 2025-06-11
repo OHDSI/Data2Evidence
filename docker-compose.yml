@@ -368,7 +368,9 @@ services:
             "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
             "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
-            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+            "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
+            "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-develop}"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",

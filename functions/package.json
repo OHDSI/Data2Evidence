@@ -367,6 +367,7 @@
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
+          "portal.gitStudies.read",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -1456,6 +1457,24 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/studies",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/study/strategus",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

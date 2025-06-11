@@ -85,6 +85,14 @@
       text-decoration: underline;
     }
 
+    &--loading {
+      cursor: default;
+      
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
     span {
       margin-left: 6px;
     }
@@ -94,6 +102,13 @@
     svg {
       width: 18px;
       height: 18px;
+    }
+  }
+
+  &__loading-icon {
+    svg {
+      width: 16px !important;
+      height: 16px !important;
     }
   }
 } 

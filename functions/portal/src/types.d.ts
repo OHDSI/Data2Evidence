@@ -291,3 +291,27 @@ export interface IConfigUpdateDto {
   type: string
   value: string
 }
+
+interface StudyMetadata {
+  strategus_json: string
+  description: string
+  email: string
+}
+
+export interface StudiesData {
+  [studyId: string]: StudyMetadata
+}
+
+export interface GitSubmodule {
+  name: string;
+  path: string;
+  url: string;
+  branch?: string;
+}
+
+export interface PartialGitSubmodule {
+  name?: string;
+  path?: string;
+  url?: string;
+  branch?: string;
+}
