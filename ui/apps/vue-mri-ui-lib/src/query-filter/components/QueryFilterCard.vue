@@ -279,9 +279,11 @@ const handleNestedEventRemove = (parentEventId: string, eventId: string) => {
   }
 }
 
-// Missing toggle nested operator method
+// Handle toggle nested operator method
 const handleToggleNestedOperator = (eventId: string) => {
-  // Implementation for toggling nested operator
+  // Toggle the main filter operator for now - in a more complex implementation
+  // this could toggle nested-specific operators
+  toggleOperator()
   emit('toggle-nested-operator', props.filter.id, eventId)
 }
 
@@ -485,6 +487,8 @@ defineExpose({
                 :event="nestedGroup.parent"
                 :parent-event-id="attrEvent.id"
                 :level="0"
+                :operator="filter.operator"
+                :sibling-count="getNestedEventGroups(attrEvent).length"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
                 @remove-event="handleNestedEventRemove"
@@ -493,6 +497,7 @@ defineExpose({
                 @attribute-selected="handleNestedAttributeSelected"
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"
+                @toggle-operator="handleToggleNestedOperator"
               />
 
               <!-- Nested attribute conditions -->
@@ -502,6 +507,8 @@ defineExpose({
                 :event="attrEvent"
                 :parent-event-id="attrEvent.id"
                 :level="0"
+                :operator="filter.operator"
+                :sibling-count="getNestedEventGroups(attrEvent).length"
                 class="query-filter-nested-event--attribute"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
@@ -511,6 +518,7 @@ defineExpose({
                 @attribute-selected="handleNestedAttributeSelected"
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"
+                @toggle-operator="handleToggleNestedOperator"
               />
             </div>
 
