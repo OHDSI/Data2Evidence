@@ -42,6 +42,8 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
     newSchemaName = newSchemaName.substring(0, 63) // truncate to 63 characters
 
     req.body.schemaName = newSchemaName
+  } else if (schemaOption === CDMSchemaTypes.FHIR) {
+    req.body.schemaName = getSchemaCase(cdmSchemaValue, dialect)
   }
 
   next()
