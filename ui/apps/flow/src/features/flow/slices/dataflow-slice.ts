@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
 import {
+  CreateFromTemplateDto,
   DataflowDto,
   DataflowItemDto,
   DeleteDataflowDto,
@@ -15,6 +16,7 @@ import {
   RemoteDiffCheckResponseDto,
   SaveDataflowDto,
   SaveDataflowResponseDto,
+  TemplateDto,
   TestDataflowDto,
 } from "../types";
 import { baseQueryFn } from "./base-query";
@@ -22,7 +24,13 @@ import { baseQueryFn } from "./base-query";
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
   baseQuery: baseQueryFn,
-  tagTypes: ["Dataflow", "DataflowRevision", "DataflowResult", "DataflowState"],
+  tagTypes: [
+    "Dataflow",
+    "DataflowRevision",
+    "DataflowResult",
+    "DataflowState",
+    "Template",
+  ],
   endpoints: (builder) => ({
     getDataflows: builder.query<DataflowDto[], void>({
       query: () => "dataflow/list",
@@ -209,6 +217,21 @@ export const dataflowApiSlice = createApi({
         { type: "Dataflow", id: "LIST" },
       ],
     }),
+    getTemplates: builder.query<TemplateDto[], void>({
+      query: () => "dataflow/templates",
+      providesTags: ["Template"],
+    }),
+    createCanvasFromTemplate: builder.mutation<
+      SaveDataflowResponseDto,
+      CreateFromTemplateDto
+    >({
+      query: ({ templateId, name, comment }) => ({
+        url: `dataflow/templates/${templateId}`,
+        method: "POST",
+        body: { name, comment },
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
   }),
 });
 
@@ -229,4 +252,6 @@ export const {
   useDeleteNodeCsvFileMutation,
   useCheckRemoteDiffQuery,
   useOverwriteCanvasFromRemoteMutation,
+  useGetTemplatesQuery,
+  useCreateCanvasFromTemplateMutation,
 } = dataflowApiSlice;
