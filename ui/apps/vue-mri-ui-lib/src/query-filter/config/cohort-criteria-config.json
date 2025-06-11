@@ -187,9 +187,10 @@
       "icon": "fa-user",
       "atlasKey": "addDemographic",
       "descriptions": {
+        "initial": "Find patients based on demographic criteria.",
+        "censoring": "Exit cohort based on demographic criteria.",
         "group": "Filter events based on demographic criteria."
-      },
-      "groupOnly": true
+      }
     },
     "locationRegion": {
       "id": "locationRegion",
@@ -232,6 +233,7 @@
       "name": "Cohort Entry Events",
       "buttonText": "Add Initial Event",
       "criteriaTypes": [
+        "demographic",
         "conditionEra",
         "conditionOccurrence",
         "death",

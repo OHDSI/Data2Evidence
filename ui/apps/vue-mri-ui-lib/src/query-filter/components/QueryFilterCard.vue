@@ -295,13 +295,25 @@ const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
   // Remove "Add " prefix from the title for display
   const displayTitle = option.title.replace(/^Add\s+/, '')
 
-  // Create a new event with the selected criteria type
-  const newEvent = props.filter.addEvent({
-    conceptSet: displayTitle,
-    criteriaType: option.id,
-    chips: [],
-  })
-  emit('update:filter', props.filter)
+  // Special handling for demographic criteria
+  if (option.id === 'demographic') {
+    // Create a demographic event that will be handled specially in Atlas export
+    const newEvent = props.filter.addEvent({
+      conceptSet: displayTitle,
+      criteriaType: option.id,
+      chips: [],
+      isDemographic: true, // Mark as demographic to handle differently in export
+    })
+    emit('update:filter', props.filter)
+  } else {
+    // Create a regular event
+    const newEvent = props.filter.addEvent({
+      conceptSet: displayTitle,
+      criteriaType: option.id,
+      chips: [],
+    })
+    emit('update:filter', props.filter)
+  }
   // Don't emit 'add-event' here as we're handling the event creation directly
 }
 
