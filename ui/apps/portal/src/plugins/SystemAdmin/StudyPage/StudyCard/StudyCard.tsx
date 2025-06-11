@@ -1,4 +1,5 @@
-import { Card, CommentIcon, DocPlayIcon, DownloadIcon, ExternalLinkIcon } from "@portal/components";
+import MailOutline from "@mui/icons-material/MailOutline";
+import { Card, DownloadStudyIcon, RunStudyIcon, ShareStudyIcon } from "@portal/components";
 import React, { FC, useCallback } from "react";
 import { HighlightText } from "../../../../components";
 import { useTranslation } from "../../../../contexts";
@@ -66,7 +67,7 @@ export const StudyCard: FC<StudyCardProps> = ({
             <HighlightText text={study.studyDetail?.name || "Untitled"} searchText={highlightText} />
           </div>
           <div className="study-card__contact">
-            <CommentIcon className="study-card__contact-icon" />
+            <MailOutline className="study-card__contact-icon" />
             {contactEmail}
           </div>
         </div>
@@ -77,15 +78,15 @@ export const StudyCard: FC<StudyCardProps> = ({
 
         <div className="study-card__actions">
           <div className="study-card__action" onClick={handleRunStudy}>
-            <DocPlayIcon className="study-card__action-icon" />
+            <RunStudyIcon className="study-card__action-icon" />
             <span>Run study</span>
           </div>
           <div className="study-card__action" onClick={handleDownloadResults}>
-            <DownloadIcon className="study-card__action-icon" />
+            <DownloadStudyIcon className="study-card__action-icon" />
             <span>Download results</span>
           </div>
           <div className="study-card__action" onClick={handleShareResults}>
-            <ExternalLinkIcon className="study-card__action-icon" />
+            <ShareStudyIcon className="study-card__action-icon" />
             <span>Share results</span>
           </div>
         </div>
