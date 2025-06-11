@@ -5,6 +5,8 @@ import sample2Input from './data/sample2-input'
 import sample2Expected from './data/sample2-expected'
 import sample3Input from './data/sample3-input'
 import sample3Expected from './data/sample3-expected'
+import sample4Input from './data/sample4-input'
+import sample4Expected from './data/sample4-expected'
 
 describe('QueryFilterCardModel', () => {
   let model: QueryFilterCardModel
@@ -965,6 +967,12 @@ describe('QueryFilterManager', () => {
       const atlasFormat = manager.convertToAtlasFormat('ALL')
 
       expect(atlasFormat).toEqual(sample3Expected)
+    })
+    it('should work for sample 4', () => {
+      const manager = QueryFilterManager.fromJSON(sample4Input)
+      const atlasFormat = manager.convertToAtlasFormat('ALL')
+
+      expect(atlasFormat).toEqual(sample4Expected)
     })
   })
 })

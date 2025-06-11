@@ -278,7 +278,7 @@ export class QueryFilterCardModel {
     }
 
     // Find which nested container holds this parent event
-    const { container, containerPath } = this.findNestedContainer(parentEventId)
+    const { container } = this.findNestedContainer(parentEventId)
     if (!container) {
       throw new Error(`Could not find container for event ${parentEventId}`)
     }
@@ -847,10 +847,11 @@ export class QueryFilterManager {
             // Check if this event has nested events (correlated criteria)
             const nestedEvents = filter.events.filter(e => e.isAttributeBased && e.parentEventId === event.id && e.isNested)
             if (nestedEvents.length > 0) {
+              const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(nestedEvents, filter.events)
               criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
                 Type: 'ALL',
-                CriteriaList: this.buildNestedCriteriaList(nestedEvents),
-                DemographicCriteriaList: [],
+                CriteriaList: criteriaList,
+                DemographicCriteriaList: demographicCriteriaList,
                 Groups: [],
               }
             }
@@ -912,14 +913,17 @@ export class QueryFilterManager {
     return atlasDef
   }
 
-  // Helper method to build nested criteria list for correlated criteria
-  private buildNestedCriteriaList(nestedEvents: QueryFilterEvent[]): any[] {
+  // Helper method to build nested criteria for correlated criteria
+  private buildNestedCriteria(nestedEvents: QueryFilterEvent[], allEvents: QueryFilterEvent[]): { criteriaList: any[], demographicCriteriaList: any[] } {
     const criteriaList: any[] = []
+    const demographicCriteriaList: any[] = []
 
     nestedEvents.forEach(nestedEvent => {
       if (nestedEvent.nestedEvents && nestedEvent.nestedEvents.length > 0) {
-        // Process each child event in the nested container
-        nestedEvent.nestedEvents.forEach(childEvent => {
+        // Process each child event in the nested container, but only non-attribute-based ones
+        const mainChildEvents = nestedEvent.nestedEvents?.filter(e => !e.isAttributeBased) || []
+        
+        mainChildEvents.forEach(childEvent => {
           const criteria: any = {
             Criteria: {
               ConditionOccurrence: {},
@@ -939,6 +943,43 @@ export class QueryFilterManager {
             },
           }
 
+          // Check if this child event has further nested events (multi-level nesting)
+          // Look for nested events that are children of this specific child event within the same nested container
+          const childNestedEvents = nestedEvent.nestedEvents?.filter(e => 
+            e.isAttributeBased && e.parentEventId === childEvent.id && e.isNested
+          ) || []
+
+          if (childNestedEvents.length > 0) {
+            // This child event should have correlated criteria for its nested events
+            // We need to pass the nested event's nestedEvents as the context for deeper levels
+            const deepestNestedEvents = childNestedEvents.map(ne => ne).filter(ne => ne.nestedEvents && ne.nestedEvents.length > 0)
+            if (deepestNestedEvents.length > 0) {
+              const childResult = this.buildNestedCriteria(deepestNestedEvents, allEvents)
+              if (childResult.criteriaList.length > 0 || childResult.demographicCriteriaList.length > 0) {
+                criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+                  Type: 'ALL',
+                  CriteriaList: childResult.criteriaList,
+                  DemographicCriteriaList: childResult.demographicCriteriaList,
+                  Groups: [],
+                }
+              }
+            }
+          }
+
+          // Check for demographic attributes that belong to this child event
+          const childDemographicEvents = nestedEvent.nestedEvents?.filter(e => 
+            e.isAttributeBased && e.parentEventId === childEvent.id && 
+            e.attributeConfig?.type === 'numericRange' && e.attributeConfig?.id === 'age'
+          ) || []
+
+          childDemographicEvents.forEach(_demogEvent => {
+            demographicCriteriaList.push({
+              Age: {
+                Op: 'gt',
+              },
+            })
+          })
+
           // Only add CodesetId if the child event has chips
           if (childEvent.chips.length > 0) {
             // Find the concept set for this child event
@@ -954,7 +995,7 @@ export class QueryFilterManager {
       }
     })
 
-    return criteriaList
+    return { criteriaList, demographicCriteriaList }
   }
 
   // Helper method to get all concept sets (needed for nested criteria)
