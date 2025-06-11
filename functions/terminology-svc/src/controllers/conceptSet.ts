@@ -96,7 +96,7 @@ export const getConceptSet = async (
     const { query, params } = schemas.getConceptSet.parse(req);
 
     const getCachedbservice = async () => {
-      return await CachedbService.createCacheDBService(req, datasetId);
+      return await CachedbService.createCacheDBService(req, query.datasetId);
     };
 
     const getConceptSet = async () => {
