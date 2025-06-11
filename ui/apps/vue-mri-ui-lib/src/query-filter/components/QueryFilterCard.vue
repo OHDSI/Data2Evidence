@@ -287,6 +287,18 @@ const handleToggleNestedOperator = (eventId: string) => {
   emit('toggle-nested-operator', props.filter.id, eventId)
 }
 
+// Handle criteria selection for ANY section
+const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
+  // Create a new event with the selected criteria type
+  const newEvent = props.filter.addEvent({
+    conceptSet: option.title,
+    criteriaType: option.id,
+    chips: [],
+  })
+  emit('update:filter', props.filter)
+  // Don't emit 'add-event' here as we're handling the event creation directly
+}
+
 // Expose the addChipToEvent method for parent access if needed
 defineExpose({
   addChipToEvent,
@@ -344,17 +356,20 @@ defineExpose({
 
       <!-- Add event button for ANY section (multiple conditions) -->
       <div v-if="filter.events.length > 1 && showAddEventInAny" class="add-any-event-container">
-        <button class="btn-add-any-event" @click="$emit('add-any-event')" title="Add event to ANY section">
-          <span>Add event</span>
-        </button>
+        <criteria-selector-dropdown
+          section-id="initialEvents"
+          button-text="Add event"
+          @criteria-selected="handleAnyEventCriteriaSelected"
+        />
       </div>
 
       <!-- Add event button for single condition cards -->
       <div v-if="filter.events.length <= 1 && showAddEventInAny" class="add-single-event-container">
-        <div>{{ filter }}</div>
-        <button class="btn-add-single-event" @click="$emit('add-event')" title="Add event">
-          <span>Add event</span>
-        </button>
+        <criteria-selector-dropdown
+          section-id="initialEvents"
+          button-text="Add event"
+          @criteria-selected="handleAnyEventCriteriaSelected"
+        />
       </div>
 
       <div
@@ -488,7 +503,7 @@ defineExpose({
                 :parent-event-id="attrEvent.id"
                 :level="0"
                 :operator="filter.operator"
-                :sibling-count="getNestedEventGroups(attrEvent).length"
+                :sibling-count="attrEvent.nestedEvents?.length || 0"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
                 @remove-event="handleNestedEventRemove"
@@ -508,7 +523,7 @@ defineExpose({
                 :parent-event-id="attrEvent.id"
                 :level="0"
                 :operator="filter.operator"
-                :sibling-count="getNestedEventGroups(attrEvent).length"
+                :sibling-count="attrEvent.nestedEvents?.length || 0"
                 class="query-filter-nested-event--attribute"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"

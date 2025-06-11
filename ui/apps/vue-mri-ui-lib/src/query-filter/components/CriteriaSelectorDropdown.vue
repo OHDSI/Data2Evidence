@@ -16,7 +16,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   buttonText: 'Add event',
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -28,10 +28,9 @@ const dropdownRef = ref<HTMLElement>()
 
 // Get criteria options based on section
 const criteriaOptions = computed(() => {
-  const descriptionType = props.sectionId === 'initialEvents' ? 'initial' : 
-                         props.sectionId === 'censoringEvents' ? 'censoring' : 
-                         'group'
-  
+  const descriptionType =
+    props.sectionId === 'initialEvents' ? 'initial' : props.sectionId === 'censoringEvents' ? 'censoring' : 'group'
+
   try {
     return criteriaConfigLoader.getCriteriaOptions(props.sectionId, descriptionType)
   } catch (error) {
@@ -73,11 +72,11 @@ onUnmounted(() => {
 
 <template>
   <div class="criteria-selector-dropdown" ref="dropdownRef">
-    <button 
+    <button
       class="criteria-selector-dropdown__trigger"
-      :class="{ 
+      :class="{
         'is-open': isOpen,
-        'is-disabled': disabled
+        'is-disabled': disabled,
       }"
       @click="toggleDropdown"
       :disabled="disabled"
@@ -88,15 +87,11 @@ onUnmounted(() => {
       <i class="criteria-selector-dropdown__icon" :class="isOpen ? 'icon-chevron-up' : 'icon-chevron-down'"></i>
     </button>
 
-    <div 
-      v-if="isOpen" 
-      class="criteria-selector-dropdown__menu"
-      role="menu"
-    >
+    <div v-if="isOpen" class="criteria-selector-dropdown__menu" role="menu">
       <div class="criteria-selector-dropdown__header">
         <span class="criteria-selector-dropdown__title">Select Criteria Type</span>
       </div>
-      
+
       <div class="criteria-selector-dropdown__options">
         <button
           v-for="option in criteriaOptions"
@@ -107,7 +102,6 @@ onUnmounted(() => {
           :title="option.description"
         >
           <div class="criteria-selector-dropdown__option-content">
-            <i class="criteria-selector-dropdown__option-icon" :class="option.icon"></i>
             <div class="criteria-selector-dropdown__option-text">
               <span class="criteria-selector-dropdown__option-title">{{ option.title }}</span>
               <span class="criteria-selector-dropdown__option-description">{{ option.description }}</span>
@@ -115,7 +109,7 @@ onUnmounted(() => {
           </div>
         </button>
       </div>
-      
+
       <div v-if="criteriaOptions.length === 0" class="criteria-selector-dropdown__empty">
         <p>No criteria types available</p>
       </div>
@@ -126,3 +120,4 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '../styles/CriteriaSelectorDropdown';
 </style>
+
