@@ -816,7 +816,7 @@ export class QueryFilterManager {
         name: filter.title,
         expression: {
           Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-          CriteriaList: filter.events.map(event => {
+          CriteriaList: filter.events.filter(event => !event.isAttributeBased).map(event => {
             const criteria: any = {
               Criteria: {
                 ConditionOccurrence: {},
@@ -841,6 +841,17 @@ export class QueryFilterManager {
               const codesetIndex = conceptSets.findIndex(cs => cs.name === event.conceptSet)
               if (codesetIndex >= 0) {
                 criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
+              }
+            }
+
+            // Check if this event has nested events (correlated criteria)
+            const nestedEvents = filter.events.filter(e => e.isAttributeBased && e.parentEventId === event.id && e.isNested)
+            if (nestedEvents.length > 0) {
+              criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+                Type: 'ALL',
+                CriteriaList: this.buildNestedCriteriaList(nestedEvents),
+                DemographicCriteriaList: [],
+                Groups: [],
               }
             }
 
@@ -899,5 +910,89 @@ export class QueryFilterManager {
     }
 
     return atlasDef
+  }
+
+  // Helper method to build nested criteria list for correlated criteria
+  private buildNestedCriteriaList(nestedEvents: QueryFilterEvent[]): any[] {
+    const criteriaList: any[] = []
+
+    nestedEvents.forEach(nestedEvent => {
+      if (nestedEvent.nestedEvents && nestedEvent.nestedEvents.length > 0) {
+        // Process each child event in the nested container
+        nestedEvent.nestedEvents.forEach(childEvent => {
+          const criteria: any = {
+            Criteria: {
+              ConditionOccurrence: {},
+            },
+            StartWindow: {
+              Start: {
+                Coeff: -1,
+              },
+              End: {
+                Coeff: 1,
+              },
+              UseEventEnd: false,
+            },
+            Occurrence: {
+              Type: 2,
+              Count: 1,
+            },
+          }
+
+          // Only add CodesetId if the child event has chips
+          if (childEvent.chips.length > 0) {
+            // Find the concept set for this child event
+            const conceptSets = this.getAllConceptSets()
+            const codesetIndex = conceptSets.findIndex(cs => cs.name === childEvent.conceptSet)
+            if (codesetIndex >= 0) {
+              criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
+            }
+          }
+
+          criteriaList.push(criteria)
+        })
+      }
+    })
+
+    return criteriaList
+  }
+
+  // Helper method to get all concept sets (needed for nested criteria)
+  private getAllConceptSets(): any[] {
+    const conceptSets: any[] = []
+    let conceptSetId = 0
+
+    this.filters.forEach(filter => {
+      filter.events.forEach(event => {
+        if (event.chips.length > 0) {
+          conceptSets.push({
+            id: conceptSetId++,
+            name: event.conceptSet || `Concept Set ${conceptSetId}`,
+            expression: {
+              items: event.chips.map(chip => ({
+                concept: {
+                  CONCEPT_CLASS_ID: 'Clinical Finding',
+                  CONCEPT_CODE: chip.value,
+                  CONCEPT_ID: parseInt(chip.value) || 0,
+                  CONCEPT_NAME: chip.label,
+                  DOMAIN_ID: 'Condition',
+                  INVALID_REASON: 'V',
+                  INVALID_REASON_CAPTION: 'Valid',
+                  STANDARD_CONCEPT: 'S',
+                  STANDARD_CONCEPT_CAPTION: 'Standard',
+                  VOCABULARY_ID: 'ICD10CM',
+                  VALID_START_DATE: '1970-01-01',
+                  VALID_END_DATE: '2099-12-31',
+                },
+                includeDescendants: false,
+                includeMapped: false,
+              })),
+            },
+          })
+        }
+      })
+    })
+
+    return conceptSets
   }
 }

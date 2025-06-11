@@ -960,5 +960,11 @@ describe('QueryFilterManager', () => {
 
       expect(atlasFormat).toEqual(sample2Expected)
     })
+    it('should work for sample 3', () => {
+      const manager = QueryFilterManager.fromJSON(sample3Input)
+      const atlasFormat = manager.convertToAtlasFormat('ALL')
+
+      expect(atlasFormat).toEqual(sample3Expected)
+    })
   })
 })
