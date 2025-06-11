@@ -7,14 +7,14 @@ export default {
       PostDays: 0,
     },
     PrimaryCriteriaLimit: {
-      Type: 'First',
+      Type: 'All',
     },
   },
   QualifiedLimit: {
-    Type: 'First',
+    Type: 'All',
   },
   ExpressionLimit: {
-    Type: 'First',
+    Type: 'All',
   },
   InclusionRules: [
     {
@@ -142,3 +142,4 @@ export default {
   },
   CensorWindow: {},
 }
+

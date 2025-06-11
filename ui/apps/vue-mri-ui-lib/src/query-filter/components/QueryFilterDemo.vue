@@ -11,7 +11,7 @@ import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
-const activeTab = ref('all')
+const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
 const filterManager = reactive(new QueryFilterManager())
 
@@ -72,18 +72,20 @@ const updateFilter = (filter: QueryFilterCardModel) => {
 // Handle criteria selection for new filters
 const handleCriteriaSelected = (option: CriteriaOption) => {
   console.log('Selected criteria:', option)
-  
+
   const newFilter = new QueryFilterCardModel({
     title: option.title.replace('Add ', ''), // Remove "Add" prefix for title
     type: 'inclusion',
-    events: [{
-      id: `event_${Date.now()}`,
-      conceptSet: `${option.title.replace('Add ', '')} concept set`,
-      chips: [],
-      criteriaType: option.id, // Store the criteria type for attributes
-    }],
+    events: [
+      {
+        id: `event_${Date.now()}`,
+        conceptSet: `${option.title.replace('Add ', '')} concept set`,
+        chips: [],
+        criteriaType: option.id, // Store the criteria type for attributes
+      },
+    ],
   })
-  
+
   // Expand the new filter by default
   newFilter.isExpanded = true
   filterManager.addFilter(newFilter)
@@ -104,7 +106,7 @@ const handleAddEvent = (filterId: string, eventId?: string) => {
     // This is a nested event being added - ignore it since it's handled internally
     return
   }
-  
+
   const filter = filterManager.getFilter(filterId)
   if (filter) {
     const newEvent: QueryFilterEvent = {
@@ -112,7 +114,7 @@ const handleAddEvent = (filterId: string, eventId?: string) => {
       conceptSet: 'Event concept set',
       chips: [],
       criteriaType: 'conditionOccurrence', // Default to condition occurrence
-      selectedAttributes: []
+      selectedAttributes: [],
     }
     filter.addEvent(newEvent)
   }
@@ -127,7 +129,7 @@ const handleCriteriaSelectedForFilter = (filterId: string, option: CriteriaOptio
       conceptSet: `${option.title.replace('Add ', '')} concept set`,
       chips: [],
       criteriaType: option.id,
-      selectedAttributes: []
+      selectedAttributes: [],
     }
     filter.addEvent(newEvent)
   }

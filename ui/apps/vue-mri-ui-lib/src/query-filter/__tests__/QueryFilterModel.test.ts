@@ -9,6 +9,8 @@ import sample4Input from './data/sample4-input'
 import sample4Expected from './data/sample4-expected'
 import sample5Input from './data/sample5-input'
 import sample5Expected from './data/sample5-expected'
+import sample6Input from './data/sample6-input'
+import sample6Expected from './data/sample6-expected'
 
 describe('QueryFilterCardModel', () => {
   let model: QueryFilterCardModel
@@ -954,33 +956,39 @@ describe('QueryFilterManager', () => {
   describe.only('convertToAtlasFormat', () => {
     it('should work for sample 1', () => {
       const manager = QueryFilterManager.fromJSON(sample1Input)
-      const atlasFormat = manager.convertToAtlasFormat('ALL')
+      const atlasFormat = manager.convertToAtlasFormat('all')
 
       expect(atlasFormat).toEqual(sample1Expected)
     })
     it('should work for sample 2', () => {
       const manager = QueryFilterManager.fromJSON(sample2Input)
-      const atlasFormat = manager.convertToAtlasFormat('ALL')
+      const atlasFormat = manager.convertToAtlasFormat('all')
 
       expect(atlasFormat).toEqual(sample2Expected)
     })
     it('should work for sample 3', () => {
       const manager = QueryFilterManager.fromJSON(sample3Input)
-      const atlasFormat = manager.convertToAtlasFormat('ALL')
+      const atlasFormat = manager.convertToAtlasFormat('all')
 
       expect(atlasFormat).toEqual(sample3Expected)
     })
     it('should work for sample 4', () => {
       const manager = QueryFilterManager.fromJSON(sample4Input)
-      const atlasFormat = manager.convertToAtlasFormat('ALL')
+      const atlasFormat = manager.convertToAtlasFormat('all')
 
       expect(atlasFormat).toEqual(sample4Expected)
     })
     it('should work for sample 5', () => {
       const manager = QueryFilterManager.fromJSON(sample5Input)
-      const atlasFormat = manager.convertToAtlasFormat('ALL')
+      const atlasFormat = manager.convertToAtlasFormat('all')
 
       expect(atlasFormat).toEqual(sample5Expected)
+    })
+    it('should work for sample 6', () => {
+      const manager = QueryFilterManager.fromJSON(sample6Input)
+      const atlasFormat = manager.convertToAtlasFormat('all')
+
+      expect(atlasFormat).toEqual(sample6Expected)
     })
   })
 })
