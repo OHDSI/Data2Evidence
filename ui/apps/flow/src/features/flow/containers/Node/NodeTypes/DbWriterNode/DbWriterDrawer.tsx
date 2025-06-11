@@ -11,11 +11,7 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import {
-  SelectSource,
-  SourceOptions,
-  SourceTypes,
-} from "../../SelectSource/SelectSource";
+import { SelectSource } from "../../SelectSource/SelectSource";
 import { NodeChoiceMap } from "../../NodeTypes";
 import { DbWriterNodeData } from "./DbWriterNode";
 
