@@ -28,7 +28,10 @@ export interface ConfigSection {
 export interface AttributeConfig {
   id: string
   name: string
-  type: 'boolean' | 'numeric' | 'text' | 'concept'
+  description?: string
+  type?: string
+  atlasKey?: string
+  special?: boolean
   required?: boolean
 }
 
@@ -294,24 +297,47 @@ export class CriteriaConfigLoader {
    * Get criteria-specific attribute options (like Add Nested Criteria, Add Stop Reason)
    */
   getCriteriaAttributeOptions(criteriaTypeId: string): Array<any> {
-    const criteriaAttributes = this.config.criteriaAttributes
-    if (!criteriaAttributes || !criteriaAttributes[criteriaTypeId]) {
+    // First check for criteria-specific attributes (like nested, stop reason, etc.)
+    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
+      return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
+        const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
+
+        return {
+          id: attr.id,
+          title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
+          defaultTitle: displayTitle,
+          description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
+          defaultDescription: attr.description || '',
+          type: attr.type || 'text',
+          atlasKey: attr.atlasKey || '',
+          special: attr.special || false,
+          action: this.createAttributeActionFunction(attr, criteriaTypeId),
+        }
+      })
+    }
+
+    // Fall back to domain-based attributes (like age, gender, etc.)
+    const attributeCategory = Object.values(this.config.attributes).find(category => 
+      category.domains.includes(criteriaTypeId)
+    )
+    
+    if (!attributeCategory || !attributeCategory.attributes) {
       return []
     }
 
-    return criteriaAttributes[criteriaTypeId].map(attr => {
+    return attributeCategory.attributes.map(attr => {
       const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
       return {
         id: attr.id,
         title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
         defaultTitle: displayTitle,
-        description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description),
-        defaultDescription: attr.description,
-        type: attr.type,
-        atlasKey: attr.atlasKey,
+        description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
+        defaultDescription: attr.description || '',
+        type: attr.type || 'text',
+        atlasKey: attr.atlasKey || '',
         special: attr.special || false,
-        action: this.createAttributeActionFunction(attr, criteriaTypeId),
+        action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig, criteriaTypeId),
       }
     })
   }
@@ -330,7 +356,7 @@ export class CriteriaConfigLoader {
 
       // For other attributes, this would trigger the appropriate editor
       // The actual implementation depends on the attribute type
-      switch (attribute.type) {
+      switch (attribute.type || '') {
         case 'text':
           // Would open text filter editor
           console.log(`Adding text filter: ${attribute.id}`)

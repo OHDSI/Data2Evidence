@@ -227,8 +227,11 @@ const getNestedEventGroups = (nestedContainer: QueryFilterEvent) => {
 
 // Handle nested criteria selection
 const handleNestedCriteriaSelected = (nestedEventId: string, option: CriteriaOption) => {
+  // Remove "Add " prefix from the title for display
+  const displayTitle = option.title.replace(/^Add\s+/, '')
+
   const newEvent = props.filter.addNestedEvent(nestedEventId, {
-    conceptSet: option.title,
+    conceptSet: displayTitle,
     criteriaType: option.id,
     chips: [],
   })
@@ -291,7 +294,7 @@ const handleToggleNestedOperator = (eventId: string) => {
 const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
   // Remove "Add " prefix from the title for display
   const displayTitle = option.title.replace(/^Add\s+/, '')
-  
+
   // Create a new event with the selected criteria type
   const newEvent = props.filter.addEvent({
     conceptSet: displayTitle,
@@ -375,21 +378,14 @@ defineExpose({
         />
       </div>
 
-      <div
-        v-for="(group, groupIndex) in eventGroups"
-        :key="group.parentEvent.id"
-        class="query-filter-event-group"
-      >
+      <div v-for="(group, groupIndex) in eventGroups" :key="group.parentEvent.id" class="query-filter-event-group">
         <!-- At least 1 sidebar that spans the parent event and all its attributes -->
         <div class="query-filter-event__at-least-group">
           <span>At least 1</span>
         </div>
 
         <!-- Parent event -->
-        <div
-          class="query-filter-event query-filter-event--parent"
-          :class="{ 'has-nested': filter.events.length > 1 }"
-        >
+        <div class="query-filter-event query-filter-event--parent" :class="{ 'has-nested': filter.events.length > 1 }">
           <div class="query-filter-event__header">
             <span class="query-filter-event__label">
               {{ group.parentEvent.conceptSet || 'Event concept set' }}
