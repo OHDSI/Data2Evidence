@@ -1,0 +1,41 @@
+{
+  "name": "concept-mapping",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build:dev": "tsc -b && vite build --mode=development",
+    "build": "tsc -b && vite build --mode=production",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "tsc -b && vite build && vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.3",
+    "classnames": "^2.5.1",
+    "lodash": "^4.17.21",
+    "pako": "^1.0.11"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "^5.8.3",
+    "@mui/material": "^5.8.3",
+    "@portal/components": "^1.0.0",
+    "@portal/plugin": "^1.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.6",
+    "@types/pako": "^1.0.1",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "sass": "^1.77.8",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.1",
+    "vite-plugin-css-injected-by-js": "^3.5.1"
+  }
+}

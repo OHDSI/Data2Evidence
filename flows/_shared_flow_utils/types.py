@@ -1,4 +1,3 @@
-import re
 from enum import Enum
 from typing import Optional, Literal
 from pydantic import BaseModel, SecretStr
@@ -54,16 +53,6 @@ class RequestType(str, Enum):
     POST = "post"
     PUT = "put"
     DELETE = "delete"
-
-
-class LiquibaseAction(str, Enum):
-    UPDATE = "update"  # Create and update schema
-    UPDATECOUNT = "updateCount"  # Create schema with count
-    STATUS = "status"  # Get Version Info
-    ROLLBACK_COUNT = "rollbackCount"  # Rollback on n changesets
-    ROLLBACK_TAG = "rollback"  # Rollback on tag
-    # mark all changesets in databasechangelog table as executed
-    CHANGELOG_SYNC = "changelog-sync"
 
 
 class InternalPluginType(str, Enum):
