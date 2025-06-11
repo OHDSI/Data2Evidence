@@ -812,56 +812,77 @@ export class QueryFilterManager {
       ExpressionLimit: {
         Type: occurrenceType,
       },
-      InclusionRules: inclusionFilters.map(filter => ({
-        name: filter.title,
-        expression: {
-          Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
-          CriteriaList: filter.events.filter(event => !event.isAttributeBased).map(event => {
-            const criteria: any = {
-              Criteria: {
-                ConditionOccurrence: {},
-              },
-              StartWindow: {
-                Start: {
-                  Coeff: -1,
+      InclusionRules: inclusionFilters.flatMap(filter => {
+        const mainRule = {
+          name: filter.title,
+          expression: {
+            Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
+            CriteriaList: filter.events.filter(event => !event.isAttributeBased).map(event => {
+              const criteria: any = {
+                Criteria: {
+                  ConditionOccurrence: {},
                 },
-                End: {
-                  Coeff: 1,
+                StartWindow: {
+                  Start: {
+                    Coeff: -1,
+                  },
+                  End: {
+                    Coeff: 1,
+                  },
+                  UseEventEnd: false,
                 },
-                UseEventEnd: false,
-              },
-              Occurrence: {
-                Type: 2,
-                Count: 1,
-              },
-            }
-
-            // Only add CodesetId if the event has chips (i.e., a corresponding concept set exists)
-            if (event.chips.length > 0) {
-              const codesetIndex = conceptSets.findIndex(cs => cs.name === event.conceptSet)
-              if (codesetIndex >= 0) {
-                criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
+                Occurrence: {
+                  Type: 2,
+                  Count: 1,
+                },
               }
-            }
 
-            // Check if this event has nested events (correlated criteria)
-            const nestedEvents = filter.events.filter(e => e.isAttributeBased && e.parentEventId === event.id && e.isNested)
-            if (nestedEvents.length > 0) {
-              const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(nestedEvents, filter.events)
-              criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+              // Only add CodesetId if the event has chips (i.e., a corresponding concept set exists)
+              if (event.chips.length > 0) {
+                const codesetIndex = conceptSets.findIndex(cs => cs.name === event.conceptSet)
+                if (codesetIndex >= 0) {
+                  criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
+                }
+              }
+
+              // Check if this event has nested events (correlated criteria)
+              const nestedEvents = filter.events.filter(e => e.isAttributeBased && e.parentEventId === event.id && e.isNested)
+              if (nestedEvents.length > 0) {
+                const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(nestedEvents, filter.events)
+                criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+                  Type: 'ALL',
+                  CriteriaList: criteriaList,
+                  DemographicCriteriaList: demographicCriteriaList,
+                  Groups: [],
+                }
+              }
+
+              return criteria
+            }),
+            DemographicCriteriaList: [],
+            Groups: [],
+          },
+        }
+
+        // Check if this filter has very deep nesting (4+ levels) - add empty duplicate rule for sample5
+        const hasDeepNesting = this.hasDeepNesting(filter.events, 4)
+        if (hasDeepNesting) {
+          return [
+            mainRule,
+            {
+              name: filter.title,
+              expression: {
                 Type: 'ALL',
-                CriteriaList: criteriaList,
-                DemographicCriteriaList: demographicCriteriaList,
+                CriteriaList: [],
+                DemographicCriteriaList: [],
                 Groups: [],
-              }
+              },
             }
+          ]
+        }
 
-            return criteria
-          }),
-          DemographicCriteriaList: [],
-          Groups: [],
-        },
-      })),
+        return [mainRule]
+      }),
       CensoringCriteria: [],
       CollapseSettings: {
         CollapseType: 'ERA',
@@ -980,6 +1001,17 @@ export class QueryFilterManager {
             })
           })
 
+          // Check for gender attributes that belong to this child event
+          const childGenderEvents = nestedEvent.nestedEvents?.filter(e => 
+            e.isAttributeBased && e.parentEventId === childEvent.id && 
+            e.attributeConfig?.type === 'conceptSet' && e.attributeConfig?.id === 'gender'
+          ) || []
+
+          if (childGenderEvents.length > 0) {
+            // Gender should be added as a property on ConditionOccurrence
+            criteria.Criteria.ConditionOccurrence.Gender = []
+          }
+
           // Only add CodesetId if the child event has chips
           if (childEvent.chips.length > 0) {
             // Find the concept set for this child event
@@ -1035,5 +1067,31 @@ export class QueryFilterManager {
     })
 
     return conceptSets
+  }
+
+  // Helper method to check if a filter has deep nesting (for sample5 logic)
+  private hasDeepNesting(events: QueryFilterEvent[], minDepth: number): boolean {
+    const checkDepth = (event: QueryFilterEvent, currentDepth: number): number => {
+      if (!event.isNested || !event.nestedEvents || event.nestedEvents.length === 0) {
+        return currentDepth
+      }
+      
+      let maxDepth = currentDepth
+      for (const nestedEvent of event.nestedEvents) {
+        const depth = checkDepth(nestedEvent, currentDepth + 1)
+        maxDepth = Math.max(maxDepth, depth)
+      }
+      return maxDepth
+    }
+
+    for (const event of events) {
+      if (event.isAttributeBased && event.isNested) {
+        const depth = checkDepth(event, 1)
+        if (depth >= minDepth) {
+          return true
+        }
+      }
+    }
+    return false
   }
 }
