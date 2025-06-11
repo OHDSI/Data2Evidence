@@ -22,7 +22,8 @@ export interface QueryFilterEvent {
   selectedAttributes?: string[] // Selected attribute IDs
   isAttributeBased?: boolean // True if this event was created from an attribute selection
   parentEventId?: string // Reference to the parent event if this is attribute-based
-  attributeConfig?: { // Store the original attribute config for attribute-based events
+  attributeConfig?: {
+    // Store the original attribute config for attribute-based events
     id: string
     name: string
     description: string
@@ -86,7 +87,7 @@ export class QueryFilterCardModel {
 
     // Remove "Add " prefix from the title for display
     const displayTitle = (attributeConfig.title || attributeConfig.name).replace(/^Add\s+/, '')
-    
+
     // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
       const nestedEvent: QueryFilterEvent = {
@@ -106,25 +107,27 @@ export class QueryFilterCardModel {
           name: displayTitle,
           description: attributeConfig.description || attributeConfig.defaultDescription || '',
           type: attributeConfig.type,
-          category: attributeConfig.category || 'criteria-specific'
-        }
+          category: attributeConfig.category || 'criteria-specific',
+        },
       }
-      
+
       // Find the insert position (after parent and its existing attribute children)
       const parentIndex = this.events.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
-      
+
       // Find the last attribute event that belongs to this parent
-      while (insertIndex < this.events.length && 
-             this.events[insertIndex].isAttributeBased && 
-             this.events[insertIndex].parentEventId === parentEventId) {
+      while (
+        insertIndex < this.events.length &&
+        this.events[insertIndex].isAttributeBased &&
+        this.events[insertIndex].parentEventId === parentEventId
+      ) {
         insertIndex++
       }
-      
+
       this.events.splice(insertIndex, 0, nestedEvent)
       return nestedEvent
     }
-    
+
     // Regular attribute event
     const newEvent: QueryFilterEvent = {
       id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
@@ -140,21 +143,23 @@ export class QueryFilterCardModel {
         name: displayTitle,
         description: attributeConfig.description || attributeConfig.defaultDescription || '',
         type: attributeConfig.type,
-        category: attributeConfig.category || 'criteria-specific'
-      }
+        category: attributeConfig.category || 'criteria-specific',
+      },
     }
-    
+
     // Find the insert position (after parent and its existing attribute children)
     const parentIndex = this.events.findIndex(e => e.id === parentEventId)
     let insertIndex = parentIndex + 1
-    
+
     // Find the last attribute event that belongs to this parent
-    while (insertIndex < this.events.length && 
-           this.events[insertIndex].isAttributeBased && 
-           this.events[insertIndex].parentEventId === parentEventId) {
+    while (
+      insertIndex < this.events.length &&
+      this.events[insertIndex].isAttributeBased &&
+      this.events[insertIndex].parentEventId === parentEventId
+    ) {
       insertIndex++
     }
-    
+
     this.events.splice(insertIndex, 0, newEvent)
     return newEvent
   }
@@ -174,12 +179,12 @@ export class QueryFilterCardModel {
   canDeleteEvent(eventId: string): boolean {
     const event = this.getEvent(eventId)
     if (!event) return false
-    
+
     // Can't delete if it's a parent event with attribute children
     if (!event.isAttributeBased && this.events.some(e => e.parentEventId === eventId)) {
       return false
     }
-    
+
     return true
   }
 
@@ -235,7 +240,11 @@ export class QueryFilterCardModel {
     throw new Error(`Could not find nested event ${nestedEventId} to add to`)
   }
 
-  private addToNestedEventRecursive(targetId: string, newEvent: QueryFilterEvent, container: QueryFilterEvent): boolean {
+  private addToNestedEventRecursive(
+    targetId: string,
+    newEvent: QueryFilterEvent,
+    container: QueryFilterEvent
+  ): boolean {
     if (!container.nestedEvents) return false
 
     // Check if target is directly in this container
@@ -276,7 +285,7 @@ export class QueryFilterCardModel {
 
     // Remove "Add " prefix from the title for display
     const displayTitle = (attributeConfig.title || attributeConfig.name).replace(/^Add\s+/, '')
-    
+
     // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
       const nestedEvent: QueryFilterEvent = {
@@ -296,14 +305,14 @@ export class QueryFilterCardModel {
           name: displayTitle,
           description: attributeConfig.description || attributeConfig.defaultDescription || '',
           type: attributeConfig.type,
-          category: attributeConfig.category || 'criteria-specific'
-        }
+          category: attributeConfig.category || 'criteria-specific',
+        },
       }
-      
+
       this.insertEventInContainer(nestedEvent, parentEventId, container)
       return nestedEvent
     }
-    
+
     // Regular attribute event
     const newEvent: QueryFilterEvent = {
       id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
@@ -319,10 +328,10 @@ export class QueryFilterCardModel {
         name: displayTitle,
         description: attributeConfig.description || attributeConfig.defaultDescription || '',
         type: attributeConfig.type,
-        category: attributeConfig.category || 'criteria-specific'
-      }
+        category: attributeConfig.category || 'criteria-specific',
+      },
     }
-    
+
     this.insertEventInContainer(newEvent, parentEventId, container)
     return newEvent
   }
@@ -364,7 +373,7 @@ export class QueryFilterCardModel {
     // First check main events
     const mainEvent = this.events.find(e => e.id === eventId)
     if (mainEvent) return mainEvent
-    
+
     // Recursively search in nested events
     for (const event of this.events) {
       if (event.isNested && event.nestedEvents) {
@@ -372,7 +381,7 @@ export class QueryFilterCardModel {
         if (found) return found
       }
     }
-    
+
     return undefined
   }
 
@@ -380,7 +389,7 @@ export class QueryFilterCardModel {
   private findEventInNested(eventId: string, nestedEvents: QueryFilterEvent[]): QueryFilterEvent | undefined {
     for (const event of nestedEvents) {
       if (event.id === eventId) return event
-      
+
       // Recursively search deeper if this event also has nested events
       if (event.isNested && event.nestedEvents) {
         const found = this.findEventInNested(eventId, event.nestedEvents)
@@ -391,7 +400,7 @@ export class QueryFilterCardModel {
   }
 
   // Find which nested container holds a specific event
-  private findNestedContainer(eventId: string): { container: QueryFilterEvent | null, containerPath: string[] } {
+  private findNestedContainer(eventId: string): { container: QueryFilterEvent | null; containerPath: string[] } {
     // Check if it's in main events
     if (this.events.find(e => e.id === eventId)) {
       return { container: null, containerPath: [] } // Main level
@@ -408,7 +417,11 @@ export class QueryFilterCardModel {
     return { container: null, containerPath: [] }
   }
 
-  private findNestedContainerRecursive(eventId: string, container: QueryFilterEvent, path: string[]): { container: QueryFilterEvent | null, containerPath: string[] } {
+  private findNestedContainerRecursive(
+    eventId: string,
+    container: QueryFilterEvent,
+    path: string[]
+  ): { container: QueryFilterEvent | null; containerPath: string[] } {
     if (!container.nestedEvents) return { container: null, containerPath: [] }
 
     // Check if the event is directly in this container
@@ -428,34 +441,42 @@ export class QueryFilterCardModel {
   }
 
   // Helper method to insert an event in the correct container (main or nested)
-  private insertEventInContainer(newEvent: QueryFilterEvent, parentEventId: string, container: QueryFilterEvent | null) {
+  private insertEventInContainer(
+    newEvent: QueryFilterEvent,
+    parentEventId: string,
+    container: QueryFilterEvent | null
+  ) {
     if (container === null) {
       // Insert in main events
       const parentIndex = this.events.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
-      
-      while (insertIndex < this.events.length && 
-             this.events[insertIndex].isAttributeBased && 
-             this.events[insertIndex].parentEventId === parentEventId) {
+
+      while (
+        insertIndex < this.events.length &&
+        this.events[insertIndex].isAttributeBased &&
+        this.events[insertIndex].parentEventId === parentEventId
+      ) {
         insertIndex++
       }
-      
+
       this.events.splice(insertIndex, 0, newEvent)
     } else {
       // Insert in nested container
       if (!container.nestedEvents) {
         container.nestedEvents = []
       }
-      
+
       const parentIndex = container.nestedEvents.findIndex(e => e.id === parentEventId)
       let insertIndex = parentIndex + 1
-      
-      while (insertIndex < container.nestedEvents.length && 
-             container.nestedEvents[insertIndex].isAttributeBased && 
-             container.nestedEvents[insertIndex].parentEventId === parentEventId) {
+
+      while (
+        insertIndex < container.nestedEvents.length &&
+        container.nestedEvents[insertIndex].isAttributeBased &&
+        container.nestedEvents[insertIndex].parentEventId === parentEventId
+      ) {
         insertIndex++
       }
-      
+
       container.nestedEvents.splice(insertIndex, 0, newEvent)
     }
   }
@@ -713,5 +734,160 @@ export class QueryFilterManager {
       totalEvents,
       totalChips,
     }
+  }
+
+  // Convert to Atlas cohort definition format
+  convertToAtlasFormat(activeTab: string = 'all'): any {
+    // Separate inclusion and exclusion filters
+    const inclusionFilters = this.filters.filter(f => f.type === 'inclusion')
+    const exclusionFilters = this.filters.filter(f => f.type === 'exclusion')
+
+    // Map tab selection to Atlas occurrence type
+    const getOccurrenceType = () => {
+      switch (activeTab) {
+        case 'earliest':
+          return 'First'
+        case 'all':
+          return 'All'
+        case 'latest':
+          return 'Last'
+        default:
+          return 'First'
+      }
+    }
+
+    const occurrenceType = getOccurrenceType()
+
+    // Build concept sets from all filters
+    const conceptSets: any[] = []
+    let conceptSetId = 0
+
+    this.filters.forEach(filter => {
+      filter.events.forEach(event => {
+        if (event.chips.length > 0) {
+          conceptSets.push({
+            id: conceptSetId++,
+            name: event.conceptSet || `Concept Set ${conceptSetId}`,
+            expression: {
+              items: event.chips.map(chip => ({
+                concept: {
+                  CONCEPT_CLASS_ID: 'Clinical Finding',
+                  CONCEPT_CODE: chip.value,
+                  CONCEPT_ID: parseInt(chip.value) || 0,
+                  CONCEPT_NAME: chip.label,
+                  DOMAIN_ID: 'Condition',
+                  INVALID_REASON: 'V',
+                  INVALID_REASON_CAPTION: 'Valid',
+                  STANDARD_CONCEPT: 'S',
+                  STANDARD_CONCEPT_CAPTION: 'Standard',
+                  VOCABULARY_ID: 'ICD10CM',
+                  VALID_START_DATE: '1970-01-01',
+                  VALID_END_DATE: '2099-12-31',
+                },
+                includeDescendants: false,
+                includeMapped: false,
+              })),
+            },
+          })
+        }
+      })
+    })
+
+    // Build Atlas cohort definition
+    const atlasDef: any = {
+      ConceptSets: conceptSets,
+      PrimaryCriteria: {
+        CriteriaList: [],
+        ObservationWindow: {
+          PriorDays: 0,
+          PostDays: 0,
+        },
+        PrimaryCriteriaLimit: {
+          Type: occurrenceType,
+        },
+      },
+      QualifiedLimit: {
+        Type: occurrenceType,
+      },
+      ExpressionLimit: {
+        Type: occurrenceType,
+      },
+      InclusionRules: inclusionFilters.map(filter => ({
+        name: filter.title,
+        expression: {
+          Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
+          CriteriaList: filter.events.map(event => ({
+            Criteria: {
+              ConditionOccurrence: {
+                CodesetId: conceptSets.findIndex(cs => cs.name === event.conceptSet),
+              },
+            },
+            StartWindow: {
+              Start: {
+                Coeff: -1,
+              },
+              End: {
+                Coeff: 1,
+              },
+              UseEventEnd: false,
+            },
+            Occurrence: {
+              Type: 2,
+              Count: 1,
+            },
+          })),
+          DemographicCriteriaList: [],
+          Groups: [],
+        },
+      })),
+      CensoringCriteria: [],
+      CollapseSettings: {
+        CollapseType: 'ERA',
+        EraPad: 0,
+      },
+      CensorWindow: {},
+    }
+
+    // Only add ExclusionRules if there are exclusion filters
+    if (exclusionFilters.length > 0) {
+      atlasDef.ExclusionRules = exclusionFilters.map(filter => ({
+        name: filter.title,
+        expression: {
+          Type: filter.operator === 'OR' ? 'ANY' : 'ALL',
+          CriteriaList: [
+            {
+              CriteriaList: filter.events.map(event => ({
+                ConditionOccurrence: {
+                  CodesetId: conceptSets.findIndex(cs => cs.name === event.conceptSet),
+                },
+              })),
+            },
+          ],
+          DemographicCriteriaList: [],
+          Groups: [],
+        },
+      }))
+    }
+
+    // Only add primary criteria if there are inclusion filters with events
+    if (inclusionFilters.length > 0 && inclusionFilters.some(f => f.events.length > 0)) {
+      atlasDef.PrimaryCriteria.CriteriaList = [
+        {
+          ObservationPeriod: {
+            PeriodStartDate: {
+              Value: '1800-01-01',
+              Op: 'gt',
+            },
+            PeriodEndDate: {
+              Value: '2999-01-01',
+              Op: 'lt',
+            },
+          },
+        },
+      ]
+      atlasDef.cdmVersionRange = '>=5.0.0'
+    }
+
+    return atlasDef
   }
 }
