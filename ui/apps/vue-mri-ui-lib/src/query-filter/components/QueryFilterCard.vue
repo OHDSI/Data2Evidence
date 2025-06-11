@@ -501,7 +501,6 @@ defineExpose({
 
           <!-- Nested criteria content -->
           <div v-if="attrEvent.isNested" class="query-filter-event__nested-content">
-            <div>{{ attrEvent.id }}</div>
             <!-- Add event button for nested criteria -->
             <div class="nested-add-event-container">
               <criteria-selector-dropdown

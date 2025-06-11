@@ -131,10 +131,11 @@ const currentOperator = computed(() => {
   <div class="query-filter-nested-event" :class="`query-filter-nested-event--level-${currentLevel}`">
     <!-- Handle regular nested events (not deeply nested) -->
     <template v-if="!event.isNested">
-      <div 
+      <div
         class="query-filter-nested-event__container"
         :class="{
-          'has-content-sidebar': (props.siblingCount && props.siblingCount > 1) || (event.nestedEvents && event.nestedEvents.length > 1)
+          'has-content-sidebar':
+            (props.siblingCount && props.siblingCount > 1) || (event.nestedEvents && event.nestedEvents.length > 1),
         }"
       >
         <!-- ANY/ALL sidebar for first level nested events -->
@@ -155,83 +156,125 @@ const currentOperator = computed(() => {
           </button>
         </div>
 
-        <div 
+        <div
           class="query-filter-nested-event__simple"
-          :class="{ 'query-filter-nested-event__simple--has-nested': event.nestedEvents && event.nestedEvents.length > 0 }"
+          :class="{
+            'query-filter-nested-event__simple--has-nested': event.nestedEvents && event.nestedEvents.length > 0,
+          }"
         >
-        <div>{{ event.id }}</div>
-        <div class="query-filter-nested-event__header">
-          <span class="query-filter-nested-event__label">
-            {{ event.conceptSet || 'Nested Event' }}
-          </span>
-          <div class="query-filter-nested-event__actions">
-            <button
-              class="btn-icon"
-              @click="handleEditEvent(event.id)"
-              aria-label="Edit nested event"
-              title="Edit nested event"
-            >
-              <i class="icon icon-pencil"></i>
-            </button>
-            <button
-              class="btn-icon"
-              @click="handleDuplicateEvent(event.id)"
-              aria-label="Duplicate nested event"
-              title="Duplicate nested event"
-            >
-              <i class="icon icon-copy"></i>
-            </button>
-            <attributes-dropdown
-              :criteria-type="event.criteriaType || 'conditionOccurrence'"
-              :event-id="event.id"
-              :all-events="getNestedEventGroup(event.id)"
-              @attribute-selected="attr => handleAttributeSelected(event.id, attr)"
-              @attribute-removed="attrId => handleAttributeRemoved(event.id, attrId)"
+          <div class="query-filter-nested-event__header">
+            <span class="query-filter-nested-event__label">
+              {{ event.conceptSet || 'Nested Event' }}
+            </span>
+            <div class="query-filter-nested-event__actions">
+              <button
+                class="btn-icon"
+                @click="handleEditEvent(event.id)"
+                aria-label="Edit nested event"
+                title="Edit nested event"
+              >
+                <i class="icon icon-pencil"></i>
+              </button>
+              <button
+                class="btn-icon"
+                @click="handleDuplicateEvent(event.id)"
+                aria-label="Duplicate nested event"
+                title="Duplicate nested event"
+              >
+                <i class="icon icon-copy"></i>
+              </button>
+              <attributes-dropdown
+                :criteria-type="event.criteriaType || 'conditionOccurrence'"
+                :event-id="event.id"
+                :all-events="getNestedEventGroup(event.id)"
+                @attribute-selected="attr => handleAttributeSelected(event.id, attr)"
+                @attribute-removed="attrId => handleAttributeRemoved(event.id, attrId)"
+              />
+              <button
+                class="btn-remove-event"
+                @click="removeSelf"
+                aria-label="Remove nested event"
+                title="Remove nested event"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div class="query-filter-nested-condition__chips">
+            <query-filter-chip
+              v-for="chip in event.chips"
+              :key="chip.id"
+              :chip="chip"
+              :removable="true"
+              @remove="handleRemoveChip(event.id, chip.id)"
             />
-            <button
-              class="btn-remove-event"
-              @click="removeSelf"
-              aria-label="Remove nested event"
-              title="Remove nested event"
-            >
-              ×
+            <button class="btn-add-chip" @click="handleAddChip(event.id)" aria-label="Add filter">
+              <i class="icon icon-plus"></i>
             </button>
           </div>
-        </div>
 
-        <div class="query-filter-nested-condition__chips">
-          <query-filter-chip
-            v-for="chip in event.chips"
-            :key="chip.id"
-            :chip="chip"
-            :removable="true"
-            @remove="handleRemoveChip(event.id, chip.id)"
-          />
-          <button class="btn-add-chip" @click="handleAddChip(event.id)" aria-label="Add filter">
-            <i class="icon icon-plus"></i>
-          </button>
-        </div>
+          <!-- Render nested children if this event has them -->
+          <div v-if="event.nestedEvents && event.nestedEvents.length > 0" class="nested-children-container">
+            <!-- Render nested event groups with "At least 1" sidebar -->
+            <div v-for="group in nestedEventGroups" :key="group.parent.id" class="query-filter-event-group">
+              <!-- At least 1 sidebar that spans the parent event and all its attributes -->
+              <div class="query-filter-event__at-least-group">
+                <span>At least 1</span>
+              </div>
 
-        <!-- Render nested children if this event has them -->
-        <div v-if="event.nestedEvents && event.nestedEvents.length > 0" class="nested-children-container">
-          <!-- Render nested event groups with "At least 1" sidebar -->
-          <div
-            v-for="group in nestedEventGroups"
-            :key="group.parent.id"
-            class="query-filter-event-group"
-          >
-            <!-- At least 1 sidebar that spans the parent event and all its attributes -->
-            <div class="query-filter-event__at-least-group">
-              <span>At least 1</span>
+              <!-- Parent nested condition -->
+              <query-filter-nested-condition
+                :event="group.parent"
+                :parent-event-id="event.id"
+                :level="currentLevel + 1"
+                :operator="currentOperator"
+                :sibling-count="nestedEventGroups.length"
+                @edit-event="handleEditEvent"
+                @duplicate-event="handleDuplicateEvent"
+                @remove-event="handleRemoveEvent"
+                @add-chip="handleAddChip"
+                @remove-chip="handleRemoveChip"
+                @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
+                @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
+                @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
+                @toggle-operator="eventId => emit('toggle-operator', eventId)"
+              />
+
+              <!-- Nested attribute conditions -->
+              <query-filter-nested-condition
+                v-for="attrEvent in group.attributes"
+                :key="attrEvent.id"
+                :event="attrEvent"
+                :parent-event-id="event.id"
+                :level="currentLevel + 1"
+                :operator="currentOperator"
+                :sibling-count="nestedEventGroups.length"
+                class="query-filter-nested-event--attribute"
+                @edit-event="handleEditEvent"
+                @duplicate-event="handleDuplicateEvent"
+                @remove-event="handleRemoveEvent"
+                @add-chip="handleAddChip"
+                @remove-chip="handleRemoveChip"
+                @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
+                @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
+                @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
+                @toggle-operator="eventId => emit('toggle-operator', eventId)"
+              />
             </div>
 
-            <!-- Parent nested condition -->
+            <!-- Fallback: Render ungrouped nested events if no groups exist -->
             <query-filter-nested-condition
-              :event="group.parent"
+              v-for="nestedEvent in event.nestedEvents?.filter(
+                e => !nestedEventGroups.some(g => g.parent.id === e.id || g.attributes.some(a => a.id === e.id))
+              )"
+              :key="nestedEvent.id"
+              :event="nestedEvent"
               :parent-event-id="event.id"
               :level="currentLevel + 1"
               :operator="currentOperator"
-              :sibling-count="nestedEventGroups.length"
+              :sibling-count="event.nestedEvents?.length || 0"
+              :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
               @edit-event="handleEditEvent"
               @duplicate-event="handleDuplicateEvent"
               @remove-event="handleRemoveEvent"
@@ -240,62 +283,19 @@ const currentOperator = computed(() => {
               @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
               @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
               @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-              @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
-            />
-
-            <!-- Nested attribute conditions -->
-            <query-filter-nested-condition
-              v-for="attrEvent in group.attributes"
-              :key="attrEvent.id"
-              :event="attrEvent"
-              :parent-event-id="event.id"
-              :level="currentLevel + 1"
-              :operator="currentOperator"
-              :sibling-count="nestedEventGroups.length"
-              class="query-filter-nested-event--attribute"
-              @edit-event="handleEditEvent"
-              @duplicate-event="handleDuplicateEvent"
-              @remove-event="handleRemoveEvent"
-              @add-chip="handleAddChip"
-              @remove-chip="handleRemoveChip"
-              @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
-              @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
-              @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-              @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
+              @toggle-operator="eventId => emit('toggle-operator', eventId)"
             />
           </div>
-
-          <!-- Fallback: Render ungrouped nested events if no groups exist -->
-          <query-filter-nested-condition
-            v-for="nestedEvent in event.nestedEvents?.filter(e => !nestedEventGroups.some(g => g.parent.id === e.id || g.attributes.some(a => a.id === e.id)))"
-            :key="nestedEvent.id"
-            :event="nestedEvent"
-            :parent-event-id="event.id"
-            :level="currentLevel + 1"
-            :operator="currentOperator"
-            :sibling-count="event.nestedEvents?.length || 0"
-            :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
-            @edit-event="handleEditEvent"
-            @duplicate-event="handleDuplicateEvent"
-            @remove-event="handleRemoveEvent"
-            @add-chip="handleAddChip"
-            @remove-chip="handleRemoveChip"
-            @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
-            @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
-            @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-            @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
-          />
-        </div>
         </div>
       </div>
     </template>
 
     <!-- Handle deeply nested events (recursive case) -->
     <template v-else>
-      <div 
+      <div
         class="query-filter-nested-event__container"
         :class="{
-          'has-content-sidebar': event.nestedEvents && event.nestedEvents.length > 1
+          'has-content-sidebar': event.nestedEvents && event.nestedEvents.length > 1,
         }"
       >
         <!-- ANY/ALL sidebar positioned relative to nested content -->
@@ -317,32 +317,71 @@ const currentOperator = computed(() => {
         </div>
 
         <div class="query-filter-nested-event__nested-content">
-        <!-- Add event button for nested criteria -->
-        <div class="nested-add-event-container">
-          <criteria-selector-dropdown
-            section-id="initialEvents"
-            button-text="Add event"
-            @criteria-selected="handleCriteriaSelected"
-          />
-        </div>
-
-        <!-- Render nested event groups with "At least 1" sidebar -->
-        <div
-          v-for="group in nestedEventGroups"
-          :key="group.parent.id"
-          class="query-filter-event-group"
-        >
-          <!-- At least 1 sidebar that spans the parent event and all its attributes -->
-          <div class="query-filter-event__at-least-group">
-            <span>At least 1</span>
+          <!-- Add event button for nested criteria -->
+          <div class="nested-add-event-container">
+            <criteria-selector-dropdown
+              section-id="initialEvents"
+              button-text="Add event"
+              @criteria-selected="handleCriteriaSelected"
+            />
           </div>
 
-          <!-- Parent nested condition -->
+          <!-- Render nested event groups with "At least 1" sidebar -->
+          <div v-for="group in nestedEventGroups" :key="group.parent.id" class="query-filter-event-group">
+            <!-- At least 1 sidebar that spans the parent event and all its attributes -->
+            <div class="query-filter-event__at-least-group">
+              <span>At least 1</span>
+            </div>
+
+            <!-- Parent nested condition -->
+            <query-filter-nested-condition
+              :event="group.parent"
+              :parent-event-id="event.id"
+              :level="currentLevel + 1"
+              :operator="currentOperator"
+              @edit-event="handleEditEvent"
+              @duplicate-event="handleDuplicateEvent"
+              @remove-event="handleRemoveEvent"
+              @add-chip="handleAddChip"
+              @remove-chip="handleRemoveChip"
+              @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
+              @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
+              @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
+              @toggle-operator="eventId => emit('toggle-operator', eventId)"
+            />
+
+            <!-- Nested attribute conditions -->
+            <query-filter-nested-condition
+              v-for="attrEvent in group.attributes"
+              :key="attrEvent.id"
+              :event="attrEvent"
+              :parent-event-id="event.id"
+              :level="currentLevel + 1"
+              :operator="currentOperator"
+              class="query-filter-nested-event--attribute"
+              @edit-event="handleEditEvent"
+              @duplicate-event="handleDuplicateEvent"
+              @remove-event="handleRemoveEvent"
+              @add-chip="handleAddChip"
+              @remove-chip="handleRemoveChip"
+              @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
+              @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
+              @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
+              @toggle-operator="eventId => emit('toggle-operator', eventId)"
+            />
+          </div>
+
+          <!-- Fallback: Render ungrouped nested events if no groups exist -->
           <query-filter-nested-condition
-            :event="group.parent"
+            v-for="nestedEvent in event.nestedEvents?.filter(
+              e => !nestedEventGroups.some(g => g.parent.id === e.id || g.attributes.some(a => a.id === e.id))
+            )"
+            :key="nestedEvent.id"
+            :event="nestedEvent"
             :parent-event-id="event.id"
             :level="currentLevel + 1"
             :operator="currentOperator"
+            :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
             @edit-event="handleEditEvent"
             @duplicate-event="handleDuplicateEvent"
             @remove-event="handleRemoveEvent"
@@ -351,49 +390,8 @@ const currentOperator = computed(() => {
             @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
             @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
             @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-            @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
+            @toggle-operator="eventId => emit('toggle-operator', eventId)"
           />
-
-          <!-- Nested attribute conditions -->
-          <query-filter-nested-condition
-            v-for="attrEvent in group.attributes"
-            :key="attrEvent.id"
-            :event="attrEvent"
-            :parent-event-id="event.id"
-            :level="currentLevel + 1"
-            :operator="currentOperator"
-            class="query-filter-nested-event--attribute"
-            @edit-event="handleEditEvent"
-            @duplicate-event="handleDuplicateEvent"
-            @remove-event="handleRemoveEvent"
-            @add-chip="handleAddChip"
-            @remove-chip="handleRemoveChip"
-            @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
-            @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
-            @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-            @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
-          />
-        </div>
-
-        <!-- Fallback: Render ungrouped nested events if no groups exist -->
-        <query-filter-nested-condition
-          v-for="nestedEvent in event.nestedEvents?.filter(e => !nestedEventGroups.some(g => g.parent.id === e.id || g.attributes.some(a => a.id === e.id)))"
-          :key="nestedEvent.id"
-          :event="nestedEvent"
-          :parent-event-id="event.id"
-          :level="currentLevel + 1"
-          :operator="currentOperator"
-          :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
-          @edit-event="handleEditEvent"
-          @duplicate-event="handleDuplicateEvent"
-          @remove-event="handleRemoveEvent"
-          @add-chip="handleAddChip"
-          @remove-chip="handleRemoveChip"
-          @attribute-selected="(eventId, attribute) => emit('attribute-selected', eventId, attribute)"
-          @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
-          @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
-          @toggle-operator="(eventId) => emit('toggle-operator', eventId)"
-        />
 
           <!-- Empty state for nested criteria -->
           <div v-if="!event.nestedEvents?.length" class="nested-empty-state">
@@ -474,12 +472,12 @@ const currentOperator = computed(() => {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 8px;
-  
+
   // Ensure we have the right padding when inside a container with sidebar
   .query-filter-nested-event__container.has-content-sidebar & {
     padding-left: calc(8px + 36px); // Base padding + sidebar space
   }
-  
+
   // Apply nested styling (yellow background) when this event has nested children
   &--has-nested {
     background: #fefce8;
@@ -490,7 +488,7 @@ const currentOperator = computed(() => {
 // Container for nested events that need sidebars
 .query-filter-nested-event__container {
   position: relative;
-  
+
   &.has-content-sidebar {
     .query-filter-nested-event__nested-content {
       padding-left: calc(1rem + 36px); // Base padding + sidebar space for nested events
@@ -554,7 +552,7 @@ const currentOperator = computed(() => {
   border-radius: 4px;
   background: #fafafa;
   position: relative;
-  
+
   // Apply nested styling (yellow background) when this contains nested events
   &:has(.query-filter-event-group) {
     background: #fefce8;
@@ -651,4 +649,3 @@ const currentOperator = computed(() => {
   }
 }
 </style>
-
