@@ -52,6 +52,10 @@
           "target": "/resources/mapping"
         },
         {
+          "source": "/concept-mapping",
+          "target": "/resources/concept-mapping"
+        },
+        {
           "source": "/jobs",
           "target": "/resources/jobs"
         },
@@ -327,24 +331,11 @@
             "name": "ETL",
             "enabled": true,
             "route": "etl",
-            "children": [
-              {
-                "name": "Concept mapping",
-                "enabled": true,
-                "pluginPath": "plugins/SystemAdmin/ConceptMapping/module",
-                "route": "concept-mapping"
-              },
-              {
-                "data": {
-                  "dnBaseUrl": "https://$$FQDN$$/",
-                  "mappingSuggestion": false
-                },
-                "name": "Data transformation",
-                "enabled": true,
-                "pluginPath": "https://$$FQDN$$/flow/module.js",
-                "route": "dataflow"
-              }
-            ]
+            "data": {
+              "dnBaseUrl": "https://$$FQDN$$/",
+              "mappingSuggestion": false
+            },
+            "pluginPath": "https://$$FQDN$$/flow/module.js"
           },
           {
             "name": "Setup",

@@ -771,6 +771,7 @@
   "STUDY_OVERVIEW__ACTIONS": "Aktionen",
   "STUDY_OVERVIEW__DATA_MODEL": "Datenmodell",
   "STUDY_OVERVIEW__DATASETS": "Datensätze",
+  "STUDY_OVERVIEW__FHIR_SERVER": "FHIR-Server",
   "STUDY_OVERVIEW__LATEST_AVAILABLE": "Neueste verfügbare Schemaversion",
   "STUDY_OVERVIEW__NAME": "Name",
   "STUDY_OVERVIEW__NO_DATA": "Keine Daten verfügbar",

@@ -5,6 +5,7 @@ export type NodeType =
   | "r_node"
   | "sql_node"
   | "data_mapping_node"
+  | "concept_mapping_node"
   | "csv_node"
   | "db_reader_node"
   | "db_writer_node"
