@@ -169,6 +169,7 @@ services:
             "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
             "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
             "NODE_ENV": "${NODE_ENV:-development}",
+            "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
             "PG__DB_NAME": "alp",
             "PG__FHIR_DB_NAME": "alp_fhir",
             "PG__DEBUG": "${PG_DEBUG:-1}",
@@ -181,7 +182,6 @@ services:
             "PG__DIALECT": "postgresql",
             "LOCAL_DEBUG": "false",
             "isHttpTestRun": "${isHttpTestRun}",
-            "USE_HANA_JWT_AUTHC": "${USE_HANA_JWT_AUTHC:-false}",
             "SERVICE_ROUTES": {
               "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",

@@ -38,10 +38,10 @@ export const SAMPLE_USER_JWT: IAppTokenPayload = {
 };
 
 const buildUserFromToken = (token: IAppTokenPayload): IUser => {
-  const { name, sub, email } = token;
+  const { name, oid, sub, email } = token;
 
   const user: IUser = {
-    userId: sub,
+    userId: oid ?? sub,
     name,
     email,
   };
@@ -58,6 +58,7 @@ export class User {
   constructor(
     private token: IAppTokenPayload | string,
     private userLang: string = "en",
+    private thirdPartyToken?: string,
   ) {
     if (typeof token === "string") {
       this.isAlice = true;
@@ -76,9 +77,8 @@ export class User {
     }
 
     this.userLang = userLang.split("-")[0];
-
     this.token = token;
-
+    this.thirdPartyToken = thirdPartyToken;
     this.user = buildUserFromToken(token);
   }
 

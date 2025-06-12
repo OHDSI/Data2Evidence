@@ -52,8 +52,7 @@ const Env = z
     PG__IDLE_TIMEOUT_IN_MS: z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
-      .transform(Number),
-    USE_HANA_JWT_AUTHC: z.string()
+      .transform(Number)
   })
   .superRefine(
     (
