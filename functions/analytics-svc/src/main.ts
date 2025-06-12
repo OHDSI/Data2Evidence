@@ -259,9 +259,8 @@ const initRoutes = async (app: express.Application) => {
         (req: IMRIRequest, res, next) => {
             QueryObject.QueryObject.format(
                 `select 
-      SESSION_CONTEXT('XS_APPLICATIONUSER') as xs_applicationuser, 
-      SESSION_CONTEXT('APPLICATIONUSER') as applicationuser, 
-      SESSION_CONTEXT('XS_ORGANIZATION') as orgidUser from dummy`
+      SESSION_CONTEXT('XS_APPLICATIONUSER') as DB_USER_NAME, 
+      SESSION_CONTEXT('APPLICATIONUSER') as APP_USER_NAME from dummy`
             ).executeQuery(
                 req.dbConnections.analyticsConnection,
                 (err, result) => {
