@@ -22,6 +22,7 @@ export interface ConnectionInterface {
     schemaName: string;
     vocabSchemaName: string;
     dialect: string;
+    cohortSchemaName?: string;
     execute(sql: string, parameters: ParameterInterface[], callback: CallBackInterface, schemaName?: string): void;
     executeQuery(sql: string, parameters: ParameterInterface[], callback: CallBackInterface, schemaName?: string): void;
     executeStreamQuery(sql: string, parameters: ParameterInterface[], callback: CallBackInterface, schemaName?: string): void;
@@ -39,6 +40,8 @@ export interface ConnectionInterface {
     getTranslatedSql(sql: string, schemaName: string, parameters: ParameterInterface[]): string;
     activate_nativedb_communication?(credentials: any): void;
     deactivate_nativedb_communication?(dbName: any): void;
+    getApplicationUser?(): Promise<any>;
+    setCohortSchemaName?(cohortSchemaName: string): void;
 }
 
 /**
