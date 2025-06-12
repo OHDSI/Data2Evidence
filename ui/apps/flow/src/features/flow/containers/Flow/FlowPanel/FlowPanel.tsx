@@ -34,7 +34,6 @@ import {
   selectEdges,
   setAddNodeTypeDialog,
   setAddGroupDialog,
-  setEdge,
   setNode,
 } from "../../../reducers";
 import { dispatch, RootState } from "../../../../../store";
@@ -270,16 +269,6 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
-
-      let edge: EdgeState | undefined;
-      if (newNode.id && connectingNodeId.current) {
-        edge = {
-          id: uuidv4(),
-          source: connectingNodeId.current!,
-          target: newNode.id,
-        };
-        dispatch(setEdge(edge));
-      }
 
       const { zoom } = getViewport();
       setCenter(

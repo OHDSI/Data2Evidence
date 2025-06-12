@@ -13,14 +13,14 @@ export const getUser = (req: Pick<IMRIDBRequest, "headers">): User => {
       decode(req.headers["authorization"].replace(/bearer /i, "")),
     );
 
-    const user = new User(JSON.parse(userToken), lang);
+    let user = new User(JSON.parse(userToken), lang);
 
     // For HANA JWT Authentication
     const thirdPartyToken = decode(
       req.headers["authorization"].replace(/bearer /i, ""),
     )["thirdPartyToken"];
     if (thirdPartyToken) {
-      user.thirdPartyToken = thirdPartyToken;
+      user = new User(decode(thirdPartyToken), lang, thirdPartyToken); //Override logto IDP with thirdparty token
     }
     return user;
   } catch (err) {

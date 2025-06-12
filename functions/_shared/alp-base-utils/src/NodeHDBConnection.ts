@@ -54,7 +54,7 @@ export class NodeHDBConnection implements ConnectionInterface {
       );
       const timestamp = (new Date()).valueOf();
       // console.time(`time-NodeHDBConnection--connected-${timestamp}`)
-      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName,sql);
 
       if (this.conn.readyState === "connected") {
         this.prepareStatementAndExecute(sql, parameters, callback);
@@ -78,7 +78,7 @@ export class NodeHDBConnection implements ConnectionInterface {
   }
 
   public getTranslatedSql(sql: string, schemaName: string, parameters: ParameterInterface[]): string {
-    return this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
+    return this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName, sql);
   }
 
   private prepareStatementAndExecute(
@@ -142,7 +142,7 @@ export class NodeHDBConnection implements ConnectionInterface {
     schemaName: string = "",
   ) {
     try {
-      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, sql);
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName, sql);
       this.conn.prepare(sql, (err, statement) => {
         if (err) {
           logger.error(`Execute error: ${JSON.stringify(err)}
@@ -432,12 +432,42 @@ export class NodeHDBConnection implements ConnectionInterface {
     }
   }
 
+  public getApplicationUser() {
+      return new Promise((resolve, reject) => {
+        this.executeQuery(
+          `SELECT SESSION_CONTEXT('XS_APPLICATIONUSER') as DB_USER_NAME FROM DUMMY;`,
+          [],
+          (err: any, result: any) => {
+              if (err) {
+                  logger.info(err);
+                  return reject(err);
+              } else {
+                  resolve(result[0].DB_USER_NAME);
+              }
+          }
+        )
+    });
+  }
+
+  public setCohortSchemaName(cohortSchemaName: string) {
+    this.cohortSchemaName = cohortSchemaName;
+  }
+
   private getSqlStatementWithSchemaName(
     schemaName: string,
     vocabSchemaName: string,
+    cohortSchemaName: string,
     sql: string,
   ): string {
     const replacement = schemaName === "" ? "" : `${schemaName}.`;
+    sql = sql.replace(
+            /\$\$SCHEMA\$\$."?COHORT_DEFINITION"?/g,
+            `"${cohortSchemaName}".COHORT_DEFINITION`
+          );
+    sql = sql.replace(
+            /\$\$SCHEMA\$\$."?COHORT"?/g,
+            `"${cohortSchemaName}".COHORT`
+            );
     sql = sql.replace(/\$\$SCHEMA\$\$./g, replacement);
     sql = sql.replace(/\$\$VOCAB_SCHEMA\$\$./g, `${vocabSchemaName}.`);
     return sql;
