@@ -50,7 +50,11 @@ export const MappingFileDialogController: FC = () => {
             console.debug("JSON content:", json);
             load(json);
             setPage("table");
-            updateNodeInternals(json.table?.nodes?.map((node) => node.id) || []);
+            if (json.table && Array.isArray(json.table.nodes)) {
+              updateNodeInternals(json.table.nodes.map((node) => node.id));
+            } else {
+              console.warn("Table or nodes are undefined. Skipping updateNodeInternals.");
+            }
           } catch (err) {
             console.error("Error parsing JSON:", err);
           }
