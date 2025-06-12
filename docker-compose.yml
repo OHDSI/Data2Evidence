@@ -112,7 +112,6 @@ services:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
-    pull_policy: ${TREX_PULL_POLICY:-missing}
     platform: linux/amd64
     logging:
       options:
@@ -170,6 +169,7 @@ services:
             "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
             "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
             "NODE_ENV": "${NODE_ENV:-development}",
+            "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
             "PG__DB_NAME": "alp",
             "PG__FHIR_DB_NAME": "alp_fhir",
             "PG__DEBUG": "${PG_DEBUG:-1}",
@@ -182,7 +182,6 @@ services:
             "PG__DIALECT": "postgresql",
             "LOCAL_DEBUG": "false",
             "isHttpTestRun": "${isHttpTestRun}",
-            "USE_HANA_JWT_AUTHC": "${USE_HANA_JWT_AUTHC:-false}",
             "SERVICE_ROUTES": {
               "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
@@ -916,7 +915,7 @@ services:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3002 # Enable if need to access admin console
-      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
       ENDPOINT: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
@@ -1322,7 +1321,7 @@ services:
       EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
       # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
       EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DsIRS:-False}
+      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
       EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
       KG_PORT: ${KG_PORT:-8888}
       EG_BASE_URL: /jupyter
