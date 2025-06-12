@@ -1,26 +1,36 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
 import {
+  CreateFromTemplateDto,
   DataflowDto,
-  LatestDataflowItemDto,
   DataflowItemDto,
-  SaveDataflowDto,
-  SaveDataflowResponseDto,
-  DuplicateDataflowDto,
-  DuplicateDataflowResponseDto,
+  DeleteDataflowDto,
+  DeleteDataflowResponseDto,
   DeleteDataflowRevisionDto,
   DeleteDataflowRevisionResponseDto,
-  TestDataflowDto,
-  NodeResultDto,
+  DuplicateDataflowDto,
+  DuplicateDataflowResponseDto,
   FlowRunStateDto,
-  DeleteDataflowResponseDto,
-  DeleteDataflowDto,
+  LatestDataflowItemDto,
+  NodeResultDto,
+  OverwriteFromRemoteResponseDto,
+  RemoteDiffCheckResponseDto,
+  SaveDataflowDto,
+  SaveDataflowResponseDto,
+  TemplateDto,
+  TestDataflowDto,
 } from "../types";
 import { baseQueryFn } from "./base-query";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
   baseQuery: baseQueryFn,
-  tagTypes: ["Dataflow", "DataflowRevision", "DataflowResult", "DataflowState"],
+  tagTypes: [
+    "Dataflow",
+    "DataflowRevision",
+    "DataflowResult",
+    "DataflowState",
+    "Template",
+  ],
   endpoints: (builder) => ({
     getDataflows: builder.query<DataflowDto[], void>({
       query: () => "dataflow/list",
@@ -160,6 +170,68 @@ export const dataflowApiSlice = createApi({
         { type: "DataflowState", id: "LATEST" },
       ],
     }),
+    uploadNodeCsvFile: builder.mutation<
+      { status: string },
+      { nodeId: string; file: File }
+    >({
+      query: ({ nodeId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return {
+          url: `dataflow/file/csv?nodeId=${nodeId}`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    deleteNodeCsvFile: builder.mutation<
+      { status: string },
+      { nodeId: string; fileName: string }
+    >({
+      query: ({ nodeId, fileName }) => ({
+        url: `dataflow/file/csv?nodeId=${nodeId}&fileName=${fileName}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    checkRemoteDiff: builder.query<RemoteDiffCheckResponseDto, string>({
+      query: (id) => `dataflow/${id}/remote-diff-check`,
+      providesTags: (result, error, id) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+      ],
+    }),
+    overwriteCanvasFromRemote: builder.mutation<
+      OverwriteFromRemoteResponseDto,
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `dataflow/${id}/overwrite-from-remote`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Dataflow", id },
+        { type: "DataflowRevision", id },
+        { type: "Dataflow", id: "LIST" },
+      ],
+    }),
+    getTemplates: builder.query<TemplateDto[], void>({
+      query: () => "dataflow/templates",
+      providesTags: ["Template"],
+    }),
+    createCanvasFromTemplate: builder.mutation<
+      SaveDataflowResponseDto,
+      CreateFromTemplateDto
+    >({
+      query: ({ templateId, name, comment }) => ({
+        url: `dataflow/templates/${templateId}`,
+        method: "POST",
+        body: { name, comment },
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
   }),
 });
 
@@ -176,4 +248,10 @@ export const {
   useCancelFlowRunMutation,
   useLazyGetFlowRunResultsByIdQuery,
   useLazyGetFlowRunStateByIdQuery,
+  useUploadNodeCsvFileMutation,
+  useDeleteNodeCsvFileMutation,
+  useCheckRemoteDiffQuery,
+  useOverwriteCanvasFromRemoteMutation,
+  useGetTemplatesQuery,
+  useCreateCanvasFromTemplateMutation,
 } = dataflowApiSlice;

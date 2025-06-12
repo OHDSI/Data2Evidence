@@ -34,7 +34,6 @@ import {
   selectEdges,
   setAddNodeTypeDialog,
   setAddGroupDialog,
-  setEdge,
   setNode,
 } from "../../../reducers";
 import { dispatch, RootState } from "../../../../../store";
@@ -145,6 +144,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
     centerViewport(savedNodes);
   }, [dataflow, centerViewport]);
+
+  const handleNodesDelete = useCallback(() => {
+    dispatch(markStatusAsDraft());
+  }, []);
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -266,16 +269,6 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
-
-      let edge: EdgeState | undefined;
-      if (newNode.id && connectingNodeId.current) {
-        edge = {
-          id: uuidv4(),
-          source: connectingNodeId.current!,
-          target: newNode.id,
-        };
-        dispatch(setEdge(edge));
-      }
 
       const { zoom } = getViewport();
       setCenter(
@@ -445,6 +438,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         fitView
         fitViewOptions={fitViewOptions}
         nodeTypes={NODE_TYPES}
+        onNodesDelete={handleNodesDelete}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

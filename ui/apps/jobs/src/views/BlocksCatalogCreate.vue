@@ -12,6 +12,10 @@
       </BlockTypeCardLayout>
     </template>
   </p-layout-default>
+
+  <p-layout-default v-else>
+    <Loader />
+  </p-layout-default>
 </template>
 
 <script lang="ts" setup>

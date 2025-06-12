@@ -1,0 +1,12 @@
+{
+  "name": "d2e-e2e-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "init": "playwright install chromium --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.52.0",
+    "playwright": "1.52.0"
+  }
+}

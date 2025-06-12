@@ -366,3 +366,28 @@ export interface NodeData {
   errorMessage: string | null;
   nodeName: string;
 }
+
+export type CanvasResult =
+  | {
+      canvasId: string;
+      revisionId: string;
+      name: string;
+    }
+  | {
+      canvasId: string;
+      error: string;
+    };
+
+export interface CsvFileOperationResponse {
+  status: "success";
+  filePath: string;
+  bucket: string;
+}
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  nodes: IReactFlowNode[];
+  edges: IReactFlowEdge[];
+}
