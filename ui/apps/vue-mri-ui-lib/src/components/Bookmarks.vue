@@ -119,6 +119,8 @@
         <d4l-spinner />
       </div>
       <div v-else>
+        <!-- TODO: Put here for convenience during dev. move it to the filter cards section later -->
+        <QueryFilterDemo />
         <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
           {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
         </div>
@@ -200,6 +202,7 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+import QueryFilterDemo from '../query-filter/components/QueryFilterDemo.vue'
 
 export default {
   compatConfig: {
@@ -574,6 +577,7 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
+    QueryFilterDemo,
   },
 }
 </script>

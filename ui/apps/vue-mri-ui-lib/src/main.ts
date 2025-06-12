@@ -49,11 +49,4 @@ applyPolyfills().then(() => {
   defineCustomElements()
 })
 
-// TODO: commented to work on component more easily
-// app.mount('.vue-main')
-
-// TODO: remove later on
-import QueryFilterDemo from './query-filter/components/QueryFilterDemo.vue'
-console.log('jerome')
-const app2 = createApp(QueryFilterDemo)
-app2.mount('.vue-main')
+app.mount('.vue-main')
