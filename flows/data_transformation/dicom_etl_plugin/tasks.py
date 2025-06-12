@@ -569,7 +569,7 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
     logger.info(f"Extracting metadata from {len(dicom_files)} files..")
 
     for filepath in dicom_files:
-        with dcmread(filepath) as dicom_f:
+        with dcmread(filepath, stop_before_pixels=True, force=True) as dicom_f:
 
             study_instance_uid = dicom_f.get(
                 "StudyInstanceUID")  # [0x0020, 0x000D]
@@ -589,7 +589,7 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
 
             for data_elem in dicom_f:
                 # Filter out values that are too large to store in db
-                if convert_tag_to_string(data_elem.tag) == "7FE00010" or data_elem.VR == "UN":
+                if data_elem.VR == "UN":
                     continue  # skip
                 else:
                     try:
