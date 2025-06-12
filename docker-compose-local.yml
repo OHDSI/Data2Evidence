@@ -4,7 +4,6 @@ services:
     build:
       context: ./services/trex
       dockerfile: Dockerfile
-      pull: true
     ports:
       - 9229:9229
       - 25432:5432
@@ -73,7 +72,6 @@ services:
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile
-      pull: true
 
   alp-minerva-pg-mgmt-init:
     ports:
