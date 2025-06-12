@@ -23,6 +23,7 @@ dist
 **/library-parameters.json
 
 **/*private*
+**/.parcel*
 
 .nx
 

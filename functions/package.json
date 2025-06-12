@@ -74,6 +74,10 @@
       ],
       "api": [
         {
+          "source": "/gateway/dashboard",
+          "service": "proxy-gateway"
+        },
+        {
           "source": "/jobplugins",
           "function": "/jobplugins",
           "imports": "/jobplugins/import.json",
@@ -527,6 +531,12 @@
         ]
       },
       "scopes": [
+        {
+          "path": "^/gateway/dashboard/(.*)",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ]
+        },
         {
           "path": "^/files-manager/api",
           "scopes": [

@@ -126,6 +126,10 @@
         {
           "source": "/ui",
           "target": "/resources/ui5/resources/"
+        },
+        {
+          "source": "/ui/gateway/dashboard",
+          "target": "/resources/gateway/dist"
         }
       ],
       "uiplugins": {

@@ -270,7 +270,22 @@ export async function authz(c: Context, next: any) {
     const { method } = c.req.raw;
     const originalUrl = c.req.path;
 
-    const bearerToken = c.req.raw.headers.get("authorization");
+    let bearerToken = c.req.raw.headers.get("authorization");
+    logger.log('authz: bearerToken: ' + bearerToken);
+    logger.log('authz: originalUrl: ' + originalUrl);
+    if (!bearerToken && originalUrl.startsWith("/gateway/dashboard/")) {
+      logger.log('authz: token empty and path is gateway ' + c.req.header("cookie"))
+      if (c.req.header("cookie")) {
+        const cookies = c.req.header("cookie")?.split("; ");
+        for (const cookie of cookies) {
+          if (cookie.startsWith("authtoken=")) {
+            bearerToken = cookie.split("=")[1];
+            bearerToken = `Bearer ${bearerToken}`;
+            break;
+          }
+        }
+      }
+    }
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
     } else if (!bearerToken) {
@@ -304,7 +319,7 @@ export async function authz(c: Context, next: any) {
     } else {
       try {
         const userGroups = await userMgmtApi.getUserGroups(
-          c.req.raw.headers.get("authorization").replace(/token /i, "bearer "),
+          bearerToken.replace(/token /i, "bearer "),
           idpUserId
         );
         token["userMgmtGroups"] = userGroups;
