@@ -699,7 +699,7 @@ const getDBConnections = async ({
 
         if (
             analyticsCredentials.dialect === DB.HANA &&
-            env.USE_HANA_JWT_AUTHC === "true"
+            analyticsCredentials.authentication_mode === "JWT"
         ) {
             delete analyticsCredentials.user;
             delete analyticsCredentials.password;
@@ -710,6 +710,8 @@ const getDBConnections = async ({
                     "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
                 );
             }
+            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-cohorts`;
+            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
         }
 
         analyticsConnectionPromise =
