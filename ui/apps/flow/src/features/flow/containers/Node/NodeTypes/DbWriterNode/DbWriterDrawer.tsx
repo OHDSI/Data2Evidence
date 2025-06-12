@@ -31,13 +31,6 @@ const EMPTY_FORM_DATA: FormData = {
   dbtablename: "",
 };
 
-// Allow all connected nodes to db writer (dataframe & any)
-// const sourceOptions: SourceOptions = {
-//   sql_node: [SourceTypes.NODE],
-//   py2table_node: [SourceTypes.NODE],
-//   db_reader_node: [SourceTypes.NODE],
-// };
-
 export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   node,
   onClose,
