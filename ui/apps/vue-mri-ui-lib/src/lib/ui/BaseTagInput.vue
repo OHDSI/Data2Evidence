@@ -9,7 +9,8 @@
   >
     <multiselect
       size="sm"
-      v-model="selectedValues"
+      :value="selectedValues"
+      @input="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
       :internal-search="false"
@@ -28,7 +29,6 @@
       :loading="isLoading"
       :close-on-select="false"
       @search-change="handleSearchChange"
-      @input="handleUpdateValue"
       @select="openControl"
       :preserveSearch="true"
       ref="multiselect"
@@ -41,7 +41,7 @@
         </div>
       </template>
       <template v-slot:tag="props">
-        <div :ref="props.option.value" class="multiselect__tags-wrap">
+        <div :ref="el => setTagRef(el, props.option.value)" class="multiselect__tags-wrap">
           <span
             tabindex="0"
             :class="getClass(props.option)"
@@ -81,7 +81,7 @@
         text="+"
         :title="texts.createConceptSet"
         style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 0px"
-        @mousedown.stop.prevent="handleConceptSetAction()"
+        @mousedown.stop.prevent="handleConceptSetAction(null)"
       />
     </div>
   </div>
@@ -97,18 +97,21 @@ function escapeStringRegExp(str) {
 
 export default {
   name: 'BaseTagInput',
+  compatConfig: {
+    MODE: 3 as const,
+  },
   props: {
     value: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     domainValues: {
       type: Object,
       default: () => ({
         values: [],
         isLoading: false,
-        loadedStatus: 'NO_RESULTS'
-      })
+        loadedStatus: 'NO_RESULTS',
+      }),
     },
     texts: {
       type: Object,
@@ -119,25 +122,25 @@ export default {
         createConceptSet: 'Create concept set',
         loadingSuggestions: 'Loading suggestions...',
         tooManyValues: 'Too many values',
-        noSuggestions: 'No suggestions found'
-      })
+        noSuggestions: 'No suggestions found',
+      }),
     },
     componentType: {
       type: String,
-      default: 'default'
+      default: 'default',
     },
     isCatalogAttribute: {
       type: Boolean,
-      default: false
+      default: false,
     },
     optionsLimit: {
       type: Number,
-      default: 200
+      default: 200,
     },
     conceptSetConfig: {
       type: Object,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   emits: ['update:value', 'search-change', 'concept-set-action'],
   data() {
@@ -148,6 +151,7 @@ export default {
       currentTagPlaceholder: '',
       optionLimitSize: 200,
       selectedValuesTimeout: null,
+      tagRefs: {},
     }
   },
   mounted() {
@@ -162,7 +166,7 @@ export default {
           this.currentTagPlaceholder = ''
         }
       },
-      deep: true
+      deep: true,
     },
     selectedValues(newVal) {
       if (this.selectedValues.length) {
@@ -179,15 +183,15 @@ export default {
           this.currentPlaceholder = this.texts.placeholder
         }
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   computed: {
     filteredList() {
       const regex = new RegExp(escapeStringRegExp(this.searchQuery), 'gi')
       const list = [...this.domainValues.values, ...this.newTags]
       const updatedList = []
-      
+
       if (this.domainValues.isLoading) {
         this.currentTagPlaceholder = this.texts.loadingSuggestions
       } else if (this.domainValues.loadedStatus === 'TOO_MANY_RESULTS') {
@@ -198,7 +202,7 @@ export default {
       } else if (this.domainValues.loadedStatus === 'NO_RESULTS') {
         this.currentTagPlaceholder = this.texts.noSuggestions
       }
-      
+
       return updatedList
     },
     selectedValues() {
@@ -206,16 +210,27 @@ export default {
     },
     isLoading() {
       return this.domainValues.isLoading
-    }
+    },
   },
   methods: {
+    setTagRef(el, value) {
+      if (el) {
+        this.tagRefs[value] = el
+      } else {
+        delete this.tagRefs[value]
+      }
+    },
     remove(removedOption, id) {
       this.removeFromNewTags(removedOption.value)
     },
     async openControl() {
       await this.$nextTick()
-      this.$refs.multiselect.activate()
-      this.$refs.multiselect.$refs.search.focus()
+      if (this.$refs.multiselect?.activate) {
+        this.$refs.multiselect.activate()
+      }
+      if (this.$refs.multiselect?.$refs?.search) {
+        this.$refs.multiselect.$refs.search.focus()
+      }
     },
     tagNavHandler(props, event) {
       const t = event.target
@@ -226,8 +241,11 @@ export default {
             return v.value === props.option.value
           }) + 1
         if (nextItemIndex < this.selectedValues.length) {
-          const prevRefId = this.selectedValues[nextItemIndex].value
-          this.$refs[prevRefId].firstChild.focus()
+          const nextRefId = this.selectedValues[nextItemIndex].value
+          const nextRef = this.tagRefs[nextRefId]
+          if (nextRef?.firstChild) {
+            nextRef.firstChild.focus()
+          }
         }
       }
       if (event.code === 'ArrowLeft' || event.keyCode === 37) {
@@ -238,7 +256,10 @@ export default {
           }) - 1
         if (prevItemIndex >= 0) {
           const prevRefId = this.selectedValues[prevItemIndex].value
-          this.$refs[prevRefId].firstChild.focus()
+          const prevRef = this.tagRefs[prevRefId]
+          if (prevRef?.firstChild) {
+            prevRef.firstChild.focus()
+          }
         }
       }
     },
@@ -294,7 +315,15 @@ export default {
       }
     },
     handleUpdateValue(value) {
+      console.log('handleUpdateValue', value)
       this.$emit('update:value', value)
+      console.log('emitted update:value', value)
+      if (this.selectedValuesTimeout) {
+        clearTimeout(this.selectedValuesTimeout)
+      }
+      this.selectedValuesTimeout = setTimeout(() => {
+        this.currentPlaceholder = this.texts.enterSearchTerm
+      }, 100)
     },
     handleSearchChange(searchQuery) {
       if (this.searchQuery !== searchQuery) {
@@ -322,9 +351,12 @@ export default {
       this.$emit('concept-set-action', { values, config: this.conceptSetConfig })
     },
     tagClickHandler(props) {
-      this.$refs.multiselect.$refs.search.blur()
-      if (this.$refs.hasOwnProperty(props.option.value)) {
-        this.$refs[props.option.value].firstChild.focus()
+      if (this.$refs.multiselect?.$refs?.search) {
+        this.$refs.multiselect.$refs.search.blur()
+      }
+      const tagRef = this.tagRefs[props.option.value]
+      if (tagRef?.firstChild) {
+        tagRef.firstChild.focus()
       }
       if (this.selectedValues.length === 0) {
         this.currentPlaceholder = this.texts.placeholder
@@ -333,7 +365,7 @@ export default {
     removeFromNewTags(value) {
       this.newTags = this.newTags.filter(item => item.value !== value)
     },
-    tagKeyUpHandler(props, e) {
+    tagKeyUpHandler(props) {
       const prevItemIndex =
         this.selectedValues.findIndex(v => {
           return v.value === props.option.value
@@ -342,7 +374,10 @@ export default {
       this.removeFromNewTags(props.option.value)
       if (prevItemIndex >= 0) {
         const prevRefId = this.selectedValues[prevItemIndex].value
-        this.$refs[prevRefId].firstChild.focus()
+        const prevRef = this.tagRefs[prevRefId]
+        if (prevRef?.firstChild) {
+          prevRef.firstChild.focus()
+        }
       }
       if (this.selectedValues.length === 0) {
         this.currentPlaceholder = this.texts.placeholder
