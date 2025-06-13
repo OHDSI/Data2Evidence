@@ -29,8 +29,8 @@ def launch_docker_kernel(
         sys.exit(
             "ERROR - KERNEL_IMAGE not found in environment - kernel launch terminating!")
 
-    # Container name is composed of KERNEL_USERNAME and KERNEL_ID
-    container_name = kernel_id
+    # KERNEL_USERNAME should be user_id or study_id, but if not set, use kernel_id
+    container_name = os.environ.get("KERNEL_USERNAME", kernel_id)
 
     # Determine network. If EG_DOCKER_NETWORK has not been propagated, fall back to 'bridge'...
     docker_network = os.environ.get(
