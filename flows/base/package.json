@@ -692,6 +692,10 @@
             "definitions": {
               "DqdOptionsType": {
                 "properties": {
+                  "datasetId": {
+                    "title": "Datasetid",
+                    "type": "string"
+                  },
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
@@ -765,6 +769,7 @@
                   }
                 },
                 "required": [
+                  "datasetId",
                   "schemaName",
                   "databaseCode",
                   "cdmVersionNumber",
