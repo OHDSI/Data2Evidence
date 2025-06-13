@@ -27,6 +27,12 @@ import {
   loadConceptSetDetails as apiLoadConceptSetDetails,
   loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
 } from '../services/ConceptSetApiService'
+import {
+  getApiConfig,
+  filterConceptSets,
+  getTagInputTexts,
+  createDefaultConceptSetDomainValues,
+} from '../utils/ConceptSetHelpers'
 
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
@@ -51,38 +57,17 @@ const selectedConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDetails = ref<ConceptSetDetails>({})
 const loadingConceptDetails = ref(false)
 
-const tagInputTexts = {
-  placeholder: 'Select concepts or type to search...',
-  enterSearchTerm: 'Enter search term',
-  clearAll: 'Clear All',
-  createConceptSet: 'Create concept set',
-  loadingSuggestions: 'Loading suggestions...',
-  tooManyValues: 'Too many values',
-  noSuggestions: 'No suggestions found',
-}
+const tagInputTexts = getTagInputTexts()
 
 const allConceptSets = ref<ConceptSetItem[]>([])
-const conceptSetDomainValues = ref<ConceptSetDomainValues>({
-  values: [],
-  isLoading: false,
-  loadedStatus: 'NO_RESULTS',
-})
+const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-const getApiConfig = (): ApiConfig | null => {
-  if (!store) return null
-
-  const mriConfig = store.getters.getMriConfig
-  const selectedDataset = store.getters.getSelectedDataset
-
-  return {
-    configId: mriConfig?.meta?.configId,
-    configVersion: mriConfig?.meta?.configVersion,
-    datasetId: selectedDataset?.id,
-  }
+const getApiConfigFromStore = (): ApiConfig | null => {
+  return getApiConfig(store)
 }
 
 const loadConceptSets = async () => {
-  const config = getApiConfig()
+  const config = getApiConfigFromStore()
   if (!config || !config.configId || !config.datasetId) {
     console.warn('Missing configuration for concept set API call')
     return
@@ -111,7 +96,7 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
     return
   }
 
-  const config = getApiConfig()
+  const config = getApiConfigFromStore()
   if (!config || !config.datasetId) {
     console.warn('Missing configuration for concept details API call')
     return
@@ -130,28 +115,8 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
   }
 }
 
-const filterConceptSets = (searchQuery: string) => {
-  if (!searchQuery || searchQuery.trim() === '') {
-    conceptSetDomainValues.value = {
-      values: allConceptSets.value,
-      isLoading: false,
-      loadedStatus: allConceptSets.value.length > 0 ? 'HAS_RESULTS' : 'NO_RESULTS',
-    }
-    return
-  }
-  const searchLower = searchQuery.toLowerCase()
-  const filteredResults = allConceptSets.value.filter(
-    (cs: ConceptSetItem) =>
-      (cs.text && cs.text.toLowerCase().includes(searchLower)) ||
-      (cs.display_value && cs.display_value.toLowerCase().includes(searchLower)) ||
-      (cs.value && cs.value.toLowerCase().includes(searchLower))
-  )
-
-  conceptSetDomainValues.value = {
-    values: filteredResults,
-    isLoading: false,
-    loadedStatus: filteredResults.length > 0 ? 'HAS_RESULTS' : 'NO_RESULTS',
-  }
+const filterConceptSetsLocal = (searchQuery: string) => {
+  conceptSetDomainValues.value = filterConceptSets(allConceptSets.value, searchQuery)
 }
 
 const tagInputDomainValues = computed(() => conceptSetDomainValues.value)
@@ -310,7 +275,7 @@ const handleEventConceptSetSelected = async (filterId: string, eventId: string, 
 }
 
 const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const config = getApiConfig()
+  const config = getApiConfigFromStore()
   if (!config || !config.datasetId) {
     console.warn('Missing configuration for concept details API call')
     return []
@@ -375,13 +340,13 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
 const handleSearchChange = (searchQuery: string) => {
   console.log('Search query changed:', searchQuery)
 
-  filterConceptSets(searchQuery)
+  filterConceptSetsLocal(searchQuery)
 }
 
 const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   console.log('Concept set action:', values, config)
 
-  const apiConfig = getApiConfig()
+  const apiConfig = getApiConfigFromStore()
   const conceptSetId = values?.value
 
   const domainFilter = tagInputModel.value.props.domainFilter
