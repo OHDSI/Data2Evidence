@@ -86,26 +86,20 @@ export class DBConnectionUtil {
                         return callback(err);
                     }
 
-                    let currentUser;
-
-                    if (userObj) {
-                        currentUser = userObj.getUser();
+                    if (client._settings.authentication_mode && client._settings.authentication_mode === "JWT") {
+                        //Get xs_appuser & set the value as cohort schema, since the username and owner schema name are the same in Hana
+                        const DB_USER_NAME = await connection.getApplicationUser();
+                        connection.setCohortSchemaName(DB_USER_NAME)
                     }
 
-                    if (!currentUser) {
+                    //Set APPLICATIONUSER
+                    if (userObj && userObj.getUser()) {
+                        connection.setCurrentUserToDbSession(userObj.getUser(), () => {
+                            callback(null, connection);
+                        })
+                    } else {
                         logger.debug("No user supplied. Cannot set HANA Connection APPLICATIONUSER");
                         return callback(null, connection);
-                    }
-
-                    try {
-                        await QueryObject
-                        .format(`SET 'APPLICATIONUSER' = '${currentUser}'`)
-                        .executeUpdateAsync(connection);
-
-                        return callback(null, connection);
-
-                    } catch (err) {
-                        callback(err);
                     }
                 });
             }

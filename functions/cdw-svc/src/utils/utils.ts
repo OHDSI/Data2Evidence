@@ -491,7 +491,7 @@ export async function getAnalyticsConnection(userObj, token?: string) {
       delete analyticsCredentials.pfx;
     }
 
-    if (env.USE_HANA_JWT_AUTHC === "true") {
+    if (analyticsCredentials.authentication_mode === "JWT") {
       delete analyticsCredentials.user
       delete analyticsCredentials.password
       if (userObj.thirdPartyToken) {
