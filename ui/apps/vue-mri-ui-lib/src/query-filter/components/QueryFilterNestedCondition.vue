@@ -10,6 +10,7 @@ import { QueryFilterEvent } from '../models/QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
+import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { type AttributeConfig, type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 const props = defineProps<{
@@ -18,6 +19,9 @@ const props = defineProps<{
   level?: number
   operator?: 'OR' | 'AND'
   siblingCount?: number // Number of sibling events at the same level
+  conceptSets?: any[]
+  conceptSetDomainValues?: any
+  conceptSetTexts?: any
 }>()
 
 const emit = defineEmits([
@@ -30,6 +34,7 @@ const emit = defineEmits([
   'attribute-removed',
   'criteria-selected',
   'toggle-operator',
+  'concept-set-selected',
 ])
 
 const currentLevel = computed(() => props.level || 0)
@@ -125,6 +130,36 @@ const toggleOperator = () => {
 const currentOperator = computed(() => {
   return props.operator || 'AND'
 })
+
+// Handle concept set selection for nested events
+const handleConceptSetSelected = (eventId: string, conceptSet: any) => {
+  emit('concept-set-selected', eventId, conceptSet)
+}
+
+// Handle concept set search change
+const handleConceptSetSearchChange = (eventId: string, searchQuery: string) => {
+  // For now, just log the search - parent can handle filtering
+  console.log('Nested concept set search change for event:', eventId, searchQuery)
+}
+
+// Handle concept set action (create/edit)
+const handleConceptSetAction = (eventId: string, action: any) => {
+  console.log('Nested concept set action for event:', eventId, action)
+}
+
+// Get concept set model for a nested event
+const getConceptSetModel = (event: QueryFilterEvent) => {
+  return {
+    id: `concept-set-${event.id}`,
+    props: {
+      type: 'conceptSet',
+      value: event.selectedConceptSet ? [event.selectedConceptSet] : [],
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: 'Condition',
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+}
 </script>
 
 <template>
@@ -163,9 +198,25 @@ const currentOperator = computed(() => {
           }"
         >
           <div class="query-filter-nested-event__header">
-            <span class="query-filter-nested-event__label">
-              {{ event.conceptSet || 'Nested Event' }}
-            </span>
+            <div class="query-filter-nested-event__concept-set-container">
+              <QueryFilterTagInputAdapter
+                v-if="conceptSets && conceptSetDomainValues && conceptSetTexts"
+                :model="getConceptSetModel(event)"
+                :external-value="event.selectedConceptSet ? [event.selectedConceptSet] : []"
+                :external-domain-values="conceptSetDomainValues"
+                :external-texts="conceptSetTexts"
+                :is-catalog-attribute="false"
+                @update:value="(value) => handleConceptSetSelected(event.id, value[0])"
+                @search-change="(query) => handleConceptSetSearchChange(event.id, query)"
+                @concept-set-action="(action) => handleConceptSetAction(event.id, action)"
+              />
+              <span v-else class="query-filter-nested-event__label">
+                {{ event.conceptSet || 'Nested Event' }}
+                <span v-if="event.conceptSetLoading" style="margin-left: 8px; font-style: italic; color: #666;">
+                  (Loading concept details...)
+                </span>
+              </span>
+            </div>
             <div class="query-filter-nested-event__actions">
               <button
                 class="btn-icon"
@@ -230,6 +281,9 @@ const currentOperator = computed(() => {
                 :level="currentLevel + 1"
                 :operator="currentOperator"
                 :sibling-count="nestedEventGroups.length"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
                 @edit-event="handleEditEvent"
                 @duplicate-event="handleDuplicateEvent"
                 @remove-event="handleRemoveEvent"
@@ -239,6 +293,7 @@ const currentOperator = computed(() => {
                 @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
                 @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
                 @toggle-operator="eventId => emit('toggle-operator', eventId)"
+                @concept-set-selected="handleConceptSetSelected"
               />
 
               <!-- Nested attribute conditions -->
@@ -250,6 +305,9 @@ const currentOperator = computed(() => {
                 :level="currentLevel + 1"
                 :operator="currentOperator"
                 :sibling-count="nestedEventGroups.length"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
                 class="query-filter-nested-event--attribute"
                 @edit-event="handleEditEvent"
                 @duplicate-event="handleDuplicateEvent"
@@ -260,6 +318,7 @@ const currentOperator = computed(() => {
                 @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
                 @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
                 @toggle-operator="eventId => emit('toggle-operator', eventId)"
+                @concept-set-selected="handleConceptSetSelected"
               />
             </div>
 
@@ -274,6 +333,9 @@ const currentOperator = computed(() => {
               :level="currentLevel + 1"
               :operator="currentOperator"
               :sibling-count="event.nestedEvents?.length || 0"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="conceptSetDomainValues"
+              :concept-set-texts="conceptSetTexts"
               :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
               @edit-event="handleEditEvent"
               @duplicate-event="handleDuplicateEvent"
@@ -284,6 +346,7 @@ const currentOperator = computed(() => {
               @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
               @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
               @toggle-operator="eventId => emit('toggle-operator', eventId)"
+              @concept-set-selected="handleConceptSetSelected"
             />
           </div>
         </div>
@@ -339,6 +402,9 @@ const currentOperator = computed(() => {
               :parent-event-id="event.id"
               :level="currentLevel + 1"
               :operator="currentOperator"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="conceptSetDomainValues"
+              :concept-set-texts="conceptSetTexts"
               @edit-event="handleEditEvent"
               @duplicate-event="handleDuplicateEvent"
               @remove-event="handleRemoveEvent"
@@ -348,6 +414,7 @@ const currentOperator = computed(() => {
               @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
               @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
               @toggle-operator="eventId => emit('toggle-operator', eventId)"
+              @concept-set-selected="handleConceptSetSelected"
             />
 
             <!-- Nested attribute conditions -->
@@ -358,6 +425,9 @@ const currentOperator = computed(() => {
               :parent-event-id="event.id"
               :level="currentLevel + 1"
               :operator="currentOperator"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="conceptSetDomainValues"
+              :concept-set-texts="conceptSetTexts"
               class="query-filter-nested-event--attribute"
               @edit-event="handleEditEvent"
               @duplicate-event="handleDuplicateEvent"
@@ -368,6 +438,7 @@ const currentOperator = computed(() => {
               @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
               @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
               @toggle-operator="eventId => emit('toggle-operator', eventId)"
+              @concept-set-selected="handleConceptSetSelected"
             />
           </div>
 
@@ -381,6 +452,9 @@ const currentOperator = computed(() => {
             :parent-event-id="event.id"
             :level="currentLevel + 1"
             :operator="currentOperator"
+            :concept-sets="conceptSets"
+            :concept-set-domain-values="conceptSetDomainValues"
+            :concept-set-texts="conceptSetTexts"
             :class="{ 'query-filter-nested-event--attribute': nestedEvent.isAttributeBased }"
             @edit-event="handleEditEvent"
             @duplicate-event="handleDuplicateEvent"
@@ -391,6 +465,7 @@ const currentOperator = computed(() => {
             @attribute-removed="(eventId, attributeId) => emit('attribute-removed', eventId, attributeId)"
             @criteria-selected="(targetId, option) => emit('criteria-selected', targetId, option)"
             @toggle-operator="eventId => emit('toggle-operator', eventId)"
+            @concept-set-selected="handleConceptSetSelected"
           />
 
           <!-- Empty state for nested criteria -->
@@ -440,6 +515,11 @@ const currentOperator = computed(() => {
   border: 1px solid #e9ecef;
   border-radius: 4px;
   margin-bottom: 0.5rem;
+}
+
+.query-filter-nested-event__concept-set-container {
+  flex: 1;
+  min-width: 0; // Allow container to shrink
 }
 
 .query-filter-nested-event__label {

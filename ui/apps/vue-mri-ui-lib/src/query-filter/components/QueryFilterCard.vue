@@ -15,12 +15,16 @@ import QueryFilterChip from './QueryFilterChip.vue'
 import QueryFilterNestedCondition from './QueryFilterNestedCondition.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
+import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { type AttributeConfig, type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 const props = defineProps<{
   filter: QueryFilterCardModel
   hideGroupLabel?: boolean
   showAddEventInAny?: boolean
+  conceptSets?: any[]
+  conceptSetDomainValues?: any
+  conceptSetTexts?: any
 }>()
 
 const emit = defineEmits([
@@ -37,6 +41,7 @@ const emit = defineEmits([
   'attribute-selected',
   'attribute-removed',
   'toggle-nested-operator',
+  'concept-set-selected',
 ])
 
 const sidebarLabel = computed(() => {
@@ -317,6 +322,37 @@ const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
   // Don't emit 'add-event' here as we're handling the event creation directly
 }
 
+// Handle concept set selection for events
+const handleConceptSetSelected = (eventId: string, conceptSet: any) => {
+  emit('concept-set-selected', props.filter.id, eventId, conceptSet)
+}
+
+// Handle concept set search change
+const handleConceptSetSearchChange = (eventId: string, searchQuery: string) => {
+  // For now, just log the search - parent can handle filtering
+  console.log('Concept set search change for event:', eventId, searchQuery)
+}
+
+// Handle concept set action (create/edit)
+const handleConceptSetAction = (eventId: string, action: any) => {
+  console.log('Concept set action for event:', eventId, action)
+}
+
+// Get concept set model for an event
+const getConceptSetModel = (event: QueryFilterEvent) => {
+  return {
+    id: `concept-set-${event.id}`,
+    props: {
+      type: 'conceptSet',
+      value: event.selectedConceptSet ? [event.selectedConceptSet] : [],
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: 'Condition',
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+}
+
+
 // Expose the addChipToEvent method for parent access if needed
 defineExpose({
   addChipToEvent,
@@ -399,9 +435,25 @@ defineExpose({
         <!-- Parent event -->
         <div class="query-filter-event query-filter-event--parent" :class="{ 'has-nested': filter.events.length > 1 }">
           <div class="query-filter-event__header">
-            <span class="query-filter-event__label">
-              {{ group.parentEvent.conceptSet || 'Event concept set' }}
-            </span>
+            <div class="query-filter-event__concept-set-container">
+              <QueryFilterTagInputAdapter
+                v-if="conceptSets && conceptSetDomainValues && conceptSetTexts"
+                :model="getConceptSetModel(group.parentEvent)"
+                :external-value="group.parentEvent.selectedConceptSet ? [group.parentEvent.selectedConceptSet] : []"
+                :external-domain-values="conceptSetDomainValues"
+                :external-texts="conceptSetTexts"
+                :is-catalog-attribute="false"
+                @update:value="(value) => handleConceptSetSelected(group.parentEvent.id, value[0])"
+                @search-change="(query) => handleConceptSetSearchChange(group.parentEvent.id, query)"
+                @concept-set-action="(action) => handleConceptSetAction(group.parentEvent.id, action)"
+              />
+              <span v-else class="query-filter-event__label">
+                {{ group.parentEvent.conceptSet || 'Event concept set' }}
+                <span v-if="group.parentEvent.conceptSetLoading" style="margin-left: 8px; font-style: italic; color: #666;">
+                  (Loading concept details...)
+                </span>
+              </span>
+            </div>
             <div class="query-filter-event__actions">
               <button
                 class="btn-icon"
@@ -439,18 +491,6 @@ defineExpose({
             </div>
           </div>
 
-          <div class="query-filter-event__chips">
-            <query-filter-chip
-              v-for="chip in group.parentEvent.chips"
-              :key="chip.id"
-              :chip="chip"
-              :removable="true"
-              @remove="removeChip(group.parentEvent.id, chip.id)"
-            />
-            <button class="btn-add-chip" @click="addChip(group.parentEvent.id)" aria-label="Add filter">
-              <i class="icon icon-plus"></i>
-            </button>
-          </div>
         </div>
 
         <!-- Attribute-based conditions -->
@@ -485,19 +525,6 @@ defineExpose({
             </div>
           </div>
 
-          <!-- Regular attribute condition chips -->
-          <div v-if="!attrEvent.isNested" class="query-filter-event__chips">
-            <query-filter-chip
-              v-for="chip in attrEvent.chips"
-              :key="chip.id"
-              :chip="chip"
-              :removable="true"
-              @remove="removeChip(attrEvent.id, chip.id)"
-            />
-            <button class="btn-add-chip" @click="addChip(attrEvent.id)" aria-label="Add filter">
-              <i class="icon icon-plus"></i>
-            </button>
-          </div>
 
           <!-- Nested criteria content -->
           <div v-if="attrEvent.isNested" class="query-filter-event__nested-content">
@@ -523,6 +550,9 @@ defineExpose({
                 :level="0"
                 :operator="filter.operator"
                 :sibling-count="attrEvent.nestedEvents?.length || 0"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
                 @remove-event="handleNestedEventRemove"
@@ -532,6 +562,7 @@ defineExpose({
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"
                 @toggle-operator="handleToggleNestedOperator"
+                @concept-set-selected="handleConceptSetSelected"
               />
 
               <!-- Nested attribute conditions -->
@@ -543,6 +574,9 @@ defineExpose({
                 :level="0"
                 :operator="filter.operator"
                 :sibling-count="attrEvent.nestedEvents?.length || 0"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
                 class="query-filter-nested-event--attribute"
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
@@ -553,6 +587,7 @@ defineExpose({
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"
                 @toggle-operator="handleToggleNestedOperator"
+                @concept-set-selected="handleConceptSetSelected"
               />
             </div>
 
@@ -585,4 +620,15 @@ defineExpose({
 
 <style lang="scss" scoped>
 @import '../styles/QueryFilterCardStyles';
+
+.query-filter-event__concept-set-container {
+  flex: 1;
+  min-width: 0; // Allow container to shrink
+
+  .query-filter-event__label {
+    display: inline-block;
+    font-weight: 500;
+    color: #333;
+  }
+}
 </style>

@@ -34,6 +34,10 @@ export interface QueryFilterEvent {
   isNested?: boolean // True if this is a nested criteria group
   nestedEvents?: QueryFilterEvent[] // Child events for nested groups
   nestedOperator?: 'AND' | 'OR' // Operator for combining nested events
+  // New fields for concept set selection
+  selectedConceptSet?: any // The full concept set object from API
+  conceptSetDetails?: any[] // Array of Atlas-formatted concept details  
+  conceptSetLoading?: boolean // Loading state for concept details
 }
 
 export class QueryFilterCardModel {
@@ -75,6 +79,9 @@ export class QueryFilterCardModel {
       isNested: event?.isNested || false,
       nestedEvents: event?.nestedEvents || [],
       nestedOperator: event?.nestedOperator || 'AND',
+      selectedConceptSet: event?.selectedConceptSet,
+      conceptSetDetails: event?.conceptSetDetails || [],
+      conceptSetLoading: event?.conceptSetLoading || false,
     }
     this.events.push(newEvent)
     return newEvent
@@ -211,6 +218,9 @@ export class QueryFilterCardModel {
       isNested: false,
       nestedEvents: [],
       nestedOperator: 'AND',
+      selectedConceptSet: event.selectedConceptSet,
+      conceptSetDetails: event.conceptSetDetails || [],
+      conceptSetLoading: event.conceptSetLoading || false,
     }
 
     // Use the recursive container logic to ensure we add to the correct nested level
@@ -531,11 +541,11 @@ export class QueryFilterCardModel {
   }
 
   hasChips(): boolean {
-    return this.events.some(e => e.chips.length > 0)
+    return this.events.some(e => e.conceptSetDetails && e.conceptSetDetails.length > 0)
   }
 
   getChipCount(): number {
-    return this.events.reduce((sum, e) => sum + e.chips.length, 0)
+    return this.events.reduce((sum, e) => sum + (e.conceptSetDetails ? e.conceptSetDetails.length : 0), 0)
   }
 
   clearAllChips(): void {
@@ -666,7 +676,7 @@ export class QueryFilterManager {
 
   clearEmptyEvents(): void {
     this.filters.forEach(filter => {
-      filter.events = filter.events.filter(e => e.chips.length > 0)
+      filter.events = filter.events.filter(e => e.conceptSetDetails && e.conceptSetDetails.length > 0)
     })
   }
 
@@ -766,29 +776,14 @@ export class QueryFilterManager {
 
     this.filters.forEach(filter => {
       filter.events.forEach(event => {
-        if (event.chips.length > 0) {
+        // Use concept set details if available
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
           conceptSets.push({
             id: conceptSetId++,
+            conceptSetId: event.conceptSetId || null,
             name: event.conceptSet || `Concept Set ${conceptSetId}`,
             expression: {
-              items: event.chips.map(chip => ({
-                concept: {
-                  CONCEPT_CLASS_ID: 'Clinical Finding',
-                  CONCEPT_CODE: chip.value,
-                  CONCEPT_ID: parseInt(chip.value) || 0,
-                  CONCEPT_NAME: chip.label,
-                  DOMAIN_ID: 'Condition',
-                  INVALID_REASON: 'V',
-                  INVALID_REASON_CAPTION: 'Valid',
-                  STANDARD_CONCEPT: 'S',
-                  STANDARD_CONCEPT_CAPTION: 'Standard',
-                  VOCABULARY_ID: 'ICD10CM',
-                  VALID_START_DATE: '1970-01-01',
-                  VALID_END_DATE: '2099-12-31',
-                },
-                includeDescendants: false,
-                includeMapped: false,
-              })),
+              items: event.conceptSetDetails,
             },
           })
         }
@@ -841,8 +836,8 @@ export class QueryFilterManager {
                   },
                 }
 
-                // Only add CodesetId if the event has chips (i.e., a corresponding concept set exists)
-                if (event.chips.length > 0) {
+                // Add CodesetId if the event has concept set details
+                if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
                   const codesetIndex = conceptSets.findIndex(cs => cs.name === event.conceptSet)
                   if (codesetIndex >= 0) {
                     criteria.Criteria.ConditionOccurrence.CodesetId = codesetIndex
@@ -937,9 +932,9 @@ export class QueryFilterManager {
       }))
     }
 
-    // Only add primary criteria if there are inclusion filters with events that have chips OR age attributes
+    // Only add primary criteria if there are inclusion filters with events that have concept set details OR age attributes
     const hasChipsOrAge = inclusionFilters.some(f =>
-      f.events.some(e => e.chips.length > 0 || (e.isAttributeBased && e.attributeConfig?.id === 'age'))
+      f.events.some(e => (e.conceptSetDetails && e.conceptSetDetails.length > 0) || (e.isAttributeBased && e.attributeConfig?.id === 'age'))
     )
     if (inclusionFilters.length > 0 && hasChipsOrAge) {
       atlasDef.PrimaryCriteria.CriteriaList = [
@@ -1070,8 +1065,8 @@ export class QueryFilterManager {
             criteria.Criteria.ConditionOccurrence.Gender = []
           }
 
-          // Only add CodesetId if the child event has chips
-          if (childEvent.chips.length > 0) {
+          // Only add CodesetId if the child event has concept set details
+          if (childEvent.conceptSetDetails && childEvent.conceptSetDetails.length > 0) {
             // Find the concept set for this child event
             const conceptSets = this.getAllConceptSets()
             const codesetIndex = conceptSets.findIndex(cs => cs.name === childEvent.conceptSet)
@@ -1095,29 +1090,14 @@ export class QueryFilterManager {
 
     this.filters.forEach(filter => {
       filter.events.forEach(event => {
-        if (event.chips.length > 0) {
+        // Use concept set details if available
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
           conceptSets.push({
             id: conceptSetId++,
+            conceptSetId: event.conceptSetId || null,
             name: event.conceptSet || `Concept Set ${conceptSetId}`,
             expression: {
-              items: event.chips.map(chip => ({
-                concept: {
-                  CONCEPT_CLASS_ID: 'Clinical Finding',
-                  CONCEPT_CODE: chip.value,
-                  CONCEPT_ID: parseInt(chip.value) || 0,
-                  CONCEPT_NAME: chip.label,
-                  DOMAIN_ID: 'Condition',
-                  INVALID_REASON: 'V',
-                  INVALID_REASON_CAPTION: 'Valid',
-                  STANDARD_CONCEPT: 'S',
-                  STANDARD_CONCEPT_CAPTION: 'Standard',
-                  VOCABULARY_ID: 'ICD10CM',
-                  VALID_START_DATE: '1970-01-01',
-                  VALID_END_DATE: '2099-12-31',
-                },
-                includeDescendants: false,
-                includeMapped: false,
-              })),
+              items: event.conceptSetDetails,
             },
           })
         }

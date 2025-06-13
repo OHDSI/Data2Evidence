@@ -16,7 +16,6 @@ import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterMan
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
-console.log('jer 1')
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
 const filterManager = reactive(new QueryFilterManager())
@@ -24,7 +23,6 @@ const filterManager = reactive(new QueryFilterManager())
 // Get Vuex store access for concept set list only
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
-console.log('jer 2')
 
 // Tag input model for concept set testing - local state for selections
 const tagInputModel = ref({
@@ -63,7 +61,6 @@ const conceptSetDomainValues = ref({
   isLoading: false,
   loadedStatus: 'NO_RESULTS',
 })
-console.log('jer 3')
 
 // Get configuration from Vuex store for API call
 const getApiConfig = () => {
@@ -241,7 +238,7 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
             if (conceptDetail) {
               // Debug: Log the actual structure of the concept detail response
               console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
-              
+
               // Format the concept detail in Atlas-compatible structure
               // API returns snake_case fields, map them to OMOP CDM uppercase format
               const formattedConcept = {
@@ -254,8 +251,12 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
                   INVALID_REASON: conceptDetail.invalid_reason || null,
                   INVALID_REASON_CAPTION: conceptDetail.invalid_reason ? 'Invalid' : 'Valid',
                   STANDARD_CONCEPT: conceptDetail.standard_concept,
-                  STANDARD_CONCEPT_CAPTION: conceptDetail.standard_concept === 'S' ? 'Standard' : 
-                                          conceptDetail.standard_concept === 'C' ? 'Classification' : 'Non-standard',
+                  STANDARD_CONCEPT_CAPTION:
+                    conceptDetail.standard_concept === 'S'
+                      ? 'Standard'
+                      : conceptDetail.standard_concept === 'C'
+                      ? 'Classification'
+                      : 'Non-standard',
                   VOCABULARY_ID: conceptDetail.vocabulary_id,
                   VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
                   VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
@@ -264,10 +265,10 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
                 includeDescendants: true, // Default to true for medical concepts
                 includeMapped: true, // Default to true for comprehensive coverage
               }
-              
+
               // Debug: Log the formatted concept
               console.log(`Formatted concept for ID ${conceptId}:`, formattedConcept)
-              
+
               conceptDetails.push(formattedConcept)
             }
           } catch (error) {
@@ -290,7 +291,6 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
     loadingConceptDetails.value = false
   }
 }
-console.log('jer 4')
 
 // Local filtering function for concept sets
 const filterConceptSets = (searchQuery: string) => {
@@ -326,45 +326,10 @@ const selectedConceptSetValues = computed(() => {
   return selectedConceptSets.value
 })
 
-// Initialize with sample data
+// Initialize with clean slate (no default data)
 const initializeSampleData = () => {
-  // Sample inclusion filters matching the screenshot
-  const diabetesFilter = new QueryFilterCardModel({
-    title: 'Diabetes Type 2',
-    type: 'inclusion',
-    events: [
-      {
-        id: 'event1',
-        conceptSet: 'Event concept set',
-        chips: [{ id: 'chip1', label: 'Diabetes Type 2', value: 'E11' }],
-      },
-    ],
-  })
-
-  const cardiovascularFilter = new QueryFilterCardModel({
-    title: 'Cardiovascular disease',
-    type: 'inclusion',
-    operator: 'OR', // Set to OR so we can see the ANY sidebar
-    events: [
-      {
-        id: 'event2',
-        conceptSet: 'Event concept set',
-        chips: [{ id: 'chip2', label: 'Atrial Fib A', value: 'I48.0' }],
-      },
-      {
-        id: 'event3',
-        conceptSet: 'Event concept set',
-        chips: [{ id: 'chip3', label: 'Atrial Fib B', value: 'I48.1' }],
-      },
-    ],
-  })
-
-  // Expand both filters by default
-  diabetesFilter.isExpanded = true
-  cardiovascularFilter.isExpanded = true
-
-  filterManager.addFilter(diabetesFilter)
-  filterManager.addFilter(cardiovascularFilter)
+  // Start with empty filter manager - users will add filters as needed
+  filterManager.clearAllFilters()
 }
 
 // Watch for changes in selected concept sets to load concept details
@@ -388,7 +353,6 @@ onMounted(() => {
   // Load initial concept set data using direct API call
   loadConceptSets()
 })
-console.log('jer 5')
 
 const inclusionFilters = computed(() => filterManager.getInclusionFilters())
 const exclusionFilters = computed(() => filterManager.getExclusionFilters())
@@ -521,6 +485,121 @@ const handleAttributeSelected = (filterId: string, eventId: string, attribute: a
 
 const handleAttributeRemoved = (filterId: string, eventId: string, attributeId: string) => {
   console.log('Attribute removed:', filterId, eventId, attributeId)
+}
+
+// Handle concept set selection for events
+const handleEventConceptSetSelected = async (filterId: string, eventId: string, conceptSet: any) => {
+  console.log('Event concept set selected:', filterId, eventId, conceptSet)
+
+  const filter = filterManager.getFilter(filterId)
+  if (!filter) return
+
+  const event = filter.getEvent(eventId)
+  if (!event) return
+
+  // Update event with selected concept set
+  event.selectedConceptSet = conceptSet
+  event.conceptSetId = conceptSet.value
+  event.conceptSet = conceptSet.text || conceptSet.display_value
+  event.conceptSetLoading = true
+
+  try {
+    // Fetch concept details for this concept set
+    const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet)
+    event.conceptSetDetails = conceptSetDetails
+    event.conceptSetLoading = false
+
+    console.log(`Updated event ${eventId} with concept set details:`, conceptSetDetails)
+  } catch (error) {
+    console.error('Error loading concept set details for event:', error)
+    event.conceptSetLoading = false
+  }
+}
+
+// Helper function to load concept set details for a single concept set
+const loadSingleConceptSetDetails = async (conceptSet: any) => {
+  const config = getApiConfig()
+  if (!config || !config.datasetId) {
+    console.warn('Missing configuration for concept details API call')
+    return []
+  }
+
+  try {
+    const portalAPI = getPortalAPI()
+    let headers: any = {
+      'Content-Type': 'application/json',
+    }
+
+    // Get bearer token
+    const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+    if (bearerToken != null) {
+      headers.Authorization = `Bearer ${bearerToken}`
+    }
+
+    // Extract concept IDs from the concept set data
+    let conceptIds = []
+
+    if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
+      conceptIds = conceptSet.conceptIds
+    } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
+      conceptIds = conceptSet.concepts.map(c => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
+    } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
+      conceptIds = conceptSet.items.map(item => item.id || item.concept_id || item.CONCEPT_ID).filter(Boolean)
+    }
+
+    // For demo purposes, if no concept IDs found, use some sample IDs
+    if (conceptIds.length === 0) {
+      console.warn(`No concept IDs found for concept set ${conceptSet.value}, using sample IDs for demo`)
+      conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
+    }
+
+    const conceptDetails = []
+
+    // Fetch details for each concept ID (limit to first 20 to avoid too many requests)
+    const limitedConceptIds = conceptIds.slice(0, 20)
+    console.log(`Fetching details for concept set ${conceptSet.value}:`, limitedConceptIds)
+
+    for (const conceptId of limitedConceptIds) {
+      try {
+        const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
+        if (conceptDetail) {
+          // Format the concept detail in Atlas-compatible structure
+          const formattedConcept = {
+            concept: {
+              CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
+              CONCEPT_CODE: conceptDetail.concept_code,
+              CONCEPT_ID: conceptDetail.concept_id || conceptId,
+              CONCEPT_NAME: conceptDetail.concept_name,
+              DOMAIN_ID: conceptDetail.domain_id,
+              INVALID_REASON: conceptDetail.invalid_reason || null,
+              INVALID_REASON_CAPTION: conceptDetail.invalid_reason ? 'Invalid' : 'Valid',
+              STANDARD_CONCEPT: conceptDetail.standard_concept,
+              STANDARD_CONCEPT_CAPTION:
+                conceptDetail.standard_concept === 'S'
+                  ? 'Standard'
+                  : conceptDetail.standard_concept === 'C'
+                  ? 'Classification'
+                  : 'Non-standard',
+              VOCABULARY_ID: conceptDetail.vocabulary_id,
+              VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
+              VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
+            },
+            isExcluded: false,
+            includeDescendants: true,
+            includeMapped: true,
+          }
+          conceptDetails.push(formattedConcept)
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
+      }
+    }
+
+    return conceptDetails
+  } catch (error) {
+    console.error('Error loading single concept set details:', error)
+    return []
+  }
 }
 
 const applyFilters = () => {
@@ -910,6 +989,9 @@ const handleConceptSetAction = ({ values, config }) => {
               :filter="filter"
               :hide-group-label="true"
               :show-add-event-in-any="true"
+              :concept-sets="allConceptSets"
+              :concept-set-domain-values="conceptSetDomainValues"
+              :concept-set-texts="tagInputTexts"
               @update:filter="updateFilter"
               @add-event="handleAddEvent(filter.id)"
               @edit-event="handleEditEvent"
@@ -922,6 +1004,7 @@ const handleConceptSetAction = ({ values, config }) => {
               @add-any-event="handleAddEvent(filter.id)"
               @attribute-selected="handleAttributeSelected"
               @attribute-removed="handleAttributeRemoved"
+              @concept-set-selected="handleEventConceptSetSelected"
             />
           </div>
         </div>
