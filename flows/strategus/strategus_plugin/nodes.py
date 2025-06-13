@@ -926,3 +926,13 @@ def get_input_nodes_by_class_type_from_results(inputs: Dict[str, Result], nodeTy
 
 def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
+
+@flow(name="drop-strategus-results-schema", log_prints=True)
+def drop_strategus_results_schema(dbSettings):
+    database_code = dbSettings['database_code']
+    results_schema = f'results_{dbSettings["dataset_id"]}'
+    dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code)
+    
+    if(dbdao.check_schema_exists(results_schema)):
+        dbdao.drop_schema(results_schema, True)

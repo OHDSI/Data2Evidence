@@ -9,7 +9,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus
+from .nodes import generate_nodes_flow, execute_r_strategus, drop_strategus_results_schema
 
 
 @flow(log_prints=True)
@@ -18,6 +18,9 @@ def strategus_plugin(json_graph, options):
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
+        return
+    if(options.get('mode', None) == 'drop-results'):
+        drop_strategus_results(options)
         return
 
     # Grab root flow id
@@ -154,3 +157,20 @@ def runStrategus(json_graph, options):
     analysisSpec = json_graph.get('analysisSpecification', {})
     executionSettings = json_graph.get('executionSettings', {})
     execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name)
+
+def drop_strategus_results(options):
+    """
+    Drops the Strategus results from the database.
+    """
+    datasetId = options.get('datasetId', None)
+    database_code = options.get('databaseCode', None)
+    schema_name = options.get('schemaName', None)
+    if(not datasetId):
+       raise Exception('DatasetId is missing')
+    if(not database_code):
+       raise Exception('Database code is missing')
+
+    drop_strategus_results_schema(dbSettings={
+        'database_code': database_code,
+        'dataset_id': datasetId
+    })
