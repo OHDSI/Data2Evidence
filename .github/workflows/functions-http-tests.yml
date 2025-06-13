@@ -117,7 +117,7 @@ jobs:
 
       - name: Build system services
         run: |
-          yarn build:minerva
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -131,7 +131,7 @@ jobs:
 
       - name: Start system services
         run: |
-          yarn start:ci
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 start
           echo "Waiting 140 secs for services to start..."
           sleep 140
 

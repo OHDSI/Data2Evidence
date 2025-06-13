@@ -112,7 +112,7 @@ jobs:
         run: |
           cd ./tests/e2e
           npm install
-          npm run init
+          ENV_TYPE=remote ./scripts/cli.sh -v develop -n .env.remote init
 
       - name: e2e tests
         run: |
