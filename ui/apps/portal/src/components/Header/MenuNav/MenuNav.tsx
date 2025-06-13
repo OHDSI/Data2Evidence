@@ -125,16 +125,18 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
 
   const renderPluginMenu = useCallback(
     (plugin: Plugins) => {
+      const name = (plugin.nameI18nKey ? getText(plugin.nameI18nKey) : "") || plugin.name;
+
       if (plugin.children || plugin.menus) {
         return (
           <>
             {plugin && plugin.children ? (
-              <a data-text={plugin.name} className="plugin-type-title">
-                {plugin.name}
+              <a data-text={name} className="plugin-type-title">
+                {name}
               </a>
             ) : plugin && plugin.menus ? (
-              <Link to={menuLink} data-text={plugin.name} className="overview-title">
-                {plugin.name}
+              <Link to={menuLink} data-text={name} className="overview-title">
+                {name}
               </Link>
             ) : null}
 
@@ -189,12 +191,12 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
       }
 
       return (
-        <Link to={menuLink} data-text={plugin.name} className="overview-title">
-          {plugin.name}
+        <Link to={menuLink} data-text={name} className="overview-title">
+          {name}
         </Link>
       );
     },
-    [anchorEl, closeMenu, handlePluginClick, isActivePlugin]
+    [anchorEl, closeMenu, handlePluginClick, isActivePlugin, getText]
   );
 
   if (type === MenuType.Plugin && !isResearcherPluginAllowed()) {
