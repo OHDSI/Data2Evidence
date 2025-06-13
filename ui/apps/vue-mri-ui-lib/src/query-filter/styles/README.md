@@ -9,9 +9,9 @@ This folder contains all SCSS stylesheets for the query filter components.
 - **CriteriaSelectorDropdown.scss** - Styles for the criteria selector dropdown
 - **QueryFilterCardStyles.scss** - Styles for the main filter card component
 - **QueryFilterChip.scss** - Styles for filter chips
-- **QueryFilterCondition.scss** - Styles for filter conditions
-- **QueryFilterNestedCondition.scss** - Styles for nested conditions
-- **QueryFilterDemo.scss** - Styles for the demo component
+- **QueryFilterEvent.scss** - Styles for filter events
+- **QueryFilterNestedEvent.scss** - Styles for nested events
+- **QueryFilter.scss** - Styles for the main component
 
 ### Shared Styles
 - **queryFilterCard.scss** - Shared styles for filter card system (tabs, containers, etc.)

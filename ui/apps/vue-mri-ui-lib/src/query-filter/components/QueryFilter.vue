@@ -1,6 +1,6 @@
 <script lang="ts">
 export default {
-  name: 'QueryFilterDemo',
+  name: 'QueryFilter',
   compatConfig: {
     MODE: 3,
   },
@@ -259,7 +259,7 @@ const handleEventConceptSetSelected = async (filterId: string, eventId: string, 
 
   event.selectedConceptSet = conceptSet
   event.conceptSetId = conceptSet.value
-  event.conceptSet = conceptSet.text || conceptSet.display_value
+  event.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
   event.conceptSetLoading = true
 
   try {
@@ -701,5 +701,5 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/QueryFilterDemo';
+@import '../styles/QueryFilter';
 </style>

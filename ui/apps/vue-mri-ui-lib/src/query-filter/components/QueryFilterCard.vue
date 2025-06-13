@@ -12,7 +12,7 @@ import {
   QueryFilterEvent,
 } from '../models/QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
-import QueryFilterNestedCondition from './QueryFilterNestedCondition.vue'
+import QueryFilterNestedEvent from './QueryFilterNestedEvent.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -544,7 +544,7 @@ defineExpose({
               class="query-filter-nested-group"
             >
               <!-- Parent nested condition -->
-              <query-filter-nested-condition
+              <query-filter-nested-event
                 :event="nestedGroup.parent"
                 :parent-event-id="attrEvent.id"
                 :level="0"
@@ -566,7 +566,7 @@ defineExpose({
               />
 
               <!-- Nested attribute conditions -->
-              <query-filter-nested-condition
+              <query-filter-nested-event
                 v-for="attrEvent in nestedGroup.attributes"
                 :key="attrEvent.id"
                 :event="attrEvent"

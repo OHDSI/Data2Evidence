@@ -1,22 +1,22 @@
 <script lang="ts">
 export default {
-  name: 'QueryFilterCondition',
+  name: 'QueryFilterEvent',
 }
 </script>
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
-import { QueryFilterCondition, QueryFilterChip as QueryFilterChipType } from '../models/QueryFilterModel'
+import { QueryFilterEvent, QueryFilterChip as QueryFilterChipType } from '../models/QueryFilterModel'
 import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import { type AttributeConfig } from '../utils/CriteriaConfigLoader'
 
 const props = defineProps<{
-  condition: QueryFilterCondition
+  condition: QueryFilterEvent
   isParent?: boolean
   isAttribute?: boolean
   isNested?: boolean
-  allConditions: QueryFilterCondition[]
+  allConditions: QueryFilterEvent[]
   showRemoveButton?: boolean
 }>()
 
@@ -109,5 +109,5 @@ const handleAttributeRemoved = (attributeId: string) => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/QueryFilterCondition';
+@import '../styles/QueryFilterEvent';
 </style>

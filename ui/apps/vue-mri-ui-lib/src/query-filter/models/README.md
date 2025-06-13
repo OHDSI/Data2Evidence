@@ -6,7 +6,7 @@ This folder contains TypeScript models, types, and data transformation utilities
 
 - **QueryFilterModel.ts** - Core data models and classes for query filters
   - `QueryFilterCardModel` - Main filter card model
-  - `QueryFilterCondition` - Condition model
+  - `QueryFilterEvent` - Event model
   - `QueryFilterChip` - Chip data model
   - `QueryFilterManager` - Manager class for filter operations
 
