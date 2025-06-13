@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { createStrategusResultsViewer } from "./services.ts";
-
+import { services } from "../env.ts";
 export class StrategusResultsRouter {
   public router = express.Router();
 
@@ -15,7 +15,10 @@ export class StrategusResultsRouter {
         const modelResponse = {
           message: "Strategus results processed successfully",
         };
-        res.status(200).json(modelResponse);
+        const token = req.headers["authorization"];
+        const studyId = req.body.studyId;
+        const ok = createStrategusResultsViewer(token, studyId);
+        res.status(200).json(services["jupyter-gateway"]);
       } catch (error) {
         res.status(500).json({
           error: true,
