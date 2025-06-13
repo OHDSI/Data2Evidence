@@ -259,9 +259,8 @@ const initRoutes = async (app: express.Application) => {
         (req: IMRIRequest, res, next) => {
             QueryObject.QueryObject.format(
                 `select 
-      SESSION_CONTEXT('XS_APPLICATIONUSER') as xs_applicationuser, 
-      SESSION_CONTEXT('APPLICATIONUSER') as applicationuser, 
-      SESSION_CONTEXT('XS_ORGANIZATION') as orgidUser from dummy`
+      SESSION_CONTEXT('XS_APPLICATIONUSER') as DB_USER_NAME, 
+      SESSION_CONTEXT('APPLICATIONUSER') as APP_USER_NAME from dummy`
             ).executeQuery(
                 req.dbConnections.analyticsConnection,
                 (err, result) => {
@@ -699,7 +698,7 @@ const getDBConnections = async ({
 
         if (
             analyticsCredentials.dialect === DB.HANA &&
-            env.USE_HANA_JWT_AUTHC === "true"
+            analyticsCredentials.authentication_mode === "JWT"
         ) {
             delete analyticsCredentials.user;
             delete analyticsCredentials.password;
@@ -710,6 +709,8 @@ const getDBConnections = async ({
                     "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
                 );
             }
+            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-cohorts`;
+            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
         }
 
         analyticsConnectionPromise =
