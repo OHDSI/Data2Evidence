@@ -125,7 +125,7 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
 
   const renderPluginMenu = useCallback(
     (plugin: Plugins) => {
-      const name = (plugin.nameI18nKey ? getText(plugin.nameI18nKey) : "") || plugin.name;
+      const name = (plugin.nameI18nKey ? getText(plugin.nameI18nKey) : null) || plugin.name;
 
       if (plugin.children || plugin.menus) {
         return (
