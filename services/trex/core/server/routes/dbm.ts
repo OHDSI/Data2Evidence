@@ -58,6 +58,7 @@ export function addRoutes(app: Hono) {
             ...y,
             ...body,
             authenticationMode: 'authenticationMode' in body ? (body.authenticationMode || null) : y.authentication_mode,
+            vocabSchemas: 'vocabSchemas' in body ? (body.vocabSchemas || null) : y.vocab_schemas,
             extra: 'extra' in body ? body.extra : { Internal: y.db_extra }
         };
         //let w = r.filter((x: any) => x.id != body.id).push(x);
