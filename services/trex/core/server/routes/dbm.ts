@@ -54,8 +54,17 @@ export function addRoutes(app: Hono) {
         const body = await c.req.json();
         let r = await (await DatabaseManager.get()).getCredentialsEncrypted();
         let y = r.filter((x: any) => x.id === body.id)[0];
-        let x = _.merge({}, y, {authenticationMode:y.authentication_mode, extra:{Internal:y.db_extra}, vocabSchemas:y.vocab_schemas}, body);
+        let x = {
+            ...y,
+            authenticationMode: y.authentication_mode,
+            extra: { Internal: y.db_extra },
+            ...body,
+            credentials: body.credentials || null,
+            vocabSchemas: body.vocabSchemas || null,
+            publications: body.publications || null
+        };
         //let w = r.filter((x: any) => x.id != body.id).push(x);
+
         try {
             const id = await (await DatabaseManager.get()).setCredentials(x);
             return c.json({"id": id});
