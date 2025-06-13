@@ -9,23 +9,24 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, getCurrentInstance, watch } from 'vue'
-import axios from 'axios'
 import QueryFilterCard from './QueryFilterCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
-import { getPortalAPI } from '../../utils/PortalUtils'
 import type {
   ConceptSetItem,
-  ConceptItem,
-  ConceptDetail,
   ApiConfig,
   ConceptSetDomainValues,
   TagInputModel,
   ConceptSetAction,
   ConceptSetDetails,
 } from '../types/ConceptSetTypes'
+import {
+  loadConceptSets as apiLoadConceptSets,
+  loadConceptSetDetails as apiLoadConceptSetDetails,
+  loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
+} from '../services/ConceptSetApiService'
 
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
@@ -90,48 +91,9 @@ const loadConceptSets = async () => {
   conceptSetDomainValues.value.isLoading = true
 
   try {
-    const portalAPI = getPortalAPI()
-    let headers: any = {}
-    const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
-    if (bearerToken != null) {
-      headers.Authorization = `Bearer ${bearerToken}`
-    }
-
-    if (config.datasetId) {
-      headers.datasetid = config.datasetId
-    }
-    let url = '/analytics-svc/api/services/values'
-    if (portalAPI.qeSvcUrl) {
-      url = `${portalAPI.qeSvcUrl}${url}`
-    } else {
-      url = `${process.env.VUE_APP_HOST}${url}`
-    }
-    const response = await axios.get(url, {
-      params: {
-        attributePath: 'conceptSets',
-        configId: config.configId,
-        configVersion: config.configVersion,
-        datasetId: config.datasetId,
-        searchQuery: '',
-        attributeType: 'conceptSet',
-      },
-      headers,
-    })
-    const values = response.status === 204 ? [] : response?.data?.data || []
-    const formattedValues = values.map((item: any) => ({
-      ...item,
-      display_value: item.text || item.value,
-    }))
-    allConceptSets.value = formattedValues
-
-    const loadedStatus =
-      response.status === 204 ? 'TOO_MANY_RESULTS' : values.length === 0 ? 'NO_RESULTS' : 'HAS_RESULTS'
-
-    conceptSetDomainValues.value = {
-      values: formattedValues,
-      isLoading: false,
-      loadedStatus,
-    }
+    const result = await apiLoadConceptSets(config)
+    allConceptSets.value = result.values
+    conceptSetDomainValues.value = result
   } catch (error) {
     console.error('Error loading concept sets:', error)
     allConceptSets.value = []
@@ -140,35 +102,6 @@ const loadConceptSets = async () => {
       isLoading: false,
       loadedStatus: 'NO_RESULTS',
     }
-  }
-}
-
-const fetchConceptById = async (
-  datasetId: string,
-  conceptId: number,
-  headers: Record<string, string>
-): Promise<ConceptDetail | null> => {
-  try {
-    const portalAPI = getPortalAPI()
-
-    let url = '/terminology/concept/searchById'
-    if (portalAPI.qeSvcUrl) {
-      url = `${portalAPI.qeSvcUrl}${url}`
-    } else {
-      url = `${process.env.VUE_APP_HOST}${url}`
-    }
-
-    const requestBody = {
-      datasetId: datasetId,
-      conceptId: conceptId,
-    }
-
-    const response = await axios.post(url, requestBody, { headers })
-    const data = response.data
-    return Array.isArray(data) && data.length > 0 ? data[0] : null
-  } catch (error) {
-    console.error(`Error fetching concept by ID ${conceptId}:`, error)
-    return null
   }
 }
 
@@ -187,94 +120,8 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
   loadingConceptDetails.value = true
 
   try {
-    const portalAPI = getPortalAPI()
-    let headers: any = {
-      'Content-Type': 'application/json',
-    }
-
-    // Get bearer token
-    const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
-    if (bearerToken != null) {
-      headers.Authorization = `Bearer ${bearerToken}`
-    }
-
-    // Now fetch full concept details for each concept set using their concept IDs
-    const detailsMap = {}
-
-    for (const conceptSet of selectedConceptSets) {
-      const conceptSetId = conceptSet.value
-
-      let conceptIds = []
-
-      if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
-        conceptIds = conceptSet.conceptIds
-      } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
-        conceptIds = conceptSet.concepts.map((c: ConceptItem) => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
-      } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
-        conceptIds = conceptSet.items
-          .map((item: ConceptItem) => item.id || item.concept_id || item.CONCEPT_ID)
-          .filter(Boolean)
-      }
-
-      if (conceptIds.length === 0) {
-        console.warn(`No concept IDs found for concept set ${conceptSetId}, using sample IDs for demo`)
-        conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
-      }
-
-      if (conceptIds && conceptIds.length > 0) {
-        const conceptDetails = []
-
-        const limitedConceptIds = conceptIds.slice(0, 20)
-        console.log(`Fetching details for concept set ${conceptSetId}:`, limitedConceptIds)
-
-        for (const conceptId of limitedConceptIds) {
-          try {
-            const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
-            if (conceptDetail) {
-              console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
-
-              const formattedConcept = {
-                concept: {
-                  CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
-                  CONCEPT_CODE: conceptDetail.concept_code,
-                  CONCEPT_ID: conceptDetail.concept_id || conceptId,
-                  CONCEPT_NAME: conceptDetail.concept_name,
-                  DOMAIN_ID: conceptDetail.domain_id,
-                  INVALID_REASON: conceptDetail.invalid_reason || null,
-                  INVALID_REASON_CAPTION: conceptDetail.invalid_reason ? 'Invalid' : 'Valid',
-                  STANDARD_CONCEPT: conceptDetail.standard_concept,
-                  STANDARD_CONCEPT_CAPTION:
-                    conceptDetail.standard_concept === 'S'
-                      ? 'Standard'
-                      : conceptDetail.standard_concept === 'C'
-                      ? 'Classification'
-                      : 'Non-standard',
-                  VOCABULARY_ID: conceptDetail.vocabulary_id,
-                  VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
-                  VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
-                },
-                isExcluded: false,
-                includeDescendants: true,
-                includeMapped: true,
-              }
-
-              console.log(`Formatted concept for ID ${conceptId}:`, formattedConcept)
-
-              conceptDetails.push(formattedConcept)
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
-          }
-        }
-
-        detailsMap[conceptSetId] = conceptDetails
-      } else {
-        detailsMap[conceptSetId] = []
-      }
-    }
-
-    conceptSetDetails.value = detailsMap
-    console.log('Loaded concept set details (Atlas format):', detailsMap)
+    const result = await apiLoadConceptSetDetails(selectedConceptSets, config)
+    conceptSetDetails.value = result
   } catch (error) {
     console.error('Error loading concept set details:', error)
     conceptSetDetails.value = {}
@@ -337,6 +184,7 @@ onMounted(() => {
 
 const inclusionFilters = computed(() => filterManager.getInclusionFilters())
 
+// This function is a placeholder for filter updates, as the reactive refs handle updates automatically. No value is needed here.
 const updateFilter = (_filter: QueryFilterCardModel) => {
   // Filter updates are handled automatically through reactive refs
 }
@@ -469,79 +317,7 @@ const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
   }
 
   try {
-    const portalAPI = getPortalAPI()
-    let headers: any = {
-      'Content-Type': 'application/json',
-    }
-
-    // Get bearer token
-    const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
-    if (bearerToken != null) {
-      headers.Authorization = `Bearer ${bearerToken}`
-    }
-
-    // Extract concept IDs from the concept set data
-    let conceptIds = []
-
-    if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
-      conceptIds = conceptSet.conceptIds
-    } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
-      conceptIds = conceptSet.concepts.map((c: ConceptItem) => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
-    } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
-      conceptIds = conceptSet.items
-        .map((item: ConceptItem) => item.id || item.concept_id || item.CONCEPT_ID)
-        .filter(Boolean)
-    }
-
-    // For demo purposes, if no concept IDs found, use some sample IDs
-    if (conceptIds.length === 0) {
-      console.warn(`No concept IDs found for concept set ${conceptSet.value}, using sample IDs for demo`)
-      conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
-    }
-
-    const conceptDetails = []
-
-    // Fetch details for each concept ID (limit to first 20 to avoid too many requests)
-    const limitedConceptIds = conceptIds.slice(0, 20)
-    console.log(`Fetching details for concept set ${conceptSet.value}:`, limitedConceptIds)
-
-    for (const conceptId of limitedConceptIds) {
-      try {
-        const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
-        if (conceptDetail) {
-          // Format the concept detail in Atlas-compatible structure
-          const formattedConcept = {
-            concept: {
-              CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
-              CONCEPT_CODE: conceptDetail.concept_code,
-              CONCEPT_ID: conceptDetail.concept_id || conceptId,
-              CONCEPT_NAME: conceptDetail.concept_name,
-              DOMAIN_ID: conceptDetail.domain_id,
-              INVALID_REASON: conceptDetail.invalid_reason || null,
-              INVALID_REASON_CAPTION: conceptDetail.invalid_reason ? 'Invalid' : 'Valid',
-              STANDARD_CONCEPT: conceptDetail.standard_concept,
-              STANDARD_CONCEPT_CAPTION:
-                conceptDetail.standard_concept === 'S'
-                  ? 'Standard'
-                  : conceptDetail.standard_concept === 'C'
-                  ? 'Classification'
-                  : 'Non-standard',
-              VOCABULARY_ID: conceptDetail.vocabulary_id,
-              VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
-              VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
-            },
-            isExcluded: false,
-            includeDescendants: true,
-            includeMapped: true,
-          }
-          conceptDetails.push(formattedConcept)
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
-      }
-    }
-
-    return conceptDetails
+    return await apiLoadSingleConceptSetDetails(conceptSet, config)
   } catch (error) {
     console.error('Error loading single concept set details:', error)
     return []
