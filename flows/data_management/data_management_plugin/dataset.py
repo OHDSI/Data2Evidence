@@ -6,13 +6,12 @@ from prefect.logging import get_run_logger
 
 from .hooks import *
 from .const import *
-from .liquibase import Liquibase
+from .liquibase import Liquibase, LiquibaseAction
 from .types import FlowActionType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.types import DBCredentialsType, UserType, LiquibaseAction
-
+from _shared_flow_utils.types import DBCredentialsType
 
 def create_datamodel(database_code: str,
                      data_model: str,

@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useMemo, useState } from "react";
+import { Loader } from "@portal/components";
 import { importPluginModule } from "./pluginLoader";
 
 interface PluginRendererProps<T = any> {
@@ -36,7 +37,7 @@ export const PluginRenderer: FC<PluginRendererProps> = ({
   );
 
   const PageComponent = component?.page;
-  if (!PageComponent) return null;
+  if (!PageComponent) return <Loader />;
 
   return <PageComponent metadata={metadata} />;
 };
