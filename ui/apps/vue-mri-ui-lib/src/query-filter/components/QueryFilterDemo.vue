@@ -16,34 +16,91 @@ import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterMan
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
+
+// Type definitions
+interface ConceptSetItem {
+  value: string
+  text?: string
+  display_value?: string
+  conceptIds?: number[]
+  concepts?: ConceptItem[]
+  items?: ConceptItem[]
+}
+
+interface ConceptItem {
+  id?: number
+  concept_id?: number
+  CONCEPT_ID?: number
+}
+
+interface ConceptDetail {
+  concept_class_id: string
+  concept_code: string
+  concept_id: number
+  concept_name: string
+  domain_id: string
+  invalid_reason?: string
+  standard_concept: string
+  vocabulary_id: string
+  valid_start_date?: string
+  valid_end_date?: string
+}
+
+interface ApiConfig {
+  configId: string
+  configVersion: string
+  datasetId: string
+}
+
+interface ConceptSetDomainValues {
+  values: ConceptSetItem[]
+  isLoading: boolean
+  loadedStatus: 'NO_RESULTS' | 'HAS_RESULTS' | 'TOO_MANY_RESULTS'
+}
+
+interface TagInputModel {
+  id: string
+  props: {
+    type: string
+    value: ConceptSetItem[]
+    attributePath: string
+    domainFilter: string
+    standardConceptCodeFilter: string
+  }
+}
+
+interface ConceptSetAction {
+  values?: ConceptSetItem
+  config?: any
+}
+
+interface ConceptSetDetails {
+  [conceptSetId: string]: any[]
+}
+
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
 const filterManager = reactive(new QueryFilterManager())
 
-// Get Vuex store access for concept set list only
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
-// Tag input model for concept set testing - local state for selections
-const tagInputModel = ref({
+const tagInputModel = ref<TagInputModel>({
   id: 'concept-set-test',
   props: {
     type: 'conceptSet',
-    value: [], // This will be stored locally, not in Vuex
+    value: [],
     attributePath: 'condition_occurrence.concept_id',
     domainFilter: 'Condition',
     standardConceptCodeFilter: 'Standard',
   },
 })
 
-// Local state for selected concept sets
-const selectedConceptSets = ref([])
+const selectedConceptSets = ref<ConceptSetItem[]>([])
 
-// Local state for concept set included concepts
-const conceptSetDetails = ref({}) // Store included concepts by concept set ID
+const conceptSetDetails = ref<ConceptSetDetails>({})
 const loadingConceptDetails = ref(false)
 
-// External texts for tag input
 const tagInputTexts = {
   placeholder: 'Select concepts or type to search...',
   enterSearchTerm: 'Enter search term',
@@ -54,16 +111,14 @@ const tagInputTexts = {
   noSuggestions: 'No suggestions found',
 }
 
-// Local state for concept set domain values (from direct API call)
-const allConceptSets = ref([]) // Store all loaded concept sets
-const conceptSetDomainValues = ref({
+const allConceptSets = ref<ConceptSetItem[]>([])
+const conceptSetDomainValues = ref<ConceptSetDomainValues>({
   values: [],
   isLoading: false,
   loadedStatus: 'NO_RESULTS',
 })
 
-// Get configuration from Vuex store for API call
-const getApiConfig = () => {
+const getApiConfig = (): ApiConfig | null => {
   if (!store) return null
 
   const mriConfig = store.getters.getMriConfig
@@ -76,7 +131,6 @@ const getApiConfig = () => {
   }
 }
 
-// Direct API call to get concept sets (loads all concept sets once)
 const loadConceptSets = async () => {
   const config = getApiConfig()
   if (!config || !config.configId || !config.datasetId) {
@@ -89,18 +143,14 @@ const loadConceptSets = async () => {
   try {
     const portalAPI = getPortalAPI()
     let headers: any = {}
-
-    // Get bearer token
     const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
     if (bearerToken != null) {
       headers.Authorization = `Bearer ${bearerToken}`
     }
 
-    // Add dataset ID header
     if (config.datasetId) {
       headers.datasetid = config.datasetId
     }
-    // Build URL like ajaxAuth does
     let url = '/analytics-svc/api/services/values'
     if (portalAPI.qeSvcUrl) {
       url = `${portalAPI.qeSvcUrl}${url}`
@@ -123,7 +173,6 @@ const loadConceptSets = async () => {
       ...item,
       display_value: item.text || item.value,
     }))
-    // Store all concept sets for local filtering
     allConceptSets.value = formattedValues
 
     const loadedStatus =
@@ -145,12 +194,14 @@ const loadConceptSets = async () => {
   }
 }
 
-// Helper function to fetch concept details by ID
-const fetchConceptById = async (datasetId: string, conceptId: number, headers: any) => {
+const fetchConceptById = async (
+  datasetId: string,
+  conceptId: number,
+  headers: Record<string, string>
+): Promise<ConceptDetail | null> => {
   try {
     const portalAPI = getPortalAPI()
 
-    // Build URL for concept search by ID
     let url = '/terminology/concept/searchById'
     if (portalAPI.qeSvcUrl) {
       url = `${portalAPI.qeSvcUrl}${url}`
@@ -164,7 +215,6 @@ const fetchConceptById = async (datasetId: string, conceptId: number, headers: a
     }
 
     const response = await axios.post(url, requestBody, { headers })
-    // The API returns an array with one concept object
     const data = response.data
     return Array.isArray(data) && data.length > 0 ? data[0] : null
   } catch (error) {
@@ -173,8 +223,7 @@ const fetchConceptById = async (datasetId: string, conceptId: number, headers: a
   }
 }
 
-// API call to get concept details for selected concept sets using their concept IDs
-const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
+const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
   if (selectedConceptSets.length === 0) {
     conceptSetDetails.value = {}
     return
@@ -206,29 +255,26 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
 
-      // Extract concept IDs from the concept set data
-      // The concept set should contain concept IDs - look for them in various possible fields
       let conceptIds = []
 
       if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
         conceptIds = conceptSet.conceptIds
       } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
-        conceptIds = conceptSet.concepts.map(c => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
+        conceptIds = conceptSet.concepts.map((c: ConceptItem) => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
       } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
-        conceptIds = conceptSet.items.map(item => item.id || item.concept_id || item.CONCEPT_ID).filter(Boolean)
+        conceptIds = conceptSet.items
+          .map((item: ConceptItem) => item.id || item.concept_id || item.CONCEPT_ID)
+          .filter(Boolean)
       }
 
-      // For demo purposes, if no concept IDs found, use some sample IDs
       if (conceptIds.length === 0) {
         console.warn(`No concept IDs found for concept set ${conceptSetId}, using sample IDs for demo`)
-        // Use some sample concept IDs for demonstration
         conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
       }
 
       if (conceptIds && conceptIds.length > 0) {
         const conceptDetails = []
 
-        // Fetch details for each concept ID (limit to first 20 to avoid too many requests)
         const limitedConceptIds = conceptIds.slice(0, 20)
         console.log(`Fetching details for concept set ${conceptSetId}:`, limitedConceptIds)
 
@@ -236,11 +282,8 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
           try {
             const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
             if (conceptDetail) {
-              // Debug: Log the actual structure of the concept detail response
               console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
 
-              // Format the concept detail in Atlas-compatible structure
-              // API returns snake_case fields, map them to OMOP CDM uppercase format
               const formattedConcept = {
                 concept: {
                   CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
@@ -261,12 +304,11 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
                   VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
                   VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
                 },
-                isExcluded: false, // Default to false, can be configured later
-                includeDescendants: true, // Default to true for medical concepts
-                includeMapped: true, // Default to true for comprehensive coverage
+                isExcluded: false,
+                includeDescendants: true,
+                includeMapped: true,
               }
 
-              // Debug: Log the formatted concept
               console.log(`Formatted concept for ID ${conceptId}:`, formattedConcept)
 
               conceptDetails.push(formattedConcept)
@@ -292,10 +334,8 @@ const loadConceptSetDetails = async (selectedConceptSets: any[]) => {
   }
 }
 
-// Local filtering function for concept sets
 const filterConceptSets = (searchQuery: string) => {
   if (!searchQuery || searchQuery.trim() === '') {
-    // Show all concept sets when no search query
     conceptSetDomainValues.value = {
       values: allConceptSets.value,
       isLoading: false,
@@ -303,10 +343,9 @@ const filterConceptSets = (searchQuery: string) => {
     }
     return
   }
-  // Filter by name (text/display_value) and id (value)
   const searchLower = searchQuery.toLowerCase()
   const filteredResults = allConceptSets.value.filter(
-    (cs: any) =>
+    (cs: ConceptSetItem) =>
       (cs.text && cs.text.toLowerCase().includes(searchLower)) ||
       (cs.display_value && cs.display_value.toLowerCase().includes(searchLower)) ||
       (cs.value && cs.value.toLowerCase().includes(searchLower))
@@ -321,79 +360,58 @@ const filterConceptSets = (searchQuery: string) => {
 
 const tagInputDomainValues = computed(() => conceptSetDomainValues.value)
 
-// Computed property to get selected values for display
 const selectedConceptSetValues = computed(() => {
   return selectedConceptSets.value
 })
 
-// Initialize with clean slate (no default data)
 const initializeSampleData = () => {
-  // Start with empty filter manager - users will add filters as needed
   filterManager.clearAllFilters()
 }
 
-// Watch for changes in selected concept sets to load concept details
 watch(
   selectedConceptSets,
   async newSelection => {
     if (newSelection && newSelection.length > 0) {
       await loadConceptSetDetails(newSelection)
     } else {
-      // Clear concept details when no concept sets are selected
       conceptSetDetails.value = {}
     }
   },
   { deep: true }
 )
 
-// Initialize sample data on mount
 onMounted(() => {
   initializeSampleData()
 
-  // Load initial concept set data using direct API call
   loadConceptSets()
 })
 
 const inclusionFilters = computed(() => filterManager.getInclusionFilters())
-const exclusionFilters = computed(() => filterManager.getExclusionFilters())
 
-const updateFilter = (filter: QueryFilterCardModel) => {
-  // May need to update the store in future
+const updateFilter = (_filter: QueryFilterCardModel) => {
+  // Filter updates are handled automatically through reactive refs
 }
 
-// Handle criteria selection for new filters
 const handleCriteriaSelected = (option: CriteriaOption) => {
   const newFilter = new QueryFilterCardModel({
-    title: option.title.replace('Add ', ''), // Remove "Add" prefix for title
+    title: option.title.replace('Add ', ''),
     type: 'inclusion',
     events: [
       {
         id: `event_${Date.now()}`,
         conceptSet: `${option.title.replace('Add ', '')} concept set`,
         chips: [],
-        criteriaType: option.id, // Store the criteria type for attributes
+        criteriaType: option.id,
       },
     ],
   })
 
-  // Expand the new filter by default
   newFilter.isExpanded = true
   filterManager.addFilter(newFilter)
 }
 
-const addInclusionFilter = () => {
-  const newFilter = new QueryFilterCardModel({
-    title: 'New Inclusion Filter',
-    type: 'inclusion',
-    events: [],
-  })
-  filterManager.addFilter(newFilter)
-}
-
 const handleAddEvent = (filterId: string, eventId?: string) => {
-  // Only handle this for main filter actions, not for nested events
   if (eventId) {
-    // This is a nested event being added - ignore it since it's handled internally
     return
   }
 
@@ -403,22 +421,7 @@ const handleAddEvent = (filterId: string, eventId?: string) => {
       id: `event_${Date.now()}`,
       conceptSet: 'Event concept set',
       chips: [],
-      criteriaType: 'conditionOccurrence', // Default to condition occurrence
-      selectedAttributes: [],
-    }
-    filter.addEvent(newEvent)
-  }
-}
-
-// Handle criteria selection for existing filters (add event to filter)
-const handleCriteriaSelectedForFilter = (filterId: string, option: CriteriaOption) => {
-  const filter = filterManager.getFilter(filterId)
-  if (filter) {
-    const newEvent: QueryFilterEvent = {
-      id: `event_${Date.now()}`,
-      conceptSet: `${option.title.replace('Add ', '')} concept set`,
-      chips: [],
-      criteriaType: option.id,
+      criteriaType: 'conditionOccurrence',
       selectedAttributes: [],
     }
     filter.addEvent(newEvent)
@@ -427,7 +430,6 @@ const handleCriteriaSelectedForFilter = (filterId: string, option: CriteriaOptio
 
 const handleEditEvent = (filterId: string, eventId: string) => {
   console.log('Edit event:', filterId, eventId)
-  // Would open edit dialog
 }
 
 const handleDuplicateEvent = (filterId: string, eventId: string) => {
@@ -457,8 +459,6 @@ const handleRemoveEvent = (filterId: string, eventId: string) => {
 
 const handleAddChip = (filterId: string, eventId: string) => {
   console.log('Add chip to event:', filterId, eventId)
-  // Would open chip selection dialog
-  // For demo, add a sample chip
   const filter = filterManager.getFilter(filterId)
   if (filter) {
     const sampleChip: QueryFilterChip = {
@@ -476,7 +476,6 @@ const handleRemoveChip = (filterId: string, eventId: string, chipId: string) => 
 
 const handleShowMenu = (filterId: string, eventId: string) => {
   console.log('Show menu for event:', filterId, eventId)
-  // Would show context menu
 }
 
 const handleAttributeSelected = (filterId: string, eventId: string, attribute: any) => {
@@ -487,8 +486,7 @@ const handleAttributeRemoved = (filterId: string, eventId: string, attributeId: 
   console.log('Attribute removed:', filterId, eventId, attributeId)
 }
 
-// Handle concept set selection for events
-const handleEventConceptSetSelected = async (filterId: string, eventId: string, conceptSet: any) => {
+const handleEventConceptSetSelected = async (filterId: string, eventId: string, conceptSet: ConceptSetItem) => {
   console.log('Event concept set selected:', filterId, eventId, conceptSet)
 
   const filter = filterManager.getFilter(filterId)
@@ -497,14 +495,12 @@ const handleEventConceptSetSelected = async (filterId: string, eventId: string, 
   const event = filter.getEvent(eventId)
   if (!event) return
 
-  // Update event with selected concept set
   event.selectedConceptSet = conceptSet
   event.conceptSetId = conceptSet.value
   event.conceptSet = conceptSet.text || conceptSet.display_value
   event.conceptSetLoading = true
 
   try {
-    // Fetch concept details for this concept set
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet)
     event.conceptSetDetails = conceptSetDetails
     event.conceptSetLoading = false
@@ -516,8 +512,7 @@ const handleEventConceptSetSelected = async (filterId: string, eventId: string, 
   }
 }
 
-// Helper function to load concept set details for a single concept set
-const loadSingleConceptSetDetails = async (conceptSet: any) => {
+const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
   const config = getApiConfig()
   if (!config || !config.datasetId) {
     console.warn('Missing configuration for concept details API call')
@@ -542,9 +537,11 @@ const loadSingleConceptSetDetails = async (conceptSet: any) => {
     if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
       conceptIds = conceptSet.conceptIds
     } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
-      conceptIds = conceptSet.concepts.map(c => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
+      conceptIds = conceptSet.concepts.map((c: ConceptItem) => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean)
     } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
-      conceptIds = conceptSet.items.map(item => item.id || item.concept_id || item.CONCEPT_ID).filter(Boolean)
+      conceptIds = conceptSet.items
+        .map((item: ConceptItem) => item.id || item.concept_id || item.CONCEPT_ID)
+        .filter(Boolean)
     }
 
     // For demo purposes, if no concept IDs found, use some sample IDs
@@ -616,7 +613,6 @@ const clearFilters = () => {
 const exportFilters = () => {
   const config = JSON.stringify(getAllFilters(), null, 2)
   console.log('Exported configuration:', config)
-  // In real app, would download as file
   showDebug.value = !showDebug.value
 }
 
@@ -635,18 +631,16 @@ const handleRemoveFilter = (filterId: string) => {
   }
 }
 
-const handleConceptSetUpdate = (value: any[]) => {
+const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
   try {
-    // Ensure we have a valid array and the ref is accessible
     if (Array.isArray(value) && selectedConceptSets) {
-      selectedConceptSets.value = [...value] // Create a new array to ensure reactivity
+      selectedConceptSets.value = [...value]
       console.log('Concept set updated (stored locally):', value)
     } else {
       console.warn('Invalid value passed to handleConceptSetUpdate:', value)
     }
   } catch (error) {
     console.error('Error in handleConceptSetUpdate:', error)
-    // Fallback: ensure we don't break the app
     if (selectedConceptSets && Array.isArray(value)) {
       selectedConceptSets.value = value
     }
@@ -656,17 +650,15 @@ const handleConceptSetUpdate = (value: any[]) => {
 const handleSearchChange = (searchQuery: string) => {
   console.log('Search query changed:', searchQuery)
 
-  // Filter existing concept sets locally by name and id
   filterConceptSets(searchQuery)
 }
 
-const handleConceptSetAction = ({ values, config }) => {
+const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   console.log('Concept set action:', values, config)
 
   const apiConfig = getApiConfig()
   const conceptSetId = values?.value
 
-  // Capture reactive values outside the callback to avoid context issues
   const domainFilter = tagInputModel.value.props.domainFilter
   const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
 
@@ -675,20 +667,16 @@ const handleConceptSetAction = ({ values, config }) => {
     { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
   ]
 
-  // Create a simple callback that doesn't rely on Vue instance context
   const handleCloseCallback = (onCloseValues: any) => {
-    // No action to do if no concept set is being created
     if (!onCloseValues?.currentConceptSet) {
       return
     }
 
     if (conceptSetId) {
-      // EDIT: Update existing concept set name
       console.log('Updating concept set:', onCloseValues.currentConceptSet.name)
       const currentSets = selectedConceptSets.value
-      const index = currentSets.findIndex((cs: any) => cs.value === conceptSetId)
+      const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
       if (index !== -1) {
-        // Create a new array to ensure reactivity
         const updatedSets = [...currentSets]
         updatedSets[index] = {
           ...updatedSets[index],
@@ -698,14 +686,12 @@ const handleConceptSetAction = ({ values, config }) => {
         selectedConceptSets.value = updatedSets
       }
     } else {
-      // CREATE: Add new concept set to selection
       console.log('Creating new concept set:', onCloseValues.currentConceptSet.name)
       const newConceptSet = {
         text: onCloseValues.currentConceptSet.name,
         display_value: onCloseValues.currentConceptSet.name,
         value: onCloseValues.currentConceptSet.id,
       }
-      // Create a new array to ensure reactivity
       selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
     }
   }
@@ -728,14 +714,11 @@ const handleConceptSetAction = ({ values, config }) => {
 
 <template>
   <div class="query-filter-demo">
-    <!-- Filter Container -->
     <div class="query-filter-container">
-      <!-- Inclusion Criteria Section -->
       <div class="query-filter-container__section">
         <div class="query-filter-container__header">
           <h3 class="query-filter-container__section-title">Inclusion Criteria</h3>
 
-          <!-- Tab Navigation -->
           <div class="query-filter-tabs">
             <button
               class="query-filter-tabs__tab query-filter-tabs__tab--earliest"
@@ -761,7 +744,6 @@ const handleConceptSetAction = ({ values, config }) => {
           </div>
         </div>
 
-        <!-- ALL 9 Container -->
         <div class="query-filter-group">
           <div class="query-filter-group__sidebar">
             <span class="sidebar-label">ALL</span>
@@ -783,7 +765,6 @@ const handleConceptSetAction = ({ values, config }) => {
               />
             </div>
 
-            <!-- Debug info -->
             <div
               style="
                 margin-top: 8px;
@@ -798,7 +779,6 @@ const handleConceptSetAction = ({ values, config }) => {
               length: {{ tagInputModel.props.value.length }}
             </div>
 
-            <!-- Display Selected Values -->
             <div
               v-if="selectedConceptSetValues.length > 0"
               style="
@@ -842,7 +822,6 @@ const handleConceptSetAction = ({ values, config }) => {
               >
             </div>
 
-            <!-- Included Concepts Display -->
             <div
               v-if="selectedConceptSetValues.length > 0"
               style="
@@ -857,8 +836,7 @@ const handleConceptSetAction = ({ values, config }) => {
                 Concept Set Details (Atlas Format):
               </h4>
               <div style="font-size: 11px; color: #666; margin-bottom: 8px; font-style: italic">
-                Uses concept IDs from selected concept sets, fetches full details via /terminology/concept/searchById
-                and formats for Atlas compatibility
+                Fetches concept details via API and formats for Atlas compatibility
               </div>
 
               <div v-if="loadingConceptDetails" style="color: #666; font-style: italic">
@@ -929,7 +907,7 @@ const handleConceptSetAction = ({ values, config }) => {
                       v-if="(concepts as any[]).length === 20"
                       style="color: #ff6600; font-style: italic; font-size: 11px; margin-top: 4px"
                     >
-                      Note: Limited to first 20 concepts to avoid too many API calls
+                      Note: Limited to first 20 concepts
                     </div>
                   </div>
 
@@ -939,7 +917,6 @@ const handleConceptSetAction = ({ values, config }) => {
                 </div>
               </div>
 
-              <!-- Raw JSON for debugging -->
               <details style="margin-top: 8px">
                 <summary style="cursor: pointer; font-size: 11px; color: #666">Show raw concept details JSON</summary>
                 <pre
@@ -974,7 +951,6 @@ const handleConceptSetAction = ({ values, config }) => {
             </div>
           </div>
           <div class="query-filter-group__content">
-            <!-- Criteria selector for adding new sections -->
             <div class="add-section-container">
               <criteria-selector-dropdown
                 section-id="initialEvents"
@@ -1009,18 +985,14 @@ const handleConceptSetAction = ({ values, config }) => {
           </div>
         </div>
       </div>
-
-      <!-- Removed exclusion criteria section as requested -->
     </div>
 
-    <!-- Action Buttons -->
     <div class="query-filter-demo__actions">
       <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
       <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
-    <!-- Debug Output -->
     <div class="query-filter-demo__debug" v-if="showDebug">
       <h3>Debug Information</h3>
       <div class="debug-columns">
