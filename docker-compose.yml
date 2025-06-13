@@ -442,7 +442,8 @@ services:
             "DATA_TRANSFORMATION_BUCKET": "data-transformation"
           },
           "jupyter-gateway": {},
-          "mlflow": {}
+          "mlflow": {},
+          "strategus-results": {}
         }
       SERVICE_ROUTES: |-
         {
