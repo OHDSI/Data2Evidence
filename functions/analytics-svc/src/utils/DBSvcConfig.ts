@@ -115,6 +115,7 @@ function getHanaConfigByTenant(tenant: string): IDBHanaCredentialsType {
     let hanaTenantConfig: IHanaTenantConfig =
         getHanaTenantConfigByTenant(tenant);
     return {
+        authentication_mode: hanaTenantConfig.authentication_mode,
         host: hanaTenantConfig.host,
         port: hanaTenantConfig.port,
         user: hanaTenantConfig.hanaReadUser,

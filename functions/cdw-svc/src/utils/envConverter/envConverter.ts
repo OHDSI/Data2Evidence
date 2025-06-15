@@ -98,6 +98,7 @@ const remapMridbToVcap = (
       name: mridb.name,
       tags: mridb.tags,
       credentials: {
+        authentication_mode: mridb.values.authentication_mode,
         host: mridb.values.host,
         port: mridb.values.port,
         code: mridb.values.code,
