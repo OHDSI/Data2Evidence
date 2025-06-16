@@ -9,9 +9,10 @@ import { api } from './IfrToExtCohortDeps/api'
 
 export const convertIFRToExtCohort = async (
   ifrDefinition: IFRDefinition,
-  datasetId: string
+  datasetId: string,
+  configId: string
 ): Promise<ExtCohortDefinition> => {
-  const backendConfig = await api.portalServer.getBackendConfig(datasetId)
+  const backendConfig = await api.paConfigSvc.getBackendConfig(datasetId, configId)
   const cdmConfig: CdmConfig = backendConfig.config
   const conceptSets = await convertEventAttributesToConceptSets(
     cdmConfig,

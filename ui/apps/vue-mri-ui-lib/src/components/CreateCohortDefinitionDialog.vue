@@ -45,6 +45,7 @@ export default {
       'getBookmarksData',
       'getIFR',
       'getBookmarkFromIFR',
+      'getMriFrontendConfig'
     ]),
   },
   watch: {},
@@ -65,7 +66,7 @@ export default {
       const IFRDefinition = { filter: this.getIFR }
       const datasetId = this.getSelectedDataset?.id
       try {
-        const expression = await convertIFRToExtCohort(IFRDefinition, datasetId)
+        const expression = await convertIFRToExtCohort(IFRDefinition, datasetId, this.getMriFrontendConfig.getPaConfigId())
         const now = +new Date()
         const content = {
           id: 0, // 0 is used by webapi for new cohort definitions

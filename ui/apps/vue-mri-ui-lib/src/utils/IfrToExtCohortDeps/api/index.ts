@@ -1,7 +1,7 @@
-import { PortalServer } from './portalServer'
+import { PaConfigSvc } from './paConfigSvc'
 import { Terminology } from './terminology'
 
 export const api = {
   terminology: new Terminology(),
-  portalServer: new PortalServer(),
+  paConfigSvc: new PaConfigSvc(),
 }
