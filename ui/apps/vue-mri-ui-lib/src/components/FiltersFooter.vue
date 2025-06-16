@@ -170,6 +170,9 @@ import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
 
 export default {
+  compatConfig: {
+    MODE: 3,
+  },
   name: 'filtersFooter',
   props: {
     splitAddButton: {
@@ -196,9 +199,13 @@ export default {
     }
   },
   mounted() {
-    // Get maxFiltercardCount from config if available.
-    this.maxFiltercardCount =
-      this.getMriFrontendConfig._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
+    try {
+      // Get maxFiltercardCount from config if available.
+      this.maxFiltercardCount =
+        this.getMriFrontendConfig?._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
+    } catch (error) {
+      console.error('FilterFooter mounted error:', error)
+    }
   },
   computed: {
     ...mapGetters([
@@ -215,10 +222,16 @@ export default {
       'getBookmarkByNameAndUsername',
     ]),
     hasChanges() {
-      return this.getActiveBookmark.isNew || this.getCurrentBookmarkHasChanges
+      // When using QueryFilter (Atlas bookmarks), always allow saving
+      if (this.isUsingQueryFilter) {
+        return true
+      }
+
+      // For regular D2E bookmarks, use existing logic with null checks
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isNewCohort() {
-      return this.getActiveBookmark.isNew
+      return this.getActiveBookmark?.isNew
     },
     hasExceededLength() {
       return this.cohortName.length == this.maxLength
@@ -272,10 +285,11 @@ export default {
         if (this.isUsingQueryFilter) {
           const bookmarkName = this.cohortName || 'Atlas Cohort'
           const cohortData = {
+            id: this.getActiveBookmark.bmkId,
             name: bookmarkName,
-            shared: this.shareBookmark
+            description: `Atlas cohort definition created from QueryFilter`,
+            shared: this.shareBookmark,
           }
-          
           this.$emit('save-atlas-cohort', cohortData)
           this.cohortName = ''
           this.closeSaveBookmark()
@@ -284,7 +298,7 @@ export default {
 
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
-        const isNewBookmark = activeBookmark.isNew || false
+        const isNewBookmark = activeBookmark?.isNew || false
         const username = getPortalAPI().username
 
         for (const bookmark of this.getBookmarks) {

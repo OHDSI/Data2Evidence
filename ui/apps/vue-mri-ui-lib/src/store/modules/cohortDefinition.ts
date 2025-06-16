@@ -192,7 +192,7 @@ const actions = {
         })
       })
   },
-  fireUpdateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { id, content }) {
+  fireUpdateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { content }) {
     if (cancel) {
       cancel('cancel')
     }
@@ -201,9 +201,8 @@ const actions = {
     })
 
     const params = JSON.stringify(content)
-
     return dispatch('ajaxAuth', {
-      url: `/d2e-webapi/cohortdefinition/${id}`,
+      url: `/d2e-webapi/cohortdefinition/${content.id}`,
       method: 'PUT',
       params,
       cancelToken,
@@ -230,6 +229,33 @@ const actions = {
         })
         dispatch('setAlertMessage', {
           message: rootGetters.getText('MRI_PA_UPDATE_ATLAS_COHORT_DEFINITION_ERROR'),
+        })
+        throw error
+      })
+  },
+  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+
+    return dispatch('ajaxAuth', {
+      url: `/d2e-webapi/cohortdefinition/${cohortDefinitionId}`,
+      method: 'GET',
+      cancelToken,
+      datasetId: rootGetters.getSelectedDataset.id,
+    })
+      .then(response => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
+        return response.data
+      })
+      .catch(error => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, {
+          response: {
+            data: 'An error occurred while fetching cohort definition',
+          },
         })
         throw error
       })

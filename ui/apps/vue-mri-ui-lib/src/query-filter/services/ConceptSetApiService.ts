@@ -3,11 +3,7 @@
  */
 import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
-import type {
-  ConceptSetItem,
-  ConceptDetail,
-  ConceptSetDomainValues,
-} from '../types/ConceptSetTypes'
+import type { ConceptSetItem, ConceptDetail, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 
 /**
  * Build authentication headers for API requests
@@ -15,7 +11,7 @@ import type {
 const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
   const portalAPI = getPortalAPI()
   const headers: Record<string, string> = {}
-  
+
   const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
   if (bearerToken != null) {
     headers.Authorization = `Bearer ${bearerToken}`
@@ -33,7 +29,7 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
  */
 const buildApiUrl = (path: string): string => {
   const portalAPI = getPortalAPI()
-  
+
   if (portalAPI.qeSvcUrl) {
     return `${portalAPI.qeSvcUrl}${path}`
   } else {
@@ -57,14 +53,14 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   try {
     const headers = await buildApiHeaders(datasetId)
     const url = buildApiUrl('/terminology/concept-set')
-    
+
     const response = await axios.get(url, {
       params: {
         datasetId: datasetId,
       },
       headers,
     })
-    
+
     const values = response.status === 204 ? [] : response?.data || []
     const formattedValues = values.map((item: any) => ({
       value: item.id,
@@ -125,7 +121,7 @@ export const fetchConceptById = async (
  * Format concept detail for Atlas compatibility
  */
 const formatConceptForAtlas = (
-  conceptDetail: ConceptDetail, 
+  conceptDetail: ConceptDetail,
   conceptId: number,
   conceptFlags?: { useMapped?: boolean; isExcluded?: boolean; useDescendants?: boolean }
 ) => {
@@ -189,8 +185,7 @@ export const loadConceptSetDetails = async (
       let conceptIds = extractConceptIds(conceptSet)
 
       if (conceptIds.length === 0) {
-        console.warn(`No concept IDs found for concept set ${conceptSetId}, using sample IDs for demo`)
-        conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
+        console.warn(`No concept IDs found for concept set ${conceptSetId}`)
       }
 
       if (conceptIds && conceptIds.length > 0) {
@@ -203,7 +198,7 @@ export const loadConceptSetDetails = async (
             const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
             if (conceptDetail) {
               console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
-              
+
               // Find the concept flags from the concept set
               const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
               const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
@@ -232,10 +227,7 @@ export const loadConceptSetDetails = async (
 /**
  * Load concept set details for a single concept set
  */
-export const loadSingleConceptSetDetails = async (
-  conceptSet: ConceptSetItem,
-  datasetId: string
-): Promise<any[]> => {
+export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, datasetId: string): Promise<any[]> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept details API call')
     return []
@@ -250,8 +242,7 @@ export const loadSingleConceptSetDetails = async (
 
     // For demo purposes, if no concept IDs found, use some sample IDs
     if (conceptIds.length === 0) {
-      console.warn(`No concept IDs found for concept set ${conceptSet.value}, using sample IDs for demo`)
-      conceptIds = [201820, 4329847, 4110056, 4112183, 4151281] // Sample diabetes-related concept IDs
+      console.warn(`No concept IDs found for concept set ${conceptSet.value}`)
     }
 
     const conceptDetails = []

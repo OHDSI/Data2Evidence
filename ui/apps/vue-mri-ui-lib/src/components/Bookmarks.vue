@@ -120,7 +120,7 @@
       </div>
       <div v-else>
         <!-- TODO: Put here for convenience during dev. move it to the filter cards section later -->
-        <QueryFilter />
+        <QueryFilter ref="queryFilterRef" />
         <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
           {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
         </div>
@@ -128,12 +128,14 @@
           <BookmarkItems
             :bookmarksDisplay="bookmarksDisplay"
             :compareCohortsSelectionList="aSelBookmarkList"
+            :useQueryFilterForAtlas="true"
             @onSelectBookmark="onSelectBookmark"
             @renameBookmark="renameBookmark"
             @deleteBookmark="deleteBookmark"
             @addCohort="addCohort"
             @openDataQualityDialog="openDataQualityDialog"
             @loadBookmarkCheck="loadBookmarkCheck"
+            @loadAtlasBookmark="loadAtlasBookmark"
           />
         </div>
       </div>
@@ -326,6 +328,38 @@ export default {
         .catch(() => {
           this.showIncompatibleMessage = true
         })
+    },
+    async loadAtlasBookmark(atlasDefinitionId) {
+      try {
+        // Get Atlas JSON using our new store action
+        const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
+
+        // Create a fake bookmark object for the tab display
+        const atlasBookmark = {
+          bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
+          bmkId: `${atlasDefinitionId}`,
+          isAtlas: true,
+          isNew: false, // Currently always false as we have to import one first
+        }
+
+        // Set as active bookmark to create the tab
+        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+
+        // Load into QueryFilter component
+        if (this.$refs.queryFilterRef) {
+          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+
+          // Switch to Patient Analytics view after loading
+          this.$emit('unloadBookmarkEv')
+        }
+      } catch (error) {
+        console.error('Failed to load Atlas bookmark:', error)
+        this.messageStrip = {
+          show: true,
+          message: 'Failed to load Atlas cohort definition',
+          messageType: 'error',
+        }
+      }
     },
     closeRenameBookmark() {
       this.showRenameDialog = false

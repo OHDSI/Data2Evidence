@@ -318,9 +318,41 @@ const convertToAtlasFormat = () => {
   return filterManager.convertToAtlasFormat(activeTab.value)
 }
 
-// Expose the convertToAtlasFormat function so parent components can access it
+const loadAtlasCohortDefinition = async (atlasJson: any) => {
+  try {
+    console.log('Loading Atlas cohort definition:', atlasJson)
+    
+    // For now, we'll create a simple placeholder filter
+    // TODO: Implement proper Atlas JSON parsing and conversion
+    filterManager.clearAllFilters()
+    
+    const placeholderFilter = new QueryFilterCardModel({
+      title: atlasJson.name || 'Atlas Cohort Definition',
+      type: 'inclusion',
+      events: [
+        {
+          id: `event_${Date.now()}`,
+          conceptSet: 'Atlas imported concepts',
+          chips: [],
+          criteriaType: 'conditionOccurrence',
+        },
+      ],
+    })
+    
+    placeholderFilter.isExpanded = true
+    filterManager.addFilter(placeholderFilter)
+    
+    console.log('Successfully loaded Atlas cohort definition into QueryFilter')
+  } catch (error) {
+    console.error('Error loading Atlas cohort definition:', error)
+    throw error
+  }
+}
+
+// Expose functions so parent components can access them
 defineExpose({
   convertToAtlasFormat,
+  loadAtlasCohortDefinition,
 })
 
 const handleRemoveFilter = (filterId: string) => {
