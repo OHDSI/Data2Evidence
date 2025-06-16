@@ -1,4 +1,4 @@
-export const RESULT_VIEWER_CODE = `
+export const RESULT_VIEWER_TEMPLATE = `
 library(ShinyAppBuilder)
 library(OhdsiShinyModules)
 

@@ -32,7 +32,6 @@ export const createStrategusResultsViewer = async (
     const readCredentials = await getReadCredentials(databaseCode);
 
     const { host, port, readUser, readPassword } = readCredentials;
-
     const r_code = RESULT_VIEWER_TEMPLATE.replace(
       "$DATABASE_SCHEMA",
       "results_" + databaseCode
@@ -40,7 +39,6 @@ export const createStrategusResultsViewer = async (
       .replace("$DATABASE_SERVER", `${host}:${port}`)
       .replace("$DATABASE_USER", readUser)
       .replace("$DATABASE_PASSWORD", readPassword);
-
     console.debug("R code to execute:", r_code);
 
     const future = await kernel.requestExecute({
@@ -60,6 +58,7 @@ export const createStrategusResultsViewer = async (
 
     await future.done;
     kernel.dispose();
+
     if (executionError) {
       throw executionError;
     }
