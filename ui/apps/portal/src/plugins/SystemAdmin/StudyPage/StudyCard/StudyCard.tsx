@@ -1,7 +1,8 @@
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
 import { Card, DownloadStudyIcon, RunStudyIcon, ShareStudyIcon } from "@portal/components";
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useState } from "react";
+import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { useTranslation } from "../../../../contexts";
 import { StrategusStudy } from "../../../../types/strategusStudy";
@@ -10,8 +11,8 @@ import "./StudyCard.scss";
 interface StudyCardProps {
   study: StrategusStudy;
   highlightText?: string;
-  isRunning?: boolean;
-  onRunStudy?: (study: StrategusStudy) => void;
+  selectedDatasetId?: string;
+  setFeedback: (feedback: any) => void;
   onDownloadResults?: (study: StrategusStudy) => void;
   onShareResults?: (study: StrategusStudy) => void;
 }
@@ -19,21 +20,79 @@ interface StudyCardProps {
 export const StudyCard: FC<StudyCardProps> = ({
   study,
   highlightText,
-  isRunning = false,
-  onRunStudy,
+  selectedDatasetId,
+  setFeedback,
   onDownloadResults,
   onShareResults,
 }) => {
   const { getText, i18nKeys } = useTranslation();
+  const [isRunning, setIsRunning] = useState<boolean>(false);
 
   const handleRunStudy = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!isRunning) {
-        onRunStudy?.(study);
+
+      if (isRunning || !selectedDatasetId) {
+        return;
+      }
+
+      setIsRunning(true);
+
+      try {
+        let strategusJson;
+        try {
+          strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+        } catch (error) {
+          console.error(`[${study.id}] Could not fetch strategus JSON from repository:`, error);
+          setFeedback({
+            type: "error",
+            message: "Could not fetch strategus JSON from repository",
+            description: "Please check if the study configuration is available.",
+            autoClose: 5000,
+          });
+          return;
+        }
+
+        const requestData = {
+          json_graph: {
+            analysisSpecification: JSON.stringify(strategusJson),
+          },
+          options: {
+            mode: "kernel",
+            datasetId: selectedDatasetId,
+            studyId: study.id,
+          },
+        };
+
+        console.log(`[${study.id}] Request data:`, {
+          ...requestData,
+          json_graph: {
+            analysisSpecification: `[JSON with ${JSON.stringify(strategusJson).length} characters]`,
+          },
+        });
+        console.log(`[${study.id}] Making API call to createStudyAnalysisRun...`);
+        const response = await api.dataflow.createStudyAnalysisRun(requestData);
+        console.log(`[${study.id}] API call successful:`, response);
+
+        setFeedback({
+          type: "success",
+          message: `Study "${study.name || study.id}" started successfully`,
+          description: `Flow run ID: ${response.flowrunId || response.flowRunId}`,
+          autoClose: 5000,
+        });
+      } catch (error) {
+        console.error(`[${study.id}] Error running study:`, error);
+        setFeedback({
+          type: "error",
+          message: `Failed to start study "${study.name || study.id}"`,
+          autoClose: 5000,
+        });
+      } finally {
+        console.log(`[${study.id}] Setting isRunning to false`);
+        setIsRunning(false);
       }
     },
-    [onRunStudy, study, isRunning]
+    [selectedDatasetId, setFeedback, study]
   );
 
   const handleDownloadResults = useCallback(

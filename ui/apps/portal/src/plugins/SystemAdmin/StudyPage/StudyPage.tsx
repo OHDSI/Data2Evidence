@@ -23,7 +23,6 @@ export const StudyPage: FC<StudyPageProps> = () => {
   const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
-  const [runningStudyId, setRunningStudyId] = useState<string | null>(null);
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
@@ -56,62 +55,6 @@ export const StudyPage: FC<StudyPageProps> = () => {
 
     fetchStudies();
   }, [setFeedback]);
-
-  const handleRunStudy = useCallback(
-    async (study: StrategusStudy) => {
-      if (runningStudyId) {
-        return;
-      }
-      setRunningStudyId(study.id!);
-
-      try {
-        console.log("Running study:", study.name || study.id);
-
-        let strategusJson;
-        try {
-          strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
-        } catch (error) {
-          console.error("Could not fetch strategus JSON from repository:", error);
-          setFeedback({
-            type: "error",
-            message: "Could not fetch strategus JSON from repository",
-            description: "Please check if the study configuration is available.",
-            autoClose: 5000,
-          });
-          return;
-        }
-
-        const requestData = {
-          json_graph: {
-            analysisSpecification: JSON.stringify(strategusJson),
-          },
-          options: {
-            mode: "kernel",
-            datasetId: selectedDatasetId,
-          },
-        };
-
-        const response = await api.dataflow.createStudyAnalysisRun(requestData);
-
-        setFeedback({
-          type: "success",
-          message: `Study "${study.name || study.id}" started successfully`,
-          description: `Flow run ID: ${response.flowrunId || response.flowRunId}`,
-          autoClose: 5000,
-        });
-      } catch (error) {
-        console.error("Error running study:", error);
-        setFeedback({
-          type: "error",
-          message: `Failed to start study "${study.name || study.id}"`,
-          autoClose: 5000,
-        });
-      } finally {
-        setRunningStudyId(null);
-      }
-    },
-    [selectedDatasetId, setFeedback, runningStudyId]
-  );
 
   const handleDownloadResults = useCallback((study: StrategusStudy) => {
     console.log("Downloading results for study:", study.name || study.id);
@@ -172,8 +115,8 @@ export const StudyPage: FC<StudyPageProps> = () => {
                 <StudyCard
                   key={study.id}
                   study={study}
-                  isRunning={runningStudyId === study.id}
-                  onRunStudy={selectedDatasetId ? handleRunStudy : undefined}
+                  selectedDatasetId={selectedDatasetId}
+                  setFeedback={setFeedback}
                   onDownloadResults={handleDownloadResults}
                   onShareResults={handleShareResults}
                 />
