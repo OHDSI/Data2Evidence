@@ -144,17 +144,14 @@ def runStrategus(json_graph, options):
     root_flow_run_context = FlowRunContext.get().flow_run.dict()
     flow_run_id = str(root_flow_run_context.get("id"))
     
+    study_id = options.get('studyId', None)
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
 
-    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId }
-    base_path = f'/tmp/{flow_run_id}'
-    work_folder = f'{base_path}/work'
-    path_to_results = f'{base_path}/results'
-    log_file_name = f'{base_path}/strategus-log.txt'
-
+    if(not study_id):
+       raise Exception('StudyId is missing')
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -162,6 +159,12 @@ def runStrategus(json_graph, options):
     if(not schema_name):
        raise Exception('Schema name is missing')
     
+    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId, "study_id": study_id }
+    base_path = f'/tmp/{flow_run_id}'
+    work_folder = f'{base_path}/work'
+    path_to_results = f'{base_path}/results'
+    log_file_name = f'{base_path}/strategus-log.txt'
+
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
 
@@ -190,8 +193,8 @@ def drop_strategus_results(options):
     Drops the Strategus results from the database.
     """
     datasetId = options.get('datasetId', None)
+    study_id = options.get('studyId', None)
     database_code = options.get('databaseCode', None)
-    schema_name = options.get('schemaName', None)
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -199,5 +202,6 @@ def drop_strategus_results(options):
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
-        'dataset_id': datasetId
+        'dataset_id': datasetId,
+        'study_id': study_id
     })

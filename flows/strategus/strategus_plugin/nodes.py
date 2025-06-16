@@ -914,7 +914,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
-            results_schema = f'results_{dbSettings["dataset_id"]}'
+            results_schema = f'results_{dbSettings["study_id"]}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -971,7 +971,7 @@ def serialize_result_to_json(result: Result):
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
-    results_schema = f'results_{dbSettings["dataset_id"]}'
+    results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(use_cache_db=False,
                   database_code=database_code)
     
