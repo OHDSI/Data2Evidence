@@ -24,8 +24,7 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     description = options.description
     use_cache_db = options.use_cache_db
     cohort_definition_id = options.cohortDefinitionId
-
-
+    
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
 

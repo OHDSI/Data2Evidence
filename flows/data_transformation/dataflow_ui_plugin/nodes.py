@@ -7,7 +7,7 @@ from rpy2 import robjects
 from sqlalchemy import text
 from functools import partial
 from jsonpath_ng import jsonpath, parse
-
+import os
 from prefect import task, flow
 
 from .hooks import *
@@ -18,7 +18,7 @@ from .nodeutils.csvutils import convert_csv_to_dataframe
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
-
+os.environ['plugin_name'] = 'dataflow_ui_plugin'
 
 class Node:
     def __init__(self, name, node):

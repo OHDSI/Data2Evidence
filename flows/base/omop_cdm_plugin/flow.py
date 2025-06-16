@@ -10,8 +10,8 @@ from .create import create_datamodel_parent_task
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-
-
+import os
+os.environ['plugin_name'] = 'omop_cdm_plugin'
 
 @flow(log_prints=True)
 def omop_cdm_plugin(options: OmopCDMPluginOptions):
