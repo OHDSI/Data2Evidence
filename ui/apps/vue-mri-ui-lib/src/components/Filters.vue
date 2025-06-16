@@ -10,7 +10,6 @@
 <script lang="ts">
 import { mapActions, mapGetters, mapState } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
-import filterCard from './FilterCard.vue'
 import filtersFooter from './FiltersFooter.vue'
 
 export default {
@@ -24,23 +23,7 @@ export default {
     ...mapState({
       query: (state: any) => state.query,
     }),
-    ...mapGetters(['getFilterCardCount', 'getText', 'getChartableFilterCards']),
-    inclusionTitle() {
-      const filterCount = this.getFilterCardCount({
-        excludeBasicCard: true,
-        excludedOnly: false,
-        matchType: 'matchall',
-      })
-      return this.getText('MRI_PA_FILTERCARD_TITLE_INCLUSION') + ' (' + filterCount + ')'
-    },
-    exclusionTitle() {
-      const filterCount = this.getFilterCardCount({
-        excludeBasicCard: true,
-        excludedOnly: true,
-        matchType: 'matchall',
-      })
-      return this.getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION') + ' (' + filterCount + ')'
-    },
+    ...mapGetters(['getChartableFilterCards']),
   },
   watch: {
     getChartableFilterCards(newVal, oldVal) {
@@ -63,7 +46,6 @@ export default {
   },
   components: {
     boolcontainer,
-    filterCard,
     filtersFooter,
   },
 }
