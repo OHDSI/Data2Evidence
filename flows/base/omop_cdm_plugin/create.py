@@ -4,6 +4,7 @@ from rpy2 import robjects
 from datetime import datetime
 from typing import TYPE_CHECKING
 from sqlalchemy import BigInteger, String
+import os
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
