@@ -1,7 +1,7 @@
 import sys
 import json
 from rpy2 import robjects
-
+import os
 from prefect import flow, task
 from prefect_shell import ShellOperation
 from prefect.context import FlowRunContext
@@ -15,6 +15,7 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
 
 
+os.environ['plugin_name'] = 'dqd_plugin'
 
 @flow(log_prints=True, timeout_seconds=3600)
 def dqd_plugin(options: DqdOptionsType):

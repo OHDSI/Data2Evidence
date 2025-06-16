@@ -122,13 +122,30 @@ export class DataModelFlowService {
     const prefectApi = new PrefectAPI(token);
     const flowRunName = createDatamodelFlowRunDto.flowRunName;
     const options = createDatamodelFlowRunDto.options;
-    const result = await prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       flowRunName,
       options.options.plugin,
       options.options.plugin,
       options
     );
-    return result;
+    await prefectApi.createInputAuthToken(flowRunId);
+
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await prefectApi.deleteInputAuthToken(flowRunId))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
+    return flowRunId;
   }
 
   public async createDatamartFlowRun(
@@ -144,6 +161,24 @@ export class DataModelFlowService {
       PrefectFlowName.DATAMART,
       options
     );
+    await prefectApi.createInputAuthToken(result);
+
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await prefectApi.deleteInputAuthToken(result))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
+
     return result;
   }
 }
