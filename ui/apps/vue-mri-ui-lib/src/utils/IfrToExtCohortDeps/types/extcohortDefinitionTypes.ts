@@ -1,30 +1,30 @@
 export type ExtCohortDefinition = {
-    ConceptSets: ExtCohortConceptSet[];
-    PrimaryCriteria: {
-        CriteriaList: CriteriaList[];
-        ObservationWindow: {
-            PriorDays: number;
-            PostDays: number;
-        };
-        PrimaryCriteriaLimit: {
-            Type: string;
-        };
-    };
-    QualifiedLimit: {
-        Type: string;
-    };
-    ExpressionLimit: {
-        Type: string;
-    };
-    InclusionRules: InclusionRules[];
-    CensoringCriteria: any[];
-    CollapseSettings: {
-        CollapseType: string;
-        EraPad: number;
-    };
-    CensorWindow: {};
-    cdmVersionRange: string;
-};
+  ConceptSets: ExtCohortConceptSet[]
+  PrimaryCriteria: {
+    CriteriaList: CriteriaList[]
+    ObservationWindow: {
+      PriorDays: number
+      PostDays: number
+    }
+    PrimaryCriteriaLimit: {
+      Type: string
+    }
+  }
+  QualifiedLimit: {
+    Type: string
+  }
+  ExpressionLimit: {
+    Type: string
+  }
+  InclusionRules: InclusionRules[]
+  CensoringCriteria: CriteriaList[]
+  CollapseSettings: {
+    CollapseType: string
+    EraPad: number
+  }
+  CensorWindow: {}
+  cdmVersionRange: string
+}
 
 export type ExtCohortConceptSet = {
     id: number;
@@ -69,11 +69,24 @@ export type InclusionRules = {
 };
 
 export type CriteriaList = {
-    [key: string]: {
-        CodesetId?: number;
-        [key: string]: any;
-    };
-};
+  [key: string]: {
+    CodesetId?: number
+    [key: string]: any
+  }
+  Occurrence?: {
+    Type: number
+    Count: number
+  }
+  StartWindow?: {
+    Start: {
+      Coeff: number
+    }
+    End: {
+      Coeff: number
+    }
+    UseEventEnd: boolean
+  }
+}
 
 export type Criteria =
     | {

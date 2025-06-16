@@ -1,11 +1,12 @@
 export type ConceptSetElement = ConceptItem[]
-export type ConceptSets = {
+export type ConceptSets = ConceptSet[]
+export type ConceptSet = {
   id: number
   name: string
   expression: {
     items: ConceptSetElement
   }
-}[]
+}
 export type CodesetIdType = AnyConcept | ConceptSetIndex
 export type AnyConcept = null
 export type ConceptSetIndex = number
@@ -34,25 +35,26 @@ export type WindowDayOptions =
   | '1095'
 export type WindowCoeffOptions = -1 | 1
 export type RestrictToTheSameVisitOccurrence = boolean
+export type BaseCriteria =
+  | AddConditionEra
+  | AddConditionOccurrence
+  | AddDeath
+  | AddDeviceExposure
+  | AddDoseEra
+  | AddDrugEra
+  | AddDrugExposure
+  | AddLocationRegion
+  | AddMeasurement
+  | AddObservation
+  | AddObservationPeriod
+  | AddPayerPlanPeriod
+  | AddProcedureOccurrence
+  | AddSpecimen
+  | AddVisit
 export type CriteriaListType = {
   IgnoreObservationPeriod: boolean
   Occurrence: Occurrences
-  Criteria:
-    | AddConditionEra
-    | AddConditionOccurrence
-    | AddDeath
-    | AddDeviceExposure
-    | AddDoseEra
-    | AddDrugEra
-    | AddDrugExposure
-    | AddLocationRegion
-    | AddMeasurement
-    | AddObservation
-    | AddObservationPeriod
-    | AddPayerPlanPeriod
-    | AddProcedureOccurrence
-    | AddSpecimen
-    | AddVisit
+  Criteria: BaseCriteria
   StartWindow: StartWindowIs
   EndWindow?: AndEndWindowIs
   RestrictVisit?: RestrictToTheSameVisitOccurrence
@@ -67,27 +69,14 @@ export type DemographicCriteriaList = {
 }[]
 export type GroupsListOr = CorrelatedCriteriaRange[]
 export type GroupsListAnd = CorrelatedCriteriaRange[]
-export type CorrelatedCriteriaListType = (
-  | AddConditionEra
-  | AddConditionOccurrence
-  | AddDeath
-  | AddDeviceExposure
-  | AddDoseEra
-  | AddDrugEra
-  | AddDrugExposure
-  | AddMeasurement
-  | AddObservation
-  | AddObservationPeriod
-  | AddPayerPlanPeriod
-  | AddProcedureOccurrence
-  | AddSpecimen
-  | AddVisit
-)[]
-export type LimitInitialEventsTo = 'All' | 'First' | 'Last'
-export type EventLimitOptions = 'All' | 'First' | 'Last'
+export type CorrelatedCriteriaListType = BaseCriteria[]
+// export type LimitInitialEventsTo = 'All' | 'First' | 'Last'
+export type LimitInitialEventsTo = string
+// export type EventLimitOptions = 'All' | 'First' | 'Last'
+export type EventLimitOptions = string
 export type InclusionCriteria = {
   name: string
-  description: string
+  description?: string
   expression: CorrelatedCriteriaRange
   [k: string]: unknown
 }[]
@@ -119,22 +108,7 @@ export type PersistenceWindowAllowForAMaximumOf =
  *  ...days to the end of the era of persistence exposure as an additional period of surveillance prior to cohort exit.
  */
 export type SurveillanceWindowAdd = 0 | 1 | 7 | 14 | 21 | 30 | 60 | 90 | 120 | 180 | 365 | 548 | 730 | 1095
-export type CohortExitCensoringEvents = (
-  | AddConditionEra
-  | AddConditionOccurrence
-  | AddDeath
-  | AddDeviceExposure
-  | AddDoseEra
-  | AddDrugEra
-  | AddDrugExposure
-  | AddMeasurement
-  | AddObservation
-  | AddObservationPeriod
-  | AddPayerPlanPeriod
-  | AddProcedureOccurrence
-  | AddSpecimen
-  | AddVisit
-)[]
+export type CohortExitCensoringEvents = BaseCriteria[]
 export type CDMVersionRequired = string
 
 export interface AtlasCohortDefinition {
@@ -151,9 +125,9 @@ export interface AtlasCohortDefinition {
 }
 export interface ConceptItem {
   concept: ConceptCoreExtended
-  isExcluded: boolean
-  includeDescendants: boolean
-  includeMapped: boolean
+  isExcluded?: boolean
+  includeDescendants?: boolean
+  includeMapped?: boolean
 }
 export interface ConceptCoreExtended {
   CONCEPT_CODE: string
@@ -161,9 +135,11 @@ export interface ConceptCoreExtended {
   DOMAIN_ID: string
   CONCEPT_ID: number
   VOCABULARY_ID: string
-  STANDARD_CONCEPT_CAPTION: 'Standard' | 'Classification' | 'Non-standard' | ''
+  // STANDARD_CONCEPT_CAPTION: 'Standard' | 'Classification' | 'Non-standard' | ''
+  STANDARD_CONCEPT_CAPTION: string
   STANDARD_CONCEPT: string
-  INVALID_REASON_CAPTION: 'Valid' | 'Deleted' | 'Upgraded' | ''
+  // INVALID_REASON_CAPTION: 'Valid' | 'Deleted' | 'Upgraded' | ''
+  INVALID_REASON_CAPTION: string
   INVALID_REASON: string
   CONCEPT_CLASS_ID: string
 }
@@ -634,6 +610,13 @@ export interface CohortErasCensoring {
   EndDate?: string
   [k: string]: unknown
 }
+
+
+
+
+
+
+
 
 
 
