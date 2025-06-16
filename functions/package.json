@@ -75,7 +75,7 @@
       "api": [
         {
           "source": "/gateway/dashboard",
-          "service": "proxy-gateway"
+          "service": "kpi-dashboard"
         },
         {
           "source": "/jobplugins",
@@ -432,7 +432,8 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup"
+          "demo.setup",
+          "gateway.external.dashboards.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -534,7 +535,7 @@
         {
           "path": "^/gateway/dashboard/(.*)",
           "scopes": [
-            "gateway.dataset.dashboards.read"
+            "gateway.external.dashboards.read"
           ]
         },
         {

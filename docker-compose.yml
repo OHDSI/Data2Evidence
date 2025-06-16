@@ -83,8 +83,8 @@ x-envs:
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-       "proxy-gateway": "http://docker-dash:8050",
-       "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
+       "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
+       "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
       }
 
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
@@ -207,7 +207,7 @@ services:
               "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
               "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
               "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-              "proxy-gateway": "http://docker-dash:8050",
+              "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
               "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
             }
           },
@@ -437,7 +437,6 @@ services:
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}"
           },
           "jupyter-gateway": {},
-          "proxy-gateway": {}
         }
       SERVICE_ROUTES: |-
         {
@@ -461,7 +460,7 @@ services:
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-        "proxy-gateway": "http://docker-dash:8050",
+        "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}

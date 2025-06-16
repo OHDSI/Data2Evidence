@@ -10,8 +10,8 @@ const render = async (container, logtoClient) => {
     const bearerToken = await logtoClient.getIdToken();
     try {
       await logtoClient.jwtVerifier.verifyIdToken(bearerToken)
-      // TODO: set an expiration time for the cookie
-      document.cookie = `authtoken=${bearerToken}; path=/gateway; secure; SameSite=Strict`;
+      const expires = new Date(Date.now() + 3600000).toUTCString();
+      document.cookie = `authtoken=${bearerToken}; path=/gateway; secure; SameSite=Strict; expires=${expires}`;
       window.location.href = '/gateway/dashboard/home';
     } catch (error) {
       // If the token is invalid, we need to sign in again
@@ -55,4 +55,3 @@ const Home = (app, logtoClient) => {
 };
 
 export default Home;
-/* eslint-enable @silverhand/fp/no-mutation */

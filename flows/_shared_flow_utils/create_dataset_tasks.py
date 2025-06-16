@@ -74,25 +74,24 @@ def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
     logger.info(f"Granting read privileges to '{schema_read_role}'")
     dbdao.grant_read_privileges(schema, schema_read_role)
 
-    if not dbdao.dialect == SupportedDatabaseDialects.HANA:
-        # Check if read user exists
-        read_user_exists = dbdao.check_user_exists(dbdao.read_user)
-        if read_user_exists:
-            logger.info(f"'{dbdao.read_user}' user already exists")
-        else:
-            logger.info(f"'{dbdao.read_user}' user does not exist")
-            logger.info(f"Creating user '{dbdao.read_user}'..")
-            dbdao.create_user(dbdao.read_user)
+    # Check if read user exists
+    read_user_exists = dbdao.check_user_exists(dbdao.read_user)
+    if read_user_exists:
+        logger.info(f"'{dbdao.read_user}' user already exists")
+    else:
+        logger.info(f"'{dbdao.read_user}' user does not exist")
+        logger.info(f"Creating user '{dbdao.read_user}'..")
+        dbdao.create_user(dbdao.read_user)
 
-        # Check if read role exists
-        read_role_exists = dbdao.check_role_exists(dbdao.read_role)
-        if read_role_exists:
-            logger.info(f"'{dbdao.read_role}' role already exists")
-        else:
-            logger.info(f"'{dbdao.read_role}' role does not exist")
-            logger.info(
-                f"Creating '{dbdao.read_role}' role and assigning to '{dbdao.read_user}' user")
-            dbdao.create_and_assign_role(dbdao.read_user, dbdao.read_role)
+    # Check if read role exists
+    read_role_exists = dbdao.check_role_exists(dbdao.read_role)
+    if read_role_exists:
+        logger.info(f"'{dbdao.read_role}' role already exists")
+    else:
+        logger.info(f"'{dbdao.read_role}' role does not exist")
+        logger.info(
+            f"Creating '{dbdao.read_role}' role and assigning to '{dbdao.read_user}' user")
+        dbdao.create_and_assign_role(dbdao.read_user, dbdao.read_role)
 
     # Grant read role read privileges
     logger.info(f"Granting read privileges to '{dbdao.read_role}' role")

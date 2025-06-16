@@ -36,7 +36,6 @@ const main = () => {
   }, {
     requester: fetcher,
     navigate: (url) => {
-      console.log('Navigating to:', url);
       window.location.assign(url);
     },
     storage: new BrowserStorage(appId),
@@ -52,4 +51,3 @@ const main = () => {
 };
 
 document.addEventListener('DOMContentLoaded', main);
-// main();
