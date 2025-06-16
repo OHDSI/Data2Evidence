@@ -7,56 +7,41 @@
   </div>
 </template>
 
-<script lang="ts">
-import { mapActions, mapGetters, mapState } from 'vuex'
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
 import filtersFooter from './FiltersFooter.vue'
-
-interface FilterCardData {
-  showExclusion: boolean
-}
 
 interface AddFilterCardPayload {
   configPath: string
 }
 
-export default defineComponent({
-  name: 'filters',
-  data(): FilterCardData {
-    return {
-      showExclusion: false,
-    }
-  },
-  computed: {
-    ...mapState({
-      query: (state: any) => state.query,
-    }),
-    ...mapGetters(['getChartableFilterCards']),
-  },
-  watch: {
-    getChartableFilterCards(newVal: any[], oldVal: any[]) {
-      if (newVal && oldVal.length < newVal.length) {
-        this.$nextTick(() => {
-          const container = this.$refs.filtercardScrollContainer as HTMLElement
-          container.scrollTop = container.scrollHeight
-        })
+const store = useStore()
+
+const showExclusion = ref<boolean>(false)
+const useQueryFilter = ref<boolean>(true)
+const filtercardScrollContainer = ref<HTMLElement>()
+
+const query = computed(() => store.state.query)
+const getChartableFilterCards = computed(() => store.getters.getChartableFilterCards)
+
+watch(getChartableFilterCards, (newVal: any[], oldVal: any[]) => {
+  if (newVal && oldVal.length < newVal.length) {
+    nextTick(() => {
+      if (filtercardScrollContainer.value) {
+        filtercardScrollContainer.value.scrollTop = filtercardScrollContainer.value.scrollHeight
       }
-    },
-  },
-  methods: {
-    ...mapActions(['addNewFilterCard']),
-    addFilterCardHandler({ configPath }: AddFilterCardPayload) {
-      const payload = { configPath, isExclusion: this.showExclusion }
-      this.addNewFilterCard(payload)
-    },
-    toggleExclusion(isToggled: boolean) {
-      this.showExclusion = isToggled
-    },
-  },
-  components: {
-    boolcontainer,
-    filtersFooter,
-  },
+    })
+  }
 })
+
+const addFilterCardHandler = ({ configPath }: AddFilterCardPayload) => {
+  const payload = { configPath, isExclusion: showExclusion.value }
+  store.dispatch('addNewFilterCard', payload)
+}
+
+const toggleExclusion = (isToggled: boolean) => {
+  showExclusion.value = isToggled
+}
 </script>
