@@ -5,7 +5,8 @@ import {
   IKernelConnection,
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
-import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type";
+import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type.ts";
+import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer.ts";
 interface IKernelModel extends Kernel.IModel {
   username: string;
 }
@@ -29,7 +30,45 @@ export const createStrategusResultsViewer = async (
 
     const kernel: IKernelConnection = await getKernel(studyId, manager);
     const readCredentials = await getReadCredentials(databaseCode);
+
+    const { host, port, readUser, readPassword } = readCredentials;
+
+    const r_code = RESULT_VIEWER_TEMPLATE.replace(
+      "$DATABASE_SCHEMA",
+      "results_" + databaseCode
+    )
+      .replace("$DATABASE_SERVER", `${host}:${port}`)
+      .replace("$DATABASE_USER", readUser)
+      .replace("$DATABASE_PASSWORD", readPassword);
+
+    console.debug("R code to execute:", r_code);
+
+    const future = await kernel.requestExecute({
+      code: r_code,
+      stop_on_error: true,
+    });
+
+    let executionError: Error | null = null;
+    future.onReply = (msg) => {
+      if (msg.content.status === "error") {
+        console.error("Execution error:", msg);
+        executionError = new Error(
+          `Code execution error: ${msg.content.ename} - ${msg.content.evalue}`
+        );
+      }
+    };
+
+    await future.done;
     kernel.dispose();
+    if (executionError) {
+      throw executionError;
+    }
+
+    console.log(
+      `Strategus Results Viewer created for study ${studyId} with kernel ${kernel.id}`
+    );
+
+    return;
   } catch (error) {
     throw error;
   }
@@ -45,7 +84,7 @@ const getKernel: IKernelConnection = async (
 
     const running = manager.running();
     const existingKernel: IKernelConnection = running.find(
-      (kernel) => kernel.username === studyId
+      (kernel: IKernelModel) => kernel.username === studyId
     );
 
     if (existingKernel) {
@@ -97,6 +136,8 @@ const getReadCredentials = async (
 
     return {
       code: rest.code,
+      host: rest.host.toString(),
+      port: port.toString(),
       credentials: decryptedCreds,
     };
   });
@@ -117,6 +158,8 @@ const getReadCredentials = async (
   }
 
   return {
+    host: readCredentials.host,
+    port: readCredentials.port,
     readUser: readCredentials.credentials.readUser,
     readPassword: readCredentials.credentials.readPassword,
   };

@@ -25,6 +25,8 @@ export interface IDatabaseCredential {
 }
 
 export interface IReadCredential {
+  host: string;
+  port: string;
   readUser: string;
   readPassword: string;
 }

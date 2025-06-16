@@ -11,17 +11,14 @@ export class StrategusResultsRouter {
   private registerRoutes() {
     this.router.post("/", async (req: Request, res: Response) => {
       try {
-        // Simulate a successful response
-        const modelResponse = {
-          message: "Strategus results processed successfully",
-        };
         const token = req.headers["authorization"];
         const studyId = req.body.studyId;
-        const ok = createStrategusResultsViewer(token, studyId);
-        res.status(200).json(services["jupyter-gateway"]);
+        const databaseCode = req.body.databaseCode;
+
+        await createStrategusResultsViewer(token, studyId, databaseCode);
+        res.status(200);
       } catch (error) {
         res.status(500).json({
-          error: true,
           message: "An error occurred while processing strategus results",
           details: error instanceof Error ? error.message : "Unknown error",
         });
