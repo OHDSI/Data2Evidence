@@ -9,12 +9,21 @@
 
 <script lang="ts">
 import { mapActions, mapGetters, mapState } from 'vuex'
+import { defineComponent } from 'vue'
 import boolcontainer from './BoolContainer.vue'
 import filtersFooter from './FiltersFooter.vue'
 
-export default {
+interface FilterCardData {
+  showExclusion: boolean
+}
+
+interface AddFilterCardPayload {
+  configPath: string
+}
+
+export default defineComponent({
   name: 'filters',
-  data() {
+  data(): FilterCardData {
     return {
       showExclusion: false,
     }
@@ -26,21 +35,22 @@ export default {
     ...mapGetters(['getChartableFilterCards']),
   },
   watch: {
-    getChartableFilterCards(newVal, oldVal) {
+    getChartableFilterCards(newVal: any[], oldVal: any[]) {
       if (newVal && oldVal.length < newVal.length) {
         this.$nextTick(() => {
-          this.$refs.filtercardScrollContainer.scrollTop = this.$refs.filtercardScrollContainer.scrollHeight
+          const container = this.$refs.filtercardScrollContainer as HTMLElement
+          container.scrollTop = container.scrollHeight
         })
       }
     },
   },
   methods: {
     ...mapActions(['addNewFilterCard']),
-    addFilterCardHandler({ configPath }) {
+    addFilterCardHandler({ configPath }: AddFilterCardPayload) {
       const payload = { configPath, isExclusion: this.showExclusion }
       this.addNewFilterCard(payload)
     },
-    toggleExclusion(isToggled) {
+    toggleExclusion(isToggled: boolean) {
       this.showExclusion = isToggled
     },
   },
@@ -48,5 +58,5 @@ export default {
     boolcontainer,
     filtersFooter,
   },
-}
+})
 </script>
