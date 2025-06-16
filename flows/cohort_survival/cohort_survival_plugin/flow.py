@@ -9,7 +9,7 @@ from prefect.artifacts import create_markdown_artifact
 from .types import CohortSurvivalOptionsType
 
 from _shared_flow_utils.dao.DBDao import DBDao
-
+os.environ['plugin_name'] = 'cohort_survival_plugin'
 
 @flow(log_prints=True)
 def cohort_survival_plugin(options: CohortSurvivalOptionsType):
