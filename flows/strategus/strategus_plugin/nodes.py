@@ -935,9 +935,6 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             # if schema exists, drop and recreate the schema
             if(not dbdao.check_schema_exists(results_schema)):
                 dbdao.create_schema(results_schema)
-            else:
-                dbdao.drop_schema(results_schema, True)
-                dbdao.create_schema(results_schema)
 
             # create results datamodel settings
             resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
