@@ -30,11 +30,6 @@ export const StudyPage: FC<StudyPageProps> = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedDatasetId) {
-      setStrategusStudies([]);
-      return;
-    }
-
     const fetchStudies = async () => {
       setLoadingStudies(true);
       setStudiesError(null);
@@ -60,7 +55,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
     };
 
     fetchStudies();
-  }, [selectedDatasetId, setFeedback]);
+  }, [setFeedback]);
 
   const handleRunStudy = useCallback(
     async (study: StrategusStudy) => {
@@ -167,35 +162,29 @@ export const StudyPage: FC<StudyPageProps> = () => {
       </div>
 
       <div className="study-page__content">
-        {selectedDatasetId && (
-          <>
-            <h2 className="study-page__section-title">Study list</h2>
-            {loadingStudies && <Loader />}
-            {studiesError && <div className="study-page__error">Repository service issue: {studiesError}</div>}
-            {!loadingStudies && (
-              <div className="study-page__studies">
-                {strategusStudies.length > 0 ? (
-                  strategusStudies.map((study) => (
-                    <StudyCard
-                      key={study.id}
-                      study={study}
-                      isRunning={runningStudyId === study.id}
-                      onRunStudy={handleRunStudy}
-                      onDownloadResults={handleDownloadResults}
-                      onShareResults={handleShareResults}
-                    />
-                  ))
-                ) : (
-                  <div className="study-page__empty-state">
-                    {studiesError ? "No studies available due to repository error" : "No studies found in repository"}
-                  </div>
-                )}
+        <h2 className="study-page__section-title">Study list</h2>
+        {loadingStudies && <Loader />}
+        {studiesError && <div className="study-page__error">Repository service issue: {studiesError}</div>}
+        {!loadingStudies && (
+          <div className={`study-page__studies ${!selectedDatasetId ? "study-page__studies--disabled" : ""}`}>
+            {strategusStudies.length > 0 ? (
+              strategusStudies.map((study) => (
+                <StudyCard
+                  key={study.id}
+                  study={study}
+                  isRunning={runningStudyId === study.id}
+                  onRunStudy={selectedDatasetId ? handleRunStudy : undefined}
+                  onDownloadResults={handleDownloadResults}
+                  onShareResults={handleShareResults}
+                />
+              ))
+            ) : (
+              <div className="study-page__empty-state">
+                {studiesError ? "No studies available due to repository error" : "No studies found in repository"}
               </div>
             )}
-          </>
+          </div>
         )}
-
-        {!selectedDatasetId && <div className="study-page__empty-state">Please select a dataset to view studies</div>}
       </div>
     </div>
   );
