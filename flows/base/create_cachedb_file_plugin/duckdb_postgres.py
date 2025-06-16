@@ -21,7 +21,7 @@ def copy_schema_to_duckdb(con, dbdao: any, schema_name: str, create_for_cdw_conf
     logger.info(f"Copying tables from schema '{schema_name}' into duckdb...")
 
     try:
-        con.execute(f"""CREATE SCHEMA {schema_name};""")
+        con.execute(f"""CREATE SCHEMA IF NOT EXISTS {schema_name};""")
 
         # Include views when creating duckdb file for cdw config validation
         table_names = dbdao.get_table_names(
@@ -29,12 +29,16 @@ def copy_schema_to_duckdb(con, dbdao: any, schema_name: str, create_for_cdw_conf
 
         # copy tables from postgres into duckdb
         for table in table_names:
-            result = con.execute(
-                f"""CREATE TABLE {schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={
-                    db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
-            ).fetchone()
-            logger.info(
-                f"{result[0]} rows copied from '{schema_name}.{table}'!")
+            result_proxy = con.execute(
+                f"""CREATE TABLE {schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
+            )
+            # DuckDB's execute() returns None for DDL, so fetchone() is not always valid
+            if result_proxy is not None:
+                result = result_proxy.fetchone()
+                if result is not None:
+                    logger.info(f"{result[0]} rows copied from '{schema_name}.{table}'!")
+            else:
+                logger.info(f"Table '{schema_name}.{table}' created (row count not available for DDL statements).")
 
             # Create index based on index in db table
             indexes = dbdao.get_indexes_for_table(schema_name, table)

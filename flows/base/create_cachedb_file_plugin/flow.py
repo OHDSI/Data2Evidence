@@ -1,6 +1,6 @@
 import os
 import duckdb
-
+import psycopg2
 from prefect import flow
 from prefect.logging import get_run_logger
 
@@ -31,8 +31,6 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
 
     remove_existing_file_if_exists(duckdb_database_name, False, logger)
 
-    duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, False)
-
     # Filter out system schemas
     schemas_to_copy = list(set(dbdao.get_schema_names()) -
                            set(SYSTEM_SCHEMAS[dbdao.dialect]))
@@ -40,16 +38,24 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     postgres_scan_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/postgres_scanner.duckdb_extension'
     fts_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension'
 
-    with duckdb.connect(duckdb_file_path) as con:
-        con.load_extension(postgres_scan_extension_path)
-        con.load_extension(fts_extension_path)
 
-        for schema in schemas_to_copy:
-            logger.info(f"Handling schema {schema}...")
-            copy_schema_to_duckdb(con, dbdao, schema, False)
-            create_duckdb_fts_index(
-                con, dbdao, schema, tables_to_create_duckdb_fts_index)
+    con = psycopg2.connect(
+        host='alp-trex',
+        port=5432,
+        user='postgres',
+        password='',
+        dbname="postgres")
+    cur = con.cursor()
+    # con.load_extension(postgres_scan_extension_path)
+    # con.load_extension(fts_extension_path)
 
+    for schema in schemas_to_copy:
+        logger.info(f"Handling schema {schema}...")
+        copy_schema_to_duckdb(cur, dbdao, schema, False)
+        create_duckdb_fts_index(
+            cur, dbdao, schema, tables_to_create_duckdb_fts_index)
+    cur.close()
+    con.close()
     logger.info(
         f"""Duckdb database file: {duckdb_database_name} successfully created.""")
 
@@ -73,9 +79,14 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     postgres_scan_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/postgres_scanner.duckdb_extension'
 
-    with duckdb.connect(duckdb_file_path) as con:
-        con.load_extension(postgres_scan_extension_path)
-        copy_schema_to_duckdb(con, dbdao, schema_name, True)
+    # Connect to DuckDB in-memory and attach the file-based database
+    con = duckdb.connect(database=':memory:')
+    # Attach a PostgreSQL database as a database
+    con.execute(f"ATTACH 'host=alp-trex port=5432 user=postgres password=pencil dbname={duckdb_database_name}' AS pgdb (TYPE POSTGRES);")
+
+    con.load_extension(postgres_scan_extension_path)
+    copy_schema_to_duckdb(con, dbdao, schema_name, True)
+    con.close()
 
 
 if __name__ == '__main__':
