@@ -15,6 +15,9 @@ export interface ConceptItem {
   id?: number
   concept_id?: number
   CONCEPT_ID?: number
+  useMapped?: boolean
+  isExcluded?: boolean
+  useDescendants?: boolean
 }
 
 export interface ConceptDetail {

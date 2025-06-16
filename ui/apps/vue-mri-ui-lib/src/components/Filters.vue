@@ -1,10 +1,14 @@
 <template>
   <div class="filters">
     <div ref="filtercardScrollContainer" class="filters-content">
-      <QueryFilter v-if="useQueryFilter" />
+      <QueryFilter v-if="useQueryFilter" ref="queryFilterRef" />
       <boolcontainer v-else :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
     </div>
-    <filtersFooter @add="addFilterCardHandler"></filtersFooter>
+    <filtersFooter 
+      @add="addFilterCardHandler" 
+      @save-atlas-cohort="handleSaveAtlasCohort"
+      :is-using-query-filter="useQueryFilter"
+    ></filtersFooter>
   </div>
 </template>
 
@@ -26,6 +30,7 @@ const useQueryFilter = ref<boolean>(true)
 
 const showExclusion = ref<boolean>(false)
 const filtercardScrollContainer = ref<HTMLElement>()
+const queryFilterRef = ref<any>()
 
 const query = computed(() => store.state.query)
 const getChartableFilterCards = computed(() => store.getters.getChartableFilterCards)
@@ -47,5 +52,29 @@ const addFilterCardHandler = ({ configPath }: AddFilterCardPayload) => {
 
 const toggleExclusion = (isToggled: boolean) => {
   showExclusion.value = isToggled
+}
+
+const handleSaveAtlasCohort = async (cohortData: any) => {
+  if (useQueryFilter.value && queryFilterRef.value) {
+    // Get the Atlas JSON from QueryFilter component
+    const atlasJson = queryFilterRef.value.convertToAtlasFormat()
+    
+    try {
+      if (cohortData.id) {
+        // Update existing cohort
+        await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
+          id: cohortData.id,
+          content: atlasJson
+        })
+      } else {
+        // Create new cohort
+        await store.dispatch('fireCreateAtlasCohortDefinitionQuery', {
+          content: atlasJson
+        })
+      }
+    } catch (error) {
+      console.error('Error saving Atlas cohort:', error)
+    }
+  }
 }
 </script>

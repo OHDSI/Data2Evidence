@@ -177,6 +177,11 @@ export default {
       required: false,
       default: false,
     },
+    isUsingQueryFilter: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -263,6 +268,20 @@ export default {
     },
     async saveBookmark() {
       if (this.hasChanges) {
+        // Check if we should save as Atlas cohort (when using QueryFilter)
+        if (this.isUsingQueryFilter) {
+          const bookmarkName = this.cohortName || 'Atlas Cohort'
+          const cohortData = {
+            name: bookmarkName,
+            shared: this.shareBookmark
+          }
+          
+          this.$emit('save-atlas-cohort', cohortData)
+          this.cohortName = ''
+          this.closeSaveBookmark()
+          return
+        }
+
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
         const isNewBookmark = activeBookmark.isNew || false

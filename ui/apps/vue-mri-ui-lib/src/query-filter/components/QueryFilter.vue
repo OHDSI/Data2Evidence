@@ -16,7 +16,6 @@ import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
   ConceptSetItem,
-  ApiConfig,
   ConceptSetDomainValues,
   TagInputModel,
   ConceptSetAction,
@@ -27,12 +26,7 @@ import {
   loadConceptSetDetails as apiLoadConceptSetDetails,
   loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
 } from '../services/ConceptSetApiService'
-import {
-  getApiConfig,
-  filterConceptSets,
-  getTagInputTexts,
-  createDefaultConceptSetDomainValues,
-} from '../utils/ConceptSetHelpers'
+import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 
 interface Props {
   debug?: boolean
@@ -70,21 +64,23 @@ const tagInputTexts = getTagInputTexts()
 const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-const getApiConfigFromStore = (): ApiConfig | null => {
-  return getApiConfig(store)
+const getDatasetIdFromStore = (): string | null => {
+  // Try to get datasetId from the store or a fixed value for now
+  // You may need to adjust this based on how datasetId is stored in your store
+  return store?.state?.selectedDataset?.id || '4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
 }
 
 const loadConceptSets = async () => {
-  const config = getApiConfigFromStore()
-  if (!config || !config.configId || !config.datasetId) {
-    console.warn('Missing configuration for concept set API call')
+  const datasetId = getDatasetIdFromStore()
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept set API call')
     return
   }
 
   conceptSetDomainValues.value.isLoading = true
 
   try {
-    const result = await apiLoadConceptSets(config)
+    const result = await apiLoadConceptSets(datasetId)
     allConceptSets.value = result.values
     conceptSetDomainValues.value = result
   } catch (error) {
@@ -104,16 +100,16 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
     return
   }
 
-  const config = getApiConfigFromStore()
-  if (!config || !config.datasetId) {
-    console.warn('Missing configuration for concept details API call')
+  const datasetId = getDatasetIdFromStore()
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
     return
   }
 
   loadingConceptDetails.value = true
 
   try {
-    const result = await apiLoadConceptSetDetails(selectedConceptSets, config)
+    const result = await apiLoadConceptSetDetails(selectedConceptSets, datasetId)
     conceptSetDetails.value = result
   } catch (error) {
     console.error('Error loading concept set details:', error)
@@ -283,14 +279,14 @@ const handleEventConceptSetSelected = async (filterId: string, eventId: string, 
 }
 
 const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const config = getApiConfigFromStore()
-  if (!config || !config.datasetId) {
-    console.warn('Missing configuration for concept details API call')
+  const datasetId = getDatasetIdFromStore()
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
     return []
   }
 
   try {
-    return await apiLoadSingleConceptSetDetails(conceptSet, config)
+    return await apiLoadSingleConceptSetDetails(conceptSet, datasetId)
   } catch (error) {
     console.error('Error loading single concept set details:', error)
     return []
@@ -321,6 +317,11 @@ const getAllFilters = () => {
 const convertToAtlasFormat = () => {
   return filterManager.convertToAtlasFormat(activeTab.value)
 }
+
+// Expose the convertToAtlasFormat function so parent components can access it
+defineExpose({
+  convertToAtlasFormat,
+})
 
 const handleRemoveFilter = (filterId: string) => {
   const removed = filterManager.removeFilter(filterId)
@@ -354,7 +355,7 @@ const handleSearchChange = (searchQuery: string) => {
 const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   console.log('Concept set action:', values, config)
 
-  const apiConfig = getApiConfigFromStore()
+  const datasetId = getDatasetIdFromStore()
   const conceptSetId = values?.value
 
   const domainFilter = tagInputModel.value.props.domainFilter
@@ -365,39 +366,73 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
     { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
   ]
 
-  const handleCloseCallback = (onCloseValues: any) => {
+  const handleCloseCallback = async (onCloseValues: any) => {
     if (!onCloseValues?.currentConceptSet) {
       return
     }
 
-    if (conceptSetId) {
-      console.log('Updating concept set:', onCloseValues.currentConceptSet.name)
-      const currentSets = selectedConceptSets.value
-      const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
-      if (index !== -1) {
-        const updatedSets = [...currentSets]
-        updatedSets[index] = {
-          ...updatedSets[index],
+    const conceptSetIdToFind = onCloseValues.currentConceptSet.id
+
+    try {
+      // Reload all concept sets to get complete data with concepts and flags
+      await loadConceptSets()
+
+      // Find the concept set with complete data from the fresh API response
+      const completeConceptSet = allConceptSets.value.find((cs: ConceptSetItem) => cs.value == conceptSetIdToFind)
+
+      if (completeConceptSet) {
+        // Use complete concept set data if found
+        if (conceptSetId) {
+          // Updating existing concept set
+          console.log('Updating concept set:', completeConceptSet.text)
+          const currentSets = selectedConceptSets.value
+          const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
+          if (index !== -1) {
+            const updatedSets = [...currentSets]
+            updatedSets[index] = completeConceptSet
+            selectedConceptSets.value = updatedSets
+          }
+        } else {
+          // Adding new concept set
+          console.log('Creating new concept set:', completeConceptSet.text)
+          selectedConceptSets.value = [...selectedConceptSets.value, completeConceptSet]
+        }
+      } else {
+        // Fallback to basic data if concept set not found in reloaded data
+        console.warn(`Could not find concept set with ID ${conceptSetIdToFind} after reloading, using basic data`)
+      }
+    } catch (error) {
+      console.error('Error reloading concept sets after terminology update:', error)
+      // Fallback to basic data if reload fails
+      if (conceptSetId) {
+        const currentSets = selectedConceptSets.value
+        const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
+        if (index !== -1) {
+          const updatedSets = [...currentSets]
+          updatedSets[index] = {
+            ...updatedSets[index],
+            text: onCloseValues.currentConceptSet.name,
+            display_value: onCloseValues.currentConceptSet.name,
+          }
+          selectedConceptSets.value = updatedSets
+        }
+      } else {
+        const newConceptSet = {
           text: onCloseValues.currentConceptSet.name,
           display_value: onCloseValues.currentConceptSet.name,
+          value: onCloseValues.currentConceptSet.id,
+          conceptIds: [],
+          concepts: [],
         }
-        selectedConceptSets.value = updatedSets
+        selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
       }
-    } else {
-      console.log('Creating new concept set:', onCloseValues.currentConceptSet.name)
-      const newConceptSet = {
-        text: onCloseValues.currentConceptSet.name,
-        display_value: onCloseValues.currentConceptSet.name,
-        value: onCloseValues.currentConceptSet.id,
-      }
-      selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
     }
   }
 
   const event = new CustomEvent('alp-terminology-open', {
     detail: {
       props: {
-        selectedDatasetId: apiConfig?.datasetId,
+        selectedDatasetId: datasetId,
         selectedConceptSetId: conceptSetId,
         mode: 'CONCEPT_SET',
         onClose: handleCloseCallback,

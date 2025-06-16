@@ -5,9 +5,7 @@ import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import type {
   ConceptSetItem,
-  ConceptItem,
   ConceptDetail,
-  ApiConfig,
   ConceptSetDomainValues,
 } from '../types/ConceptSetTypes'
 
@@ -44,11 +42,11 @@ const buildApiUrl = (path: string): string => {
 }
 
 /**
- * Load concept sets from the analytics service
+ * Load concept sets from the terminology service
  */
-export const loadConceptSets = async (config: ApiConfig): Promise<ConceptSetDomainValues> => {
-  if (!config || !config.configId || !config.datasetId) {
-    console.warn('Missing configuration for concept set API call')
+export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept set API call')
     return {
       values: [],
       isLoading: false,
@@ -57,25 +55,27 @@ export const loadConceptSets = async (config: ApiConfig): Promise<ConceptSetDoma
   }
 
   try {
-    const headers = await buildApiHeaders(config.datasetId)
-    const url = buildApiUrl('/analytics-svc/api/services/values')
+    const headers = await buildApiHeaders(datasetId)
+    const url = buildApiUrl('/terminology/concept-set')
     
     const response = await axios.get(url, {
       params: {
-        attributePath: 'conceptSets',
-        configId: config.configId,
-        configVersion: config.configVersion,
-        datasetId: config.datasetId,
-        searchQuery: '',
-        attributeType: 'conceptSet',
+        datasetId: datasetId,
       },
       headers,
     })
     
-    const values = response.status === 204 ? [] : response?.data?.data || []
+    const values = response.status === 204 ? [] : response?.data || []
     const formattedValues = values.map((item: any) => ({
-      ...item,
-      display_value: item.text || item.value,
+      value: item.id,
+      text: item.name,
+      display_value: item.name,
+      conceptIds: item.concepts?.map((c: any) => c.id) || [],
+      concepts: item.concepts || [],
+      shared: item.shared,
+      userName: item.userName,
+      createdDate: item.createdDate,
+      modifiedDate: item.modifiedDate,
     }))
 
     const loadedStatus =
@@ -124,7 +124,11 @@ export const fetchConceptById = async (
 /**
  * Format concept detail for Atlas compatibility
  */
-const formatConceptForAtlas = (conceptDetail: ConceptDetail, conceptId: number) => {
+const formatConceptForAtlas = (
+  conceptDetail: ConceptDetail, 
+  conceptId: number,
+  conceptFlags?: { useMapped?: boolean; isExcluded?: boolean; useDescendants?: boolean }
+) => {
   return {
     concept: {
       CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
@@ -145,9 +149,9 @@ const formatConceptForAtlas = (conceptDetail: ConceptDetail, conceptId: number) 
       VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
       VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
     },
-    isExcluded: false,
-    includeDescendants: true,
-    includeMapped: true,
+    isExcluded: conceptFlags?.isExcluded ?? false,
+    includeDescendants: conceptFlags?.useDescendants ?? true,
+    includeMapped: conceptFlags?.useMapped ?? true,
   }
 }
 
@@ -155,16 +159,7 @@ const formatConceptForAtlas = (conceptDetail: ConceptDetail, conceptId: number) 
  * Extract concept IDs from concept set data
  */
 const extractConceptIds = (conceptSet: ConceptSetItem): number[] => {
-  if (conceptSet.conceptIds && Array.isArray(conceptSet.conceptIds)) {
-    return conceptSet.conceptIds
-  } else if (conceptSet.concepts && Array.isArray(conceptSet.concepts)) {
-    return conceptSet.concepts.map((c: ConceptItem) => c.id || c.concept_id || c.CONCEPT_ID).filter(Boolean) as number[]
-  } else if (conceptSet.items && Array.isArray(conceptSet.items)) {
-    return conceptSet.items
-      .map((item: ConceptItem) => item.id || item.concept_id || item.CONCEPT_ID)
-      .filter(Boolean) as number[]
-  }
-  return []
+  return conceptSet.conceptIds || []
 }
 
 /**
@@ -172,14 +167,14 @@ const extractConceptIds = (conceptSet: ConceptSetItem): number[] => {
  */
 export const loadConceptSetDetails = async (
   selectedConceptSets: ConceptSetItem[],
-  config: ApiConfig
+  datasetId: string
 ): Promise<Record<string, any[]>> => {
   if (selectedConceptSets.length === 0) {
     return {}
   }
 
-  if (!config || !config.datasetId) {
-    console.warn('Missing configuration for concept details API call')
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
     return {}
   }
 
@@ -205,10 +200,13 @@ export const loadConceptSetDetails = async (
 
         for (const conceptId of limitedConceptIds) {
           try {
-            const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
+            const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
             if (conceptDetail) {
               console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
-              const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId)
+              
+              // Find the concept flags from the concept set
+              const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
+              const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
               console.log(`Formatted concept for ID ${conceptId}:`, formattedConcept)
               conceptDetails.push(formattedConcept)
             }
@@ -236,10 +234,10 @@ export const loadConceptSetDetails = async (
  */
 export const loadSingleConceptSetDetails = async (
   conceptSet: ConceptSetItem,
-  config: ApiConfig
+  datasetId: string
 ): Promise<any[]> => {
-  if (!config || !config.datasetId) {
-    console.warn('Missing configuration for concept details API call')
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
     return []
   }
 
@@ -264,10 +262,12 @@ export const loadSingleConceptSetDetails = async (
 
     for (const conceptId of limitedConceptIds) {
       try {
-        const conceptDetail = await fetchConceptById(config.datasetId, conceptId, headers)
+        const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
         if (conceptDetail) {
+          // Find the concept flags from the concept set
+          const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
           // Format the concept detail in Atlas-compatible structure
-          const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId)
+          const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
           conceptDetails.push(formattedConcept)
         }
       } catch (error) {
