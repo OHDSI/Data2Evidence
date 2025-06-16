@@ -88,6 +88,33 @@ export interface DeleteDataflowRevisionResponseDto {
   revisionId: string;
 }
 
+export interface OverwriteFromRemoteResponseDto {
+  message: string;
+  overwritten: boolean;
+  canvasId: string;
+  revisionId?: string;
+  previousVersion?: number;
+  newVersion?: number;
+  localVersion?: number;
+}
+
+export interface RemoteDiffCheckResponseDto {
+  hasDifferences: boolean;
+  reason: string;
+  localVersion?: number;
+}
+
+export interface OverwriteAllFromRemoteResponseDto {
+  message: string;
+  processedCount: number;
+  results: Array<{
+    canvasId: string;
+    revisionId?: string;
+    name?: string;
+    error?: string;
+  }>;
+}
+
 interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];
@@ -103,3 +130,17 @@ export interface TestDataflowDto {
 }
 
 export type FlowStatus = "draft" | "saved";
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  nodes: NodeState[];
+  edges: EdgeState[];
+}
+
+export interface CreateFromTemplateDto {
+  templateId: string;
+  name: string;
+  comment?: string;
+}
