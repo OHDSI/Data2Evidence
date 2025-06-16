@@ -145,14 +145,14 @@ export const StudyCard: FC<StudyCardProps> = ({
               </>
             )}
           </div>
-          <div className="study-card__action" onClick={handleDownloadResults}>
+          {/* <div className="study-card__action" onClick={handleDownloadResults}>
             <DownloadStudyIcon className="study-card__action-icon" />
             <span>Download results</span>
           </div>
           <div className="study-card__action" onClick={handleShareResults}>
             <ShareStudyIcon className="study-card__action-icon" />
             <span>Share results</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </Card>
