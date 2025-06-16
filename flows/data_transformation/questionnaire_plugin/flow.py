@@ -3,7 +3,7 @@ import pandas as pd
 from uuid import uuid4
 from typing import List
 from datetime import datetime
-
+import os
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
@@ -11,7 +11,7 @@ from .types import *
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
-
+os.environ['plugin_name'] = 'questionnaire_plugin'
     
 @flow(log_prints=True)
 def questionnaire_plugin(options: QuestionnaireOptionsType):

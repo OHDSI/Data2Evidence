@@ -556,6 +556,7 @@ async function getDBClient() {
       }
       return ssl;
     })(),
+    options: `--search_path=${process.env.PG__SCHEMA}`
   });
   await client.connect();
   return client;

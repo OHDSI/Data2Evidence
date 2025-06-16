@@ -9,7 +9,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus, drop_strategus_results_schema
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
 
 
 @flow(log_prints=True)
@@ -141,9 +141,20 @@ def execute_node_task(nodename, node_type, node, input, test):
 
 
 def runStrategus(json_graph, options):
+    root_flow_run_context = FlowRunContext.get().flow_run.dict()
+    flow_run_id = str(root_flow_run_context.get("id"))
+    
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
+    upload_results = options.get('uploadResults', False)
+
+    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId }
+    base_path = f'/tmp/{flow_run_id}'
+    work_folder = f'{base_path}/work'
+    path_to_results = f'{base_path}/results'
+    log_file_name = f'{base_path}/strategus-log.txt'
+
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -155,8 +166,24 @@ def runStrategus(json_graph, options):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
-    executionSettings = json_graph.get('executionSettings', {})
-    execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name)
+    defaultExecutionSettings = json.dumps({
+        "workDatabaseSchema": schema_name,
+        "cdmDatabaseSchema": schema_name,
+        "workFolder": work_folder,
+        "resultsFolder": path_to_results,
+        "logFileName": log_file_name,
+        "minCellCount": 5,
+        "maxCores": 8,
+        "attr_class": [
+            "CdmExecutionSettings",
+            "ExecutionSettings"
+        ]
+    })
+    executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
+
+    execute_r_strategus(analysisSpec, executionSettings, dbSettings)
+    if(upload_results):
+        upload_strategus_results(analysisSpec, path_to_results, dbSettings)
 
 def drop_strategus_results(options):
     """
