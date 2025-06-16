@@ -11,7 +11,8 @@ from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 import logging
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
-
+import os
+os.environ['plugin_name'] = 'phenotype_plugin'
 
 @task
 def validate_integer_string(input_string):

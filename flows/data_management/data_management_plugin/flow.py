@@ -8,7 +8,8 @@ from .const import get_db_dialect
 from .types import DataModelType, FlowActionType
 
 from _shared_flow_utils.create_dataset_tasks import get_plugin_classpath
-
+import os
+os.environ['plugin_name'] = 'data_management_plugin'
 
 @flow(log_prints=True, timeout_seconds=3600)
 def data_management_plugin(options: DataModelType):
