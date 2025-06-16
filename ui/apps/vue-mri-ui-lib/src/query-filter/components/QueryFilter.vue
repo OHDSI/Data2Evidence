@@ -34,6 +34,14 @@ import {
   createDefaultConceptSetDomainValues,
 } from '../utils/ConceptSetHelpers'
 
+interface Props {
+  debug?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  debug: false,
+})
+
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
 const showDebug = ref(false)
 const filterManager = reactive(new QueryFilterManager())
@@ -438,7 +446,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
           <div class="query-filter-group__sidebar">
             <span class="sidebar-label">ALL</span>
           </div>
-          <div style="padding: 16px">
+          <div v-if="props.debug" style="padding: 16px">
             <div style="margin-bottom: 16px">
               <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px">
                 Event Concept Set:
@@ -456,6 +464,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
             </div>
 
             <div
+              v-if="props.debug"
               style="
                 margin-top: 8px;
                 padding: 8px;
@@ -470,7 +479,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
             </div>
 
             <div
-              v-if="selectedConceptSetValues.length > 0"
+              v-if="props.debug && selectedConceptSetValues.length > 0"
               style="
                 margin-top: 16px;
                 padding: 12px;
@@ -513,7 +522,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
             </div>
 
             <div
-              v-if="selectedConceptSetValues.length > 0"
+              v-if="props.debug && selectedConceptSetValues.length > 0"
               style="
                 margin-top: 16px;
                 padding: 12px;
@@ -626,7 +635,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
               </details>
             </div>
             <div
-              v-else
+              v-else-if="!props.debug"
               style="
                 margin-top: 16px;
                 padding: 12px;
@@ -677,13 +686,13 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
       </div>
     </div>
 
-    <div class="query-filter-demo__actions">
+    <div v-if="props.debug" class="query-filter-demo__actions">
       <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
       <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
-    <div class="query-filter-demo__debug" v-if="showDebug">
+    <div v-if="props.debug" class="query-filter-demo__debug" v-show="showDebug">
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">

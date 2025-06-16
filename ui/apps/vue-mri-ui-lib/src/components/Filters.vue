@@ -1,7 +1,8 @@
 <template>
   <div class="filters">
     <div ref="filtercardScrollContainer" class="filters-content">
-      <boolcontainer :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
+      <QueryFilter v-if="useQueryFilter" />
+      <boolcontainer v-else :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
     </div>
     <filtersFooter @add="addFilterCardHandler"></filtersFooter>
   </div>
@@ -12,6 +13,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
 import filtersFooter from './FiltersFooter.vue'
+import QueryFilter from '../query-filter/components/QueryFilter.vue'
 
 interface AddFilterCardPayload {
   configPath: string
@@ -19,8 +21,10 @@ interface AddFilterCardPayload {
 
 const store = useStore()
 
-const showExclusion = ref<boolean>(false)
+// TODO: This should come from the PA config
 const useQueryFilter = ref<boolean>(true)
+
+const showExclusion = ref<boolean>(false)
 const filtercardScrollContainer = ref<HTMLElement>()
 
 const query = computed(() => store.state.query)
