@@ -4,12 +4,16 @@
 \alias{run_strategus_flow}
 \title{Start running the Strategus flow in D2E}
 \usage{
-run_strategus_flow(analysisSpecification, executionSettings)
+run_strategus_flow(
+  analysisSpecification,
+  executionSettings = NULL,
+  options = list()
+)
 }
 \arguments{
 \item{analysisSpecification}{AnalysisSpecification object created by Strategus::createEmptyAnalysisSpecificiations}
 
-\item{executionSettings}{ExecutionSettings object created by Strategus::createCdmExecutionSettings}
+\item{executionSettings}{optional, ExecutionSettings object created by Strategus::createCdmExecutionSettings}
 }
 \value{
 Response object with flow run details, id and status
