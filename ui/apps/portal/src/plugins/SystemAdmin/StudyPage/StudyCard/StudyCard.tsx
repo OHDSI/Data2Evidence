@@ -1,6 +1,6 @@
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Card, DownloadStudyIcon, RunStudyIcon, ShareStudyIcon } from "@portal/components";
+import { Card, RunStudyIcon } from "@portal/components";
 import React, { FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
@@ -95,22 +95,6 @@ export const StudyCard: FC<StudyCardProps> = ({
     [selectedDatasetId, setFeedback, study]
   );
 
-  const handleDownloadResults = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onDownloadResults?.(study);
-    },
-    [onDownloadResults, study]
-  );
-
-  const handleShareResults = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onShareResults?.(study);
-    },
-    [onShareResults, study]
-  );
-
   return (
     <Card className="study-card" borderRadius={18}>
       <div className="study-card__content">
@@ -118,10 +102,12 @@ export const StudyCard: FC<StudyCardProps> = ({
           <div className="study-card__title">
             <HighlightText text={study.id || "Untitled"} searchText={highlightText} />
           </div>
-          <div className="study-card__contact">
-            <MailOutline className="study-card__contact-icon" />
-            {study.email}
-          </div>
+          {study.email && (
+            <div className="study-card__contact">
+              <MailOutline className="study-card__contact-icon" />
+              {study.email}
+            </div>
+          )}
         </div>
 
         <div className="study-card__summary">
