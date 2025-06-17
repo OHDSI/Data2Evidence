@@ -73,7 +73,7 @@ const handleSaveAtlasCohort = async (cohortData: any) => {
       name: cohortData.name,
       description: cohortData.description || `Cohort definition created from QueryFilter`,
       expressionType: 'SIMPLE_EXPRESSION',
-      expression: atlasJson,
+      expression: JSON.stringify(atlasJson),
       tags: cohortData.tags || [],
       createdBy: 'current_user', // This should come from user context
       createdDate: now,

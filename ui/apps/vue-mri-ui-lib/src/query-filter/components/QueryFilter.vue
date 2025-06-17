@@ -8,10 +8,11 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, getCurrentInstance, watch } from 'vue'
+import { ref, computed, reactive, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCard from './QueryFilterCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
+import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
@@ -37,24 +38,49 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')
-const showDebug = ref(false)
+const filters = ref<QueryFilterCardModel[]>([])
 const filterManager = reactive(new QueryFilterManager())
-
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
-const tagInputModel = ref<TagInputModel>({
+// Tag input model that reflects the concept sets from filters
+const tagInputModel = computed<TagInputModel>(() => ({
   id: 'concept-set-test',
   props: {
     type: 'conceptSet',
-    value: [],
+    value: selectedConceptSetValues.value,
     attributePath: 'condition_occurrence.concept_id',
     domainFilter: 'Condition',
     standardConceptCodeFilter: 'Standard',
   },
-})
+}))
 
 const selectedConceptSets = ref<ConceptSetItem[]>([])
+
+// Computed property to extract concept sets from loaded filters
+const conceptSetsFromFilters = computed(() => {
+  const conceptSets: ConceptSetItem[] = []
+  const seenIds = new Set<string>()
+
+  filters.value.forEach(filter => {
+    filter.events.forEach(event => {
+      if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
+        // Look up the concept set by ID in allConceptSets
+        const foundConceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+        if (foundConceptSet) {
+          conceptSets.push(foundConceptSet)
+          seenIds.add(event.conceptSetId)
+        } else if (event.selectedConceptSet) {
+          // Fallback to selectedConceptSet if lookup fails
+          conceptSets.push(event.selectedConceptSet)
+          seenIds.add(event.conceptSetId)
+        }
+      }
+    })
+  })
+
+  return conceptSets
+})
 
 const conceptSetDetails = ref<ConceptSetDetails>({})
 const loadingConceptDetails = ref(false)
@@ -126,11 +152,14 @@ const filterConceptSetsLocal = (searchQuery: string) => {
 const tagInputDomainValues = computed(() => conceptSetDomainValues.value)
 
 const selectedConceptSetValues = computed(() => {
+  // selectedConceptSets is kept in sync with conceptSetsFromFilters via watcher
   return selectedConceptSets.value
 })
 
 const initializeSampleData = () => {
+  filters.value = []
   filterManager.clearAllFilters()
+  selectedConceptSets.value = []
 }
 
 watch(
@@ -145,13 +174,26 @@ watch(
   { deep: true }
 )
 
-onMounted(() => {
-  initializeSampleData()
+// Watch for changes in conceptSetsFromFilters and sync with selectedConceptSets
+watch(
+  conceptSetsFromFilters,
+  newConceptSets => {
+    // Only update if the conceptSetsFromFilters has content and is different from selectedConceptSets
+    if (newConceptSets.length > 0) {
+      selectedConceptSets.value = [...newConceptSets]
+    }
+  },
+  { deep: true }
+)
 
+onMounted(() => {
+  console.log('QueryFilter component mounted')
+  initializeSampleData()
+  console.log('Loading initial concept sets...')
   loadConceptSets()
 })
 
-const inclusionFilters = computed(() => filterManager.getInclusionFilters())
+const inclusionFilters = computed(() => filters.value.filter(f => f.type === 'inclusion'))
 
 // This function is a placeholder for filter updates, as the reactive refs handle updates automatically. No value is needed here.
 const updateFilter = (_filter: QueryFilterCardModel) => {
@@ -173,6 +215,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   })
 
   newFilter.isExpanded = true
+  filters.value.push(newFilter)
   filterManager.addFilter(newFilter)
 }
 
@@ -181,7 +224,7 @@ const handleAddEvent = (filterId: string, eventId?: string) => {
     return
   }
 
-  const filter = filterManager.getFilter(filterId)
+  const filter = filters.value.find(f => f.id === filterId)
   if (filter) {
     const newEvent: QueryFilterEvent = {
       id: `event_${Date.now()}`,
@@ -199,7 +242,7 @@ const handleEditEvent = (filterId: string, eventId: string) => {
 }
 
 const handleDuplicateEvent = (filterId: string, eventId: string) => {
-  const filter = filterManager.getFilter(filterId)
+  const filter = filters.value.find(f => f.id === filterId)
   if (filter) {
     const event = filter.events.find(e => e.id === eventId)
     if (event) {
@@ -217,7 +260,7 @@ const handleDuplicateEvent = (filterId: string, eventId: string) => {
 }
 
 const handleRemoveEvent = (filterId: string, eventId: string) => {
-  const filter = filterManager.getFilter(filterId)
+  const filter = filters.value.find(f => f.id === filterId)
   if (filter) {
     filter.removeEvent(eventId)
   }
@@ -225,7 +268,7 @@ const handleRemoveEvent = (filterId: string, eventId: string) => {
 
 const handleAddChip = (filterId: string, eventId: string) => {
   console.log('Add chip to event:', filterId, eventId)
-  const filter = filterManager.getFilter(filterId)
+  const filter = filters.value.find(f => f.id === filterId)
   if (filter) {
     const sampleChip: QueryFilterChip = {
       id: `chip_${Date.now()}`,
@@ -255,7 +298,7 @@ const handleAttributeRemoved = (filterId: string, eventId: string, attributeId: 
 const handleEventConceptSetSelected = async (filterId: string, eventId: string, conceptSet: ConceptSetItem) => {
   console.log('Event concept set selected:', filterId, eventId, conceptSet)
 
-  const filter = filterManager.getFilter(filterId)
+  const filter = filters.value.find(f => f.id === filterId)
   if (!filter) return
 
   const event = filter.getEvent(eventId)
@@ -300,48 +343,81 @@ const applyFilters = () => {
 
 const clearFilters = () => {
   if (confirm('Are you sure you want to clear all filters?')) {
+    filters.value = []
     filterManager.clearAllFilters()
+    selectedConceptSets.value = []
   }
 }
 
 const exportFilters = () => {
   const config = JSON.stringify(getAllFilters(), null, 2)
   console.log('Exported configuration:', config)
-  showDebug.value = !showDebug.value
 }
 
 const getAllFilters = () => {
-  return filterManager.getAllFilters().map(f => f.toJSON())
+  return filters.value.map(f => f.toJSON())
 }
 
 const convertToAtlasFormat = () => {
+  // Sync the filterManager with current reactive filters
+  filterManager.clearAllFilters()
+  filters.value.forEach(filter => filterManager.addFilter(filter))
   return filterManager.convertToAtlasFormat(activeTab.value)
+}
+
+// Use the extracted utility function for Atlas conversion
+const convertAtlasToFiltersLocal = (atlasJson: any): QueryFilterCardModel[] => {
+  return convertAtlasToFilters(atlasJson, allConceptSets.value)
 }
 
 const loadAtlasCohortDefinition = async (atlasJson: any) => {
   try {
-    console.log('Loading Atlas cohort definition:', atlasJson)
-    
-    // For now, we'll create a simple placeholder filter
-    // TODO: Implement proper Atlas JSON parsing and conversion
+    console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
+    console.log('Available concept sets:', allConceptSets.value.length)
+
+    // Clear existing filters
+    filters.value = []
     filterManager.clearAllFilters()
-    
-    const placeholderFilter = new QueryFilterCardModel({
-      title: atlasJson.name || 'Atlas Cohort Definition',
-      type: 'inclusion',
-      events: [
-        {
-          id: `event_${Date.now()}`,
-          conceptSet: 'Atlas imported concepts',
-          chips: [],
-          criteriaType: 'conditionOccurrence',
-        },
-      ],
+
+    // Convert Atlas JSON to QueryFilter models
+    const queryFilters = convertAtlasToFiltersLocal(atlasJson)
+    console.log(
+      `Converted to ${queryFilters.length} filter(s):`,
+      queryFilters.map(f => f.title)
+    )
+
+    // Add converted filters to both the reactive ref and manager
+    queryFilters.forEach(filter => {
+      filter.isExpanded = true
+      // Make the filter reactive
+      const reactiveFilter = reactive(filter)
+      filters.value.push(reactiveFilter)
+      filterManager.addFilter(reactiveFilter)
     })
-    
-    placeholderFilter.isExpanded = true
-    filterManager.addFilter(placeholderFilter)
-    
+    console.log('filterManager.toJSON()', filterManager.toJSON())
+    console.log(`UI now shows ${filters.value.length} filters`)
+    console.log('Reactive filters array:', filters.value)
+    console.log('Inclusion filters computed:', inclusionFilters.value)
+
+    // Force reactivity update
+    await nextTick()
+    console.log('After nextTick - Inclusion filters:', inclusionFilters.value.length)
+
+    // Load concept set details for events that have selectedConceptSet
+    setTimeout(async () => {
+      for (const filter of filters.value) {
+        for (const event of filter.events) {
+          if (event.selectedConceptSet && event.conceptSetId) {
+            try {
+              await handleEventConceptSetSelected(filter.id, event.id, event.selectedConceptSet)
+            } catch (error) {
+              console.warn(`Failed to load concept set details for event ${event.id}:`, error)
+            }
+          }
+        }
+      }
+    }, 200)
+
     console.log('Successfully loaded Atlas cohort definition into QueryFilter')
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
@@ -356,8 +432,10 @@ defineExpose({
 })
 
 const handleRemoveFilter = (filterId: string) => {
-  const removed = filterManager.removeFilter(filterId)
-  if (removed) {
+  const index = filters.value.findIndex(f => f.id === filterId)
+  if (index > -1) {
+    filters.value.splice(index, 1)
+    filterManager.removeFilter(filterId)
     console.log('Filter removed:', filterId)
   }
 }
@@ -759,7 +837,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
       <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
-    <div v-if="props.debug" class="query-filter-demo__debug" v-show="showDebug">
+    <div v-if="props.debug" class="query-filter-demo__debug">
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">

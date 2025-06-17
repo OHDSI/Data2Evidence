@@ -119,8 +119,6 @@
         <d4l-spinner />
       </div>
       <div v-else>
-        <!-- TODO: Put here for convenience during dev. move it to the filter cards section later -->
-        <QueryFilter ref="queryFilterRef" />
         <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
           {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
         </div>
@@ -345,13 +343,11 @@ export default {
         // Set as active bookmark to create the tab
         this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
 
-        // Load into QueryFilter component
-        if (this.$refs.queryFilterRef) {
-          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+        // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
+        this.$emit('loadAtlasCohortDefinition', atlasJson)
 
-          // Switch to Patient Analytics view after loading
-          this.$emit('unloadBookmarkEv')
-        }
+        // Switch to Patient Analytics view after loading
+        this.$emit('unloadBookmarkEv')
       } catch (error) {
         console.error('Failed to load Atlas bookmark:', error)
         this.messageStrip = {
