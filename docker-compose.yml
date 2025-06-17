@@ -439,7 +439,8 @@ services:
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
-            "DATA_TRANSFORMATION_BUCKET": "data-transformation"
+            "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
           },
           "jupyter-gateway": {},
           "mlflow": {}
@@ -823,6 +824,7 @@ services:
       PREFECT_API_ENABLE_HTTP2: False
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
+      INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
 
