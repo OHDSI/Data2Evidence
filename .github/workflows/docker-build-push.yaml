@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - develop
+      - KangJingA/integrate-2163
 
   workflow_dispatch:
     inputs:
