@@ -894,7 +894,7 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                connectionString=construct_jdbc_url(db_credentials),
                 user=db_credentials.readUser,
                 password=db_credentials.readPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
@@ -971,3 +971,6 @@ def get_input_nodes_by_class_type_from_results(inputs: Dict[str, Result], nodeTy
 
 def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
+
+def construct_jdbc_url(db_credentials):
+    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
