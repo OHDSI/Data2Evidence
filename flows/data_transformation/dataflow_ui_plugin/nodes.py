@@ -6,19 +6,25 @@ import traceback as tb
 from rpy2 import robjects
 from sqlalchemy import text
 from functools import partial
+from collections.abc import Iterable
+from pandas.api.types import is_scalar
 from jsonpath_ng import jsonpath, parse
-import os
+
 from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
-from .types import NodeType, TableSourceType, DataMappingType
+from .types import (NodeType, 
+                    TableSourceType, 
+                    DataMappingType, 
+                    ConceptMappingType, 
+                    ResultType)
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
-os.environ['plugin_name'] = 'dataflow_ui_plugin'
+
 
 class Node:
     def __init__(self, name, node):
@@ -41,18 +47,78 @@ class Result:
     def __init__(self, error: bool, data, node: Node, task_run_context):
         self.error = error
         self.node = node
-        self.result = data # preserves the data type of the node result
+        self.result = data # preserves the actual data of the node result
         self.task_run_id = str(task_run_context.get("id"))
         self.task_run_name = str(task_run_context.get("name"))
         self.flow_run_id = str(task_run_context.get("flow_run_id"))
 
-    def create_serializable_result(self):
+
+    def serialize_result(self):
         return {
-            "result": serialize_to_json(self.result),
-            "error": self.error, 
+            "error": self.error,
             "errorMessage": self.result if self.error else None,
-            "nodeName": self.node.name
+            "nodeName": self.node.name,
+            "resultSchema": self.create_result_schema(self.result),
+            "resultReturnedType": self.get_result_type(self.result),
+            "resultLength": self.get_result_length(),
         }
+
+
+    def get_result_length(self) -> int | None:
+        if is_scalar(self.result):
+            return 1
+        elif isinstance(self.result, (dict, list, tuple, set, frozenset, pd.DataFrame)):
+            return len(self.result)
+        elif isinstance(self.result, Iterable) and not isinstance(self.result, (str, bytes, dict, pd.DataFrame)):
+            return len(self.result) if hasattr(self.result, "__len__") else None
+        elif hasattr(self.result, 'rid') and hasattr(self.result, 'rclass') and hasattr(self.result, 'r_repr'):
+            r_result = self.result.r_repr()
+            return len(r_result) if hasattr(r_result, "__len__") else None
+        else:
+            return None
+
+
+    def get_result_type(self, result_value) -> str:
+        if is_scalar(result_value):
+            return ResultType.SCALAR.value
+        elif isinstance(result_value, dict):
+            return ResultType.MAPPING.value
+        elif isinstance(result_value, pd.DataFrame):
+            return ResultType.DATAFRAME.value
+        elif isinstance(result_value, Iterable) and not isinstance(result_value, (str, bytes, dict, pd.DataFrame)):
+            return ResultType.COLLECTION.value
+        elif callable(result_value):
+            return ResultType.CALLABLE.value
+        elif hasattr(result_value, 'rid') and hasattr(result_value, 'rclass') and hasattr(result_value, 'r_repr'):
+            return self.get_result_type(result_value.r_repr())
+        elif hasattr(result_value, "__class__"):
+            return ResultType.CUSTOMOBJ.value
+        else:
+            return ResultType.UNKNOWN.value
+
+
+    def create_result_schema(self, result_value):
+        if is_scalar(result_value):
+            return str(type(result_value).__name__)
+        elif isinstance(result_value, dict):
+            return {k: self.create_result_schema(v) for k, v in result_value.items()}
+        elif isinstance(result_value, pd.DataFrame):
+            dtype_mapping = result_value.dtypes.apply(lambda x: x.name).to_dict()
+            return dtype_mapping
+        elif isinstance(result_value, (list, tuple, set, frozenset)):
+            element_schemas = list({str(self.create_result_schema(element)) for element in result_value})
+            return element_schemas
+        elif isinstance(result_value, Iterable) and not isinstance(result_value, (str, bytes, dict, pd.DataFrame)):
+            return type(result_value).__name__
+        elif callable(result_value):
+            schema = getattr(result_value, '__name__', result_value.__class__.__name__)
+            return schema
+        elif hasattr(result_value, 'rid') and hasattr(result_value, 'rclass') and hasattr(result_value, 'r_repr'):
+            return self.create_result_schema(result_value.r_repr())
+        elif hasattr(result_value, "__class__"):
+            return self.result.__class__.__name__
+        else:
+            return type(result_value).__name__
 
 
 class Py2TableNode(Node):
@@ -317,6 +383,31 @@ class DBReader(Node):
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
+class ConceptMappingNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+
+        self.concept_mapping_data = _node["data"]["csvData"]["data"]
+        
+    def test(self, task_run_context) -> Result:
+        return self.task(self, task_run_context)
+    
+    def task(self, task_run_context) -> Result:
+        try:
+            checked_concepts = (
+                {
+                    "domain_id": cm.domainId,
+                    "concept_id": cm.conceptId,
+                    "concept_name": cm.conceptName,
+                    "source_code": cm.source_code,
+                    "validity": cm.validity if cm.validity else None
+                } for item in self.concept_mapping_data
+                if (cm := ConceptMappingType(**item)).status == "checked"
+            )
+            concept_mapping_df = pd.DataFrame(checked_concepts)
+            return Result(False,  concept_mapping_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
 
 
 class DataMappingNode(Node):
@@ -476,7 +567,7 @@ class DataMappingNode(Node):
 
         
     def test(self, task_run_context) -> Result:
-        return task(self, task_run_context)
+        return self.task(self, task_run_context)
 
 
     def task(self, task_run_context) -> Result:
@@ -550,12 +641,9 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DbWriter(nodename, node)
         case NodeType.DATAMAPPING:
             nodeobj = DataMappingNode(nodename, node)
+        case NodeType.CONCEPTMAPPING:
+            nodeobj = ConceptMappingNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
     return nodeobj
-
-
-def serialize_result_to_json(result: Result):
-    result_to_store = result.create_serializable_result()
-    return result_to_store
