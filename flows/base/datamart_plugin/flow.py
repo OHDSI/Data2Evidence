@@ -4,7 +4,7 @@ from prefect.logging import get_run_logger
 from .types import *
 from .const import *
 from .utils import *
-
+import os
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -13,6 +13,8 @@ from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 
 from _shared_flow_utils.create_dataset_tasks import create_schema_task, create_and_assign_roles_task
 from _shared_flow_utils.update_dataset_metadata import update_entity_value, update_entity_distinct_count
+
+os.environ['plugin_name'] = 'datamart_plugin'
 
 @flow(log_prints=True)
 def datamart_plugin(options: CreateDatamartOptions):
