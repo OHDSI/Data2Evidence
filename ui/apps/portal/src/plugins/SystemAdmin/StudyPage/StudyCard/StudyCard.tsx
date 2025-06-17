@@ -56,16 +56,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
             studyId: study.id,
           },
         };
-
-        console.log(`[${study.id}] Request data:`, {
-          ...requestData,
-          json_graph: {
-            analysisSpecification: `[JSON with ${JSON.stringify(strategusJson).length} characters]`,
-          },
-        });
-        console.log(`[${study.id}] Making API call to createStudyAnalysisRun...`);
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
-        console.log(`[${study.id}] API call successful:`, response);
 
         setFeedback({
           type: "success",
