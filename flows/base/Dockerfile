@@ -2,7 +2,6 @@ FROM alpine AS builder
 
 # Create .Renviron file with GITHUB_PAT
 ARG GITHUB_PAT
-ARG BUILD_TYPE
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
 FROM rocker/r-ver:4.4 as base-build
@@ -177,8 +176,10 @@ RUN mkdir -p ./cdw-config/duckdb_data
 RUN chown -R docker:alp ./cdw-config
 
 COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
+
+ARG BUILD_TYPE
 ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
+RUN if [ $BUILD_TYPE = "OSS" ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
 RUN pip install -r requirements_base.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
@@ -191,4 +192,4 @@ RUN chmod -R 755 /app
 
 RUN rm -rf .Renviron /app/.github/.ssh
 
-USER docker
+# USER docker
