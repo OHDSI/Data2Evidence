@@ -1,6 +1,6 @@
 from .types import *
 from .features import *
-
+import os
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
@@ -11,6 +11,7 @@ from sqlalchemy import String
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
+os.environ['plugin_name'] = 'loyalty_score_plugin'
 
 @flow(log_prints=True)
 def loyalty_score_plugin(options:LoyaltyPluginType):
