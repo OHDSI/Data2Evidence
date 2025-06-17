@@ -91,6 +91,18 @@ export class PrefectController {
     }
   }
 
+  private async removeAnalysisResultsSchema(req: Request, res: Response) {
+    try {
+      const { id: studyId, datasetid: datasetId } = req.params;
+      const token = req.headers["Authorization"] || req.headers["authorization"];
+      const flowrunId = await this.prefectService.removeAnalysisResultsSchema(token, { studyId, datasetId } );
+      return res.status(200).send({ flowrunId, status: "Successfully created a flow run" })
+    } catch (error) {
+      console.log(`removeResultsSchema: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
   private registerRoutes() {
     this.router.post("/flow-run/:id", this.createFlowrun.bind(this));
     this.router.post("/analysis-run/:id", this.createAnalysisRun.bind(this));
@@ -100,6 +112,7 @@ export class PrefectController {
     );
     this.router.post("/test-run", this.createTestRun.bind(this));
     this.router.post("/jupyter-kernel/flow-run/strategus", this.createAnalaysisRunByJupyterKernel.bind(this));
+    this.router.delete("/flow-run/strategus/remove-results-schema/:id/:datasetid", this.removeAnalysisResultsSchema.bind(this));
 
     this.router.get("/flow-run/:id/logs", this.getFlowrunLogs.bind(this));
     this.router.get("/flow-run/:id/state", this.getFlowrunState.bind(this));
