@@ -34,7 +34,6 @@ jobs:
         run: |
           # generate dotenv
           npm run init:minerva
-          echo "TREX_PULL_POLICY=always" >> .env.local
 
       - name: Docker compose build
         run: |
