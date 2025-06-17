@@ -46,3 +46,4 @@ COPY mimic_staging.tmp_custom_mapping FROM 'flows/mimic_omop_conversion_plugin/e
 COPY mimic_staging.tmp_custom_mapping FROM 'flows/mimic_omop_conversion_plugin/external/custom_mapping_csv/gcpt_proc_datetimeevents.csv' (DELIMITER ',', FORMAT CSV, HEADER, QUOTE '"') ;
 COPY mimic_staging.tmp_custom_mapping FROM 'flows/mimic_omop_conversion_plugin/external/custom_mapping_csv/gcpt_proc_itemid.csv' (DELIMITER ',', FORMAT CSV, HEADER, QUOTE '"') ;
 COPY mimic_staging.tmp_custom_mapping FROM 'flows/mimic_omop_conversion_plugin/external/custom_mapping_csv/gcpt_vis_admission.csv' (DELIMITER ',', FORMAT CSV, HEADER, QUOTE '"') ;
+COPY mimic_staging.tmp_custom_mapping FROM 'flows/mimic_omop_conversion_plugin/external/custom_mapping_csv/gcpt_outputevents.csv' (DELIMITER ',', FORMAT CSV, HEADER, QUOTE '"') ;
