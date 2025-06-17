@@ -21,7 +21,8 @@ class SqlAlchemyDao(DaoBase):
     Using SQLAlchemy for implementation
     """
 
-    def __init__(self, use_cache_db: bool, database_code: str,
+    def __init__(self, use_cache_db: bool, 
+                 database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
                  connect_to_duckdb=False):
 

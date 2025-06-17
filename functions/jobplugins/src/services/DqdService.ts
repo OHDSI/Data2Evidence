@@ -297,7 +297,7 @@ export class DqdService {
     if (!flowRunIds.length) {
       return [];
     }
-    const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
+    const dqdResults = await this.getDqdResults(prefectApi, flowRunIds);
     const domainIndexes: { [key: string]: number } = {};
 
     return dqdResults
@@ -341,7 +341,7 @@ export class DqdService {
       (flowRun) => flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED
     );
     const flowRunIds = flowRuns.map((run) => run.id);
-    const dqdResults = await this.getDqdResults(portalServerApi, flowRunIds);
+    const dqdResults = await this.getDqdResults(prefectApi, flowRunIds);
 
     return dqdResults!
       .filter((r) => {
@@ -351,14 +351,12 @@ export class DqdService {
   }
 
   private async getDqdResults(
-    portalServerApi: PortalServerAPI,
+    prefectApi: PrefectAPI,
     flowRunIds: string[]
   ) {
     let dqdResults;
-    // file path '<flowrun_id>_dqd.json' pattern is same as followed in dqd_plugin
-    const filePaths = flowRunIds.map((id) => `results/${id}_dqd.json`);
     try {
-      dqdResults = await portalServerApi.getFlowRunResults(filePaths);
+      dqdResults = await prefectApi.getFlowRunsArtifacts(flowRunIds);
       return dqdResults;
     } catch (error) {
       throw error;
