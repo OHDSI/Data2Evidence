@@ -22,7 +22,7 @@ def mimic_omop_conversion_plugin(options:MimicOMOPOptionsType):
     schema_name = options.schema_name
     overwrite_schema = options.overwrite_schema
     chunk_size = options.chunk_size
-    to_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    to_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, plugin_name="mimic_omop_conversion_plugin")
     
     # Load data to duckdb
     if load_mimic_vocab:
