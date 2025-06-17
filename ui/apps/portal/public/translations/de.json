@@ -858,6 +858,7 @@
   "UI_PLUGIN_DATASETS": "Datensätze",
   "UI_PLUGIN_DEMO_SETUP": "Demo-Einrichtung",
   "UI_PLUGIN_ETL": "ETL",
+  "UI_PLUGIN_STUDIES": "Studien",
   "UI_PLUGIN_FEATURE_FLAGS": "Funktionsflags",
   "UI_PLUGIN_GIT_CONFIG": "Git-Konfiguration",
   "UI_PLUGIN_HYBRID_SEARCH": "Hybridsuche",

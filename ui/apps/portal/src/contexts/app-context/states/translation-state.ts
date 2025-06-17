@@ -1072,6 +1072,7 @@ export const i18nDefault = {
     UI_PLUGIN_DATASETS: "Datasets",
     UI_PLUGIN_DEMO_SETUP: "Demo setup",
     UI_PLUGIN_ETL: "ETL",
+    UI_PLUGIN_STUDIES: "Studies",
     UI_PLUGIN_FEATURE_FLAGS: "Feature flags",
     UI_PLUGIN_GIT_CONFIG: "Git configuration",
     UI_PLUGIN_HYBRID_SEARCH: "Hybrid search",
