@@ -264,6 +264,11 @@
           "function": "/d2e-webapi",
           "env": "d2e-webapi",
           "imports": "/d2e-webapi/deno.json"
+        },
+        {
+          "source": "/mlflow",
+          "service": "mlflow",
+          "rmsrc": true
         }
       ],
       "roles": {
@@ -362,6 +367,7 @@
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -431,7 +437,8 @@
           "perseus.read",
           "whiteRabbit.read",
           "whiteRabbit.post",
-          "demo.setup"
+          "demo.setup",
+          "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -1134,6 +1141,33 @@
           ]
         },
         {
+          "path": "^/system-portal/notebook/templates$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates/(.*)$",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/notebook",
           "scopes": [
             "portal.notebook.add"
@@ -1158,6 +1192,24 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/remote-diff-check$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
@@ -2352,6 +2404,12 @@
           "path": "^/jupyter",
           "scopes": [
             "jupyter"
+          ]
+        },
+        {
+          "path": "^/mlflow(.*)",
+          "scopes": [
+            "mlflow"
           ]
         }
       ]

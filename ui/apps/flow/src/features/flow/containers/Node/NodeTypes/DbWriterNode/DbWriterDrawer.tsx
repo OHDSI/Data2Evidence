@@ -11,11 +11,7 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import {
-  SelectSource,
-  SourceOptions,
-  SourceTypes,
-} from "../../SelectSource/SelectSource";
+import { SelectSource } from "../../SelectSource/SelectSource";
 import { NodeChoiceMap } from "../../NodeTypes";
 import { DbWriterNodeData } from "./DbWriterNode";
 
@@ -34,13 +30,6 @@ const EMPTY_FORM_DATA: FormData = {
   dataframe: "",
   dbtablename: "",
 };
-
-// Allow all connected nodes to db writer (dataframe & any)
-// const sourceOptions: SourceOptions = {
-//   sql_node: [SourceTypes.NODE],
-//   py2table_node: [SourceTypes.NODE],
-//   db_reader_node: [SourceTypes.NODE],
-// };
 
 export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   node,

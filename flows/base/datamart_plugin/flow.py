@@ -1,17 +1,11 @@
-import pandas as pd
-from time import time
-from datetime import datetime
-
 from prefect import flow, task
-from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
 from .types import *
 from .const import *
 from .utils import *
-
+import os
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.dao.MinioDao import MinioDao
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
@@ -20,10 +14,12 @@ from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 from _shared_flow_utils.create_dataset_tasks import create_schema_task, create_and_assign_roles_task
 from _shared_flow_utils.update_dataset_metadata import update_entity_value, update_entity_distinct_count
 
+os.environ['plugin_name'] = 'datamart_plugin'
+
 @flow(log_prints=True)
 def datamart_plugin(options: CreateDatamartOptions):
     match options.flow_action_type:
-        case DatamartFlowAction.CREATE_SNAPSHOT | DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
+        case DatamartFlowAction.CREATE_SNAPSHOT:
             create_datamart(options) 
         case DatamartFlowAction.GET_VERSION_INFO:
             update_dataset_metadata(options)   
@@ -34,7 +30,6 @@ def create_datamart(options: CreateDatamartOptions):
 
     database_code = options.database_code
     use_cache_db = options.use_cache_db
-    datamart_action = options.flow_action_type
     snapshot_copy_config = options.snapshot_copy_config
     
     match options.dialect:
@@ -54,13 +49,10 @@ def create_datamart(options: CreateDatamartOptions):
         raise ValueError(f"Source schema '{source_schema}' does not exist in database '{database_code}'")
     
     try:
-        
-        if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
-            create_schema_task(dbdao, target_schema)
+        create_schema_task(dbdao, target_schema)
     
         
-        _, failed_tables = copy_schema(datamart_action,
-                                       snapshot_copy_config,
+        _, failed_tables = copy_schema(snapshot_copy_config,
                                        dbdao,
                                        source_schema,
                                        target_schema)
@@ -73,32 +65,29 @@ def create_datamart(options: CreateDatamartOptions):
     except Exception as err:
         error_message = f"Schema: {target_schema} created successful, but failed to load data with Error: {err}"
         logger.error(error_message)
-        if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
-            logger.info(f"Cleaning up schema '{target_schema}'")
-            dbdao.drop_schema(target_schema, cascade=True)
-            logger.info(f"Successfully dropped schema '{target_schema}'")
-            raise Exception(error_message) from err
+        logger.info(f"Cleaning up schema '{target_schema}'")
+        dbdao.drop_schema(target_schema, cascade=True)
+        logger.info(f"Successfully dropped schema '{target_schema}'")
+        raise Exception(error_message) from err
     else:
         logger.info(
             f"{target_schema} schema created and loaded from source schema: {source_schema} with configuration {snapshot_copy_config}")
 
-        if datamart_action == DatamartFlowAction.CREATE_SNAPSHOT:
-            try:
-                logger.info(f"Granting read privileges to datamart schema '{dbdao.database_code}.{target_schema}'..")                
-                create_and_assign_roles_task(dbdao=dbdao, schema=target_schema)
-                logger.info(f"Successfully granted read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!")
-            except Exception as err:
-                error_message = f"Failed to grant read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!"
-                logger.error(error_message)
-                logger.info(f"Cleaning up schema '{target_schema}'")
-                dbdao.drop_schema(target_schema, cascade=True)
-                logger.info(f"Successfully dropped schema '{target_schema}'")
-                raise Exception(error_message) from err
+        try:
+            logger.info(f"Granting read privileges to datamart schema '{dbdao.database_code}.{target_schema}'..")                
+            create_and_assign_roles_task(dbdao=dbdao, schema=target_schema)
+            logger.info(f"Successfully granted read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!")
+        except Exception as err:
+            error_message = f"Failed to grant read privileges to datamart schema '{dbdao.database_code}.{target_schema}'!"
+            logger.error(error_message)
+            logger.info(f"Cleaning up schema '{target_schema}'")
+            dbdao.drop_schema(target_schema, cascade=True)
+            logger.info(f"Successfully dropped schema '{target_schema}'")
+            raise Exception(error_message) from err
 
 
 @task(log_prints=True)
-def copy_schema(datamart_action: str,
-                snapshot_copy_config: DatamartCopyConfig,
+def copy_schema(snapshot_copy_config: DatamartCopyConfig,
                 dbdao,
                 source_schema: str,
                 target_schema: str):
@@ -109,8 +98,6 @@ def copy_schema(datamart_action: str,
     successful_tables: list[str] = []
     failed_tables: list[str] = []
     
-
-
     for table in tables_to_copy:
         # get the columns to copy for each table
         columns_to_copy = get_columns_to_copy(dbdao, source_schema, table, table_filter)
@@ -134,60 +121,24 @@ def copy_schema(datamart_action: str,
                 "dates_to_filter": date_filter
             }
 
-        match datamart_action:
-            case DatamartFlowAction.CREATE_SNAPSHOT:
-                try:
-                    rows_copied = dbdao.copy_table(source_schema_name=source_schema, source_table_name=table,
-                                                   target_table_name=table, target_schema_name=target_schema,
-                                                   columns_to_copy=columns_to_copy, filter_conditions=filter_conditions)
-                except Exception as err:
-                    logger.error(f"""Datamart copying failed from {source_schema} to {
-                        target_schema} for table: {table} with Error:{err}""")
-                    failed_tables.append(table)                    
-                else:
-                    logger.info(f"""Succesfully copied {rows_copied} rows from {
-                        source_schema} to {target_schema} for table: {table}""")
-                    successful_tables.append(table)
-            case DatamartFlowAction.CREATE_PARQUET_SNAPSHOT:
-                try:
-                    datamart_df = dbdao.copy_table_as_dataframe(source_schema_name=source_schema,
-                                                                source_table_name=table,
-                                                                columns_to_copy=columns_to_copy, 
-                                                                filter_conditions=filter_conditions)
-                    upload_df_as_parquet(target_schema, table, datamart_df, logger)
-                except Exception as err:
-                    logger.error(f"""Datamart parquet creation failed for {source_schema} to {
-                        target_schema} for table: {table} with Error:{err}""")
-                    failed_tables.append(table)
-                else:
-                    logger.info(f"""Succesfully created parquet file for {source_schema} to {
-                        target_schema} for table: {table}""")
-                    successful_tables.append(table)
+        try:
+            rows_copied = dbdao.copy_table(source_schema_name=source_schema, source_table_name=table,
+                                            target_table_name=table, target_schema_name=target_schema,
+                                            columns_to_copy=columns_to_copy, filter_conditions=filter_conditions)
+        except Exception as err:
+            logger.error(f"""Datamart copying failed from {source_schema} to {
+                target_schema} for table: {table} with Error:{err}""")
+            failed_tables.append(table)                    
+        else:
+            logger.info(f"""Succesfully copied {rows_copied} rows from {
+                source_schema} to {target_schema} for table: {table}""")
+            successful_tables.append(table)
+
 
                     
     logger.info(f"Successful Tables: {successful_tables}")
     logger.info(f"Failed Tables: {failed_tables}")
     return successful_tables, failed_tables
-
-
-def upload_df_as_parquet(target_schema: str, table_name: str, df: pd.DataFrame, logger):
-    alp_system_id = Variable.get("alp_system_id")
-    if not alp_system_id:
-        raise ValueError("'alp_system_id' prefect variable is undefined")
-
-    bucket_name = f"parquetsnapshots-{alp_system_id}"
-    file_name = f"{target_schema}-{table_name}-{int(time()*1000)}.parquet"
-
-    minio_dao = MinioDao()
-    try:  
-        minio_dao.put_dataframe_as_parquet(bucket_name, file_name, df)
-    except Exception as err:
-        logger.error(
-            f"""Datamart parquet uploading to object store failed at {bucket_name}/{file_name}""")
-        raise err
-    else:
-        logger.info(f"""Succesfully uploaded parquet file at {
-            bucket_name}/{file_name}""")
 
 
 def update_dataset_metadata(options: CreateDatamartOptions):

@@ -124,6 +124,7 @@ export interface BookmarkDto {
   cdm_config_version: number
   user_id: string
   shared: boolean
+  materializedCohortDefinitions?: IMaterializedBookmarkCohortDefinition[]
 }
 
 export interface IMaterializedCohort {
@@ -133,6 +134,12 @@ export interface IMaterializedCohort {
   creationTimestamp: string
   syntax: string
   patientCount: number
+}
+
+// Bookmark materialized cohort definitions are tagged to a datasetId
+export interface IMaterializedBookmarkCohortDefinition {
+  datasetId: string
+  cohortDefinitionId: number
 }
 
 export interface IFormattedBookmark {
@@ -151,6 +158,7 @@ export interface IFormattedMaterializedCohort {
   patientCount: number
   cohortDefinitionName: string
   createdOn: string
+  description: string
 }
 
 export interface IAtlasCohortDefinition {
@@ -164,7 +172,7 @@ export interface IAtlasCohortDefinition {
   modifiedBy: string
   modifiedDate: number
   tags: string[]
-  materializedCohortDefinitionIds: number[]
+  materializedCohortDefinitions: IMaterializedBookmarkCohortDefinition[]
 }
 
 export interface IFormattedAtlasCohortDefinition {

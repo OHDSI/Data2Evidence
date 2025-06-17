@@ -1,4 +1,5 @@
 import { PluginDropdownItem } from "@portal/plugin";
+import { LanguageMappings } from "../contexts";
 
 export * from "./auth";
 export * from "./study";
@@ -27,6 +28,7 @@ export interface Plugins {
   iconUrl?: string;
   iconSize?: number;
   name: string;
+  nameI18nKey?: keyof LanguageMappings;
   enabled?: boolean;
   route: string;
   pluginPath: string;
@@ -47,6 +49,7 @@ export interface PluginDropdown {
 
 export interface IPluginItem {
   name: string;
+  nameI18nKey?: keyof LanguageMappings;
   route: string;
   pluginPath: string;
   featureFlag?: string;
@@ -65,7 +68,9 @@ export interface IPluginItem {
   iframe?: boolean;
   iframeUrlEnv?: string;
   description?: string;
+  descriptionI18nKey?: keyof LanguageMappings;
   notes?: string;
+  notesI18nKey?: keyof LanguageMappings;
   children?: IPluginItem[];
 }
 
