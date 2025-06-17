@@ -117,6 +117,7 @@ export class PrefectService {
       prefectDeploymentName,
       prefectFlowName,
       {
+        json_graph: {},
         options: Object.assign({}, {
           mode: 'drop-results',
           databaseCode,
