@@ -17,14 +17,7 @@ interface StudyCardProps {
   onShareResults?: (study: StrategusStudy) => void;
 }
 
-export const StudyCard: FC<StudyCardProps> = ({
-  study,
-  highlightText,
-  selectedDatasetId,
-  setFeedback,
-  onDownloadResults,
-  onShareResults,
-}) => {
+export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
   const { getText, i18nKeys } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
@@ -46,8 +39,8 @@ export const StudyCard: FC<StudyCardProps> = ({
           console.error(`[${study.id}] Could not fetch strategus JSON from repository:`, error);
           setFeedback({
             type: "error",
-            message: "Could not fetch strategus JSON from repository",
-            description: "Please check if the study configuration is available.",
+            message: getText(i18nKeys.STUDY_CARD__ERROR_FETCH_STRATEGUS_JSON),
+            description: getText(i18nKeys.STUDY_CARD__ERROR_FETCH_STRATEGUS_JSON_DESCRIPTION),
             autoClose: 5000,
           });
           return;
@@ -76,15 +69,17 @@ export const StudyCard: FC<StudyCardProps> = ({
 
         setFeedback({
           type: "success",
-          message: `Study "${study.name || study.id}" started successfully`,
-          description: `Flow run ID: ${response.flowrunId || response.flowRunId}`,
+          message: getText(i18nKeys.STUDY_CARD__SUCCESS_STUDY_STARTED, [study.name || study.id || "Unknown"]),
+          description: getText(i18nKeys.STUDY_CARD__SUCCESS_FLOW_RUN_ID, [
+            response.flowrunId || response.flowRunId || "Unknown",
+          ]),
           autoClose: 5000,
         });
       } catch (error) {
         console.error(`[${study.id}] Error running study:`, error);
         setFeedback({
           type: "error",
-          message: `Failed to start study "${study.name || study.id}"`,
+          message: getText(i18nKeys.STUDY_CARD__ERROR_START_STUDY, [study.name || study.id || "Unknown"]),
           autoClose: 5000,
         });
       } finally {
@@ -100,7 +95,7 @@ export const StudyCard: FC<StudyCardProps> = ({
       <div className="study-card__content">
         <div className="study-card__header">
           <div className="study-card__title">
-            <HighlightText text={study.id || "Untitled"} searchText={highlightText} />
+            <HighlightText text={study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)} searchText={highlightText} />
           </div>
           {study.email && (
             <div className="study-card__contact">
@@ -111,7 +106,10 @@ export const StudyCard: FC<StudyCardProps> = ({
         </div>
 
         <div className="study-card__summary">
-          <HighlightText text={study.description || "No study summary available"} searchText={highlightText} />
+          <HighlightText
+            text={study.description || getText(i18nKeys.STUDY_CARD__NO_DATASET_SUMMARY)}
+            searchText={highlightText}
+          />
         </div>
 
         <div className="study-card__actions">
@@ -122,12 +120,12 @@ export const StudyCard: FC<StudyCardProps> = ({
             {isRunning ? (
               <>
                 <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                <span>Running...</span>
+                <span>{getText(i18nKeys.STUDY_CARD__RUNNING)}</span>
               </>
             ) : (
               <>
                 <RunStudyIcon className="study-card__action-icon" />
-                <span>Run study</span>
+                <span>{getText(i18nKeys.STUDY_CARD__RUN_STUDY)}</span>
               </>
             )}
           </div>

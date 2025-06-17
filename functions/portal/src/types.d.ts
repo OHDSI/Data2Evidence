@@ -294,8 +294,8 @@ export interface IConfigUpdateDto {
 
 interface StudyMetadata {
   strategus_json: string
-  description: string
-  email: string
+  description?: string
+  email?: string
 }
 
 export interface StudiesData {

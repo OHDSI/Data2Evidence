@@ -15,7 +15,6 @@ interface StrategusStudiesData {
 }
 
 export const StudyPage: FC<StudyPageProps> = () => {
-  // TODO: Add translation
   const { getText, i18nKeys } = useTranslation();
   const { setFeedback } = useFeedback();
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
@@ -56,19 +55,13 @@ export const StudyPage: FC<StudyPageProps> = () => {
     fetchStudies();
   }, [setFeedback]);
 
-  const handleDownloadResults = useCallback((study: StrategusStudy) => {
-    console.log("Downloading results for study:", study.name || study.id);
-  }, []);
-
-  const handleShareResults = useCallback((study: StrategusStudy) => {
-    console.log("Sharing results for study:", study.name || study.id);
-  }, []);
-
   if (loadingDatasets) return <Loader />;
 
   if (error) {
     console.error(error.message);
-    return <div className="study-page__error">Error loading datasets: {error.message}</div>;
+    return (
+      <div className="study-page__error">{getText(i18nKeys.STUDY_PAGE__ERROR_LOADING_DATASETS, [error.message])}</div>
+    );
   }
 
   return (
@@ -76,7 +69,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
       <div className="study-page__header">
         <div className="study-page__dataset-selector">
           <label htmlFor="dataset-select" className="study-page__dataset-label">
-            Select a dataset:
+            {getText(i18nKeys.STUDY_PAGE__SELECT_DATASET)}
           </label>
           <Select
             id="dataset-select"
@@ -93,7 +86,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
             }}
           >
             <MenuItem value="" disabled>
-              Choose a dataset
+              {getText(i18nKeys.STUDY_PAGE__CHOOSE_DATASET)}
             </MenuItem>
             {datasets.map((dataset) => (
               <MenuItem key={dataset.id} value={dataset.id}>
@@ -105,9 +98,13 @@ export const StudyPage: FC<StudyPageProps> = () => {
       </div>
 
       <div className="study-page__content">
-        <h2 className="study-page__section-title">Study list</h2>
+        <h2 className="study-page__section-title">{getText(i18nKeys.STUDY_PAGE__STUDY_LIST)}</h2>
         {loadingStudies && <Loader />}
-        {studiesError && <div className="study-page__error">Repository service issue: {studiesError}</div>}
+        {studiesError && (
+          <div className="study-page__error">
+            {getText(i18nKeys.STUDY_PAGE__REPOSITORY_SERVICE_ISSUE, [studiesError])}
+          </div>
+        )}
         {!loadingStudies && (
           <div className={`study-page__studies ${!selectedDatasetId ? "study-page__studies--disabled" : ""}`}>
             {strategusStudies.length > 0 ? (
@@ -117,13 +114,13 @@ export const StudyPage: FC<StudyPageProps> = () => {
                   study={study}
                   selectedDatasetId={selectedDatasetId}
                   setFeedback={setFeedback}
-                  onDownloadResults={handleDownloadResults}
-                  onShareResults={handleShareResults}
                 />
               ))
             ) : (
               <div className="study-page__empty-state">
-                {studiesError ? "No studies available due to repository error" : "No studies found in repository"}
+                {studiesError
+                  ? getText(i18nKeys.STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR)
+                  : getText(i18nKeys.STUDY_PAGE__NO_STUDIES_FOUND)}
               </div>
             )}
           </div>
