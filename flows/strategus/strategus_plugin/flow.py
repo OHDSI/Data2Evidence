@@ -150,8 +150,9 @@ def runStrategus(json_graph, options):
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
 
-    if(not study_id):
-       raise Exception('StudyId is missing')
+    # TODO: Uncomment when study_id is required
+    # if(not study_id):
+    #    raise Exception('StudyId is missing')
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
