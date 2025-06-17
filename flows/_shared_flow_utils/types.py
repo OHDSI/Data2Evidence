@@ -101,11 +101,3 @@ class User:
   userId: str
   name: Optional[str]
   email: Optional[str]
-
-CHARACTERIZATION_DATA_MODEL = "characterization"
-OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi"]
-CHANGESET_AVAILABLE_REGEX = re.compile(r"db/migrations/\S+")
-LB_ERROR_MESSAGE_REGEX = re.compile(r"Unexpected error running Liquibase:")
-PASSWORD_REGEX = re.compile(r"password=\S+")
-SSL_TRUST_STORE_REGEX = re.compile(
-    r"&sslTrustStore=-----BEGIN CERTIFICATE-----[a-zA-Z0-9\+\/]+-----END CERTIFICATE-----")
