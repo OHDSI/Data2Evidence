@@ -69,6 +69,10 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 
+# OHDSI studies viewer
+RUN Rscript -e 'remotes::install_github("OHDSI/ShinyAppBuilder@v3.2.0")'
+RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@v3.2.0")'
+
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
