@@ -1000,10 +1000,6 @@
                     "title": "Cohortschemaname",
                     "type": "string"
                   },
-                  "cohorttableName": {
-                    "title": "Cohorttablename",
-                    "type": "string"
-                  },
                   "cohortsId": {
                     "title": "Cohortsid",
                     "type": "string"
@@ -1011,20 +1007,14 @@
                   "vocabschemaName": {
                     "title": "Vocabschemaname",
                     "type": "string"
-                  },
-                  "description": {
-                    "title": "Description",
-                    "type": "string"
                   }
                 },
                 "required": [
                   "databaseCode",
                   "cdmschemaName",
                   "cohortschemaName",
-                  "cohorttableName",
                   "cohortsId",
-                  "vocabschemaName",
-                  "description"
+                  "vocabschemaName"
                 ],
                 "title": "PhenotypeOptionsType",
                 "type": "object"
