@@ -13,7 +13,7 @@ from .utils import remove_existing_file_if_exists, check_supported_duckdb_dialec
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.dao.daobase import SYSTEM_SCHEMAS
-
+os.environ['plugin_name'] = 'create_cachedb_file_plugin'
 
 @flow(log_prints=True)
 def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
