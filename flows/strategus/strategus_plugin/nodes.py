@@ -926,7 +926,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                connectionString=construct_jdbc_url(db_credentials),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
