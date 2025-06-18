@@ -40,8 +40,8 @@ export interface ConceptSet {
 
 // Criteria types
 export interface ConditionOccurrence {
-  CodesetId: number
-  ConditionTypeExclude: boolean
+  CodesetId?: number
+  ConditionTypeExclude?: boolean
   First?: boolean
   OccurrenceStartDate?: DateRange
   OccurrenceEndDate?: DateRange
@@ -50,6 +50,7 @@ export interface ConditionOccurrence {
   Age?: NumericRange
   ProviderSpecialty?: ConceptSet[]
   VisitType?: ConceptSet[]
+  CorrelatedCriteria?: CorrelatedCriteria // Added support for nested criteria
 }
 
 export interface DrugExposure {
@@ -270,9 +271,19 @@ export interface CensorWindow {
   EndDate?: string
 }
 
+// Correlated criteria for nested events
+export interface CorrelatedCriteria {
+  Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  Count?: number
+  CriteriaList: CriteriaGroup[]
+  DemographicCriteriaList: DemographicCriteria[]
+  Groups: GroupCriteria[]
+}
+
 // Inclusion rule
 export interface InclusionRule {
   name: string
+  description?: string // Added support for description
   expression: {
     Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
     Count?: number
@@ -441,4 +452,28 @@ export function getCriteriaObject(item: CriteriaListItem): any {
     item.ObservationPeriod ||
     null
   )
+}
+
+// Helper types for cardinality mapping
+export type CardinalityType = 'exactly' | 'atMost' | 'AT_LEAST'
+export type AtlasOccurrenceType = 0 | 1 | 2 // 0=exactly, 1=at most, 2=at least
+
+// Helper function to map cardinality to Atlas occurrence type
+export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurrenceType {
+  switch (cardinality) {
+    case 'exactly': return 0
+    case 'atMost': return 1
+    case 'AT_LEAST':
+    default: return 2
+  }
+}
+
+// Helper function to map criteria type to Atlas primary criteria type
+export function mapCriteriaTypeToAtlas(criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'): 'All' | 'First' | 'Last' {
+  switch (criteriaType) {
+    case 'EARLIEST': return 'First'
+    case 'LATEST': return 'Last'
+    case 'ALL':
+    default: return 'All'
+  }
 }

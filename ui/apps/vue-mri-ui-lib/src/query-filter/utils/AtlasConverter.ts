@@ -169,14 +169,17 @@ export const convertAtlasToFilters = (
   if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
     cohortDefinition.InclusionRules.forEach((rule: any) => {
       if (rule.expression?.CriteriaList?.length > 0) {
-        const events = convertCriteriaListToEvents(rule.expression.CriteriaList)
+        // Create a separate filter for each CriteriaList item
+        rule.expression.CriteriaList.forEach((criteriaItem: any) => {
+          const events = convertCriteriaListToEvents([criteriaItem])
 
-        const inclusionFilter = new QueryFilterCardModel({
-          title: rule.name || 'Inclusion Rule',
-          type: 'inclusion',
-          events,
+          const inclusionFilter = new QueryFilterCardModel({
+            title: rule.name || 'Inclusion Rule',
+            type: 'inclusion',
+            events,
+          })
+          filters.push(inclusionFilter)
         })
-        filters.push(inclusionFilter)
       }
     })
   }
@@ -185,12 +188,17 @@ export const convertAtlasToFilters = (
   if (cohortDefinition.ExclusionRules && Array.isArray(cohortDefinition.ExclusionRules)) {
     cohortDefinition.ExclusionRules.forEach((rule: any) => {
       if (rule.expression?.CriteriaList?.length > 0) {
-        const exclusionFilter = new QueryFilterCardModel({
-          title: rule.name || 'Exclusion Rule',
-          type: 'exclusion',
-          events: convertCriteriaListToEvents(rule.expression.CriteriaList),
+        // Create a separate filter for each CriteriaList item
+        rule.expression.CriteriaList.forEach((criteriaItem: any) => {
+          const events = convertCriteriaListToEvents([criteriaItem])
+
+          const exclusionFilter = new QueryFilterCardModel({
+            title: rule.name || 'Exclusion Rule',
+            type: 'exclusion',
+            events,
+          })
+          filters.push(exclusionFilter)
         })
-        filters.push(exclusionFilter)
       }
     })
   }

@@ -153,16 +153,17 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].events).toHaveLength(2)
+      expect(result).toHaveLength(2) // Now creates 2 filters, one per CriteriaList item
+      expect(result[0].events).toHaveLength(1)
+      expect(result[1].events).toHaveLength(1)
 
-      // First event should find concept set
+      // First filter should find concept set
       expect(result[0].events[0].conceptSet).toBe('Test Condition')
       expect(result[0].events[0].selectedConceptSet).toBeDefined()
 
-      // Second event should fallback to Atlas concept set name
-      expect(result[0].events[1].conceptSet).toBe('Missing Drug Set') // From Atlas ConceptSets
-      expect(result[0].events[1].selectedConceptSet).toBeDefined() // Should have fallback concept set item
+      // Second filter should fallback to Atlas concept set name
+      expect(result[1].events[0].conceptSet).toBe('Missing Drug Set') // From Atlas ConceptSets
+      expect(result[1].events[0].selectedConceptSet).toBeDefined() // Should have fallback concept set item
     })
   })
 

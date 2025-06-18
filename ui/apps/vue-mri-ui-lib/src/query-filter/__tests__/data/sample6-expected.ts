@@ -31,7 +31,8 @@ export default {
   },
   InclusionRules: [
     {
-      name: 'Condition Occurrence',
+      name: 'Group 1',
+      description: 'Description 1',
       expression: {
         Type: 'ALL',
         CriteriaList: [

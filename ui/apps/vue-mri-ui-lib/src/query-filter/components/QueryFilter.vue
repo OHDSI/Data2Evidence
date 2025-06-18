@@ -34,7 +34,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  debug: false,
+  debug: true,
 })
 
 const activeTab = ref<'earliest' | 'all' | 'latest'>('all')

@@ -142,14 +142,14 @@ describe('Atlas JSON to UI Conversion', () => {
       const atlasInput = sample2Expected
       const uiFilters = convertAtlasToFilters(atlasInput, mockConceptSets)
 
-      // Sample2 has 2 inclusion rules with empty criteria (no CodesetId)
+      // Sample2 has 1 inclusion rule with 2 criteria items (creates 2 filters)
       expect(uiFilters).toHaveLength(2)
-      expect(uiFilters[0].title).toBe('Condition Occurrence')
+      expect(uiFilters[0].title).toBe('Group 1')
       expect(uiFilters[0].type).toBe('inclusion')
       expect(uiFilters[0].events).toHaveLength(1)
       expect(uiFilters[0].events[0].criteriaType).toBe('conditionOccurrence')
 
-      expect(uiFilters[1].title).toBe('Condition Occurrence')
+      expect(uiFilters[1].title).toBe('Group 1')
       expect(uiFilters[1].type).toBe('inclusion')
     })
 
@@ -157,14 +157,14 @@ describe('Atlas JSON to UI Conversion', () => {
       const atlasInput = sample3Expected
       const uiFilters = convertAtlasToFilters(atlasInput, mockConceptSets)
 
-      // Sample3 has 2 inclusion rules, first one has correlated criteria
+      // Sample3 has 1 inclusion rule with 2 criteria items (creates 2 filters)
       expect(uiFilters).toHaveLength(2)
-      expect(uiFilters[0].title).toBe('Condition Occurrence')
+      expect(uiFilters[0].title).toBe('Group 1')
       expect(uiFilters[0].events).toHaveLength(1)
 
       // The nested criteria would be handled differently in a full implementation
       // For now, just verify basic structure
-      expect(uiFilters[1].title).toBe('Condition Occurrence')
+      expect(uiFilters[1].title).toBe('Group 1')
     })
   })
 
@@ -292,15 +292,19 @@ describe('Atlas JSON to UI Conversion', () => {
 
       const uiFilters = convertAtlasToFilters(atlasInput, mockConceptSets)
 
-      expect(uiFilters).toHaveLength(1)
-      const events = uiFilters[0].events
-      expect(events).toHaveLength(5)
+      expect(uiFilters).toHaveLength(5)
+      
+      expect(uiFilters[0].events).toHaveLength(1)
+      expect(uiFilters[1].events).toHaveLength(1)
+      expect(uiFilters[2].events).toHaveLength(1)
+      expect(uiFilters[3].events).toHaveLength(1)
+      expect(uiFilters[4].events).toHaveLength(1)
 
-      expect(events[0].criteriaType).toBe('conditionOccurrence')
-      expect(events[1].criteriaType).toBe('drugExposure')
-      expect(events[2].criteriaType).toBe('procedureOccurrence')
-      expect(events[3].criteriaType).toBe('observation')
-      expect(events[4].criteriaType).toBe('measurement')
+      expect(uiFilters[0].events[0].criteriaType).toBe('conditionOccurrence')
+      expect(uiFilters[1].events[0].criteriaType).toBe('drugExposure')
+      expect(uiFilters[2].events[0].criteriaType).toBe('procedureOccurrence')
+      expect(uiFilters[3].events[0].criteriaType).toBe('observation')
+      expect(uiFilters[4].events[0].criteriaType).toBe('measurement')
     })
   })
 
