@@ -105,7 +105,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     } finally {
       setIsStartingViewer(false);
     }
-  }, []);
+  }, [
+    getText,
+    selectedDatasetId,
+    setFeedback,
+    study.id,
+    study.name,
+    i18nKeys.STUDY_CARD__ERROR_START_VIEWER,
+    i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED,
+  ]);
 
   return (
     <Card className="study-card" borderRadius={18}>
