@@ -3,41 +3,41 @@ name: d2e-ui build plugin
 on:
   workflow_dispatch:
     inputs:
-        GIT_REPO_FULL_NAME:
-          description: Select RepoName
-          required: false
-          type: choice
-          options:
-            - ohdsi/d2e
-        GIT_BRANCH_NAME:
-          default: develop
-          description: Enter BranchName / ReleaseTagName
-          required: true
-          type: string
-        tag:
-          description: Enter tag for release
-          required: true
-          type: string
-        release:
-          description: Enter name for github release
-          required: true
-          type: string
-        prerelease:
-          type: boolean
-          default: true
-          required: true
-        overwrite:
-          type: boolean
-          default: false
-          required: true
-        artifacttype:
-            type: choice
-            required: true
-            default: "OSS-develop"
-            options:
-              - "OSS-develop"
-              - "OSS-release"
-              - "Project"
+      GIT_REPO_FULL_NAME:
+        description: Select RepoName
+        required: false
+        type: choice
+        options:
+          - ohdsi/d2e
+      GIT_BRANCH_NAME:
+        default: develop
+        description: Enter BranchName / ReleaseTagName
+        required: true
+        type: string
+      tag:
+        description: Enter tag for release
+        required: true
+        type: string
+      release:
+        description: Enter name for github release
+        required: true
+        type: string
+      prerelease:
+        type: boolean
+        default: true
+        required: true
+      overwrite:
+        type: boolean
+        default: false
+        required: true
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
+          - "Project"
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   push:
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -131,7 +131,7 @@ jobs:
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
           fi
       - name: Publish
-        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
+        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || needs.check_file_changes.outputs.changes == 'true' }}
         env:
           CI: false # For portal build to ignore warnings and not treat them as errors
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
@@ -145,4 +145,3 @@ jobs:
           else 
               yarn pack
           fi
-

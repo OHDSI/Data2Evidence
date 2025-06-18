@@ -8,7 +8,6 @@
     "@std/testing": "jsr:@std/testing@1.0.3",
     "express": "npm:express@^4.18",
     "@danet/typeorm": "jsr:@danet/typeorm@0.1.1",
-    "mime": "npm:mime@1.6.0",
     "typeorm-extension": "npm:typeorm-extension@3.6.3",
     "@hono/hono/request": "jsr:@hono/hono@4.6.3/request",
     "uuid": "npm:uuid@9.0.1",
@@ -19,6 +18,11 @@
     "axios": "npm:axios@^0.21.2",
     "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
     "class-validator": "npm:class-validator@0.14.1",
-    "class-transformer": "npm:class-transformer@0.5.1"
+    "class-transformer": "npm:class-transformer@0.5.1",
+    "mime-types": "npm:mime-types@2.1.35",
+    "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "http": "npm:isomorphic-git@1.27.1/http/web/index.js",
+    "fs": "node:fs",
+    "path": "node:path"
   }
 }

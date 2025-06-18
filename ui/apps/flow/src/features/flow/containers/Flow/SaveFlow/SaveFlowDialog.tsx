@@ -1,10 +1,3 @@
-import React, {
-  ChangeEvent,
-  FC,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
 import {
   Box,
   Button,
@@ -13,18 +6,23 @@ import {
   EditNoBoxIcon,
   IconButton,
   InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
   Snackbar,
   TextField,
 } from "@portal/components";
-import { useSelector } from "react-redux";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/dist/query";
+import React, {
+  ChangeEvent,
+  FC,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import { useSelector } from "react-redux";
 import { RootState, dispatch } from "~/store";
-import {
-  useGetLatestDataflowByIdQuery,
-  useSaveDataflowMutation,
-} from "../../../slices";
 import { useFormData } from "../../../hooks";
-import { selectFlowNodes } from "../../../selectors";
 import {
   markStatusAsSaved,
   selectEdges,
@@ -32,6 +30,13 @@ import {
   setDataflowId,
   setRevisionId,
 } from "../../../reducers";
+import { selectFlowNodes } from "../../../selectors";
+import {
+  useCreateCanvasFromTemplateMutation,
+  useGetLatestDataflowByIdQuery,
+  useGetTemplatesQuery,
+  useSaveDataflowMutation,
+} from "../../../slices";
 import { ErrorResponse, SaveDataflowDto } from "../../../types";
 import "./SaveFlowDialog.scss";
 
@@ -40,11 +45,13 @@ export interface SaveFlowDialogProps extends DialogProps {}
 interface FormData {
   name: string;
   comment: string;
+  selectedTemplate: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   comment: "",
+  selectedTemplate: "",
 };
 
 export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
@@ -60,6 +67,12 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     { skip: !saveFlowDialog.dataflowId }
   );
   const [saveDataflow, { isLoading }] = useSaveDataflowMutation();
+  const { data: templates = [], isLoading: templatesLoading } =
+    useGetTemplatesQuery(undefined, {
+      skip: !isNew,
+    });
+  const [createFromTemplate, { isLoading: createFromTemplateLoading }] =
+    useCreateCanvasFromTemplateMutation();
   const nodes = useSelector(selectFlowNodes);
   const edges = useSelector(selectEdges);
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
@@ -82,7 +95,11 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       if (isNew || !dataflow) {
         onFormDataChange(EMPTY_FORM_DATA);
       } else {
-        setFormData({ name: dataflow.canvas.name, comment: "" });
+        setFormData({
+          name: dataflow.canvas.name,
+          comment: "",
+          selectedTemplate: "",
+        });
       }
 
       if (isNew) {
@@ -94,31 +111,53 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   }, [props.open, dataflow, nameRef, commentRef]);
 
   const handleSave = useCallback(async () => {
-    const dataflow: SaveDataflowDto = {
-      id: saveFlowDialog.dataflowId,
-      name: formData.name,
-      dataflow: isNew
-        ? { nodes: [], edges: [], comment: formData.comment }
-        : { nodes, edges, comment: formData.comment },
-    };
-    const response = await saveDataflow(dataflow);
+    if (isNew && formData.selectedTemplate) {
+      // Create from template
+      const response = await createFromTemplate({
+        templateId: formData.selectedTemplate,
+        name: formData.name,
+        comment: formData.comment,
+      });
 
-    if ("error" in response) {
-      setError((response.error as FetchBaseQueryError).data as ErrorResponse);
-      return;
-    }
-
-    if (isNew && "data" in response) {
-      if (response.data?.id) {
-        dispatch(setDataflowId(response.data.id));
-        dispatch(setAddNodeTypeDialog({ visible: true }));
+      if ("error" in response) {
+        setError((response.error as FetchBaseQueryError).data as ErrorResponse);
+        return;
       }
-    }
 
-    dispatch(setRevisionId(undefined));
-    dispatch(markStatusAsSaved());
-    typeof onClose === "function" && onClose();
-  }, [saveFlowDialog, isNew, formData, nodes, edges]);
+      if ("data" in response && response.data?.id) {
+        dispatch(setDataflowId(response.data.id));
+        dispatch(setRevisionId(undefined));
+        dispatch(markStatusAsSaved());
+        typeof onClose === "function" && onClose();
+      }
+    } else {
+      // Without template
+      const dataflow: SaveDataflowDto = {
+        id: saveFlowDialog.dataflowId,
+        name: formData.name,
+        dataflow: isNew
+          ? { nodes: [], edges: [], comment: formData.comment }
+          : { nodes, edges, comment: formData.comment },
+      };
+      const response = await saveDataflow(dataflow);
+
+      if ("error" in response) {
+        setError((response.error as FetchBaseQueryError).data as ErrorResponse);
+        return;
+      }
+
+      if (isNew && "data" in response) {
+        if (response.data?.id) {
+          dispatch(setDataflowId(response.data.id));
+          dispatch(setAddNodeTypeDialog({ visible: true }));
+        }
+      }
+
+      dispatch(setRevisionId(undefined));
+      dispatch(markStatusAsSaved());
+      typeof onClose === "function" && onClose();
+    }
+  }, [saveFlowDialog, isNew, formData, nodes, edges, createFromTemplate]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();
@@ -135,7 +174,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         <Snackbar
           type="error"
           message={error?.message}
-          visible={error?.statusCode === 400}
+          visible={error?.statusCode === 400 || !!error?.message}
           handleClose={() => setError(undefined)}
         />
         <Box mb={4}>
@@ -175,6 +214,30 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
             }
           />
         </Box>
+        {isNew && (
+          <Box mb={4}>
+            <InputLabel sx={{ mb: 1 }}>Template (Optional)</InputLabel>
+            <Select
+              sx={{ width: "100%" }}
+              variant="standard"
+              value={formData.selectedTemplate}
+              onChange={(e: SelectChangeEvent) =>
+                onFormDataChange({ selectedTemplate: e.target.value })
+              }
+              displayEmpty
+              disabled={templatesLoading}
+            >
+              <MenuItem value="">
+                <em>No template</em>
+              </MenuItem>
+              {templates.map((template) => (
+                <MenuItem key={template.id} value={template.id}>
+                  {template.name} - {template.description}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        )}
       </div>
       <div className="save-flow-dialog__footer">
         <Box
@@ -186,7 +249,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
           <Button
             text={isNew ? "Create" : !!revisionId ? "Overwrite latest" : "Save"}
             onClick={handleSave}
-            loading={isLoading}
+            loading={isLoading || createFromTemplateLoading}
           />
         </Box>
       </div>

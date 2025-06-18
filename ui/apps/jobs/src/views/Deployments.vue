@@ -13,10 +13,14 @@
         <DeploymentList @delete="deploymentsSubscription.refresh" />
       </template>
     </template>
+    
+    <template v-else>
+      <Loader />
+    </template>
   </p-layout-default>
 </template>
-  
-  <script lang="ts" setup>
+
+<script lang="ts" setup>
 import {
   DeploymentList,
   DeploymentsPageEmptyState,
@@ -24,6 +28,8 @@ import {
 } from '@prefecthq/prefect-ui-library'
 import { useSubscription } from '@prefecthq/vue-compositions'
 import { computed } from 'vue'
+import Loader from '@/components/Loader.vue'
+
 
 const api = useWorkspaceApi()
 const subscriptionOptions = {

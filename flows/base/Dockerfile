@@ -2,7 +2,6 @@ FROM alpine AS builder
 
 # Create .Renviron file with GITHUB_PAT
 ARG GITHUB_PAT
-ARG BUILD_TYPE
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
 FROM rocker/r-ver:4.4 as base-build
@@ -95,6 +94,9 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
+RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.3.3", upgrade="never")'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
+RUN Rscript -e 'remotes::install_github("OHDSI/PhenotypeLibrary@v3.36.0", upgrade="never")'
 
 # D2E packages
 RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-SqlRender.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
@@ -103,7 +105,14 @@ RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-Datab
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-# RUN rm -rf .Renviron /app/.github/.ssh
+
+# Verify installation and fail if any are missing
+RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -121,12 +130,13 @@ RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
 RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-    
 FROM dbsvc-build AS final-build
 
 WORKDIR /app
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
+# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
+
 COPY --chown=docker:docker  ./__init__.py .
 
 # Grant docker ownership to create properties file
@@ -142,6 +152,10 @@ RUN chown -R docker:docker /app/synpuf1k
 # Create folder to store vocab CSVs
 RUN mkdir -p /app/vocab
 RUN chown -R docker:docker /app/vocab
+
+# Create folder to store data load CSVs
+RUN mkdir -p /app/data_load
+RUN chown -R docker:docker /app/data_load
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
@@ -162,8 +176,10 @@ RUN mkdir -p ./cdw-config/duckdb_data
 RUN chown -R docker:alp ./cdw-config
 
 COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
+
+ARG BUILD_TYPE
 ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
+RUN if [ $BUILD_TYPE = "OSS" ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
 RUN pip install -r requirements_base.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
@@ -174,4 +190,6 @@ RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-USER docker
+RUN rm -rf .Renviron /app/.github/.ssh
+
+# USER docker

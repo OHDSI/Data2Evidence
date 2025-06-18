@@ -2,8 +2,8 @@ import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
 import { NodeDataState } from "../../../../types";
-import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
+import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { CsvDrawer } from "./CsvDrawer";
 import "./CsvNode.scss";
 
@@ -12,6 +12,7 @@ export interface CsvNodeData extends NodeDataState {
   delimiter: string;
   hasheader: boolean;
   columns: string[];
+  encoding?: string;
 }
 
 export const CsvNode = (node: NodeProps<CsvNodeData>) => {

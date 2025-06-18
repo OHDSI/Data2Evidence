@@ -47,6 +47,8 @@ export default {
     this.requestMriConfig()
   },
   mounted() {
+    this.setLocale()
+
     const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
@@ -85,6 +87,7 @@ export default {
       'toggleConfigSelectionDialog',
       'setFireRequest',
       'refreshPatientCount',
+      'setLocale',
     ]),
     ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
     okFatal() {

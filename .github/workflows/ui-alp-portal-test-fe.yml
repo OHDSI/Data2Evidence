@@ -25,6 +25,7 @@ jobs:
         filters: |
           portal_fe_changed:
             - 'apps/portal/**'
+            - '.github/workflows/ui-alp-portal-test-fe.yml'
 
     - name: Setup node if files have changed
       uses: actions/setup-node@v4

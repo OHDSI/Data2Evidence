@@ -235,10 +235,6 @@ interface IFlowBasicNodeData {
   executorOptions?: IPrefectExecutorOptions;
 }
 
-interface IFlowCsvNodeData extends IFlowBasicNodeData {
-  hasheader: string;
-}
-
 interface IPrefectExecutorOptions {
   executor_type: string;
   executor_address: IPrefectExecutorAddress;
@@ -267,8 +263,12 @@ export interface IDataflowDuplicateDto {
   name: string;
 }
 
-interface IFlowCsvNodeData extends IFlowBasicNodeData {
-  hasheader: string;
+export interface IFlowCsvNodeData extends IFlowBasicNodeData {
+  file: string;
+  delimiter: string;
+  hasheader: boolean;
+  columns: string[];
+  encoding?: string;
 }
 
 interface IPrefectEdge {
@@ -365,4 +365,29 @@ export interface NodeData {
   error: boolean;
   errorMessage: string | null;
   nodeName: string;
+}
+
+export type CanvasResult =
+  | {
+      canvasId: string;
+      revisionId: string;
+      name: string;
+    }
+  | {
+      canvasId: string;
+      error: string;
+    };
+
+export interface CsvFileOperationResponse {
+  status: "success";
+  filePath: string;
+  bucket: string;
+}
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  nodes: IReactFlowNode[];
+  edges: IReactFlowEdge[];
 }

@@ -254,6 +254,15 @@ export class Dataflow {
     });
   }
 
+  public createStudyAnalysisRun(data: { json_graph: any; options: any }) {
+    return request({
+      baseURL: DATAFLOW_MGMT_URL,
+      url: "prefect/jupyter-kernel/flow-run/strategus",
+      method: "POST",
+      data,
+    });
+  }
+
   public getFlowRunState(flowId: string) {
     return request({
       baseURL: DATAFLOW_MGMT_URL,

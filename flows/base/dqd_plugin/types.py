@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 DQD_THREAD_COUNT = 1
 
 class DqdOptionsType(BaseModel):
+    datasetId: str
     schemaName: str
     databaseCode: str
     cdmVersionNumber: str

@@ -27,7 +27,7 @@
               <SelectedCount v-else :count="selectedFlowRuns.length" />
               <FlowRunsDeleteButton
                 v-if="can.delete.flow_run"
-                :selected="selectedFlowRuns"
+                v-model:selected="selectedFlowRuns"
                 @delete="deleteFlowRuns"
               />
 
@@ -53,11 +53,11 @@
 
             <template v-if="flowRunCount > 0">
               <FlowRunList
-                v-model:selected="selectedFlowRuns"
+                :selected="selectedFlowRuns"
                 :selectable="flowRunsAreSelectable"
                 :flow-runs="flowRuns"
               />
-              <p-pager v-model:limit="limit" v-model:page="flowRunsPage" :pages="flowRunPages" />
+              <p-pager :limit="limit" :page="flowRunsPage" :pages="flowRunPages" />
             </template>
 
             <template v-else-if="!flowRunsSubscription.executed && flowRunsSubscription.loading">
@@ -81,6 +81,10 @@
           </p-content>
         </p-content>
       </template>
+    </template>
+
+    <template v-else>
+      <Loader />
     </template>
   </p-layout-default>
 </template>
@@ -118,6 +122,7 @@ import { useRouter } from 'vue-router'
 import { useCan } from '@/compositions/useCan'
 import { routes } from '@/router'
 import { mapper } from '@/utils/mapper'
+import Loader from '@/components/Loader.vue'
 
 const router = useRouter()
 const api = useWorkspaceApi()
@@ -142,9 +147,6 @@ const {
 
 const flowRunNameLike = useRouteQueryParam('flow-run-search', NullableStringRouteParam, null)
 const flowRunNameLikeDebounced = useDebouncedRef(flowRunNameLike, 1200)
-
-const taskRunNameLike = useRouteQueryParam('task-run-search', NullableStringRouteParam, null)
-const taskRunNameLikeDebounced = useDebouncedRef(taskRunNameLike, 1200)
 
 const hideSubflows = useRouteQueryParam('hide-subflows', BooleanRouteParam, false)
 const flowRunsSort = useRouteQueryParam(
@@ -202,4 +204,8 @@ const deleteFlowRuns = (): void => {
 </script>
   
 <style>
+.flow-run-work-pool,
+.flow-run-work-queue {
+  display: none
+}
 </style>

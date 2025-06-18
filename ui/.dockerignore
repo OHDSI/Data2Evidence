@@ -13,6 +13,7 @@ resources/flow
 resources/jobs
 resources/log-viewer
 resources/mapping
+resources/concept-mapping
 
 **/*-dbg*.js
 **/*-preload*.js

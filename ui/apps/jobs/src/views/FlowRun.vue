@@ -42,9 +42,13 @@
       </template>
     </p-tabs>
   </p-layout-default>
+
+  <p-layout-default v-else>
+    <Loader />
+  </p-layout-default>
 </template>
-  
-  <script lang="ts" setup>
+
+<script lang="ts" setup>
 import {
   PageHeadingFlowRun,
   FlowRunArtifacts,
@@ -68,6 +72,7 @@ import FlowRunGraphs from '@/components/FlowRunGraphs.vue'
 import { routes } from '@/router'
 import { RUN_TYPES } from '@/types/runs'
 import { mapFlowRunResults } from '@/utils/mapFlowRunResults'
+import Loader from '@/components/Loader.vue'
 
 const router = useRouter()
 const flowRunId = useRouteParam('flowRunId')
@@ -137,8 +142,8 @@ watchEffect(() => {
   }
 })
 </script>
-  
-  <style>
+
+<style>
 .flow-run {
   @apply items-start;
 }
@@ -148,16 +153,25 @@ watchEffect(() => {
 }
 
 .flow-run__header-meta {
-  @apply flex
-    gap-2
-    items-center
-    xl:hidden;
+  @apply flex gap-2 items-center xl:hidden;
 }
 
 .flow-run__job-variables,
 .flow-run__parameters {
-  @apply px-4
-    py-3;
+  @apply px-4 py-3;
+}
+
+.log-row {
+  .log-row__content>span {
+    font-size: 1.1em;
+  }
+
+  .log-row__leading>span {
+    font-size: 0.7em;
+  }
+
+  .log-row__trailing {
+    font-size: 0.65em;
+  }
 }
 </style>
-  

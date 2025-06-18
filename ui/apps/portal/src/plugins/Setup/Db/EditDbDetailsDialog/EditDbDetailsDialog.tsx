@@ -223,6 +223,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
                 <Autocomplete
                   multiple
                   freeSolo
+                  autoSelect
                   options={[] as string[]}
                   sx={styles}
                   id="autocomplete-vocab-schemas"
@@ -231,7 +232,9 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
                       <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
                     ))
                   }
-                  renderInput={(params) => <TextField {...params} variant="standard" />}
+                  renderInput={(params) => (
+                    <TextField {...params} variant="standard" helperText="Press enter to confirm the entry" />
+                  )}
                   value={formData.vocabSchemas}
                   onChange={(event, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
                 />

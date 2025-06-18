@@ -4,6 +4,7 @@ import { changeLocale } from "./actions/translation";
 import { setActiveDatasetId, setActiveReleaseId } from "./actions/active-dataset";
 import { clearToken, setIdToken, setIdTokenClaim } from "./actions/token";
 import { clearUser, setUser } from "./actions/user";
+import { setConversationHistory } from "./actions/conversation-history";
 
 export enum ACTION_TYPES {
   SET_FEEDBACK = "SET_FEEDBACK",
@@ -18,6 +19,7 @@ export enum ACTION_TYPES {
   CLEAR_USER = "CLEAR_USER",
   SET_POST_LOGIN_REDIRECT_URI = "SET_POST_LOGIN_REDIRECT_URI",
   CLEAR_POST_LOGIN_REDIRECT_URI = "CLEAR_POST_LOGIN_REDIRECT_URI",
+  SET_CONVERSATION_HISTORY = "SET_CONVERSATION_HISTORY",
 }
 
 type ActionType = keyof typeof ACTION_TYPES;
@@ -36,6 +38,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.CLEAR_USER, clearUser],
   [ACTION_TYPES.SET_POST_LOGIN_REDIRECT_URI, setPostLoginRedirectUri],
   [ACTION_TYPES.CLEAR_POST_LOGIN_REDIRECT_URI, clearPostLoginRedirectUri],
+  [ACTION_TYPES.SET_CONVERSATION_HISTORY, setConversationHistory],
 ]);
 
 export interface DispatchType {
