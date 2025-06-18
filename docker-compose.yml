@@ -90,7 +90,7 @@ x-envs:
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
     TREX__SQL__PORT: 5432
     TREX__SQL__USER: postgres
-    TREX__SQL__PASSWORD: ${TREX_SQL_PASSWORD} # Password for the trex sql interface
+    TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
   tls: &x-tls
