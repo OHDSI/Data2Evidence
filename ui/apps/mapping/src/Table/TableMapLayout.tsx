@@ -11,7 +11,7 @@ import "reactflow/dist/style.css";
 export const TableMapLayout = () => {
   const { setPage, state } = useApp();
   const { nodes, edges, setTableNodes, setTableEdges, addTableConnection } = useTable();
-  const { setActiveSourceTable, setActiveTargetTable } = useField();
+  const { setActiveTableEdgeId } = useField();
   const { sourceTables } = useScannedSchema();
   const { cdmTables } = useCdmSchema();
 
@@ -33,9 +33,7 @@ export const TableMapLayout = () => {
         return;
       }
 
-      setActiveSourceTable(sourceTable);
-      setActiveTargetTable(targetTable);
-
+      setActiveTableEdgeId(edge.id);
       setPage("field");
     },
     [sourceTables, cdmTables]
@@ -49,7 +47,7 @@ export const TableMapLayout = () => {
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={(changes) => setTableNodes(changes)}
-          onEdgesChange={(changes) => setTableEdges(changes)}
+          onEdgesChange={(changes) => setTableEdges({ reset: false, changes })}
           onConnect={(changes) => addTableConnection(changes)}
           zoomOnDoubleClick={false}
           zoomOnScroll={false}
