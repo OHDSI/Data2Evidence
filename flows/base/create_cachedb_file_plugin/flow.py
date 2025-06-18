@@ -52,20 +52,20 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 con, dbdao, schema, tables_to_create_duckdb_fts_index)        
             
     #Connect to Trex Sql Interface
-    con = psycopg2.connect(
-        host='alp-trex',
-        port=5432,
-        user='postgres',
-        password='',
-        dbname="postgres")
-    cur = con.cursor()
+    trex_conn = psycopg2.connect(
+        host=os.environ['TREX__SQL__HOST'],
+        port=os.environ['TREX__SQL__PORT'],
+        user=os.environ['TREX__SQL__USER'],
+        password=os.environ['TREX__SQL__PASSWORD'],
+        dbname=os.environ['TREX__SQL__DBNAME'])
+    cur = trex_conn.cursor()
     for schema in schemas_to_copy:
         logger.info(f"Handling schema {schema}...")
         copy_schema_to_cache(cur, dbdao, schema, False, True)
         create_duckdb_fts_index(
             cur, dbdao, schema, tables_to_create_duckdb_fts_index)
     cur.close()
-    con.close()
+    trex_conn.close()
     logger.info(
         f"""Duckdb database file: {duckdb_database_name} successfully created.""")
 
@@ -91,9 +91,22 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     with duckdb.connect(duckdb_file_path) as con:
         con.load_extension(postgres_scan_extension_path)
-        copy_schema_to_duckdb(con, dbdao, schema_name, True)
+        copy_schema_to_cache(con, dbdao, schema_name, True)
     con.close()
-
+    
+    #Connect to Trex Sql Interface
+    trex_conn = psycopg2.connect(
+        host=os.environ['TREX__SQL__HOST'],
+        port=os.environ['TREX__SQL__PORT'],
+        user=os.environ['TREX__SQL__USER'],
+        password=os.environ['TREX__SQL__PASSWORD'],
+        dbname=os.environ['TREX__SQL__DBNAME'])
+    cur = trex_conn.cursor()
+    copy_schema_to_cache(cur, dbdao, schema_name, False, True)
+    cur.close()
+    trex_conn.close()
+    logger.info(
+        f"""Duckdb database file: {duckdb_database_name} successfully created.""")
 
 if __name__ == '__main__':
     database_code = "alpdev_pg"
