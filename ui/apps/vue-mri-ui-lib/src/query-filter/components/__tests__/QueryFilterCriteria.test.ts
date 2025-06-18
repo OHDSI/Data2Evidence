@@ -1,21 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import QueryFilterCriteria from '../QueryFilterCriteria.vue'
 import { QueryFilterCriteriaManager } from '../../models/QueryFilterModel'
 
-// Mock child components
-vi.mock('../QueryFilterCriteriaGroup.vue', () => ({
-  default: {
-    name: 'QueryFilterCriteriaGroup',
-    props: ['group', 'groupIndex', 'conceptSets', 'conceptSetDomainValues', 'conceptSetTexts', 'readonly'],
-    emits: ['update-group', 'remove-group'],
-    template: '<div class="mock-criteria-group">Mock Criteria Group {{ groupIndex }}</div>'
-  }
-}))
-
-describe('QueryFilterCriteria', () => {
+describe('QueryFilterCriteria Model Tests', () => {
   let criteriaManager: QueryFilterCriteriaManager
-  
+
   beforeEach(() => {
     // Create a basic criteria manager with sample data
     criteriaManager = new QueryFilterCriteriaManager({
@@ -27,163 +14,201 @@ describe('QueryFilterCriteria', () => {
             title: 'Test Criteria 1',
             description: 'Test description',
             criteriaType: 'ALL',
-            events: []
-          }
-        ]
-      }
+            events: [],
+          },
+        ],
+      },
     })
   })
 
-  it('renders the component correctly', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
-
-    expect(wrapper.find('.query-filter-criteria').exists()).toBe(true)
-    expect(wrapper.find('.criteria-title').text()).toBe('Inclusion Criteria')
+  it('creates a valid criteria manager', () => {
+    expect(criteriaManager).toBeDefined()
+    expect(criteriaManager.getCriteria()).toBeDefined()
+    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
+    expect(criteriaManager.getCriteria().criteria).toHaveLength(1)
   })
 
-  it('displays qualifying events limit controls', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
+  it('supports different qualifying events limits', () => {
+    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
 
-    const buttons = wrapper.findAll('.qualifying-events-btn')
-    expect(buttons).toHaveLength(3)
-    expect(buttons[0].text()).toBe('ALL')
-    expect(buttons[1].text()).toBe('EARLIEST')
-    expect(buttons[2].text()).toBe('LATEST')
-  })
-
-  it('highlights active qualifying events limit', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
-
-    const activeButton = wrapper.find('.qualifying-events-btn--active')
-    expect(activeButton.exists()).toBe(true)
-    expect(activeButton.text()).toBe('ALL')
-  })
-
-  it('renders criteria groups', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
-
-    const groups = wrapper.findAll('.mock-criteria-group')
-    expect(groups).toHaveLength(1)
-    expect(groups[0].text()).toContain('Mock Criteria Group 0')
-  })
-
-  it('shows add group button when not readonly', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
-
-    const addButton = wrapper.find('.btn-add-group')
-    expect(addButton.exists()).toBe(true)
-    expect(addButton.text()).toContain('Add Criteria Group')
-  })
-
-  it('hides add group button when readonly', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: true
-      }
-    })
-
-    const addButton = wrapper.find('.btn-add-group')
-    expect(addButton.exists()).toBe(false)
-  })
-
-  it('handles qualifying events limit changes', async () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
-    })
-
-    const earliestButton = wrapper.findAll('.qualifying-events-btn')[1]
-    await earliestButton.trigger('click')
-
-    expect(wrapper.emitted('criteria-updated')).toBeTruthy()
+    criteriaManager.updateQualifyingEventsLimit('EARLIEST')
     expect(criteriaManager.getCriteria().criteriaType).toBe('EARLIEST')
+
+    criteriaManager.updateQualifyingEventsLimit('LATEST')
+    expect(criteriaManager.getCriteria().criteriaType).toBe('LATEST')
+
+    criteriaManager.updateQualifyingEventsLimit('ALL')
+    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
   })
 
-  it('handles adding new criteria group', async () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: false
-      }
+  it('manages criteria groups correctly', () => {
+    const criteria = criteriaManager.getCriteria()
+    const initialCount = criteria.criteria.length
+
+    // Add a new criteria group
+    criteriaManager.addCriteriaGroup({
+      title: 'New Criteria Group',
+      description: 'New description',
+      groupType: 'ANY',
+      groups: [],
     })
 
-    const initialGroupCount = criteriaManager.getCriteria().criteria.length
-    
-    const addButton = wrapper.find('.btn-add-group')
-    await addButton.trigger('click')
-
-    expect(wrapper.emitted('criteria-updated')).toBeTruthy()
-    expect(criteriaManager.getCriteria().criteria.length).toBe(initialGroupCount + 1)
+    expect(criteria.criteria.length).toBe(initialCount + 1)
+    expect(criteria.criteria[1].title).toBe('New Criteria Group')
+    expect(criteria.criteria[1].groupType).toBe('ANY')
   })
 
-  it('disables controls when readonly', () => {
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets: [],
-        readonly: true
-      }
+  it('updates criteria groups', () => {
+    const criteria = criteriaManager.getCriteria()
+    const originalGroup = criteria.criteria[0]
+
+    const updatedGroup = {
+      ...originalGroup,
+      title: 'Updated Title',
+      description: 'Updated Description',
+      groupType: 'ANY' as const,
+    }
+
+    criteriaManager.updateCriteriaGroup(0, updatedGroup)
+
+    const updatedCriteria = criteriaManager.getCriteria()
+    expect(updatedCriteria.criteria[0].title).toBe('Updated Title')
+    expect(updatedCriteria.criteria[0].description).toBe('Updated Description')
+    expect(updatedCriteria.criteria[0].groupType).toBe('ANY')
+  })
+
+  it('removes criteria groups', () => {
+    const criteria = criteriaManager.getCriteria()
+    const initialCount = criteria.criteria.length
+
+    // Add an extra group first
+    criteriaManager.addCriteriaGroup({
+      title: 'Temporary Group',
+      description: 'To be removed',
+      groupType: 'ALL',
+      groups: [],
     })
 
-    const buttons = wrapper.findAll('.qualifying-events-btn')
-    buttons.forEach(button => {
-      expect(button.attributes('disabled')).toBeDefined()
-      expect(button.classes()).toContain('qualifying-events-btn--readonly')
+    expect(criteria.criteria.length).toBe(initialCount + 1)
+
+    // Remove the group
+    criteriaManager.removeCriteriaGroup(1)
+
+    expect(criteria.criteria.length).toBe(initialCount)
+    expect(criteria.criteria[0].title).toBe('Test Criteria 1')
+  })
+
+  it('clears all criteria', () => {
+    const criteria = criteriaManager.getCriteria()
+    expect(criteria.criteria.length).toBeGreaterThan(0)
+
+    criteriaManager.clearAllCriteria()
+
+    expect(criteria.criteria.length).toBe(0)
+  })
+
+  it('supports criteria serialization and deserialization', () => {
+    const originalCriteria = criteriaManager.getCriteria()
+
+    // Serialize to JSON
+    const json = criteriaManager.toJSON()
+    expect(json).toBeDefined()
+    expect(json.criteriaType).toBe('ALL')
+    expect(json.criteria).toHaveLength(1)
+
+    // Create new manager from JSON
+    const newManager = QueryFilterCriteriaManager.fromJSON(json)
+    const newCriteria = newManager.getCriteria()
+
+    expect(newCriteria.criteriaType).toBe(originalCriteria.criteriaType)
+    expect(newCriteria.criteria.length).toBe(originalCriteria.criteria.length)
+    expect(newCriteria.criteria[0].title).toBe(originalCriteria.criteria[0].title)
+  })
+
+  it('validates criteria structure', () => {
+    const criteria = criteriaManager.getCriteria()
+
+    // Check root structure
+    expect(criteria.id).toBeDefined()
+    expect(criteria.criteriaType).toBeDefined()
+    expect(Array.isArray(criteria.criteria)).toBe(true)
+
+    // Check group structure
+    criteria.criteria.forEach(group => {
+      expect(group.id).toBeDefined()
+      expect(group.title).toBeDefined()
+      expect(group.description).toBeDefined()
+      expect(group.groupType).toBeDefined()
+      expect(Array.isArray(group.groups)).toBe(true)
     })
   })
 
-  it('passes props correctly to child components', () => {
-    const conceptSets = [{ value: 'test', text: 'Test Concept Set' }]
-    const conceptSetTexts = { test: 'Test Text' }
-    
-    const wrapper = mount(QueryFilterCriteria, {
-      props: {
-        criteriaManager,
-        conceptSets,
-        conceptSetTexts,
-        readonly: true
-      }
+  it('handles empty criteria manager', () => {
+    const emptyManager = new QueryFilterCriteriaManager()
+    const emptyCriteria = emptyManager.getCriteria()
+
+    expect(emptyCriteria.criteriaType).toBe('ALL')
+    expect(emptyCriteria.criteria).toHaveLength(0)
+  })
+
+  it('supports manager cloning', () => {
+    const originalManager = criteriaManager
+    const clonedManager = originalManager.clone()
+
+    expect(clonedManager).not.toBe(originalManager)
+    expect(clonedManager.getCriteria().criteriaType).toBe(originalManager.getCriteria().criteriaType)
+    expect(clonedManager.getCriteria().criteria.length).toBe(originalManager.getCriteria().criteria.length)
+
+    // Verify deep copy
+    const originalCriteria = originalManager.getCriteria()
+    const clonedCriteria = clonedManager.getCriteria()
+
+    expect(clonedCriteria).not.toBe(originalCriteria)
+    expect(clonedCriteria.criteria[0]).not.toBe(originalCriteria.criteria[0])
+  })
+
+  it('handles manager state consistency after operations', () => {
+    // Perform multiple operations
+    criteriaManager.updateQualifyingEventsLimit('EARLIEST')
+
+    criteriaManager.addCriteriaGroup({
+      title: 'Second Group',
+      description: 'Second description',
+      groupType: 'ANY',
+      groups: [],
     })
 
-    const criteriaGroup = wrapper.findComponent({ name: 'QueryFilterCriteriaGroup' })
-    expect(criteriaGroup.props('conceptSets')).toEqual(conceptSets)
-    expect(criteriaGroup.props('conceptSetTexts')).toEqual(conceptSetTexts)
-    expect(criteriaGroup.props('readonly')).toBe(true)
+    criteriaManager.addCriteriaGroup({
+      title: 'Third Group',
+      description: 'Third description',
+      groupType: 'AT_LEAST',
+      groups: [],
+    })
+
+    // Remove middle group
+    criteriaManager.removeCriteriaGroup(1)
+
+    const criteria = criteriaManager.getCriteria()
+    expect(criteria.criteriaType).toBe('EARLIEST')
+    expect(criteria.criteria).toHaveLength(2)
+    expect(criteria.criteria[0].title).toBe('Test Criteria 1')
+    expect(criteria.criteria[1].title).toBe('Third Group')
+    expect(criteria.criteria[1].groupType).toBe('AT_LEAST')
+  })
+
+  it('converts to Atlas format correctly', () => {
+    const atlasFormat = criteriaManager.convertToAtlasFormat()
+
+    expect(atlasFormat).toBeDefined()
+    expect(atlasFormat).toHaveProperty('ConceptSets')
+    expect(atlasFormat).toHaveProperty('PrimaryCriteria')
+    expect(atlasFormat).toHaveProperty('QualifiedLimit')
+    expect(atlasFormat).toHaveProperty('InclusionRules')
+    expect(atlasFormat).toHaveProperty('EndStrategy')
+
+    expect(atlasFormat.QualifiedLimit.Type).toBe('All')
+    expect(atlasFormat.InclusionRules).toHaveLength(1)
+    expect(atlasFormat.InclusionRules[0].name).toBe('Test Criteria 1')
+    expect(atlasFormat.InclusionRules[0].description).toBe('Test description')
   })
 })

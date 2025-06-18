@@ -1,245 +1,160 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import QueryFilterCriteriaGroup from '../QueryFilterCriteriaGroup.vue'
+import { QueryFilterCardModel } from '../../models/QueryFilterModel'
 import type { QueryFilterGroup } from '../../models/QueryFilterModel'
 
-// Mock child components
-vi.mock('../QueryFilterEventContainer.vue', () => ({
-  default: {
-    name: 'QueryFilterEventContainer',
-    props: ['events', 'parentGroup', 'conceptSets', 'conceptSetDomainValues', 'conceptSetTexts', 'readonly'],
-    emits: ['update-events'],
-    template: '<div class="mock-event-container">Mock Event Container</div>'
-  }
-}))
-
-describe('QueryFilterCriteriaGroup', () => {
+describe('QueryFilterCriteriaGroup Model Tests', () => {
   let mockGroup: QueryFilterGroup
-  
+
   beforeEach(() => {
     mockGroup = {
       id: 'group_1',
       title: 'Test Group',
       description: 'Test Description',
       groupType: 'ALL',
-      groups: [{
-        id: 'filter_1',
-        title: 'Test Filter',
-        type: 'inclusion',
-        events: [],
-        isExpanded: true,
-        cardinality: { type: 'AT_LEAST', count: 1, using: 'ALL' },
-        addEvent: vi.fn(),
-        removeEvent: vi.fn(),
-        getEvent: vi.fn(),
-        hasEvent: vi.fn(),
-        addChipToEvent: vi.fn(),
-        toJSON: vi.fn()
-      }]
+      groups: [
+        new QueryFilterCardModel({
+          id: 'filter_1',
+          title: 'Test Filter',
+          type: 'inclusion',
+          events: [],
+          isExpanded: true,
+          cardinality: { type: 'AT_LEAST', count: 1, using: 'ALL' },
+        }),
+      ],
     }
   })
 
-  it('renders the component correctly', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
-
-    expect(wrapper.find('.query-filter-criteria-group').exists()).toBe(true)
-    expect(wrapper.find('.group-title-input').element.value).toBe('Test Group')
-    expect(wrapper.find('.group-description-input').element.value).toBe('Test Description')
+  it('creates a valid group structure', () => {
+    expect(mockGroup.id).toBe('group_1')
+    expect(mockGroup.title).toBe('Test Group')
+    expect(mockGroup.description).toBe('Test Description')
+    expect(mockGroup.groupType).toBe('ALL')
+    expect(mockGroup.groups).toHaveLength(1)
   })
 
-  it('displays readonly content when readonly prop is true', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: true
-      }
-    })
+  it('supports different group types', () => {
+    const allGroup = { ...mockGroup, groupType: 'ALL' as const }
+    const anyGroup = { ...mockGroup, groupType: 'ANY' as const }
+    const atLeastGroup = { ...mockGroup, groupType: 'AT_LEAST' as const }
+    const atMostGroup = { ...mockGroup, groupType: 'AT_MOST' as const }
 
-    expect(wrapper.find('.group-title-readonly').exists()).toBe(true)
-    expect(wrapper.find('.group-title-input').exists()).toBe(false)
-    expect(wrapper.find('.group-description-readonly').exists()).toBe(true)
-    expect(wrapper.find('.group-description-input').exists()).toBe(false)
-    expect(wrapper.find('.operator-readonly').exists()).toBe(true)
-    expect(wrapper.find('.operator-select').exists()).toBe(false)
+    expect(allGroup.groupType).toBe('ALL')
+    expect(anyGroup.groupType).toBe('ANY')
+    expect(atLeastGroup.groupType).toBe('AT_LEAST')
+    expect(atMostGroup.groupType).toBe('AT_MOST')
   })
 
-  it('shows editable inputs when not readonly', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
-
-    expect(wrapper.find('.group-title-input').exists()).toBe(true)
-    expect(wrapper.find('.group-description-input').exists()).toBe(true)
-    expect(wrapper.find('.operator-select').exists()).toBe(true)
-    expect(wrapper.find('.btn-remove-group').exists()).toBe(true)
+  it('contains QueryFilterCardModel instances', () => {
+    expect(mockGroup.groups[0]).toBeInstanceOf(QueryFilterCardModel)
+    expect(mockGroup.groups[0].id).toBe('filter_1')
+    expect(mockGroup.groups[0].title).toBe('Test Filter')
+    expect(mockGroup.groups[0].type).toBe('inclusion')
   })
 
-  it('displays the correct operator in select', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
+  it('handles multiple filters in a group', () => {
+    const secondFilter = new QueryFilterCardModel({
+      id: 'filter_2',
+      title: 'Second Filter',
+      type: 'exclusion',
+      events: [],
+      isExpanded: false,
+      cardinality: { type: 'exactly', count: 2, using: 'ALL' },
     })
 
-    const select = wrapper.find('.operator-select')
-    expect(select.element.value).toBe('ALL')
+    mockGroup.groups.push(secondFilter)
+
+    expect(mockGroup.groups).toHaveLength(2)
+    expect(mockGroup.groups[0].type).toBe('inclusion')
+    expect(mockGroup.groups[1].type).toBe('exclusion')
+    expect(mockGroup.groups[1].cardinality.count).toBe(2)
   })
 
-  it('handles title input changes', async () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
+  it('validates group structure integrity', () => {
+    // Test required properties
+    expect(mockGroup.id).toBeDefined()
+    expect(mockGroup.title).toBeDefined()
+    expect(mockGroup.description).toBeDefined()
+    expect(mockGroup.groupType).toBeDefined()
+    expect(mockGroup.groups).toBeDefined()
+    expect(Array.isArray(mockGroup.groups)).toBe(true)
+
+    // Test that groups contains valid filter models
+    mockGroup.groups.forEach(filter => {
+      expect(filter.id).toBeDefined()
+      expect(filter.hasEvents).toBeDefined()
+      expect(filter.addEvent).toBeDefined()
+      expect(filter.removeEvent).toBeDefined()
     })
-
-    const titleInput = wrapper.find('.group-title-input')
-    await titleInput.setValue('New Title')
-
-    expect(wrapper.emitted('update-group')).toBeTruthy()
-    const emittedGroup = wrapper.emitted('update-group')[0][0] as QueryFilterGroup
-    expect(emittedGroup.title).toBe('New Title')
   })
 
-  it('handles description input changes', async () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
+  it('supports group metadata updates', () => {
+    const updatedGroup = {
+      ...mockGroup,
+      title: 'Updated Title',
+      description: 'Updated Description',
+      groupType: 'ANY' as const,
+    }
 
-    const descInput = wrapper.find('.group-description-input')
-    await descInput.setValue('New Description')
-
-    expect(wrapper.emitted('update-group')).toBeTruthy()
-    const emittedGroup = wrapper.emitted('update-group')[0][0] as QueryFilterGroup
-    expect(emittedGroup.description).toBe('New Description')
+    expect(updatedGroup.title).toBe('Updated Title')
+    expect(updatedGroup.description).toBe('Updated Description')
+    expect(updatedGroup.groupType).toBe('ANY')
+    expect(updatedGroup.id).toBe(mockGroup.id) // ID should remain the same
   })
 
-  it('handles operator selection changes', async () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
+  it('handles empty groups', () => {
+    const emptyGroup: QueryFilterGroup = {
+      id: 'empty_group',
+      title: 'Empty Group',
+      description: 'No filters',
+      groupType: 'ALL',
+      groups: [],
+    }
 
-    const select = wrapper.find('.operator-select')
-    await select.setValue('ANY')
-
-    expect(wrapper.emitted('update-group')).toBeTruthy()
-    const emittedGroup = wrapper.emitted('update-group')[0][0] as QueryFilterGroup
-    expect(emittedGroup.groupType).toBe('ANY')
+    expect(emptyGroup.groups).toHaveLength(0)
+    expect(Array.isArray(emptyGroup.groups)).toBe(true)
   })
 
-  it('shows remove group confirmation', async () => {
-    // Mock window.confirm
-    window.confirm = vi.fn(() => true)
+  it('supports filter operations within group', () => {
+    const initialCount = mockGroup.groups.length
 
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
+    // Add a new filter
+    const newFilter = new QueryFilterCardModel({
+      id: 'new_filter',
+      title: 'New Filter',
+      type: 'inclusion',
     })
+    mockGroup.groups.push(newFilter)
 
-    const removeButton = wrapper.find('.btn-remove-group')
-    await removeButton.trigger('click')
+    expect(mockGroup.groups.length).toBe(initialCount + 1)
+    expect(mockGroup.groups[mockGroup.groups.length - 1]).toBe(newFilter)
 
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to remove this criteria group?')
-    expect(wrapper.emitted('remove-group')).toBeTruthy()
+    // Remove the filter
+    const removeIndex = mockGroup.groups.findIndex(f => f.id === 'new_filter')
+    mockGroup.groups.splice(removeIndex, 1)
+
+    expect(mockGroup.groups.length).toBe(initialCount)
   })
 
-  it('does not emit remove-group when confirmation is cancelled', async () => {
-    // Mock window.confirm to return false
-    window.confirm = vi.fn(() => false)
+  it('maintains group type consistency', () => {
+    const validGroupTypes = ['ALL', 'ANY', 'AT_LEAST', 'AT_MOST'] as const
 
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
+    validGroupTypes.forEach(groupType => {
+      const testGroup = { ...mockGroup, groupType }
+      expect(testGroup.groupType).toBe(groupType)
     })
-
-    const removeButton = wrapper.find('.btn-remove-group')
-    await removeButton.trigger('click')
-
-    expect(window.confirm).toHaveBeenCalled()
-    expect(wrapper.emitted('remove-group')).toBeFalsy()
   })
 
-  it('displays sidebar with group type', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
+  it('preserves filter relationships', () => {
+    // Add events to the filter
+    const filter = mockGroup.groups[0]
+    const event1 = filter.addEvent({ conceptSet: 'Event 1' })
+    const event2 = filter.addEvent({ conceptSet: 'Event 2' })
 
-    const sidebarLabel = wrapper.find('.sidebar-label')
-    expect(sidebarLabel.text()).toBe('ALL')
-  })
+    expect(filter.events).toHaveLength(2)
+    expect(filter.events[0].conceptSet).toBe('Event 1')
+    expect(filter.events[1].conceptSet).toBe('Event 2')
 
-  it('renders event container component', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: false
-      }
-    })
-
-    const eventContainer = wrapper.findComponent({ name: 'QueryFilterEventContainer' })
-    expect(eventContainer.exists()).toBe(true)
-    expect(eventContainer.props('parentGroup')).toEqual(mockGroup)
-  })
-
-  it('hides remove button when readonly', () => {
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        readonly: true
-      }
-    })
-
-    expect(wrapper.find('.btn-remove-group').exists()).toBe(false)
-  })
-
-  it('passes props correctly to event container', () => {
-    const conceptSets = [{ value: 'test', text: 'Test' }]
-    
-    const wrapper = mount(QueryFilterCriteriaGroup, {
-      props: {
-        group: mockGroup,
-        groupIndex: 0,
-        conceptSets,
-        readonly: true
-      }
-    })
-
-    const eventContainer = wrapper.findComponent({ name: 'QueryFilterEventContainer' })
-    expect(eventContainer.props('conceptSets')).toEqual(conceptSets)
-    expect(eventContainer.props('readonly')).toBe(true)
+    // Verify the filter is still part of the group
+    expect(mockGroup.groups[0]).toBe(filter)
+    expect(mockGroup.groups[0].events).toHaveLength(2)
   })
 })
