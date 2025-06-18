@@ -194,20 +194,9 @@ const initRoutes = async (app: express.Application) => {
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != DB.HANA
                 ) {
-                    try {
-                        const dbm = Trex.databaseManager();
-                        const conn = dbm.getConnection(
-                            credentials.code,
-                            credentials.schema,
-                            credentials.vocabSchema,
-                            { duckdb: translateHanaToDuckdb }
-                        );
-
-                        req.dbConnections = { analyticsConnection: conn };
-                    } catch (error) {
-                        console.log("Error getting trex connection, ", error);
-                        throw error;
-                    }
+                    req.dbConnections = getTrexDbConnection({
+                        analyticsCredentials: credentials,
+                    });
                 }
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
                 else if (
@@ -629,6 +618,49 @@ const initSwaggerRoutes = async (app: express.Application) => {
 
 let initSettingsFromEnvVars = () => {
     EnvVarUtils.loadDevSettings();
+};
+
+const getTrexDbConnection = ({
+    analyticsCredentials,
+}): { analyticsConnection: Connection.ConnectionInterface } => {
+    try {
+        const dbm = Trex.databaseManager();
+        const trex_publication = dbm.getFirstPublication(
+            analyticsCredentials.code
+        );
+        const trex_pg_direct_connection_alias = `${trex_publication}_trexpg`;
+
+        const parseSql = (
+            temp: string,
+            schemaNames: string,
+            vocabSchemaNames: string,
+            parameters: any
+        ): string => {
+            // Specifically for trex db connection, direct pg connection alias is different from cachedb.
+            // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
+            temp = temp.replace(
+                /\$\$SCHEMA_DIRECT_CONN\$\$./g,
+                `${trex_pg_direct_connection_alias}.$$$$SCHEMA$$$$.`
+            );
+            return translateHanaToDuckdb(
+                temp,
+                schemaNames,
+                vocabSchemaNames,
+                parameters
+            );
+        };
+        const conn = dbm.getConnection(
+            analyticsCredentials.code,
+            analyticsCredentials.schema,
+            analyticsCredentials.vocabSchema,
+            { duckdb: parseSql }
+        );
+
+        return { analyticsConnection: conn };
+    } catch (error) {
+        console.log("Error getting trex connection, ", error);
+        throw error;
+    }
 };
 
 const getDBConnections = async ({
