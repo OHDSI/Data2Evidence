@@ -7,7 +7,7 @@ import { api } from "../../../axios/api";
 import { getFallbackLocale, replaceParams } from "../helpers";
 import env from "../../../env";
 
-type LanguageMappings = {
+export type LanguageMappings = {
   [key in keyof typeof i18nKeys]: string;
 };
 
