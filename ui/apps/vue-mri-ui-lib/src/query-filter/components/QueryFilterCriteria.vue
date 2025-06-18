@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -45,11 +45,11 @@ const addNewGroup = () => {
   const newGroup = {
     id: `criteria_${Date.now()}`,
     title: `Criteria ${criteriaData.value.criteria.length + 1}`,
-    description: '',
-    criteriaType: 'ALL',
-    events: []
+    description: `Description for Criteria ${criteriaData.value.criteria.length + 1}`,
+    groupType: 'ALL' as 'ALL',
+    groups: [],
   }
-  
+
   props.criteriaManager.addCriteriaGroup(newGroup)
   emit('criteria-updated', props.criteriaManager)
 }
@@ -72,15 +72,15 @@ const handleGroupRemove = (groupIndex: number) => {
     <!-- Qualifying Events Limit Controls -->
     <div class="criteria-header">
       <h3 class="criteria-title">Inclusion Criteria</h3>
-      
+
       <div class="qualifying-events-controls">
-        <button 
+        <button
           v-for="limit in ['ALL', 'EARLIEST', 'LATEST']"
           :key="limit"
           class="qualifying-events-btn"
-          :class="{ 
+          :class="{
             'qualifying-events-btn--active': criteriaData.criteriaType === limit,
-            'qualifying-events-btn--readonly': readonly
+            'qualifying-events-btn--readonly': readonly,
           }"
           :disabled="readonly"
           @click="updateQualifyingLimit(limit as 'ALL' | 'EARLIEST' | 'LATEST')"
@@ -89,7 +89,7 @@ const handleGroupRemove = (groupIndex: number) => {
         </button>
       </div>
     </div>
-    
+
     <!-- Criteria Groups -->
     <div class="criteria-groups">
       <QueryFilterCriteriaGroup
@@ -105,7 +105,7 @@ const handleGroupRemove = (groupIndex: number) => {
         @remove-group="handleGroupRemove(index)"
       />
     </div>
-    
+
     <!-- Add Group Button -->
     <div v-if="!readonly" class="add-group-container">
       <button class="btn-add-group" @click="addNewGroup">

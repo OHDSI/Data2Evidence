@@ -25,7 +25,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
 import filtersFooter from './FiltersFooter.vue'
-import QueryFilter from '../query-filter/components/QueryFilter.vue'
+import { QueryFilter } from '../query-filter'
 
 interface AddFilterCardPayload {
   configPath: string

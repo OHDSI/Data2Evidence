@@ -148,16 +148,16 @@
 
     <cohortListDialog
       :openListDialog="showCohortListDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showCohortListDialog = false"
     >
     </cohortListDialog>
 
     <addCohort
       :openAddDialog="showAddCohortDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showAddCohortDialog = false"
       :cohortDefinitionType="cohortDefinitionType"
       :atlasCohortDefinitionId="atlasCohortDefinitionId"
@@ -202,7 +202,6 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-import QueryFilter from '../query-filter/components/QueryFilter.vue'
 
 export default {
   compatConfig: {
@@ -607,7 +606,6 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
-    QueryFilter,
   },
 }
 </script>

@@ -8,12 +8,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import { QueryFilterCriteriaManager, QueryFilterCardModel, QueryFilterEvent, QueryFilterChip } from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
-import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
   ConceptSetItem,
@@ -40,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // Use the new hierarchical criteria manager instead of the old filter manager
-const criteriaManager = reactive(new QueryFilterCriteriaManager())
+const criteriaManager = new QueryFilterCriteriaManager()
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
@@ -202,15 +200,7 @@ const handleCriteriaUpdated = (updatedCriteriaManager: QueryFilterCriteriaManage
   console.log('Criteria updated:', updatedCriteriaManager.toJSON())
 }
 
-const handleCriteriaSelected = (option: CriteriaOption) => {
-  // Add a new criteria group when a criteria is selected
-  criteriaManager.addCriteriaGroup({
-    title: option.title.replace('Add ', ''),
-    description: '',
-    criteriaType: 'ALL',
-    groups: []
-  })
-}
+// Note: handleCriteriaSelected removed - not needed in modern component
 
 const applyFilters = () => {
   console.log('Applying filters:', getAllFilters())
@@ -241,7 +231,7 @@ const convertToAtlasFormat = () => {
 const convertAtlasToFiltersLocal = (atlasJson: any) => {
   // For now, use the existing conversion and then transform to hierarchical format
   const legacyFilters = convertAtlasToFilters(atlasJson, allConceptSets.value)
-  
+
   // Transform legacy filters to hierarchical criteria
   const hierarchicalData = {
     entryEvents: {},
@@ -260,16 +250,16 @@ const convertAtlasToFiltersLocal = (atlasJson: any) => {
           cardinality: event.cardinality || {
             type: 'AT_LEAST',
             count: 1,
-            using: 'ALL'
+            using: 'ALL',
           },
           conceptSetId: event.conceptSetId,
           selectedConceptSet: event.selectedConceptSet,
-          conceptSet: event.conceptSet
-        }))
-      }))
-    }
+          conceptSet: event.conceptSet,
+        })),
+      })),
+    },
   }
-  
+
   return new QueryFilterCriteriaManager(hierarchicalData)
 }
 
@@ -283,16 +273,16 @@ const loadAtlasCohortDefinition = async (atlasJson: any) => {
 
     // Convert Atlas JSON to hierarchical criteria
     const newCriteriaManager = convertAtlasToFiltersLocal(atlasJson)
-    
+
     // Copy the criteria to our reactive manager
     const criteriaData = newCriteriaManager.getCriteria()
     criteriaManager.setCriteria(criteriaData)
-    
+
     console.log('Successfully loaded Atlas cohort definition into QueryFilterModern')
-    
+
     // Force reactivity update
     await nextTick()
-    
+
     // Load concept set details for events that have selectedConceptSet
     setTimeout(async () => {
       const criteria = criteriaManager.getCriteria()
@@ -312,7 +302,6 @@ const loadAtlasCohortDefinition = async (atlasJson: any) => {
         }
       }
     }, 200)
-
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
     throw error
@@ -457,16 +446,6 @@ defineExpose({
 
 <template>
   <div class="query-filter-modern">
-    <!-- Header with debug info -->
-    <div v-if="props.debug" class="query-filter-debug-header">
-      <h2>Query Filter (New Hierarchical Architecture)</h2>
-      <div class="debug-info">
-        <span class="debug-badge">Vue 3 + TypeScript</span>
-        <span class="debug-badge">Hierarchical Components</span>
-        <span class="debug-badge">Recursive Structures</span>
-      </div>
-    </div>
-
     <!-- Main Query Filter Content -->
     <div class="query-filter-container">
       <!-- New Hierarchical Component Structure -->
@@ -484,7 +463,9 @@ defineExpose({
       <!-- Legacy support section for backward compatibility -->
       <div v-else class="query-filter-legacy-section">
         <div class="legacy-notice">
-          <p>Using legacy flat structure. Set <code>useNewHierarchy: true</code> to use the new hierarchical components.</p>
+          <p>
+            Using legacy flat structure. Set <code>useNewHierarchy: true</code> to use the new hierarchical components.
+          </p>
         </div>
       </div>
     </div>
@@ -519,26 +500,16 @@ defineExpose({
             font-size: 12px;
           "
         >
-          <strong>Debug:</strong> Model ID: {{ tagInputModel.id }}, Type: {{ tagInputModel.props.type }}, Value
-          length: {{ tagInputModel.props.value.length }}
+          <strong>Debug:</strong> Model ID: {{ tagInputModel.id }}, Type: {{ tagInputModel.props.type }}, Value length:
+          {{ tagInputModel.props.value.length }}
         </div>
       </div>
     </div>
 
     <!-- Concept Set Details Debug Section -->
     <div v-if="props.debug && selectedConceptSetValues.length > 0" class="concept-set-debug">
-      <div
-        style="
-          margin-top: 16px;
-          padding: 12px;
-          background: #f8f9fa;
-          border-radius: 6px;
-          border: 1px solid #e0e0e0;
-        "
-      >
-        <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333">
-          Selected Concept Set Values:
-        </h4>
+      <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e0e0e0">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333">Selected Concept Set Values:</h4>
         <div style="display: flex; flex-wrap: wrap; gap: 8px">
           <div
             v-for="item in selectedConceptSetValues"

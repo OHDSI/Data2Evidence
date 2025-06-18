@@ -11,7 +11,7 @@ export default {
 import { ref, computed, reactive, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCard from './QueryFilterCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip, QueryFilterManager } from '../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterEvent, QueryFilterManager } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -193,7 +193,7 @@ onMounted(() => {
   loadConceptSets()
 })
 
-const inclusionFilters = computed(() => filters.value.filter(f => f.type === 'inclusion'))
+const inclusionFilters = computed(() => filters.value.filter(f => f.type === 'inclusion') as QueryFilterCardModel[])
 
 // This function is a placeholder for filter updates, as the reactive refs handle updates automatically. No value is needed here.
 const updateFilter = (_filter: QueryFilterCardModel) => {
@@ -260,22 +260,7 @@ const handleRemoveEvent = (filterId: string, eventId: string) => {
   }
 }
 
-const handleAddChip = (filterId: string, eventId: string) => {
-  console.log('Add chip to event:', filterId, eventId)
-  const filter = filters.value.find(f => f.id === filterId)
-  if (filter) {
-    const sampleChip: QueryFilterChip = {
-      id: `chip_${Date.now()}`,
-      label: 'New Event',
-      value: 'NEW001',
-    }
-    filter.addChipToEvent(eventId, sampleChip)
-  }
-}
-
-const handleRemoveChip = (filterId: string, eventId: string, chipId: string) => {
-  console.log('Chip removed:', filterId, eventId, chipId)
-}
+// Note: Chip functionality removed - not used in current implementation
 
 const handleShowMenu = (filterId: string, eventId: string) => {
   console.log('Show menu for event:', filterId, eventId)
@@ -792,7 +777,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
             <div class="add-section-container">
               <criteria-selector-dropdown
                 section-id="initialEvents"
-                button-text="Add event"
+                button-text="Add criteria"
                 @criteria-selected="handleCriteriaSelected"
               />
             </div>
@@ -811,8 +796,6 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
               @edit-event="handleEditEvent"
               @duplicate-event="handleDuplicateEvent"
               @remove-event="handleRemoveEvent"
-              @add-chip="handleAddChip"
-              @remove-chip="handleRemoveChip"
               @show-menu="handleShowMenu"
               @remove-filter="handleRemoveFilter"
               @add-any-event="handleAddEvent(filter.id)"
