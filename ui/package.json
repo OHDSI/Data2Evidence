@@ -138,6 +138,7 @@
             "enabled": true,
             "featureFlag": "conceptSets",
             "name": "Concepts",
+            "nameI18nKey": "UI_PLUGIN_CONCEPTS",
             "pluginPath": "plugins/Researcher/ConceptSets/module",
             "requiredRoles": [
               "RESEARCHER"
@@ -148,6 +149,7 @@
             "enabled": true,
             "featureFlag": "cohort",
             "name": "Cohorts",
+            "nameI18nKey": "UI_PLUGIN_COHORTS",
             "pluginPath": "plugins/mri/PatientAnalytics/module",
             "requiredRoles": [
               "RESEARCHER"
@@ -168,6 +170,7 @@
             "enabled": true,
             "featureFlag": "starboard",
             "name": "Notebooks",
+            "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
             "pluginPath": "plugins/Starboard/module",
             "requiredRoles": [
               "RESEARCHER"
@@ -178,6 +181,7 @@
           {
             "enabled": true,
             "name": "Analysis",
+            "nameI18nKey": "UI_PLUGIN_ANALYSIS",
             "route": "analysis_parent",
             "requiredRoles": [
               "RESEARCHER"
@@ -185,6 +189,7 @@
             "children": [
               {
                 "name": "Kaplan-Meier",
+                "nameI18nKey": "UI_PLUGIN_KAPLAN_MEIER",
                 "route": "kaplan-meier",
                 "pluginPath": "plugins/Researcher/KaplanMeier/module",
                 "featureFlag": "kaplanMeier",
@@ -209,8 +214,10 @@
         "setup": [
           {
             "description": "Database connection and credentials",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_DB_DESCRIPTION",
             "enabled": true,
             "name": "Databases",
+            "nameI18nKey": "UI_PLUGIN_DATABASES",
             "notes": "",
             "pluginPath": "plugins/Setup/Db/module",
             "route": "db"
@@ -225,38 +232,48 @@
           },
           {
             "description": "Allow user to configure the git information",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_GIT_DESCRIPTION",
             "enabled": true,
-            "name": "Git Configuration",
+            "name": "Git configuration",
+            "nameI18nKey": "UI_PLUGIN_GIT_CONFIG",
             "pluginPath": "plugins/Setup/GitConfig/module",
             "route": "git-config"
           },
           {
             "description": "Enable / disable feature",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_FEATURE_FLAGS_DESCRIPTION",
             "enabled": true,
             "name": "Feature flags",
+            "nameI18nKey": "UI_PLUGIN_FEATURE_FLAGS",
             "pluginPath": "plugins/Setup/Feature/module",
             "route": "feature"
           },
           {
             "description": "Configure dataset metadata and tags",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_METADATA_DESCRIPTION",
             "enabled": true,
             "name": "Metadata",
+            "nameI18nKey": "UI_PLUGIN_METADATA",
             "notes": "",
             "pluginPath": "plugins/Setup/Metadata/module",
             "route": "metadata"
           },
           {
             "description": "Configure patient analytics",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION",
             "enabled": true,
-            "name": "Patient Analytics Config",
+            "name": "Patient Analytics config",
+            "nameI18nKey": "UI_PLUGIN_PATIENT_ANALYTICS_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",
             "route": "pa-config"
           },
           {
             "description": "Configure CDM",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_CDM_DESCRIPTION",
             "enabled": true,
             "name": "CDM Config",
+            "nameI18nKey": "UI_PLUGIN_CDM_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/CDM/module",
             "route": "cdm-config"
@@ -271,32 +288,40 @@
           },
           {
             "description": "Configure overview description text",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_OVERVIEW_DESCRIPTION",
             "enabled": true,
             "name": "Overview description",
+            "nameI18nKey": "UI_PLUGIN_OVERVIEW_DESCRIPTION",
             "notes": "",
             "pluginPath": "plugins/Setup/OverviewDescription/module",
             "route": "overview-description"
           },
           {
             "description": "Configure hybrid search for concepts",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_HYBRID_SEARCH_DESCRIPTION",
             "enabled": true,
-            "name": "Hybrid Search",
+            "name": "Hybrid search",
+            "nameI18nKey": "UI_PLUGIN_HYBRID_SEARCH",
             "notes": "",
             "pluginPath": "plugins/Setup/HybridSearch/module",
             "route": "hybrid-search"
           },
           {
             "description": "Manage plugins",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION",
             "enabled": true,
             "name": "Plugins",
+            "nameI18nKey": "UI_PLUGIN_PLUGINS",
             "notes": "",
             "pluginPath": "plugins/Setup/TrexPlugins/module",
             "route": "plugins"
           },
           {
             "description": "Setting up demo dataset",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_DEMO_DESCRIPTION",
             "enabled": true,
             "name": "Demo setup",
+            "nameI18nKey": "UI_PLUGIN_DEMO_SETUP",
             "notes": "",
             "pluginPath": "plugins/Setup/DemoSetup/module",
             "route": "demo-setup"
@@ -305,24 +330,35 @@
         "systemadmin": [
           {
             "name": "Users",
+            "nameI18nKey": "UI_PLUGIN_USERS",
             "enabled": true,
             "pluginPath": "plugins/SystemAdmin/UserOverview/module",
             "route": "user-overview"
           },
           {
             "name": "Datasets",
+            "nameI18nKey": "UI_PLUGIN_DATASETS",
             "enabled": true,
             "pluginPath": "plugins/SystemAdmin/StudyOverview/module",
             "route": "dataset-overview"
           },
           {
+            "name": "Studies",
+            "nameI18nKey": "UI_PLUGIN_STUDIES",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/StudyPage/module",
+            "route": "study-page"
+          },
+          {
             "name": "Jobs",
+            "nameI18nKey": "UI_PLUGIN_JOBS",
             "enabled": true,
             "pluginPath": "plugins/SystemAdmin/Jobs/module",
             "route": "jobs"
           },
           {
             "name": "ETL",
+            "nameI18nKey": "UI_PLUGIN_ETL",
             "enabled": true,
             "route": "etl",
             "data": {
@@ -333,6 +369,7 @@
           },
           {
             "name": "Setup",
+            "nameI18nKey": "UI_PLUGIN_SETUP",
             "enabled": true,
             "pluginPath": "plugins/Setup/module",
             "route": "setup"

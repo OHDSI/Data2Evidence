@@ -57,12 +57,17 @@ export const SetupOverview: FC = () => {
             </div>
             <div className="setup-overview__list">
               {enabledPlugins.map((plugin: IPluginItem) => {
+                const name = (plugin.nameI18nKey ? getText(plugin.nameI18nKey) : null) || plugin.name;
+                const description =
+                  (plugin.descriptionI18nKey ? getText(plugin.descriptionI18nKey) : null) || plugin.description;
+                const notes = (plugin.notesI18nKey ? getText(plugin.notesI18nKey) : null) || plugin.notes;
+
                 return (
                   <SetupMenuItem
                     key={plugin.route}
-                    name={plugin.name}
-                    description={plugin.description}
-                    notes={plugin.notes}
+                    name={name}
+                    description={description}
+                    notes={notes}
                     onClick={() => handleOpenPlugin(plugin)}
                   />
                 );
