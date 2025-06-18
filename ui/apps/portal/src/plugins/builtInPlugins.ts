@@ -15,6 +15,7 @@ const moduleNames = [
   "SystemAdmin/Athena",
   "SystemAdmin/FlowOverview",
   "SystemAdmin/ConceptMapping",
+  "SystemAdmin/StudyPage",
   "Starboard",
   "Cohort",
   "Admin/Permissions",
@@ -28,6 +29,7 @@ const moduleNames = [
   "Setup/TrexPlugins",
   "Setup/DemoSetup",
   "Setup/HybridSearch",
+  "Setup/GitConfig",
 ];
 
 const modulePaths = moduleNames.reduce(

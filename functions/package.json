@@ -34,7 +34,7 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/import.json",
           "env": "alp-dataflow-gen-init",
-          "waitfor": "http://dataflow-gen-1:41120/api/health"
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
           "function": "/files-manager/src/init",
@@ -268,6 +268,11 @@
           "function": "/d2e-webapi",
           "env": "d2e-webapi",
           "imports": "/d2e-webapi/deno.json"
+        },
+        {
+          "source": "/mlflow",
+          "service": "mlflow",
+          "rmsrc": true
         }
       ],
       "roles": {
@@ -363,6 +368,11 @@
           "portal.userArtifact.delete",
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
+          "portal.gitStudies.read",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -433,7 +443,8 @@
           "whiteRabbit.read",
           "whiteRabbit.post",
           "demo.setup",
-          "gateway.external.dashboards.read"
+          "gateway.external.dashboards.read",
+          "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -1142,6 +1153,33 @@
           ]
         },
         {
+          "path": "^/system-portal/notebook/templates$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates/(.*)$",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/notebook",
           "scopes": [
             "portal.notebook.add"
@@ -1166,6 +1204,24 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/remote-diff-check$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
@@ -1443,6 +1499,42 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/csv",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/csv",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/studies",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/study/strategus",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
           "scopes": [
             "gateway.dashboardGate.content"
@@ -1623,6 +1715,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/dataflow-mgmt/dataflow/file/csv$",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {
@@ -2289,6 +2390,16 @@
           ]
         },
         {
+          "path": "^/code-suggestion/chat",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/data-mapping",
           "scopes": [
             "datamapping.post"
@@ -2323,6 +2434,12 @@
           "path": "^/jupyter",
           "scopes": [
             "jupyter"
+          ]
+        },
+        {
+          "path": "^/mlflow(.*)",
+          "scopes": [
+            "mlflow"
           ]
         }
       ]

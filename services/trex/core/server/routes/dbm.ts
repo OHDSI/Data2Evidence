@@ -3,6 +3,7 @@ import {authz} from "../auth/authz.ts"
 import { Hono, Context } from "npm:hono";
 
 import { DatabaseManager } from '../lib/dbm.ts';
+import { isValidDbDto } from '../middleware/dbm.ts'
 import { logger } from '../env.ts';
 import * as _ from "npm:lodash-es";
 
@@ -26,7 +27,7 @@ export function addRoutes(app: Hono) {
         }
     })
 
-    app.post('/trex/db/', authn, authz, async (c: Context) => {
+    app.post('/trex/db/', authn, authz, isValidDbDto, async (c: Context) => {
         const body = await c.req.json();
         try {
             const id = await (await DatabaseManager.get()).setCredentials(body);
@@ -53,8 +54,15 @@ export function addRoutes(app: Hono) {
         const body = await c.req.json();
         let r = await (await DatabaseManager.get()).getCredentialsEncrypted();
         let y = r.filter((x: any) => x.id === body.id)[0];
-        let x = _.merge({}, y, {authenticationMode:y.authentication_mode, extra:{Internal:y.db_extra}, vocabSchemas:y.vocab_schemas}, body);
+        let x = {
+            ...y,
+            ...body,
+            authenticationMode: 'authenticationMode' in body ? (body.authenticationMode || null) : y.authentication_mode,
+            vocabSchemas: 'vocabSchemas' in body ? (body.vocabSchemas || null) : y.vocab_schemas,
+            extra: 'extra' in body ? body.extra : { Internal: y.db_extra }
+        };
         //let w = r.filter((x: any) => x.id != body.id).push(x);
+
         try {
             const id = await (await DatabaseManager.get()).setCredentials(x);
             return c.json({"id": id});

@@ -11,9 +11,13 @@ const headers = new Headers({
 	'Content-Type': 'application/json',
 });
 
+const getFullyQualifiedUserFunctionName = (function_name: string) => {
+	return (function_name.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase()) ? function_name : `${env.PROJECT_NAME}-${function_name}`) // Add Project prefix if not exists
+}
 
 async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: string, dir: string) {
-	const myenv = Object.assign({}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv])
+	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fnEnv)
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv])
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
@@ -41,7 +45,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 }
     
 async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string) {
-	const myenv = Object.assign({}, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY})
+	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fncfg.env);
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY})
 	const _myenv = Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fncfg.env] || false; 
 
@@ -124,7 +129,7 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
                     r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
                     r.env,
 					r.eszip ? r.eszip : null, dir,
-                    r.waitfor); //Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
+                    r.waitfor ?? (r.waitforEnvVar ? (env[r.waitforEnvVar] ?? Deno.env.get(r.waitforEnvVar)) : "")); //Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
                 if (r.delay) await new Promise(resolve => setTimeout(resolve, r.delay));
                 logger.log(`add init fn done @ ${dir}${r.function}`)
 

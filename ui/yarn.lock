@@ -3564,11 +3564,11 @@
 
 "@data2evidence/d2e-starboard-notebook@https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop":
   version "1.0.0"
-  resolved "https://github.com/data2evidence/d2e-starboard-notebook-base.git#bd54bf46e2624046454c8ea771f50a779527be8b"
+  resolved "https://github.com/data2evidence/d2e-starboard-notebook-base.git#30118fb2f2da7a62858b5efaaf39bf557f6dd3ec"
 
 "@data2evidence/d2e-starboard-wrap@https://github.com/data2evidence/d2e-starboard-wrap.git#develop":
   version "1.0.0"
-  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#539c635cca5c66e09d23394473fb631f7efa73c9"
+  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#598ed7512f6e34f9caa0d6f20628b7b6dbce96e0"
   dependencies:
     "@data2evidence/d2e-starboard-notebook" "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop"
     "@ungap/custom-elements" "^0.1.15"
@@ -4895,6 +4895,23 @@
     clsx "^2.0.0"
     prop-types "^15.8.1"
     react-transition-group "^4.4.5"
+
+"@nlux/core@2.17.1":
+  version "2.17.1"
+  resolved "https://registry.yarnpkg.com/@nlux/core/-/core-2.17.1.tgz#18a95e21e5aafae83bf6d515651780497f0f39cc"
+  integrity sha512-hIvOnuENVqWaIg5Co4JtFmHph7Sp0Nj+QixOMdOW9Ou7CjU7HK+maB5koLoayNL64B+wHTtgPN7zBrB8NCSPXw==
+
+"@nlux/react@^2.17.1":
+  version "2.17.1"
+  resolved "https://registry.yarnpkg.com/@nlux/react/-/react-2.17.1.tgz#e4668e7cbe42dd195ea86a02350c8b15cb8f48f0"
+  integrity sha512-/t6qDAHIefg1vGIthLOtkQxbI4Sh/aL7/eqVuhcoC1w/8NqnvVxwfxR0mkshcIVrKSwHI8Yjav5edZ2yeRBqMw==
+  dependencies:
+    "@nlux/core" "2.17.1"
+
+"@nlux/themes@^2.17.1":
+  version "2.17.1"
+  resolved "https://registry.yarnpkg.com/@nlux/themes/-/themes-2.17.1.tgz#f991b1b5fcf9595e59d0abeb76f9997876b44784"
+  integrity sha512-spD3QJBSdkF+q45rQFFsUQcR4pTy3OEjQywEP+yc9dHcuPrxIMb0/W/whwiHn1aePGL758lKQH3E/NRHA4aSAw==
 
 "@node-ipc/js-queue@2.0.3":
   version "2.0.3"
@@ -30113,7 +30130,7 @@ string-to-arraybuffer@^1.0.0:
     atob-lite "^2.0.0"
     is-base64 "^0.1.0"
 
-"string-width-cjs@npm:string-width@^4.2.0":
+"string-width-cjs@npm:string-width@^4.2.0", "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.2, string-width@^4.2.3:
   version "4.2.3"
   resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -30130,15 +30147,6 @@ string-width@^1.0.1:
     code-point-at "^1.0.0"
     is-fullwidth-code-point "^1.0.0"
     strip-ansi "^3.0.0"
-
-"string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.2, string-width@^4.2.3:
-  version "4.2.3"
-  resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
-  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
-  dependencies:
-    emoji-regex "^8.0.0"
-    is-fullwidth-code-point "^3.0.0"
-    strip-ansi "^6.0.1"
 
 string-width@^2.1.1:
   version "2.1.1"
@@ -30263,7 +30271,7 @@ stringstream@~0.0.4:
   resolved "https://registry.npmjs.org/stringstream/-/stringstream-0.0.6.tgz"
   integrity sha512-87GEBAkegbBcweToUrdzf3eLhWNg06FJTebl4BVJz/JgWy8CvEr9dRtX5qWphiynMSQlxxi+QqN0z5T32SLlhA==
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
   version "6.0.1"
   resolved "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -30283,13 +30291,6 @@ strip-ansi@^4.0.0:
   integrity sha512-4XaJ2zQdCzROZDivEVIDPkcQn8LMFSa8kj8Gxb/Lnwzv9A8VctNZ+lfivC/sV3ivW8ElJTERXZoPBRrZKkNKow==
   dependencies:
     ansi-regex "^3.0.0"
-
-strip-ansi@^6.0.0, strip-ansi@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz"
-  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
-  dependencies:
-    ansi-regex "^5.0.1"
 
 strip-ansi@^7.0.1:
   version "7.0.1"
@@ -33512,7 +33513,7 @@ world-calendars@^1.0.3:
   dependencies:
     object-assign "^4.1.0"
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
   version "7.0.0"
   resolved "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
@@ -33528,15 +33529,6 @@ wrap-ansi@^3.0.1:
   dependencies:
     string-width "^2.1.1"
     strip-ansi "^4.0.0"
-
-wrap-ansi@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz"
-  integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
-  dependencies:
-    ansi-styles "^4.0.0"
-    string-width "^4.1.0"
-    strip-ansi "^6.0.0"
 
 wrap-ansi@^8.0.1, wrap-ansi@^8.1.0:
   version "8.1.0"

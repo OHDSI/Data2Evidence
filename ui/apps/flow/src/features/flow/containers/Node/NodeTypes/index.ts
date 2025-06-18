@@ -2,15 +2,17 @@ import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
-import { PythonNode } from "./PythonNode/PythonNode";
-import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
-import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
-import { RNode } from "./RNode/RNode";
-import { SqlNode } from "./SqlNode/SqlNode";
+import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
 import { GroupNode } from "./GroupNode/GroupNode";
-import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
+import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
+import { PythonNode } from "./PythonNode/PythonNode";
+import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
+import { RNode } from "./RNode/RNode";
+import { SqlNode } from "./SqlNode/SqlNode";
+import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
+import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -20,6 +22,8 @@ export const NODE_TYPES: {
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
+  data_mapping_node: DataMappingNode,
+  concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
@@ -34,6 +38,8 @@ export const NODE_COLORS: {
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
+  data_mapping_node: "#999fcb",
+  concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
@@ -83,11 +89,29 @@ test_exec <- function(myinput) {
     tag: NodeTag.Stable,
     defaultData: {},
   },
+  data_mapping_node: {
+    title: "Data mapping",
+    description: "Map source data to OMOP data model.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
+  },
+  concept_mapping_node: {
+    title: "Concept mapping",
+    description: "Map source to vocabulary standard concepts.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
+  },
   csv_node: {
     title: "CSV",
     description: "Read CSV file from a path with columns specified.",
     tag: NodeTag.Experimental,
-    defaultData: {},
+    defaultData: {
+      file: "",
+      delimiter: ",",
+      hasheader: true,
+      columns: [],
+      encoding: "utf-8",
+    },
   },
   db_reader_node: {
     title: "Database query",
@@ -117,6 +141,6 @@ export const getNodeClassName = (node: Node<NodeDataState>) => {
   return "";
 };
 
-export type { NodeType };
 export * from "./SelectNodeTypes/SelectNodeTypesDialog";
 export * from "./type";
+export type { NodeType };

@@ -1,8 +1,10 @@
 import * as utilsLib from "@alp/alp-base-utils";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
-import { getUser } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
 import { IMRIRequest, StudyDbMetadata } from "../../types";
 import * as domainValuesService from "../../mri/endpoint/domain_values_service";
+
+const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 
 export function values(req: IMRIRequest, res, next) {
     function _sendResult(err, result) {
@@ -21,8 +23,18 @@ export function values(req: IMRIRequest, res, next) {
     const language = user.lang;
     const attributePath = req.query.attributePath;
     const attributeType = req.query.attributeType;
-    const configId = req.paConfigId;
-    const configVersion = req.paConfigVersion;
+    //Determine config metadata
+    let configId = req.paConfigId;
+    let configVersion = req.paConfigVersion;
+    //Only for tests choose metadata from the request
+    if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+        if (!req.query.configId || !req.query.configVersion) {
+            throw new Error("Config metadata undefined!")
+        }
+        configId = req.query.configId
+        configVersion = req.query.configVersion
+    }
+
     const suggestionLimit = req.query.suggestionLimit;
     const datasetId = req.query.datasetId;
     const searchQuery = req.query.searchQuery ? req.query.searchQuery : "";

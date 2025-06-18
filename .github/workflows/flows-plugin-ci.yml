@@ -19,9 +19,9 @@ on:
         required: true
         type: string
       release:
-          description: Enter name for github release
-          required: true
-          type: string
+        description: Enter name for github release
+        required: true
+        type: string
       prerelease:
         type: boolean
         default: true
@@ -31,13 +31,13 @@ on:
         default: true
         required: true
       artifacttype:
-          type: choice
-          required: true
-          default: "OSS-develop"
-          options:
-            - "OSS-develop"
-            - "OSS-release"
-            - "Project"
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
+          - "Project"
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   push:
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: dorny/paths-filter@v3
         id: file_changes
         with:
           initial-fetch-depth: 1
@@ -67,6 +67,7 @@ jobs:
               - "flows/**"
               - "package.json"
               - "docker-compose.yml"
+              - ".github/workflows/flows-plugin-ci.yml"
 
   build:
     runs-on: ubuntu-latest
@@ -81,16 +82,14 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./base/
-          - PKGPATH: ./cohort_survival/
-          - PKGPATH: ./dicom_etl/
-          - PKGPATH: ./mimic_omop_conversion/
           - PKGPATH: ./nlp/
-          - PKGPATH: ./white_rabbit/
+          - PKGPATH: ./cohort_survival/
           - PKGPATH: ./i2b2/
           - PKGPATH: ./search_embedding/
           - PKGPATH: ./data_management/
           - PKGPATH: ./strategus/
           - PKGPATH: ./loyalty_score/
+          - PKGPATH: ./data_transformation/
 
     steps:
       - uses: actions/checkout@v4
@@ -133,12 +132,12 @@ jobs:
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
-           cd ${{ matrix.PKGPATH }}
-           if [[ $SHOULD_PUBLISH == true ]]; then 
-              npm publish
-           else 
-              npm publish --dry-run
-           fi
+          cd ${{ matrix.PKGPATH }}
+          if [[ $SHOULD_PUBLISH == true ]]; then 
+             npm publish
+          else 
+             npm publish --dry-run
+          fi
 
   success:
     needs: build

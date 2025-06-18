@@ -5,8 +5,8 @@ import React, {
   useEffect,
   ChangeEvent,
   SetStateAction,
-  SyntheticEvent,
   useMemo,
+  SyntheticEvent,
 } from "react";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
@@ -14,13 +14,8 @@ import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Chip from "@mui/material/Chip";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormLabel from "@mui/material/FormLabel";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
 import { SxProps } from "@mui/system";
-import { Button, Dialog, Checkbox, Autocomplete, TextField, IconButton, AddSquareIcon, Box } from "@portal/components";
+import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
 import {
   NewStudyInput,
   Feedback,
@@ -33,16 +28,16 @@ import {
 import SimpleMDE from "react-simplemde-editor";
 import {
   useDatasetAttributeConfigs,
-  useDatasetTagConfigs,
   usePaConfigs,
   useTenant,
   useDbVocabSchemas,
+  useEnabledFeatures,
 } from "../../../../hooks";
 import MetadataForm from "../UpdateStudyDialog/MetadataForm/MetadataForm";
-import "./AddStudyDialog.scss";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
-import { FhirServerCheckbox } from "./components/FhirServerCheckbox";
+import { FEATURE_FHIR_SERVER } from "../../../../config";
+import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
   open: boolean;
@@ -74,7 +69,6 @@ interface FormData {
   name: string;
   summary: string;
   showRequestAccess: boolean;
-  createFhirProject: boolean;
   cleansedSchemaOption: boolean;
   description: string;
   dataModel: string;
@@ -143,7 +137,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   summary: "",
   showRequestAccess: false,
-  createFhirProject: false,
   cleansedSchemaOption: false,
   description: "",
   dataModel: "", //Optional
@@ -174,6 +167,7 @@ interface Datamodel {
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
   NoCDM: "no_cdm",
+  FHIR: "fhir",
   CustomCDM: "custom_cdm",
   ExistingCDM: "existing_cdm",
 };
@@ -211,36 +205,46 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [schemas, setSchemas] = useState<string[]>([]);
   const [paConfigs] = usePaConfigs();
   const [vocabSchemas] = useDbVocabSchemas(formData.databaseCode);
-  const [tagConfigs] = useDatasetTagConfigs();
   const [attributeConfigs] = useDatasetAttributeConfigs();
   const [studyMetadata, setStudyMetadata] = useState<NewStudyMetadataInput[]>([EMPTY_STUDY_METADATA]);
   const [studyTagsData, setStudyTagsData] = useState<Array<string>>([]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
   const [formMetadataErrorIndex, setFormMetadataErrorIndex] = useState<Array<Number>>([]);
+  const featureFlags = useEnabledFeatures();
 
-  const SchemaOptions: dropdownOption[] = [
-    {
-      title: getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_NEW_SCHEMA),
-      type: SchemaTypes.CreateCDM,
-    },
-    {
-      title: getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_NEW_SCHEMA_EXISTING_NAME),
-      type: SchemaTypes.CustomCDM,
-    },
-    {
-      title: getText(i18nKeys.ADD_STUDY_DIALOG__EXISTING_SCHEMA),
-      type: SchemaTypes.ExistingCDM,
-    },
-  ];
+  const SchemaOptions: dropdownOption[] = useMemo(() => {
+    const result: dropdownOption[] = [
+      {
+        title: getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_NEW_SCHEMA),
+        type: SchemaTypes.CreateCDM,
+      },
+      {
+        title: getText(i18nKeys.ADD_STUDY_DIALOG__EXISTING_SCHEMA),
+        type: SchemaTypes.ExistingCDM,
+      },
+    ];
+
+    if (featureFlags.includes(FEATURE_FHIR_SERVER)) {
+      result.push({
+        title: getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_FHIR),
+        type: SchemaTypes.FHIR,
+      });
+    }
+
+    return result;
+  }, [featureFlags]);
 
   const displayDatabases = useMemo(
-    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
+    () =>
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(
+        formData.schemaOption
+      ),
     [formData.schemaOption]
   );
 
   const displayDataModels = useMemo(
-    () => formData.databaseCode && formData.schemaOption !== SchemaTypes.NoCDM,
+    () => formData.databaseCode && ![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption),
     [formData.schemaOption, formData.databaseCode]
   );
 
@@ -268,7 +272,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displaySchemaNameInput = useMemo(
-    () => formData.schemaOption === SchemaTypes.CustomCDM || formData.schemaOption === SchemaTypes.ExistingCDM,
+    () =>
+      formData.schemaOption === SchemaTypes.CustomCDM ||
+      formData.schemaOption === SchemaTypes.ExistingCDM ||
+      formData.schemaOption === SchemaTypes.FHIR,
     [formData.schemaOption]
   );
 
@@ -303,7 +310,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, [formData.schemaOption]);
 
   useEffect(() => {
-    if (formData.schemaOption !== SchemaTypes.NoCDM && formData.databaseCode) {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && formData.databaseCode) {
       const db = databases.find((db) => db.code === formData.databaseCode);
       if (db) {
         getDataModels();
@@ -391,7 +398,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, tokenStudyCode: { valid: true } };
     }
 
-    if (schemaOption !== SchemaTypes.NoCDM && !databaseCode) {
+    if (![SchemaTypes.NoCDM].includes(formData.schemaOption) && !databaseCode) {
       formError = { ...formError, databaseCode: { required: true } };
     }
 
@@ -403,11 +410,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if (schemaOption == SchemaTypes.ExistingCDM && cdmSchemaValue == "") {
+    if ([SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(schemaOption) && cdmSchemaValue == "") {
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if (schemaOption != SchemaTypes.NoCDM && dataModel == "") {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && dataModel == "") {
       formError = { ...formError, dataModel: { required: true } };
     }
 
@@ -477,7 +484,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       cleansedSchemaOption,
-      createFhirProject,
       name,
       summary,
       showRequestAccess,
@@ -490,26 +496,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       visibilityStatus,
     } = formData;
 
+    const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
+
     const dataModelDetails = parseDatamodelOption(dataModel);
     let fhirProjectId;
-
-    if (createFhirProject) {
-      try {
-        const fhirProjectInput: NewFhirProjectInput = {
-          name: tokenStudyCode,
-          description: description,
-        };
-        const { id } = await api.gateway.createFhirStaging(fhirProjectInput);
-        fhirProjectId = id;
-      } catch (err: any) {
-        setFeedback({
-          type: "error",
-          message: `[FHIR Project] ${err.data?.message || err.data}`,
-        });
-        console.error(err);
-        return;
-      }
-    }
 
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
@@ -540,7 +530,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      await api.gateway.createDataset(input);
+      const datasetId = await api.gateway.createDataset(input);
+      if (createFhirProject) {
+        try {
+          const fhirProjectInput: NewFhirProjectInput = {
+            id: datasetId.id,
+            description: description,
+          };
+          await api.gateway.createFhirStaging(fhirProjectInput);
+        } catch (err: any) {
+          setFeedback({
+            type: "error",
+            message: `[FHIR Project] ${err.data?.message || err.data}`,
+          });
+          console.error(err);
+          //return;
+        }
+      }
       handleClose("success");
     } catch (err: any) {
       setFeedback({
@@ -601,12 +607,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             onChange={(event) => handleFormDataChange({ summary: event.target.value })}
           />
         </Box>
-        <FhirServerCheckbox
-          checked={formData.createFhirProject}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            handleFormDataChange({ createFhirProject: event.target.checked });
-          }}
-        />
         <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
         <SimpleMDE
           value={formData.description}
@@ -703,29 +703,31 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         )}
 
         {/* Custom Schema Input */}
-        {displaySchemaNameInput && formData.schemaOption === SchemaTypes.ExistingCDM ? (
-          <Box mb={4}>
-            <TextField
-              fullWidth
-              variant="standard"
-              label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
-              value={formData.cdmSchemaValue}
-              onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
-              error={formError.cdmSchemaValue.required}
-            />
-            {formError.cdmSchemaValue.required && (
-              <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-            )}
-          </Box>
-        ) : (
-          formData.schemaOption === SchemaTypes.CustomCDM && (
+        {displaySchemaNameInput &&
+          (formData.schemaOption === SchemaTypes.ExistingCDM ? (
+            <Box mb={4}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
+                value={formData.cdmSchemaValue}
+                onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
+                error={formError.cdmSchemaValue.required}
+              />
+              {formError.cdmSchemaValue.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </Box>
+          ) : formData.schemaOption === SchemaTypes.CustomCDM ? (
             <Box mb={4}>
               <Autocomplete
                 freeSolo
                 sx={styles}
                 id="autocomplete-schemas"
                 options={schemas}
-                renderInput={(params) => <TextField {...params} label="Schemas" variant="standard" />}
+                renderInput={(params) => (
+                  <TextField {...params} label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)} variant="standard" />
+                )}
                 value={formData?.cdmSchemaValue}
                 onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) =>
                   handleFormDataChange({ cdmSchemaValue })
@@ -739,8 +741,45 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME)}</FormHelperText>
               )}
             </Box>
-          )
-        )}
+          ) : (
+            formData.schemaOption === SchemaTypes.FHIR && (
+              <Box mb={4}>
+                <FormControl
+                  sx={styles}
+                  className="select"
+                  variant="standard"
+                  fullWidth
+                  {...(formError.cdmSchemaValue.required ? { error: true } : {})}
+                >
+                  <InputLabel htmlFor="cdm-schema-option">{getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}</InputLabel>
+                  <Select
+                    sx={styles}
+                    value={formData.cdmSchemaValue}
+                    onChange={(event: SelectChangeEvent<string>) =>
+                      handleFormDataChange({ cdmSchemaValue: event.target.value })
+                    }
+                    inputProps={{
+                      name: "cdmSchemaOption",
+                      id: "cdm-schema-option",
+                    }}
+                  >
+                    <MenuItem sx={styles} value="">
+                      &nbsp;
+                    </MenuItem>
+                    {/* Use vocab schemas defined in the database as the schema options  */}
+                    {vocabSchemas[formData.databaseCode]?.map((vocabSchema) => (
+                      <MenuItem sx={styles} key={vocabSchema} value={vocabSchema}>
+                        {vocabSchema}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formError.cdmSchemaValue.required && (
+                    <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                  )}
+                </FormControl>
+              </Box>
+            )
+          ))}
 
         {displaySameCdmVocabSchemaCheckbox && (
           <Box mb={4}>
