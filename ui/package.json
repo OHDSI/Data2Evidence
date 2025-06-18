@@ -343,6 +343,13 @@
             "route": "dataset-overview"
           },
           {
+            "name": "Studies",
+            "nameI18nKey": "UI_PLUGIN_STUDIES",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/StudyPage/module",
+            "route": "study-page"
+          },
+          {
             "name": "Jobs",
             "nameI18nKey": "UI_PLUGIN_JOBS",
             "enabled": true,
