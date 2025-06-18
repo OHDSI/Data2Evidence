@@ -8,9 +8,10 @@
   },
   "license": "Apache-2.0",
   "scripts": {
-    "build-all": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && yarn build-ui5 && yarn build-starboard",
+    "build-all": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && yarn build-ui5 && yarn build-starboard && yarn build-gateway",
     "build-all-skip-cache": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && yarn build-ui5",
     "build-ui5": "yarn ui5 build -a --clean-dest --dest ./resources/ui5",
+    "build-gateway": "cd apps/gateway-proxy && yarn build && cd ../../",
     "build-starboard": "node scripts/build-starboard.js",
     "mri-vue": "yarn; nx build vue-mri",
     "portal-ui": "yarn; nx build @portal/plugin; nx build @portal/components; nx build portal; nx build-mri portal",

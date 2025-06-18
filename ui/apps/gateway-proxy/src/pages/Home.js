@@ -43,7 +43,7 @@ const Home = (app, logtoClient) => {
   container.classList.add('container');
 
   const h3 = document.createElement('h3');
-  h3.innerHTML = 'Logto Browser Sample';
+  h3.innerHTML = 'Loading KPI Dashboard...';
   container.append(h3);
 
   fragment.append(container);

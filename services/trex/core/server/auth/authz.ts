@@ -271,10 +271,7 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    logger.log('authz: bearerToken: ' + bearerToken);
-    logger.log('authz: originalUrl: ' + originalUrl);
     if (!bearerToken && originalUrl.startsWith("/gateway/dashboard/")) {
-      logger.log('authz: token empty and path is gateway ' + c.req.header("cookie"))
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {

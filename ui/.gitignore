@@ -23,8 +23,7 @@ dist
 **/library-parameters.json
 
 **/*private*
-**/.parcel*
-
+**/.parcel-cache/
 .nx
 
 pyqetest
