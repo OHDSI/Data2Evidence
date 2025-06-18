@@ -38,7 +38,7 @@ import {
   DB_DIALECTS,
 } from "../../../../types";
 import { api } from "../../../../axios/api";
-import { validateCredentials } from "../CredentialValidator";
+import { validateCredentials, isValidDbCode } from "../CredentialValidator";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
 import { useTranslation } from "../../../../contexts";
@@ -194,6 +194,9 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         formData.port = 0;
       }
 
+      if(!isValidDbCode(formData.code, setFeedback)) {
+        return;
+      }
       const encryptedCredentials = formData.credentials
         .filter((cred) => Boolean(cred.username))
         .map(async (cred: IDbCredential) => dbCredentialProcessor.encryptDbCredential(cred));
@@ -386,6 +389,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               <Autocomplete
                 multiple
                 freeSolo
+                autoSelect
                 options={[] as string[]}
                 sx={styles}
                 id="autocomplete-vocab-schemas"
@@ -394,7 +398,9 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
                   ))
                 }
-                renderInput={(params) => <TextField {...params} variant="standard" />}
+                renderInput={(params) => (
+                  <TextField {...params} variant="standard" helperText="Press enter to confirm the entry" />
+                )}
                 value={formData.vocabSchemas}
                 onChange={(_, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
               />

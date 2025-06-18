@@ -236,7 +236,7 @@ export class DatasetCommandService {
   }
 
   private async updateDataset(entityMgr: EntityManager, datasetUpdateDto: IDatasetDetailMetadataUpdateDto) {
-    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus } = datasetUpdateDto
+    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id } = datasetUpdateDto
 
     const currDataset = await this.datasetRepo.getDataset(datasetId)
 
@@ -248,7 +248,8 @@ export class DatasetCommandService {
       type,
       tokenDatasetCode,
       visibilityStatus,
-      paConfigId
+      paConfigId,
+      fhir_project_id
     }
     await this.datasetRepo.updateDataset(entityMgr, datasetId, this.addOwner(dataset))
   }

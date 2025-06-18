@@ -6,6 +6,7 @@ import { FlowAppProps } from "./FlowApp";
 
 export interface FlowMetadataParams {
   dnBaseUrl: string;
+  mappingSuggestion: boolean;
 }
 
 const mockMetadata: SystemAdminPageMetadata<FlowMetadataParams> = {
@@ -14,6 +15,7 @@ const mockMetadata: SystemAdminPageMetadata<FlowMetadataParams> = {
   getToken: () => Promise.resolve("MockToken"),
   data: {
     dnBaseUrl: "https://localhost:41100/",
+    mappingSuggestion: false,
   },
 };
 

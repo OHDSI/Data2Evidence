@@ -60,8 +60,6 @@ DOCKER_TAG_NAME:
   comment: default tag
   publish: true
   type: string
-DOCKER_TREX_TAG_NAME:
-  publish: true
 DOCKER__RESTART_POLICY:
   comment: auto restart on issue. logging debug simpler if off
   publish: false
@@ -174,10 +172,6 @@ TLS__INTERNAL__CRT:
 TLS__INTERNAL__KEY:
   comment: Internal Microservice TLS Communication Private
   publish: true
-TREX_PULL_POLICY:
-  comment: null
-  publish: false
-  type: string
 USE_CACHEDB:
   comment: boolean
   publish: false

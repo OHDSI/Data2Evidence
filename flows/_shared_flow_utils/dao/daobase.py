@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Optional, Tuple
 from datetime import datetime
@@ -8,7 +9,7 @@ from sqlalchemy import text
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from _shared_flow_utils.types import UserType, AuthToken
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input, get_token_value
+from _shared_flow_utils.api.PrefectAPI import buildUserFromToken, get_auth_token_from_input, get_third_party_token_value
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
@@ -66,7 +67,6 @@ class DaoBase(ABC):
         self.database_code = database_code
         self.user_type = user_type
         self.connect_to_duckdb = connect_to_duckdb
-
     # --- Property methods ---
 
     @property
@@ -244,17 +244,26 @@ class DaoBase(ABC):
                                          password: str = None,
                                          host: str = None,
                                          port: int = None) -> Tuple[str, dict]:
-
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
 
-        if auth_mode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
-            # Prefect task to fetch token
-            auth_token: AuthToken = get_auth_token_from_input()
-            return base_url, {"password": get_token_value(auth_token)}
+        if dialect == SupportedDatabaseDialects.HANA:
+            hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
+            if auth_mode == AuthMode.JWT:
+                # Prefect task to fetch token
+                auth_token: AuthToken = get_auth_token_from_input()
+                hana_connect_args["password"] = get_third_party_token_value(auth_token)
+                
+                # Add APPLICATION and APPLICATIONUSER as session variables for JWT
+                app_name = f"d2e-{os.environ.get('plugin_name')}"
+                token_user = buildUserFromToken(get_third_party_token_value(auth_token=auth_token))
+                base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
+                return base_url, hana_connect_args
+            if auth_mode == AuthMode.PASSWORD:
+                return base_url, hana_connect_args.update({"user": user, "password": password.get_secret_value()})
 
         return base_url, {"user": user, "password": password.get_secret_value()}
 
@@ -267,28 +276,10 @@ class DaoBase(ABC):
         base_url = f"postgresql://{user.get_secret_value()}@{host}:{port}/{database_name}"
         return base_url
 
-    @staticmethod
-    def create_jdbc_connection_url(dialect: SupportedDatabaseDialects,
-                                   database_name: str = None,
-                                   user: str = None,
-                                   password: str = None,
-                                   host: str = None,
-                                   port: int = None) -> str:
-
-        match dialect:
-            case SupportedDatabaseDialects.DUCKDB:
-                base_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{database_name}"
-            case SupportedDatabaseDialects.POSTGRES:
-                base_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{user}:{password}@{host}:{port}/{database_name}"
-            case SupportedDatabaseDialects.HANA:
-                base_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{user}:{password}@{host}:{port}?{database_name}"
-
-        return base_url
-
     def get_database_connector_connection_string(
         self,
         user_type: UserType,
-        release_date: str = None
+        release_date: str = None,
     ):
         """
         Used for Database Connector package
@@ -297,7 +288,6 @@ class DaoBase(ABC):
         database_credentials = self.tenant_configs
         database_connector_dialect = getattr(
             DialectDrivers.database_connector, database_credentials.dialect)
-
         dialect = database_credentials.dialect
         host = database_credentials.host
         port = database_credentials.port
@@ -307,7 +297,9 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.POSTGRES:
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?{database_name}"
+                encrypt = database_credentials.encrypt or "TRUE"
+                validateCertificate = database_credentials.validateCertificate or "FALSE"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
                 extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
                 conn_url += extra_config
 
@@ -315,7 +307,13 @@ class DaoBase(ABC):
             user = ""  # Todo: Confirm if can be left blank
             # Prefect task to fetch token
             auth_token: AuthToken = get_auth_token_from_input()
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{get_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            
+            # Add APPLICATION and APPLICATIONUSER as session variables for JWT
+            app_name = f"d2e-{os.environ.get('plugin_name')}"
+            token_user = buildUserFromToken(get_third_party_token_value(auth_token=auth_token))
+            conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.userId}"
+            
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         else:
             match user_type:

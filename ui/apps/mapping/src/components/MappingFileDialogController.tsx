@@ -1,15 +1,16 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { useUpdateNodeInternals } from "reactflow";
 import { CloseDialogType, SaveMappingDialog } from "./SaveMappingDialog/SaveMappingDialog";
 import { useApp, useDialog } from "../contexts/hooks";
-import { useNavigate } from "react-router-dom";
+import { AppState } from "../contexts";
 
 export const MappingFileDialogController: FC = () => {
-  const { load, state } = useApp();
+  const { load, setPage, state } = useApp();
   const { saveMappingDialogVisible, loadMappingDialogVisible, openSaveMappingDialog, openLoadMappingDialog } =
     useDialog();
   const [nextAction, setNextAction] = useState<string | undefined>();
   const hiddenFileInput = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
+  const updateNodeInternals = useUpdateNodeInternals();
 
   const handleOpenSaveDialog = useCallback(
     (nextAction?: string) => {
@@ -45,11 +46,15 @@ export const MappingFileDialogController: FC = () => {
           const jsonData = reader.result as string;
 
           try {
-            const json = JSON.parse(jsonData);
+            const json = JSON.parse(jsonData) as Partial<AppState>;
             console.debug("JSON content:", json);
             load(json);
-            navigate("");
-            window.location.reload();
+            setPage("table");
+            if (json.table && Array.isArray(json.table.nodes)) {
+              updateNodeInternals(json.table.nodes.map((node) => node.id));
+            } else {
+              console.warn("Table or nodes are undefined. Skipping updateNodeInternals.");
+            }
           } catch (err) {
             console.error("Error parsing JSON:", err);
           }
@@ -57,7 +62,7 @@ export const MappingFileDialogController: FC = () => {
         reader.readAsText(file);
       }
     },
-    [openLoadMappingDialog, load, navigate]
+    [openLoadMappingDialog, load, updateNodeInternals]
   );
 
   const handleCloseSaveDialog = useCallback(

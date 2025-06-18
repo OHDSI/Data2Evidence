@@ -2,10 +2,11 @@ import express from "express";
 import { validationResult } from "express-validator";
 import {
   createProject,
+  deleteProject,
   forwardRequest,
 } from "./services";
 
-import { validateCreateFhirProjectDto, validateProxyDto } from "./middleware";
+import { validateCreateFhirProjectDto, validateDeleteFhirProjectDto, validateProxyDto } from "./middleware";
 
 import { filterHeaders, HTTPMethod } from "../utils/types";
 
@@ -18,7 +19,7 @@ export class FhirRouter {
   }
 
   private registerRoutes() {
-    //Endpoint to create a new project for the incoming dataset name in FHIR server
+    //Endpoint to create a new project for the incoming dataset id in FHIR server
     this.router.post(
       "/createProject",
       validateCreateFhirProjectDto(),
@@ -27,10 +28,11 @@ export class FhirRouter {
         if (!errors.isEmpty()) {
           res.status(400).json({ errors: errors.array() });
         }
-        const { name, description } = req.body;
+        const token = req.headers.authorization;
+        const { id, description } = req.body;
         try {
-          const projectId = await createProject(name, description);
-          return res.status(200).json(projectId);
+          const status = await createProject(token, id, description);
+          return res.status(200).json(status);
         } catch (error) {
           let log_msg = `Failed to create project in fhir server - ${error.message}`;
           this.logger.error(log_msg);
@@ -165,6 +167,28 @@ export class FhirRouter {
         //     .set(fhirResponse.headers)
         //     .send(fhirResponse.data);
         // }
+      }
+    );
+
+    //Endpoint to delete fhir project
+    this.router.delete(
+      "/deleteProject/:id",
+      validateDeleteFhirProjectDto(),
+      async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          res.status(400).json({ errors: errors.array() });
+          return;
+        }
+        const { id } = req.params;
+        try {
+          const response = await deleteProject(id);
+          return res.status(response.status).json(response.data);
+        } catch (error) {
+          let log_msg = `Failed to delete project in fhir server`;
+          this.logger.error(log_msg);
+          res.status(500).send(log_msg);
+        }
       }
     );
   }

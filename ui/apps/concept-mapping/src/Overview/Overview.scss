@@ -1,0 +1,12 @@
+.concept-mapping__overview {
+  height: 100%;
+  padding: 24px;
+
+  .alp-card {
+    flex: 1;
+
+    &__header {
+      justify-content: center;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import json
 from rpy2 import robjects
-
+import os
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
@@ -9,7 +9,7 @@ from .types import CohortGeneratorOptionsType
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-
+os.environ['plugin_name'] = 'cohort_generator_plugin'
 
 @flow(log_prints=True, persist_result=True)
 def cohort_generator_plugin(options: CohortGeneratorOptionsType):
@@ -24,7 +24,7 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     description = options.description
     use_cache_db = options.use_cache_db
     cohort_definition_id = options.cohortDefinitionId
-
+    
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
 
@@ -84,7 +84,7 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
                 schemaName <- '{schema_name}'
                 vocabSchemaName <- '{vocab_schema_name}'
                 cohortName <- '{cohort_name}'
-                cohortId <- '{cohort_definition_id}'
+                cohortId <- {cohort_definition_id}
                 
                 cat("Generating cohort sql from cohort expression from json")
                 cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)

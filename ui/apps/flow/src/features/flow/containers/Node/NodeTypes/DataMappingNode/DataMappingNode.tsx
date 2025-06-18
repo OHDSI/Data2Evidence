@@ -1,16 +1,16 @@
 import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
-import { EdgeState, NodeDataState } from "../../../../types";
+import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { DataMappingDrawer } from "./DataMappingDrawer";
+import { SourceHandle } from "../../CustomHandle/CustomHandle";
+import { HandleIOType } from "../type";
 import "./DataMappingNode.scss";
 
 export interface DataMappingNodeData extends NodeDataState {
-  edges?: EdgeState[];
-  data_model?: string;
-  data_map?: {};
+  data: any;
 }
 
 export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
@@ -27,6 +27,10 @@ export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
+        LeftHandle={null}
+        RightHandle={
+          <SourceHandle ioType={HandleIOType.Object} nodeId={node.id} />
+        }
       >
         {data.description}
       </NodeLayout>

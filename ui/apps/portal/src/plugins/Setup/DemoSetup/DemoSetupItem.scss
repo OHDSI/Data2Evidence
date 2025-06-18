@@ -1,6 +1,6 @@
 .demo-setup-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   border: 1px solid #ddd;
   padding: 1em 2em;
@@ -10,7 +10,7 @@
   &__info {
     flex: 1;
     display: flex;
-    align-items: flex-start;
+    align-self: center;
   }
 
   &__no {

@@ -11,17 +11,33 @@ patient_data = Person.Patient()
 constraint_age_greater_than_80_years = Constraint()
 constraint_age_greater_than_80_years.add(Expression(ComparisonOperator.MORE_THAN_EQUAL, 80))
 patient_data.add_age([constraint_age_greater_than_80_years])
+
+# %% [markdown]
+Use get_all_concept_sets() method to fetch all available concept sets that you have access to.
+Use show_concept_set_list() method to print out each concept set's ID and name.
+
+# %% [python]
+conceptSetQuery = ConceptSetQuery(total_patients_query._selectedStudyId)
+await conceptSetQuery.get_all_concept_sets()
+conceptSetQuery.show_concept_set_list()
+
+# %% [markdown]
+Use get_concepts_in_concept_set() method to see all concepts in a particular concept set with concept_set_id
+
+# %% [python]
+# conceptSetQuery.get_concepts_in_concept_set(44)
+
 # %% [python]
 # Patients who have drug exposure Interactions for ADHD Medications intake
-adhd_drug_concepts  = ConceptSet('ADHD Medications',
-                            Domain.DRUG, 
-                           ['1091497', '2599', '725', '40114', '308979', '308976', '308973', 
-                            '2598', '4493', '36437', '35636', '32937', '10737',
-                            '310384', '313990','310385', '313989', '312938', 
-                            '312940', '312941', '374185'])
 
-adhd_drug_exposure = Interactions.DrugExposure("ADHD Medications Interaction")
-adhd_drug_exposure.add_concept_set(adhd_drug_concepts)
+# Add in the concept set id as the comparison operator's value
+CONCEPT_SET_ID = 
+
+adhd_drug_exposure = Interactions.ConditionOccurrence("ADHD Medications")
+
+adhd_drug_concepts = Constraint()
+adhd_drug_concepts.add(Expression(ComparisonOperator.EQUAL, CONCEPT_SET_ID))
+adhd_drug_exposure.add_condition_concept_set([adhd_drug_concepts])
 
 # Select cohort who took medications between 2012 May & 2012 December
 constraint_start_date_time = Constraint()
@@ -49,4 +65,4 @@ print(f'Total number of patients for ADHD Phenotype: {patient_count}')
 dataframe_cohort = await total_patients_query.get_dataframe_cohort([])
 drug_exposure_dataframe = await Result().download_dataframe(dataframe_cohort) # Select Drug Exposure from the list
 print('Cohort Drug Exposure dataframe first 20 records:')
-drug_exposure_dataframe.head(20)`
+drug_exposure_dataframe.head(20)`;

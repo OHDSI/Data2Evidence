@@ -27,6 +27,7 @@ RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 &
 RUN java -version
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
+# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
 COPY --chown=docker:docker ./__init__.py .
 
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
@@ -50,4 +51,4 @@ COPY --chown=docker:docker --chmod=711 ./data_management flows
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-USER docker
+# USER docker

@@ -748,9 +748,10 @@ export class HanaHDBDao {
           hostname_in_certificate:
             datasetDatabaseCredential.db_extra.hostnameInCertificate,
           dialect: datasetDatabaseCredential.dialect,
+          authentication_mode: datasetDatabaseCredential.authentication_mode,
         };
 
-        if (env.USE_HANA_JWT_AUTHC === "true") {
+        if (credentials.authentication_mode === "JWT") {
           // Add token to credentials
           if (this.jwt) {
             const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
@@ -758,6 +759,8 @@ export class HanaHDBDao {
             ];
 
             credentials["token"] = thirdPartyToken;
+            credentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-concepts`;
+            credentials['SESSIONVARIABLE:APPLICATIONUSER'] = decode(thirdPartyToken).oid;
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"

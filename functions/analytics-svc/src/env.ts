@@ -23,7 +23,6 @@ function initEnv(__env) {
         USE_DUCKDB: z.string(),
         USE_CACHEDB: z.string(),
         USE_TREX_DB_CONN: z.string(),
-        USE_HANA_JWT_AUTHC: z.string(),
 
         PG__IDLE_TIMEOUT_IN_MS: z
             .string()
@@ -37,6 +36,8 @@ function initEnv(__env) {
             .string()
             .refine((val) => !isNaN(parseInt(val)))
             .transform(Number),
+            
+        PROJECT_NAME: z.string(),
 
         CACHEDB__HOST: z.string(),
         CACHEDB__PORT: z
@@ -57,6 +58,7 @@ function initEnv(__env) {
         NODE_ENV: z.string().optional(),
         ENV_MOUNT_PATH: z.string().optional(),
         TESTSCHEMA: z.string().optional(),
+        TREX_CURRENT_USER_FUNCTION_NAME: z.string().optional(),
         //DATABASE_CREDENTIALS: z.array().optional(),
         MINIO__ENDPOINT: z.string().optional(),
         MINIO__PORT: z

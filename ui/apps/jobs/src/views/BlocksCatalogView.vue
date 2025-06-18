@@ -6,10 +6,15 @@
 
     <BlockTypeCard :block-type="blockType" />
   </p-layout-default>
+
+  <p-layout-default v-else>
+    <Loader />
+  </p-layout-default>
 </template>
 
 <script lang="ts" setup>
-  import { PageHeadingBlocksCatalogView, BlockTypeCard, useWorkspaceApi } from '@prefecthq/prefect-ui-library'
+import Loader from '@/components/Loader.vue'
+import { PageHeadingBlocksCatalogView, BlockTypeCard, useWorkspaceApi } from '@prefecthq/prefect-ui-library'
   import { useRouteParam, useSubscriptionWithDependencies } from '@prefecthq/vue-compositions'
   import { computed } from 'vue'
 
