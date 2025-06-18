@@ -23,7 +23,7 @@ def build_user_from_token(token: str) -> User:
         # decode token
         decoded_token = decode(token, options={"verify_signature": False})
         user = {
-            "user_id": decoded_token.get("name", "sub"),
+            "user_id": decoded_token.get("oid", decoded_token.get("sub", "")),
             "name": decoded_token.get("name", ""),
             "email": decoded_token.get("email", "")
         }
