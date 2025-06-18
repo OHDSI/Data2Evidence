@@ -101,7 +101,3 @@ class User:
   userId: str
   name: Optional[str]
   email: Optional[str]
-<<<<<<< alicia-koh/data-2129-2097
-=======
-
->>>>>>> develop
