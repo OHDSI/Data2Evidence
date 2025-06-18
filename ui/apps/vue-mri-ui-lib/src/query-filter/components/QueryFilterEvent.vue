@@ -6,8 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
-import { QueryFilterEvent, QueryFilterChip as QueryFilterChipType } from '../models/QueryFilterModel'
-import QueryFilterChip from './QueryFilterChip.vue'
+import { QueryFilterEvent } from '../models/QueryFilterModel'
 import AttributesDropdown from './AttributesDropdown.vue'
 import { type AttributeConfig } from '../utils/CriteriaConfigLoader'
 
@@ -20,15 +19,7 @@ const props = defineProps<{
   showRemoveButton?: boolean
 }>()
 
-const emit = defineEmits([
-  'edit',
-  'duplicate',
-  'remove',
-  'add-chip',
-  'remove-chip',
-  'attribute-selected',
-  'attribute-removed'
-])
+const emit = defineEmits(['edit', 'duplicate', 'remove', 'attribute-selected', 'attribute-removed'])
 
 const handleAttributeSelected = (attribute: AttributeConfig & { category: string }) => {
   emit('attribute-selected', props.condition.id, attribute)
@@ -45,7 +36,7 @@ const handleAttributeRemoved = (attributeId: string) => {
     :class="{
       'query-filter-condition--parent': isParent,
       'query-filter-condition--attribute': isAttribute,
-      'query-filter-condition--nested': isNested
+      'query-filter-condition--nested': isNested,
     }"
   >
     <div class="query-filter-condition__header">
@@ -89,19 +80,6 @@ const handleAttributeRemoved = (attributeId: string) => {
           ×
         </button>
       </div>
-    </div>
-
-    <div v-if="!condition.isNested" class="query-filter-condition__chips">
-      <query-filter-chip
-        v-for="chip in condition.chips"
-        :key="chip.id"
-        :chip="chip"
-        :removable="true"
-        @remove="$emit('remove-chip', condition.id, chip.id)"
-      />
-      <button class="btn-add-chip" @click="$emit('add-chip', condition.id)" aria-label="Add filter">
-        <i class="icon icon-plus"></i>
-      </button>
     </div>
 
     <slot name="nested-content"></slot>

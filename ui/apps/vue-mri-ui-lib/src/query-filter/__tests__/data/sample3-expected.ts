@@ -18,7 +18,7 @@ export default {
   },
   InclusionRules: [
     {
-      name: 'Group 1',
+      name: 'Criteria 1',
       description: 'Description 1',
       expression: {
         Type: 'ALL',

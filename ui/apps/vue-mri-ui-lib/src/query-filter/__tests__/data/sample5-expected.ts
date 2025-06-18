@@ -18,7 +18,7 @@ export default {
   },
   InclusionRules: [
     {
-      name: 'Group 1',
+      name: 'Criteria 1',
       description: 'Description 1',
       expression: {
         Type: 'ALL',
@@ -97,7 +97,7 @@ export default {
                         UseEventEnd: false,
                       },
                       Occurrence: {
-                        Type: 2, // options: 0: exactly, 1: at most, 2: at least
+                        Type: 2,
                         Count: 1,
                       },
                     },
@@ -117,21 +117,29 @@ export default {
               UseEventEnd: false,
             },
             Occurrence: {
-              Type: 2, // options: 0: exactly, 1: at most, 2: at least
+              Type: 2,
+              Count: 1,
+            },
+          },
+          {
+            Criteria: {
+              ConditionOccurrence: {},
+            },
+            StartWindow: {
+              Start: {
+                Coeff: -1,
+              },
+              End: {
+                Coeff: 1,
+              },
+              UseEventEnd: false,
+            },
+            Occurrence: {
+              Type: 2,
               Count: 1,
             },
           },
         ],
-        DemographicCriteriaList: [],
-        Groups: [],
-      },
-    },
-    {
-      name: 'Group 1',
-      description: 'Description 1',
-      expression: {
-        Type: 'ALL',
-        CriteriaList: [],
         DemographicCriteriaList: [],
         Groups: [],
       },
@@ -144,4 +152,3 @@ export default {
   },
   CensorWindow: {},
 }
-

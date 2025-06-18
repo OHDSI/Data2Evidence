@@ -137,9 +137,7 @@ export const convertAtlasToFilters = (
         conceptSet:
           conceptSetInfo?.name || (conceptSetId !== undefined ? `Concept Set ${conceptSetId}` : 'No Concept Set'),
         conceptSetId: conceptSetInfo?.id,
-        chips: [],
         criteriaType,
-        operator: 'OR',
         selectedConceptSet: conceptSetInfo?.conceptSetItem || undefined,
       }
 

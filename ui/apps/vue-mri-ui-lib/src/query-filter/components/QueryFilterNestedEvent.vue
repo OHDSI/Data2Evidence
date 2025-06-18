@@ -7,7 +7,6 @@ export default {
 <script setup lang="ts">
 import { computed, defineProps, defineEmits } from 'vue'
 import { QueryFilterEvent } from '../models/QueryFilterModel'
-import QueryFilterChip from './QueryFilterChip.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -206,13 +205,13 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 :external-domain-values="conceptSetDomainValues"
                 :external-texts="conceptSetTexts"
                 :is-catalog-attribute="false"
-                @update:value="(value) => handleConceptSetSelected(event.id, value[0])"
-                @search-change="(query) => handleConceptSetSearchChange(event.id, query)"
-                @concept-set-action="(action) => handleConceptSetAction(event.id, action)"
+                @update:value="value => handleConceptSetSelected(event.id, value[0])"
+                @search-change="query => handleConceptSetSearchChange(event.id, query)"
+                @concept-set-action="action => handleConceptSetAction(event.id, action)"
               />
               <span v-else class="query-filter-nested-event__label">
                 {{ event.conceptSet || 'Nested Event' }}
-                <span v-if="event.conceptSetLoading" style="margin-left: 8px; font-style: italic; color: #666;">
+                <span v-if="event.conceptSetLoading" style="margin-left: 8px; font-style: italic; color: #666">
                   (Loading concept details...)
                 </span>
               </span>
@@ -250,19 +249,6 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 ×
               </button>
             </div>
-          </div>
-
-          <div class="query-filter-nested-condition__chips">
-            <query-filter-chip
-              v-for="chip in event.chips"
-              :key="chip.id"
-              :chip="chip"
-              :removable="true"
-              @remove="handleRemoveChip(event.id, chip.id)"
-            />
-            <button class="btn-add-chip" @click="handleAddChip(event.id)" aria-label="Add filter">
-              <i class="icon icon-plus"></i>
-            </button>
           </div>
 
           <!-- Render nested children if this event has them -->

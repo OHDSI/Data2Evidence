@@ -4,7 +4,7 @@
 
 import { AtlasCohortDefinition, getCriteriaType, getCriteriaObject, InclusionRule } from './AtlasCohortDefinition'
 
-import { QueryFilterCardModel, QueryFilterEvent, QueryFilterChip } from './QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterEvent } from './QueryFilterModel'
 
 export interface SimplifiedConcept {
   id: number
@@ -161,28 +161,25 @@ export class AtlasCohortAdapter {
     return this.toQueryFilterModel(simplified)
   }
 
-  private static criteriaToEvent(
-    criteria: SimplifiedCriteria,
-    conceptSets: SimplifiedConceptSet[]
-  ): QueryFilterEvent {
+  private static criteriaToEvent(criteria: SimplifiedCriteria, conceptSets: SimplifiedConceptSet[]): QueryFilterEvent {
     const conceptSet = conceptSets.find(cs => cs.id === criteria.conceptSetId)
 
-    // Create chips from concepts
-    const chips: QueryFilterChip[] =
+    // Create concept set details for Atlas compatibility
+    const conceptSetDetails =
       conceptSet?.concepts
-        .filter(c => !c.isExcluded) // Only include non-excluded concepts as chips
+        .filter(c => !c.isExcluded)
         .map(concept => ({
-          id: `chip_${concept.id}`,
-          label: concept.name,
-          value: concept.code,
-          color: this.getDomainColor(concept.domainId),
+          CONCEPT_ID: concept.id,
+          CONCEPT_NAME: concept.name,
+          CONCEPT_CODE: concept.code,
+          DOMAIN_ID: concept.domainId,
         })) || []
 
     return {
       id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       conceptSet: conceptSet?.name || `Concept Set ${criteria.conceptSetId}`,
       conceptSetId: criteria.conceptSetId.toString(),
-      chips,
+      conceptSetDetails,
     }
   }
 

@@ -1,168 +1,83 @@
 export default {
-  id: 'criteria_1749627253400_hwumpmeea',
-  criteriaType: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
-  criteria: [
-    {
-      id: 'group_1749627253400_hwumpmeet',
-      title: 'Group 1',
-      description: 'Description 1',
-      groupType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
-      groups: [
-        {
-          id: 'filter_1749627253400_45btf9dg3',
-          events: [
-            {
-              id: 'event_1749627253400',
-              conceptSet: 'Condition Occurrence concept set',
-              chips: [],
-              criteriaType: 'conditionOccurrence',
-            },
-            {
-              id: 'nested_1749627262791_2lvaibza0',
-              conceptSet: 'Nested Criteria',
-              chips: [],
-              isEditing: false,
-              operator: 'OR',
-              criteriaType: 'conditionOccurrence',
-              isAttributeBased: true,
-              parentEventId: 'event_1749627253400',
-              isNested: true,
-              nestedEvents: [
-                {
-                  id: 'nested_child_1749627268429_qdvppq1e8',
-                  conceptSet: 'Add Condition Occurrence',
-                  chips: [],
-                  isEditing: false,
-                  operator: 'OR',
-                  criteriaType: 'conditionOccurrence',
-                  isAttributeBased: false,
-                  parentEventId: 'nested_1749627262791_2lvaibza0',
-                  isNested: false,
-                  nestedEvents: [],
-                  nestedOperator: 'AND',
-                },
-                {
-                  id: 'nested_1749627387688_bk1epzvbt',
-                  conceptSet: 'Nested Criteria',
-                  chips: [],
-                  isEditing: false,
-                  operator: 'OR',
-                  criteriaType: 'conditionOccurrence',
-                  isAttributeBased: true,
-                  parentEventId: 'nested_child_1749627268429_qdvppq1e8',
-                  isNested: true,
-                  nestedEvents: [
+  entryEvents: {},
+  inclusionCriteria: {
+    qualifyingEventsLimit: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
+    criteria: [
+      {
+        id: 'criteria_1749626300526',
+        title: 'Criteria 1',
+        description: 'Description 1',
+        criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+        events: [
+          {
+            id: 'event_1749626300526',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [
+              {
+                id: 'attribute_1749626300526',
+                attributeType: 'nested',
+                nestedCriteria: {
+                  id: 'criteria_1749626300528',
+                  criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                  events: [
                     {
-                      id: 'nested_child_1749627390379_87y6flw6q',
-                      conceptSet: 'Add Condition Occurrence',
-                      chips: [],
-                      isEditing: false,
-                      operator: 'OR',
-                      criteriaType: 'conditionOccurrence',
-                      isAttributeBased: false,
-                      parentEventId: 'nested_1749627387688_bk1epzvbt',
-                      isNested: false,
-                      nestedEvents: [],
-                      nestedOperator: 'AND',
+                      id: 'event_1749626300529',
+                      eventType: 'conditionOccurrence',
+                      isExpanded: true,
+                      attributes: [
+                        {
+                          id: 'attribute_1749626300526',
+                          attributeType: 'nested',
+                          nestedCriteria: {
+                            id: 'criteria_1749626300528',
+                            criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                            events: [
+                              {
+                                id: 'event_1749626300529',
+                                eventType: 'conditionOccurrence',
+                                isExpanded: true,
+                                attributes: [],
+                                cardinality: {
+                                  type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                                  count: 1,
+                                  using: 'ALL',
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                      cardinality: {
+                        type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                        count: 1,
+                        using: 'ALL',
+                      },
                     },
                   ],
-                  nestedOperator: 'AND',
-                  attributeConfig: {
-                    id: 'nested',
-                    name: 'Nested Criteria',
-                    description: 'Add nested criteria group',
-                    type: 'nested',
-                    category: 'criteria-specific',
-                  },
                 },
-              ],
-              nestedOperator: 'AND',
-              attributeConfig: {
-                id: 'nested',
-                name: 'Nested Criteria',
-                description: 'Add nested criteria group',
-                type: 'nested',
-                category: 'criteria-specific',
               },
+            ],
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
             },
-          ],
-          isExpanded: true,
-          cardinality: {
-            type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
-            count: 1,
-            using: 'ALL',
           },
-        },
-        {
-          id: 'filter_1749627255353_g4gtcddlo',
-          type: 'inclusion',
-          events: [
-            {
-              id: 'event_1749627255353',
-              conceptSet: 'Condition Occurrence concept set',
-              chips: [],
-              criteriaType: 'conditionOccurrence',
+          {
+            id: 'event_1749626302603',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [],
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
             },
-            {
-              id: 'nested_1749627266092_kmq3ngqf8',
-              conceptSet: 'Nested Criteria',
-              chips: [],
-              isEditing: false,
-              operator: 'OR',
-              criteriaType: 'conditionOccurrence',
-              isAttributeBased: true,
-              parentEventId: 'event_1749627255353',
-              isNested: true,
-              nestedEvents: [
-                {
-                  id: 'nested_child_1749627272942_z7xaq68r3',
-                  conceptSet: 'Add Condition Occurrence',
-                  chips: [],
-                  isEditing: false,
-                  operator: 'OR',
-                  criteriaType: 'conditionOccurrence',
-                  isAttributeBased: false,
-                  parentEventId: 'nested_1749627266092_kmq3ngqf8',
-                  isNested: false,
-                  nestedEvents: [],
-                  nestedOperator: 'AND',
-                },
-                {
-                  id: 'attr_1749627280756_9sr4u0ehc',
-                  conceptSet: 'Age',
-                  chips: [],
-                  isEditing: false,
-                  operator: 'OR',
-                  criteriaType: 'conditionOccurrence',
-                  isAttributeBased: true,
-                  parentEventId: 'nested_child_1749627272942_z7xaq68r3',
-                  attributeConfig: {
-                    id: 'age',
-                    name: 'Age',
-                    description: 'Filter by age at time of diagnosis',
-                    type: 'numericRange',
-                    category: 'criteria-specific',
-                  },
-                },
-              ],
-              nestedOperator: 'AND',
-              attributeConfig: {
-                id: 'nested',
-                name: 'Nested Criteria',
-                description: 'Add nested criteria group',
-                type: 'nested',
-                category: 'criteria-specific',
-              },
-            },
-          ],
-          isExpanded: true,
-          cardinality: {
-            type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
-            count: 1,
-            using: 'ALL',
           },
-        },
-      ],
-    },
-  ],
+        ],
+      },
+    ],
+  },
 }
+

@@ -247,15 +247,15 @@ describe('AtlasCohortAdapter', () => {
       expect(inclusionFilter.type).toBe('inclusion')
     })
 
-    it('should create chips from non-excluded concepts', () => {
+    it('should create concept set details from non-excluded concepts', () => {
       const filters = AtlasCohortAdapter.toQueryFilterModel(simplified)
       const primaryFilter = filters[0]
       const diabetesEvent = primaryFilter.events[0]
 
-      // Should only have 1 chip (the non-excluded concept)
-      expect(diabetesEvent.chips).toHaveLength(1)
-      expect(diabetesEvent.chips[0].label).toBe('Diabetes mellitus')
-      expect(diabetesEvent.chips[0].value).toBe('E10-E14')
+      // Should only have 1 concept (the non-excluded concept)
+      expect(diabetesEvent.conceptSetDetails).toHaveLength(1)
+      expect(diabetesEvent.conceptSetDetails![0].CONCEPT_NAME).toBe('Diabetes mellitus')
+      expect(diabetesEvent.conceptSetDetails![0].CONCEPT_CODE).toBe('E10-E14')
     })
 
     it('should set correct concept set information', () => {
@@ -365,10 +365,10 @@ describe('AtlasCohortAdapter', () => {
       const filters = AtlasCohortAdapter.atlasToQueryFilters(testAtlas)
       const event = filters[0].events[0]
 
-      expect(event.chips).toHaveLength(3)
-      expect(event.chips[0].color).toBe('#e74c3c') // Condition - Red
-      expect(event.chips[1].color).toBe('#3498db') // Drug - Blue
-      expect(event.chips[2].color).toBe('#7f8c8d') // Unknown - Default Gray
+      expect(event.conceptSetDetails).toHaveLength(3)
+      expect(event.conceptSetDetails![0].DOMAIN_ID).toBe('Condition')
+      expect(event.conceptSetDetails![1].DOMAIN_ID).toBe('Drug')
+      expect(event.conceptSetDetails![2].DOMAIN_ID).toBe('UnknownDomain')
     })
   })
 
@@ -384,7 +384,7 @@ describe('AtlasCohortAdapter', () => {
 
       const filters = AtlasCohortAdapter.toQueryFilterModel(simplified)
       expect(filters[0].events[0].conceptSet).toBe('Concept Set 1')
-      expect(filters[0].events[0].chips).toHaveLength(0)
+      expect(filters[0].events[0].conceptSetDetails).toHaveLength(0)
     })
 
     it('should handle criteria with missing CodesetId', () => {
