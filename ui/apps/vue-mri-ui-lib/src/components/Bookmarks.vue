@@ -186,7 +186,7 @@
 </template>
 
 <script lang="ts">
-declare var sap
+declare var sap: any
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
