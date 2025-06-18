@@ -6,7 +6,9 @@ import {
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
 import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type.ts";
-import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer.ts";
+import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
+import { PortalServerAPI } from "./api/PortalServerAPI.ts";
+
 interface IKernelModel extends Kernel.IModel {
   username: string;
 }
@@ -14,7 +16,7 @@ interface IKernelModel extends Kernel.IModel {
 export const createStrategusResultsViewer = async (
   token: string,
   studyId: string,
-  databaseCode: string
+  datasetId: string
 ): Promise<void> => {
   console.log("Creating Strategus Results Viewer for study:", studyId);
 
@@ -28,16 +30,18 @@ export const createStrategusResultsViewer = async (
       }),
     });
 
+    const portalServerApi = new PortalServerAPI(token);
+    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+
     const kernel: IKernelConnection = await getKernel(studyId, manager);
     const readCredentials = await getReadCredentials(databaseCode);
-    const schema = "results_" + studyId;
 
     const { host, port, readUser, readPassword } = readCredentials;
     const r_code = RESULT_VIEWER_TEMPLATE.replace(
       "$DATABASE_SCHEMA",
       "results_" + studyId
     )
-      .replace("$DATABASE_SERVER", `${host}:${port}/${schema}`)
+      .replace("$DATABASE_SERVER", `${host}:${port}/results_${studyId}`)
       .replace("$DATABASE_USER", readUser)
       .replace("$DATABASE_PASSWORD", readPassword);
 

@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { createStrategusResultsViewer } from "./services.ts";
-import { services } from "../env.ts";
+
 export class StrategusResultsRouter {
   public router = express.Router();
 
@@ -13,11 +13,10 @@ export class StrategusResultsRouter {
       try {
         const token = req.headers["authorization"];
         const studyId = req.body.studyId;
-        const databaseCode = req.body.databaseCode;
-        await createStrategusResultsViewer(token, studyId, databaseCode);
+        const datasetId = req.body.datasetId;
+        await createStrategusResultsViewer(token, studyId, datasetId);
         res.status(200).json({
-          message: "Strategus Results Viewer created successfully",
-          studyId: studyId,
+          message: `Strategus Results Viewer created successfully for study: ${studyId}`,
         });
       } catch (error) {
         res.status(500).json({
