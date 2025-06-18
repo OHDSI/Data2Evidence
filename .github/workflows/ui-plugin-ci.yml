@@ -131,7 +131,7 @@ jobs:
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
           fi
       - name: Publish
-        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || steps.file_changes.outputs.ui == 'true' }}
+        if: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' || needs.check_file_changes.outputs.changes == 'true' }}
         env:
           CI: false # For portal build to ignore warnings and not treat them as errors
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
