@@ -1838,6 +1838,81 @@ export class QueryFilterCriteriaManager {
     }
   }
 
+  // Clear all criteria
+  clearAllCriteria() {
+    this.criteria.criteria = []
+  }
+
+  // Set criteria (for Atlas loading)
+  setCriteria(criteria: QueryFilterCriteria) {
+    this.criteria = criteria
+  }
+
+  // Convert to Atlas format
+  convertToAtlasFormat(): any {
+    // Simplified Atlas conversion - can be enhanced later
+    return {
+      ConceptSets: [],
+      PrimaryCriteria: {
+        CriteriaList: [],
+        ObservationWindow: {
+          PriorDays: 0,
+          PostDays: 0
+        },
+        PrimaryCriteriaLimit: {
+          Type: this.criteria.criteriaType
+        }
+      },
+      QualifiedLimit: {
+        Type: this.criteria.criteriaType
+      },
+      ExpressionLimit: {
+        Type: "All"
+      },
+      InclusionRules: this.criteria.criteria.map((group, index) => ({
+        name: group.title,
+        description: group.description,
+        expression: {
+          Type: group.groupType,
+          CriteriaList: group.groups.flatMap(filter => 
+            filter.events.map(event => ({
+              Criteria: {
+                [event.criteriaType || 'ConditionOccurrence']: {
+                  CodesetId: event.conceptSetId ? parseInt(event.conceptSetId) : null,
+                  OccurrenceStartDate: null,
+                  OccurrenceEndDate: null
+                }
+              },
+              StartWindow: null,
+              EndWindow: null,
+              RestrictVisit: false,
+              IgnoreObservationPeriod: false
+            }))
+          )
+        }
+      })),
+      EndStrategy: {
+        Type: "CustomEra",
+        CustomEra: {
+          CriteriaList: [],
+          EraConstructorSettings: {
+            EraConsolidationSettings: {
+              ConsolidationType: "ConsolidateAll",
+              ConsolidationPeriod: 0
+            }
+          }
+        }
+      },
+      CensoringCriteria: [],
+      CollapseSettings: {
+        CollapseType: "ERA",
+        EraPad: 0
+      },
+      CensorWindow: {},
+      cdmVersionRange: ">=5.0.0"
+    }
+  }
+
   // Clone
   clone(): QueryFilterCriteriaManager {
     return QueryFilterCriteriaManager.fromJSON(this.toJSON())
