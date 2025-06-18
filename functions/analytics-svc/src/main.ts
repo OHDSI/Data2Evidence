@@ -780,5 +780,4 @@ try {
         MRI failed to start! Kindly fix the error and restart the application. ${err.message}
         ${err.stack}`);
     //process.exit(1);
-    // to trigger httptest
 }
