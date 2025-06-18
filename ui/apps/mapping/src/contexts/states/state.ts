@@ -9,6 +9,7 @@ export interface AppState {
   saved: boolean;
   datasetSelected: string;
   mappingSuggestion: boolean;
+  nodeId: string;
   dialog: DialogState;
   table: TableState;
   field: FieldState;
@@ -22,6 +23,7 @@ export const initialState: AppState = {
   saved: true,
   datasetSelected: "",
   mappingSuggestion: false,
+  nodeId: "",
   dialog: INIT_DIALOG_STATE,
   table: {
     nodes: [

@@ -28,6 +28,10 @@ export const useApp = () => {
     dispatch({ type: ACTION_TYPES.SET_VOCABULARY_DATASET_ID, payload: data });
   }, []);
 
+  const setNodeId = useCallback((data: string) => {
+    dispatch({ type: ACTION_TYPES.SET_NODE_ID, payload: data });
+  }, []);
+
   const setMappingSuggestion = useCallback((data: boolean) => {
     dispatch({ type: ACTION_TYPES.SET_MAPPING_SUGGESTION, payload: data });
   }, []);
@@ -42,6 +46,7 @@ export const useApp = () => {
     clearHandles,
     markAsSaved,
     setVocabularyDatasetId,
+    setNodeId,
     setMappingSuggestion,
     setPage,
     state,

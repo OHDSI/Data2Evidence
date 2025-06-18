@@ -1,5 +1,14 @@
 import { AppState } from "../states";
-import { reset, clearHandles, markAsSaved, load, setVocabularybDatasetId, setMappingSuggestion, setPage } from "./app";
+import {
+  reset,
+  clearHandles,
+  markAsSaved,
+  load,
+  setVocabularybDatasetId,
+  setNodeId,
+  setMappingSuggestion,
+  setPage,
+} from "./app";
 import {
   setTableNodes,
   setTableEdges,
@@ -28,6 +37,7 @@ export enum ACTION_TYPES {
   CLEAR_HANDLES = "CLEAR_HANDLES",
   MARK_AS_SAVED = "MARK_AS_SAVED",
   SET_VOCABULARY_DATASET_ID = "SET_VOCABULARY_DATASET_ID",
+  SET_NODE_ID = "SET_NODE_ID",
   SET_MAPPING_SUGGESTION = "SET_MAPPING_SUGGESTION",
   OPEN_SAVE_MAPPING_DIALOG = "OPEN_SAVE_MAPPING_DIALOG",
   OPEN_LOAD_MAPPING_DIALOG = "OPEN_LOAD_MAPPING_DIALOG",
@@ -60,6 +70,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.CLEAR_HANDLES, clearHandles],
   [ACTION_TYPES.MARK_AS_SAVED, markAsSaved],
   [ACTION_TYPES.SET_VOCABULARY_DATASET_ID, setVocabularybDatasetId],
+  [ACTION_TYPES.SET_NODE_ID, setNodeId],
   [ACTION_TYPES.SET_MAPPING_SUGGESTION, setMappingSuggestion],
   [ACTION_TYPES.OPEN_SAVE_MAPPING_DIALOG, openSaveMappingDialog],
   [ACTION_TYPES.OPEN_LOAD_MAPPING_DIALOG, openLoadMappingDialog],
