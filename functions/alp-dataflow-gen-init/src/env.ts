@@ -26,6 +26,7 @@ export const env = {
     idp_scope: _env.IDP__SCOPE,
     alp_system_id: _env.ALP__SYSTEM_ID,
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
+    exclude_analysis_ids: _env.EXCLUDE_ANALYSIS_IDS || "",
     cohort_generator_module_settings_url:
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,
     cohort_diagnostics_module_settings_url:
@@ -57,7 +58,7 @@ export const env = {
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
   WORKPOOL_NAME: _env.WORKPOOL_NAME,
-  INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY
+  INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
 };
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;

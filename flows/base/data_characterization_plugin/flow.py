@@ -34,8 +34,6 @@ def data_characterization_plugin(options: DCOptionsType):
 
     cdm_version_number = options.cdmVersionNumber
     release_date = options.releaseDate
-    # comma separated values in a string
-    exclude_analysis_ids = options.excludeAnalysisIds
 
     flow_run_context = FlowRunContext.get().flow_run.dict()
     flow_run_id = str(flow_run_context.get("id"))
@@ -77,7 +75,6 @@ def data_characterization_plugin(options: DCOptionsType):
                                                   vocab_schema=vocab_schema,
                                                   cdm_version_number=cdm_version_number,
                                                   dbdao=dbdao,
-                                                  exclude_analysis_ids=exclude_analysis_ids,
                                                   output_folder=output_folder,
                                                   set_connection_string=set_admin_connection_string,
                                                   flow_run_id=flow_run_id
@@ -163,14 +160,17 @@ def execute_data_characterization(schema_name: str,
                                   results_schema: str,
                                   vocab_schema: str,
                                   cdm_version_number: str,
-                                  exclude_analysis_ids: str,
                                   output_folder: str,
                                   dbdao,
                                   set_connection_string: str,
                                   flow_run_id: str):
     try:
         logger = get_run_logger()
+
+        # Set these in .env
         threads = int(Variable.get("achilles_thread_count"))
+        exclude_analysis_ids = Variable.get("exclude_analysis_ids") # comma separated values in a string
+
         logger.info(f'Running achilles on thread count: {threads}')
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f'''
@@ -196,7 +196,7 @@ def execute_data_characterization(schema_name: str,
 
         # drop schema
         logger.info(f"Dropping schema")
-        dbdao.drop_schema(schema_name, cascade=True)
+        dbdao.drop_schema(results_schema, cascade=True)
 
         error_result = {
             "flow_run_id": flow_run_id,
@@ -259,7 +259,7 @@ def execute_export_to_ares(schema_name: str,
 
         logger.info(
             f"Dropping Data Characterization results schema '{results_schema}'")
-        dbdao.drop_schema(schema_name, cascade=True)
+        dbdao.drop_schema(results_schema, cascade=True)
 
         raise Exception(
             f"An error occurred while executing export to ares: {error_message}")
