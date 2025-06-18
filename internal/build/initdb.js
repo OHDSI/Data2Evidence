@@ -100,7 +100,7 @@ async function createTestSchema() {
 
   // run tables & views ddl script
   let result = await createDBArtefacts(queries);
-  console.log(`Created ${result} tables & views succussfully ...`);
+  console.log(`Created ${result} tables, views & grant privileges succussfully ...`);
 
   // run functions & procedures ddl script
   result = await createDBArtefacts(functionsAndProcedures);
