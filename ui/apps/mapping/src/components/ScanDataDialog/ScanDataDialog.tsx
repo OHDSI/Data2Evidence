@@ -4,10 +4,11 @@ import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState, useContext } from "react";
 import { api } from "../../axios/api";
 import { ScanDataDBConnectionForm } from "../../types/scanDataDialog";
 import { ConnectionErrorDialog } from "../ConnectionErrorDialog/ConnectionErrorDialog";
+import { AppContext } from "../../contexts/AppContext";
 
 import "./ScanDataDialog.scss";
 
@@ -75,6 +76,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const [connectionErrorMessage, setConnectionErrorMesssage] = useState<string>("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { nodeId } = useContext(AppContext);
 
   useEffect(() => {
     if (dataType) {
@@ -100,11 +102,20 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     [onClose]
   );
 
+  const uploadCsvData = useCallback(async () => {
+    if (uploadedFiles && nodeId) {
+      for (const file of uploadedFiles) {
+        await api.Dataflow.uploadCsv(nodeId, file);
+      }
+    }
+  }, [uploadedFiles]);
+
   const handleApply = useCallback(async () => {
     try {
       setLoading(true);
       if (dataType === "csv") {
         await scanData();
+        await uploadCsvData();
       } else {
         await scanDBData();
       }
@@ -315,7 +326,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
                     <InputLabel>Delimiter</InputLabel>
                     <Select value={delimiter} label="Delimiter" onChange={handleDelimiterChange}>
                       {DELIMITERS.map((delimiter) => (
-                        <MenuItem key={delimiter.value} value={delimiter.value}>{delimiter.name}</MenuItem>
+                        <MenuItem key={delimiter.value} value={delimiter.value}>
+                          {delimiter.name}
+                        </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
