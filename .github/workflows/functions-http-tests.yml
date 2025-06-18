@@ -132,8 +132,8 @@ jobs:
       - name: Start system services
         run: |
           yarn start:ci
-          echo "Waiting 140 secs for services to start..."
-          sleep 140
+          echo "Waiting 143 secs for services to start..."
+          sleep 143
 
       - name: Check status of docker containers
         run: |
