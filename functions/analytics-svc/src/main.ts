@@ -311,7 +311,7 @@ const initRoutes = async (app: express.Application) => {
                     let queryParams = {
                         action: "getMyConfig",
                         datasetId,
-                        configId: req.paConfigId
+                        configId: req.paConfigId,
                     };
 
                     configResults = await mriConfigConnection.getMriConfig(
@@ -361,7 +361,7 @@ const initRoutes = async (app: express.Application) => {
                     let qParams = {
                         action: "getMyConfig",
                         datasetId,
-                        configId: req.paConfigId
+                        configId: req.paConfigId,
                     };
                     configResults = await mriConfigConnection.getMriConfig(
                         req,
@@ -405,19 +405,26 @@ const initRoutes = async (app: express.Application) => {
                         let configVersion = req.paConfigVersion;
 
                         //Only for tests choose metadata from the request body
-                        if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+                        if (
+                            envVarUtils.isTestEnv() ||
+                            envVarUtils.isHttpTestRun()
+                        ) {
                             let configData = Array.isArray(body)
-                                            ? body[0].configData
-                                            : body.configData;
+                                ? body[0].configData
+                                : body.configData;
 
-                            if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                            if (
+                                configData &&
+                                (configData.length > 0 ||
+                                    Object.keys(configData).length > 0)
+                            ) {
                                 configId = configData.configId;
                                 configVersion = configData.configVersion;
                             } else {
-                                throw new Error("Config metadata undefined!")
+                                throw new Error("Config metadata undefined!");
                             }
                         }
-                      
+
                         const datasetId = req.body.datasetId;
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
@@ -709,8 +716,11 @@ const getDBConnections = async ({
                     "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
                 );
             }
-            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-cohorts`;
-            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
+            analyticsCredentials[
+                "SESSIONVARIABLE:APPLICATION"
+            ] = `${env.PROJECT_NAME}-cohorts`;
+            analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+                userObj.getUser();
         }
 
         analyticsConnectionPromise =
