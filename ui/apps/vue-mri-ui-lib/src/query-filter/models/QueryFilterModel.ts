@@ -1798,6 +1798,46 @@ export class QueryFilterCriteriaManager {
     return false
   }
 
+  // Update qualifying events limit
+  updateQualifyingEventsLimit(limit: 'ALL' | 'EARLIEST' | 'LATEST') {
+    this.criteria.criteriaType = limit
+  }
+
+  // Add criteria group
+  addCriteriaGroup(group: Partial<QueryFilterGroup>) {
+    const newGroup: QueryFilterGroup = {
+      id: group.id || `criteria_${Date.now()}`,
+      title: group.title || '',
+      description: group.description || '',
+      groupType: group.groupType || 'ALL',
+      groups: group.groups || [
+        new QueryFilterCardModel({
+          id: `filter_${Date.now()}`,
+          title: group.title || '',
+          type: 'inclusion',
+          events: [],
+          isExpanded: true,
+        })
+      ]
+    }
+    
+    this.criteria.criteria.push(newGroup)
+  }
+
+  // Update criteria group
+  updateCriteriaGroup(index: number, updatedGroup: QueryFilterGroup) {
+    if (index >= 0 && index < this.criteria.criteria.length) {
+      this.criteria.criteria[index] = updatedGroup
+    }
+  }
+
+  // Remove criteria group
+  removeCriteriaGroup(index: number) {
+    if (index >= 0 && index < this.criteria.criteria.length) {
+      this.criteria.criteria.splice(index, 1)
+    }
+  }
+
   // Clone
   clone(): QueryFilterCriteriaManager {
     return QueryFilterCriteriaManager.fromJSON(this.toJSON())
