@@ -104,9 +104,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
 
   const uploadCsvData = useCallback(async () => {
     if (uploadedFiles && nodeId) {
-      for (const file of uploadedFiles) {
-        await api.Dataflow.uploadCsv(nodeId, file);
-      }
+      await Promise.all(
+        uploadedFiles.map((file) => api.Dataflow.uploadCsv(nodeId, file))
+      );
     }
   }, [uploadedFiles]);
 
