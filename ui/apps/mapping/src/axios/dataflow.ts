@@ -1,6 +1,6 @@
 import request from "./request";
 
-const DATAFLOW_BASE_ENDPOINT = "dataflow-mgmt/";
+const DATAFLOW_BASE_ENDPOINT = "jobplugins/";
 
 export class Dataflow {
   public uploadCsv(nodeId: string, file: File): Promise<void> {
