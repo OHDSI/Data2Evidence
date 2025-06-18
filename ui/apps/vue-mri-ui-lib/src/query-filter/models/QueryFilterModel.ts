@@ -1,60 +1,55 @@
 /**
- * Model for the new query filter card system with hierarchical structure
+ * Model for the query filter card system with hierarchical structure.
+ * Provides interfaces and classes for managing filter cards and events,
+ * with support for Atlas cohort definition conversion.
  */
-
-// Cardinality settings for filters - maps to Atlas Occurrence settings
 export interface QueryFilterCardinality {
-  type: 'AT_LEAST' | 'exactly' | 'atMost' // Maps to Atlas Occurrence.Type (2, 0, 1)
-  count: number // Maps to Atlas Occurrence.Count
-  using: 'ALL' // Additional context for transformation
+  type: 'AT_LEAST' | 'exactly' | 'atMost'
+  count: number
+  using: 'ALL'
 }
 
-// Group-level structure - maps to Atlas InclusionRule
 export interface QueryFilterGroup {
   id: string
-  title: string // Maps to Atlas InclusionRule.name
-  description: string // Maps to Atlas InclusionRule.description
-  groupType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST' // Maps to Atlas expression.Type
-  groups: QueryFilterCardModel[] // Maps to Atlas expression.CriteriaList[]
+  title: string
+  description: string
+  groupType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  groups: QueryFilterCardModel[]
 }
 
-// Outermost criteria structure - maps to Atlas root level
 export interface QueryFilterCriteria {
   id: string
-  criteriaType: 'ALL' | 'EARLIEST' | 'LATEST' // Maps to Atlas PrimaryCriteriaLimit.Type
-  criteria: QueryFilterGroup[] // Maps to Atlas InclusionRules[]
+  criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'
+  criteria: QueryFilterGroup[]
 }
-
 
 export interface QueryFilterEvent {
   id: string
   conceptSet: string
   conceptSetId?: string
   isEditing?: boolean
-  criteriaType?: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
-  selectedAttributes?: string[] // Selected attribute IDs
-  isAttributeBased?: boolean // True if this event was created from an attribute selection
-  isDemographic?: boolean // True if this is a demographic criteria (goes to DemographicCriteriaList)
-  parentEventId?: string // Reference to the parent event if this is attribute-based
+  criteriaType?: string
+  selectedAttributes?: string[]
+  isAttributeBased?: boolean
+  isDemographic?: boolean
+  parentEventId?: string
   attributeConfig?: {
-    // Store the original attribute config for attribute-based events
     id: string
     name: string
     description: string
     type: string
     category: string
-    operator?: string // For age attributes (e.g., 'GREATER_THAN', 'LESS_THAN')
-    value?: number // For age attributes (e.g., 5, 18, 65)
+    operator?: string
+    value?: number
   }
-  isNested?: boolean // True if this is a nested criteria group
-  nestedEvents?: QueryFilterEvent[] // Child events for nested groups
-  nestedOperator?: 'AND' | 'OR' // Operator for combining nested events
-  // New fields for concept set selection
-  selectedConceptSet?: any // The full concept set object from API
-  conceptSetDetails?: any[] // Array of Atlas-formatted concept details  
-  conceptSetLoading?: boolean // Loading state for concept details
-  cardinality?: QueryFilterCardinality // Event-level cardinality for sample2 structure
-  isExpanded?: boolean // Expansion state for events
+  isNested?: boolean
+  nestedEvents?: QueryFilterEvent[]
+  nestedOperator?: 'AND' | 'OR'
+  selectedConceptSet?: any
+  conceptSetDetails?: any[]
+  conceptSetLoading?: boolean
+  cardinality?: QueryFilterCardinality
+  isExpanded?: boolean
 }
 
 export class QueryFilterCardModel {
@@ -63,7 +58,7 @@ export class QueryFilterCardModel {
   type?: 'inclusion' | 'exclusion'
   events: QueryFilterEvent[]
   isExpanded: boolean
-  cardinality: QueryFilterCardinality // Maps to Atlas CriteriaGroup.Occurrence
+  cardinality: QueryFilterCardinality
 
   constructor(data: Partial<QueryFilterCardModel> = {}) {
     this.id = data.id || this.generateId()
@@ -74,18 +69,17 @@ export class QueryFilterCardModel {
     this.cardinality = data.cardinality || {
       type: 'AT_LEAST',
       count: 1,
-      using: 'ALL'
+      using: 'ALL',
     }
   }
 
   private generateId(): string {
-    return `filter_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+    return `filter_${Date.now()}`
   }
 
-  // Event management
   addEvent(event?: Partial<QueryFilterEvent>): QueryFilterEvent {
     const newEvent: QueryFilterEvent = {
-      id: event?.id || `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: event?.id || `event_${Date.now()}}`,
       conceptSet: event?.conceptSet || '',
       conceptSetId: event?.conceptSetId,
       isEditing: event?.isEditing || false,
@@ -106,23 +100,20 @@ export class QueryFilterCardModel {
     return newEvent
   }
 
-  // Add attribute-based event
   addAttributeEvent(parentEventId: string, attributeConfig: any): QueryFilterEvent {
     const parentEvent = this.getEvent(parentEventId)
     if (!parentEvent) {
       throw new Error(`Parent event ${parentEventId} not found`)
     }
 
-    // Remove "Add " prefix from the title for display
     const displayTitle = (attributeConfig.title || attributeConfig.name || '').replace(/^Add\s+/, '')
 
-    // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
       const nestedEvent: QueryFilterEvent = {
-        id: `nested_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        id: `nested_${Date.now()}}`,
         conceptSet: displayTitle,
         isEditing: false,
-          criteriaType: parentEvent.criteriaType,
+        criteriaType: parentEvent.criteriaType,
         isAttributeBased: true,
         parentEventId: parentEventId,
         isNested: true,
@@ -156,7 +147,7 @@ export class QueryFilterCardModel {
 
     // Regular attribute event
     const newEvent: QueryFilterEvent = {
-      id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: `attr_${Date.now()}}`,
       conceptSet: displayTitle,
       isEditing: false,
       criteriaType: parentEvent.criteriaType,
@@ -220,7 +211,7 @@ export class QueryFilterCardModel {
     }
 
     const newEvent: QueryFilterEvent = {
-      id: event.id || `nested_child_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: event.id || `nested_child_${Date.now()}}`,
       conceptSet: event.conceptSet || '',
       conceptSetId: event.conceptSetId,
       isEditing: event.isEditing || false,
@@ -314,10 +305,10 @@ export class QueryFilterCardModel {
     // Special handling for nested criteria
     if (attributeConfig.type === 'nested') {
       const nestedEvent: QueryFilterEvent = {
-        id: `nested_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        id: `nested_${Date.now()}}`,
         conceptSet: displayTitle,
         isEditing: false,
-          criteriaType: parentEvent.criteriaType,
+        criteriaType: parentEvent.criteriaType,
         isAttributeBased: true,
         parentEventId: parentEventId,
         isNested: true,
@@ -338,7 +329,7 @@ export class QueryFilterCardModel {
 
     // Regular attribute event
     const newEvent: QueryFilterEvent = {
-      id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: `attr_${Date.now()}}`,
       conceptSet: displayTitle,
       isEditing: false,
       criteriaType: parentEvent.criteriaType,
@@ -512,7 +503,6 @@ export class QueryFilterCardModel {
     }
   }
 
-
   // Utility methods
   toggle(): void {
     this.isExpanded = !this.isExpanded
@@ -521,7 +511,6 @@ export class QueryFilterCardModel {
   hasEvents(): boolean {
     return this.events.length > 0
   }
-
 
   // Cloning and serialization
   clone(): QueryFilterCardModel {
@@ -621,7 +610,6 @@ export class QueryFilterManager {
     const filter = this.getFilter(filterId)
     return filter ? filter.removeEvent(eventId) : false
   }
-
 
   // Bulk operations
   clearAllFilters(): void {
@@ -889,7 +877,11 @@ export class QueryFilterManager {
 
     // Only add primary criteria if there are inclusion filters with events that have concept set details OR age attributes
     const hasEventsOrAge = inclusionFilters.some(f =>
-      f.events.some(e => (e.conceptSetDetails && e.conceptSetDetails.length > 0) || (e.isAttributeBased && e.attributeConfig?.id === 'age'))
+      f.events.some(
+        e =>
+          (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
+          (e.isAttributeBased && e.attributeConfig?.id === 'age')
+      )
     )
     if (inclusionFilters.length > 0 && hasEventsOrAge) {
       atlasDef.PrimaryCriteria.CriteriaList = [
@@ -990,8 +982,9 @@ export class QueryFilterManager {
             ) || []
 
           // Also check if the child event itself has an age attribute
-          const hasChildAgeAttribute = childEvent.selectedAttributes?.includes('age') || 
-                                      (childEvent.attributeConfig?.id === 'age' && childEvent.attributeConfig?.type === 'numericRange')
+          const hasChildAgeAttribute =
+            childEvent.selectedAttributes?.includes('age') ||
+            (childEvent.attributeConfig?.id === 'age' && childEvent.attributeConfig?.type === 'numericRange')
 
           if (childAgeEvents.length > 0 || hasChildAgeAttribute) {
             // Put age directly in ConditionOccurrence.Age for nested criteria
@@ -1005,7 +998,7 @@ export class QueryFilterManager {
               if (childEvent.attributeConfig.operator) {
                 ageConfig.Op = this.mapOperatorToAtlas(childEvent.attributeConfig.operator)
               }
-              
+
               // Add value if specified
               if (childEvent.attributeConfig.value !== undefined) {
                 ageConfig.Value = childEvent.attributeConfig.value
@@ -1102,14 +1095,22 @@ export class QueryFilterManager {
     // TODO: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
     // These mappings are educated guesses based on common patterns
     switch (operator) {
-      case 'GREATER_THAN': return 'gt'
-      case 'LESS_THAN': return 'lt'
-      case 'GREATER_THAN_OR_EQUAL': return 'gte'
-      case 'LESS_THAN_OR_EQUAL': return 'lte'
-      case 'EQUAL': return 'eq'
-      case 'BETWEEN': return 'bt'  // Common abbreviation for "between"
-      case 'NOT_BETWEEN': return 'nbt' // Not between - may need verification
-      default: return 'gt'
+      case 'GREATER_THAN':
+        return 'gt'
+      case 'LESS_THAN':
+        return 'lt'
+      case 'GREATER_THAN_OR_EQUAL':
+        return 'gte'
+      case 'LESS_THAN_OR_EQUAL':
+        return 'lte'
+      case 'EQUAL':
+        return 'eq'
+      case 'BETWEEN':
+        return 'bt' // Common abbreviation for "between"
+      case 'NOT_BETWEEN':
+        return 'nbt' // Not between - may need verification
+      default:
+        return 'gt'
     }
   }
 }
@@ -1131,37 +1132,40 @@ export class QueryFilterCriteriaManager {
       this.criteria = {
         id: this.generateId(),
         criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
-        criteria: data.inclusionCriteria.criteria?.map((group: any) => ({
-          id: group.id,
-          title: group.title,
-          description: group.description,
-          groupType: group.criteriaType,
-          groups: [new QueryFilterCardModel({
-            id: this.generateId(),
-            title: group.title || '',
-            type: 'inclusion',
-            events: this.transformEvents(group.events || []),
-            isExpanded: true,
-            cardinality: {
-              type: 'AT_LEAST',
-              count: 1,
-              using: 'ALL'
-            }
-          })]
-        })) || []
+        criteria:
+          data.inclusionCriteria.criteria?.map((group: any) => ({
+            id: group.id,
+            title: group.title,
+            description: group.description,
+            groupType: group.criteriaType,
+            groups: [
+              new QueryFilterCardModel({
+                id: this.generateId(),
+                title: group.title || '',
+                type: 'inclusion',
+                events: this.transformEvents(group.events || []),
+                isExpanded: true,
+                cardinality: {
+                  type: 'AT_LEAST',
+                  count: 1,
+                  using: 'ALL',
+                },
+              }),
+            ],
+          })) || [],
       }
     } else {
       // Handle original structure
       this.criteria = {
         id: data.id || this.generateId(),
         criteriaType: data.criteriaType || 'ALL',
-        criteria: data.criteria || []
+        criteria: data.criteria || [],
       }
     }
   }
 
   private generateId(): string {
-    return `criteria_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+    return `criteria_${Date.now()}}`
   }
 
   // Criteria management
@@ -1176,11 +1180,11 @@ export class QueryFilterCriteriaManager {
   // Group management
   addGroup(group?: Partial<QueryFilterGroup>): QueryFilterGroup {
     const newGroup: QueryFilterGroup = {
-      id: group?.id || `group_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: group?.id || `group_${Date.now()}}`,
       title: group?.title || 'Group 1',
-      description: group?.description || 'Description 1', 
+      description: group?.description || 'Description 1',
       groupType: group?.groupType || 'ALL',
-      groups: group?.groups || []
+      groups: group?.groups || [],
     }
     this.criteria.criteria.push(newGroup)
     return newGroup
@@ -1234,17 +1238,20 @@ export class QueryFilterCriteriaManager {
   // Helper method to map qualifyingEventsLimit to criteriaType
   private mapQualifyingEventsLimit(limit: string): 'ALL' | 'EARLIEST' | 'LATEST' {
     switch (limit) {
-      case 'EARLIEST': return 'EARLIEST'
-      case 'LATEST': return 'LATEST'
+      case 'EARLIEST':
+        return 'EARLIEST'
+      case 'LATEST':
+        return 'LATEST'
       case 'ALL':
-      default: return 'ALL'
+      default:
+        return 'ALL'
     }
   }
 
   // Transform events from new structure to internal structure
   private transformEvents(events: any[]): QueryFilterEvent[] {
     const transformedEvents: QueryFilterEvent[] = []
-    
+
     events.forEach(event => {
       // Main event
       const mainEvent: QueryFilterEvent = {
@@ -1253,10 +1260,10 @@ export class QueryFilterCriteriaManager {
         criteriaType: event.eventType,
         isExpanded: event.isExpanded,
         cardinality: event.cardinality,
-        isAttributeBased: false
+        isAttributeBased: false,
       }
       transformedEvents.push(mainEvent)
-      
+
       // Process attributes to create nested events or handle direct attributes
       if (event.attributes && event.attributes.length > 0) {
         event.attributes.forEach((attr: any) => {
@@ -1270,14 +1277,14 @@ export class QueryFilterCriteriaManager {
               parentEventId: mainEvent.id,
               isNested: true,
               nestedEvents: [],
-              nestedOperator: 'AND'
+              nestedOperator: 'AND',
             }
-            
+
             // Recursively transform nested criteria events
             if (attr.nestedCriteria.events) {
               nestedEvent.nestedEvents = this.transformNestedEvents(attr.nestedCriteria.events, nestedEvent.id)
             }
-            
+
             transformedEvents.push(nestedEvent)
           } else if (attr.attributeId && attr.attributeType && attr.attributeType !== 'nested') {
             // Handle direct attributes (like age, gender on demographic events)
@@ -1285,14 +1292,14 @@ export class QueryFilterCriteriaManager {
               mainEvent.selectedAttributes = []
             }
             mainEvent.selectedAttributes.push(attr.attributeId)
-            
+
             // Store attribute config for later processing
             mainEvent.attributeConfig = {
               id: attr.attributeId,
               name: attr.attributeId,
               description: '',
               type: attr.attributeType || 'conceptSet',
-              category: 'criteria-specific'
+              category: 'criteria-specific',
             }
 
             // Store operator and value for age attributes
@@ -1304,7 +1311,7 @@ export class QueryFilterCriteriaManager {
         })
       }
     })
-    
+
     return transformedEvents
   }
 
@@ -1318,7 +1325,7 @@ export class QueryFilterCriteriaManager {
         isExpanded: event.isExpanded,
         cardinality: event.cardinality,
         isAttributeBased: false,
-        parentEventId: parentId
+        parentEventId: parentId,
       }
 
       // Handle further nesting if this event has attributes
@@ -1333,7 +1340,10 @@ export class QueryFilterCriteriaManager {
 
             // Recursively transform deeper levels
             if (attr.nestedCriteria.events) {
-              nestedChildEvent.nestedEvents = this.transformNestedEvents(attr.nestedCriteria.events, nestedChildEvent.id)
+              nestedChildEvent.nestedEvents = this.transformNestedEvents(
+                attr.nestedCriteria.events,
+                nestedChildEvent.id
+              )
             }
           } else if (attr.attributeId || attr.attributeType) {
             // Handle non-nested attributes (like gender, age, etc.)
@@ -1341,7 +1351,7 @@ export class QueryFilterCriteriaManager {
               nestedChildEvent.selectedAttributes = []
             }
             nestedChildEvent.selectedAttributes.push(attr.attributeId || attr.id)
-            
+
             // Store attribute config for later processing
             if (!nestedChildEvent.attributeConfig) {
               nestedChildEvent.attributeConfig = {
@@ -1349,7 +1359,7 @@ export class QueryFilterCriteriaManager {
                 name: attr.attributeId || attr.id,
                 description: '',
                 type: attr.attributeType || 'conceptSet',
-                category: 'criteria-specific'
+                category: 'criteria-specific',
               }
             }
 
@@ -1392,7 +1402,7 @@ export class QueryFilterCriteriaManager {
         description: group.description, // Maps group.description → Atlas InclusionRule.description
         expression: {
           Type: this.mapGroupTypeToAtlas(group.groupType), // Maps groupType → Atlas expression.Type
-          CriteriaList: group.groups.flatMap(filter => 
+          CriteriaList: group.groups.flatMap(filter =>
             filter.events
               .filter(event => !event.isAttributeBased && event.criteriaType !== 'demographic') // Only non-demographic main events
               .map(event => {
@@ -1434,7 +1444,7 @@ export class QueryFilterCriteriaManager {
                 const nestedEvents = filter.events.filter(
                   e => e.isAttributeBased && e.parentEventId === event.id && e.isNested
                 )
-                
+
                 if (nestedEvents.length > 0) {
                   const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(
                     nestedEvents,
@@ -1457,33 +1467,33 @@ export class QueryFilterCriteriaManager {
           ),
           DemographicCriteriaList: group.groups.flatMap(filter => {
             // Process demographic events and their age attributes
-            const demographicEvents = filter.events.filter(event => 
-              !event.isAttributeBased && event.criteriaType === 'demographic'
+            const demographicEvents = filter.events.filter(
+              event => !event.isAttributeBased && event.criteriaType === 'demographic'
             )
-            
+
             const demographicCriteria: any[] = []
-            
+
             demographicEvents.forEach(event => {
               // Check if this demographic event has age attributes in selectedAttributes/attributeConfig (transformed)
               if (event.selectedAttributes?.includes('age') && event.attributeConfig?.id === 'age') {
                 const ageConfig: any = {
                   Op: 'gt', // Default operator
                 }
-                
+
                 // Map operator and value if available
                 if (event.attributeConfig.operator) {
                   ageConfig.Op = this.mapOperatorToAtlas(event.attributeConfig.operator)
                 }
-                
+
                 if (event.attributeConfig.value !== undefined) {
                   ageConfig.Value = event.attributeConfig.value
                 }
-                
+
                 demographicCriteria.push({
-                  Age: ageConfig
+                  Age: ageConfig,
                 })
               }
-              
+
               // Also check for age attributes directly in the original attributes array (for events not fully transformed)
               const eventAny = event as any
               if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
@@ -1492,24 +1502,24 @@ export class QueryFilterCriteriaManager {
                     const ageConfig: any = {
                       Op: 'gt', // Default operator
                     }
-                    
+
                     // Map operator and value if available
                     if (attr.operator) {
                       ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
                     }
-                    
+
                     if (attr.value !== undefined) {
                       ageConfig.Value = parseInt(attr.value)
                     }
-                    
+
                     demographicCriteria.push({
-                      Age: ageConfig
+                      Age: ageConfig,
                     })
                   }
                 })
               }
             })
-            
+
             return demographicCriteria
           }),
           Groups: [],
@@ -1526,9 +1536,10 @@ export class QueryFilterCriteriaManager {
     // Add PrimaryCriteria if any events have conceptSetDetails or age attributes
     const hasEventsOrAge = this.criteria.criteria.some(group =>
       group.groups.some(filter =>
-        filter.events.some(e => 
-          (e.conceptSetDetails && e.conceptSetDetails.length > 0) || 
-          (e.isAttributeBased && e.attributeConfig?.id === 'age')
+        filter.events.some(
+          e =>
+            (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
+            (e.isAttributeBased && e.attributeConfig?.id === 'age')
         )
       )
     )
@@ -1550,36 +1561,45 @@ export class QueryFilterCriteriaManager {
       atlasDef.cdmVersionRange = '>=5.0.0'
     }
 
-
     return atlasDef
   }
 
   // Helper methods for mapping values to Atlas format
   private mapCriteriaTypeToAtlas(type: string): string {
     switch (type) {
-      case 'EARLIEST': return 'First'
-      case 'LATEST': return 'Last'
+      case 'EARLIEST':
+        return 'First'
+      case 'LATEST':
+        return 'Last'
       case 'ALL':
-      default: return 'All'
+      default:
+        return 'All'
     }
   }
 
   private mapGroupTypeToAtlas(type: string): string {
     switch (type) {
-      case 'ANY': return 'ANY'
-      case 'AT_LEAST': return 'AT_LEAST'
-      case 'AT_MOST': return 'AT_MOST'
+      case 'ANY':
+        return 'ANY'
+      case 'AT_LEAST':
+        return 'AT_LEAST'
+      case 'AT_MOST':
+        return 'AT_MOST'
       case 'ALL':
-      default: return 'ALL'
+      default:
+        return 'ALL'
     }
   }
 
   private mapCardinalityTypeToAtlas(type: string): number {
     switch (type) {
-      case 'exactly': return 0 // Atlas Type 0 = exactly
-      case 'atMost': return 1  // Atlas Type 1 = at most
+      case 'exactly':
+        return 0 // Atlas Type 0 = exactly
+      case 'atMost':
+        return 1 // Atlas Type 1 = at most
       case 'AT_LEAST':
-      default: return 2        // Atlas Type 2 = at least
+      default:
+        return 2 // Atlas Type 2 = at least
     }
   }
 
@@ -1587,14 +1607,22 @@ export class QueryFilterCriteriaManager {
     // TODO: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
     // These mappings are educated guesses based on common patterns
     switch (operator) {
-      case 'GREATER_THAN': return 'gt'
-      case 'LESS_THAN': return 'lt'
-      case 'GREATER_THAN_OR_EQUAL': return 'gte'
-      case 'LESS_THAN_OR_EQUAL': return 'lte'
-      case 'EQUAL': return 'eq'
-      case 'BETWEEN': return 'bt'  // Common abbreviation for "between"
-      case 'NOT_BETWEEN': return 'nbt' // Not between - may need verification
-      default: return 'gt'
+      case 'GREATER_THAN':
+        return 'gt'
+      case 'LESS_THAN':
+        return 'lt'
+      case 'GREATER_THAN_OR_EQUAL':
+        return 'gte'
+      case 'LESS_THAN_OR_EQUAL':
+        return 'lte'
+      case 'EQUAL':
+        return 'eq'
+      case 'BETWEEN':
+        return 'bt' // Common abbreviation for "between"
+      case 'NOT_BETWEEN':
+        return 'nbt' // Not between - may need verification
+      default:
+        return 'gt'
     }
   }
 
@@ -1608,8 +1636,8 @@ export class QueryFilterCriteriaManager {
         title: group.title,
         description: group.description,
         groupType: group.groupType,
-        groups: group.groups.map(filter => filter.toJSON())
-      }))
+        groups: group.groups.map(filter => filter.toJSON()),
+      })),
     }
   }
 
@@ -1618,18 +1646,19 @@ export class QueryFilterCriteriaManager {
     if (data.inclusionCriteria) {
       return new QueryFilterCriteriaManager(data)
     }
-    
+
     // Handle original structure
     const criteria = {
       id: data.id,
       criteriaType: data.criteriaType,
-      criteria: data.criteria?.map((group: any) => ({
-        id: group.id,
-        title: group.title,
-        description: group.description,
-        groupType: group.groupType,
-        groups: group.groups?.map((filter: any) => new QueryFilterCardModel(filter)) || []
-      })) || []
+      criteria:
+        data.criteria?.map((group: any) => ({
+          id: group.id,
+          title: group.title,
+          description: group.description,
+          groupType: group.groupType,
+          groups: group.groups?.map((filter: any) => new QueryFilterCardModel(filter)) || [],
+        })) || [],
     }
     return new QueryFilterCriteriaManager(criteria)
   }
@@ -1700,8 +1729,9 @@ export class QueryFilterCriteriaManager {
             ) || []
 
           // Also check if the child event itself has an age attribute
-          const hasChildAgeAttribute = childEvent.selectedAttributes?.includes('age') || 
-                                      (childEvent.attributeConfig?.id === 'age' && childEvent.attributeConfig?.type === 'numericRange')
+          const hasChildAgeAttribute =
+            childEvent.selectedAttributes?.includes('age') ||
+            (childEvent.attributeConfig?.id === 'age' && childEvent.attributeConfig?.type === 'numericRange')
 
           if (childAgeEvents.length > 0 || hasChildAgeAttribute) {
             // Put age directly in ConditionOccurrence.Age for nested criteria
@@ -1715,7 +1745,7 @@ export class QueryFilterCriteriaManager {
               if (childEvent.attributeConfig.operator) {
                 ageConfig.Op = this.mapOperatorToAtlas(childEvent.attributeConfig.operator)
               }
-              
+
               // Add value if specified
               if (childEvent.attributeConfig.value !== undefined) {
                 ageConfig.Value = childEvent.attributeConfig.value
@@ -1726,8 +1756,8 @@ export class QueryFilterCriteriaManager {
           }
 
           // Check for gender attributes that belong to this child event
-          const hasGenderAttribute = childEvent.selectedAttributes?.includes('gender') || 
-                                   (childEvent.attributeConfig?.id === 'gender')
+          const hasGenderAttribute =
+            childEvent.selectedAttributes?.includes('gender') || childEvent.attributeConfig?.id === 'gender'
 
           if (hasGenderAttribute) {
             // Gender should be added as a property on ConditionOccurrence

@@ -1,7 +1,6 @@
 /**
  * Utility functions for converting between Atlas cohort definitions and QueryFilter UI models
  */
-
 import { QueryFilterCardModel, QueryFilterEvent } from '../models/QueryFilterModel'
 
 export interface ConceptSetItem {
@@ -16,47 +15,28 @@ export interface ConceptSetMapping {
   conceptSetItem: ConceptSetItem | null
 }
 
-/**
- * Converts Atlas cohort definition JSON to QueryFilter UI models
- * @param atlasJson - Atlas cohort definition JSON
- * @param availableConceptSets - Array of concept sets loaded from API
- * @returns Array of QueryFilterCardModel instances
- */
 export const convertAtlasToFilters = (
   atlasJson: any,
   availableConceptSets: ConceptSetItem[] = []
 ): QueryFilterCardModel[] => {
   const filters: QueryFilterCardModel[] = []
 
-  // Handle null or undefined input
   if (!atlasJson) {
-    console.log('Atlas JSON is null or undefined')
     return filters
   }
 
-  // Handle wrapper structure - if there's an 'expression' property, use it
   let cohortDefinition = atlasJson
   let cohortName = atlasJson.name
 
   if (atlasJson.expression && atlasJson.expressionType) {
-    console.log('Detected Atlas wrapper structure, extracting expression')
     cohortDefinition = JSON.parse(atlasJson.expression)
     cohortName = atlasJson.name || cohortDefinition.name
   }
 
-  console.log('Converting Atlas cohort:', cohortName, {
-    primaryCriteria: cohortDefinition.PrimaryCriteria?.CriteriaList?.length || 0,
-    inclusionRules: cohortDefinition.InclusionRules?.length || 0,
-    exclusionRules: cohortDefinition.ExclusionRules?.length || 0,
-  })
-
-  // Helper function to find concept set by CodesetId (which maps to Atlas ConceptSets[].id)
   const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping => {
-    // Find the Atlas concept set where id matches the CodesetId
     const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === codesetId)
 
     if (atlasConceptSet) {
-      // Use the conceptSetId field to look up in available concept sets
       const actualConceptSetId = atlasConceptSet.conceptSetId || atlasConceptSet.id
       const localConceptSet = availableConceptSets.find(cs => cs.value == actualConceptSetId.toString())
 
@@ -68,7 +48,6 @@ export const convertAtlasToFilters = (
         }
       }
 
-      // Create a concept set item from Atlas data if not found in available sets
       const conceptSetItem: ConceptSetItem = {
         value: actualConceptSetId.toString(),
         text: atlasConceptSet.name,
@@ -82,7 +61,6 @@ export const convertAtlasToFilters = (
       }
     }
 
-    // Fallback if concept set not found
     return {
       name: `Concept Set ${codesetId}`,
       id: codesetId.toString(),
@@ -90,7 +68,6 @@ export const convertAtlasToFilters = (
     }
   }
 
-  // Helper function to get criteria type from Atlas criteria
   const getCriteriaType = (criteria: any): string => {
     if (criteria.ConditionOccurrence) return 'conditionOccurrence'
     if (criteria.DrugExposure) return 'drugExposure'
@@ -101,10 +78,9 @@ export const convertAtlasToFilters = (
     if (criteria.DeviceExposure) return 'deviceExposure'
     if (criteria.Death) return 'death'
     if (criteria.ObservationPeriod) return 'observationPeriod'
-    return 'conditionOccurrence' // default
+    return 'conditionOccurrence'
   }
 
-  // Helper function to get criteria object from Atlas criteria
   const getCriteriaObject = (criteria: any): any => {
     if (criteria.ConditionOccurrence) return criteria.ConditionOccurrence
     if (criteria.DrugExposure) return criteria.DrugExposure
@@ -118,7 +94,6 @@ export const convertAtlasToFilters = (
     return {}
   }
 
-  // Helper function to convert criteria list to events
   const convertCriteriaListToEvents = (criteriaList: any[]): QueryFilterEvent[] => {
     if (!criteriaList || criteriaList.length === 0) {
       return []
@@ -133,7 +108,7 @@ export const convertAtlasToFilters = (
       const conceptSetInfo = conceptSetId !== undefined ? findConceptSetByCodesetId(conceptSetId) : null
 
       const event: QueryFilterEvent = {
-        id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        id: `event_${Date.now()}}`,
         conceptSet:
           conceptSetInfo?.name || (conceptSetId !== undefined ? `Concept Set ${conceptSetId}` : 'No Concept Set'),
         conceptSetId: conceptSetInfo?.id,
@@ -141,7 +116,6 @@ export const convertAtlasToFilters = (
         selectedConceptSet: conceptSetInfo?.conceptSetItem || undefined,
       }
 
-      // Add concept set details from Atlas JSON if available
       if (conceptSetId !== undefined) {
         const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === conceptSetId)
         if (atlasConceptSet?.expression?.items) {
@@ -154,20 +128,9 @@ export const convertAtlasToFilters = (
     })
   }
 
-  // TODO: Handle PrimaryCriteria when UI support is added
-  // PrimaryCriteria defines the initial qualifying events for the cohort
-  // For now, we skip this as it's not yet implemented in the UI
-  if (cohortDefinition.PrimaryCriteria?.CriteriaList?.length > 0) {
-    console.log(
-      `Skipping PrimaryCriteria with ${cohortDefinition.PrimaryCriteria.CriteriaList.length} criteria (not yet supported in UI)`
-    )
-  }
-
-  // Handle InclusionRules
   if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
     cohortDefinition.InclusionRules.forEach((rule: any) => {
       if (rule.expression?.CriteriaList?.length > 0) {
-        // Create a separate filter for each CriteriaList item
         rule.expression.CriteriaList.forEach((criteriaItem: any) => {
           const events = convertCriteriaListToEvents([criteriaItem])
 
@@ -182,11 +145,9 @@ export const convertAtlasToFilters = (
     })
   }
 
-  // Handle ExclusionRules
   if (cohortDefinition.ExclusionRules && Array.isArray(cohortDefinition.ExclusionRules)) {
     cohortDefinition.ExclusionRules.forEach((rule: any) => {
       if (rule.expression?.CriteriaList?.length > 0) {
-        // Create a separate filter for each CriteriaList item
         rule.expression.CriteriaList.forEach((criteriaItem: any) => {
           const events = convertCriteriaListToEvents([criteriaItem])
 
@@ -201,20 +162,9 @@ export const convertAtlasToFilters = (
     })
   }
 
-  console.log(
-    `Generated ${filters.length} filters from Atlas cohort:`,
-    filters.map(f => f.title)
-  )
-
   return filters
 }
 
-/**
- * Helper function to get concept set mappings for later detail loading
- * @param atlasJson - Atlas cohort definition JSON
- * @param availableConceptSets - Array of concept sets loaded from API
- * @returns Array of concept set mappings that need detail loading
- */
 export const getConceptSetMappings = (
   atlasJson: any,
   availableConceptSets: ConceptSetItem[] = []
@@ -223,64 +173,33 @@ export const getConceptSetMappings = (
 
   if (!atlasJson) return mappings
 
-  // Handle wrapper structure - if there's an 'expression' property, use it
   const cohortDefinition = atlasJson.expression || atlasJson
-
-  // Extract all concept set IDs used in the Atlas definition
   const conceptSetIds = new Set<number>()
-
-  // TODO: Include PrimaryCriteria concept sets when UI support is added
-  // For now, we skip extracting concept sets from PrimaryCriteria
-  // cohortDefinition.PrimaryCriteria?.CriteriaList?.forEach((criteria: any) => {
-  //   const criteriaObj = getCriteriaObject(criteria) || {}
-  //   if (criteriaObj.CodesetId !== undefined) {
-  //     conceptSetIds.add(criteriaObj.CodesetId)
-  //   }
-  // })
-
-  // From InclusionRules
-  cohortDefinition.InclusionRules?.forEach((rule: any) => {
-    rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
-      const criteria = criteriaItem.Criteria || criteriaItem
-      const criteriaObj =
-        criteria.ConditionOccurrence ||
-        criteria.DrugExposure ||
-        criteria.ProcedureOccurrence ||
-        criteria.Observation ||
-        criteria.Measurement ||
-        criteria.VisitOccurrence ||
-        criteria.DeviceExposure ||
-        criteria.Death ||
-        criteria.ObservationPeriod ||
-        {}
-      if (criteriaObj.CodesetId !== undefined) {
-        conceptSetIds.add(criteriaObj.CodesetId)
-      }
+  const extractConceptSetIds = (rules: any[]) => {
+    rules?.forEach((rule: any) => {
+      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+        const criteria = criteriaItem.Criteria || criteriaItem
+        const criteriaObj =
+          criteria.ConditionOccurrence ||
+          criteria.DrugExposure ||
+          criteria.ProcedureOccurrence ||
+          criteria.Observation ||
+          criteria.Measurement ||
+          criteria.VisitOccurrence ||
+          criteria.DeviceExposure ||
+          criteria.Death ||
+          criteria.ObservationPeriod ||
+          {}
+        if (criteriaObj.CodesetId !== undefined) {
+          conceptSetIds.add(criteriaObj.CodesetId)
+        }
+      })
     })
-  })
+  }
 
-  // From ExclusionRules
-  cohortDefinition.ExclusionRules?.forEach((rule: any) => {
-    rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
-      const criteria = criteriaItem.Criteria || criteriaItem
-      const criteriaObj =
-        criteria.ConditionOccurrence ||
-        criteria.DrugExposure ||
-        criteria.ProcedureOccurrence ||
-        criteria.Observation ||
-        criteria.Measurement ||
-        criteria.VisitOccurrence ||
-        criteria.DeviceExposure ||
-        criteria.Death ||
-        criteria.ObservationPeriod ||
-        {}
-      if (criteriaObj.CodesetId !== undefined) {
-        conceptSetIds.add(criteriaObj.CodesetId)
-      }
-    })
-  })
+  extractConceptSetIds(cohortDefinition.InclusionRules)
+  extractConceptSetIds(cohortDefinition.ExclusionRules)
 
-  // Create mappings for each concept set ID (CodesetId -> actual conceptSetId)
   conceptSetIds.forEach(codesetId => {
     const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === codesetId)
     if (atlasConceptSet) {

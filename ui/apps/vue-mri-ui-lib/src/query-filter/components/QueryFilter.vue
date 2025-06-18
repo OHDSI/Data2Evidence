@@ -208,7 +208,6 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
       {
         id: `event_${Date.now()}`,
         conceptSet: `${option.title.replace('Add ', '')} concept set`,
-        chips: [],
         criteriaType: option.id,
       },
     ],
@@ -229,7 +228,6 @@ const handleAddEvent = (filterId: string, eventId?: string) => {
     const newEvent: QueryFilterEvent = {
       id: `event_${Date.now()}`,
       conceptSet: 'Event concept set',
-      chips: [],
       criteriaType: 'conditionOccurrence',
       selectedAttributes: [],
     }
@@ -249,10 +247,6 @@ const handleDuplicateEvent = (filterId: string, eventId: string) => {
       const duplicated: QueryFilterEvent = {
         id: `event_${Date.now()}`,
         conceptSet: event.conceptSet,
-        chips: event.chips.map(chip => ({
-          ...chip,
-          id: `chip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-        })),
       }
       filter.addEvent(duplicated)
     }

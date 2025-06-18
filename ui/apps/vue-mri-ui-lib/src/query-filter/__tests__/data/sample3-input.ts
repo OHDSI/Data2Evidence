@@ -27,7 +27,7 @@ export default {
                       isExpanded: true,
                       attributes: [],
                       cardinality: {
-                        type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                        type: 'AT_LEAST',
                         count: 1,
                         using: 'ALL',
                       },
@@ -37,7 +37,7 @@ export default {
               },
             ],
             cardinality: {
-              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              type: 'AT_LEAST',
               count: 1,
               using: 'ALL',
             },
@@ -48,7 +48,7 @@ export default {
             isExpanded: true,
             attributes: [],
             cardinality: {
-              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              type: 'AT_LEAST',
               count: 1,
               using: 'ALL',
             },

@@ -1,9 +1,7 @@
 /**
- * Adapter to convert between OHDSI Atlas Cohort Definition JSON and simplified Query Filter Model
+ * Adapter to convert between OHDSI Atlas Cohort Definition JSON and Query Filter Model
  */
-
 import { AtlasCohortDefinition, getCriteriaType, getCriteriaObject, InclusionRule } from './AtlasCohortDefinition'
-
 import { QueryFilterCardModel, QueryFilterEvent } from './QueryFilterModel'
 
 export interface SimplifiedConcept {
@@ -23,13 +21,11 @@ export interface SimplifiedConceptSet {
 }
 
 export interface SimplifiedCriteria {
-  type: string // 'ConditionOccurrence', 'DrugExposure', etc.
+  type: string
   conceptSetId: number
   conceptSetName?: string
   isTypeExcluded: boolean
-  additionalCriteria?: {
-    [key: string]: any
-  }
+  additionalCriteria?: Record<string, any>
 }
 
 export interface SimplifiedCohortDefinition {
@@ -56,11 +52,7 @@ export interface SimplifiedCohortDefinition {
 }
 
 export class AtlasCohortAdapter {
-  /**
-   * Convert Atlas cohort definition to simplified format
-   */
   static toSimplified(atlasDef: AtlasCohortDefinition): SimplifiedCohortDefinition {
-    // Extract concept sets
     const conceptSets: SimplifiedConceptSet[] = atlasDef.ConceptSets.map(cs => ({
       id: cs.id,
       name: cs.name,
@@ -75,7 +67,6 @@ export class AtlasCohortAdapter {
       })),
     }))
 
-    // Extract primary criteria
     const primaryCriteriaList = atlasDef.PrimaryCriteria.CriteriaList.map(item => {
       const type = getCriteriaType(item)
       const criteria = getCriteriaObject(item)
@@ -89,7 +80,6 @@ export class AtlasCohortAdapter {
       }
     })
 
-    // Extract inclusion rules
     const inclusionRules = atlasDef.InclusionRules.map(rule => ({
       name: rule.name,
       type: rule.expression.Type as 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST',
@@ -110,13 +100,9 @@ export class AtlasCohortAdapter {
     }
   }
 
-  /**
-   * Convert simplified cohort definition to Query Filter Model
-   */
   static toQueryFilterModel(simplified: SimplifiedCohortDefinition): QueryFilterCardModel[] {
     const filters: QueryFilterCardModel[] = []
 
-    // Create primary criteria filter
     if (simplified.primaryCriteria.criteriaList.length > 0) {
       const primaryFilter = new QueryFilterCardModel({
         title: 'Primary Events',
@@ -128,7 +114,6 @@ export class AtlasCohortAdapter {
       filters.push(primaryFilter)
     }
 
-    // Create filters for inclusion rules
     simplified.inclusionRules.forEach(rule => {
       const inclusionFilter = new QueryFilterCardModel({
         title: rule.name,
@@ -138,7 +123,6 @@ export class AtlasCohortAdapter {
       filters.push(inclusionFilter)
     })
 
-    // Create filters for exclusion rules if any
     if (simplified.exclusionRules) {
       simplified.exclusionRules.forEach(rule => {
         const exclusionFilter = new QueryFilterCardModel({
@@ -153,9 +137,6 @@ export class AtlasCohortAdapter {
     return filters
   }
 
-  /**
-   * Convert from Atlas JSON directly to Query Filter Models
-   */
   static atlasToQueryFilters(atlasDef: AtlasCohortDefinition): QueryFilterCardModel[] {
     const simplified = this.toSimplified(atlasDef)
     return this.toQueryFilterModel(simplified)
@@ -164,7 +145,6 @@ export class AtlasCohortAdapter {
   private static criteriaToEvent(criteria: SimplifiedCriteria, conceptSets: SimplifiedConceptSet[]): QueryFilterEvent {
     const conceptSet = conceptSets.find(cs => cs.id === criteria.conceptSetId)
 
-    // Create concept set details for Atlas compatibility
     const conceptSetDetails =
       conceptSet?.concepts
         .filter(c => !c.isExcluded)
@@ -176,7 +156,7 @@ export class AtlasCohortAdapter {
         })) || []
 
     return {
-      id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: `event_${Date.now()}}`,
       conceptSet: conceptSet?.name || `Concept Set ${criteria.conceptSetId}`,
       conceptSetId: criteria.conceptSetId.toString(),
       conceptSetDetails,
@@ -184,33 +164,28 @@ export class AtlasCohortAdapter {
   }
 
   private static isExcluded(criteria: any): boolean {
-    // Check for type-specific exclude properties
-    return (
+    return Boolean(
       criteria.ConditionTypeExclude ||
-      criteria.DrugTypeExclude ||
-      criteria.ProcedureTypeExclude ||
-      criteria.ObservationTypeExclude ||
-      criteria.VisitTypeExclude ||
-      criteria.DeviceTypeExclude ||
-      criteria.MeasurementTypeExclude ||
-      criteria.DeathTypeExclude ||
-      false
+        criteria.DrugTypeExclude ||
+        criteria.ProcedureTypeExclude ||
+        criteria.ObservationTypeExclude ||
+        criteria.VisitTypeExclude ||
+        criteria.DeviceTypeExclude ||
+        criteria.MeasurementTypeExclude ||
+        criteria.DeathTypeExclude
     )
   }
 
   private static extractAdditionalCriteria(criteria: any): any {
     if (!criteria) return {}
 
-    const additional: any = {}
+    const additional: Record<string, any> = {}
 
-    // Extract common additional criteria
     if (criteria.OccurrenceStartDate) additional.occurrenceStartDate = criteria.OccurrenceStartDate
     if (criteria.OccurrenceEndDate) additional.occurrenceEndDate = criteria.OccurrenceEndDate
     if (criteria.Age) additional.age = criteria.Age
     if (criteria.Gender) additional.gender = criteria.Gender
     if (criteria.VisitType) additional.visitType = criteria.VisitType
-
-    // Extract type-specific criteria
     if (criteria.DaysSupplyRange) additional.daysSupplyRange = criteria.DaysSupplyRange
     if (criteria.QuantityRange) additional.quantityRange = criteria.QuantityRange
     if (criteria.ValueAsNumber) additional.valueAsNumber = criteria.ValueAsNumber
@@ -222,7 +197,6 @@ export class AtlasCohortAdapter {
   private static extractCriteriaFromRule(rule: InclusionRule): SimplifiedCriteria[] {
     const criteriaList: SimplifiedCriteria[] = []
 
-    // Extract from main criteria list
     if (rule.expression.CriteriaList) {
       rule.expression.CriteriaList.forEach(group => {
         if (group.Criteria) {
@@ -245,17 +219,17 @@ export class AtlasCohortAdapter {
   }
 
   private static getDomainColor(domainId: string): string {
-    const colorMap: { [key: string]: string } = {
-      Condition: '#e74c3c', // Red
-      Drug: '#3498db', // Blue
-      Procedure: '#9b59b6', // Purple
-      Observation: '#f39c12', // Orange
-      Measurement: '#1abc9c', // Turquoise
-      Visit: '#2ecc71', // Green
-      Device: '#95a5a6', // Gray
-      Death: '#34495e', // Dark Gray
+    const colorMap: Record<string, string> = {
+      Condition: '#e74c3c',
+      Drug: '#3498db',
+      Procedure: '#9b59b6',
+      Observation: '#f39c12',
+      Measurement: '#1abc9c',
+      Visit: '#2ecc71',
+      Device: '#95a5a6',
+      Death: '#34495e',
     }
 
-    return colorMap[domainId] || '#7f8c8d' // Default gray
+    return colorMap[domainId] || '#7f8c8d'
   }
 }
