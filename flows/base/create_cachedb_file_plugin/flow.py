@@ -13,6 +13,9 @@ from .utils import remove_existing_file_if_exists, check_supported_duckdb_dialec
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.dao.daobase import SYSTEM_SCHEMAS
+from prefect.blocks.system import Secret
+from prefect.variables import Variable
+
 os.environ['plugin_name'] = 'create_cachedb_file_plugin'
 
 @flow(log_prints=True)
@@ -53,11 +56,12 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
             
     #Connect to Trex Sql Interface
     trex_conn = psycopg2.connect(
-        host=os.environ['TREX__SQL__HOST'],
-        port=os.environ['TREX__SQL__PORT'],
-        user=os.environ['TREX__SQL__USER'],
-        password=os.environ['TREX__SQL__PASSWORD'],
-        dbname=os.environ['TREX__SQL__DBNAME'])
+            host= Variable.get("trex_sql_host"),
+            port=Variable.get("trex_sql_ports"),
+            user=Variable.get("trex_sql_user"),
+            password=Secret.load("trex-sql-password").get(),
+            dbname=Variable.get("trex_sql_dbname")
+        )
     cur = trex_conn.cursor()
     for schema in schemas_to_copy:
         logger.info(f"Handling schema {schema}...")
@@ -96,11 +100,13 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     
     #Connect to Trex Sql Interface
     trex_conn = psycopg2.connect(
-        host=os.environ['TREX__SQL__HOST'],
-        port=os.environ['TREX__SQL__PORT'],
-        user=os.environ['TREX__SQL__USER'],
-        password=os.environ['TREX__SQL__PASSWORD'],
-        dbname=os.environ['TREX__SQL__DBNAME'])
+        host=Variable.get("trex_sql_host"),
+        port=Variable.get("trex_sql_ports"),
+        user=Variable.get("trex_sql_user"),
+        password=Secret.load("trex-sql-password").get(),
+        dbname=Variable.get("trex_sql_dbname")
+    )
+    # Copy schema to cache
     cur = trex_conn.cursor()
     copy_schema_to_cache(cur, dbdao, schema_name, False, True)
     cur.close()
