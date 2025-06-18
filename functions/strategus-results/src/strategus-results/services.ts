@@ -30,50 +30,62 @@ export const createStrategusResultsViewer = async (
 
     const kernel: IKernelConnection = await getKernel(studyId, manager);
     const readCredentials = await getReadCredentials(databaseCode);
+    const schema = "results_" + studyId;
 
     const { host, port, readUser, readPassword } = readCredentials;
     const r_code = RESULT_VIEWER_TEMPLATE.replace(
       "$DATABASE_SCHEMA",
-      "results_" + databaseCode
+      "results_" + studyId
     )
-      .replace("$DATABASE_SERVER", `${host}:${port}`)
+      .replace("$DATABASE_SERVER", `${host}:${port}/${schema}`)
       .replace("$DATABASE_USER", readUser)
       .replace("$DATABASE_PASSWORD", readPassword);
-    console.debug("R code to execute:", r_code);
 
     const future = await kernel.requestExecute({
       code: r_code,
       stop_on_error: true,
     });
 
-    let executionError: Error | null = null;
-    future.onReply = (msg) => {
-      if (msg.content.status === "error") {
-        console.error("Execution error:", msg);
-        executionError = new Error(
-          `Code execution error: ${msg.content.ename} - ${msg.content.evalue}`
-        );
-      }
-    };
+    return new Promise<void>((resolve, reject) => {
+      let executionError: Error | null = null;
+      let executionComplete = false;
 
-    await future.done;
-    kernel.dispose();
+      future.onReply = (msg) => {
+        if (msg.content.status === "error") {
+          console.error("Execution error:", msg);
+          executionError = new Error(
+            `Code execution error: ${msg.content.ename} - ${msg.content.evalue}`
+          );
+          kernel.dispose();
+          reject(executionError);
+        }
+      };
 
-    if (executionError) {
-      throw executionError;
-    }
+      future.onIOPub = (msg) => {
+        if (
+          msg.content &&
+          msg.content.text &&
+          typeof msg.content.text === "string" &&
+          msg.content.text.includes("Shiny app started on http://0.0.0.0:3838")
+        ) {
+          console.log("IOPub message:", msg);
+          executionComplete = true;
+          resolve();
+        }
+      };
 
-    console.log(
-      `Strategus Results Viewer created for study ${studyId} with kernel ${kernel.id}`
-    );
-
-    return;
+      setTimeout(() => {
+        if (!executionComplete) {
+          reject(new Error("Timeout error: Shiny app failed to start"));
+        }
+      }, 60000);
+    });
   } catch (error) {
     throw error;
   }
 };
 
-const getKernel: IKernelConnection = async (
+const getKernel = async (
   studyId: string,
   manager: KernelManager
 ): Promise<IKernelConnection> => {

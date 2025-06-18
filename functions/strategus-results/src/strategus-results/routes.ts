@@ -14,9 +14,11 @@ export class StrategusResultsRouter {
         const token = req.headers["authorization"];
         const studyId = req.body.studyId;
         const databaseCode = req.body.databaseCode;
-
         await createStrategusResultsViewer(token, studyId, databaseCode);
-        res.status(200);
+        res.status(200).json({
+          message: "Strategus Results Viewer created successfully",
+          studyId: studyId,
+        });
       } catch (error) {
         res.status(500).json({
           message: "An error occurred while processing strategus results",
