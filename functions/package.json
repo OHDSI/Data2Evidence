@@ -367,6 +367,7 @@
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -1140,6 +1141,33 @@
           ]
         },
         {
+          "path": "^/system-portal/notebook/templates$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates/(.*)$",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/notebook",
           "scopes": [
             "portal.notebook.add"
@@ -1164,6 +1192,24 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/remote-diff-check$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
