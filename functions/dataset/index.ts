@@ -222,8 +222,9 @@ export class DatasetRouter {
         snapshotCopyConfig,
         dataModel,
       } = req.body;
-      const { dialect, databaseCode, schemaName, vocabSchemaName } =
-        await portalAPI.getDataset(sourceStudyId);
+      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
+        sourceStudyId
+      );
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
@@ -260,10 +261,7 @@ export class DatasetRouter {
                   newSchemaName,
                   dialect as DbDialect
                 ),
-                source_schema: this.schemaCase(
-                  schemaName,
-                  dialect as DbDialect
-                ),
+                source_schema: schemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
               },

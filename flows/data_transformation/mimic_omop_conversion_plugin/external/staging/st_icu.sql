@@ -76,3 +76,20 @@ FROM (SELECT subject_id                                                         
              (SELECT  main.sha1(subject_id::text || hadm_id::text || stay_id::text || charttime::text)) AS trace_id
       FROM mimiciv_icu.chartevents) t
 ;
+
+DROP TABLE IF EXISTS mimic_etl.src_outputevents;
+CREATE TABLE mimic_etl.src_outputevents AS
+SELECT t.*, nextval('id_sequence') AS load_row_id
+FROM (SELECT subject_id                                                              AS subject_id,
+             hadm_id                                                                 AS hadm_id,
+             stay_id                                                                 AS stay_id,
+             itemid                                                                  AS itemid,
+             charttime                                                               AS charttime,
+             value                                                                   AS value,
+             valueuom                                                                AS valueuom,
+             storetime                                                               AS storetime,
+             --
+             'outputevents'                                                          AS load_table_id,
+             (SELECT  main.sha1(subject_id::text || hadm_id::text || stay_id::text || charttime::text)) AS trace_id
+      FROM mimiciv_icu.outputevents) t
+;
