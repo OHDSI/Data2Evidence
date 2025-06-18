@@ -53,7 +53,6 @@ export default {
       // Update the config in state before doing further queries
       this.requestMriConfig().then(() => {
         this.setFireRequest()
-        this.requestTotalPatientCount()
         this.refreshPatientCount()
       })
     }
@@ -86,7 +85,6 @@ export default {
       'toggleConfigSelectionDialog',
       'setFireRequest',
       'refreshPatientCount',
-      'requestTotalPatientCount',
     ]),
     ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
     okFatal() {
