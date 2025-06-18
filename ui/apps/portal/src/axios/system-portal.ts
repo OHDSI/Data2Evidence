@@ -298,4 +298,22 @@ export class SystemPortal {
       data: config,
     });
   }
+
+  public getStudiesFromRepo() {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "git-studies/studies",
+      method: "GET",
+    });
+  }
+
+  public getStudyStrategusJson(studyId: string) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "git-studies/study/strategus",
+      method: "GET",
+      params: { studyId },
+    });
+  }
+
 }
