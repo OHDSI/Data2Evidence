@@ -1186,6 +1186,7 @@ export const i18nDefault = {
     STUDY_CARD__RUNNING: "Running...",
     STUDY_CARD__ERROR_FETCH_STRATEGUS_JSON: "Could not fetch strategus JSON from repository",
     STUDY_CARD__ERROR_FETCH_STRATEGUS_JSON_DESCRIPTION: "Please check if the study configuration is available.",
+    STUDY_CARD__NO_STUDY_SUMMARY: "No study summary available",
     STUDY_CARD__SUCCESS_STUDY_STARTED: 'Study "{0}" started successfully',
     STUDY_CARD__SUCCESS_FLOW_RUN_ID: "Flow run ID: {0}",
     STUDY_CARD__ERROR_START_STUDY: 'Failed to start study "{0}"',

@@ -98,7 +98,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
 
         <div className="study-card__summary">
           <HighlightText
-            text={study.description || getText(i18nKeys.STUDY_CARD__NO_DATASET_SUMMARY)}
+            text={study.description || getText(i18nKeys.STUDY_CARD__NO_STUDY_SUMMARY)}
             searchText={highlightText}
           />
         </div>
