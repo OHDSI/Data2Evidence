@@ -103,4 +103,29 @@ export class PrefectService {
     this.prefectApi = new PrefectAPI(token);
     return await this.prefectApi.cancelFlowRun(id);
   }
+
+  public async removeAnalysisResultsSchema(token: string, { studyId, datasetId }: { studyId: string; datasetId: string }) {
+    this.prefectApi = new PrefectAPI(token);
+    const portalServerApi = new PortalServerAPI(token);
+    const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
+    const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
+
+    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+
+    const flowRunId = await this.prefectApi.createFlowRun(
+      "strategus-analysis-remove-results-schema",
+      prefectDeploymentName,
+      prefectFlowName,
+      {
+        json_graph: {},
+        options: Object.assign({}, {
+          mode: 'drop-results',
+          databaseCode,
+          studyId,
+          datasetId
+        })
+      }
+    );
+    return flowRunId;
+  }
 }
