@@ -1,6 +1,6 @@
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Card, RunStudyIcon } from "@portal/components";
+import { Card, RunStudyIcon, TrashIcon } from "@portal/components";
 import React, { FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
@@ -20,6 +20,7 @@ interface StudyCardProps {
 export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
   const { getText, i18nKeys } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
 
   const handleRunStudy = useCallback(
     async (e: React.MouseEvent) => {
@@ -81,6 +82,39 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     [selectedDatasetId, setFeedback, study]
   );
 
+  const handleCleanupStudy = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      if (isCleaningUp || !selectedDatasetId || !study.id) {
+        return;
+      }
+
+      setIsCleaningUp(true);
+
+      try {
+        await api.dataflow.createCleanUpStudySchemaRun(study.id, selectedDatasetId);
+
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.STUDY_CARD__SUCCESS_STUDY_CLEANUP, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } catch (error) {
+        console.error(`[${study.id}] Error cleaning up study:`, error);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STUDY_CARD__ERROR_CLEANUP_STUDY, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } finally {
+        console.log(`[${study.id}] Setting isCleaningUp to false`);
+        setIsCleaningUp(false);
+      }
+    },
+    [selectedDatasetId, setFeedback, study]
+  );
+
   return (
     <Card className="study-card" borderRadius={18}>
       <div className="study-card__content">
@@ -117,6 +151,22 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               <>
                 <RunStudyIcon className="study-card__action-icon" />
                 <span>{getText(i18nKeys.STUDY_CARD__RUN_STUDY)}</span>
+              </>
+            )}
+          </div>
+          <div
+            className={`study-card__action ${isCleaningUp ? "study-card__action--loading" : ""}`}
+            onClick={handleCleanupStudy}
+          >
+            {isCleaningUp ? (
+              <>
+                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                <span>{getText(i18nKeys.STUDY_CARD__CLEANING_UP)}</span>
+              </>
+            ) : (
+              <>
+                <TrashIcon className="study-card__action-icon" />
+                <span>{getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)}</span>
               </>
             )}
           </div>

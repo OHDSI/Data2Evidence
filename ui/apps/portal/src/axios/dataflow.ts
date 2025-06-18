@@ -263,6 +263,14 @@ export class Dataflow {
     });
   }
 
+  public createCleanUpStudySchemaRun(studyId: string, datasetId: string) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: `prefect/flow-run/flow-run/strategus/remove-results-schema/${studyId}/${datasetId}`,
+      method: "DELETE",
+    });
+  }
+
   public getFlowRunState(flowId: string) {
     return request({
       baseURL: DATAFLOW_MGMT_URL,

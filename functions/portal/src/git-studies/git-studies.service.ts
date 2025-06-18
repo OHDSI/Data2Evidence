@@ -114,7 +114,6 @@ export class GitStudiesService {
       } else {
         try {
           const remotes = await git.listRemotes({ fs, dir: this.repoDir });
-          console.log("Remotes:", remotes);
           const hasOrigin = remotes.some((r) => r.remote === "origin");
 
           if (hasOrigin) {
