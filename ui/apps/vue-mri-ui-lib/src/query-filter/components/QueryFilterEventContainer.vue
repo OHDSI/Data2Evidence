@@ -9,7 +9,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import QueryFilterCard from './QueryFilterCard.vue'
+import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import type { QueryFilterEvent, QueryFilterGroup } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -129,43 +129,7 @@ const duplicateEvent = (eventIndex: number) => {
   }
 }
 
-// Pass through event handlers for the existing QueryFilterCard component
-const handleAddEvent = (filterId: string, eventId?: string) => {
-  if (!eventId) {
-    addNewEvent()
-  }
-}
-
-const handleEditEvent = (filterId: string, eventId: string) => {
-  console.log('Edit event:', eventId)
-}
-
-const handleDuplicateEvent = (filterId: string, eventId: string) => {
-  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
-  if (eventIndex !== -1) {
-    duplicateEvent(eventIndex)
-  }
-}
-
-const handleRemoveEvent = (filterId: string, eventId: string) => {
-  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
-  if (eventIndex !== -1) {
-    removeEvent(eventIndex)
-  }
-}
-
-const handleAddChip = (filterId: string, eventId: string) => {
-  console.log('Add chip to event:', eventId)
-}
-
-const handleRemoveChip = (filterId: string, eventId: string, chipId: string) => {
-  console.log('Remove chip:', chipId)
-}
-
-const handleShowMenu = (filterId: string, eventId: string) => {
-  console.log('Show menu for event:', eventId)
-}
-
+// Event handlers for new QueryFilterEventCard component
 const handleAttributeSelected = (filterId: string, eventId: string, attribute: any) => {
   console.log('Attribute selected:', eventId, attribute)
 }
@@ -186,15 +150,6 @@ const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet:
     updateEvent(eventIndex, updatedEvent)
   }
 }
-
-// Create a temporary filter object for backward compatibility
-const createTempFilter = () => ({
-  id: props.parentGroup.id,
-  title: props.parentGroup.title,
-  type: 'inclusion' as const,
-  events: eventsData.value,
-  isExpanded: true
-})
 </script>
 
 <template>
@@ -214,28 +169,22 @@ const createTempFilter = () => ({
     
     <!-- Events List -->
     <div class="events-list">
-      <!-- Use existing QueryFilterCard component for backward compatibility -->
-      <QueryFilterCard
+      <!-- Use new QueryFilterEventCard component for single event focus -->
+      <QueryFilterEventCard
         v-for="(event, index) in eventsData"
         :key="event.id"
-        :filter="createTempFilter()"
-        :hide-group-label="true"
-        :show-add-event-in-any="false"
+        :event="event"
+        :event-index="index"
         :concept-sets="conceptSets"
         :concept-set-domain-values="conceptSetDomainValues"
         :concept-set-texts="conceptSetTexts"
-        :event-filter="(e) => e.id === event.id"
-        @update:filter="() => {}"
-        @add-event="handleAddEvent"
-        @edit-event="handleEditEvent"
-        @duplicate-event="handleDuplicateEvent"
-        @remove-event="handleRemoveEvent"
-        @add-chip="handleAddChip"
-        @remove-chip="handleRemoveChip"
-        @show-menu="handleShowMenu"
-        @attribute-selected="handleAttributeSelected"
-        @attribute-removed="handleAttributeRemoved"
-        @concept-set-selected="handleConceptSetSelected"
+        :readonly="readonly"
+        @update:event="updateEvent(index, $event)"
+        @remove-event="removeEvent(index)"
+        @duplicate-event="duplicateEvent(index)"
+        @concept-set-selected="handleConceptSetSelected(parentGroup.id, event.id, $event)"
+        @attribute-selected="handleAttributeSelected(parentGroup.id, event.id, $event)"
+        @attribute-removed="handleAttributeRemoved(parentGroup.id, event.id, $event)"
       />
     </div>
     
