@@ -41,14 +41,14 @@ const groupData = computed({
   set: (value: QueryFilterGroup) => {
     localGroup.value = value
     emit('update-group', value)
-  }
+  },
 })
 
 // Handle title changes
 const updateTitle = (newTitle: string) => {
   groupData.value = {
     ...groupData.value,
-    title: newTitle
+    title: newTitle,
   }
 }
 
@@ -56,7 +56,7 @@ const updateTitle = (newTitle: string) => {
 const updateDescription = (newDescription: string) => {
   groupData.value = {
     ...groupData.value,
-    description: newDescription
+    description: newDescription,
   }
 }
 
@@ -64,22 +64,22 @@ const updateDescription = (newDescription: string) => {
 const updateGroupType = (newType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST') => {
   groupData.value = {
     ...groupData.value,
-    groupType: newType
+    criteriaType: newType,
   }
 }
 
 // Handle events updates from child container
 const handleEventsUpdate = (updatedEvents: any[]) => {
-  // For now, we're using the first group's events since the structure is transitional
-  if (groupData.value.groups && groupData.value.groups[0]) {
-    groupData.value.groups[0].events = updatedEvents
-    emit('update-group', groupData.value)
+  groupData.value = {
+    ...groupData.value,
+    events: updatedEvents,
   }
+  emit('update-group', groupData.value)
 }
 
-// Get events from first group (transitional structure)
+// Get events from group
 const groupEvents = computed(() => {
-  return groupData.value.groups?.[0]?.events || []
+  return groupData.value.events || []
 })
 
 // Handle remove group
@@ -89,16 +89,15 @@ const removeGroup = () => {
   }
 }
 
-// Get operator display text
-const getOperatorText = (operator: string) => {
-  switch (operator) {
-    case 'ALL': return 'ALL of the following'
-    case 'ANY': return 'ANY of the following'
-    case 'AT_LEAST': return 'AT LEAST _ of the following'
-    case 'AT_MOST': return 'AT MOST _ of the following'
-    default: return operator
-  }
+// Toggle between group types by cycling through them
+const toggleGroupType = () => {
+  const types: ('ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST')[] = ['ALL', 'ANY', 'AT_LEAST', 'AT_MOST']
+  const currentIndex = types.indexOf(localGroup.value.criteriaType || 'ALL')
+  const nextIndex = (currentIndex + 1) % types.length
+  updateGroupType(types[nextIndex])
 }
+
+// Removed unused getOperatorText function
 </script>
 
 <template>
@@ -107,67 +106,49 @@ const getOperatorText = (operator: string) => {
     <div class="group-header">
       <div class="group-header__left">
         <div class="group-title-container">
-          <input 
+          <input
             v-if="!readonly"
             v-model="localGroup.title"
             class="group-title-input"
             placeholder="Group Title"
-            @input="updateTitle($event.target.value)"
+            @input="updateTitle(($event.target as HTMLInputElement).value)"
           />
           <h4 v-else class="group-title-readonly">{{ localGroup.title }}</h4>
         </div>
-        
+
         <div class="group-description-container">
-          <textarea 
+          <textarea
             v-if="!readonly"
             v-model="localGroup.description"
             class="group-description-input"
             placeholder="Group Description (optional)"
             rows="2"
-            @input="updateDescription($event.target.value)"
+            @input="updateDescription(($event.target as HTMLTextAreaElement).value)"
           />
           <p v-else-if="localGroup.description" class="group-description-readonly">
             {{ localGroup.description }}
           </p>
         </div>
       </div>
-      
+
       <div class="group-header__right">
-        <div class="group-operator-container">
-          <label class="operator-label">Match:</label>
-          <select 
-            v-if="!readonly"
-            v-model="localGroup.groupType" 
-            class="operator-select"
-            @change="updateGroupType($event.target.value as any)"
-          >
-            <option value="ALL">ALL</option>
-            <option value="ANY">ANY</option>
-            <option value="AT_LEAST">AT LEAST</option>
-            <option value="AT_MOST">AT MOST</option>
-          </select>
-          <span v-else class="operator-readonly">
-            {{ getOperatorText(localGroup.groupType) }}
-          </span>
-        </div>
-        
-        <button 
-          v-if="!readonly"
-          class="btn-remove-group" 
-          @click="removeGroup"
-          title="Remove this criteria group"
-        >
+        <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
           ×
         </button>
       </div>
     </div>
-    
+
     <!-- Group Sidebar and Content -->
     <div class="group-body">
-      <div class="group-sidebar">
-        <span class="sidebar-label">{{ localGroup.groupType }}</span>
+      <div
+        class="group-sidebar"
+        :class="`group-sidebar--${localGroup.criteriaType?.toLowerCase() || 'all'}`"
+        @click="!readonly && toggleGroupType()"
+        :title="readonly ? '' : 'Click to change match type'"
+      >
+        <span class="sidebar-label">{{ localGroup.criteriaType || 'ALL' }}</span>
       </div>
-      
+
       <div class="group-content">
         <!-- Events Container -->
         <QueryFilterEventContainer
@@ -273,38 +254,7 @@ const getOperatorText = (operator: string) => {
     color: #666;
   }
 
-  .group-operator-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .operator-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #666;
-  }
-
-  .operator-select {
-    padding: 6px 12px;
-    border: 1px solid #d0d0d0;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #333;
-    background: #fff;
-    cursor: pointer;
-
-    &:focus {
-      outline: none;
-      border-color: #1976d2;
-    }
-  }
-
-  .operator-readonly {
-    font-size: 14px;
-    color: #333;
-    font-weight: 500;
-  }
+  // Removed old operator dropdown styles
 
   .btn-remove-group {
     width: 32px;
@@ -335,21 +285,66 @@ const getOperatorText = (operator: string) => {
   .group-sidebar {
     width: 60px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 16px 8px;
-    background: #f8f9fa;
-    border-right: 1px solid #e0e0e0;
+    padding: 20px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    // Default styling (ALL)
+    background: #1e3a8a;
+
+    // Different colors for different group types
+    &--all {
+      background: #1e3a8a; // Blue
+    }
+
+    &--any {
+      background: #dc2626; // Red like in the reference
+    }
+
+    &--at_least {
+      background: #059669; // Green
+    }
+
+    &--at_most {
+      background: #d97706; // Orange
+    }
+
+    &:hover:not(.readonly) {
+      opacity: 0.9;
+      transform: translateX(2px);
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active:not(.readonly) {
+      transform: translateX(0);
+      box-shadow: 1px 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    // Add subtle border to indicate different states
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.3);
+    }
   }
 
   .sidebar-label {
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
   }
 
   .group-content {

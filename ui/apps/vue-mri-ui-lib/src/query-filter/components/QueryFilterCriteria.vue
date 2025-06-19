@@ -136,30 +136,40 @@ const handleGroupRemove = (groupIndex: number) => {
   }
 
   .qualifying-events-controls {
-    display: flex;
-    gap: 8px;
+    display: inline-flex;
+    background: white;
+    border-radius: 8px;
+    padding: 4px;
+    border: 2px solid #1e3a8a;
+    position: relative;
+    overflow: hidden;
+    width: 280px;
   }
 
   .qualifying-events-btn {
-    padding: 8px 16px;
-    border: 1px solid #d0d0d0;
-    background: #fff;
-    border-radius: 4px;
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
     font-size: 14px;
-    font-weight: 500;
-    color: #666;
+    font-weight: 600;
+    color: #1e3a8a;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    white-space: nowrap;
 
-    &:hover:not(:disabled) {
-      border-color: #1976d2;
-      color: #1976d2;
+    &:hover:not(:disabled):not(.qualifying-events-btn--active) {
+      background: rgba(30, 58, 138, 0.05);
     }
 
     &--active {
-      background: #1976d2;
-      border-color: #1976d2;
+      background: #1e3a8a;
       color: white;
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
     }
 
     &--readonly {
@@ -170,6 +180,26 @@ const handleGroupRemove = (groupIndex: number) => {
     &:disabled {
       cursor: not-allowed;
       opacity: 0.6;
+    }
+
+    // Remove border radius for middle button
+    &:not(:first-child):not(:last-child) {
+      border-radius: 0;
+    }
+
+    // First button - rounded left only
+    &:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+
+    // Last button - rounded right only
+    &:last-child {
+      border-radius: 0 6px 6px 0;
+    }
+
+    // If only one button (shouldn't happen but just in case)
+    &:only-child {
+      border-radius: 6px;
     }
   }
 
