@@ -29,11 +29,11 @@ $qf-transition-fast: all 0.15s ease-out;
 
 // Typography
 $qf-font-family: 'GT America', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-$qf-font-size-xs: 0.75rem;   // 12px
-$qf-font-size-sm: 0.875rem;  // 14px
-$qf-font-size-base: 1rem;    // 16px
-$qf-font-size-lg: 1.125rem;  // 18px
-$qf-font-size-xl: 1.25rem;   // 20px
+$qf-font-size-xs: 0.75rem; // 12px
+$qf-font-size-sm: 0.875rem; // 14px
+$qf-font-size-base: 1rem; // 16px
+$qf-font-size-lg: 1.125rem; // 18px
+$qf-font-size-xl: 1.25rem; // 20px
 
 // Color palette for hierarchy levels
 $qf-level-colors: (
@@ -42,7 +42,7 @@ $qf-level-colors: (
   2: $qf-success-color,
   3: $qf-warning-color,
   4: $qf-danger-color,
-  5: $qf-info-color
+  5: $qf-info-color,
 );
 
 // Mixins
@@ -165,12 +165,12 @@ $qf-level-colors: (
 
 @mixin qf-hierarchy-level($level) {
   $color: map-get($qf-level-colors, $level % 6);
-  
+
   border-left: 3px solid $color;
   margin-left: #{$level * 20px};
   padding-left: $qf-spacing-md;
   background-color: rgba($color, 0.02 + $level * 0.01);
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -223,7 +223,7 @@ $qf-level-colors: (
   &__container {
     &-section {
       margin-bottom: $qf-spacing-lg;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -709,7 +709,6 @@ $qf-level-colors: (
     }
   }
 
-  .btn-duplicate-event,
   .btn-remove-event {
     @include qf-button-base;
     width: 28px;
@@ -1074,7 +1073,6 @@ $qf-level-colors: (
 
     .btn-remove-group,
     .btn-remove-event,
-    .btn-duplicate-event,
     .btn-add-group,
     .btn-add-nested-event {
       display: none;

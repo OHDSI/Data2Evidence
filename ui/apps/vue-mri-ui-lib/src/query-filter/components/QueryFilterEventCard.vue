@@ -50,7 +50,7 @@ const eventData = computed({
   set: (value: QueryFilterEvent) => {
     localEvent.value = value
     emit('update:event', value)
-  }
+  },
 })
 
 // Check if event has nested attributes
@@ -70,8 +70,8 @@ const updateCardinality = (field: 'type' | 'count', value: any) => {
     ...eventData.value,
     cardinality: {
       ...eventData.value.cardinality,
-      [field]: value
-    }
+      [field]: value,
+    },
   }
   eventData.value = updatedEvent
 }
@@ -83,7 +83,7 @@ const handleConceptSetSelected = (conceptSet: ConceptSetItem) => {
     selectedConceptSet: conceptSet,
     conceptSetId: conceptSet.value,
     conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value,
-    conceptSetLoading: true
+    conceptSetLoading: true,
   }
   eventData.value = updatedEvent
   emit('concept-set-selected', conceptSet)
@@ -95,7 +95,7 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
   const currentAttributes = eventData.value.selectedAttributes || []
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: [...currentAttributes, attribute.id]
+    selectedAttributes: [...currentAttributes, attribute.id],
   }
   eventData.value = updatedEvent
   emit('attribute-selected', attribute)
@@ -106,15 +106,10 @@ const handleAttributeRemoved = (attributeId: string) => {
   const currentAttributes = eventData.value.selectedAttributes || []
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: currentAttributes.filter(id => id !== attributeId)
+    selectedAttributes: currentAttributes.filter(id => id !== attributeId),
   }
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
-}
-
-// Handle event duplication
-const duplicateEvent = () => {
-  emit('duplicate-event')
 }
 
 // Handle event removal
@@ -150,7 +145,7 @@ const tagInputModel = computed(() => ({
 // Get event type display name
 const getEventTypeDisplay = (eventType?: string) => {
   if (!eventType) return 'Unknown Event'
-  
+
   const typeMap: Record<string, string> = {
     conditionOccurrence: 'Condition Occurrence',
     drugExposure: 'Drug Exposure',
@@ -161,31 +156,32 @@ const getEventTypeDisplay = (eventType?: string) => {
     deviceExposure: 'Device Exposure',
     death: 'Death',
   }
-  
+
   return typeMap[eventType] || eventType
 }
 
 // Get cardinality display text
 const getCardinalityDisplay = (cardinality?: any) => {
   if (!cardinality) return 'At least 1'
-  
-  const typeText = {
-    'AT_LEAST': 'At least',
-    'exactly': 'Exactly',
-    'atMost': 'At most'
-  }[cardinality.type] || cardinality.type
-  
+
+  const typeText =
+    {
+      AT_LEAST: 'At least',
+      exactly: 'Exactly',
+      atMost: 'At most',
+    }[cardinality.type] || cardinality.type
+
   return `${typeText} ${cardinality.count}`
 }
 </script>
 
 <template>
-  <div 
+  <div
     class="query-filter-event-card"
     :class="{
       'query-filter-event-card--nested': nestedLevel > 0,
       'query-filter-event-card--readonly': readonly,
-      'query-filter-event-card--has-nested': hasNestedAttributes
+      'query-filter-event-card--has-nested': hasNestedAttributes,
     }"
   >
     <!-- Event Header -->
@@ -195,31 +191,29 @@ const getCardinalityDisplay = (cardinality?: any) => {
           <span class="event-type-label">
             {{ getEventTypeDisplay(eventData.criteriaType) }}
           </span>
-          <span v-if="nestedLevel > 0" class="nested-indicator">
-            (Level {{ nestedLevel }})
-          </span>
+          <span v-if="nestedLevel > 0" class="nested-indicator"> (Level {{ nestedLevel }}) </span>
         </div>
-        
+
         <div class="event-cardinality">
           <span class="cardinality-label">Occurs:</span>
-          <select 
+          <select
             v-if="!readonly"
             :value="eventData.cardinality?.type || 'AT_LEAST'"
             class="cardinality-type-select"
-            @change="updateCardinality('type', $event.target.value)"
+            @change="updateCardinality('type', ($event.target as HTMLSelectElement).value)"
           >
             <option value="AT_LEAST">At least</option>
             <option value="exactly">Exactly</option>
             <option value="atMost">At most</option>
           </select>
-          <input 
+          <input
             v-if="!readonly"
             :value="eventData.cardinality?.count || 1"
-            type="number" 
-            min="1" 
+            type="number"
+            min="1"
             max="999"
             class="cardinality-count-input"
-            @input="updateCardinality('count', parseInt($event.target.value))"
+            @input="updateCardinality('count', parseInt(($event.target as HTMLInputElement).value))"
           />
           <span v-else class="cardinality-readonly">
             {{ getCardinalityDisplay(eventData.cardinality) }}
@@ -227,27 +221,12 @@ const getCardinalityDisplay = (cardinality?: any) => {
           <span class="cardinality-suffix">time(s)</span>
         </div>
       </div>
-      
+
       <div class="event-header__right">
-        <button 
-          v-if="!readonly"
-          class="btn-duplicate-event" 
-          @click="duplicateEvent"
-          title="Duplicate this event"
-        >
-          📋
-        </button>
-        <button 
-          v-if="!readonly"
-          class="btn-remove-event" 
-          @click="removeEvent"
-          title="Remove this event"
-        >
-          ×
-        </button>
+        <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">×</button>
       </div>
     </div>
-    
+
     <!-- Event Content -->
     <div class="event-content">
       <!-- Concept Set Selection -->
@@ -260,45 +239,38 @@ const getCardinalityDisplay = (cardinality?: any) => {
           :external-domain-values="conceptSetDomainValues"
           :external-texts="conceptSetTexts"
           :is-catalog-attribute="false"
-          @update:value="(values) => values[0] && handleConceptSetSelected(values[0])"
+          @update:value="values => values[0] && handleConceptSetSelected(values[0])"
         />
         <div v-else class="concept-set-readonly">
           {{ eventData.conceptSet || 'No concept set selected' }}
         </div>
       </div>
-      
+
       <!-- Attributes Section -->
       <div v-if="!readonly" class="attributes-section">
         <AttributesDropdown
+          :criteria-type="eventData.criteriaType"
           :event-id="eventData.id"
-          :selected-attributes="eventData.selectedAttributes || []"
+          :all-events="[eventData]"
           @attribute-selected="handleAttributeSelected"
           @attribute-removed="handleAttributeRemoved"
         />
       </div>
-      
+
       <!-- Selected Attributes Display -->
       <div v-if="eventData.selectedAttributes?.length" class="selected-attributes">
         <h5 class="selected-attributes-title">Selected Attributes:</h5>
         <div class="attribute-chips">
-          <div 
-            v-for="attributeId in eventData.selectedAttributes"
-            :key="attributeId"
-            class="attribute-chip"
-          >
+          <div v-for="attributeId in eventData.selectedAttributes" :key="attributeId" class="attribute-chip">
             <span class="attribute-chip-text">{{ attributeId }}</span>
-            <button 
-              v-if="!readonly"
-              class="attribute-chip-remove"
-              @click="handleAttributeRemoved(attributeId)"
-            >
+            <button v-if="!readonly" class="attribute-chip-remove" @click="handleAttributeRemoved(attributeId)">
               ×
             </button>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Nested Criteria (Recursive) -->
     <div v-if="hasNestedAttributes && nestedCriteria" class="nested-criteria-section">
       <QueryFilterNestedCriteria
@@ -429,7 +401,6 @@ const getCardinalityDisplay = (cardinality?: any) => {
     color: #666;
   }
 
-  .btn-duplicate-event,
   .btn-remove-event {
     width: 28px;
     height: 28px;

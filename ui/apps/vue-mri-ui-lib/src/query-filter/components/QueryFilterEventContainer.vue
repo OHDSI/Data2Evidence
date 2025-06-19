@@ -45,7 +45,7 @@ const eventsData = computed({
   set: (value: QueryFilterEvent[]) => {
     localEvents.value = value
     emit('update-events', value)
-  }
+  },
 })
 
 // Handle adding new event from criteria selector
@@ -66,8 +66,8 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
     cardinality: {
       type: 'AT_LEAST',
       count: 1,
-      using: 'ALL'
-    }
+      using: 'ALL',
+    },
   }
 
   eventsData.value = [...eventsData.value, newEvent]
@@ -91,8 +91,8 @@ const addNewEvent = () => {
     cardinality: {
       type: 'AT_LEAST',
       count: 1,
-      using: 'ALL'
-    }
+      using: 'ALL',
+    },
   }
 
   eventsData.value = [...eventsData.value, newEvent]
@@ -120,9 +120,9 @@ const duplicateEvent = (eventIndex: number) => {
     const duplicatedEvent: QueryFilterEvent = {
       ...originalEvent,
       id: `event_${Date.now()}`,
-      conceptSet: `${originalEvent.conceptSet} (Copy)`
+      conceptSet: `${originalEvent.conceptSet} (Copy)`,
     }
-    
+
     const newEvents = [...eventsData.value]
     newEvents.splice(eventIndex + 1, 0, duplicatedEvent)
     eventsData.value = newEvents
@@ -130,22 +130,22 @@ const duplicateEvent = (eventIndex: number) => {
 }
 
 // Event handlers for new QueryFilterEventCard component
-const handleAttributeSelected = (filterId: string, eventId: string, attribute: any) => {
+const handleAttributeSelected = (eventId: string, attribute: any) => {
   console.log('Attribute selected:', eventId, attribute)
 }
 
-const handleAttributeRemoved = (filterId: string, eventId: string, attributeId: string) => {
+const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   console.log('Attribute removed:', eventId, attributeId)
 }
 
-const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
     const updatedEvent = {
       ...eventsData.value[eventIndex],
       selectedConceptSet: conceptSet,
       conceptSetId: conceptSet.value,
-      conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value
+      conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value,
     }
     updateEvent(eventIndex, updatedEvent)
   }
@@ -161,12 +161,8 @@ const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet:
         button-text="Add event"
         @criteria-selected="handleCriteriaSelected"
       />
-      
-      <button class="btn-add-event-simple" @click="addNewEvent">
-        + Add Simple Event
-      </button>
     </div>
-    
+
     <!-- Events List -->
     <div class="events-list">
       <!-- Use new QueryFilterEventCard component for single event focus -->
@@ -182,31 +178,27 @@ const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet:
         @update:event="updateEvent(index, $event)"
         @remove-event="removeEvent(index)"
         @duplicate-event="duplicateEvent(index)"
-        @concept-set-selected="handleConceptSetSelected(parentGroup.id, event.id, $event)"
-        @attribute-selected="handleAttributeSelected(parentGroup.id, event.id, $event)"
-        @attribute-removed="handleAttributeRemoved(parentGroup.id, event.id, $event)"
+        @concept-set-selected="handleConceptSetSelected(event.id, $event)"
+        @attribute-selected="handleAttributeSelected(event.id, $event)"
+        @attribute-removed="handleAttributeRemoved(event.id, $event)"
       />
     </div>
-    
+
     <!-- Empty State -->
     <div v-if="eventsData.length === 0" class="empty-state">
       <div class="empty-state__content">
         <div class="empty-state__icon">📝</div>
         <h4 class="empty-state__title">No Events Added</h4>
-        <p class="empty-state__description">
-          Add events to define the criteria for this group.
-        </p>
-        <button v-if="!readonly" class="btn-add-first-event" @click="addNewEvent">
-          Add Your First Event
-        </button>
+        <p class="empty-state__description">Add events to define the criteria for this group.</p>
+        <button v-if="!readonly" class="btn-add-first-event" @click="addNewEvent">Add Your First Event</button>
       </div>
     </div>
-    
+
     <!-- Event Relationships (if more than one event) -->
     <div v-if="eventsData.length > 1" class="event-relationships">
       <div class="relationship-indicator">
         <span class="relationship-text">
-          Events are combined using <strong>{{ parentGroup.groupType }}</strong> logic
+          Events are combined using <strong>{{ parentGroup.criteriaType }}</strong> logic
         </span>
       </div>
     </div>
@@ -245,7 +237,7 @@ const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet:
   .events-list {
     .query-filter-card {
       margin-bottom: 12px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -314,7 +306,7 @@ const handleConceptSetSelected = (filterId: string, eventId: string, conceptSet:
     .relationship-text {
       font-size: 13px;
       color: #1565c0;
-      
+
       strong {
         font-weight: 600;
       }
