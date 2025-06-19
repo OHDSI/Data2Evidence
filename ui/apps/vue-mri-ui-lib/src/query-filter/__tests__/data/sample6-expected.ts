@@ -193,6 +193,7 @@ export default {
       },
     },
   ],
+  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA',

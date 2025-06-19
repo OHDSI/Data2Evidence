@@ -18,7 +18,7 @@ describe('Atlas Integration Tests', () => {
       expect(atlasFormat).toHaveProperty('EndStrategy')
 
       // Validate qualifying events limit
-      expect(atlasFormat.QualifiedLimit.Type).toBe('ALL')
+      expect(atlasFormat.QualifiedLimit.Type).toBe('All')
 
       // Validate inclusion rules
       expect(atlasFormat.InclusionRules).toHaveLength(1)
@@ -40,7 +40,7 @@ describe('Atlas Integration Tests', () => {
       const criteriaList = atlasFormat.InclusionRules[0].expression.CriteriaList
       criteriaList.forEach(criteria => {
         expect(criteria).toHaveProperty('Criteria')
-        expect(criteria.Criteria).toHaveProperty('conditionOccurrence')
+        expect(criteria.Criteria).toHaveProperty('ConditionOccurrence')
       })
     })
 
@@ -68,9 +68,9 @@ describe('Atlas Integration Tests', () => {
 
       const atlasFormat = manager.convertToAtlasFormat()
 
-      expect(atlasFormat.QualifiedLimit.Type).toBe('EARLIEST')
+      expect(atlasFormat.QualifiedLimit.Type).toBe('First')
       expect(atlasFormat.InclusionRules[0].expression.Type).toBe('ANY')
-      expect(atlasFormat.InclusionRules[0].expression.CriteriaList[0].Criteria).toHaveProperty('drugExposure')
+      expect(atlasFormat.InclusionRules[0].expression.CriteriaList[0].Criteria).toHaveProperty('DrugExposure')
     })
   })
 
@@ -147,7 +147,9 @@ describe('Atlas Integration Tests', () => {
       // Verify basic structure preservation
       const originalCriteria = originalManager.getCriteria()
 
-      expect(atlasFormat.QualifiedLimit.Type).toBe(originalCriteria.criteriaType)
+      // Map criteriaType to Atlas format
+      const expectedType = originalCriteria.criteriaType === 'ALL' ? 'All' : originalCriteria.criteriaType
+      expect(atlasFormat.QualifiedLimit.Type).toBe(expectedType)
       expect(atlasFormat.InclusionRules.length).toBe(originalCriteria.criteria.length)
     })
 

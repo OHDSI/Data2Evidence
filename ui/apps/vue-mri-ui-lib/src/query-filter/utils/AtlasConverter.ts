@@ -99,7 +99,9 @@ export const convertAtlasToFilters = (
       return []
     }
 
-    return criteriaList.map(criteriaItem => {
+    const events: QueryFilterEvent[] = []
+
+    criteriaList.forEach(criteriaItem => {
       const criteria = criteriaItem.Criteria || criteriaItem
       const criteriaType = getCriteriaType(criteria)
       const criteriaObj = getCriteriaObject(criteria)
@@ -107,13 +109,23 @@ export const convertAtlasToFilters = (
 
       const conceptSetInfo = conceptSetId !== undefined ? findConceptSetByCodesetId(conceptSetId) : null
 
-      const event: QueryFilterEvent = {
-        id: `event_${Date.now()}}`,
-        conceptSet:
-          conceptSetInfo?.name || (conceptSetId !== undefined ? `Concept Set ${conceptSetId}` : 'No Concept Set'),
-        conceptSetId: conceptSetInfo?.id,
-        criteriaType,
-        selectedConceptSet: conceptSetInfo?.conceptSetItem || undefined,
+      const event: any = {
+        id: `event_${Math.random().toString(36).substring(2)}`,
+        eventType: criteriaType,
+        isExpanded: true,
+        cardinality: {
+          type: 'AT_LEAST',
+          count: criteriaItem.Occurrence?.Count || 1,
+          using: 'ALL',
+        },
+        attributes: [],
+      }
+
+      // Only add conceptSet and related properties if we have a concept set
+      if (conceptSetInfo || conceptSetId !== undefined) {
+        event.conceptSet = conceptSetInfo?.name || `Concept Set ${conceptSetId}`
+        event.conceptSetId = conceptSetInfo?.id
+        event.selectedConceptSet = conceptSetInfo?.conceptSetItem || undefined
       }
 
       if (conceptSetId !== undefined) {
@@ -124,44 +136,155 @@ export const convertAtlasToFilters = (
         }
       }
 
-      return event
+      // Handle direct Age attributes on the event
+      if (criteriaObj.Age) {
+        ;(event.attributes! as any).push({
+          id: `attribute_${Math.random().toString(36).substring(2)}`,
+          attributeId: 'age',
+          attributeType: 'numericRange',
+          operator: mapAtlasOperatorToInternal(criteriaObj.Age.Op || 'gt'),
+          value: criteriaObj.Age.Value.toString(),
+        })
+      }
+
+      // Handle direct Gender attributes on the event
+      if (criteriaObj.Gender) {
+        ;(event.attributes! as any).push({
+          id: `attribute_${Math.random().toString(36).substring(2)}`,
+          attributeId: 'gender',
+          type: 'conceptSet',
+        })
+      }
+
+      // Handle CorrelatedCriteria (nested structure)
+      if (criteriaObj.CorrelatedCriteria) {
+        const nestedAttribute = {
+          id: `attribute_${Math.random().toString(36).substring(2)}`,
+          attributeType: 'nested' as const,
+          nestedCriteria: {
+            id: `criteria_${Math.random().toString(36).substring(2)}`,
+            criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
+            events: convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || []),
+          },
+        }
+
+        event.attributes!.push(nestedAttribute)
+      }
+
+      events.push(event)
     })
+
+    return events
+  }
+
+  const mapAtlasOperatorToInternal = (atlasOp: string): string => {
+    switch (atlasOp) {
+      case 'gt':
+        return 'GREATER_THAN'
+      case 'lt':
+        return 'LESS_THAN'
+      case 'gte':
+        return 'GREATER_THAN_OR_EQUAL'
+      case 'lte':
+        return 'LESS_THAN_OR_EQUAL'
+      case 'eq':
+        return 'EQUAL'
+      case 'bt':
+        return 'BETWEEN'
+      case 'nbt':
+        return 'NOT_BETWEEN'
+      default:
+        return 'GREATER_THAN'
+    }
+  }
+
+  // Create the main inclusionCriteria structure
+  const inclusionCriteria = {
+    qualifyingEventsLimit: 'ALL' as const,
+    criteria: [] as any[],
   }
 
   if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
     cohortDefinition.InclusionRules.forEach((rule: any) => {
-      if (rule.expression?.CriteriaList?.length > 0) {
-        rule.expression.CriteriaList.forEach((criteriaItem: any) => {
-          const events = convertCriteriaListToEvents([criteriaItem])
+      const criteriaItem = {
+        id: `criteria_${Math.random().toString(36).substring(2)}`,
+        title: rule.name || 'Inclusion Rule',
+        description: rule.description || '',
+        criteriaType: rule.expression?.Type || 'ALL',
+        events: [] as QueryFilterEvent[],
+      }
 
-          const inclusionFilter = new QueryFilterCardModel({
-            title: rule.name || 'Inclusion Rule',
-            type: 'inclusion',
-            events,
-          })
-          filters.push(inclusionFilter)
+      // Handle regular CriteriaList
+      if (rule.expression?.CriteriaList?.length > 0) {
+        criteriaItem.events = convertCriteriaListToEvents(rule.expression.CriteriaList)
+      }
+
+      // Handle DemographicCriteriaList - create demographic events
+      if (rule.expression?.DemographicCriteriaList?.length > 0) {
+        rule.expression.DemographicCriteriaList.forEach((demoCriteria: any) => {
+          const demographicEvent: any = {
+            id: `event_${Math.random().toString(36).substring(2)}`,
+            eventType: 'demographic',
+            isExpanded: true,
+            attributes: [],
+          }
+
+          if (demoCriteria.Age) {
+            ;(demographicEvent.attributes! as any).push({
+              id: `attribute_${Math.random().toString(36).substring(2)}`,
+              attributeId: 'age',
+              attributeType: 'numericRange',
+              operator: mapAtlasOperatorToInternal(demoCriteria.Age.Op || 'gt'),
+              value: demoCriteria.Age.Value.toString(),
+            })
+          }
+
+          if (demoCriteria.Gender) {
+            ;(demographicEvent.attributes! as any).push({
+              id: `attribute_${Math.random().toString(36).substring(2)}`,
+              attributeId: 'gender',
+              type: 'conceptSet',
+            })
+          }
+
+          criteriaItem.events.push(demographicEvent)
         })
       }
+
+      inclusionCriteria.criteria.push(criteriaItem)
     })
   }
 
+  // Return the QueryFilterCardModel structure that matches sample6Input format
+  if (inclusionCriteria.criteria.length > 0) {
+    const mainFilter = new QueryFilterCardModel({
+      title: cohortName || 'Cohort Definition',
+      type: 'inclusion',
+      events: [],
+    })
+
+    // Add the inclusionCriteria structure to the filter
+    ;(mainFilter as any).inclusionCriteria = inclusionCriteria
+    ;(mainFilter as any).entryEvents = {}
+
+    filters.push(mainFilter)
+  }
+
+  // Handle ExclusionRules if needed
   if (cohortDefinition.ExclusionRules && Array.isArray(cohortDefinition.ExclusionRules)) {
     cohortDefinition.ExclusionRules.forEach((rule: any) => {
       if (rule.expression?.CriteriaList?.length > 0) {
-        rule.expression.CriteriaList.forEach((criteriaItem: any) => {
-          const events = convertCriteriaListToEvents([criteriaItem])
+        const events = convertCriteriaListToEvents(rule.expression.CriteriaList)
 
-          const exclusionFilter = new QueryFilterCardModel({
-            title: rule.name || 'Exclusion Rule',
-            type: 'exclusion',
-            events,
-          })
-          filters.push(exclusionFilter)
+        const exclusionFilter = new QueryFilterCardModel({
+          title: rule.name || 'Exclusion Rule',
+          type: 'exclusion',
+          events,
         })
+        filters.push(exclusionFilter)
       }
     })
   }
-
   return filters
 }
 

@@ -91,6 +91,7 @@ export default {
       },
     },
   ],
+  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA',
@@ -98,4 +99,3 @@ export default {
   },
   CensorWindow: {},
 }
-

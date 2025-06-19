@@ -1,6 +1,5 @@
 import {
   QueryFilterCardModel,
-  QueryFilterManager,
   QueryFilterCriteriaManager,
   QueryFilterEvent,
 } from '../models/QueryFilterModel'
@@ -608,346 +607,159 @@ describe('QueryFilterCardModel', () => {
   })
 })
 
-describe('QueryFilterManager', () => {
+describe('QueryFilterCriteriaManager', () => {
   describe('constructor', () => {
-    it('should create with empty filters', () => {
-      const manager = new QueryFilterManager()
+    it('should create with default values', () => {
+      const manager = new QueryFilterCriteriaManager()
 
-      expect(manager.getAllFilters()).toEqual([])
+      expect(manager.getCriteria()).toBeDefined()
+      expect(manager.getCriteria().criteriaType).toBe('ALL')
+      expect(manager.getCriteria().criteria).toEqual([])
     })
 
-    it('should create with initial filters', () => {
-      const filters = [new QueryFilterCardModel({ title: 'Test Filter' })]
-      const manager = new QueryFilterManager(filters)
+    it('should create with inclusionCriteria structure', () => {
+      const data = {
+        inclusionCriteria: {
+          qualifyingEventsLimit: 'EARLIEST',
+          criteria: [
+            {
+              id: 'test-criteria',
+              title: 'Test Criteria',
+              description: 'Test Description',
+              criteriaType: 'ALL',
+              events: []
+            }
+          ]
+        }
+      }
+      const manager = new QueryFilterCriteriaManager(data)
 
-      expect(manager.getAllFilters()).toHaveLength(1)
-      expect(manager.getAllFilters()[0].title).toBe('Test Filter')
+      expect(manager.getCriteria().criteriaType).toBe('EARLIEST')
+      expect(manager.getCriteria().criteria).toHaveLength(1)
+      expect(manager.getCriteria().criteria[0].title).toBe('Test Criteria')
     })
   })
 
-  describe('filter management', () => {
-    let manager: QueryFilterManager
+  describe('criteria management', () => {
+    let manager: QueryFilterCriteriaManager
 
     beforeEach(() => {
-      manager = new QueryFilterManager()
+      manager = new QueryFilterCriteriaManager()
     })
 
-    it('should add filter with default values', () => {
-      const filter = manager.addFilter()
-
-      expect(manager.getAllFilters()).toHaveLength(1)
-      expect(filter.title).toBe('')
-      expect(filter.type).toBe('inclusion')
-      expect(filter.isExpanded).toBe(true)
-    })
-
-    it('should add filter with custom values', () => {
-      const filterData = {
-        title: 'Custom Filter',
-        type: 'exclusion' as const,
-        isExpanded: false,
+    it('should add criteria group', () => {
+      const group = {
+        title: 'Test Group',
+        description: 'Test Description',
+        groupType: 'ALL' as const
       }
 
-      const filter = manager.addFilter(filterData)
+      manager.addGroup(group)
 
-      expect(filter.title).toBe('Custom Filter')
-      expect(filter.type).toBe('exclusion')
-      expect(filter.isExpanded).toBe(false)
+      expect(manager.getCriteria().criteria).toHaveLength(1)
+      expect(manager.getCriteria().criteria[0].title).toBe('Test Group')
     })
 
-    it('should remove filter by ID', () => {
-      const filter = manager.addFilter()
-      expect(manager.getAllFilters()).toHaveLength(1)
+    it('should remove criteria group', () => {
+      const group = manager.addGroup({ title: 'Test Group' })
+      expect(manager.getCriteria().criteria).toHaveLength(1)
 
-      const removed = manager.removeFilter(filter.id)
+      const removed = manager.removeGroup(group.id)
 
       expect(removed).toBe(true)
-      expect(manager.getAllFilters()).toHaveLength(0)
+      expect(manager.getCriteria().criteria).toHaveLength(0)
     })
 
-    it('should return false when removing non-existent filter', () => {
-      const removed = manager.removeFilter('non-existent')
+    it('should update criteria group', () => {
+      const group = manager.addGroup({ title: 'Original Title' })
+      const updates = { title: 'Updated Title', description: 'Updated Description' }
 
-      expect(removed).toBe(false)
-    })
-
-    it('should update filter', () => {
-      const filter = manager.addFilter()
-      const updates = { title: 'Updated Filter', type: 'exclusion' as const }
-
-      const updated = manager.updateFilter(filter.id, updates)
+      const updated = manager.updateGroup(group.id, updates)
 
       expect(updated).toBe(true)
-      expect(filter.title).toBe('Updated Filter')
-      expect(filter.type).toBe('exclusion')
+      expect(group.title).toBe('Updated Title')
+      expect(group.description).toBe('Updated Description')
     })
 
-    it('should move filter to new position', () => {
-      const filter1 = manager.addFilter({ title: 'Filter 1' })
-      const filter2 = manager.addFilter({ title: 'Filter 2' })
-      const filter3 = manager.addFilter({ title: 'Filter 3' })
+    it('should set criteria type', () => {
+      expect(manager.getCriteria().criteriaType).toBe('ALL')
 
-      const moved = manager.moveFilter(filter1.id, 2)
+      manager.setCriteriaType('EARLIEST')
 
-      expect(moved).toBe(true)
-      expect(manager.getAllFilters()[0].title).toBe('Filter 2')
-      expect(manager.getAllFilters()[1].title).toBe('Filter 3')
-      expect(manager.getAllFilters()[2].title).toBe('Filter 1')
-    })
-
-    it('should return false when moving filter to invalid position', () => {
-      const filter = manager.addFilter()
-
-      const moved = manager.moveFilter(filter.id, 5)
-
-      expect(moved).toBe(false)
+      expect(manager.getCriteria().criteriaType).toBe('EARLIEST')
     })
   })
 
-  describe('filter getters', () => {
-    let manager: QueryFilterManager
+  describe('filter management within groups', () => {
+    let manager: QueryFilterCriteriaManager
 
     beforeEach(() => {
-      manager = new QueryFilterManager()
+      manager = new QueryFilterCriteriaManager()
     })
 
-    it('should get filter by ID', () => {
-      const addedFilter = manager.addFilter({ title: 'Test Filter' })
-      const foundFilter = manager.getFilter(addedFilter.id)
+    it('should add filter to group', () => {
+      const group = manager.addGroup({ title: 'Test Group' })
+      const filterData = { title: 'Test Filter', type: 'inclusion' as const }
 
-      expect(foundFilter).toBe(addedFilter)
-      expect(foundFilter?.title).toBe('Test Filter')
+      const filter = manager.addFilterToGroup(group.id, filterData)
+
+      expect(filter).not.toBeNull()
+      expect(filter?.title).toBe('Test Filter')
+      expect(group.groups).toHaveLength(1) // Added filter
     })
 
-    it('should get all filters', () => {
-      manager.addFilter({ title: 'Filter 1' })
-      manager.addFilter({ title: 'Filter 2' })
+    it('should return null when adding filter to non-existent group', () => {
+      const filter = manager.addFilterToGroup('non-existent', {})
 
-      const allFilters = manager.getAllFilters()
-
-      expect(allFilters).toHaveLength(2)
-      expect(allFilters[0].title).toBe('Filter 1')
-      expect(allFilters[1].title).toBe('Filter 2')
+      expect(filter).toBeNull()
     })
 
-    it('should get inclusion filters', () => {
-      manager.addFilter({ title: 'Inclusion 1', type: 'inclusion' })
-      manager.addFilter({ title: 'Exclusion 1', type: 'exclusion' })
-      manager.addFilter({ title: 'Inclusion 2', type: 'inclusion' })
+    it('should remove filter from group', () => {
+      const group = manager.addGroup({ title: 'Test Group' })
+      const filter = manager.addFilterToGroup(group.id, {})!
 
-      const inclusionFilters = manager.getInclusionFilters()
-
-      expect(inclusionFilters).toHaveLength(2)
-      expect(inclusionFilters[0].title).toBe('Inclusion 1')
-      expect(inclusionFilters[1].title).toBe('Inclusion 2')
-    })
-
-    it('should get exclusion filters', () => {
-      manager.addFilter({ title: 'Inclusion 1', type: 'inclusion' })
-      manager.addFilter({ title: 'Exclusion 1', type: 'exclusion' })
-      manager.addFilter({ title: 'Exclusion 2', type: 'exclusion' })
-
-      const exclusionFilters = manager.getExclusionFilters()
-
-      expect(exclusionFilters).toHaveLength(2)
-      expect(exclusionFilters[0].title).toBe('Exclusion 1')
-      expect(exclusionFilters[1].title).toBe('Exclusion 2')
-    })
-
-    it('should get filter count', () => {
-      expect(manager.getFilterCount()).toBe(0)
-
-      manager.addFilter()
-      manager.addFilter()
-
-      expect(manager.getFilterCount()).toBe(2)
-    })
-  })
-
-  describe('event and concept set management', () => {
-    let manager: QueryFilterManager
-
-    beforeEach(() => {
-      manager = new QueryFilterManager()
-    })
-
-    it('should add event to filter', () => {
-      const filter = manager.addFilter()
-      const eventData = { conceptSet: 'Test Concept Set' }
-
-      const event = manager.addEventToFilter(filter.id, eventData)
-
-      expect(event).not.toBeNull()
-      expect(event?.conceptSet).toBe('Test Concept Set')
-      expect(filter.events).toHaveLength(1)
-    })
-
-    it('should return null when adding event to non-existent filter', () => {
-      const event = manager.addEventToFilter('non-existent', {})
-
-      expect(event).toBeNull()
-    })
-
-    it('should remove event from filter', () => {
-      const filter = manager.addFilter()
-      const event = manager.addEventToFilter(filter.id, {})!
-
-      const removed = manager.removeEventFromFilter(filter.id, event.id)
+      const removed = manager.removeFilterFromGroup(group.id, filter.id)
 
       expect(removed).toBe(true)
-      expect(filter.events).toHaveLength(0)
-    })
-
-    it('should handle concept set details', () => {
-      const filter = manager.addFilter()
-      const event = manager.addEventToFilter(filter.id, {})!
-
-      // Simulate updating event with concept set details
-      filter.updateEvent(event.id, {
-        conceptSetDetails: [{ CONCEPT_ID: 1, CONCEPT_NAME: 'Diabetes', DOMAIN_ID: 'Condition' }],
-      })
-
-      expect(event.conceptSetDetails).toHaveLength(1)
-      expect(event.conceptSetDetails![0].CONCEPT_NAME).toBe('Diabetes')
-    })
-  })
-
-  describe('bulk operations', () => {
-    let manager: QueryFilterManager
-
-    beforeEach(() => {
-      manager = new QueryFilterManager()
-    })
-
-    it('should clear all filters', () => {
-      manager.addFilter()
-      manager.addFilter()
-
-      expect(manager.getAllFilters()).toHaveLength(2)
-
-      manager.clearAllFilters()
-
-      expect(manager.getAllFilters()).toHaveLength(0)
-    })
-
-    it('should clear empty filters', () => {
-      const filter1 = manager.addFilter()
-      const filter2 = manager.addFilter()
-
-      // Add event to filter1 only
-      manager.addEventToFilter(filter1.id, { conceptSet: 'Test' })
-
-      manager.clearEmptyFilters()
-
-      expect(manager.getAllFilters()).toHaveLength(1)
-      expect(manager.getAllFilters()[0]).toBe(filter1)
-    })
-
-    it('should clear empty events', () => {
-      const filter = manager.addFilter()
-      const event1 = manager.addEventToFilter(filter.id, {})!
-      const event2 = manager.addEventToFilter(filter.id, {})!
-
-      // Add conceptSetDetails to event1 only
-      filter.updateEvent(event1.id, {
-        conceptSetDetails: [{ CONCEPT_ID: 1, CONCEPT_NAME: 'Test' }],
-      })
-
-      expect(filter.events).toHaveLength(2)
-      manager.clearEmptyEvents()
-      expect(filter.events).toHaveLength(1) // Only event with conceptSetDetails remains
-    })
-  })
-
-  describe('validation', () => {
-    let manager: QueryFilterManager
-
-    beforeEach(() => {
-      manager = new QueryFilterManager()
-    })
-
-    it('should check if has filters', () => {
-      expect(manager.hasFilters()).toBe(false)
-
-      manager.addFilter()
-      expect(manager.hasFilters()).toBe(true)
-    })
-
-    it('should check if has valid filters', () => {
-      expect(manager.hasValidFilters()).toBe(false)
-
-      const filter = manager.addFilter()
-      manager.addEventToFilter(filter.id, { conceptSet: 'Test' })
-
-      expect(manager.hasValidFilters()).toBe(true)
-    })
-
-    it('should validate filters and return errors', () => {
-      const result = manager.validateFilters()
-
-      expect(result.isValid).toBe(true) // No filters means valid
-      expect(result.errors).toEqual([])
+      expect(group.groups).toHaveLength(0) // No filters remain
     })
   })
 
   describe('serialization and cloning', () => {
-    let manager: QueryFilterManager
+    let manager: QueryFilterCriteriaManager
 
     beforeEach(() => {
-      manager = new QueryFilterManager()
+      manager = new QueryFilterCriteriaManager()
     })
 
     it('should serialize to JSON', () => {
-      const filter = manager.addFilter({ title: 'Test Filter' })
-      manager.addEventToFilter(filter.id, { conceptSet: 'Test Concept' })
-
+      const group = manager.addGroup({ title: 'Test Group' })
       const json = manager.toJSON()
-      const filters = manager.getAllFilters()
 
-      expect(filters).toHaveLength(1)
-      expect(filters[0].title).toBe('Test Filter')
-      expect(filters[0].events).toHaveLength(1)
+      expect(json.criteriaType).toBe('ALL')
+      expect(json.criteria).toHaveLength(1)
+      expect(json.criteria[0].title).toBe('Test Group')
     })
 
     it('should create manager from JSON', () => {
-      const filter = manager.addFilter({ title: 'Test Filter' })
-      manager.addEventToFilter(filter.id, { conceptSet: 'Test Concept' })
-
+      const group = manager.addGroup({ title: 'Test Group' })
       const json = manager.toJSON()
-      const restored = QueryFilterManager.fromJSON(json)
+      const restored = QueryFilterCriteriaManager.fromJSON(json)
 
-      expect(restored.getAllFilters()).toHaveLength(1)
-      expect(restored.getAllFilters()[0].title).toBe('Test Filter')
-      expect(restored.getAllFilters()[0].events).toHaveLength(1)
+      expect(restored.getCriteria().criteria).toHaveLength(1)
+      expect(restored.getCriteria().criteria[0].title).toBe('Test Group')
     })
 
     it('should clone manager', () => {
-      const filter = manager.addFilter({ title: 'Test Filter' })
-      manager.addEventToFilter(filter.id, { conceptSet: 'Test Concept' })
-
+      const group = manager.addGroup({ title: 'Test Group' })
       const clone = manager.clone()
 
-      expect(clone.getAllFilters()).toHaveLength(1)
-      expect(clone.getAllFilters()[0].title).toBe('Test Filter')
-      expect(clone.getAllFilters()[0].events).toHaveLength(1)
+      expect(clone.getCriteria().criteria).toHaveLength(1)
+      expect(clone.getCriteria().criteria[0].title).toBe('Test Group')
 
       // Ensure deep copy
-      expect(clone.getAllFilters()[0]).not.toBe(filter)
-      expect(clone.getAllFilters()[0].id).not.toBe(filter.id)
-    })
-
-    it('should get summary statistics', () => {
-      const inclusionFilter = manager.addFilter({ type: 'inclusion' })
-      const exclusionFilter = manager.addFilter({ type: 'exclusion' })
-
-      manager.addEventToFilter(inclusionFilter.id, { conceptSet: 'Test' })
-
-      const summary = manager.getSummary()
-
-      expect(summary.totalFilters).toBe(2)
-      expect(summary.inclusionFilters).toBe(1)
-      expect(summary.exclusionFilters).toBe(1)
-      expect(summary.totalEvents).toBe(1)
+      expect(clone.getCriteria().criteria[0]).not.toBe(group)
+      expect(clone.getCriteria().criteria[0].id).not.toBe(group.id)
     })
   })
 
