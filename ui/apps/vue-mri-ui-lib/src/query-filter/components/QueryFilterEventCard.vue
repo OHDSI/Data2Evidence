@@ -91,11 +91,23 @@ const handleConceptSetSelected = (conceptSet: ConceptSetItem) => {
 
 // Handle attribute selection
 const handleAttributeSelected = (attribute: AttributeConfig) => {
-  // Add attribute to event
+  // Add full attribute object to event, not just ID
+  const currentAttributeObjects = eventData.value.attributeObjects || []
   const currentAttributes = eventData.value.selectedAttributes || []
+
+  // Store both the ID (for compatibility) and the full object
   const updatedEvent = {
     ...eventData.value,
     selectedAttributes: [...currentAttributes, attribute.id],
+    attributeObjects: [
+      ...currentAttributeObjects,
+      {
+        ...attribute,
+        // Initialize based on attribute type
+        conceptSet: attribute.id === 'nested' ? null : undefined,
+        nestedCriteria: attribute.id === 'nested' ? { operator: 'ANY', events: [] } : undefined,
+      },
+    ],
   }
   eventData.value = updatedEvent
   emit('attribute-selected', attribute)
@@ -104,9 +116,12 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
 // Handle attribute removal
 const handleAttributeRemoved = (attributeId: string) => {
   const currentAttributes = eventData.value.selectedAttributes || []
+  const currentAttributeObjects = eventData.value.attributeObjects || []
+
   const updatedEvent = {
     ...eventData.value,
     selectedAttributes: currentAttributes.filter(id => id !== attributeId),
+    attributeObjects: currentAttributeObjects.filter(obj => obj.id !== attributeId),
   }
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
@@ -128,6 +143,34 @@ const updateNestedCriteria = (updatedCriteria: any) => {
       eventData.value = { ...eventData.value }
     }
   }
+}
+
+// Handle attribute concept set selection
+const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItem) => {
+  const currentAttributeObjects = eventData.value.attributeObjects || []
+  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+    attr.id === attributeId ? { ...attr, conceptSet, conceptSetId: conceptSet.value } : attr
+  )
+
+  const updatedEvent = {
+    ...eventData.value,
+    attributeObjects: updatedAttributeObjects,
+  }
+  eventData.value = updatedEvent
+}
+
+// Handle attribute nested criteria updates
+const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria: any) => {
+  const currentAttributeObjects = eventData.value.attributeObjects || []
+  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+    attr.id === attributeId ? { ...attr, nestedCriteria } : attr
+  )
+
+  const updatedEvent = {
+    ...eventData.value,
+    attributeObjects: updatedAttributeObjects,
+  }
+  eventData.value = updatedEvent
 }
 
 // Create tag input model for concept set selection
@@ -255,14 +298,54 @@ const getCardinalityDisplay = (cardinality?: any) => {
       </div>
 
       <!-- Selected Attributes Display -->
-      <div v-if="eventData.selectedAttributes?.length" class="selected-attributes">
-        <h5 class="selected-attributes-title">Selected Attributes:</h5>
-        <div class="attribute-chips">
-          <div v-for="attributeId in eventData.selectedAttributes" :key="attributeId" class="attribute-chip">
-            <span class="attribute-chip-text">{{ attributeId }}</span>
-            <button v-if="!readonly" class="attribute-chip-remove" @click="handleAttributeRemoved(attributeId)">
-              ×
-            </button>
+      <div v-if="eventData.attributeObjects?.length" class="selected-attributes">
+        <div v-for="attribute in eventData.attributeObjects" :key="attribute.id" class="attribute-component">
+          <!-- Attribute Header -->
+          <div class="attribute-header">
+            <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
+            <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
+          </div>
+
+          <!-- Nested Criteria Attribute -->
+          <div v-if="attribute.id === 'nested'" class="attribute-nested">
+            <QueryFilterNestedCriteria
+              :nested-criteria="attribute.nestedCriteria"
+              :level="0"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="conceptSetDomainValues"
+              :concept-set-texts="conceptSetTexts"
+              :readonly="readonly"
+              :hide-header="true"
+              @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+            />
+          </div>
+
+          <!-- Regular Attribute with Concept Set -->
+          <div v-else class="attribute-concept-set">
+            <label class="attribute-concept-set-label">
+              {{ attribute.description || `Select ${attribute.name} concepts:` }}
+            </label>
+            <QueryFilterTagInputAdapter
+              v-if="!readonly"
+              :model="{
+                id: `attribute-${attribute.id}-${eventData.id}`,
+                props: {
+                  type: 'conceptSet',
+                  value: attribute.conceptSet ? [attribute.conceptSet] : [],
+                  attributePath: 'condition_occurrence.concept_id',
+                  domainFilter: 'Condition',
+                  standardConceptCodeFilter: 'Standard',
+                },
+              }"
+              :external-value="attribute.conceptSet ? [attribute.conceptSet] : []"
+              :external-domain-values="conceptSetDomainValues"
+              :external-texts="conceptSetTexts"
+              :is-catalog-attribute="false"
+              @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
+            />
+            <div v-else class="attribute-concept-set-readonly">
+              {{ attribute.conceptSet?.text || 'No concept set selected' }}
+            </div>
           </div>
         </div>
       </div>
@@ -461,6 +544,79 @@ const getCardinalityDisplay = (cardinality?: any) => {
       font-size: 13px;
       font-weight: 600;
       color: #333;
+    }
+  }
+
+  .attribute-component {
+    margin-bottom: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+    overflow: hidden;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .attribute-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .attribute-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .attribute-remove {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    border-radius: 3px;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #dc3545;
+      color: #dc3545;
+      background: #fff5f5;
+    }
+  }
+
+  .attribute-nested {
+    padding: 12px;
+  }
+
+  .attribute-concept-set {
+    padding: 12px;
+
+    &-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
+
+    &-readonly {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #666;
     }
   }
 

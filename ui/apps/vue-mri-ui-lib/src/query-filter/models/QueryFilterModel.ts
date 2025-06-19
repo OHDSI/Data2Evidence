@@ -30,6 +30,20 @@ export interface QueryFilterEvent {
   isEditing?: boolean
   criteriaType?: string
   selectedAttributes?: string[]
+  attributeObjects?: Array<{
+    id: string
+    name?: string
+    title?: string
+    description?: string
+    type?: string
+    category?: string
+    conceptSet?: any
+    conceptSetId?: string
+    nestedCriteria?: {
+      operator: string
+      events: any[]
+    }
+  }>
   isAttributeBased?: boolean
   isDemographic?: boolean
   parentEventId?: string
@@ -576,19 +590,20 @@ export class QueryFilterCriteriaManager {
       if (data.inclusionCriteria) {
         this.inclusionCriteria = {
           qualifyingEventsLimit: data.inclusionCriteria.qualifyingEventsLimit || 'ALL',
-          criteria: data.inclusionCriteria.criteria?.map((criteria: any) => ({
-            id: criteria.id,
-            title: criteria.title,
-            description: criteria.description,
-            criteriaType: criteria.criteriaType,
-            events: this.transformEvents(criteria.events || []),
-          })) || []
+          criteria:
+            data.inclusionCriteria.criteria?.map((criteria: any) => ({
+              id: criteria.id,
+              title: criteria.title,
+              description: criteria.description,
+              criteriaType: criteria.criteriaType,
+              events: this.transformEvents(criteria.events || []),
+            })) || [],
         }
       } else {
         // Handle original structure - initialize inclusionCriteria with proper structure
         this.inclusionCriteria = {
           qualifyingEventsLimit: data.criteriaType || 'ALL',
-          criteria: data.criteria || []
+          criteria: data.criteria || [],
         }
       }
     } catch (error) {
@@ -606,7 +621,7 @@ export class QueryFilterCriteriaManager {
     return {
       id: this.generateId(),
       criteriaType: this.mapQualifyingEventsLimit(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
-      criteria: this.inclusionCriteria.criteria || []
+      criteria: this.inclusionCriteria.criteria || [],
     }
   }
 
@@ -1029,7 +1044,7 @@ export class QueryFilterCriteriaManager {
     const conceptSets: any[] = []
     const usedConceptSetIds = new window.Set() as Set<string>
 
-    (this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
+    ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
       group.events.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const conceptSetId = event.conceptSetId
@@ -1053,7 +1068,7 @@ export class QueryFilterCriteriaManager {
     atlasDef.InclusionRules.forEach((rule: any) => {
       rule.expression.CriteriaList.forEach((criteriaItem: any) => {
         // Find the corresponding event to get the conceptSetId
-        (this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
+        ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
           group.events.forEach(event => {
             if (!event.isAttributeBased && event.conceptSetId) {
               const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
@@ -1348,13 +1363,7 @@ export class QueryFilterCriteriaManager {
   }
 
   // Set criteria (for Atlas loading)
-  setData({
-    inclusionCriteria,
-    entryEvents,
-  }: {
-    inclusionCriteria: InclusionCriteria
-    entryEvents: any
-  }) {
+  setData({ inclusionCriteria, entryEvents }: { inclusionCriteria: InclusionCriteria; entryEvents: any }) {
     console.log('setData called with:', { inclusionCriteria, entryEvents })
     this.inclusionCriteria = inclusionCriteria
     this.entryEvents = entryEvents

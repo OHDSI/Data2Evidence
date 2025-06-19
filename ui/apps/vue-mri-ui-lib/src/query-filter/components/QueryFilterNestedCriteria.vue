@@ -26,6 +26,7 @@ interface Props {
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   readonly?: boolean
+  hideHeader?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -33,6 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
   maxDepth: 10,
   conceptSets: () => [],
   readonly: false,
+  hideHeader: false,
 })
 
 const emit = defineEmits<{
@@ -49,7 +51,7 @@ const criteriaData = computed({
   set: (value: NestedCriteria) => {
     localCriteria.value = value
     emit('update:nestedCriteria', value)
-  }
+  },
 })
 
 // Check if we've reached maximum nesting depth
@@ -57,7 +59,7 @@ const isMaxDepthReached = computed(() => props.level >= props.maxDepth)
 
 // Get events that have nested attributes
 const eventsWithNesting = computed(() => {
-  return criteriaData.value.events.filter(event => 
+  return criteriaData.value.events.filter(event =>
     event.attributes?.some((attr: any) => attr.attributeType === 'nested')
   )
 })
@@ -72,7 +74,7 @@ const getNestedCriteriaFromEvent = (event: any) => {
 const updateCriteriaType = (newType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST') => {
   criteriaData.value = {
     ...criteriaData.value,
-    criteriaType: newType
+    criteriaType: newType,
   }
 }
 
@@ -86,13 +88,13 @@ const addNestedEvent = () => {
     cardinality: {
       type: 'AT_LEAST',
       count: 1,
-      using: 'ALL'
-    }
+      using: 'ALL',
+    },
   }
 
   criteriaData.value = {
     ...criteriaData.value,
-    events: [...criteriaData.value.events, newEvent]
+    events: [...criteriaData.value.events, newEvent],
   }
 }
 
@@ -109,7 +111,7 @@ const createTempFilterForEvent = (event: any) => ({
   title: 'Nested Event',
   type: 'inclusion' as const,
   events: [event],
-  isExpanded: true
+  isExpanded: true,
 })
 
 // Handle event updates from QueryFilterCard
@@ -117,10 +119,10 @@ const handleEventUpdate = (eventIndex: number, updatedFilter: any) => {
   if (updatedFilter.events && updatedFilter.events[0]) {
     const newEvents = [...criteriaData.value.events]
     newEvents[eventIndex] = updatedFilter.events[0]
-    
+
     criteriaData.value = {
       ...criteriaData.value,
-      events: newEvents
+      events: newEvents,
     }
   }
 }
@@ -128,10 +130,10 @@ const handleEventUpdate = (eventIndex: number, updatedFilter: any) => {
 // Handle event removal
 const handleEventRemove = (eventIndex: number) => {
   const newEvents = criteriaData.value.events.filter((_, index) => index !== eventIndex)
-  
+
   criteriaData.value = {
     ...criteriaData.value,
-    events: newEvents
+    events: newEvents,
   }
 }
 
@@ -139,7 +141,7 @@ const handleEventRemove = (eventIndex: number) => {
 const getNestingStyle = computed(() => ({
   marginLeft: `${props.level * 20}px`,
   borderLeft: `3px solid ${getNestingColor()}`,
-  backgroundColor: props.level > 0 ? `rgba(25, 118, 210, ${0.05 + props.level * 0.02})` : 'transparent'
+  backgroundColor: props.level > 0 ? `rgba(25, 118, 210, ${0.05 + props.level * 0.02})` : 'transparent',
 }))
 
 const getNestingColor = () => {
@@ -150,38 +152,41 @@ const getNestingColor = () => {
 // Get operator display text
 const getOperatorText = (operator: string) => {
   switch (operator) {
-    case 'ALL': return 'ALL'
-    case 'ANY': return 'ANY'
-    case 'AT_LEAST': return 'AT LEAST'
-    case 'AT_MOST': return 'AT MOST'
-    default: return operator
+    case 'ALL':
+      return 'ALL'
+    case 'ANY':
+      return 'ANY'
+    case 'AT_LEAST':
+      return 'AT LEAST'
+    case 'AT_MOST':
+      return 'AT MOST'
+    default:
+      return operator
   }
 }
 </script>
 
 <template>
-  <div 
-    class="query-filter-nested-criteria" 
+  <div
+    class="query-filter-nested-criteria"
     :class="`query-filter-nested-criteria--level-${level}`"
     :style="getNestingStyle"
   >
     <!-- Nested Criteria Header -->
-    <div class="nested-header">
+    <div v-if="!hideHeader" class="nested-header">
       <div class="nested-header__left">
         <span class="nested-indicator">
           {{ '└─'.repeat(level + 1) }}
         </span>
-        <span class="nested-label">
-          Nested Criteria (Level {{ level + 1 }})
-        </span>
+        <span class="nested-label"> Nested Criteria (Level {{ level + 1 }}) </span>
       </div>
-      
+
       <div class="nested-header__controls">
         <div class="nested-operator-container">
           <label class="nested-operator-label">Match:</label>
-          <select 
+          <select
             v-if="!readonly"
-            v-model="localCriteria.criteriaType" 
+            v-model="localCriteria.criteriaType"
             class="nested-operator-select"
             @change="updateCriteriaType($event.target.value as any)"
           >
@@ -194,10 +199,10 @@ const getOperatorText = (operator: string) => {
             {{ getOperatorText(localCriteria.criteriaType) }}
           </span>
         </div>
-        
-        <button 
+
+        <button
           v-if="!readonly && level > 0"
-          class="btn-remove-nested" 
+          class="btn-remove-nested"
           @click="removeNested"
           title="Remove nested criteria"
         >
@@ -205,23 +210,17 @@ const getOperatorText = (operator: string) => {
         </button>
       </div>
     </div>
-    
+
     <!-- Nested Events -->
     <div class="nested-events">
       <div v-if="criteriaData.events.length === 0" class="nested-empty-state">
         <p class="empty-message">No events in this nested criteria</p>
-        <button v-if="!readonly" class="btn-add-nested-event" @click="addNestedEvent">
-          + Add Event
-        </button>
+        <button v-if="!readonly" class="btn-add-nested-event" @click="addNestedEvent">+ Add Event</button>
       </div>
-      
+
       <div v-else class="nested-events-list">
         <!-- Render each event using QueryFilterCard for compatibility -->
-        <div 
-          v-for="(event, eventIndex) in criteriaData.events"
-          :key="event.id"
-          class="nested-event-item"
-        >
+        <div v-for="(event, eventIndex) in criteriaData.events" :key="event.id" class="nested-event-item">
           <QueryFilterCard
             :filter="createTempFilterForEvent(event)"
             :hide-group-label="true"
@@ -233,7 +232,7 @@ const getOperatorText = (operator: string) => {
             @update:filter="handleEventUpdate(eventIndex, $event)"
             @remove-filter="handleEventRemove(eventIndex)"
           />
-          
+
           <!-- Recursive nested criteria if this event has nested attributes -->
           <QueryFilterNestedCriteria
             v-if="!isMaxDepthReached && getNestedCriteriaFromEvent(event)"
@@ -244,28 +243,26 @@ const getOperatorText = (operator: string) => {
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="conceptSetTexts"
             :readonly="readonly"
-            @update:nested-criteria="(updated) => {
-              const attr = event.attributes.find(a => a.attributeType === 'nested')
-              if (attr) attr.nestedCriteria = updated
-            }"
+            @update:nested-criteria="
+              updated => {
+                const attr = event.attributes.find(a => a.attributeType === 'nested')
+                if (attr) attr.nestedCriteria = updated
+              }
+            "
           />
         </div>
       </div>
     </div>
-    
+
     <!-- Add Event Button -->
     <div v-if="!readonly && criteriaData.events.length > 0" class="nested-actions">
-      <button class="btn-add-nested-event" @click="addNestedEvent">
-        + Add Event to Nested Criteria
-      </button>
+      <button class="btn-add-nested-event" @click="addNestedEvent">+ Add Event to Nested Criteria</button>
     </div>
-    
+
     <!-- Depth Warning -->
     <div v-if="level >= maxDepth - 1" class="depth-warning">
       <span class="warning-icon">⚠️</span>
-      <span class="warning-text">
-        Maximum nesting depth reached. Further nesting is not allowed.
-      </span>
+      <span class="warning-text"> Maximum nesting depth reached. Further nesting is not allowed. </span>
     </div>
   </div>
 </template>
