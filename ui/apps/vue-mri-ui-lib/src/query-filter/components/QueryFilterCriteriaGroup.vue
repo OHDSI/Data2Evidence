@@ -285,7 +285,7 @@ const toggleGroupType = () => {
   }
 
   .group-sidebar {
-    width: 60px;
+    width: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -295,11 +295,11 @@ const toggleGroupType = () => {
     position: relative;
 
     // Default styling (ALL)
-    background: #1e3a8a;
+    background: #000080;
 
     // Different colors for different group types
     &--all {
-      background: #1e3a8a; // Blue
+      background: #000080;
     }
 
     &--any {
@@ -338,8 +338,8 @@ const toggleGroupType = () => {
   }
 
   .sidebar-label {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+    writing-mode: sideways-lr;
+    text-orientation: sideways;
     font-size: 13px;
     font-weight: 700;
     color: white;

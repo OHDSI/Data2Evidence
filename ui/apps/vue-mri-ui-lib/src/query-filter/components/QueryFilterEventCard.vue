@@ -498,12 +498,12 @@ const getCardinalityDisplay = (cardinality?: any) => {
   }
 
   .event-sidebar {
-    width: 60px;
+    width: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px 8px;
-    background: #1e3a8a; // Blue similar to nested criteria
+    background: #000080; // Blue similar to nested criteria
     position: relative;
 
     // Add subtle border to indicate different states
@@ -519,8 +519,8 @@ const getCardinalityDisplay = (cardinality?: any) => {
   }
 
   .sidebar-label {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+    writing-mode: sideways-lr;
+    text-orientation: sideways;
     font-size: 11px;
     font-weight: 700;
     color: white;

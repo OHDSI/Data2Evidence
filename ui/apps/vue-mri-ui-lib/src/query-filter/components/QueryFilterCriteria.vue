@@ -76,7 +76,7 @@ const handleGroupRemove = (groupIndex: number) => {
 
       <div class="qualifying-events-controls">
         <button
-          v-for="limit in ['ALL', 'EARLIEST', 'LATEST']"
+          v-for="limit in ['EARLIEST', 'ALL', 'LATEST']"
           :key="limit"
           class="qualifying-events-btn"
           :class="{
@@ -121,27 +121,28 @@ const handleGroupRemove = (groupIndex: number) => {
 .query-filter-criteria {
   .criteria-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
     padding-bottom: 16px;
     border-bottom: 1px solid #e0e0e0;
+    position: relative;
   }
 
   .criteria-title {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: #fe5e59;
   }
 
   .qualifying-events-controls {
     display: inline-flex;
     background: white;
     border-radius: 8px;
-    padding: 4px;
-    border: 2px solid #1e3a8a;
-    position: relative;
+    border: 2px solid #000080;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     overflow: hidden;
     width: 280px;
   }
@@ -152,9 +153,12 @@ const handleGroupRemove = (groupIndex: number) => {
     border: none;
     background: transparent;
     border-radius: 6px;
+    &:not(:first-child) {
+      border-left: #000080 2px solid;
+    }
     font-size: 14px;
     font-weight: 600;
-    color: #1e3a8a;
+    color: #000080;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -167,7 +171,7 @@ const handleGroupRemove = (groupIndex: number) => {
     }
 
     &--active {
-      background: #1e3a8a;
+      background: #000080;
       color: white;
       box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
     }
