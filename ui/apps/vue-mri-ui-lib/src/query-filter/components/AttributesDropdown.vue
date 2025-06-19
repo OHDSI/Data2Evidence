@@ -58,20 +58,24 @@ const attributesByCategory = computed(() => {
   return grouped
 })
 
-// Check if an attribute is currently selected by looking for existing attribute-based events
+// Check if an attribute is currently selected by looking at the current event's attributeObjects
 const isAttributeSelected = (attributeId: string) => {
-  return props.allEvents.some(
-    event =>
-      event.isAttributeBased && event.parentEventId === props.eventId && event.attributeConfig?.id === attributeId
-  )
+  // Find the current event by eventId
+  const currentEvent = props.allEvents.find(event => event.id === props.eventId)
+  if (!currentEvent) return false
+
+  // Check if the attribute is in the attributeObjects array
+  return currentEvent.attributeObjects?.some(attr => attr.id === attributeId) || false
 }
 
 // Get currently selected attributes for the button label
 const selectedAttributeIds = computed(() => {
-  return props.allEvents
-    .filter(event => event.isAttributeBased && event.parentEventId === props.eventId)
-    .map(event => event.attributeConfig?.id)
-    .filter(id => id)
+  // Find the current event by eventId
+  const currentEvent = props.allEvents.find(event => event.id === props.eventId)
+  if (!currentEvent || !currentEvent.attributeObjects) return []
+
+  // Return the IDs of selected attributes
+  return currentEvent.attributeObjects.map(attr => attr.id)
 })
 
 const toggleDropdown = () => {

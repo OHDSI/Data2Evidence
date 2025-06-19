@@ -143,9 +143,14 @@ const getDatasetIdFromProps = (): string => {
 
 // Handle attribute selection
 const handleAttributeSelected = (attribute: AttributeConfig) => {
-  // Add full attribute object to event, not just ID
   const currentAttributeObjects = eventData.value.attributeObjects || []
   const currentAttributes = eventData.value.selectedAttributes || []
+  
+  // Check if attribute is already selected to prevent duplicates
+  if (currentAttributeObjects.some(attr => attr.id === attribute.id)) {
+    console.warn(`Attribute ${attribute.id} is already selected`)
+    return
+  }
 
   // Store both the ID (for compatibility) and the full object
   const updatedEvent = {
