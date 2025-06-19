@@ -199,6 +199,30 @@ const handleCriteriaUpdated = (updatedCriteriaManager: QueryFilterCriteriaManage
   console.log('Criteria updated:', updatedCriteriaManager.toJSON())
 }
 
+// Handle qualifying events limit updates
+const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
+  criteriaManager.updateQualifyingEventsLimit(limit)
+  console.log('Qualifying limit updated:', limit)
+}
+
+// Handle adding new criteria group
+const handleAddCriteriaGroup = (groupData: any) => {
+  criteriaManager.addCriteriaGroup(groupData)
+  console.log('Criteria group added:', groupData)
+}
+
+// Handle updating criteria group
+const handleUpdateCriteriaGroup = (index: number, groupData: any) => {
+  criteriaManager.updateCriteriaGroup(index, groupData)
+  console.log('Criteria group updated:', { index, groupData })
+}
+
+// Handle removing criteria group
+const handleRemoveCriteriaGroup = (index: number) => {
+  criteriaManager.removeCriteriaGroup(index)
+  console.log('Criteria group removed:', index)
+}
+
 // Note: handleCriteriaSelected removed - not needed in modern component
 
 const applyFilters = () => {
@@ -427,12 +451,16 @@ defineExpose({
       <!-- New Hierarchical Component Structure -->
       <div v-if="useNewHierarchy" class="query-filter-container__section">
         <QueryFilterCriteria
-          :criteria-manager="criteriaManager"
+          :criteria-data="criteriaManager.getCriteria()"
           :concept-sets="allConceptSets"
           :concept-set-domain-values="conceptSetDomainValues"
           :concept-set-texts="tagInputTexts"
           @criteria-updated="handleCriteriaUpdated"
           @update:criteria="handleCriteriaUpdated"
+          @update-qualifying-limit="handleUpdateQualifyingLimit"
+          @add-criteria-group="handleAddCriteriaGroup"
+          @update-criteria-group="handleUpdateCriteriaGroup"
+          @remove-criteria-group="handleRemoveCriteriaGroup"
         />
       </div>
 

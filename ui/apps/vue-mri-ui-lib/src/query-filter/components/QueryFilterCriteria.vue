@@ -14,7 +14,7 @@ import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 
 interface Props {
-  criteriaManager: QueryFilterCriteriaManager
+  criteriaData?: any
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
@@ -22,6 +22,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  criteriaData: () => ({ criteriaType: 'ALL', criteria: [] }),
   conceptSets: () => [],
   readonly: false,
 })
@@ -29,41 +30,41 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:criteria': [criteria: any]
   'criteria-updated': [criteriaManager: QueryFilterCriteriaManager]
+  'update-qualifying-limit': [limit: 'ALL' | 'EARLIEST' | 'LATEST']
+  'add-criteria-group': [groupData: any]
+  'update-criteria-group': [index: number, groupData: any]
+  'remove-criteria-group': [index: number]
 }>()
 
-// Get current criteria data
-const criteriaData = computed(() => props.criteriaManager.getCriteria())
+// Get current criteria data (now from props instead of criteriaManager)
+const currentCriteriaData = computed(() => props.criteriaData)
 
 // Handle qualifying events limit selection
 const updateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  props.criteriaManager.updateQualifyingEventsLimit(limit)
-  emit('criteria-updated', props.criteriaManager)
+  emit('update-qualifying-limit', limit)
 }
 
 // Handle adding new criteria group
 const addNewGroup = () => {
   const newGroup = {
     id: `criteria_${Date.now()}`,
-    title: `Criteria ${criteriaData.value.criteria.length + 1}`,
-    description: `Description for Criteria ${criteriaData.value.criteria.length + 1}`,
-    groupType: 'ALL' as 'ALL',
-    groups: [],
+    title: `Criteria ${currentCriteriaData.value.criteria.length + 1}`,
+    description: `Description for Criteria ${currentCriteriaData.value.criteria.length + 1}`,
+    criteriaType: 'ALL' as 'ALL',
+    events: [],
   }
 
-  props.criteriaManager.addCriteriaGroup(newGroup)
-  emit('criteria-updated', props.criteriaManager)
+  emit('add-criteria-group', newGroup)
 }
 
 // Handle group updates
 const handleGroupUpdate = (groupIndex: number, updatedGroup: any) => {
-  props.criteriaManager.updateCriteriaGroup(groupIndex, updatedGroup)
-  emit('criteria-updated', props.criteriaManager)
+  emit('update-criteria-group', groupIndex, updatedGroup)
 }
 
 // Handle group removal
 const handleGroupRemove = (groupIndex: number) => {
-  props.criteriaManager.removeCriteriaGroup(groupIndex)
-  emit('criteria-updated', props.criteriaManager)
+  emit('remove-criteria-group', groupIndex)
 }
 </script>
 
@@ -79,7 +80,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :key="limit"
           class="qualifying-events-btn"
           :class="{
-            'qualifying-events-btn--active': criteriaData.criteriaType === limit,
+            'qualifying-events-btn--active': currentCriteriaData.criteriaType === limit,
             'qualifying-events-btn--readonly': readonly,
           }"
           :disabled="readonly"
@@ -93,7 +94,7 @@ const handleGroupRemove = (groupIndex: number) => {
     <!-- Criteria Groups -->
     <div class="criteria-groups">
       <QueryFilterCriteriaGroup
-        v-for="(group, index) in criteriaData.criteria"
+        v-for="(group, index) in currentCriteriaData.criteria"
         :key="group.id"
         :group="group"
         :group-index="index"
