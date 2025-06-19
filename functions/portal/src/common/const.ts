@@ -50,3 +50,4 @@ export enum ATTRIBUTE_CONFIG_CATEGORIES {
 }
 
 export const PORTAL_REPOSITORY = "PORTAL_REPOSITORY";
+export const STUDIES_JSON_NAME = "studies.json";
