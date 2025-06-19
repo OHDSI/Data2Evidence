@@ -223,6 +223,14 @@ const getCardinalityDisplay = (cardinality?: any) => {
       </div>
 
       <div class="event-header__right">
+        <AttributesDropdown
+          v-if="!readonly"
+          :criteria-type="eventData.criteriaType || 'conditionOccurrence'"
+          :event-id="eventData.id"
+          :all-events="[eventData]"
+          @attribute-selected="handleAttributeSelected"
+          @attribute-removed="handleAttributeRemoved"
+        />
         <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">×</button>
       </div>
     </div>
@@ -244,17 +252,6 @@ const getCardinalityDisplay = (cardinality?: any) => {
         <div v-else class="concept-set-readonly">
           {{ eventData.conceptSet || 'No concept set selected' }}
         </div>
-      </div>
-
-      <!-- Attributes Section -->
-      <div v-if="!readonly" class="attributes-section">
-        <AttributesDropdown
-          :criteria-type="eventData.criteriaType"
-          :event-id="eventData.id"
-          :all-events="[eventData]"
-          @attribute-selected="handleAttributeSelected"
-          @attribute-removed="handleAttributeRemoved"
-        />
       </div>
 
       <!-- Selected Attributes Display -->
