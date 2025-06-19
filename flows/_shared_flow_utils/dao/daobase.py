@@ -47,7 +47,7 @@ class DialectDrivers(BaseModel):
 
 class DaoBase(ABC):
     path_to_driver = "/app/inst/drivers"
-
+    big_query_key_path = "/app/key.json"
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
@@ -247,13 +247,12 @@ class DaoBase(ABC):
                                          port: int = None) -> Tuple[str, dict]:
 
         connect_args={}
-        credentials_path = "/app/key.json"
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
                 connect_args = {"user": user, "password": password.get_secret_value()}
             case SupportedDatabaseDialects.BIGQUERY:
-                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={credentials_path}"
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={DaoBase.big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 connect_args = {"user": user, "password": password.get_secret_value()}
