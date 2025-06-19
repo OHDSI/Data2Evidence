@@ -17,6 +17,9 @@ def get_token_value(auth_token: AuthToken) -> str:
 def get_third_party_token_value(auth_token: AuthToken) -> str:
     return auth_token.thirdpartytoken.get_secret_value()
 
+def get_third_party_refresh_token_value(auth_token: AuthToken) -> str:
+    return auth_token.thirdpartyrefreshtoken.get_secret_value()
+
 def buildUserFromToken(token: AppTokenPayload):
     if(token):
         name = token.get("name")
