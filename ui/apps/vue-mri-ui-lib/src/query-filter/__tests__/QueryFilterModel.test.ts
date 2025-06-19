@@ -1,8 +1,4 @@
-import {
-  QueryFilterCardModel,
-  QueryFilterCriteriaManager,
-  QueryFilterEvent,
-} from '../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import sample1Input from './data/sample1-input'
 import sample1Expected from './data/sample1-expected'
 import sample2Input from './data/sample2-input'
@@ -484,7 +480,7 @@ describe('QueryFilterCardModel', () => {
           },
         })
 
-        const eventGroup = model.getEventGroup(parentEvent.id)
+        const eventGroup = model.getEventWithParent(parentEvent.id)
 
         expect(eventGroup).toHaveLength(2)
         expect(eventGroup[0]).toBe(parentEvent)
@@ -627,10 +623,10 @@ describe('QueryFilterCriteriaManager', () => {
               title: 'Test Criteria',
               description: 'Test Description',
               criteriaType: 'ALL',
-              events: []
-            }
-          ]
-        }
+              events: [],
+            },
+          ],
+        },
       }
       const manager = new QueryFilterCriteriaManager(data)
 
@@ -651,34 +647,34 @@ describe('QueryFilterCriteriaManager', () => {
       const group = {
         title: 'Test Group',
         description: 'Test Description',
-        groupType: 'ALL' as const
+        groupType: 'ALL' as const,
       }
 
-      manager.addGroup(group)
+      manager.addCriteria(group)
 
       expect(manager.getCriteria().criteria).toHaveLength(1)
       expect(manager.getCriteria().criteria[0].title).toBe('Test Group')
     })
 
     it('should remove criteria group', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
+      const criteria = manager.addCriteria({ title: 'Test Group' })
       expect(manager.getCriteria().criteria).toHaveLength(1)
 
-      const removed = manager.removeGroup(group.id)
+      const removed = manager.removeGroup(criteria.id)
 
       expect(removed).toBe(true)
       expect(manager.getCriteria().criteria).toHaveLength(0)
     })
 
     it('should update criteria group', () => {
-      const group = manager.addGroup({ title: 'Original Title' })
+      const criteria = manager.addCriteria({ title: 'Original Title' })
       const updates = { title: 'Updated Title', description: 'Updated Description' }
 
-      const updated = manager.updateGroup(group.id, updates)
+      const updated = manager.updateGroup(criteria.id, updates)
 
       expect(updated).toBe(true)
-      expect(group.title).toBe('Updated Title')
-      expect(group.description).toBe('Updated Description')
+      expect(criteria.title).toBe('Updated Title')
+      expect(criteria.description).toBe('Updated Description')
     })
 
     it('should set criteria type', () => {
@@ -697,15 +693,15 @@ describe('QueryFilterCriteriaManager', () => {
       manager = new QueryFilterCriteriaManager()
     })
 
-    it('should add filter to group', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
+    it('should add event to criteria', () => {
+      const criteria = manager.addCriteria({ title: 'Test Group' })
       const filterData = { title: 'Test Filter', type: 'inclusion' as const }
 
-      const filter = manager.addFilterToGroup(group.id, filterData)
+      const filter = manager.addFilterToGroup(criteria.id, filterData)
 
       expect(filter).not.toBeNull()
       expect(filter?.title).toBe('Test Filter')
-      expect(group.events).toHaveLength(1) // Added filter
+      expect(criteria.events).toHaveLength(1) // Added filter
     })
 
     it('should return null when adding filter to non-existent group', () => {
@@ -715,13 +711,13 @@ describe('QueryFilterCriteriaManager', () => {
     })
 
     it('should remove filter from group', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
-      const filter = manager.addFilterToGroup(group.id, {})!
+      const criteria = manager.addCriteria({ title: 'Test Group' })
+      const filter = manager.addFilterToGroup(criteria.id, {})!
 
-      const removed = manager.removeFilterFromGroup(group.id, filter.id)
+      const removed = manager.removeFilterFromGroup(criteria.id, filter.id)
 
       expect(removed).toBe(true)
-      expect(group.events).toHaveLength(0) // No filters remain
+      expect(criteria.events).toHaveLength(0) // No filters remain
     })
   })
 
@@ -733,7 +729,7 @@ describe('QueryFilterCriteriaManager', () => {
     })
 
     it('should serialize to JSON', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
+      const group = manager.addCriteria({ title: 'Test Group' })
       const json = manager.toJSON()
 
       expect(json.criteriaType).toBe('ALL')
@@ -742,7 +738,7 @@ describe('QueryFilterCriteriaManager', () => {
     })
 
     it('should create manager from JSON', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
+      manager.addCriteria({ title: 'Test Group' })
       const json = manager.toJSON()
       const restored = QueryFilterCriteriaManager.fromJSON(json)
 
@@ -751,15 +747,15 @@ describe('QueryFilterCriteriaManager', () => {
     })
 
     it('should clone manager', () => {
-      const group = manager.addGroup({ title: 'Test Group' })
+      const criteria = manager.addCriteria({ title: 'Test Group' })
       const clone = manager.clone()
 
       expect(clone.getCriteria().criteria).toHaveLength(1)
       expect(clone.getCriteria().criteria[0].title).toBe('Test Group')
 
       // Ensure deep copy
-      expect(clone.getCriteria().criteria[0]).not.toBe(group)
-      expect(clone.getCriteria().criteria[0].id).not.toBe(group.id)
+      expect(clone.getCriteria().criteria[0]).not.toBe(criteria)
+      expect(clone.getCriteria().criteria[0].id).not.toBe(criteria.id)
     })
   })
 

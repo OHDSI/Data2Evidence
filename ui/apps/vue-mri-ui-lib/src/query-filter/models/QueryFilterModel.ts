@@ -194,7 +194,7 @@ export class QueryFilterCardModel {
   }
 
   // Get all events that belong to a parent (including the parent itself)
-  getEventGroup(parentEventId: string): QueryFilterEvent[] {
+  getEventWithParent(parentEventId: string): QueryFilterEvent[] {
     const events: QueryFilterEvent[] = []
     const parent = this.getEvent(parentEventId)
     if (parent) {
@@ -575,12 +575,12 @@ export class QueryFilterCriteriaManager {
         id: this.generateId(),
         criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
         criteria:
-          data.inclusionCriteria.criteria?.map((group: any) => ({
-            id: group.id,
-            title: group.title,
-            description: group.description,
-            criteriaType: group.criteriaType,
-            events: this.transformEvents(group.events || []),
+          data.inclusionCriteria.criteria?.map((criteria: any) => ({
+            id: criteria.id,
+            title: criteria.title,
+            description: criteria.description,
+            criteriaType: criteria.criteriaType,
+            events: this.transformEvents(criteria.events || []),
           })) || [],
       }
     } else {
@@ -607,7 +607,7 @@ export class QueryFilterCriteriaManager {
   }
 
   // Group management
-  addGroup(group?: Partial<QueryFilterGroup>): QueryFilterGroup {
+  addCriteria(group?: Partial<QueryFilterGroup>): QueryFilterGroup {
     const newGroup: QueryFilterGroup = {
       id: group?.id || `criteria_${Math.random().toString(36).substring(2)}`,
       title: group?.title || 'Group 1',
@@ -851,9 +851,10 @@ export class QueryFilterCriteriaManager {
         name: group.title, // Maps group.title → Atlas InclusionRule.name
         description: group.description, // Maps group.description → Atlas InclusionRule.description
         expression: {
-          Type: this.mapGroupTypeToAtlas(group.criteriaType), // Maps criteriaType → Atlas expression.Type
+          Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
           CriteriaList: group.events.flatMap(event =>
-            [event].filter(e => !e.isAttributeBased && e.criteriaType !== 'demographic') // Only non-demographic main events
+            [event]
+              .filter(e => !e.isAttributeBased && e.criteriaType !== 'demographic') // Only non-demographic main events
               .map(event => {
                 const criteria: any = {
                   Criteria: {
@@ -917,60 +918,60 @@ export class QueryFilterCriteriaManager {
           DemographicCriteriaList: group.events
             .filter(event => !event.isAttributeBased && event.criteriaType === 'demographic')
             .flatMap(event => {
-            // Process demographic events and their age attributes
-            const demographicEvents = [event]
+              // Process demographic events and their age attributes
+              const demographicEvents = [event]
 
-            const demographicCriteria: any[] = []
+              const demographicCriteria: any[] = []
 
-            demographicEvents.forEach(event => {
-              // Check if this demographic event has age attributes in selectedAttributes/attributeConfig (transformed)
-              if (event.selectedAttributes?.includes('age') && event.attributeConfig?.id === 'age') {
-                const ageConfig: any = {
-                  Op: 'gt', // Default operator
-                }
-
-                // Map operator and value if available
-                if (event.attributeConfig.operator) {
-                  ageConfig.Op = this.mapOperatorToAtlas(event.attributeConfig.operator)
-                }
-
-                if (event.attributeConfig.value !== undefined) {
-                  ageConfig.Value = event.attributeConfig.value
-                }
-
-                demographicCriteria.push({
-                  Age: ageConfig,
-                })
-              }
-
-              // Also check for age attributes directly in the original attributes array (for events not fully transformed)
-              const eventAny = event as any
-              if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
-                eventAny.attributes.forEach((attr: any) => {
-                  if (attr.attributeId === 'age' && attr.attributeType === 'numericRange') {
-                    const ageConfig: any = {
-                      Op: 'gt', // Default operator
-                    }
-
-                    // Map operator and value if available
-                    if (attr.operator) {
-                      ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
-                    }
-
-                    if (attr.value !== undefined) {
-                      ageConfig.Value = parseInt(attr.value)
-                    }
-
-                    demographicCriteria.push({
-                      Age: ageConfig,
-                    })
+              demographicEvents.forEach(event => {
+                // Check if this demographic event has age attributes in selectedAttributes/attributeConfig (transformed)
+                if (event.selectedAttributes?.includes('age') && event.attributeConfig?.id === 'age') {
+                  const ageConfig: any = {
+                    Op: 'gt', // Default operator
                   }
-                })
-              }
-            })
 
-            return demographicCriteria
-          }),
+                  // Map operator and value if available
+                  if (event.attributeConfig.operator) {
+                    ageConfig.Op = this.mapOperatorToAtlas(event.attributeConfig.operator)
+                  }
+
+                  if (event.attributeConfig.value !== undefined) {
+                    ageConfig.Value = event.attributeConfig.value
+                  }
+
+                  demographicCriteria.push({
+                    Age: ageConfig,
+                  })
+                }
+
+                // Also check for age attributes directly in the original attributes array (for events not fully transformed)
+                const eventAny = event as any
+                if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
+                  eventAny.attributes.forEach((attr: any) => {
+                    if (attr.attributeId === 'age' && attr.attributeType === 'numericRange') {
+                      const ageConfig: any = {
+                        Op: 'gt', // Default operator
+                      }
+
+                      // Map operator and value if available
+                      if (attr.operator) {
+                        ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
+                      }
+
+                      if (attr.value !== undefined) {
+                        ageConfig.Value = parseInt(attr.value)
+                      }
+
+                      demographicCriteria.push({
+                        Age: ageConfig,
+                      })
+                    }
+                  })
+                }
+              })
+
+              return demographicCriteria
+            }),
           Groups: [],
         },
       })),
@@ -1065,20 +1066,6 @@ export class QueryFilterCriteriaManager {
       case 'ALL':
       default:
         return 'All'
-    }
-  }
-
-  private mapGroupTypeToAtlas(type: string): string {
-    switch (type) {
-      case 'ANY':
-        return 'ANY'
-      case 'AT_LEAST':
-        return 'AT_LEAST'
-      case 'AT_MOST':
-        return 'AT_MOST'
-      case 'ALL':
-      default:
-        return 'ALL'
     }
   }
 
@@ -1362,10 +1349,10 @@ export class QueryFilterCriteriaManager {
     // Generate new IDs for the cloned structure
     const cloneData = {
       ...jsonData,
-      criteria: jsonData.criteria.map((group: any) => ({
-        ...group,
+      criteria: jsonData.criteria.map((criteria: any) => ({
+        ...criteria,
         id: `criteria_${Math.random().toString(36).substring(2)}`,
-        events: group.events.map((event: any) => ({
+        events: criteria.events.map((event: any) => ({
           ...event,
           id: `event_${Math.random().toString(36).substring(2)}`,
           nestedEvents: event.nestedEvents?.map((nestedEvent: any) => ({
