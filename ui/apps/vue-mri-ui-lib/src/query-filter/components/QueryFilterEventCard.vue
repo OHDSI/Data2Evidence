@@ -145,7 +145,7 @@ const getDatasetIdFromProps = (): string => {
 const handleAttributeSelected = (attribute: AttributeConfig) => {
   const currentAttributeObjects = eventData.value.attributeObjects || []
   const currentAttributes = eventData.value.selectedAttributes || []
-  
+
   // Check if attribute is already selected to prevent duplicates
   if (currentAttributeObjects.some(attr => attr.id === attribute.id)) {
     console.warn(`Attribute ${attribute.id} is already selected`)
@@ -446,7 +446,7 @@ const getConceptSetDisplayName = (): string => {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   background: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   overflow: visible;
   transition: all 0.2s ease;
 
@@ -473,7 +473,7 @@ const getConceptSetDisplayName = (): string => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 8px 12px;
     background: #fafafa;
     border-bottom: 1px solid #e0e0e0;
 
@@ -481,12 +481,12 @@ const getConceptSetDisplayName = (): string => {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     &__right {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
   }
 
@@ -591,7 +591,7 @@ const getConceptSetDisplayName = (): string => {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 8px;
+    padding: 12px 6px;
     background: #000080; // Blue similar to nested criteria
     position: relative;
 
@@ -621,16 +621,16 @@ const getConceptSetDisplayName = (): string => {
 
   .event-content {
     flex: 1;
-    padding: 16px;
+    padding: 12px;
   }
 
   .concept-set-section {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .concept-set-label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-size: 14px;
     font-weight: 500;
     color: #333;
@@ -650,7 +650,7 @@ const getConceptSetDisplayName = (): string => {
   }
 
   .selected-attributes {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 
     &-title {
       margin: 0 0 8px 0;
@@ -661,7 +661,7 @@ const getConceptSetDisplayName = (): string => {
   }
 
   .attribute-component {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     background: #fafafa;
@@ -676,7 +676,7 @@ const getConceptSetDisplayName = (): string => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: #f0f0f0;
     border-bottom: 1px solid #e0e0e0;
   }
@@ -709,11 +709,11 @@ const getConceptSetDisplayName = (): string => {
   }
 
   .attribute-nested {
-    padding: 12px;
+    padding: 10px;
   }
 
   .attribute-concept-set {
-    padding: 12px;
+    padding: 10px;
 
     &-label {
       display: block;

@@ -177,7 +177,7 @@ const toggleGroupType = () => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   &:not(:last-child) {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -196,7 +196,7 @@ const toggleGroupType = () => {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid #f0f0f0;
     background: #fafafa;
     border-radius: 0 8px 0 0; // Only round top-right corner
@@ -214,7 +214,7 @@ const toggleGroupType = () => {
   }
 
   .group-title-container {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .group-title-input {
@@ -302,7 +302,7 @@ const toggleGroupType = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 8px;
+    padding: 12px 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -366,7 +366,7 @@ const toggleGroupType = () => {
 
   .group-content {
     flex: 1;
-    padding: 16px;
+    padding: 12px;
     padding-left: 4px;
     border-radius: 0 0 8px 0; // Round bottom-right corner
   }

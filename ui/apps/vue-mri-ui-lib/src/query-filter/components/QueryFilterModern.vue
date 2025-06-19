@@ -557,8 +557,8 @@ defineExpose({
 <style lang="scss" scoped>
 .query-filter-modern {
   .query-filter-debug-header {
-    margin-bottom: 24px;
-    padding: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 8px;
@@ -588,19 +588,19 @@ defineExpose({
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     overflow: hidden;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .query-filter-container {
-    padding: 24px;
-
-    &__section {
+    padding: 16px;
+    margin: 16px;
+    margin: 4px &__section {
       margin-bottom: 0; // Remove bottom margin since container handles spacing
     }
   }
 
   .debug-toggle-section {
-    padding: 16px 24px;
+    padding: 12px 16px;
     border-top: 1px solid #e0e0e0;
     background: #f8f9fa;
   }
@@ -627,11 +627,11 @@ defineExpose({
 
   .query-filter-legacy-section {
     .legacy-notice {
-      padding: 16px;
+      padding: 12px;
       background: #fff3cd;
       border: 1px solid #ffeaa7;
       border-radius: 6px;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
 
       p {
         margin: 0;
@@ -649,22 +649,22 @@ defineExpose({
   }
 
   .query-filter-debug-section {
-    margin-bottom: 24px;
-    padding: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
     background: #f8f9fa;
     border-radius: 6px;
     border: 1px solid #e0e0e0;
   }
 
   .concept-set-debug {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .query-filter-actions {
     display: flex;
     gap: 12px;
-    margin-bottom: 24px;
-    padding: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
     background: #f8f9fa;
     border-radius: 6px;
 
@@ -709,7 +709,7 @@ defineExpose({
   }
 
   .query-filter-debug {
-    padding: 16px;
+    padding: 12px;
     background: #f8f9fa;
     border-radius: 6px;
     border: 1px solid #e0e0e0;

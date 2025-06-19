@@ -130,8 +130,8 @@ const handleGroupRemove = (groupIndex: number) => {
   .criteria-header {
     display: flex;
     align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #e0e0e0;
     position: relative;
   }
@@ -157,7 +157,7 @@ const handleGroupRemove = (groupIndex: number) => {
 
   .qualifying-events-btn {
     flex: 1;
-    padding: 10px 16px;
+    padding: 8px 12px;
     border: none;
     background: transparent;
     border-radius: 6px;
@@ -224,7 +224,7 @@ const handleGroupRemove = (groupIndex: number) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 8px;
+    padding: 12px 6px;
     background: #000080; // Blue to match other sidebars
     position: relative;
     border-radius: 8px 0 0 8px; // Round left corners
@@ -259,20 +259,20 @@ const handleGroupRemove = (groupIndex: number) => {
   }
 
   .criteria-groups-layout {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .add-group-container {
     display: flex;
     justify-content: center;
-    padding: 16px 0;
+    padding: 12px 0;
   }
 
   .btn-add-group {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 8px 16px;
     border: 2px dashed #d0d0d0;
     background: transparent;
     border-radius: 8px;
