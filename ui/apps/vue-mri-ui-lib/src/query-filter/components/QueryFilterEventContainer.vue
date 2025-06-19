@@ -157,7 +157,7 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
     <!-- Add Event Controls -->
     <div v-if="!readonly" class="add-event-controls">
       <CriteriaSelectorDropdown
-        section-id="events"
+        section-id="initialEvents"
         button-text="Add event"
         @criteria-selected="handleCriteriaSelected"
       />
