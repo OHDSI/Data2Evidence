@@ -91,23 +91,31 @@ const handleGroupRemove = (groupIndex: number) => {
       </div>
     </div>
 
-    <!-- Criteria Groups -->
-    <div class="criteria-groups">
-      <QueryFilterCriteriaGroup
-        v-for="(group, index) in currentCriteriaData.criteria"
-        :key="group.id"
-        :group="group"
-        :group-index="index"
-        :concept-sets="conceptSets"
-        :concept-set-domain-values="conceptSetDomainValues"
-        :concept-set-texts="conceptSetTexts"
-        :readonly="readonly"
-        @update-group="handleGroupUpdate(index, $event)"
-        @remove-group="handleGroupRemove(index)"
-      />
+    <!-- Criteria Groups with Sidebar -->
+    <div class="criteria-groups-layout">
+      <!-- Criteria Groups Sidebar -->
+      <div class="criteria-groups-sidebar">
+        <span class="criteria-sidebar-label">ALL</span>
+      </div>
+
+      <!-- Criteria Groups Only -->
+      <div class="criteria-groups-content">
+        <QueryFilterCriteriaGroup
+          v-for="(group, index) in currentCriteriaData.criteria"
+          :key="group.id"
+          :group="group"
+          :group-index="index"
+          :concept-sets="conceptSets"
+          :concept-set-domain-values="conceptSetDomainValues"
+          :concept-set-texts="conceptSetTexts"
+          :readonly="readonly"
+          @update-group="handleGroupUpdate(index, $event)"
+          @remove-group="handleGroupRemove(index)"
+        />
+      </div>
     </div>
 
-    <!-- Add Group Button -->
+    <!-- Add Group Button (Outside the sidebar layout) -->
     <div v-if="!readonly" class="add-group-container">
       <button class="btn-add-group" @click="addNewGroup">
         <span class="btn-add-group__icon">+</span>
@@ -207,7 +215,50 @@ const handleGroupRemove = (groupIndex: number) => {
     }
   }
 
-  .criteria-groups {
+  .criteria-groups-layout {
+    display: flex;
+  }
+
+  .criteria-groups-sidebar {
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 8px;
+    background: #000080; // Blue to match other sidebars
+    position: relative;
+    border-radius: 8px 0 0 8px; // Round left corners
+
+    // Add subtle border to indicate different states
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .criteria-sidebar-label {
+    writing-mode: sideways-lr;
+    text-orientation: sideways;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
+  }
+
+  .criteria-groups-content {
+    flex: 1;
+    padding: 0 0 0 4px; // Add left padding for spacing from sidebar
+  }
+
+  .criteria-groups-layout {
     margin-bottom: 24px;
   }
 

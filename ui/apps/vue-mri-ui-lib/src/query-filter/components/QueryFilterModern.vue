@@ -593,7 +593,6 @@ defineExpose({
 
   .query-filter-container {
     padding: 24px;
-    margin: 24px;
 
     &__section {
       margin-bottom: 0; // Remove bottom margin since container handles spacing

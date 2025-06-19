@@ -176,7 +176,9 @@ const toggleGroupType = () => {
 .query-filter-criteria-group {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  margin-bottom: 16px;
+  &:not(:last-child) {
+    margin-bottom: 16px;
+  }
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
@@ -365,6 +367,7 @@ const toggleGroupType = () => {
   .group-content {
     flex: 1;
     padding: 16px;
+    padding-left: 4px;
     border-radius: 0 0 8px 0; // Round bottom-right corner
   }
 }
