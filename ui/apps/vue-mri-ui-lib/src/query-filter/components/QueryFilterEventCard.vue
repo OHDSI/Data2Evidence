@@ -105,11 +105,14 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
         ...attribute,
         // Initialize based on attribute type
         conceptSet: attribute.id === 'nested' ? null : undefined,
-        nestedCriteria: attribute.id === 'nested' ? { 
-          id: `nested_${Date.now()}`,
-          criteriaType: 'ANY' as const,
-          events: [] 
-        } : undefined,
+        nestedCriteria:
+          attribute.id === 'nested'
+            ? {
+                id: `nested_${Date.now()}`,
+                criteriaType: 'ANY' as const,
+                events: [],
+              }
+            : undefined,
       },
     ],
   }
@@ -240,33 +243,6 @@ const getCardinalityDisplay = (cardinality?: any) => {
           </span>
           <span v-if="nestedLevel > 0" class="nested-indicator"> (Level {{ nestedLevel }}) </span>
         </div>
-
-        <div class="event-cardinality">
-          <span class="cardinality-label">Occurs:</span>
-          <select
-            v-if="!readonly"
-            :value="eventData.cardinality?.type || 'AT_LEAST'"
-            class="cardinality-type-select"
-            @change="updateCardinality('type', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="AT_LEAST">At least</option>
-            <option value="exactly">Exactly</option>
-            <option value="atMost">At most</option>
-          </select>
-          <input
-            v-if="!readonly"
-            :value="eventData.cardinality?.count || 1"
-            type="number"
-            min="1"
-            max="999"
-            class="cardinality-count-input"
-            @input="updateCardinality('count', parseInt(($event.target as HTMLInputElement).value))"
-          />
-          <span v-else class="cardinality-readonly">
-            {{ getCardinalityDisplay(eventData.cardinality) }}
-          </span>
-          <span class="cardinality-suffix">time(s)</span>
-        </div>
       </div>
 
       <div class="event-header__right">
@@ -282,73 +258,80 @@ const getCardinalityDisplay = (cardinality?: any) => {
       </div>
     </div>
 
-    <!-- Event Content -->
-    <div class="event-content">
-      <!-- Concept Set Selection -->
-      <div class="concept-set-section">
-        <label class="concept-set-label">Event Concept Set:</label>
-        <QueryFilterTagInputAdapter
-          v-if="!readonly"
-          :model="tagInputModel"
-          :external-value="eventData.selectedConceptSet ? [eventData.selectedConceptSet] : []"
-          :external-domain-values="conceptSetDomainValues"
-          :external-texts="conceptSetTexts"
-          :is-catalog-attribute="false"
-          @update:value="values => values[0] && handleConceptSetSelected(values[0])"
-        />
-        <div v-else class="concept-set-readonly">
-          {{ eventData.conceptSet || 'No concept set selected' }}
-        </div>
+    <!-- Event Body with Sidebar -->
+    <div class="event-body">
+      <!-- Event Sidebar -->
+      <div class="event-sidebar">
+        <span class="sidebar-label">AT LEAST 1</span>
       </div>
 
-      <!-- Selected Attributes Display -->
-      <div v-if="eventData.attributeObjects?.length" class="selected-attributes">
-        <div v-for="attribute in eventData.attributeObjects" :key="attribute.id" class="attribute-component">
-          <!-- Attribute Header -->
-          <div class="attribute-header">
-            <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
-            <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
+      <!-- Event Content -->
+      <div class="event-content">
+        <!-- Concept Set Selection -->
+        <div class="concept-set-section">
+          <label class="concept-set-label">Event Concept Set:</label>
+          <QueryFilterTagInputAdapter
+            v-if="!readonly"
+            :model="tagInputModel"
+            :external-value="eventData.selectedConceptSet ? [eventData.selectedConceptSet] : []"
+            :external-domain-values="conceptSetDomainValues"
+            :external-texts="conceptSetTexts"
+            :is-catalog-attribute="false"
+            @update:value="values => values[0] && handleConceptSetSelected(values[0])"
+          />
+          <div v-else class="concept-set-readonly">
+            {{ eventData.conceptSet || 'No concept set selected' }}
           </div>
+        </div>
 
-          <!-- Nested Criteria Attribute -->
-          <div v-if="attribute.id === 'nested'" class="attribute-nested">
-            <QueryFilterNestedCriteria
-              :nested-criteria="attribute.nestedCriteria"
-              :level="0"
-              :concept-sets="conceptSets"
-              :concept-set-domain-values="conceptSetDomainValues"
-              :concept-set-texts="conceptSetTexts"
-              :readonly="readonly"
-              :hide-header="true"
-              @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
-            />
-          </div>
+        <!-- Selected Attributes Display -->
+        <div v-if="eventData.attributeObjects?.length" class="selected-attributes">
+          <div v-for="attribute in eventData.attributeObjects" :key="attribute.id" class="attribute-component">
+            <!-- Attribute Header -->
+            <div class="attribute-header">
+              <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
+              <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
+            </div>
 
-          <!-- Regular Attribute with Concept Set -->
-          <div v-else class="attribute-concept-set">
-            <label class="attribute-concept-set-label">
-              {{ attribute.description || `Select ${attribute.name} concepts:` }}
-            </label>
-            <QueryFilterTagInputAdapter
-              v-if="!readonly"
-              :model="{
-                id: `attribute-${attribute.id}-${eventData.id}`,
-                props: {
-                  type: 'conceptSet',
-                  value: attribute.conceptSet ? [attribute.conceptSet] : [],
-                  attributePath: 'condition_occurrence.concept_id',
-                  domainFilter: 'Condition',
-                  standardConceptCodeFilter: 'Standard',
-                },
-              }"
-              :external-value="attribute.conceptSet ? [attribute.conceptSet] : []"
-              :external-domain-values="conceptSetDomainValues"
-              :external-texts="conceptSetTexts"
-              :is-catalog-attribute="false"
-              @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
-            />
-            <div v-else class="attribute-concept-set-readonly">
-              {{ attribute.conceptSet?.text || 'No concept set selected' }}
+            <!-- Nested Criteria Attribute -->
+            <div v-if="attribute.id === 'nested'" class="attribute-nested">
+              <QueryFilterNestedCriteria
+                :nested-criteria="attribute.nestedCriteria"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
+                :readonly="readonly"
+                :hide-header="true"
+                @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+              />
+            </div>
+
+            <!-- Regular Attribute with Concept Set -->
+            <div v-else class="attribute-concept-set">
+              <label class="attribute-concept-set-label">
+                {{ attribute.description || `Select ${attribute.name} concepts:` }}
+              </label>
+              <QueryFilterTagInputAdapter
+                v-if="!readonly"
+                :model="{
+                  id: `attribute-${attribute.id}-${eventData.id}`,
+                  props: {
+                    type: 'conceptSet',
+                    value: attribute.conceptSet ? [attribute.conceptSet] : [],
+                    attributePath: 'condition_occurrence.concept_id',
+                    domainFilter: 'Condition',
+                    standardConceptCodeFilter: 'Standard',
+                  },
+                }"
+                :external-value="attribute.conceptSet ? [attribute.conceptSet] : []"
+                :external-domain-values="conceptSetDomainValues"
+                :external-texts="conceptSetTexts"
+                :is-catalog-attribute="false"
+                @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
+              />
+              <div v-else class="attribute-concept-set-readonly">
+                {{ attribute.conceptSet?.text || 'No concept set selected' }}
+              </div>
             </div>
           </div>
         </div>
@@ -359,7 +342,6 @@ const getCardinalityDisplay = (cardinality?: any) => {
     <div v-if="hasNestedAttributes && nestedCriteria" class="nested-criteria-section">
       <QueryFilterNestedCriteria
         :nested-criteria="nestedCriteria"
-        :level="nestedLevel + 1"
         :concept-sets="conceptSets"
         :concept-set-domain-values="conceptSetDomainValues"
         :concept-set-texts="conceptSetTexts"
@@ -511,7 +493,45 @@ const getCardinalityDisplay = (cardinality?: any) => {
     background: #fff5f5;
   }
 
+  .event-body {
+    display: flex;
+  }
+
+  .event-sidebar {
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 8px;
+    background: #1e3a8a; // Blue similar to nested criteria
+    position: relative;
+
+    // Add subtle border to indicate different states
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .sidebar-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
+  }
+
   .event-content {
+    flex: 1;
     padding: 16px;
   }
 
