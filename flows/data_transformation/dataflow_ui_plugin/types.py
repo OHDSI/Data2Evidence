@@ -184,14 +184,3 @@ class ConceptMappingType(BaseModel):
                     f"When status is 'checked', the following fields must not be None: {', '.join(missing_fields)}"
                 )
         return self
-    
-
-class ResultType(str, Enum):
-    SCALAR = "Scalar"
-    DATAFRAME = "Pandas Dataframe"
-    CALLABLE = "Callable"
-    MAPPING = "Dictonary Mapping"
-    COLLECTION = "Collection"
-    CUSTOMOBJ = "Custom Object"
-    ITERABLE = "Iterable"
-    UNKNOWN = "Unknown"

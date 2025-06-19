@@ -1,14 +1,17 @@
 import json
 import duckdb
 import logging
-import pandas as pd
+from typing import Any
 import traceback as tb
 from rpy2 import robjects
-from sqlalchemy import text
 from functools import partial
-from collections.abc import Iterable
-from pandas.api.types import is_scalar
-from jsonpath_ng import jsonpath, parse
+from jsonpath_ng import parse
+
+import pandas as pd
+from pandas.api.types import is_scalar, is_list_like, is_dict_like
+
+from genson import SchemaBuilder
+from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
 
@@ -17,8 +20,8 @@ from .flowutils import *
 from .types import (NodeType, 
                     TableSourceType, 
                     DataMappingType, 
-                    ConceptMappingType, 
-                    ResultType)
+                    ConceptMappingType)
+
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
 
@@ -54,71 +57,57 @@ class Result:
 
 
     def serialize_result(self):
-        return {
+        base_result = {
             "error": self.error,
             "errorMessage": self.result if self.error else None,
-            "nodeName": self.node.name,
-            "resultSchema": self.create_result_schema(self.result),
-            "resultReturnedType": self.get_result_type(self.result),
-            "resultLength": self.get_result_length(),
+            "nodeName": self.node.name
         }
 
+        if self.error: return base_result
+        base_result.update(self.__create_result_schema(self.result))
+        return base_result
+    
 
-    def get_result_length(self) -> int | None:
-        if is_scalar(self.result):
-            return 1
-        elif isinstance(self.result, (dict, list, tuple, set, frozenset, pd.DataFrame)):
-            return len(self.result)
-        elif isinstance(self.result, Iterable) and not isinstance(self.result, (str, bytes, dict, pd.DataFrame)):
-            return len(self.result) if hasattr(self.result, "__len__") else None
-        elif hasattr(self.result, 'rid') and hasattr(self.result, 'rclass') and hasattr(self.result, 'r_repr'):
-            r_result = self.result.r_repr()
-            return len(r_result) if hasattr(r_result, "__len__") else None
-        else:
-            return None
+    def __is_strictly_list_like(self, obj):
+        return is_list_like(obj) and not is_dict_like(obj)
+    
 
+    def __create_result_schema(self, result_value: Any):
+        result_schema = {
+            "length": len(result_value) if hasattr(result_value, "__len__") else None,
+            "type": str(type(result_value))
+        }
 
-    def get_result_type(self, result_value) -> str:
         if is_scalar(result_value):
-            return ResultType.SCALAR.value
-        elif isinstance(result_value, dict):
-            return ResultType.MAPPING.value
-        elif isinstance(result_value, pd.DataFrame):
-            return ResultType.DATAFRAME.value
-        elif isinstance(result_value, Iterable) and not isinstance(result_value, (str, bytes, dict, pd.DataFrame)):
-            return ResultType.COLLECTION.value
-        elif callable(result_value):
-            return ResultType.CALLABLE.value
-        elif hasattr(result_value, 'rid') and hasattr(result_value, 'rclass') and hasattr(result_value, 'r_repr'):
-            return self.get_result_type(result_value.r_repr())
-        elif hasattr(result_value, "__class__"):
-            return ResultType.CUSTOMOBJ.value
-        else:
-            return ResultType.UNKNOWN.value
+            result_schema["value"] = result_value
+            return result_schema
+
+        if isinstance(result_value, pd.DataFrame):
+            result_schema["schema"] = result_value.dtypes.apply(lambda x: x.name).to_dict()
+            return result_schema
+
+        try:
+            builder = SchemaBuilder()
+            if self.__is_strictly_list_like(result_value):
+                builder.add_object(list(result_value))
+            elif is_dict_like(result_value):
+                builder.add_object(result_value)
+            else:
+                return result_schema
+
+            schema = builder.to_schema()
+            schema.pop("$schema", None)
+            schema.pop("required", None)
+            result_schema["schema"] = schema
 
 
-    def create_result_schema(self, result_value):
-        if is_scalar(result_value):
-            return str(type(result_value).__name__)
-        elif isinstance(result_value, dict):
-            return {k: self.create_result_schema(v) for k, v in result_value.items()}
-        elif isinstance(result_value, pd.DataFrame):
-            dtype_mapping = result_value.dtypes.apply(lambda x: x.name).to_dict()
-            return dtype_mapping
-        elif isinstance(result_value, (list, tuple, set, frozenset)):
-            element_schemas = list({str(self.create_result_schema(element)) for element in result_value})
-            return element_schemas
-        elif isinstance(result_value, Iterable) and not isinstance(result_value, (str, bytes, dict, pd.DataFrame)):
-            return type(result_value).__name__
-        elif callable(result_value):
-            schema = getattr(result_value, '__name__', result_value.__class__.__name__)
-            return schema
-        elif hasattr(result_value, 'rid') and hasattr(result_value, 'rclass') and hasattr(result_value, 'r_repr'):
-            return self.create_result_schema(result_value.r_repr())
-        elif hasattr(result_value, "__class__"):
-            return self.result.__class__.__name__
-        else:
-            return type(result_value).__name__
+        except SchemaGenerationError:
+            if self.__is_strictly_list_like(result_value):
+                result_schema["schema"] = [self.__create_result_schema(v) for v in result_value]
+            elif is_dict_like(result_value):
+                result_schema["schema"] = {k: self.__create_result_schema(v) for k, v in result_value.items()}
+            
+        return result_schema
 
 
 class Py2TableNode(Node):
