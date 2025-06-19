@@ -969,7 +969,7 @@ export class QueryFilterCriteriaManager {
               }
             })
 
-            return []
+            return demographicCriteria
           }),
           Groups: [],
         },
