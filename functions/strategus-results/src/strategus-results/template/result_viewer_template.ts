@@ -44,7 +44,7 @@ shinyConfig <- initializeModuleConfig() |>
   ) 
 
 # Set options for base URL
-options(shiny.base_url = "/strategus-viewer/$STUDY_ID/")
+options(shiny.base_url = "/strategus-results/$STUDY_ID/")
 
 # now create the shiny app based on the config file and view the results
 # based on the connection 
