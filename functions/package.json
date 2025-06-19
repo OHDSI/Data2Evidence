@@ -527,6 +527,7 @@
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
+          "jobplugins.flowRun.strategus.removeResults.add",
           "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
@@ -574,6 +575,16 @@
           "httpMethods": [
             "GET",
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "scopes": [
+            "jobplugins.flowRun.strategus.removeResults.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {
