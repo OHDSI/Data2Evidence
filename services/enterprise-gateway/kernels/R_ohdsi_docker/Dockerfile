@@ -23,7 +23,8 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
-    less
+    less \ 
+    python3-pip
 
 # # GitHub setup & test
 # RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
@@ -68,6 +69,11 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=F
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+
+# mlflow
+RUN pip3 install --upgrade pip
+RUN pip3 install mlflow
+RUN Rscript -e 'install.packages("mlflow", repos="https://cran.r-project.org")'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
