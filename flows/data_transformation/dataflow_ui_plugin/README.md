@@ -86,7 +86,7 @@
 - **How To Use:**  TBD.
 
 
-## Concept Mapping Mapping Node (Experimental)
+## Concept Mapping Node (Experimental)
 
 - **Description:** Map concept code from source data to target concept id in vocabulary.
 - **Input Nodes:** This node does not accept any input nodes.
