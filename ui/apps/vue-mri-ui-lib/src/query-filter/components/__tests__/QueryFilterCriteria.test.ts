@@ -104,7 +104,8 @@ describe('QueryFilterCriteria Model Tests', () => {
 
     criteriaManager.clearAllCriteria()
 
-    expect(criteria.criteria.length).toBe(0)
+    const clearedCriteria = criteriaManager.getCriteria()
+    expect(clearedCriteria.criteria.length).toBe(0)
   })
 
   it('supports criteria serialization and deserialization', () => {

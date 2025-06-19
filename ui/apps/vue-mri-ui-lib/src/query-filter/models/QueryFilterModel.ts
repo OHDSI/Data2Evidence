@@ -565,7 +565,6 @@ export class QueryFilterCardModel {
 }
 
 export class QueryFilterCriteriaManager {
-  private criteria: QueryFilterCriteria
   private entryEvents: EntryEvent
   private inclusionCriteria: InclusionCriteria
 
@@ -575,29 +574,21 @@ export class QueryFilterCriteriaManager {
       this.entryEvents = data.entryEvents || {}
 
       if (data.inclusionCriteria) {
-        this.inclusionCriteria = data.inclusionCriteria
-        this.criteria = {
-          id: this.generateId(),
-          criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
-          criteria:
-            data.inclusionCriteria.criteria?.map((criteria: any) => ({
-              id: criteria.id,
-              title: criteria.title,
-              description: criteria.description,
-              criteriaType: criteria.criteriaType,
-              events: this.transformEvents(criteria.events || []),
-            })) || [],
+        this.inclusionCriteria = {
+          qualifyingEventsLimit: data.inclusionCriteria.qualifyingEventsLimit || 'ALL',
+          criteria: data.inclusionCriteria.criteria?.map((criteria: any) => ({
+            id: criteria.id,
+            title: criteria.title,
+            description: criteria.description,
+            criteriaType: criteria.criteriaType,
+            events: this.transformEvents(criteria.events || []),
+          })) || []
         }
       } else {
         // Handle original structure - initialize inclusionCriteria with proper structure
         this.inclusionCriteria = {
           qualifyingEventsLimit: data.criteriaType || 'ALL',
-          criteria: data.criteria || [],
-        }
-        this.criteria = {
-          id: data.id || this.generateId(),
-          criteriaType: data.criteriaType || 'ALL',
-          criteria: data.criteria || [],
+          criteria: data.criteria || []
         }
       }
     } catch (error) {
@@ -612,12 +603,14 @@ export class QueryFilterCriteriaManager {
 
   // Criteria management
   getCriteria(): QueryFilterCriteria {
-    return this.criteria
+    return {
+      id: this.generateId(),
+      criteriaType: this.mapQualifyingEventsLimit(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
+      criteria: this.inclusionCriteria.criteria || []
+    }
   }
 
   setCriteriaType(type: 'ALL' | 'EARLIEST' | 'LATEST'): void {
-    this.criteria.criteriaType = type
-    // Keep inclusionCriteria in sync
     this.inclusionCriteria.qualifyingEventsLimit = type
   }
 
@@ -630,8 +623,6 @@ export class QueryFilterCriteriaManager {
       criteriaType: group?.criteriaType || 'ALL',
       events: group?.events || [],
     }
-    this.criteria.criteria.push(newGroup)
-    // Keep inclusionCriteria in sync
     if (!this.inclusionCriteria.criteria) {
       this.inclusionCriteria.criteria = []
     }
@@ -640,23 +631,18 @@ export class QueryFilterCriteriaManager {
   }
 
   removeGroup(groupId: string): boolean {
-    const index = this.criteria.criteria.findIndex(g => g.id === groupId)
-    if (index > -1) {
-      this.criteria.criteria.splice(index, 1)
-      // Keep inclusionCriteria in sync
-      if (this.inclusionCriteria.criteria) {
-        const inclusionIndex = this.inclusionCriteria.criteria.findIndex(g => g.id === groupId)
-        if (inclusionIndex > -1) {
-          this.inclusionCriteria.criteria.splice(inclusionIndex, 1)
-        }
+    if (this.inclusionCriteria.criteria) {
+      const index = this.inclusionCriteria.criteria.findIndex((g: QueryFilterGroup) => g.id === groupId)
+      if (index > -1) {
+        this.inclusionCriteria.criteria.splice(index, 1)
+        return true
       }
-      return true
     }
     return false
   }
 
   getGroup(groupId: string): QueryFilterGroup | undefined {
-    return this.criteria.criteria.find(g => g.id === groupId)
+    return this.inclusionCriteria.criteria?.find((g: QueryFilterGroup) => g.id === groupId)
   }
 
   updateGroup(groupId: string, updates: Partial<QueryFilterGroup>): boolean {
@@ -865,16 +851,16 @@ export class QueryFilterCriteriaManager {
           PostDays: 0,
         },
         PrimaryCriteriaLimit: {
-          Type: this.mapCriteriaTypeToAtlas(this.criteria.criteriaType), // Maps criteriaType → Atlas Type
+          Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'), // Maps criteriaType → Atlas Type
         },
       },
       QualifiedLimit: {
-        Type: this.mapCriteriaTypeToAtlas(this.criteria.criteriaType),
+        Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
       },
       ExpressionLimit: {
-        Type: this.mapCriteriaTypeToAtlas(this.criteria.criteriaType),
+        Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
       },
-      InclusionRules: this.criteria.criteria.map(group => ({
+      InclusionRules: (this.inclusionCriteria.criteria || []).map((group: QueryFilterGroup) => ({
         name: group.title, // Maps group.title → Atlas InclusionRule.name
         description: group.description, // Maps group.description → Atlas InclusionRule.description
         expression: {
@@ -1012,7 +998,7 @@ export class QueryFilterCriteriaManager {
     }
 
     // Add PrimaryCriteria if any events have conceptSetDetails or age attributes
-    const hasEventsOrAge = this.criteria.criteria.some(group =>
+    const hasEventsOrAge = (this.inclusionCriteria.criteria || []).some((group: QueryFilterGroup) =>
       group.events.some(
         e =>
           (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
@@ -1041,9 +1027,9 @@ export class QueryFilterCriteriaManager {
 
     // Generate ConceptSets from events with conceptSetDetails
     const conceptSets: any[] = []
-    const usedConceptSetIds = new Set<string>()
+    const usedConceptSetIds = new window.Set() as Set<string>
 
-    this.criteria.criteria.forEach(group => {
+    (this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
       group.events.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const conceptSetId = event.conceptSetId
@@ -1067,7 +1053,7 @@ export class QueryFilterCriteriaManager {
     atlasDef.InclusionRules.forEach((rule: any) => {
       rule.expression.CriteriaList.forEach((criteriaItem: any) => {
         // Find the corresponding event to get the conceptSetId
-        this.criteria.criteria.forEach(group => {
+        (this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
           group.events.forEach(event => {
             if (!event.isAttributeBased && event.conceptSetId) {
               const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
@@ -1323,7 +1309,7 @@ export class QueryFilterCriteriaManager {
 
   // Update qualifying events limit
   updateQualifyingEventsLimit(limit: 'ALL' | 'EARLIEST' | 'LATEST') {
-    this.criteria.criteriaType = limit
+    this.inclusionCriteria.qualifyingEventsLimit = limit
   }
 
   // Add criteria group
@@ -1336,44 +1322,43 @@ export class QueryFilterCriteriaManager {
       events: group.events || [],
     }
 
-    this.criteria.criteria.push(newGroup)
+    if (!this.inclusionCriteria.criteria) {
+      this.inclusionCriteria.criteria = []
+    }
+    this.inclusionCriteria.criteria.push(newGroup)
   }
 
   // Update criteria group
   updateCriteriaGroup(index: number, updatedGroup: QueryFilterGroup) {
-    if (index >= 0 && index < this.criteria.criteria.length) {
-      this.criteria.criteria[index] = updatedGroup
+    if (this.inclusionCriteria.criteria && index >= 0 && index < this.inclusionCriteria.criteria.length) {
+      this.inclusionCriteria.criteria[index] = updatedGroup
     }
   }
 
   // Remove criteria group
   removeCriteriaGroup(index: number) {
-    if (index >= 0 && index < this.criteria.criteria.length) {
-      this.criteria.criteria.splice(index, 1)
+    if (this.inclusionCriteria.criteria && index >= 0 && index < this.inclusionCriteria.criteria.length) {
+      this.inclusionCriteria.criteria.splice(index, 1)
     }
   }
 
   // Clear all criteria
   clearAllCriteria() {
-    this.criteria.criteria = []
+    this.inclusionCriteria.criteria = []
   }
 
   // Set criteria (for Atlas loading)
   setData({
-    criteria,
     inclusionCriteria,
     entryEvents,
   }: {
-    criteria: QueryFilterCriteria
-    inclusionCriteria: any
+    inclusionCriteria: InclusionCriteria
     entryEvents: any
   }) {
-    console.log('setData called with:', { criteria, inclusionCriteria, entryEvents })
-    this.criteria = criteria
+    console.log('setData called with:', { inclusionCriteria, entryEvents })
     this.inclusionCriteria = inclusionCriteria
     this.entryEvents = entryEvents
     console.log('setData completed. Current state:', {
-      criteria: this.criteria,
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
     })
@@ -1381,7 +1366,6 @@ export class QueryFilterCriteriaManager {
 
   getData() {
     return {
-      criteria: this.criteria,
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
     }
