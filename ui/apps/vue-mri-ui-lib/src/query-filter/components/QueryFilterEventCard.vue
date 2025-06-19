@@ -289,7 +289,7 @@ const getCardinalityDisplay = (cardinality?: any) => {
   border-radius: 6px;
   background: #fff;
   margin-bottom: 12px;
-  overflow: hidden;
+  overflow: visible;
   transition: all 0.2s ease;
 
   &:hover {

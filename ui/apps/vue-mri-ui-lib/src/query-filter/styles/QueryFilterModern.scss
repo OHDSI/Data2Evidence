@@ -529,7 +529,7 @@ $qf-level-colors: (
 .query-filter-criteria-group {
   @include qf-card;
   margin-bottom: $qf-spacing-md;
-  overflow: hidden;
+  overflow: visible;
   transition: $qf-transition;
 
   &:hover {
@@ -621,7 +621,7 @@ $qf-level-colors: (
 .query-filter-event-card {
   @include qf-card;
   margin-bottom: $qf-spacing-md;
-  overflow: hidden;
+  overflow: visible;
   transition: $qf-transition;
 
   &:hover {
