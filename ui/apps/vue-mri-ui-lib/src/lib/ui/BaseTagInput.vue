@@ -9,7 +9,7 @@
   >
     <multiselect
       size="sm"
-      :value="selectedValues"
+      :value="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
       @input="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
@@ -24,7 +24,7 @@
       :taggable="componentType !== 'conceptSet'"
       label="display_value"
       :options="filteredList"
-      :multiple="true"
+      :multiple="maxSelections !== 1"
       :options-limit="optionLimitSize"
       :loading="isLoading"
       :close-on-select="false"
@@ -140,6 +140,10 @@ export default {
     conceptSetConfig: {
       type: Object,
       default: () => ({}),
+    },
+    maxSelections: {
+      type: Number,
+      default: null,
     },
   },
   emits: ['update:value', 'search-change', 'concept-set-action'],
@@ -315,9 +319,19 @@ export default {
       }
     },
     handleUpdateValue(value) {
-      console.log('handleUpdateValue', value)
-      this.$emit('update:value', value)
-      console.log('emitted update:value', value)
+      let finalValue = value
+
+      // Handle single-select mode (when maxSelections = 1)
+      if (this.maxSelections === 1) {
+        // In single-select mode, value is a single object, not an array
+        // Convert to array format for consistent handling
+        finalValue = value ? [value] : []
+      } else if (this.maxSelections && value && Array.isArray(value) && value.length > this.maxSelections) {
+        // Multi-select mode with limit enforcement
+        finalValue = value.slice(0, this.maxSelections)
+      }
+
+      this.$emit('update:value', finalValue)
       if (this.selectedValuesTimeout) {
         clearTimeout(this.selectedValuesTimeout)
       }

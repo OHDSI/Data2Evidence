@@ -76,6 +76,28 @@ const updateCardinality = (field: 'type' | 'count', value: any) => {
   eventData.value = updatedEvent
 }
 
+// Handle concept set changes (add/remove/update)
+const handleConceptSetChange = async (values: ConceptSetItem[]) => {
+  if (!values || values.length === 0) {
+    // Remove concept set
+    const updatedEvent = {
+      ...eventData.value,
+      selectedConceptSet: undefined,
+      conceptSetId: undefined,
+      conceptSet: '',
+      conceptSetDetails: [],
+      conceptSetLoading: false,
+    }
+    eventData.value = updatedEvent
+    emit('concept-set-selected', null)
+    return
+  }
+
+  // For events, we typically only support one concept set
+  const conceptSet = values[0]
+  await handleConceptSetSelected(conceptSet)
+}
+
 // Handle concept set selection
 const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
   const updatedEvent = {
@@ -93,7 +115,7 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
     // Import the API service function
     const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
-    
+
     // Update event with concept set details
     const eventWithDetails = {
       ...eventData.value,
@@ -222,6 +244,14 @@ const tagInputModel = computed(() => ({
   },
 }))
 
+// Get the external value for the tag input (ensuring it's always an array)
+const getTagInputValue = () => {
+  if (eventData.value.selectedConceptSet) {
+    return [eventData.value.selectedConceptSet]
+  }
+  return []
+}
+
 // Get event type display name
 const getEventTypeDisplay = (eventType?: string) => {
   if (!eventType) return 'Unknown Event'
@@ -252,6 +282,29 @@ const getCardinalityDisplay = (cardinality?: any) => {
     }[cardinality.type] || cardinality.type
 
   return `${typeText} ${cardinality.count}`
+}
+
+// Get concept set display name for readonly mode
+const getConceptSetDisplayName = (): string => {
+  // Priority: selectedConceptSet.text > selectedConceptSet.display_value > conceptSet property > conceptSetId
+  if (eventData.value.selectedConceptSet) {
+    return (
+      eventData.value.selectedConceptSet.text ||
+      eventData.value.selectedConceptSet.display_value ||
+      eventData.value.selectedConceptSet.value ||
+      'Unknown Concept Set'
+    )
+  }
+
+  if (eventData.value.conceptSet) {
+    return eventData.value.conceptSet
+  }
+
+  if (eventData.value.conceptSetId) {
+    return `Concept Set ${eventData.value.conceptSetId}`
+  }
+
+  return ''
 }
 </script>
 
@@ -303,14 +356,15 @@ const getCardinalityDisplay = (cardinality?: any) => {
           <QueryFilterTagInputAdapter
             v-if="!readonly"
             :model="tagInputModel"
-            :external-value="eventData.selectedConceptSet ? [eventData.selectedConceptSet] : []"
+            :external-value="getTagInputValue()"
             :external-domain-values="conceptSetDomainValues"
             :external-texts="conceptSetTexts"
             :is-catalog-attribute="false"
-            @update:value="values => values[0] && handleConceptSetSelected(values[0])"
+            :max-selections="1"
+            @update:value="handleConceptSetChange"
           />
           <div v-else class="concept-set-readonly">
-            {{ eventData.conceptSet || 'No concept set selected' }}
+            {{ getConceptSetDisplayName() || 'No concept set selected' }}
           </div>
         </div>
 
