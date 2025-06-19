@@ -36,7 +36,6 @@ def dicom_etl_plugin(options: DICOMETLOptions):
             upload_files = options.upload_files
             person_patient_mapping = options.person_to_patient_mapping
             person_mapping_schema = person_patient_mapping.schema_name
-            mapping_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
             # Check if schemas exist
             mi_schema_exists = dbdao.check_schema_exists(schema=medical_imaging_schema)
