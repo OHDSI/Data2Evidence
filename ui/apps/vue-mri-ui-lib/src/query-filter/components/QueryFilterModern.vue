@@ -444,22 +444,24 @@ defineExpose({
 
 <template>
   <div class="query-filter-modern">
-    <!-- Main Query Filter Content -->
-    <div class="query-filter-container">
-      <!-- New Hierarchical Component Structure -->
-      <div class="query-filter-container__section">
-        <QueryFilterCriteria
-          :criteria-data="criteriaManager.getCriteria()"
-          :concept-sets="allConceptSets"
-          :concept-set-domain-values="conceptSetDomainValues"
-          :concept-set-texts="tagInputTexts"
-          @criteria-updated="handleCriteriaUpdated"
-          @update:criteria="handleCriteriaUpdated"
-          @update-qualifying-limit="handleUpdateQualifyingLimit"
-          @add-criteria-group="handleAddCriteriaGroup"
-          @update-criteria-group="handleUpdateCriteriaGroup"
-          @remove-criteria-group="handleRemoveCriteriaGroup"
-        />
+    <!-- Main Query Filter Content Container -->
+    <div class="query-filter-main-container">
+      <div class="query-filter-container">
+        <!-- New Hierarchical Component Structure -->
+        <div class="query-filter-container__section">
+          <QueryFilterCriteria
+            :criteria-data="criteriaManager.getCriteria()"
+            :concept-sets="allConceptSets"
+            :concept-set-domain-values="conceptSetDomainValues"
+            :concept-set-texts="tagInputTexts"
+            @criteria-updated="handleCriteriaUpdated"
+            @update:criteria="handleCriteriaUpdated"
+            @update-qualifying-limit="handleUpdateQualifyingLimit"
+            @add-criteria-group="handleAddCriteriaGroup"
+            @update-criteria-group="handleUpdateCriteriaGroup"
+            @remove-criteria-group="handleRemoveCriteriaGroup"
+          />
+        </div>
       </div>
     </div>
 
@@ -575,9 +577,21 @@ defineExpose({
     }
   }
 
+  .query-filter-main-container {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
   .query-filter-container {
+    padding: 24px;
+    margin: 24px;
+
     &__section {
-      margin-bottom: 24px;
+      margin-bottom: 0; // Remove bottom margin since container handles spacing
     }
   }
 
