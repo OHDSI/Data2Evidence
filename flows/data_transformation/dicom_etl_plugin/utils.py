@@ -28,6 +28,7 @@ def update_vocabulary_table(dbdao, schema_name: str, to_truncate: bool, logger):
     vocabulary_table = "vocabulary"    
     if to_truncate:
         logger.info(f"Truncating '{schema_name}.{vocabulary_table}' table..")
+        dbdao.truncate_table(schema_name, vocabulary_table)
     try:
         logger.info(f"Populating '{schema_name}.{vocabulary_table}' table..")
         values_to_insert = {
