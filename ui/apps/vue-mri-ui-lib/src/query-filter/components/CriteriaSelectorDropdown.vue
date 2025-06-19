@@ -7,9 +7,11 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import criteriaConfigLoader, { type CriteriaOption } from '../utils/CriteriaConfigLoader'
+import { FilterType } from '../models/QueryFilterModel';
 
 interface Props {
   sectionId: string // 'initialEvents', 'censoringEvents', 'criteriaGroup'
+  filterType: FilterType
   buttonText?: string
   disabled?: boolean
 }
@@ -20,7 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'criteria-selected': [option: CriteriaOption]
+  'criteria-selected': [option: CriteriaOption, type: FilterType]
 }>()
 
 const isOpen = ref(false)
@@ -46,7 +48,9 @@ const toggleDropdown = () => {
 }
 
 const selectCriteria = (option: CriteriaOption) => {
-  emit('criteria-selected', option)
+  console.log(props);
+  
+  emit('criteria-selected', option, props.filterType)
   isOpen.value = false
 }
 

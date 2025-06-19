@@ -40,10 +40,12 @@ export interface QueryFilterEvent {
   conceptSetLoading?: boolean // Loading state for concept details
 }
 
+export type FilterType = 'inclusion' | 'exclusion' | 'primary'
+
 export class QueryFilterCardModel {
   id: string
   title: string
-  type: 'inclusion' | 'exclusion'
+  type: FilterType
   events: QueryFilterEvent[]
   isExpanded: boolean
   operator: 'AND' | 'OR' // For combining events
@@ -632,6 +634,10 @@ export class QueryFilterManager {
     return this.filters.filter(f => f.type === 'inclusion')
   }
 
+  getPrimaryFilters(): QueryFilterCardModel[] {
+    return this.filters.filter(f => f.type === 'primary')
+  }
+
   getExclusionFilters(): QueryFilterCardModel[] {
     return this.filters.filter(f => f.type === 'exclusion')
   }
@@ -934,7 +940,11 @@ export class QueryFilterManager {
 
     // Only add primary criteria if there are inclusion filters with events that have concept set details OR age attributes
     const hasChipsOrAge = inclusionFilters.some(f =>
-      f.events.some(e => (e.conceptSetDetails && e.conceptSetDetails.length > 0) || (e.isAttributeBased && e.attributeConfig?.id === 'age'))
+      f.events.some(
+        e =>
+          (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
+          (e.isAttributeBased && e.attributeConfig?.id === 'age')
+      )
     )
     if (inclusionFilters.length > 0 && hasChipsOrAge) {
       atlasDef.PrimaryCriteria.CriteriaList = [
