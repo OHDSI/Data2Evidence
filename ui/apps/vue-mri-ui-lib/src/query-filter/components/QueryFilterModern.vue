@@ -30,12 +30,10 @@ import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 
 interface Props {
   debug?: boolean
-  useNewHierarchy?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  debug: true,
-  useNewHierarchy: true,
+  debug: false,
 })
 
 // Use the new hierarchical criteria manager instead of the old filter manager
@@ -449,7 +447,7 @@ defineExpose({
     <!-- Main Query Filter Content -->
     <div class="query-filter-container">
       <!-- New Hierarchical Component Structure -->
-      <div v-if="useNewHierarchy" class="query-filter-container__section">
+      <div class="query-filter-container__section">
         <QueryFilterCriteria
           :criteria-data="criteriaManager.getCriteria()"
           :concept-sets="allConceptSets"
@@ -462,15 +460,6 @@ defineExpose({
           @update-criteria-group="handleUpdateCriteriaGroup"
           @remove-criteria-group="handleRemoveCriteriaGroup"
         />
-      </div>
-
-      <!-- Legacy support section for backward compatibility -->
-      <div v-else class="query-filter-legacy-section">
-        <div class="legacy-notice">
-          <p>
-            Using legacy flat structure. Set <code>useNewHierarchy: true</code> to use the new hierarchical components.
-          </p>
-        </div>
       </div>
     </div>
 
