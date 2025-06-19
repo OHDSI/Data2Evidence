@@ -5,9 +5,10 @@ from _shared_flow_utils.dao.DBDao import DBDao
 import pandas as pd
 import spacy
 from datetime import datetime
-
+import os
 from prefect import flow
 from prefect.logging import get_run_logger
+os.environ['plugin_name'] = 'ner_extract_plugin'
 
 @flow(log_prints=True)
 def ner_extract_plugin(options: NerExtractOptions):

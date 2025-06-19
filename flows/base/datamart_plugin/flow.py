@@ -4,7 +4,7 @@ from prefect.logging import get_run_logger
 from .types import *
 from .const import *
 from .utils import *
-
+import os
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -13,6 +13,8 @@ from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 
 from _shared_flow_utils.create_dataset_tasks import create_schema_task, create_and_assign_roles_task
 from _shared_flow_utils.update_dataset_metadata import update_entity_value, update_entity_distinct_count
+
+os.environ['plugin_name'] = 'datamart_plugin'
 
 @flow(log_prints=True)
 def datamart_plugin(options: CreateDatamartOptions):
@@ -29,16 +31,8 @@ def create_datamart(options: CreateDatamartOptions):
     database_code = options.database_code
     use_cache_db = options.use_cache_db
     snapshot_copy_config = options.snapshot_copy_config
-    
-    match options.dialect:
-        case SupportedDatabaseDialects.HANA:
-            source_schema = options.source_schema.upper() # schema to copy from
-            target_schema = options.schema_name.upper() # schema to copy to
-        case SupportedDatabaseDialects.POSTGRES:
-            source_schema = options.source_schema.lower() # schema to copy from
-            target_schema = options.schema_name.lower() # schema to copy to            
-        case _:
-            raise ValueError(f"Database dialect {options.dialect} not supported for this plugin")
+    source_schema = options.source_schema
+    target_schema = options.schema_name
 
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
     

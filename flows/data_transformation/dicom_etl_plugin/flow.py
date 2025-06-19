@@ -5,10 +5,11 @@ from prefect.logging import get_run_logger
 
 from .types import *
 from .tasks import *
+import os
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.DicomServerAPI import DicomServerAPI
-
+os.environ['plugin_name'] = 'dicom_etl_plugin'
 
 @flow(log_prints=True)
 def dicom_etl_plugin(options: DICOMETLOptions):
