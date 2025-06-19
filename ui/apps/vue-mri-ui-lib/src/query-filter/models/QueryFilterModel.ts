@@ -64,6 +64,13 @@ export interface QueryFilterAttribute {
   }
 }
 
+export interface EntryEvent {}
+
+export interface InclusionCriteria {
+  qualifyingEventsLimit: 'ALL' | 'EARLIEST' | 'LATEST'
+  criteria: QueryFilterGroup[]
+}
+
 export class QueryFilterCardModel {
   id: string
   title?: string
@@ -559,8 +566,8 @@ export class QueryFilterCardModel {
 
 export class QueryFilterCriteriaManager {
   private criteria: QueryFilterCriteria
-  private entryEvents: any
-  private inclusionCriteria: any
+  private entryEvents: EntryEvent
+  private inclusionCriteria: InclusionCriteria
 
   constructor(data: any = {}) {
     try {
