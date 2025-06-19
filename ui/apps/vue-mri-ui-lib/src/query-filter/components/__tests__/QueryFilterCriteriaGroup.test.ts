@@ -1,4 +1,4 @@
-import { QueryFilterCardModel } from '../../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterEvent } from '../../models/QueryFilterModel'
 import type { QueryFilterGroup } from '../../models/QueryFilterModel'
 
 describe('QueryFilterCriteriaGroup Model Tests', () => {
@@ -9,16 +9,14 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
       id: 'group_1',
       title: 'Test Group',
       description: 'Test Description',
-      groupType: 'ALL',
-      groups: [
-        new QueryFilterCardModel({
-          id: 'filter_1',
-          title: 'Test Filter',
-          type: 'inclusion',
-          events: [],
-          isExpanded: true,
-          cardinality: { type: 'AT_LEAST', count: 1, using: 'ALL' },
-        }),
+      criteriaType: 'ALL',
+      events: [
+        {
+          id: 'event_1',
+          conceptSet: 'Test Event',
+          criteriaType: 'conditionOccurrence',
+          isAttributeBased: false,
+        },
       ],
     }
   })
@@ -27,45 +25,43 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     expect(mockGroup.id).toBe('group_1')
     expect(mockGroup.title).toBe('Test Group')
     expect(mockGroup.description).toBe('Test Description')
-    expect(mockGroup.groupType).toBe('ALL')
-    expect(mockGroup.groups).toHaveLength(1)
+    expect(mockGroup.criteriaType).toBe('ALL')
+    expect(mockGroup.events).toHaveLength(1)
   })
 
   it('supports different group types', () => {
-    const allGroup = { ...mockGroup, groupType: 'ALL' as const }
-    const anyGroup = { ...mockGroup, groupType: 'ANY' as const }
-    const atLeastGroup = { ...mockGroup, groupType: 'AT_LEAST' as const }
-    const atMostGroup = { ...mockGroup, groupType: 'AT_MOST' as const }
+    const allGroup = { ...mockGroup, criteriaType: 'ALL' as const }
+    const anyGroup = { ...mockGroup, criteriaType: 'ANY' as const }
+    const atLeastGroup = { ...mockGroup, criteriaType: 'AT_LEAST' as const }
+    const atMostGroup = { ...mockGroup, criteriaType: 'AT_MOST' as const }
 
-    expect(allGroup.groupType).toBe('ALL')
-    expect(anyGroup.groupType).toBe('ANY')
-    expect(atLeastGroup.groupType).toBe('AT_LEAST')
-    expect(atMostGroup.groupType).toBe('AT_MOST')
+    expect(allGroup.criteriaType).toBe('ALL')
+    expect(anyGroup.criteriaType).toBe('ANY')
+    expect(atLeastGroup.criteriaType).toBe('AT_LEAST')
+    expect(atMostGroup.criteriaType).toBe('AT_MOST')
   })
 
-  it('contains QueryFilterCardModel instances', () => {
-    expect(mockGroup.groups[0]).toBeInstanceOf(QueryFilterCardModel)
-    expect(mockGroup.groups[0].id).toBe('filter_1')
-    expect(mockGroup.groups[0].title).toBe('Test Filter')
-    expect(mockGroup.groups[0].type).toBe('inclusion')
+  it('contains QueryFilterEvent instances', () => {
+    expect(mockGroup.events[0]).toBeDefined()
+    expect(mockGroup.events[0].id).toBe('event_1')
+    expect(mockGroup.events[0].conceptSet).toBe('Test Event')
+    expect(mockGroup.events[0].criteriaType).toBe('conditionOccurrence')
   })
 
-  it('handles multiple filters in a group', () => {
-    const secondFilter = new QueryFilterCardModel({
-      id: 'filter_2',
-      title: 'Second Filter',
-      type: 'exclusion',
-      events: [],
-      isExpanded: false,
-      cardinality: { type: 'exactly', count: 2, using: 'ALL' },
-    })
+  it('handles multiple events in a group', () => {
+    const secondEvent: QueryFilterEvent = {
+      id: 'event_2',
+      conceptSet: 'Second Event',
+      criteriaType: 'drugExposure',
+      isAttributeBased: false,
+    }
 
-    mockGroup.groups.push(secondFilter)
+    mockGroup.events.push(secondEvent)
 
-    expect(mockGroup.groups).toHaveLength(2)
-    expect(mockGroup.groups[0].type).toBe('inclusion')
-    expect(mockGroup.groups[1].type).toBe('exclusion')
-    expect(mockGroup.groups[1].cardinality.count).toBe(2)
+    expect(mockGroup.events).toHaveLength(2)
+    expect(mockGroup.events[0].criteriaType).toBe('conditionOccurrence')
+    expect(mockGroup.events[1].criteriaType).toBe('drugExposure')
+    expect(mockGroup.events[1].conceptSet).toBe('Second Event')
   })
 
   it('validates group structure integrity', () => {
@@ -73,16 +69,15 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     expect(mockGroup.id).toBeDefined()
     expect(mockGroup.title).toBeDefined()
     expect(mockGroup.description).toBeDefined()
-    expect(mockGroup.groupType).toBeDefined()
-    expect(mockGroup.groups).toBeDefined()
-    expect(Array.isArray(mockGroup.groups)).toBe(true)
+    expect(mockGroup.criteriaType).toBeDefined()
+    expect(mockGroup.events).toBeDefined()
+    expect(Array.isArray(mockGroup.events)).toBe(true)
 
-    // Test that groups contains valid filter models
-    mockGroup.groups.forEach(filter => {
-      expect(filter.id).toBeDefined()
-      expect(filter.hasEvents).toBeDefined()
-      expect(filter.addEvent).toBeDefined()
-      expect(filter.removeEvent).toBeDefined()
+    // Test that events contains valid event objects
+    mockGroup.events.forEach(event => {
+      expect(event.id).toBeDefined()
+      expect(event.conceptSet).toBeDefined()
+      expect(typeof event.isAttributeBased).toBe('boolean')
     })
   })
 
@@ -91,70 +86,76 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
       ...mockGroup,
       title: 'Updated Title',
       description: 'Updated Description',
-      groupType: 'ANY' as const,
+      criteriaType: 'ANY' as const,
     }
 
     expect(updatedGroup.title).toBe('Updated Title')
     expect(updatedGroup.description).toBe('Updated Description')
-    expect(updatedGroup.groupType).toBe('ANY')
+    expect(updatedGroup.criteriaType).toBe('ANY')
     expect(updatedGroup.id).toBe(mockGroup.id) // ID should remain the same
   })
 
-  it('handles empty groups', () => {
+  it('handles empty events', () => {
     const emptyGroup: QueryFilterGroup = {
       id: 'empty_group',
       title: 'Empty Group',
       description: 'No filters',
-      groupType: 'ALL',
-      groups: [],
+      criteriaType: 'ALL',
+      events: [],
     }
 
-    expect(emptyGroup.groups).toHaveLength(0)
-    expect(Array.isArray(emptyGroup.groups)).toBe(true)
+    expect(emptyGroup.events).toHaveLength(0)
+    expect(Array.isArray(emptyGroup.events)).toBe(true)
   })
 
-  it('supports filter operations within group', () => {
-    const initialCount = mockGroup.groups.length
+  it('supports event operations within group', () => {
+    const initialCount = mockGroup.events.length
 
-    // Add a new filter
-    const newFilter = new QueryFilterCardModel({
-      id: 'new_filter',
-      title: 'New Filter',
-      type: 'inclusion',
-    })
-    mockGroup.groups.push(newFilter)
+    // Add a new event
+    const newEvent: QueryFilterEvent = {
+      id: 'new_event',
+      conceptSet: 'New Event',
+      criteriaType: 'procedureOccurrence',
+      isAttributeBased: false,
+    }
+    mockGroup.events.push(newEvent)
 
-    expect(mockGroup.groups.length).toBe(initialCount + 1)
-    expect(mockGroup.groups[mockGroup.groups.length - 1]).toBe(newFilter)
+    expect(mockGroup.events.length).toBe(initialCount + 1)
+    expect(mockGroup.events[mockGroup.events.length - 1]).toBe(newEvent)
 
-    // Remove the filter
-    const removeIndex = mockGroup.groups.findIndex(f => f.id === 'new_filter')
-    mockGroup.groups.splice(removeIndex, 1)
+    // Remove the event
+    const removeIndex = mockGroup.events.findIndex(e => e.id === 'new_event')
+    mockGroup.events.splice(removeIndex, 1)
 
-    expect(mockGroup.groups.length).toBe(initialCount)
+    expect(mockGroup.events.length).toBe(initialCount)
   })
 
   it('maintains group type consistency', () => {
     const validGroupTypes = ['ALL', 'ANY', 'AT_LEAST', 'AT_MOST'] as const
 
-    validGroupTypes.forEach(groupType => {
-      const testGroup = { ...mockGroup, groupType }
-      expect(testGroup.groupType).toBe(groupType)
+    validGroupTypes.forEach(criteriaType => {
+      const testGroup = { ...mockGroup, criteriaType }
+      expect(testGroup.criteriaType).toBe(criteriaType)
     })
   })
 
-  it('preserves filter relationships', () => {
-    // Add events to the filter
-    const filter = mockGroup.groups[0]
-    const event1 = filter.addEvent({ conceptSet: 'Event 1' })
-    const event2 = filter.addEvent({ conceptSet: 'Event 2' })
-
-    expect(filter.events).toHaveLength(2)
-    expect(filter.events[0].conceptSet).toBe('Event 1')
-    expect(filter.events[1].conceptSet).toBe('Event 2')
-
-    // Verify the filter is still part of the group
+  it('preserves event relationships', () => {
+    // Verify events exist in the group
     expect(mockGroup.events[0]).toBeDefined()
     expect(mockGroup.events).toHaveLength(1)
+    expect(mockGroup.events[0].conceptSet).toBe('Test Event')
+
+    // Add a nested event
+    const nestedEvent: QueryFilterEvent = {
+      id: 'nested_event',
+      conceptSet: 'Nested Event',
+      criteriaType: 'observation',
+      isAttributeBased: true,
+      parentEventId: mockGroup.events[0].id,
+    }
+
+    mockGroup.events.push(nestedEvent)
+    expect(mockGroup.events).toHaveLength(2)
+    expect(mockGroup.events[1].parentEventId).toBe('event_1')
   })
 })

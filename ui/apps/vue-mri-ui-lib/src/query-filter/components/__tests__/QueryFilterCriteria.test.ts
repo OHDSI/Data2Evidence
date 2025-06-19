@@ -139,7 +139,7 @@ describe('QueryFilterCriteria Model Tests', () => {
       expect(group.title).toBeDefined()
       expect(group.description).toBeDefined()
       expect(group.criteriaType).toBeDefined()
-      expect(Array.isArray(group.groups)).toBe(true)
+      expect(Array.isArray(group.events)).toBe(true)
     })
   })
 
