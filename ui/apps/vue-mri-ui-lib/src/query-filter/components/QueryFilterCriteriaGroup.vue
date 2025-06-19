@@ -104,44 +104,9 @@ const toggleGroupType = () => {
 
 <template>
   <div class="query-filter-criteria-group">
-    <!-- Group Header -->
-    <div v-if="!hideHeader" class="group-header">
-      <div class="group-header__left">
-        <div class="group-title-container">
-          <input
-            v-if="!readonly"
-            v-model="localGroup.title"
-            class="group-title-input"
-            placeholder="Group Title"
-            @input="updateTitle(($event.target as HTMLInputElement).value)"
-          />
-          <h4 v-else class="group-title-readonly">{{ localGroup.title }}</h4>
-        </div>
-
-        <div class="group-description-container">
-          <textarea
-            v-if="!readonly"
-            v-model="localGroup.description"
-            class="group-description-input"
-            placeholder="Group Description (optional)"
-            rows="2"
-            @input="updateDescription(($event.target as HTMLTextAreaElement).value)"
-          />
-          <p v-else-if="localGroup.description" class="group-description-readonly">
-            {{ localGroup.description }}
-          </p>
-        </div>
-      </div>
-
-      <div class="group-header__right">
-        <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
-          ×
-        </button>
-      </div>
-    </div>
-
-    <!-- Group Sidebar and Content -->
-    <div class="group-body">
+    <!-- Group with Full-Height Sidebar -->
+    <div class="group-layout">
+      <!-- Full-Height Sidebar -->
       <div
         class="group-sidebar"
         :class="`group-sidebar--${localGroup.criteriaType?.toLowerCase() || 'all'}`"
@@ -151,17 +116,57 @@ const toggleGroupType = () => {
         <span class="sidebar-label">{{ localGroup.criteriaType || 'ALL' }}</span>
       </div>
 
-      <div class="group-content">
-        <!-- Events Container -->
-        <QueryFilterEventContainer
-          :events="groupEvents"
-          :parent-group="localGroup"
-          :concept-sets="conceptSets"
-          :concept-set-domain-values="conceptSetDomainValues"
-          :concept-set-texts="conceptSetTexts"
-          :readonly="readonly"
-          @update-events="handleEventsUpdate"
-        />
+      <!-- Group Content Area -->
+      <div class="group-main">
+        <!-- Group Header -->
+        <div v-if="!hideHeader" class="group-header">
+          <div class="group-header__left">
+            <div class="group-title-container">
+              <input
+                v-if="!readonly"
+                v-model="localGroup.title"
+                class="group-title-input"
+                placeholder="Group Title"
+                @input="updateTitle(($event.target as HTMLInputElement).value)"
+              />
+              <h4 v-else class="group-title-readonly">{{ localGroup.title }}</h4>
+            </div>
+
+            <!-- <div class="group-description-container">
+              <textarea
+                v-if="!readonly"
+                v-model="localGroup.description"
+                class="group-description-input"
+                placeholder="Group Description (optional)"
+                rows="2"
+                @input="updateDescription(($event.target as HTMLTextAreaElement).value)"
+              />
+              <p v-else-if="localGroup.description" class="group-description-readonly">
+                {{ localGroup.description }}
+              </p>
+            </div> -->
+          </div>
+
+          <div class="group-header__right">
+            <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <!-- Group Content -->
+        <div class="group-content">
+          <!-- Events Container -->
+          <QueryFilterEventContainer
+            :events="groupEvents"
+            :parent-group="localGroup"
+            :concept-sets="conceptSets"
+            :concept-set-domain-values="conceptSetDomainValues"
+            :concept-set-texts="conceptSetTexts"
+            :readonly="readonly"
+            @update-events="handleEventsUpdate"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -175,6 +180,16 @@ const toggleGroupType = () => {
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
+  .group-layout {
+    display: flex;
+  }
+
+  .group-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
   .group-header {
     display: flex;
     justify-content: space-between;
@@ -182,7 +197,7 @@ const toggleGroupType = () => {
     padding: 16px;
     border-bottom: 1px solid #f0f0f0;
     background: #fafafa;
-    border-radius: 8px 8px 0 0;
+    border-radius: 0 8px 0 0; // Only round top-right corner
 
     &__left {
       flex: 1;
@@ -280,10 +295,6 @@ const toggleGroupType = () => {
     }
   }
 
-  .group-body {
-    display: flex;
-  }
-
   .group-sidebar {
     width: 30px;
     display: flex;
@@ -293,6 +304,8 @@ const toggleGroupType = () => {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    align-self: stretch; // Makes sidebar match the height of its flex container
+    border-radius: 8px 0 0 8px; // Round left corners
 
     // Default styling (ALL)
     background: #000080;
@@ -352,6 +365,7 @@ const toggleGroupType = () => {
   .group-content {
     flex: 1;
     padding: 16px;
+    border-radius: 0 0 8px 0; // Round bottom-right corner
   }
 }
 </style>

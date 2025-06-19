@@ -77,7 +77,7 @@ const updateCardinality = (field: 'type' | 'count', value: any) => {
 }
 
 // Handle concept set selection
-const handleConceptSetSelected = (conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
   const updatedEvent = {
     ...eventData.value,
     selectedConceptSet: conceptSet,
@@ -87,6 +87,36 @@ const handleConceptSetSelected = (conceptSet: ConceptSetItem) => {
   }
   eventData.value = updatedEvent
   emit('concept-set-selected', conceptSet)
+
+  // Load concept set details for Atlas conversion
+  try {
+    // Import the API service function
+    const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
+    const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
+    
+    // Update event with concept set details
+    const eventWithDetails = {
+      ...eventData.value,
+      conceptSetDetails,
+      conceptSetLoading: false,
+    }
+    eventData.value = eventWithDetails
+  } catch (error) {
+    console.error('Failed to load concept set details:', error)
+    // Update loading state even if failed
+    const eventWithError = {
+      ...eventData.value,
+      conceptSetLoading: false,
+    }
+    eventData.value = eventWithError
+  }
+}
+
+// Helper to get dataset ID (could be passed as prop in the future)
+const getDatasetIdFromProps = (): string => {
+  // For now, use the same fallback as QueryFilterModern
+  // In the future, this could be passed as a prop
+  return '4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
 }
 
 // Handle attribute selection
