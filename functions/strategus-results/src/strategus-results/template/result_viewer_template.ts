@@ -43,6 +43,9 @@ shinyConfig <- initializeModuleConfig() |>
     createDefaultEstimationConfig()
   ) 
 
+# Set options for base URL, could be the studyId
+options(shiny.base_url = "/strategus-viewer/")
+
 # now create the shiny app based on the config file and view the results
 # based on the connection 
 app <- OhdsiShinyAppBuilder::createShinyApp(
@@ -50,7 +53,6 @@ app <- OhdsiShinyAppBuilder::createShinyApp(
   connection = resultsConnectionDetails,
   resultDatabaseSettings = createDefaultResultDatabaseSettings(schema = resultsDatabaseSchema)
 )
-
 # Run the app in the background so the kernel execution can complete
 plan(multisession)
 future({
