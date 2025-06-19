@@ -40,9 +40,13 @@ export interface QueryFilterEvent {
     conceptSet?: any
     conceptSetId?: string
     nestedCriteria?: {
-      operator: string
+      id: string
+      criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
       events: any[]
     }
+    atlasKey?: string
+    special?: boolean
+    required?: boolean
   }>
   isAttributeBased?: boolean
   isDemographic?: boolean

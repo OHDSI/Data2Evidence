@@ -10,7 +10,10 @@ export default {
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import QueryFilterCard from './QueryFilterCard.vue'
+import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
+import { QueryFilterCardModel } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import { type CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface NestedCriteria {
   id: string
@@ -57,12 +60,7 @@ const criteriaData = computed({
 // Check if we've reached maximum nesting depth
 const isMaxDepthReached = computed(() => props.level >= props.maxDepth)
 
-// Get events that have nested attributes
-const eventsWithNesting = computed(() => {
-  return criteriaData.value.events.filter(event =>
-    event.attributes?.some((attr: any) => attr.attributeType === 'nested')
-  )
-})
+// Removed unused eventsWithNesting computed
 
 // Get nested criteria from an event's attributes
 const getNestedCriteriaFromEvent = (event: any) => {
@@ -78,11 +76,13 @@ const updateCriteriaType = (newType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST') => 
   }
 }
 
-// Handle adding new event to nested criteria
-const addNestedEvent = () => {
+// Handle adding new event to nested criteria from CriteriaSelectorDropdown
+const handleCriteriaSelected = (option: CriteriaOption) => {
   const newEvent = {
     id: `nested_event_${Date.now()}`,
-    eventType: 'conditionOccurrence',
+    eventType: option.id,
+    criteriaType: option.id,
+    conceptSet: '',
     isExpanded: true,
     attributes: [],
     cardinality: {
@@ -106,13 +106,15 @@ const removeNested = () => {
 }
 
 // Create temporary filter for backward compatibility with QueryFilterCard
-const createTempFilterForEvent = (event: any) => ({
-  id: `temp_${event.id}`,
-  title: 'Nested Event',
-  type: 'inclusion' as const,
-  events: [event],
-  isExpanded: true,
-})
+const createTempFilterForEvent = (event: any) => {
+  return new QueryFilterCardModel({
+    id: `temp_${event.id}`,
+    title: 'Nested Event',
+    type: 'inclusion' as const,
+    events: [event],
+    isExpanded: true
+  })
+}
 
 // Handle event updates from QueryFilterCard
 const handleEventUpdate = (eventIndex: number, updatedFilter: any) => {
@@ -188,7 +190,7 @@ const getOperatorText = (operator: string) => {
             v-if="!readonly"
             v-model="localCriteria.criteriaType"
             class="nested-operator-select"
-            @change="updateCriteriaType($event.target.value as any)"
+            @change="updateCriteriaType(($event.target as HTMLSelectElement).value as any)"
           >
             <option value="ALL">ALL</option>
             <option value="ANY">ANY</option>
@@ -215,7 +217,12 @@ const getOperatorText = (operator: string) => {
     <div class="nested-events">
       <div v-if="criteriaData.events.length === 0" class="nested-empty-state">
         <p class="empty-message">No events in this nested criteria</p>
-        <button v-if="!readonly" class="btn-add-nested-event" @click="addNestedEvent">+ Add Event</button>
+        <CriteriaSelectorDropdown
+          v-if="!readonly"
+          section-id="initialEvents"
+          button-text="Add event"
+          @criteria-selected="handleCriteriaSelected"
+        />
       </div>
 
       <div v-else class="nested-events-list">
@@ -245,7 +252,7 @@ const getOperatorText = (operator: string) => {
             :readonly="readonly"
             @update:nested-criteria="
               updated => {
-                const attr = event.attributes.find(a => a.attributeType === 'nested')
+                const attr = event.attributes.find((a: any) => a.attributeType === 'nested')
                 if (attr) attr.nestedCriteria = updated
               }
             "
@@ -256,7 +263,11 @@ const getOperatorText = (operator: string) => {
 
     <!-- Add Event Button -->
     <div v-if="!readonly && criteriaData.events.length > 0" class="nested-actions">
-      <button class="btn-add-nested-event" @click="addNestedEvent">+ Add Event to Nested Criteria</button>
+      <CriteriaSelectorDropdown
+        section-id="initialEvents"
+        button-text="Add another event"
+        @criteria-selected="handleCriteriaSelected"
+      />
     </div>
 
     <!-- Depth Warning -->

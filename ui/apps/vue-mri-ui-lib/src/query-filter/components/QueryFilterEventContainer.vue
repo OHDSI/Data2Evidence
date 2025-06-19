@@ -184,16 +184,6 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
       />
     </div>
 
-    <!-- Empty State -->
-    <div v-if="eventsData.length === 0" class="empty-state">
-      <div class="empty-state__content">
-        <div class="empty-state__icon">📝</div>
-        <h4 class="empty-state__title">No Events Added</h4>
-        <p class="empty-state__description">Add events to define the criteria for this group.</p>
-        <button v-if="!readonly" class="btn-add-first-event" @click="addNewEvent">Add Your First Event</button>
-      </div>
-    </div>
-
     <!-- Event Relationships (if more than one event) -->
     <div v-if="eventsData.length > 1" class="event-relationships">
       <div class="relationship-indicator">

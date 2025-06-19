@@ -105,7 +105,11 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
         ...attribute,
         // Initialize based on attribute type
         conceptSet: attribute.id === 'nested' ? null : undefined,
-        nestedCriteria: attribute.id === 'nested' ? { operator: 'ANY', events: [] } : undefined,
+        nestedCriteria: attribute.id === 'nested' ? { 
+          id: `nested_${Date.now()}`,
+          criteriaType: 'ANY' as const,
+          events: [] 
+        } : undefined,
       },
     ],
   }
