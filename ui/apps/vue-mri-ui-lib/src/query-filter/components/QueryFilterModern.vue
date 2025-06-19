@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // Use the new hierarchical criteria manager instead of the old filter manager
-const criteriaManager = new QueryFilterCriteriaManager()
+const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 

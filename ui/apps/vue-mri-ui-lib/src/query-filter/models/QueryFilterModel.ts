@@ -563,29 +563,35 @@ export class QueryFilterCriteriaManager {
   private inclusionCriteria: any
 
   constructor(data: any = {}) {
-    // Handle new sample2/sample3 structure
-    if (data.inclusionCriteria) {
+    try {
+      // Always initialize all properties
       this.entryEvents = data.entryEvents || {}
-      this.inclusionCriteria = data.inclusionCriteria
-      this.criteria = {
-        id: this.generateId(),
-        criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
-        criteria:
-          data.inclusionCriteria.criteria?.map((criteria: any) => ({
-            id: criteria.id,
-            title: criteria.title,
-            description: criteria.description,
-            criteriaType: criteria.criteriaType,
-            events: this.transformEvents(criteria.events || []),
-          })) || [],
+      this.inclusionCriteria = data.inclusionCriteria || {}
+
+      if (data.inclusionCriteria) {
+        this.criteria = {
+          id: this.generateId(),
+          criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
+          criteria:
+            data.inclusionCriteria.criteria?.map((criteria: any) => ({
+              id: criteria.id,
+              title: criteria.title,
+              description: criteria.description,
+              criteriaType: criteria.criteriaType,
+              events: this.transformEvents(criteria.events || []),
+            })) || [],
+        }
+      } else {
+        // Handle original structure
+        this.criteria = {
+          id: data.id || this.generateId(),
+          criteriaType: data.criteriaType || 'ALL',
+          criteria: data.criteria || [],
+        }
       }
-    } else {
-      // Handle original structure
-      this.criteria = {
-        id: data.id || this.generateId(),
-        criteriaType: data.criteriaType || 'ALL',
-        criteria: data.criteria || [],
-      }
+    } catch (error) {
+      console.error('Error initializing QueryFilterCriteriaManager:', error)
+      throw error
     }
   }
 
