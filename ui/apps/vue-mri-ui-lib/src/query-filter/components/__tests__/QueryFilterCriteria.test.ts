@@ -113,8 +113,9 @@ describe('QueryFilterCriteria Model Tests', () => {
     // Serialize to JSON
     const json = criteriaManager.toJSON()
     expect(json).toBeDefined()
-    expect(json.criteriaType).toBe('ALL')
-    expect(json.criteria).toHaveLength(1)
+    expect(json.inclusionCriteria).toBeDefined()
+    expect(json.inclusionCriteria.qualifyingEventsLimit).toBe('ALL')
+    expect(json.inclusionCriteria.criteria).toHaveLength(1)
 
     // Create new manager from JSON
     const newManager = QueryFilterCriteriaManager.fromJSON(json)

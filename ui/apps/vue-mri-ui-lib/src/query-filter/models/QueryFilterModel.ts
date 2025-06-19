@@ -573,9 +573,9 @@ export class QueryFilterCriteriaManager {
     try {
       // Always initialize all properties
       this.entryEvents = data.entryEvents || {}
-      this.inclusionCriteria = data.inclusionCriteria || {}
 
       if (data.inclusionCriteria) {
+        this.inclusionCriteria = data.inclusionCriteria
         this.criteria = {
           id: this.generateId(),
           criteriaType: this.mapQualifyingEventsLimit(data.inclusionCriteria.qualifyingEventsLimit),
@@ -589,7 +589,11 @@ export class QueryFilterCriteriaManager {
             })) || [],
         }
       } else {
-        // Handle original structure
+        // Handle original structure - initialize inclusionCriteria with proper structure
+        this.inclusionCriteria = {
+          qualifyingEventsLimit: data.criteriaType || 'ALL',
+          criteria: data.criteria || [],
+        }
         this.criteria = {
           id: data.id || this.generateId(),
           criteriaType: data.criteriaType || 'ALL',
@@ -613,6 +617,8 @@ export class QueryFilterCriteriaManager {
 
   setCriteriaType(type: 'ALL' | 'EARLIEST' | 'LATEST'): void {
     this.criteria.criteriaType = type
+    // Keep inclusionCriteria in sync
+    this.inclusionCriteria.qualifyingEventsLimit = type
   }
 
   // Group management
@@ -625,6 +631,11 @@ export class QueryFilterCriteriaManager {
       events: group?.events || [],
     }
     this.criteria.criteria.push(newGroup)
+    // Keep inclusionCriteria in sync
+    if (!this.inclusionCriteria.criteria) {
+      this.inclusionCriteria.criteria = []
+    }
+    this.inclusionCriteria.criteria.push(newGroup)
     return newGroup
   }
 
@@ -632,6 +643,13 @@ export class QueryFilterCriteriaManager {
     const index = this.criteria.criteria.findIndex(g => g.id === groupId)
     if (index > -1) {
       this.criteria.criteria.splice(index, 1)
+      // Keep inclusionCriteria in sync
+      if (this.inclusionCriteria.criteria) {
+        const inclusionIndex = this.inclusionCriteria.criteria.findIndex(g => g.id === groupId)
+        if (inclusionIndex > -1) {
+          this.inclusionCriteria.criteria.splice(inclusionIndex, 1)
+        }
+      }
       return true
     }
     return false
@@ -1138,11 +1156,6 @@ export class QueryFilterCriteriaManager {
 
   // Serialization
   toJSON(): any {
-    console.log('toJSON called. Current state:', {
-      inclusionCriteria: this.inclusionCriteria,
-      entryEvents: this.entryEvents,
-      criteria: this.criteria,
-    })
     return {
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
@@ -1380,18 +1393,22 @@ export class QueryFilterCriteriaManager {
     // Generate new IDs for the cloned structure
     const cloneData = {
       ...jsonData,
-      criteria: jsonData.criteria.map((criteria: any) => ({
-        ...criteria,
-        id: `criteria_${Math.random().toString(36).substring(2)}`,
-        events: criteria.events.map((event: any) => ({
-          ...event,
-          id: `event_${Math.random().toString(36).substring(2)}`,
-          nestedEvents: event.nestedEvents?.map((nestedEvent: any) => ({
-            ...nestedEvent,
-            id: `event_${Math.random().toString(36).substring(2)}`,
-          })),
-        })),
-      })),
+      inclusionCriteria: {
+        ...jsonData.inclusionCriteria,
+        criteria:
+          jsonData.inclusionCriteria.criteria?.map((criteria: any) => ({
+            ...criteria,
+            id: `criteria_${Math.random().toString(36).substring(2)}`,
+            events: criteria.events.map((event: any) => ({
+              ...event,
+              id: `event_${Math.random().toString(36).substring(2)}`,
+              nestedEvents: event.nestedEvents?.map((nestedEvent: any) => ({
+                ...nestedEvent,
+                id: `event_${Math.random().toString(36).substring(2)}`,
+              })),
+            })),
+          })) || [],
+      },
     }
     return QueryFilterCriteriaManager.fromJSON(cloneData)
   }

@@ -732,9 +732,10 @@ describe('QueryFilterCriteriaManager', () => {
       const group = manager.addCriteria({ title: 'Test Group' })
       const json = manager.toJSON()
 
-      expect(json.criteriaType).toBe('ALL')
-      expect(json.criteria).toHaveLength(1)
-      expect(json.criteria[0].title).toBe('Test Group')
+      expect(json.inclusionCriteria).toBeDefined()
+      expect(json.inclusionCriteria.qualifyingEventsLimit).toBe('ALL')
+      expect(json.inclusionCriteria.criteria).toHaveLength(1)
+      expect(json.inclusionCriteria.criteria[0].title).toBe('Test Group')
     })
 
     it('should create manager from JSON', () => {
