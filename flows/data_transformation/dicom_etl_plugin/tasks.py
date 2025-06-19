@@ -119,11 +119,11 @@ def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFra
 
         # Insert non-numeric records
         non_numeric_columns = [x for x in ingestion_columns if x != "value_as_number"]
-
-        transformed_chunk[non_numeric_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
+        transformed_chunk_non_numeric = transformed_chunk[transformed_chunk['value_as_number'].isna()]
+        transformed_chunk_non_numeric[non_numeric_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
                                         chunksize=50000, method=psql_insert_copy)
         logger.info(
-        f"Successfully ingested {len(transformed_chunk)} non-numeric records into '{schema_name}.{table_name}' table!")
+        f"Successfully ingested {len(transformed_chunk_non_numeric)} non-numeric records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
@@ -478,7 +478,7 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame,
 
     # Get concept id for modality and body part
     with dbdao.ibis_connect() as conn:
-        print(f"Connecting to vocab schema {vocab_schema_name} to get concept ids for tags..")
+        task_logger.info(f"Connecting to vocab schema {vocab_schema_name} to get concept ids for tags..")
         concept_table = conn.table("concept", database=vocab_schema_name)
         concept_df = concept_table.filter(concept_table.vocabulary_id == "DICOM")[
             ["concept_id", "concept_code"]].execute()
@@ -488,6 +488,10 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame,
     # Todo: Update with standard concept ids
     # Get concept id for BodyPartExamined -> anatomic_site_concept_id
     task_logger.info("Mapping BodyPartExamined tag to concept_id..")
+
+    # convert 00180015 to string
+    image_occurrence_df['00180015'] = image_occurrence_df['00180015'].astype(str)
+
     image_occurrence_df = image_occurrence_df.merge(concept_df[["concept_id", "concept_code"]],
                                                     how="left", left_on="00180015", right_on="concept_code")
     image_occurrence_df.rename(
