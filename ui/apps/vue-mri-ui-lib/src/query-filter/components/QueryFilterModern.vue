@@ -229,38 +229,9 @@ const convertToAtlasFormat = () => {
 
 // Convert Atlas JSON to the new hierarchical format
 const convertAtlasToFiltersLocal = (atlasJson: any) => {
-  // For now, use the existing conversion and then transform to hierarchical format
-  const legacyFilters = convertAtlasToFilters(atlasJson, allConceptSets.value)
+  const filters = convertAtlasToFilters(atlasJson, allConceptSets.value)
 
-  // Transform legacy filters to hierarchical criteria
-  const hierarchicalData = {
-    entryEvents: {},
-    inclusionCriteria: {
-      qualifyingEventsLimit: 'ALL',
-      criteria: legacyFilters.map((filter, index) => ({
-        id: filter.id,
-        title: filter.title || `Criteria ${index + 1}`,
-        description: '',
-        criteriaType: 'ALL',
-        events: filter.events.map(event => ({
-          id: event.id,
-          eventType: event.criteriaType || 'conditionOccurrence',
-          isExpanded: true,
-          attributes: event.attributes || [],
-          cardinality: event.cardinality || {
-            type: 'AT_LEAST',
-            count: 1,
-            using: 'ALL',
-          },
-          conceptSetId: event.conceptSetId,
-          selectedConceptSet: event.selectedConceptSet,
-          conceptSet: event.conceptSet,
-        })),
-      })),
-    },
-  }
-
-  return new QueryFilterCriteriaManager(hierarchicalData)
+  return new QueryFilterCriteriaManager(filters)
 }
 
 const loadAtlasCohortDefinition = async (atlasJson: any) => {
@@ -287,16 +258,14 @@ const loadAtlasCohortDefinition = async (atlasJson: any) => {
     setTimeout(async () => {
       const criteria = criteriaManager.getCriteria()
       for (const group of criteria.criteria) {
-        for (const filter of group.groups) {
-          for (const event of filter.events) {
-            if (event.selectedConceptSet && event.conceptSetId) {
-              try {
-                const conceptSetDetails = await loadSingleConceptSetDetails(event.selectedConceptSet)
-                event.conceptSetDetails = conceptSetDetails
-                event.conceptSetLoading = false
-              } catch (error) {
-                console.warn(`Failed to load concept set details for event ${event.id}:`, error)
-              }
+        for (const event of group.events) {
+          if (event.selectedConceptSet && event.conceptSetId) {
+            try {
+              const conceptSetDetails = await loadSingleConceptSetDetails(event.selectedConceptSet)
+              event.conceptSetDetails = conceptSetDetails
+              event.conceptSetLoading = false
+            } catch (error) {
+              console.warn(`Failed to load concept set details for event ${event.id}:`, error)
             }
           }
         }

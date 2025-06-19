@@ -18,11 +18,9 @@ export interface ConceptSetMapping {
 export const convertAtlasToFilters = (
   atlasJson: any,
   availableConceptSets: ConceptSetItem[] = []
-): QueryFilterCardModel[] => {
-  const filters: QueryFilterCardModel[] = []
-
+): QueryFilterCardModel => {
   if (!atlasJson) {
-    return filters
+    throw new Error('Invalid Atlas JSON input')
   }
 
   let cohortDefinition = atlasJson
@@ -255,17 +253,16 @@ export const convertAtlasToFilters = (
     })
   }
 
-  const mainFilter = new QueryFilterCardModel({
+  const filter = new QueryFilterCardModel({
     title: cohortName || 'Cohort Definition',
     type: 'inclusion',
     events: [],
   })
 
   // Add the inclusionCriteria structure to the filter
-  ;(mainFilter as any).inclusionCriteria = inclusionCriteria
-  ;(mainFilter as any).entryEvents = {}
-
-  return filters
+  ;(filter as any).inclusionCriteria = inclusionCriteria
+  ;(filter as any).entryEvents = {}
+  return filter
 }
 
 export const getConceptSetMappings = (

@@ -7,7 +7,7 @@
  * conversion functions work correctly in both directions.
  */
 
-import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterCardModel } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 
 describe('Atlas Round-Trip Conversion', () => {
@@ -78,16 +78,12 @@ describe('Atlas Round-Trip Conversion', () => {
     // 2. Convert Atlas to UI format
     const uiFilters = convertAtlasToFilters(simpleAtlas)
 
-    // The function currently returns an empty array, so this test documents the expected behavior
-    // when the function is properly implemented
-    expect(uiFilters).toEqual([])
-
-    // TODO: When convertAtlasToFilters is fixed to return the mainFilter, uncomment and update this test:
-    // expect(uiFilters).toHaveLength(1)
-    // expect(uiFilters[0].type).toBe('inclusion')
-    // expect(uiFilters[0].title).toBe('Cohort Definition') // Default cohort name
-    // expect((uiFilters[0] as any).inclusionCriteria).toBeDefined()
-    // expect((uiFilters[0] as any).inclusionCriteria.criteria).toHaveLength(1)
+    // Verify UI conversion worked - new structure with inclusionCriteria
+    expect(uiFilters).toBeInstanceOf(QueryFilterCardModel)
+    expect(uiFilters.type).toBe('inclusion')
+    expect(uiFilters.title).toBe('Cohort Definition')
+    expect((uiFilters as any).inclusionCriteria).toBeDefined()
+    expect((uiFilters as any).inclusionCriteria.criteria).toHaveLength(1)
   })
 
   test('should handle round-trip with exclusion rules', () => {
@@ -183,12 +179,10 @@ describe('Atlas Round-Trip Conversion', () => {
     // Convert to UI
     const uiFilters = convertAtlasToFilters(atlasWithExclusion)
 
-    // The function currently returns an empty array
-    expect(uiFilters).toEqual([])
-
-    // TODO: When convertAtlasToFilters is fixed, uncomment and update this test:
-    // expect(uiFilters).toHaveLength(2)
-    // expect(uiFilters[0].type).toBe('inclusion')
-    // expect(uiFilters[1].type).toBe('exclusion')
+    // Should return a single filter with inclusion criteria (exclusion rules are not handled yet)
+    expect(uiFilters).toBeInstanceOf(QueryFilterCardModel)
+    expect(uiFilters.type).toBe('inclusion')
+    expect((uiFilters as any).inclusionCriteria).toBeDefined()
+    expect((uiFilters as any).inclusionCriteria.criteria).toHaveLength(1)
   })
 })

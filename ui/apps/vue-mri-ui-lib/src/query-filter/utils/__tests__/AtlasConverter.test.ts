@@ -11,13 +11,15 @@ describe('AtlasConverter', () => {
 
   describe('convertAtlasToFilters', () => {
     test('should handle null input', () => {
-      const result = convertAtlasToFilters(null, mockConceptSets)
-      expect(result).toEqual([])
+      expect(() => convertAtlasToFilters(null, mockConceptSets)).toThrow('Invalid Atlas JSON input')
     })
 
     test('should handle empty Atlas definition', () => {
       const result = convertAtlasToFilters({}, mockConceptSets)
-      expect(result).toEqual([])
+      expect(result).toBeInstanceOf(QueryFilterCardModel)
+      expect(result.title).toBe('Cohort Definition')
+      expect(result.type).toBe('inclusion')
+      expect((result as any).inclusionCriteria).toBeDefined()
     })
 
     test('should convert simple Atlas definition', () => {
@@ -51,9 +53,15 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      // The function currently returns an empty array, so we need to test the internal processing
-      // The actual conversion logic exists but the final filter is not being returned
-      expect(result).toEqual([])
+      expect(result).toBeInstanceOf(QueryFilterCardModel)
+      expect(result.title).toBe('Test Cohort')
+      expect(result.type).toBe('inclusion')
+      expect((result as any).inclusionCriteria).toBeDefined()
+      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
+      expect((result as any).inclusionCriteria.criteria[0].events).toHaveLength(1)
+      
+      const firstEvent = (result as any).inclusionCriteria.criteria[0].events[0]
+      expect(firstEvent.eventType).toBe('conditionOccurrence')
     })
 
     test('should handle inclusion and exclusion rules', () => {
@@ -80,8 +88,11 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      // The function currently returns an empty array
-      expect(result).toEqual([])
+      expect(result).toBeInstanceOf(QueryFilterCardModel)
+      expect(result.title).toBe('Test Cohort')
+      expect(result.type).toBe('inclusion')
+      expect((result as any).inclusionCriteria).toBeDefined()
+      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
     })
 
     test('should map concept sets correctly', () => {
@@ -124,8 +135,15 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      // The function currently returns an empty array
-      expect(result).toEqual([])
+      expect(result).toBeInstanceOf(QueryFilterCardModel)
+      expect((result as any).inclusionCriteria).toBeDefined()
+      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
+      expect((result as any).inclusionCriteria.criteria[0].events).toHaveLength(2)
+
+      // Check that concept sets are properly mapped in the nested structure
+      const events = (result as any).inclusionCriteria.criteria[0].events
+      expect(events[0].eventType).toBe('conditionOccurrence')
+      expect(events[1].eventType).toBe('drugExposure')
     })
   })
 
@@ -177,10 +195,9 @@ describe('AtlasConverter', () => {
       const result = convertAtlasToFilters(sample6Expected, mockConceptSets)
 
       expect(result).toBeDefined()
-      expect(Array.isArray(result)).toBe(true)
-
-      // The function currently returns an empty array
-      expect(result).toEqual([])
+      expect(result).toBeInstanceOf(QueryFilterCardModel)
+      expect((result as any).inclusionCriteria).toBeDefined()
+      expect((result as any).inclusionCriteria.criteria).toHaveLength(2)
     })
   })
 })
