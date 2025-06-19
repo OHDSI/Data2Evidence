@@ -391,7 +391,11 @@ export class CriteriaConfigLoader {
    * Get display title for attribute with "Add" prefix
    */
   getAttributeDisplayTitle(_attributeId: string, baseName: string): string {
-    // Always add "Add" prefix for attribute options
+    // Don't add "Add" prefix for "Nested Criteria"
+    if (baseName === 'Nested Criteria') {
+      return baseName
+    }
+    // Always add "Add" prefix for other attribute options
     return baseName.startsWith('Add') ? baseName : `Add ${baseName}`
   }
 
