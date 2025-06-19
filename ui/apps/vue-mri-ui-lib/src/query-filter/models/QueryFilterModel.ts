@@ -579,21 +579,8 @@ export class QueryFilterCriteriaManager {
             id: group.id,
             title: group.title,
             description: group.description,
-            groupType: group.criteriaType,
-            groups: [
-              new QueryFilterCardModel({
-                id: this.generateId(),
-                title: group.title || '',
-                type: 'inclusion',
-                events: this.transformEvents(group.events || []),
-                isExpanded: true,
-                cardinality: {
-                  type: 'AT_LEAST',
-                  count: 1,
-                  using: 'ALL',
-                },
-              }),
-            ],
+            criteriaType: group.criteriaType,
+            events: this.transformEvents(group.events || []),
           })) || [],
       }
     } else {
@@ -625,8 +612,8 @@ export class QueryFilterCriteriaManager {
       id: group?.id || `criteria_${Math.random().toString(36).substring(2)}`,
       title: group?.title || 'Group 1',
       description: group?.description || 'Description 1',
-      groupType: group?.groupType || 'ALL',
-      groups: group?.groups || [],
+      criteriaType: group?.criteriaType || 'ALL',
+      events: group?.events || [],
     }
     this.criteria.criteria.push(newGroup)
     return newGroup
@@ -659,7 +646,7 @@ export class QueryFilterCriteriaManager {
     const group = this.getGroup(groupId)
     if (group) {
       const newFilter = new QueryFilterCardModel(filter)
-      group.groups.push(newFilter)
+      group.events.push(newFilter as any)
       return newFilter
     }
     return null
@@ -668,9 +655,9 @@ export class QueryFilterCriteriaManager {
   removeFilterFromGroup(groupId: string, filterId: string): boolean {
     const group = this.getGroup(groupId)
     if (group) {
-      const index = group.groups.findIndex(f => f.id === filterId)
+      const index = group.events.findIndex(f => f.id === filterId)
       if (index > -1) {
-        group.groups.splice(index, 1)
+        group.events.splice(index, 1)
         return true
       }
     }
@@ -864,10 +851,9 @@ export class QueryFilterCriteriaManager {
         name: group.title, // Maps group.title → Atlas InclusionRule.name
         description: group.description, // Maps group.description → Atlas InclusionRule.description
         expression: {
-          Type: this.mapGroupTypeToAtlas(group.groupType), // Maps groupType → Atlas expression.Type
-          CriteriaList: group.groups.flatMap(filter =>
-            filter.events
-              .filter(event => !event.isAttributeBased && event.criteriaType !== 'demographic') // Only non-demographic main events
+          Type: this.mapGroupTypeToAtlas(group.criteriaType), // Maps criteriaType → Atlas expression.Type
+          CriteriaList: group.events.flatMap(event =>
+            [event].filter(e => !e.isAttributeBased && e.criteriaType !== 'demographic') // Only non-demographic main events
               .map(event => {
                 const criteria: any = {
                   Criteria: {
@@ -883,13 +869,13 @@ export class QueryFilterCriteriaManager {
                     UseEventEnd: false,
                   },
                   Occurrence: {
-                    Type: this.mapCardinalityTypeToAtlas(event.cardinality?.type || filter.cardinality.type), // Maps cardinality.type → Atlas Occurrence.Type
-                    Count: event.cardinality?.count || filter.cardinality.count, // Maps cardinality.count → Atlas Occurrence.Count
+                    Type: this.mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
+                    Count: event.cardinality?.count || 1, // Maps cardinality.count → Atlas Occurrence.Count
                   },
                 }
 
                 // Check for age attributes that belong directly to this event
-                const ageAttributes = filter.events.filter(
+                const ageAttributes = group.events.filter(
                   e =>
                     e.isAttributeBased &&
                     e.parentEventId === event.id &&
@@ -904,14 +890,14 @@ export class QueryFilterCriteriaManager {
                 }
 
                 // Check for nested events (correlated criteria)
-                const nestedEvents = filter.events.filter(
+                const nestedEvents = group.events.filter(
                   e => e.isAttributeBased && e.parentEventId === event.id && e.isNested
                 )
 
                 if (nestedEvents.length > 0) {
                   const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(
                     nestedEvents,
-                    filter.events,
+                    group.events,
                     event.id
                   )
 
@@ -928,11 +914,11 @@ export class QueryFilterCriteriaManager {
                 return criteria
               })
           ),
-          DemographicCriteriaList: group.groups.flatMap(filter => {
+          DemographicCriteriaList: group.events
+            .filter(event => !event.isAttributeBased && event.criteriaType === 'demographic')
+            .flatMap(event => {
             // Process demographic events and their age attributes
-            const demographicEvents = filter.events.filter(
-              event => !event.isAttributeBased && event.criteriaType === 'demographic'
-            )
+            const demographicEvents = [event]
 
             const demographicCriteria: any[] = []
 
@@ -983,7 +969,7 @@ export class QueryFilterCriteriaManager {
               }
             })
 
-            return demographicCriteria
+            return []
           }),
           Groups: [],
         },
@@ -999,12 +985,10 @@ export class QueryFilterCriteriaManager {
 
     // Add PrimaryCriteria if any events have conceptSetDetails or age attributes
     const hasEventsOrAge = this.criteria.criteria.some(group =>
-      group.groups.some(filter =>
-        filter.events.some(
-          e =>
-            (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
-            (e.isAttributeBased && e.attributeConfig?.id === 'age')
-        )
+      group.events.some(
+        e =>
+          (e.conceptSetDetails && e.conceptSetDetails.length > 0) ||
+          (e.isAttributeBased && e.attributeConfig?.id === 'age')
       )
     )
     if (hasEventsOrAge) {
@@ -1032,22 +1016,20 @@ export class QueryFilterCriteriaManager {
     const usedConceptSetIds = new Set<string>()
 
     this.criteria.criteria.forEach(group => {
-      group.groups.forEach(filter => {
-        filter.events.forEach(event => {
-          if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
-            const conceptSetId = event.conceptSetId
-            if (!usedConceptSetIds.has(conceptSetId)) {
-              usedConceptSetIds.add(conceptSetId)
-              conceptSets.push({
-                id: parseInt(conceptSetId),
-                name: event.conceptSet || `Concept Set ${conceptSetId}`,
-                expression: {
-                  items: event.conceptSetDetails,
-                },
-              })
-            }
+      group.events.forEach(event => {
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
+          const conceptSetId = event.conceptSetId
+          if (!usedConceptSetIds.has(conceptSetId)) {
+            usedConceptSetIds.add(conceptSetId)
+            conceptSets.push({
+              id: parseInt(conceptSetId),
+              name: event.conceptSet || `Concept Set ${conceptSetId}`,
+              expression: {
+                items: event.conceptSetDetails,
+              },
+            })
           }
-        })
+        }
       })
     })
 
@@ -1058,15 +1040,13 @@ export class QueryFilterCriteriaManager {
       rule.expression.CriteriaList.forEach((criteriaItem: any) => {
         // Find the corresponding event to get the conceptSetId
         this.criteria.criteria.forEach(group => {
-          group.groups.forEach(filter => {
-            filter.events.forEach(event => {
-              if (!event.isAttributeBased && event.conceptSetId) {
-                const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
-                if (criteriaItem.Criteria[criteriaType]) {
-                  criteriaItem.Criteria[criteriaType].CodesetId = parseInt(event.conceptSetId)
-                }
+          group.events.forEach(event => {
+            if (!event.isAttributeBased && event.conceptSetId) {
+              const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
+              if (criteriaItem.Criteria[criteriaType]) {
+                criteriaItem.Criteria[criteriaType].CodesetId = parseInt(event.conceptSetId)
               }
-            })
+            }
           })
         })
       })
@@ -1169,8 +1149,8 @@ export class QueryFilterCriteriaManager {
         id: group.id,
         title: group.title,
         description: group.description,
-        groupType: group.groupType,
-        groups: group.groups.map(filter => filter.toJSON()),
+        criteriaType: group.criteriaType,
+        events: group.events,
       })),
     }
   }
@@ -1190,8 +1170,8 @@ export class QueryFilterCriteriaManager {
           id: group.id,
           title: group.title,
           description: group.description,
-          groupType: group.groupType,
-          groups: group.groups?.map((filter: any) => new QueryFilterCardModel(filter)) || [],
+          criteriaType: group.criteriaType,
+          events: group.events || [],
         })) || [],
     }
     return new QueryFilterCriteriaManager(criteria)
@@ -1345,16 +1325,8 @@ export class QueryFilterCriteriaManager {
       id: group.id || `criteria_${Math.random().toString(36).substring(2)}`,
       title: group.title || '',
       description: group.description || '',
-      groupType: group.groupType || 'ALL',
-      groups: group.groups || [
-        new QueryFilterCardModel({
-          id: `filter_${Math.random().toString(36).substring(2)}`,
-          title: group.title || '',
-          type: 'inclusion',
-          events: [],
-          isExpanded: true,
-        }),
-      ],
+      criteriaType: group.criteriaType || 'ALL',
+      events: group.events || [],
     }
 
     this.criteria.criteria.push(newGroup)
@@ -1393,16 +1365,12 @@ export class QueryFilterCriteriaManager {
       criteria: jsonData.criteria.map((group: any) => ({
         ...group,
         id: `criteria_${Math.random().toString(36).substring(2)}`,
-        groups: group.groups.map((filter: any) => ({
-          ...filter,
-          id: `filter_${Math.random().toString(36).substring(2)}`,
-          events: filter.events.map((event: any) => ({
-            ...event,
+        events: group.events.map((event: any) => ({
+          ...event,
+          id: `event_${Math.random().toString(36).substring(2)}`,
+          nestedEvents: event.nestedEvents?.map((nestedEvent: any) => ({
+            ...nestedEvent,
             id: `event_${Math.random().toString(36).substring(2)}`,
-            nestedEvents: event.nestedEvents?.map((nestedEvent: any) => ({
-              ...nestedEvent,
-              id: `event_${Math.random().toString(36).substring(2)}`,
-            })),
           })),
         })),
       })),

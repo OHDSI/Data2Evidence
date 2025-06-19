@@ -49,13 +49,13 @@ describe('QueryFilterCriteria Model Tests', () => {
     criteriaManager.addCriteriaGroup({
       title: 'New Criteria Group',
       description: 'New description',
-      groupType: 'ANY',
-      groups: [],
+      criteriaType: 'ANY',
+      events: [],
     })
 
     expect(criteria.criteria.length).toBe(initialCount + 1)
     expect(criteria.criteria[1].title).toBe('New Criteria Group')
-    expect(criteria.criteria[1].groupType).toBe('ANY')
+    expect(criteria.criteria[1].criteriaType).toBe('ANY')
   })
 
   it('updates criteria groups', () => {
@@ -66,7 +66,7 @@ describe('QueryFilterCriteria Model Tests', () => {
       ...originalGroup,
       title: 'Updated Title',
       description: 'Updated Description',
-      groupType: 'ANY' as const,
+      criteriaType: 'ANY' as const,
     }
 
     criteriaManager.updateCriteriaGroup(0, updatedGroup)
@@ -74,7 +74,7 @@ describe('QueryFilterCriteria Model Tests', () => {
     const updatedCriteria = criteriaManager.getCriteria()
     expect(updatedCriteria.criteria[0].title).toBe('Updated Title')
     expect(updatedCriteria.criteria[0].description).toBe('Updated Description')
-    expect(updatedCriteria.criteria[0].groupType).toBe('ANY')
+    expect(updatedCriteria.criteria[0].criteriaType).toBe('ANY')
   })
 
   it('removes criteria groups', () => {
@@ -85,8 +85,8 @@ describe('QueryFilterCriteria Model Tests', () => {
     criteriaManager.addCriteriaGroup({
       title: 'Temporary Group',
       description: 'To be removed',
-      groupType: 'ALL',
-      groups: [],
+      criteriaType: 'ALL',
+      events: [],
     })
 
     expect(criteria.criteria.length).toBe(initialCount + 1)
@@ -138,7 +138,7 @@ describe('QueryFilterCriteria Model Tests', () => {
       expect(group.id).toBeDefined()
       expect(group.title).toBeDefined()
       expect(group.description).toBeDefined()
-      expect(group.groupType).toBeDefined()
+      expect(group.criteriaType).toBeDefined()
       expect(Array.isArray(group.groups)).toBe(true)
     })
   })
@@ -174,15 +174,15 @@ describe('QueryFilterCriteria Model Tests', () => {
     criteriaManager.addCriteriaGroup({
       title: 'Second Group',
       description: 'Second description',
-      groupType: 'ANY',
-      groups: [],
+      criteriaType: 'ANY',
+      events: [],
     })
 
     criteriaManager.addCriteriaGroup({
       title: 'Third Group',
       description: 'Third description',
-      groupType: 'AT_LEAST',
-      groups: [],
+      criteriaType: 'AT_LEAST',
+      events: [],
     })
 
     // Remove middle group
@@ -193,7 +193,7 @@ describe('QueryFilterCriteria Model Tests', () => {
     expect(criteria.criteria).toHaveLength(2)
     expect(criteria.criteria[0].title).toBe('Test Criteria 1')
     expect(criteria.criteria[1].title).toBe('Third Group')
-    expect(criteria.criteria[1].groupType).toBe('AT_LEAST')
+    expect(criteria.criteria[1].criteriaType).toBe('AT_LEAST')
   })
 
   it('converts to Atlas format correctly', () => {

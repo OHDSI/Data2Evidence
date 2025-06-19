@@ -705,7 +705,7 @@ describe('QueryFilterCriteriaManager', () => {
 
       expect(filter).not.toBeNull()
       expect(filter?.title).toBe('Test Filter')
-      expect(group.groups).toHaveLength(1) // Added filter
+      expect(group.events).toHaveLength(1) // Added filter
     })
 
     it('should return null when adding filter to non-existent group', () => {
@@ -721,7 +721,7 @@ describe('QueryFilterCriteriaManager', () => {
       const removed = manager.removeFilterFromGroup(group.id, filter.id)
 
       expect(removed).toBe(true)
-      expect(group.groups).toHaveLength(0) // No filters remain
+      expect(group.events).toHaveLength(0) // No filters remain
     })
   })
 

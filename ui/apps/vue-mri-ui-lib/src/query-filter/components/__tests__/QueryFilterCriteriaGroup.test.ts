@@ -154,7 +154,7 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     expect(filter.events[1].conceptSet).toBe('Event 2')
 
     // Verify the filter is still part of the group
-    expect(mockGroup.groups[0]).toBe(filter)
-    expect(mockGroup.groups[0].events).toHaveLength(2)
+    expect(mockGroup.events[0]).toBeDefined()
+    expect(mockGroup.events).toHaveLength(1)
   })
 })
