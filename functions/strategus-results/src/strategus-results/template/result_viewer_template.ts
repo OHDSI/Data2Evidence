@@ -43,8 +43,8 @@ shinyConfig <- initializeModuleConfig() |>
     createDefaultEstimationConfig()
   ) 
 
-# Set options for base URL, could be the studyId
-options(shiny.base_url = "/strategus-viewer/")
+# Set options for base URL
+options(shiny.base_url = "/strategus-viewer/$STUDY_ID/")
 
 # now create the shiny app based on the config file and view the results
 # based on the connection 
@@ -54,10 +54,10 @@ app <- OhdsiShinyAppBuilder::createShinyApp(
   resultDatabaseSettings = createDefaultResultDatabaseSettings(schema = resultsDatabaseSchema)
 )
 
-# Run the app in the background so the kernel execution can complete
-plan(multisession)
-future({
-  shiny::runApp(app, host = "0.0.0.0", port = 3838)
-})
-
-cat("Shiny app started on http://0.0.0.0:3838")`;
+shiny::runApp(
+  app, 
+  host = "0.0.0.0", 
+  port = 3838,
+  launch.browser = FALSE
+)
+`;

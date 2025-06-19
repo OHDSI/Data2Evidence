@@ -43,7 +43,8 @@ export const createStrategusResultsViewer = async (
     )
       .replace("$DATABASE_SERVER", `${host}:${port}/results_${studyId}`)
       .replace("$DATABASE_USER", readUser)
-      .replace("$DATABASE_PASSWORD", readPassword);
+      .replace("$DATABASE_PASSWORD", readPassword)
+      .replace("$STUDY_ID", studyId);
 
     const future = await kernel.requestExecute({
       code: r_code,
@@ -66,13 +67,13 @@ export const createStrategusResultsViewer = async (
       };
 
       future.onIOPub = (msg) => {
+        console.debug(msg);
         if (
           msg.content &&
           msg.content.text &&
           typeof msg.content.text === "string" &&
-          msg.content.text.includes("Shiny app started on http://0.0.0.0:3838")
+          msg.content.text.includes("Listening on http://0.0.0.0:3838")
         ) {
-          console.log("IOPub message:", msg);
           executionComplete = true;
           resolve();
         }
