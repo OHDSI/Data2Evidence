@@ -362,7 +362,6 @@ export interface AtlasCohortDefinition {
   CensorWindow: CensorWindow
   name?: string
   description?: string
-  ExclusionRules?: InclusionRule[] // Same structure as inclusion rules
 }
 
 // Atlas cohort definition API response wrapper

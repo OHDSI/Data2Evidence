@@ -255,36 +255,16 @@ export const convertAtlasToFilters = (
     })
   }
 
-  // Return the QueryFilterCardModel structure that matches sample6Input format
-  if (inclusionCriteria.criteria.length > 0) {
-    const mainFilter = new QueryFilterCardModel({
-      title: cohortName || 'Cohort Definition',
-      type: 'inclusion',
-      events: [],
-    })
+  const mainFilter = new QueryFilterCardModel({
+    title: cohortName || 'Cohort Definition',
+    type: 'inclusion',
+    events: [],
+  })
 
-    // Add the inclusionCriteria structure to the filter
-    ;(mainFilter as any).inclusionCriteria = inclusionCriteria
-    ;(mainFilter as any).entryEvents = {}
+  // Add the inclusionCriteria structure to the filter
+  ;(mainFilter as any).inclusionCriteria = inclusionCriteria
+  ;(mainFilter as any).entryEvents = {}
 
-    filters.push(mainFilter)
-  }
-
-  // Handle ExclusionRules if needed
-  if (cohortDefinition.ExclusionRules && Array.isArray(cohortDefinition.ExclusionRules)) {
-    cohortDefinition.ExclusionRules.forEach((rule: any) => {
-      if (rule.expression?.CriteriaList?.length > 0) {
-        const events = convertCriteriaListToEvents(rule.expression.CriteriaList)
-
-        const exclusionFilter = new QueryFilterCardModel({
-          title: rule.name || 'Exclusion Rule',
-          type: 'exclusion',
-          events,
-        })
-        filters.push(exclusionFilter)
-      }
-    })
-  }
   return filters
 }
 
@@ -321,7 +301,6 @@ export const getConceptSetMappings = (
   }
 
   extractConceptSetIds(cohortDefinition.InclusionRules)
-  extractConceptSetIds(cohortDefinition.ExclusionRules)
 
   conceptSetIds.forEach(codesetId => {
     const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === codesetId)

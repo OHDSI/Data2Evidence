@@ -280,29 +280,6 @@ describe('AtlasCohortAdapter', () => {
       const filters = AtlasCohortAdapter.toQueryFilterModel(emptySimplified)
       expect(filters).toHaveLength(0)
     })
-
-    it('should handle exclusion rules if present', () => {
-      const simplifiedWithExclusion: SimplifiedCohortDefinition = {
-        ...simplified,
-        exclusionRules: [
-          {
-            name: 'Exclude pregnancy',
-            criteriaList: [
-              {
-                type: 'ConditionOccurrence',
-                conceptSetId: 4,
-                isTypeExcluded: false,
-              },
-            ],
-          },
-        ],
-      }
-
-      const filters = AtlasCohortAdapter.toQueryFilterModel(simplifiedWithExclusion)
-      expect(filters).toHaveLength(3) // Primary + inclusion + exclusion
-      expect(filters[2].type).toBe('exclusion')
-      expect(filters[2].title).toBe('Exclude pregnancy')
-    })
   })
 
   describe('atlasToQueryFilters', () => {
@@ -455,3 +432,4 @@ describe('AtlasCohortAdapter', () => {
     })
   })
 })
+

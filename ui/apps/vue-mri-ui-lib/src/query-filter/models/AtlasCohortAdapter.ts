@@ -45,10 +45,6 @@ export interface SimplifiedCohortDefinition {
     count?: number
     criteriaList: SimplifiedCriteria[]
   }>
-  exclusionRules?: Array<{
-    name: string
-    criteriaList: SimplifiedCriteria[]
-  }>
 }
 
 export class AtlasCohortAdapter {
@@ -122,17 +118,6 @@ export class AtlasCohortAdapter {
       })
       filters.push(inclusionFilter)
     })
-
-    if (simplified.exclusionRules) {
-      simplified.exclusionRules.forEach(rule => {
-        const exclusionFilter = new QueryFilterCardModel({
-          title: rule.name,
-          type: 'exclusion',
-          events: rule.criteriaList.map(criteria => this.criteriaToEvent(criteria, simplified.conceptSets)),
-        })
-        filters.push(exclusionFilter)
-      })
-    }
 
     return filters
   }
