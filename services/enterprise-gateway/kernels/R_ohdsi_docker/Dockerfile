@@ -78,6 +78,7 @@ COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app
 WORKDIR /app/rD2E
 # R CMD build . && R CMD check $(ls -t . | head -n1)
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
+RUN chown jovyan /app && chmod 711 /app
 
 WORKDIR /app
 RUN rm .Renviron
