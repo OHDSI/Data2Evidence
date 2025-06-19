@@ -28,18 +28,15 @@ import {
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 
-interface Props {
-  debug?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  debug: false,
-})
+// No props needed currently - removed Props interface to fix TypeScript error
 
 // Use the new hierarchical criteria manager instead of the old filter manager
 const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
+
+// Debug mode toggle
+const showDebug = ref(false)
 
 // Maintain backward compatibility with existing tag input model
 const tagInputModel = computed<TagInputModel>(() => ({
@@ -465,8 +462,16 @@ defineExpose({
       </div>
     </div>
 
+    <!-- Debug Toggle -->
+    <div class="debug-toggle-section">
+      <label class="debug-toggle">
+        <input type="checkbox" v-model="showDebug" class="debug-checkbox" />
+        <span class="debug-label">Show Debug Information</span>
+      </label>
+    </div>
+
     <!-- Debug Tag Input Section -->
-    <div v-if="props.debug" class="query-filter-debug-section">
+    <div v-if="showDebug" class="query-filter-debug-section">
       <div class="debug-tag-input">
         <div style="margin-bottom: 16px">
           <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px">
@@ -485,7 +490,7 @@ defineExpose({
         </div>
 
         <div
-          v-if="props.debug"
+          v-if="showDebug"
           style="
             margin-top: 8px;
             padding: 8px;
@@ -502,7 +507,7 @@ defineExpose({
     </div>
 
     <!-- Concept Set Details Debug Section -->
-    <div v-if="props.debug && selectedConceptSetValues.length > 0" class="concept-set-debug">
+    <div v-if="showDebug && selectedConceptSetValues.length > 0" class="concept-set-debug">
       <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e0e0e0">
         <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333">Selected Concept Set Values:</h4>
         <div style="display: flex; flex-wrap: wrap; gap: 8px">
@@ -525,14 +530,14 @@ defineExpose({
     </div>
 
     <!-- Action Buttons -->
-    <div v-if="props.debug" class="query-filter-actions">
+    <div v-if="showDebug" class="query-filter-actions">
       <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
       <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
     <!-- Debug Output -->
-    <div v-if="props.debug" class="query-filter-debug">
+    <div v-if="showDebug" class="query-filter-debug">
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">
@@ -593,6 +598,32 @@ defineExpose({
     &__section {
       margin-bottom: 0; // Remove bottom margin since container handles spacing
     }
+  }
+
+  .debug-toggle-section {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+  }
+
+  .debug-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .debug-checkbox {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+
+  .debug-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
   }
 
   .query-filter-legacy-section {

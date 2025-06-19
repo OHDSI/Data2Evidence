@@ -183,15 +183,6 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
         @attribute-removed="handleAttributeRemoved(event.id, $event)"
       />
     </div>
-
-    <!-- Event Relationships (if more than one event) -->
-    <div v-if="eventsData.length > 1" class="event-relationships">
-      <div class="relationship-indicator">
-        <span class="relationship-text">
-          Events are combined using <strong>{{ parentGroup.criteriaType }}</strong> logic
-        </span>
-      </div>
-    </div>
   </div>
 </template>
 
