@@ -78,10 +78,6 @@ class Result:
             "type": str(type(result_value))
         }
 
-        if is_scalar(result_value):
-            result_schema["value"] = result_value
-            return result_schema
-
         if isinstance(result_value, pd.DataFrame):
             result_schema["schema"] = result_value.dtypes.apply(lambda x: x.name).to_dict()
             return result_schema
