@@ -7,39 +7,39 @@ export default {
       PostDays: 0,
     },
     PrimaryCriteriaLimit: {
-      Type: 'All',
+      Type: 'All' as const,
     },
   },
   QualifiedLimit: {
-    Type: 'All',
+    Type: 'All' as const,
   },
   ExpressionLimit: {
-    Type: 'All',
+    Type: 'All' as const,
   },
   InclusionRules: [
     {
       name: 'Criteria 1',
       description: 'Description 1',
       expression: {
-        Type: 'ALL',
+        Type: 'ALL' as const,
         CriteriaList: [
           {
             Criteria: {
               ConditionOccurrence: {
                 CorrelatedCriteria: {
-                  Type: 'ALL',
+                  Type: 'ALL' as const,
                   CriteriaList: [
                     {
                       Criteria: {
                         ConditionOccurrence: {
                           CorrelatedCriteria: {
-                            Type: 'ALL',
+                            Type: 'ALL' as const,
                             CriteriaList: [
                               {
                                 Criteria: {
                                   ConditionOccurrence: {
                                     CorrelatedCriteria: {
-                                      Type: 'ALL',
+                                      Type: 'ALL' as const,
                                       CriteriaList: [
                                         {
                                           Criteria: {
@@ -125,7 +125,7 @@ export default {
             Criteria: {
               ConditionOccurrence: {
                 CorrelatedCriteria: {
-                  Type: 'ALL',
+                  Type: 'ALL' as const,
                   CriteriaList: [
                     {
                       Criteria: {
@@ -179,7 +179,7 @@ export default {
       name: 'Criteria 2',
       description: 'Description 2',
       expression: {
-        Type: 'ALL',
+        Type: 'ALL' as const,
         CriteriaList: [],
         DemographicCriteriaList: [
           {
@@ -196,7 +196,7 @@ export default {
   EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
-    CollapseType: 'ERA',
+    CollapseType: 'ERA' as const,
     EraPad: 0,
   },
   CensorWindow: {},

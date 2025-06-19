@@ -557,10 +557,6 @@ export class QueryFilterCardModel {
   }
 }
 
-/**
- * Manager for the new hierarchical criteria structure
- * Handles Criteria → Groups → Filters → Events
- */
 export class QueryFilterCriteriaManager {
   private criteria: QueryFilterCriteria
   private entryEvents: any
@@ -1129,16 +1125,14 @@ export class QueryFilterCriteriaManager {
 
   // Serialization
   toJSON(): any {
+    console.log('toJSON called. Current state:', {
+      inclusionCriteria: this.inclusionCriteria,
+      entryEvents: this.entryEvents,
+      criteria: this.criteria,
+    })
     return {
-      id: this.criteria.id,
-      criteriaType: this.criteria.criteriaType,
-      criteria: this.criteria.criteria.map(group => ({
-        id: group.id,
-        title: group.title,
-        description: group.description,
-        criteriaType: group.criteriaType,
-        events: group.events,
-      })),
+      inclusionCriteria: this.inclusionCriteria,
+      entryEvents: this.entryEvents,
     }
   }
 
@@ -1339,8 +1333,32 @@ export class QueryFilterCriteriaManager {
   }
 
   // Set criteria (for Atlas loading)
-  setCriteria(criteria: QueryFilterCriteria) {
+  setData({
+    criteria,
+    inclusionCriteria,
+    entryEvents,
+  }: {
+    criteria: QueryFilterCriteria
+    inclusionCriteria: any
+    entryEvents: any
+  }) {
+    console.log('setData called with:', { criteria, inclusionCriteria, entryEvents })
     this.criteria = criteria
+    this.inclusionCriteria = inclusionCriteria
+    this.entryEvents = entryEvents
+    console.log('setData completed. Current state:', {
+      criteria: this.criteria,
+      inclusionCriteria: this.inclusionCriteria,
+      entryEvents: this.entryEvents,
+    })
+  }
+
+  getData() {
+    return {
+      criteria: this.criteria,
+      inclusionCriteria: this.inclusionCriteria,
+      entryEvents: this.entryEvents,
+    }
   }
 
   // Clone

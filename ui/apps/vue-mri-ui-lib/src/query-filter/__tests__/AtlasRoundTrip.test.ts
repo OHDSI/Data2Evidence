@@ -7,13 +7,13 @@
  * conversion functions work correctly in both directions.
  */
 
-import { QueryFilterCardModel } from '../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 
 describe('Atlas Round-Trip Conversion', () => {
   test('should maintain exact structure for simple Atlas definition', () => {
     // 1. Create the simplest possible Atlas JSON
-    const simpleAtlas = {
+    const simpleAtlas: any = {
       cdmVersionRange: '>=5.0.0',
       ConceptSets: [
         {
@@ -47,13 +47,13 @@ describe('Atlas Round-Trip Conversion', () => {
       PrimaryCriteria: {
         CriteriaList: [],
         ObservationWindow: { PriorDays: 0, PostDays: 0 },
-        PrimaryCriteriaLimit: { Type: 'All' },
+        PrimaryCriteriaLimit: { Type: 'All' as const },
       },
       InclusionRules: [
         {
           name: 'Has Diabetes',
           expression: {
-            Type: 'ALL',
+            Type: 'ALL' as const,
             CriteriaList: [
               {
                 Criteria: {
@@ -68,10 +68,10 @@ describe('Atlas Round-Trip Conversion', () => {
         },
       ],
       // Required Atlas boilerplate
-      QualifiedLimit: { Type: 'All' },
-      ExpressionLimit: { Type: 'All' },
+      QualifiedLimit: { Type: 'All' as const },
+      ExpressionLimit: { Type: 'All' as const },
       CensoringCriteria: [],
-      CollapseSettings: { CollapseType: 'ERA', EraPad: 0 },
+      CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
       CensorWindow: {},
     }
 
@@ -79,16 +79,15 @@ describe('Atlas Round-Trip Conversion', () => {
     const uiFilters = convertAtlasToFilters(simpleAtlas)
 
     // Verify UI conversion worked - new structure with inclusionCriteria
-    expect(uiFilters).toBeInstanceOf(QueryFilterCardModel)
-    expect(uiFilters.type).toBe('inclusion')
-    expect(uiFilters.title).toBe('Cohort Definition')
-    expect((uiFilters as any).inclusionCriteria).toBeDefined()
-    expect((uiFilters as any).inclusionCriteria.criteria).toHaveLength(1)
+    expect(uiFilters).toBeInstanceOf(QueryFilterCriteriaManager)
+    const criteria = uiFilters.getCriteria()
+    expect(criteria).toBeDefined()
+    expect(criteria.criteria).toHaveLength(1)
   })
 
   test('should handle round-trip with exclusion rules', () => {
     // Atlas with both inclusion and exclusion rules
-    const atlasWithExclusion = {
+    const atlasWithExclusion: any = {
       cdmVersionRange: '>=5.0.0',
       ConceptSets: [
         {
@@ -149,13 +148,13 @@ describe('Atlas Round-Trip Conversion', () => {
       PrimaryCriteria: {
         CriteriaList: [],
         ObservationWindow: { PriorDays: 0, PostDays: 0 },
-        PrimaryCriteriaLimit: { Type: 'All' },
+        PrimaryCriteriaLimit: { Type: 'All' as const },
       },
       InclusionRules: [
         {
           name: 'Has Diabetes',
           expression: {
-            Type: 'ALL',
+            Type: 'ALL' as const,
             CriteriaList: [
               {
                 Criteria: {
@@ -169,10 +168,10 @@ describe('Atlas Round-Trip Conversion', () => {
           },
         },
       ],
-      QualifiedLimit: { Type: 'All' },
-      ExpressionLimit: { Type: 'All' },
+      QualifiedLimit: { Type: 'All' as const },
+      ExpressionLimit: { Type: 'All' as const },
       CensoringCriteria: [],
-      CollapseSettings: { CollapseType: 'ERA', EraPad: 0 },
+      CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
       CensorWindow: {},
     }
 
@@ -180,9 +179,9 @@ describe('Atlas Round-Trip Conversion', () => {
     const uiFilters = convertAtlasToFilters(atlasWithExclusion)
 
     // Should return a single filter with inclusion criteria (exclusion rules are not handled yet)
-    expect(uiFilters).toBeInstanceOf(QueryFilterCardModel)
-    expect(uiFilters.type).toBe('inclusion')
-    expect((uiFilters as any).inclusionCriteria).toBeDefined()
-    expect((uiFilters as any).inclusionCriteria.criteria).toHaveLength(1)
+    expect(uiFilters).toBeInstanceOf(QueryFilterCriteriaManager)
+    const criteria = uiFilters.getCriteria()
+    expect(criteria).toBeDefined()
+    expect(criteria.criteria).toHaveLength(1)
   })
 })

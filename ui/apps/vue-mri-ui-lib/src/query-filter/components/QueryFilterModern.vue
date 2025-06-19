@@ -26,6 +26,7 @@ import {
   loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
+import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 
 interface Props {
   debug?: boolean
@@ -63,21 +64,19 @@ const conceptSetsFromCriteria = computed(() => {
 
   const criteria = criteriaManager.getCriteria()
   criteria.criteria.forEach(group => {
-    group.groups.forEach(filter => {
-      filter.events.forEach(event => {
-        if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
-          // Look up the concept set by ID in allConceptSets
-          const foundConceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
-          if (foundConceptSet) {
-            conceptSets.push(foundConceptSet)
-            seenIds.add(event.conceptSetId)
-          } else if (event.selectedConceptSet) {
-            // Fallback to selectedConceptSet if lookup fails
-            conceptSets.push(event.selectedConceptSet)
-            seenIds.add(event.conceptSetId)
-          }
+    group.events.forEach(event => {
+      if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
+        // Look up the concept set by ID in allConceptSets
+        const foundConceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+        if (foundConceptSet) {
+          conceptSets.push(foundConceptSet)
+          seenIds.add(event.conceptSetId)
+        } else if (event.selectedConceptSet) {
+          // Fallback to selectedConceptSet if lookup fails
+          conceptSets.push(event.selectedConceptSet)
+          seenIds.add(event.conceptSetId)
         }
-      })
+      }
     })
   })
 
@@ -227,14 +226,22 @@ const convertToAtlasFormat = () => {
   return criteriaManager.convertToAtlasFormat()
 }
 
-// Convert Atlas JSON to the new hierarchical format
-const convertAtlasToFiltersLocal = (atlasJson: any) => {
-  const filters = convertAtlasToFilters(atlasJson, allConceptSets.value)
-
-  return new QueryFilterCriteriaManager(filters)
+type AtlasBookmark = {
+  id: number
+  name: string
+  description: string
+  expressionType: string
+  expression: string
+  createdBy: string
+  createdDate: number
+  modifiedBy: string
+  modifiedDate: number
+  tags: any[]
+  hasWriteAccess: boolean
+  hasReadAccess: boolean
 }
 
-const loadAtlasCohortDefinition = async (atlasJson: any) => {
+const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
   try {
     console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
     console.log('Available concept sets:', allConceptSets.value.length)
@@ -243,11 +250,11 @@ const loadAtlasCohortDefinition = async (atlasJson: any) => {
     criteriaManager.clearAllCriteria()
 
     // Convert Atlas JSON to hierarchical criteria
-    const newCriteriaManager = convertAtlasToFiltersLocal(atlasJson)
+    const tempManager = convertAtlasToFilters(JSON.parse(atlasJson.expression), allConceptSets.value)
+    console.log('Converted Atlas JSON to tempManager:', tempManager)
 
     // Copy the criteria to our reactive manager
-    const criteriaData = newCriteriaManager.getCriteria()
-    criteriaManager.setCriteria(criteriaData)
+    criteriaManager.setData(tempManager.getData())
 
     console.log('Successfully loaded Atlas cohort definition into QueryFilterModern')
 

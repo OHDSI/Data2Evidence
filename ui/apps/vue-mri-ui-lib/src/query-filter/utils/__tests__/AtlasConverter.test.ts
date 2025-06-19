@@ -1,5 +1,5 @@
 import { convertAtlasToFilters, getConceptSetMappings, ConceptSetItem } from '../AtlasConverter'
-import { QueryFilterCardModel } from '../../models/QueryFilterModel'
+import { QueryFilterCardModel, QueryFilterCriteriaManager } from '../../models/QueryFilterModel'
 import sample6Expected from '../../__tests__/data/sample6-expected'
 import sample6Input from '../../__tests__/data/sample6-input'
 
@@ -15,27 +15,52 @@ describe('AtlasConverter', () => {
     })
 
     test('should handle empty Atlas definition', () => {
-      const result = convertAtlasToFilters({}, mockConceptSets)
-      expect(result).toBeInstanceOf(QueryFilterCardModel)
-      expect(result.title).toBe('Cohort Definition')
-      expect(result.type).toBe('inclusion')
-      expect((result as any).inclusionCriteria).toBeDefined()
+      const emptyAtlas: any = {
+        ConceptSets: [],
+        InclusionRules: [],
+        PrimaryCriteria: {
+          CriteriaList: [],
+          ObservationWindow: { PriorDays: 0, PostDays: 0 },
+          PrimaryCriteriaLimit: { Type: 'All' as const }
+        },
+        QualifiedLimit: { Type: 'All' as const },
+        ExpressionLimit: { Type: 'All' as const },
+        CensoringCriteria: [],
+        CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
+        CensorWindow: {},
+        cdmVersionRange: '>=5.0.0'
+      }
+      const result = convertAtlasToFilters(emptyAtlas, mockConceptSets)
+      expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
+      expect(result.getCriteria()).toBeDefined()
     })
 
     test('should convert simple Atlas definition', () => {
-      const atlasJson = {
+      const atlasJson: any = {
         name: 'Test Cohort',
+        cdmVersionRange: '>=5.0.0',
         ConceptSets: [
           {
             id: 1,
             name: 'Test Condition Set',
+            expression: { items: [] }
           },
         ],
+        PrimaryCriteria: {
+          CriteriaList: [],
+          ObservationWindow: { PriorDays: 0, PostDays: 0 },
+          PrimaryCriteriaLimit: { Type: 'All' as const }
+        },
+        QualifiedLimit: { Type: 'All' as const },
+        ExpressionLimit: { Type: 'All' as const },
+        CensoringCriteria: [],
+        CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
+        CensorWindow: {},
         InclusionRules: [
           {
             name: 'Test Rule',
             expression: {
-              Type: 'ALL',
+              Type: 'ALL' as const,
               CriteriaList: [
                 {
                   Criteria: {
@@ -53,24 +78,36 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      expect(result).toBeInstanceOf(QueryFilterCardModel)
-      expect(result.title).toBe('Test Cohort')
-      expect(result.type).toBe('inclusion')
-      expect((result as any).inclusionCriteria).toBeDefined()
-      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
-      expect((result as any).inclusionCriteria.criteria[0].events).toHaveLength(1)
+      expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
+      const criteria = result.getCriteria()
+      expect(criteria).toBeDefined()
+      expect(criteria.criteria).toHaveLength(1)
+      expect(criteria.criteria[0].events).toHaveLength(1)
       
-      const firstEvent = (result as any).inclusionCriteria.criteria[0].events[0]
+      const firstEvent = criteria.criteria[0].events[0]
       expect(firstEvent.eventType).toBe('conditionOccurrence')
     })
 
     test('should handle inclusion and exclusion rules', () => {
-      const atlasJson = {
+      const atlasJson: any = {
         name: 'Test Cohort',
+        cdmVersionRange: '>=5.0.0',
+        ConceptSets: [],
+        PrimaryCriteria: {
+          CriteriaList: [],
+          ObservationWindow: { PriorDays: 0, PostDays: 0 },
+          PrimaryCriteriaLimit: { Type: 'All' as const }
+        },
+        QualifiedLimit: { Type: 'All' as const },
+        ExpressionLimit: { Type: 'All' as const },
+        CensoringCriteria: [],
+        CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
+        CensorWindow: {},
         InclusionRules: [
           {
             name: 'Include Drug',
             expression: {
+              Type: 'ALL' as const,
               CriteriaList: [
                 {
                   Criteria: {
@@ -88,30 +125,42 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      expect(result).toBeInstanceOf(QueryFilterCardModel)
-      expect(result.title).toBe('Test Cohort')
-      expect(result.type).toBe('inclusion')
-      expect((result as any).inclusionCriteria).toBeDefined()
-      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
+      expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
+      const criteria = result.getCriteria()
+      expect(criteria).toBeDefined()
+      expect(criteria.criteria).toHaveLength(1)
     })
 
     test('should map concept sets correctly', () => {
-      const atlasJson = {
+      const atlasJson: any = {
+        cdmVersionRange: '>=5.0.0',
         ConceptSets: [
           {
             id: 1,
             name: 'Test Condition Set',
+            expression: { items: [] }
           },
           {
             id: 999,
             name: 'Missing Drug Set',
+            expression: { items: [] }
           },
         ],
+        PrimaryCriteria: {
+          CriteriaList: [],
+          ObservationWindow: { PriorDays: 0, PostDays: 0 },
+          PrimaryCriteriaLimit: { Type: 'All' as const }
+        },
+        QualifiedLimit: { Type: 'All' as const },
+        ExpressionLimit: { Type: 'All' as const },
+        CensoringCriteria: [],
+        CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
+        CensorWindow: {},
         InclusionRules: [
           {
             name: 'Test Mapping',
             expression: {
-              Type: 'ALL',
+              Type: 'ALL' as const,
               CriteriaList: [
                 {
                   Criteria: {
@@ -135,13 +184,14 @@ describe('AtlasConverter', () => {
 
       const result = convertAtlasToFilters(atlasJson, mockConceptSets)
 
-      expect(result).toBeInstanceOf(QueryFilterCardModel)
-      expect((result as any).inclusionCriteria).toBeDefined()
-      expect((result as any).inclusionCriteria.criteria).toHaveLength(1)
-      expect((result as any).inclusionCriteria.criteria[0].events).toHaveLength(2)
+      expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
+      const criteria = result.getCriteria()
+      expect(criteria).toBeDefined()
+      expect(criteria.criteria).toHaveLength(1)
+      expect(criteria.criteria[0].events).toHaveLength(2)
 
       // Check that concept sets are properly mapped in the nested structure
-      const events = (result as any).inclusionCriteria.criteria[0].events
+      const events = criteria.criteria[0].events
       expect(events[0].eventType).toBe('conditionOccurrence')
       expect(events[1].eventType).toBe('drugExposure')
     })
@@ -192,12 +242,15 @@ describe('AtlasConverter', () => {
 
   describe('Round-trip conversion', () => {
     test('should convert sample6 Atlas format back to original structure', () => {
-      const result = convertAtlasToFilters(sample6Expected, mockConceptSets)
+      // Add required properties for AtlasCohortDefinition type
+      const sample6WithCdm = { ...sample6Expected, cdmVersionRange: '>=5.0.0' }
+      const result = convertAtlasToFilters(sample6WithCdm as any, mockConceptSets)
 
       expect(result).toBeDefined()
-      expect(result).toBeInstanceOf(QueryFilterCardModel)
-      expect((result as any).inclusionCriteria).toBeDefined()
-      expect((result as any).inclusionCriteria.criteria).toHaveLength(2)
+      expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
+      const criteria = result.getCriteria()
+      expect(criteria).toBeDefined()
+      expect(criteria.criteria).toHaveLength(2)
     })
   })
 })

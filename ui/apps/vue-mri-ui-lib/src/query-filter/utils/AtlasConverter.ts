@@ -1,8 +1,8 @@
 /**
  * Utility functions for converting between Atlas cohort definitions and QueryFilter UI models
  */
-import { QueryFilterCardModel, QueryFilterEvent } from '../models/QueryFilterModel'
-
+import { QueryFilterCardModel, QueryFilterEvent, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 export interface ConceptSetItem {
   value: string
   text?: string
@@ -16,26 +16,21 @@ export interface ConceptSetMapping {
 }
 
 export const convertAtlasToFilters = (
-  atlasJson: any,
+  atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItem[] = []
-): QueryFilterCardModel => {
+): QueryFilterCriteriaManager => {
   if (!atlasJson) {
     throw new Error('Invalid Atlas JSON input')
   }
 
-  let cohortDefinition = atlasJson
-  let cohortName = atlasJson.name
-
-  if (atlasJson.expression && atlasJson.expressionType) {
-    cohortDefinition = JSON.parse(atlasJson.expression)
-    cohortName = atlasJson.name || cohortDefinition.name
-  }
+  const cohortDefinition = atlasJson
+  const cohortName = atlasJson.name
 
   const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping => {
-    const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === codesetId)
+    const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
 
     if (atlasConceptSet) {
-      const actualConceptSetId = atlasConceptSet.conceptSetId || atlasConceptSet.id
+      const actualConceptSetId = atlasConceptSet.id
       const localConceptSet = availableConceptSets.find(cs => cs.value == actualConceptSetId.toString())
 
       if (localConceptSet) {
@@ -253,16 +248,10 @@ export const convertAtlasToFilters = (
     })
   }
 
-  const filter = new QueryFilterCardModel({
-    title: cohortName || 'Cohort Definition',
-    type: 'inclusion',
-    events: [],
-  })
-
   // Add the inclusionCriteria structure to the filter
-  ;(filter as any).inclusionCriteria = inclusionCriteria
-  ;(filter as any).entryEvents = {}
-  return filter
+  const data = { inclusionCriteria, entryEvents: {} }
+  // Create and return QueryFilterCriteriaManager
+  return new QueryFilterCriteriaManager(data)
 }
 
 export const getConceptSetMappings = (
