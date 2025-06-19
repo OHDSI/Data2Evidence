@@ -55,7 +55,7 @@
     gap: 16px;
 
     &--disabled {
-      .study-card__action:first-child {
+      .study-card__action {
         cursor: not-allowed;
         color: #ccc;
         pointer-events: none;
@@ -67,7 +67,6 @@
         // Grey out the icon
         .study-card__action-icon {
           opacity: 0.1;
-
           filter: grayscale(100%);
           svg {
             color: #ccc;
