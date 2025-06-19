@@ -23,7 +23,7 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
-    less \ 
+    less \
     python3-pip
 
 # # GitHub setup & test
@@ -72,8 +72,8 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "nev
 
 # mlflow
 RUN pip3 install --upgrade pip
-RUN pip3 install mlflow
-RUN Rscript -e 'install.packages("mlflow", repos="https://cran.r-project.org")'
+RUN pip3 install mlflow==2.22.1
+RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
