@@ -915,7 +915,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
-            results_schema = f'results_{dbSettings["dataset_id"]}'
+            results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -935,9 +935,6 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
 
             # if schema exists, drop and recreate the schema
             if(not dbdao.check_schema_exists(results_schema)):
-                dbdao.create_schema(results_schema)
-            else:
-                dbdao.drop_schema(results_schema, True)
                 dbdao.create_schema(results_schema)
 
             # create results datamodel settings
@@ -974,3 +971,15 @@ def serialize_result_to_json(result: Result):
 
 def construct_jdbc_url(db_credentials):
     return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
+
+@flow(name="drop-strategus-results-schema", log_prints=True)
+def drop_strategus_results_schema(dbSettings):
+    database_code = dbSettings['database_code']
+    results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
+    dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code)
+    
+    if(dbdao.check_schema_exists(results_schema)):
+        dbdao.drop_schema(results_schema, True)
+    else:
+        raise Exception(f"Schema {results_schema} not found")
