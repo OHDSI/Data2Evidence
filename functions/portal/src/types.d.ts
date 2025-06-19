@@ -315,3 +315,7 @@ export interface PartialGitSubmodule {
   url?: string;
   branch?: string;
 }
+
+export interface IGitStudiesQueryDto {
+  studyId: string;
+}
