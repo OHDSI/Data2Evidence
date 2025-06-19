@@ -259,13 +259,13 @@ const handleGroupRemove = (groupIndex: number) => {
   }
 
   .criteria-groups-layout {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
 
   .add-group-container {
     display: flex;
     justify-content: center;
-    padding: 12px 0;
+    padding: 8px 0;
   }
 
   .btn-add-group {

@@ -154,11 +154,11 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
 
 <template>
   <div class="query-filter-event-container">
-    <!-- Add Event Controls -->
+    <!-- Add Event Controls - positioned at top, right after group title -->
     <div v-if="!readonly" class="add-event-controls">
       <CriteriaSelectorDropdown
         section-id="initialEvents"
-        button-text="Add event"
+        button-text="+ Add event"
         @criteria-selected="handleCriteriaSelected"
       />
     </div>
@@ -190,12 +190,12 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
 .query-filter-event-container {
   .add-event-controls {
     display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px dashed #d0d0d0;
+    gap: 8px;
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
   }
 
   .btn-add-event-simple {

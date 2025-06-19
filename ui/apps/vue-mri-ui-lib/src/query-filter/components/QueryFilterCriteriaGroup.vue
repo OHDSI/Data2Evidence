@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -46,11 +46,42 @@ const groupData = computed({
   },
 })
 
+// Title editing state
+const isEditingTitle = ref(false)
+const titleInputRef = ref<HTMLInputElement>()
+
 // Handle title changes
 const updateTitle = (newTitle: string) => {
   groupData.value = {
     ...groupData.value,
     title: newTitle,
+  }
+}
+
+// Start editing title
+const startEditingTitle = () => {
+  if (!props.readonly) {
+    isEditingTitle.value = true
+    nextTick(() => {
+      titleInputRef.value?.focus()
+      titleInputRef.value?.select()
+    })
+  }
+}
+
+// Finish editing title
+const finishEditingTitle = () => {
+  isEditingTitle.value = false
+}
+
+// Handle enter key to finish editing
+const handleTitleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    finishEditingTitle()
+  } else if (event.key === 'Escape') {
+    // Restore original title on escape
+    localGroup.value.title = props.group.title
+    finishEditingTitle()
   }
 }
 
@@ -99,7 +130,7 @@ const toggleGroupType = () => {
   updateGroupType(types[nextIndex])
 }
 
-// Removed unused getOperatorText function
+// Removed duplicate criteria selection handler
 </script>
 
 <template>
@@ -122,29 +153,31 @@ const toggleGroupType = () => {
         <div v-if="!hideHeader" class="group-header">
           <div class="group-header__left">
             <div class="group-title-container">
-              <input
-                v-if="!readonly"
-                v-model="localGroup.title"
-                class="group-title-input"
-                placeholder="Group Title"
-                @input="updateTitle(($event.target as HTMLInputElement).value)"
-              />
-              <h4 v-else class="group-title-readonly">{{ localGroup.title }}</h4>
+              <!-- Editable Title with Pencil Button -->
+              <div class="title-edit-wrapper">
+                <input
+                  v-if="isEditingTitle && !readonly"
+                  ref="titleInputRef"
+                  v-model="localGroup.title"
+                  class="group-title-input"
+                  placeholder="Group Title"
+                  @blur="finishEditingTitle"
+                  @keydown="handleTitleKeydown"
+                  @input="updateTitle(($event.target as HTMLInputElement).value)"
+                />
+                <h4 v-else class="group-title-display" @click="readonly ? null : startEditingTitle()">
+                  {{ localGroup.title || 'Untitled Group' }}
+                </h4>
+                <button
+                  v-if="!readonly && !isEditingTitle"
+                  class="btn-edit-title"
+                  @click="startEditingTitle"
+                  title="Edit group title"
+                >
+                  ✏️
+                </button>
+              </div>
             </div>
-
-            <!-- <div class="group-description-container">
-              <textarea
-                v-if="!readonly"
-                v-model="localGroup.description"
-                class="group-description-input"
-                placeholder="Group Description (optional)"
-                rows="2"
-                @input="updateDescription(($event.target as HTMLTextAreaElement).value)"
-              />
-              <p v-else-if="localGroup.description" class="group-description-readonly">
-                {{ localGroup.description }}
-              </p>
-            </div> -->
           </div>
 
           <div class="group-header__right">
@@ -198,7 +231,7 @@ const toggleGroupType = () => {
     align-items: flex-start;
     padding: 10px 12px;
     border-bottom: 1px solid #f0f0f0;
-    background: #fafafa;
+    background: transparent;
     border-radius: 0 8px 0 0; // Only round top-right corner
 
     &__left {
@@ -238,11 +271,51 @@ const toggleGroupType = () => {
     }
   }
 
-  .group-title-readonly {
+  .title-edit-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px; // Ensure consistent height
+  }
+
+  .group-title-display {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
     color: #333;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  .btn-edit-title {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.08);
+      opacity: 1;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
   }
 
   .group-description-input {

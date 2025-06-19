@@ -474,7 +474,7 @@ const getConceptSetDisplayName = (): string => {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: #fafafa;
+    background: transparent;
     border-bottom: 1px solid #e0e0e0;
 
     &__left {
