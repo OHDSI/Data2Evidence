@@ -53,6 +53,7 @@ app <- OhdsiShinyAppBuilder::createShinyApp(
   connection = resultsConnectionDetails,
   resultDatabaseSettings = createDefaultResultDatabaseSettings(schema = resultsDatabaseSchema)
 )
+
 # Run the app in the background so the kernel execution can complete
 plan(multisession)
 future({
