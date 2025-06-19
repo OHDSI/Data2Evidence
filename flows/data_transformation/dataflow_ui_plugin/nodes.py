@@ -379,7 +379,7 @@ class ConceptMappingNode(Node):
         self.concept_mapping_data = _node["data"]["csvData"]["data"]
         
     def test(self, task_run_context) -> Result:
-        return self.task(self, task_run_context)
+        return self.task(task_run_context)
     
     def task(self, task_run_context) -> Result:
         try:
