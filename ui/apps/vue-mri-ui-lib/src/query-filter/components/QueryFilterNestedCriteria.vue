@@ -79,14 +79,9 @@ const handleGroupRemove = () => {
       :concept-set-domain-values="conceptSetDomainValues"
       :concept-set-texts="conceptSetTexts"
       :readonly="readonly"
+      :hide-header="true"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.query-filter-nested-criteria {
-  // No custom styling needed - QueryFilterCriteriaGroup handles all styling
-}
-</style>

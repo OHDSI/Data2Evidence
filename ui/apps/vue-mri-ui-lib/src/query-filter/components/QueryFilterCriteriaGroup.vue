@@ -20,11 +20,13 @@ interface Props {
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   readonly?: boolean
+  hideHeader?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   conceptSets: () => [],
   readonly: false,
+  hideHeader: false,
 })
 
 const emit = defineEmits<{
@@ -103,7 +105,7 @@ const toggleGroupType = () => {
 <template>
   <div class="query-filter-criteria-group">
     <!-- Group Header -->
-    <div class="group-header">
+    <div v-if="!hideHeader" class="group-header">
       <div class="group-header__left">
         <div class="group-title-container">
           <input
