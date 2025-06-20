@@ -126,7 +126,7 @@ export const MenuButton = () => {
         });
       });
 
-      setTableEdges(tableChanges);
+      setTableEdges({ reset: true, changes: tableChanges });
       setFieldEdges(fieldChanges);
     } catch (error) {
       console.log(`Error while getting suggested mapping`);
