@@ -71,9 +71,8 @@ export class Utils {
                     }
                 }
 
+                // Construct order by query for unionQuery if there is an ORDER BY in PatientRequest
                 let orderByQuery = "";
-                // ORDER BY "patient.attributes.Age" DESC
-                // Construct order by query for unionQuery
                 localContextList.forEach((queryObject) => {
                     // Find ORDER BY expression and direction by looking for string inbetween ORDER BY and ASC|DESC
                     const orderByExpressionMatch =
@@ -86,14 +85,14 @@ export class Utils {
                         const orderByDirection =
                             orderByExpressionMatch[2].trim();
 
-                        // Use orderByExpression to find `AS alias` to use as ORDER BY in unionQuery
-                        const OrderByExpressionRegex = new RegExp(
+                        // Use orderByExpression to find `AS alias` to use in ORDER BY for unionQuery
+                        const OrderByAliasRegex = new RegExp(
                             `${this.escapeRegExp(
                                 orderByExpression
                             )} AS \\"(.*?)\\"`
                         );
                         const orderByAliasMatch = queryObject.queryString.match(
-                            OrderByExpressionRegex
+                            OrderByAliasRegex
                         );
 
                         if (orderByAliasMatch) {
