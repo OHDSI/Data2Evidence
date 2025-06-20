@@ -1,6 +1,6 @@
 <template>
   <div ref="content" style="display: none">
-    <slot />
+    <slot :hide="hide"/>
   </div>
 </template>
 
@@ -408,6 +408,8 @@ export default {
       if (!(element && element.nodeType)) {
         element = document
       }
+      console.log(`Selecting element with selector: ${selector} in`, element);
+      
       return element.querySelector(selector) || null
     },
   },
