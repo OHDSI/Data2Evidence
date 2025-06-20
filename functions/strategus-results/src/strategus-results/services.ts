@@ -141,9 +141,11 @@ const getReadCredentials = async (
           case USER_SCOPE.READ:
             acc[userScope.toLowerCase() + "User"] = username;
             acc[userScope.toLowerCase() + "Password"] = password;
+            break;
           default:
             acc["user"] = username;
             acc["password"] = password;
+            break;
         }
         return acc;
       },
