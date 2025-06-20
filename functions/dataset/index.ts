@@ -6,6 +6,7 @@ import { PortalAPI } from "./api/PortalAPI.ts";
 import { CDMSchemaTypes, DbDialect } from "./const.ts";
 import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
+import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
 
 const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
@@ -175,6 +176,30 @@ export class DatasetRouter {
             }
           }
 
+          if (schemaOption === CDMSchemaTypes.ExistingCDM) {
+            const dbAPI = new DbCredentialsAPI(token);
+            const dbList = await dbAPI.getDbList();
+            const db = dbList.find((d) => d.code === databaseCode);
+
+            if (!db) {
+              this.logger.error(
+                `Database with code ${databaseCode} does not exist`
+              );
+              return res.status(400).send("Database does not exist");
+            }
+
+            if (!db.vocab_schemas.includes(schemaName)) {
+              this.logger.info(
+                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`
+              );
+
+              await dbAPI.updateDbDetails({
+                id: databaseCode,
+                vocabSchemas: [...db.vocab_schemas, schemaName],
+              });
+            }
+          }
+
           this.logger.info("Creating new dataset in Portal");
           const newDatasetInput = {
             id,
@@ -222,8 +247,9 @@ export class DatasetRouter {
         snapshotCopyConfig,
         dataModel,
       } = req.body;
-      const { dialect, databaseCode, schemaName, vocabSchemaName } =
-        await portalAPI.getDataset(sourceStudyId);
+      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
+        sourceStudyId
+      );
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
@@ -260,10 +286,7 @@ export class DatasetRouter {
                   newSchemaName,
                   dialect as DbDialect
                 ),
-                source_schema: this.schemaCase(
-                  schemaName,
-                  dialect as DbDialect
-                ),
+                source_schema: schemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
               },

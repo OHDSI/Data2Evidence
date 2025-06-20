@@ -1,0 +1,11 @@
+.aimodels {
+    height: 100%;
+
+    &__error {
+        height: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+

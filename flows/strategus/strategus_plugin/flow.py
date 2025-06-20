@@ -9,7 +9,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
 
 
 @flow(log_prints=True)
@@ -18,6 +18,9 @@ def strategus_plugin(json_graph, options):
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
+        return
+    if(options.get('mode', None) == 'drop-results'):
+        drop_strategus_results(options)
         return
 
     # Grab root flow id
@@ -141,17 +144,15 @@ def runStrategus(json_graph, options):
     root_flow_run_context = FlowRunContext.get().flow_run.dict()
     flow_run_id = str(root_flow_run_context.get("id"))
     
+    study_id = options.get('studyId', None)
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
 
-    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId }
-    base_path = f'/tmp/{flow_run_id}'
-    work_folder = f'{base_path}/work'
-    path_to_results = f'{base_path}/results'
-    log_file_name = f'{base_path}/strategus-log.txt'
-
+    # TODO: Uncomment when study_id is required
+    # if(not study_id):
+    #    raise Exception('StudyId is missing')
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -159,6 +160,12 @@ def runStrategus(json_graph, options):
     if(not schema_name):
        raise Exception('Schema name is missing')
     
+    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId, "study_id": study_id }
+    base_path = f'/tmp/{flow_run_id}'
+    work_folder = f'{base_path}/work'
+    path_to_results = f'{base_path}/results'
+    log_file_name = f'{base_path}/strategus-log.txt'
+
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
 
@@ -181,3 +188,21 @@ def runStrategus(json_graph, options):
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     if(upload_results):
         upload_strategus_results(analysisSpec, path_to_results, dbSettings)
+
+def drop_strategus_results(options):
+    """
+    Drops the Strategus results from the database.
+    """
+    datasetId = options.get('datasetId', None)
+    study_id = options.get('studyId', None)
+    database_code = options.get('databaseCode', None)
+    if(not datasetId):
+       raise Exception('DatasetId is missing')
+    if(not database_code):
+       raise Exception('Database code is missing')
+
+    drop_strategus_results_schema(dbSettings={
+        'database_code': database_code,
+        'dataset_id': datasetId,
+        'study_id': study_id
+    })

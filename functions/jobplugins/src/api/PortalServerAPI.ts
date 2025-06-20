@@ -58,9 +58,9 @@ export class PortalServerAPI {
     }
   }
 
-  async getConfigByType(type: string) {
+  async getConfigSecretByType(type: string) {
     try {
-      const url = `${this.baseURL}/config/${type}`;
+      const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
       const result = await fetch(url, options);
       if (!result.ok) {

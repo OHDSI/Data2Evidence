@@ -11,11 +11,7 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import {
-  SelectSource,
-  SourceOptions,
-  SourceTypes,
-} from "../../SelectSource/SelectSource";
+import { SelectSource, SourceTypes } from "../../SelectSource/SelectSource";
 import { NodeChoiceMap } from "..";
 import { SourceToTableMap, Py2TableNodeData } from "./Py2TableNode";
 import "./Py2TableDrawer.scss";
@@ -34,12 +30,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   uiMap: { source: "", path: "" },
-};
-
-const sourceOptions: SourceOptions = {
-  python_node: [SourceTypes.SCRIPT_NODE],
-  python_notebook_node: [SourceTypes.SCRIPT_NODE],
-  r_node: [SourceTypes.SCRIPT_NODE],
 };
 
 export const Py2TableDrawer: FC<Py2TableDrawerProps> = ({
@@ -132,7 +122,7 @@ export const Py2TableDrawer: FC<Py2TableDrawerProps> = ({
             <SelectSource
               fullWidth
               nodeId={node.id}
-              sourceOptions={sourceOptions}
+              sourceOptions={null}
               label="Source"
               value={formData.uiMap?.source}
               onChange={(value: string) =>

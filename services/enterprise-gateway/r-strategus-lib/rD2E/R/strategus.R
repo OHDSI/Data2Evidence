@@ -13,7 +13,7 @@
 run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, options = list()) {
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  url <- paste0(host, "/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus")
+  url <- paste0(host, "/jobplugins/prefect/jupyter-kernel/flow-run/strategus")
   json_graph = list()
   
   if (!is.null(analysisSpecification)) {

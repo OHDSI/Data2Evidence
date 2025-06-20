@@ -13,14 +13,14 @@ services:
       - ./plugins/chat_functions:/usr/src/plugins/chat
       - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
-      # - ../trex/core:/usr/src/core # For debugging trex with local code
+      # - ./services/trex/core:/usr/src/core # For debugging trex with local code
       # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
@@ -160,8 +160,6 @@ services:
       - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
   mlflow:
-    ports:
-      - "5000:5000"
     build:
       context: ./flows
       dockerfile: ./base/Dockerfile
