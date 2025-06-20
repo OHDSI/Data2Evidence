@@ -5,6 +5,7 @@ import git from "isomorphic-git";
 import path from "path";
 import { env } from "../env.ts";
 import { GitSubmodule, PartialGitSubmodule, StudiesData } from "../types.d.ts";
+import { STUDIES_JSON_NAME } from "../common/const.ts";
 
 @Injectable()
 export class GitStudiesService {
@@ -23,14 +24,12 @@ export class GitStudiesService {
     try {
       await this.ensureRepositoryReady();
 
-      // TODO: Confirm the actual json name and put in the env variable
-      const studiesPath = path.join(this.repoDir, "studies.json");
+      const studiesPath = path.join(this.repoDir, STUDIES_JSON_NAME);
       if (!fs.existsSync(studiesPath)) {
-        throw new Error("studies.json not found in repository root");
+        throw new Error(`${STUDIES_JSON_NAME} not found in repository root`);
       }
 
       const studiesContent = fs.readFileSync(studiesPath, "utf8");
-      // TODO: Confirm the actual studiesData object structure
       const studiesData = JSON.parse(studiesContent) as StudiesData;
 
       console.log(
@@ -118,7 +117,7 @@ export class GitStudiesService {
           const hasOrigin = remotes.some((r) => r.remote === "origin");
 
           if (hasOrigin) {
-            // Fetch and merge latest changes
+            console.log(`Fetching latest changes from origin/${defaultBranch}...`);
             await git.fetch({
               fs,
               http,
@@ -126,17 +125,13 @@ export class GitStudiesService {
               remote: "origin",
               ref: defaultBranch,
             });
-
-            await git.merge({
+  
+            await git.checkout({
               fs,
               dir: this.repoDir,
-              theirs: `origin/${defaultBranch}`,
-              author: {
-                name: "Studies System",
-                email: "we@data4life-asia.care",
-              },
+              ref: `origin/${defaultBranch}`,
+              force: true,
             });
-
             // Update submodules after merge
             await this.initializeSubmodules(this.repoDir);
           }
