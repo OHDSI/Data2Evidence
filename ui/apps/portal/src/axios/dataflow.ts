@@ -16,7 +16,7 @@ const JOBPLUGIN_URL = "jobplugins/";
 export class Dataflow {
   public getFlows() {
     return request<Flow[]>({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/flow/list",
       method: "GET",
     });
@@ -24,7 +24,7 @@ export class Dataflow {
 
   public getDeploymentByFlowId(id: string) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow/${id}/deployment`,
       method: "GET",
     });
@@ -32,7 +32,7 @@ export class Dataflow {
 
   public addFlowFromFileDeployment(file?: File) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow/file-deployment`,
       method: "POST",
       data: { file },
@@ -43,7 +43,7 @@ export class Dataflow {
 
   public addFlowFromGitUrlDeployment(url: string) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow/git-deployment`,
       method: "POST",
       data: { url },
@@ -53,7 +53,7 @@ export class Dataflow {
 
   public executeFlowRunByDeployment(data: ExecuteFlowRunByDeployment) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow-run/deployment`,
       method: "POST",
       data: data,
@@ -62,7 +62,7 @@ export class Dataflow {
 
   public deleteFlow(id: string) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow/${id}`,
       method: "DELETE",
     });
@@ -70,7 +70,7 @@ export class Dataflow {
 
   public getFlowRuns(filter: string, extraFilters: FlowRunFilters = {}) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "job-history/flow-runs",
       method: "GET",
       params: {
@@ -82,7 +82,7 @@ export class Dataflow {
 
   public cancelFlowRun(flowRunId: string) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow-run/${flowRunId}/cancellation`,
       method: "POST",
       data: {},
@@ -91,7 +91,7 @@ export class Dataflow {
 
   public getFlowMetadata() {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/flow/metadata/list",
       method: "GET",
     });
@@ -203,7 +203,7 @@ export class Dataflow {
 
   public createFlowRunByMetadata(data: CreateFlowRunByMetadata) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/flow-run/metadata",
       method: "POST",
       data: data,
@@ -263,9 +263,17 @@ export class Dataflow {
     });
   }
 
+  public createCleanUpStudySchemaRun(studyId: string, datasetId: string) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: `prefect/flow-run/strategus/remove-results-schema/${studyId}/${datasetId}`,
+      method: "DELETE",
+    });
+  }
+
   public getFlowRunState(flowId: string) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: `prefect/flow-run/${flowId}/state`,
       method: "GET",
     });
@@ -273,7 +281,7 @@ export class Dataflow {
 
   public getPluginUploadStatus() {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/flow/default-deployment",
       method: "GET",
     });
@@ -281,7 +289,7 @@ export class Dataflow {
 
   public triggerPluginUpload() {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/flow/default-deployment",
       method: "POST",
     });
