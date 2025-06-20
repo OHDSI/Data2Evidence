@@ -49,7 +49,7 @@ module.exports = (env, argv) => {
           secure: false,
         },
         {
-          context: ["/concept-mapping"],
+          context: ["/resources/concept-mapping"],
           target: "https://localhost:41100",
           secure: false,
         },

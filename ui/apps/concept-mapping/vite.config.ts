@@ -67,7 +67,7 @@ export default defineConfig(({ command, mode }) => {
           target: "https://localhost:41100",
           secure: false,
         },
-        "/concept-mapping": {
+        "/resources/concept-mapping": {
           target: "https://localhost:41100",
           secure: false,
         },
