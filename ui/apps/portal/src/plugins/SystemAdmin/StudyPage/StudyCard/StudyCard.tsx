@@ -248,7 +248,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
 
             <div className="study-card__action" onClick={handleOpenIframeViewer}>
               <OpenInBrowser className="study-card__action-icon" />
-              <span>Open Iframe Viewer</span>
+              <span>Open Viewer</span>
             </div>
 
             <div
