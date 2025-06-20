@@ -1,4 +1,3 @@
-import env from "../../env";
 import { StreamSend, StreamingAdapterObserver } from "@nlux/react";
 import fetchRequest from "../../fetch/request";
 
