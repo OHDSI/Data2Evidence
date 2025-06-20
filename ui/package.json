@@ -52,7 +52,7 @@
           "target": "/resources/mapping"
         },
         {
-          "source": "/concept-mapping",
+          "source": "/resources/concept-mapping",
           "target": "/resources/concept-mapping"
         },
         {

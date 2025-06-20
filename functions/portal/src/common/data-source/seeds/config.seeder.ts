@@ -1,15 +1,17 @@
 import { DataSource } from "npm:typeorm";
 import { Seeder } from "./seeder.ts";
 import { Config } from "../../../config/entity/index.ts";
+import { IConfig } from "../../../types.d.ts";
+import { ConfigTypes } from "../../const.ts";
 
-const DEFAULT_VALUES = [
+const DEFAULT_VALUES: IConfig[] = [
   {
-    type: "overview-description",
+    type: ConfigTypes.OVERVIEW_DESCRIPTION,
     value:
       "Our vision is a world where health data is comprehensively, digitally, and securely available for research and directly impacts the prevention, diagnosis, and treatment of diseases.",
   },
   {
-    type: "hybrid-search",
+    type: ConfigTypes.HYBRID_SEARCH,
     value: `{"isEnabled":false,"semanticRatio":"0"}`,
   },
 ];
