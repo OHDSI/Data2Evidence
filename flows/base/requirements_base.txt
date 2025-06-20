@@ -16,5 +16,6 @@ numpy==2.0.0
 ibis-framework[duckdb, postgres]==10.0.0
 jsonpath-ng==1.7.0
 pymssql==2.3.4
+sqlalchemy-bigquery==1.14.1
 mlflow==3.0.0rc3
 openai==0.28
