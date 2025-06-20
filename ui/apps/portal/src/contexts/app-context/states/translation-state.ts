@@ -114,6 +114,7 @@ export const i18nDefault = {
     ADD_USER_DIALOG__SHOW_PASSWORD: "Show password",
     ADD_USER_DIALOG__USERNAME_HELPER: "Username should only contain letters, numbers, or underscore.",
     ADD_USER_DIALOG__USERNAME: "Username",
+    AI_MODELS__ERROR: "Error loading page. Please check that the plugin is installed",
     ANALYSIS_DIALOG__TITLE: "Run {0} for dataset: {1}",
     ANALYSIS_DIALOG__FORM_TITLE: "Dataset Analysis Configuration",
     ANALYSIS_DIALOG__DATA_QUALITY: "Data Quality",
