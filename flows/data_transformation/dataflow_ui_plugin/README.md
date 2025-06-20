@@ -86,6 +86,24 @@
 - **How To Use:**  TBD.
 
 
+## Concept Mapping Node (Experimental)
+
+- **Description:** Map concept code from source data to target concept id in vocabulary.
+- **Input Nodes:** This node does not accept any input nodes.
+- **Output Data:** Returns a dataframe of mapped concepts with status 'checked' that has the following columns: domain_id, concept_id, concept_name, source_code, validity.
+- **How To Use:**
+  - Upload CSV containing source concepts
+    - Source code: The source concept code to map.
+    - Source name column: The source concept code to map.
+    - source frequency column: NA
+    - Additional info column: NA
+  - Select a dataset from the drop down with data loaded.
+  - Click on the first row and search for a target concept. Add a mapping using '+' button.
+  - Click Populate Concepts.
+  - Click Apply.
+
+
+
 
 ## R Node (Experimental)
 

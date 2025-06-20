@@ -9,7 +9,7 @@ import {
   NodeProps,
 } from "reactflow";
 import { AppState } from "../states";
-import { FieldHandleData, FieldTargetHandleData } from "../states/field-state";
+import { FieldTargetHandleData } from "../states/field-state";
 
 export const setFieldNodes = (state: AppState, payload: NodeChange[]): AppState => ({
   ...state,
@@ -50,87 +50,29 @@ export const addFieldConnection = (state: AppState, payload: Connection): AppSta
   };
 };
 
-export const setFieldSourceHandles = (
-  state: AppState,
-  payload: { tableName: string; data: NodeProps<FieldHandleData>[] }
-): AppState => ({
+export const setActiveTableEdgeId = (state: AppState, payload: string): AppState => ({
   ...state,
   saved: false,
   field: {
     ...state.field,
-    sourceHandles: {
-      ...state.field.sourceHandles,
-      [payload.tableName]: payload.data,
-    },
-  },
-});
-
-export const setActiveSourceTable = (state: AppState, payload: string): AppState => ({
-  ...state,
-  saved: false,
-  field: {
-    ...state.field,
-    activeSourceTable: payload,
-  },
-});
-
-export const setActiveFieldSourceHandles = (state: AppState, payload: NodeProps<FieldHandleData>[]): AppState => {
-  if (!state.field.activeSourceTable) {
-    console.warn("Invalid operation to set field source handles when active source table is empty");
-    return state;
-  }
-
-  return {
-    ...state,
-    saved: false,
-    field: {
-      ...state.field,
-      sourceHandles: {
-        ...state.field.sourceHandles,
-        [state.field.activeSourceTable]: payload,
-      },
-    },
-  };
-};
-
-export const setFieldTargetHandles = (
-  state: AppState,
-  payload: { tableName: string; data: NodeProps<FieldTargetHandleData>[] }
-): AppState => ({
-  ...state,
-  saved: false,
-  field: {
-    ...state.field,
-    targetHandles: {
-      ...state.field.targetHandles,
-      [payload.tableName]: payload.data,
-    },
-  },
-});
-
-export const setActiveTargetTable = (state: AppState, payload: string): AppState => ({
-  ...state,
-  saved: false,
-  field: {
-    ...state.field,
-    activeTargetTable: payload,
+    activeTableEdgeId: payload,
   },
 });
 
 export const setActiveFieldTargetHandles = (state: AppState, payload: NodeProps<FieldTargetHandleData>[]): AppState => {
-  if (!state.field.activeTargetTable) {
-    console.warn("Invalid operation to set field target handles when active target table is empty");
+  if (!state.field.activeTableEdgeId) {
+    console.warn("Invalid operation to set field target handles when active table edge ID is empty");
     return state;
   }
 
   return {
     ...state,
     saved: false,
-    field: {
-      ...state.field,
-      targetHandles: {
-        ...state.field.targetHandles,
-        [state.field.activeTargetTable]: payload,
+    fieldMap: {
+      ...state.fieldMap,
+      [state.field.activeTableEdgeId]: {
+        ...state.fieldMap[state.field.activeTableEdgeId],
+        targetHandles: payload,
       },
     },
   };
