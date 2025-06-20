@@ -523,6 +523,7 @@ export const Terminology: FC<TerminologyProps> = ({
             <div className="terminology__details" style={{ width: showDetails ? "100%" : "0%" }}>
               {showDetails && conceptId !== null ? (
                 <TerminologyDetail
+                  setShowDetails={setShowDetails}
                   conceptId={conceptId}
                   setConceptId={setConceptId}
                   userId={userId}
