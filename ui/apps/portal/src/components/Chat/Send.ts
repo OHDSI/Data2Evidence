@@ -1,6 +1,7 @@
 import { StreamSend, StreamingAdapterObserver } from "@nlux/react";
 import fetchRequest from "../../fetch/request";
 
+const MAX_CHUNK_SIZE = 32;
 export const createSend = (datasetId: string, context: string): StreamSend => {
   return async (prompt: string, observer: StreamingAdapterObserver) => {
     const response = await fetchRequest(`code-suggestion/chat?datasetId=${datasetId}`, {
@@ -27,13 +28,17 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
     try {
       while (true) {
         const { value, done } = await reader.read();
-
-        if (done) {
-          break;
-        }
+        if (done) break;
 
         const chunk = textDecoder.decode(value, { stream: true });
-        observer.next(chunk);
+        let start = 0;
+        while (start < chunk.length) {
+          const end = start + MAX_CHUNK_SIZE;
+          const piece = chunk.slice(start, end);
+          console.log("Sending piece:", piece);
+          observer.next(piece);
+          start = end;
+        }
       }
     } finally {
       reader.releaseLock();
