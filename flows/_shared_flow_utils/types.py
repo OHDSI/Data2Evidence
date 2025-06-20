@@ -102,4 +102,3 @@ class User:
   userId: str
   name: Optional[str]
   email: Optional[str]
-
