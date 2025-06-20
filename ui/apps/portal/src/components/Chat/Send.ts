@@ -4,7 +4,7 @@ import fetchRequest from "../../fetch/request";
 
 export const createSend = (datasetId: string, context: string): StreamSend => {
   return async (prompt: string, observer: StreamingAdapterObserver) => {
-    const response = await fetchRequest(`${env.REACT_APP_DN_BASE_URL}code-suggestion/chat?datasetId=${datasetId}`, {
+    const response = await fetchRequest(`code-suggestion/chat?datasetId=${datasetId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -25,6 +25,7 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
     const reader = response.body.getReader();
     const textDecoder = new TextDecoder();
     let buffer = "";
+    let lastMessage = "";
 
     try {
       while (true) {
@@ -45,11 +46,20 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
           for (const line of lines) {
             const trimmedLine = line.trim();
             if (trimmedLine) {
-              observer.next(trimmedLine + "\n");
+              let newPart = trimmedLine;
+              if (trimmedLine.startsWith(lastMessage)) {
+                newPart = trimmedLine.slice(lastMessage.length);
+              }
+              if (newPart && newPart !== lastMessage) {
+                observer.next(newPart + "\n");
+              }
+              lastMessage = trimmedLine;
             }
           }
-        } else {
-          observer.next(buffer + "\n");
+        }
+
+        if (buffer.trim() && buffer.trim() !== lastMessage) {
+          observer.next(buffer.trim());
         }
       }
     } finally {
