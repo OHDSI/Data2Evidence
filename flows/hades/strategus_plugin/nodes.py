@@ -15,6 +15,7 @@ from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 
 from _shared_flow_utils.types import UserType
+from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 
 os.environ['plugin_name'] = 'strategus_plugin'
@@ -893,9 +894,9 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
-                user=db_credentials.adminUser,
-                password=db_credentials.adminPassword.get_secret_value(),
+                connectionString=construct_jdbc_url(db_credentials),
+                user=db_credentials.readUser,
+                password=db_credentials.readPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
             )
 
@@ -925,7 +926,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                connectionString=construct_jdbc_url(db_credentials),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
@@ -967,6 +968,9 @@ def get_input_nodes_by_class_type_from_results(inputs: Dict[str, Result], nodeTy
 
 def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
+
+def construct_jdbc_url(db_credentials):
+    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
 
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
