@@ -3,7 +3,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Divider from "@mui/material/Divider";
 import { Button, Dialog } from "@portal/components";
-import { TransformationConfig, useField } from "../../contexts";
+import { TransformationConfig, useActiveFieldMap } from "../../contexts";
 import {
   EMPTY_SQL_TRANSFORMATION_FUNCTION,
   EPMTY_SQL_TRANSFORMATION_FORM_DATA,
@@ -37,8 +37,8 @@ enum TabChoice {
 }
 
 export const TransformConfigDialog: FC<TransformConfigDialogProps> = ({ handleId, open, onClose }) => {
-  const { activeTargetHandles, setActiveFieldTargetHandles } = useField();
-  const handle = activeTargetHandles.find((h) => h.id === handleId);
+  const { targetHandles, setFieldTargetHandles } = useActiveFieldMap();
+  const handle = targetHandles.find((h) => h.id === handleId);
   const columnName = handle?.data.label;
   const columnType = handle?.data.columnType;
 
@@ -78,11 +78,11 @@ export const TransformConfigDialog: FC<TransformConfigDialogProps> = ({ handleId
   }, []);
 
   const handleApply = useCallback(() => {
-    setActiveFieldTargetHandles(
-      activeTargetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, ...formData } } : h))
+    setFieldTargetHandles(
+      targetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, ...formData } } : h))
     );
     typeof onClose === "function" && onClose("success");
-  }, [activeTargetHandles, formData]);
+  }, [targetHandles, formData]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
