@@ -352,6 +352,7 @@
           "portal.dataset.metadataConfig.attribute.write",
           "portal.dataset.metadataConfig.attribute.delete",
           "portal.config.read",
+          "portal.configSecret.read",
           "portal.config.write",
           "portal.userArtifact.read",
           "portal.userArtifact.write",
@@ -1331,6 +1332,15 @@
           "path": "^/system-portal/config(.*)",
           "scopes": [
             "portal.config.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/config/secret(.*)",
+          "scopes": [
+            "portal.configSecret.read"
           ],
           "httpMethods": [
             "GET"
