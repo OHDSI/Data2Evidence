@@ -35,7 +35,6 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
         while (start < chunk.length) {
           const end = start + MAX_CHUNK_SIZE;
           const piece = chunk.slice(start, end);
-          console.log("Sending piece:", piece);
           observer.next(piece);
           start = end;
         }
