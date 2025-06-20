@@ -1,5 +1,6 @@
 import os
 import json
+import pandas as pd
 from re import match
 from rpy2 import robjects
 from string import Template
@@ -12,9 +13,7 @@ from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
-from .hooks import *
 from .types import *
-
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType
@@ -221,18 +220,21 @@ def execute_export_to_ares(schema_name: str,
                            dbdao,
                            output_folder: str,
                            set_connection_string: str):
+    logger = get_run_logger()
+    logger.info('Running exportToAres')
+
+    cdm_source_abbreviation = dbdao.get_value(schema=schema_name,
+                                            table="cdm_source",
+                                            column="cdm_source_abbreviation")
+    
+    if output_folder is None or cdm_source_abbreviation is None:
+        raise ValueError("output_folder and cdm_source_abbreviation must not be None")
+    
+    # Get name of folder created by at {outputFolder/cdm_source_abbreviation}
+    ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25 \
+                             else cdm_source_abbreviation)
+
     try:
-        logger = get_run_logger()
-        logger.info('Running exportToAres')
-
-        cdm_source_abbreviation = dbdao.get_value(schema=schema_name,
-                                                  table="cdm_source",
-                                                  column="cdm_source_abbreviation")
-
-        # Get name of folder created by at {outputFolder/cdm_source_abbreviation}
-        ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25
-                                 else cdm_source_abbreviation)
-
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f'''
                     library('Achilles')
@@ -252,13 +254,22 @@ def execute_export_to_ares(schema_name: str,
                     )
             ''')
     except Exception as e:
-        logger.error(f"execute_export_to_ares task failed")
-        error_message = get_export_to_ares_execute_error_message_from_file(
-            ares_path)
+        logger.error(f"Execute_export_to_ares task failed")
+
+        cdm_release_date = os.listdir(ares_path)[0]
+        error_report_path = os.path.join(ares_path, cdm_release_date, "errorReportSql.txt")
+
+        if not os.path.exists(error_report_path):
+            error_message = f"errorReportSql.txt does not exist at Ares export path : {ares_path}"
+        else:
+            with open(error_report_path, 'rt') as f:
+                error_message = f.read()
+
         logger.error(error_message)
 
         logger.info(
             f"Dropping Data Characterization results schema '{results_schema}'")
+        
         dbdao.drop_schema(results_schema, cascade=True)
 
         raise Exception(
@@ -271,6 +282,26 @@ def execute_export_to_ares(schema_name: str,
                 get_export_to_ares_results_from_file(ares_path)),
             description=f"Export to Ares completed successfully for schema: {schema_name}"
         )
+
+
+def get_export_to_ares_results_from_file(ares_path: str):
+    cdm_release_date = os.listdir(ares_path)[0]
+
+    # export_to_ares creates many csv files, but now we are only interested in saving results from records-by-domain.csv
+    # Read records-by-domain.csv and parse csv into json
+    file_name = "records-by-domain"
+    df = pd.read_csv(os.path.join(
+        ares_path, cdm_release_date, f"{file_name}.csv"))
+    df = df.rename(columns={"count_records": "countRecords"})
+
+    data = {
+        "exportToAres": {
+            "cdmReleaseDate": cdm_release_date,
+            file_name: df.to_dict(orient="records")
+        }
+    }
+
+    return data
 
 
 def is_safe_schema_name(schema: str) -> bool:
