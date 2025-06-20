@@ -9,7 +9,7 @@ resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 # Specify the connection to the results database
 resultsConnectionDetails <- DatabaseConnector::createConnectionDetails(
   dbms = "postgresql",
-  server = "$DATABASE_SERVER",
+  connectionString="$DATABASE_CONNECTION_STRING",
   user = "$DATABASE_USER",
   password = "$DATABASE_PASSWORD",
   pathToDriver = "/app/inst/drivers"
@@ -45,6 +45,15 @@ shinyConfig <- initializeModuleConfig() |>
 
 # Set options for base URL
 options(shiny.base_url = "/strategus-results/$STUDY_ID/")
+
+# Test database connection before starting
+tryCatch({
+  conn <- DatabaseConnector::connect(resultsConnectionDetails)
+  cat("Database connection successful\n")
+  DatabaseConnector::disconnect(conn)
+}, error = function(e) {
+  cat("Database connection failed:", e$message, "\n")
+})
 
 # now create the shiny app based on the config file and view the results
 # based on the connection 

@@ -36,12 +36,15 @@ export const createStrategusResultsViewer = async (
     const kernel: IKernelConnection = await getKernel(studyId, manager);
     const readCredentials = await getReadCredentials(databaseCode);
 
-    const { host, port, readUser, readPassword } = readCredentials;
+    const { name, host, port, readUser, readPassword } = readCredentials;
     const r_code = RESULT_VIEWER_TEMPLATE.replace(
       "$DATABASE_SCHEMA",
       "results_" + studyId
     )
-      .replace("$DATABASE_SERVER", `${host}:${port}/results_${studyId}`)
+      .replace(
+        "$DATABASE_CONNECTION_STRING",
+        `jdbc:postgresql://${host}:${port}/${name}`
+      )
       .replace("$DATABASE_USER", readUser)
       .replace("$DATABASE_PASSWORD", readPassword)
       .replace("$STUDY_ID", studyId);
@@ -153,6 +156,7 @@ const getReadCredentials = async (
     );
 
     return {
+      name: name,
       code: rest.code,
       host: rest.host.toString(),
       port: port.toString(),
@@ -176,6 +180,7 @@ const getReadCredentials = async (
   }
 
   return {
+    name: readCredentials.name,
     host: readCredentials.host,
     port: readCredentials.port,
     readUser: readCredentials.credentials.readUser,
