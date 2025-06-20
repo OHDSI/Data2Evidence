@@ -2,16 +2,9 @@ import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
 import { api } from "../../axios/api";
-import {
-  ScannedSchemaState,
-  TableSourceHandleData,
-  useApp,
-  useField,
-  useScannedSchema,
-  useTable,
-} from "../../contexts";
+import { ScannedSchemaState, TableSourceHandleData, useApp, useScannedSchema, useTable } from "../../contexts";
 import { ScanDataSourceTable } from "../../types/scanDataDialog";
-import { buildFieldHandle, getColumns, saveBlobAs } from "../../utils/utils";
+import { saveBlobAs } from "../../utils/utils";
 import { CloseDialogType } from "../ScanDataDialog/ScanDataDialog";
 import "./ScanProgressDialog.scss";
 
@@ -40,7 +33,6 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
   const updateNodeInternals = useUpdateNodeInternals();
   const { setPage } = useApp();
   const { setTableSourceHandles } = useTable();
-  const { setFieldSourceHandles } = useField();
   const { setScannedSchema } = useScannedSchema();
 
   const handleClose = useCallback(
@@ -73,18 +65,6 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({ open, onBack, 
         sourcePosition: Position.Right,
       }));
       setTableSourceHandles(sourceHandles);
-
-      sourceHandles.forEach((table) => {
-        const tableName = table.data?.label;
-        if (!tableName) {
-          console.warn("Invalid handle with empty table name");
-          return;
-        }
-
-        const columns = getColumns(scannedResult.source_tables, tableName);
-        const handles = buildFieldHandle(columns, tableName, true);
-        setFieldSourceHandles({ tableName, data: handles });
-      });
 
       setLoading(false);
       setScannedSchema(scannedResult);
