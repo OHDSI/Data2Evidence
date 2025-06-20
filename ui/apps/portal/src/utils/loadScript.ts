@@ -26,7 +26,7 @@ const _loadScript = (
     onload();
   }
   return () => {
-    if (script) {
+    if (script && script.parentNode === document.body) {
       document.body.removeChild(script);
     }
   };
@@ -63,7 +63,7 @@ export const loadStyleSheet = (href: string): Callback => {
     document.head.appendChild(link);
   }
   return () => {
-    if (link) {
+    if (link && link.parentNode === document.head) {
       document.head.removeChild(link);
     }
   };
