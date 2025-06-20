@@ -103,6 +103,7 @@
   "ADD_USER_DIALOG__SHOW_PASSWORD": "Passwort anzeigen",
   "ADD_USER_DIALOG__USERNAME_HELPER": "Der Benutzername sollte nur Buchstaben, Zahlen oder Unterstriche enthalten.",
   "ADD_USER_DIALOG__USERNAME": "Nutzername",
+  "AI_MODELS__ERROR": "Fehler beim Laden der Seite. Bitte überprüfen Sie, ob das Plugin installiert ist",
   "ATTRIBUTE_TABLE__ADD_ATTRIBUTE": "Attribute hinzufügen",
   "ATTRIBUTE_TABLE__ATTRIBUTE_ID": "Attribut-ID",
   "ATTRIBUTE_TABLE__ATTRIBUTE_NAME": "Attributname",
