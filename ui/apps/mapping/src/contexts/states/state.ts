@@ -1,5 +1,5 @@
 import { TableState } from "./table-state";
-import { FieldState } from "./field-state";
+import { FieldMapState, FieldState } from "./field-state";
 import { ScannedSchemaState, TableSchemaState } from "./scanned-schema-state";
 import { DialogState, INIT_DIALOG_STATE } from "./dialog-state";
 import { FIELD_SOURCE_MENU, FIELD_TARGET_MENU, Page, TABLE_SOURCE_MENU, TABLE_TARGET_MENU } from "../../constants";
@@ -12,6 +12,7 @@ export interface AppState {
   dialog: DialogState;
   table: TableState;
   field: FieldState;
+  fieldMap: { [tableEdgeId: string]: FieldMapState };
   scannedSchema: ScannedSchemaState | undefined;
   cdmVersion: string | undefined;
   cdmTables: TableSchemaState[];
@@ -78,11 +79,9 @@ export const initialState: AppState = {
       },
     ],
     edges: [],
-    sourceHandles: {},
-    targetHandles: {},
-    activeSourceTable: undefined,
-    activeTargetTable: undefined,
+    activeTableEdgeId: undefined,
   },
+  fieldMap: {},
   scannedSchema: undefined,
   cdmVersion: undefined,
   cdmTables: [],
