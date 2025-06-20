@@ -1,5 +1,12 @@
 import { Edge } from "reactflow";
-import { FieldTargetHandleData, FieldTargetState, ScannedSchemaState, TableSchemaState } from "../contexts";
+import {
+  FieldMapState,
+  FieldSourceState,
+  FieldTargetHandleData,
+  FieldTargetState,
+  ScannedSchemaState,
+  TableSchemaState,
+} from "../contexts";
 
 interface Ref {
   "@ref": number | undefined;
@@ -58,6 +65,7 @@ interface Db {
 }
 
 interface ItemToItemMap {
+  edgeId: string;
   "@type": string;
   sourceItem: Ref;
   cdmItem: Ref;
@@ -75,14 +83,14 @@ export interface EtlModel {
   cdmDb: Db;
   tableToTableMaps: {
     "@type": string;
-    "@items": ItemToItemMap[];
+    "@items": Omit<ItemToItemMap, "edgeId">[];
   };
   tableMapToFieldToFieldMaps: {
     "@type": string;
-    "@keys": ItemToItemMap[];
+    "@keys": Omit<ItemToItemMap, "edgeId">[];
     "@items": {
       "@type": string;
-      "@items": ItemToItemMap[];
+      "@items": Omit<ItemToItemMap, "edgeId">[];
     }[];
   };
 }
@@ -130,7 +138,8 @@ const createDb = (dbId: number, dbName: string): Omit<Db, "tables"> => ({
   conceptIdHintsVocabularyVersion: null,
 });
 
-const createMap = (sourceId: number | undefined, targetId: number | undefined): ItemToItemMap => ({
+const createMap = (edgeId: string, sourceId: number | undefined, targetId: number | undefined): ItemToItemMap => ({
+  edgeId,
   "@type": "org.ohdsi.rabbitInAHat.dataModel.ItemToItemMap",
   sourceItem: {
     "@ref": sourceId,
@@ -146,7 +155,23 @@ const createMap = (sourceId: number | undefined, targetId: number | undefined): 
   isCompleted: false,
 });
 
-const getFieldByHandleId = (
+const getFieldByHandle = (
+  fields: FieldSourceState[] | FieldTargetState[],
+  handleId: string | null | undefined
+): FieldSourceState | FieldTargetState | undefined => {
+  if (!handleId) return undefined;
+
+  const sourceParts = handleId?.split("-");
+  const tableName = sourceParts && sourceParts.length >= 2 ? sourceParts[0] : "";
+  const fieldName = sourceParts && sourceParts.length >= 2 ? sourceParts[1] : "";
+
+  const field = fields.find(
+    (f) => f.data.tableName === tableName && f.data.label.toLowerCase() === fieldName.toLowerCase()
+  );
+  return field as FieldSourceState | FieldTargetState;
+};
+
+const getFieldFromLookup = (
   lookupTables: Table[],
   tableId: number | undefined,
   handleId: string | null | undefined
@@ -193,8 +218,8 @@ export const transformEtlModel = (
   cdmTables: TableSchemaState[],
   tableToTableMaps: Edge[],
   fieldToFieldMaps: Edge[],
-  allTargetFields: {
-    [tableName: string]: FieldTargetState[];
+  fieldMap: {
+    [tableEdgeId: string]: FieldMapState;
   }
 ): EtlModel => {
   const mappedSourceTables =
@@ -232,17 +257,11 @@ export const transformEtlModel = (
         "@items": table.column_list.map((column) => {
           etlGlobalVar.fieldId++;
 
-          const targetField = allTargetFields[table.table_name].find((f) => f.data.label === column.column_name);
-
           return {
             ...createField(etlGlobalVar.fieldId, column.column_name, table.table_name, column.column_type),
             table: {
               "@ref": etlGlobalVar.tableId,
             },
-            comment: targetField?.data?.comment || "",
-
-            // Note: Logic is only applicable for linked fields
-            // logic: getLogicString(targetField?.data),
           };
         }),
       },
@@ -251,6 +270,7 @@ export const transformEtlModel = (
 
   const mappedTableToTableMaps = tableToTableMaps.map((item) =>
     createMap(
+      item.id,
       mappedSourceTables.find((t) => getFieldName(t.name) === getFieldName(item.sourceHandle || ""))?.["@id"],
       mappedTargetTables.find((t) => getFieldName(t.name) === getFieldName(item.targetHandle || ""))?.["@id"]
     )
@@ -261,26 +281,27 @@ export const transformEtlModel = (
       "@type": "java.util.ArrayList",
       "@items": fieldToFieldMaps
         .filter((item) => {
-          const mappedSourceField = getFieldByHandleId(mappedSourceTables, table.sourceItem["@ref"], item.sourceHandle);
-          if (!mappedSourceField) return false;
+          const sourceField = getFieldByHandle(fieldMap[table.edgeId].sourceHandles, item.sourceHandle);
+          if (!sourceField) return false;
 
-          const mappedTargetField = getFieldByHandleId(mappedTargetTables, table.cdmItem["@ref"], item.targetHandle);
-          if (!mappedTargetField) return false;
+          const targetField = getFieldByHandle(fieldMap[table.edgeId].targetHandles, item.targetHandle);
+          if (!targetField) return false;
 
           return true;
         })
         .map((item) => {
-          const mappedSourceField = getFieldByHandleId(mappedSourceTables, table.sourceItem["@ref"], item.sourceHandle);
-          const mappedTargetField = getFieldByHandleId(mappedTargetTables, table.cdmItem["@ref"], item.targetHandle);
+          const mappedSourceField = getFieldFromLookup(mappedSourceTables, table.sourceItem["@ref"], item.sourceHandle);
+          const mappedTargetField = getFieldFromLookup(mappedTargetTables, table.cdmItem["@ref"], item.targetHandle);
 
-          const targetField = allTargetFields[mappedTargetField?.tableName || ""].find(
-            (f) => f.data.label === mappedTargetField?.name
-          );
+          const targetField = getFieldByHandle(
+            fieldMap[table.edgeId].targetHandles,
+            item.targetHandle
+          ) as FieldTargetState;
 
           return {
-            ...createMap(mappedSourceField?.["@id"], mappedTargetField?.["@id"]),
-            comment: mappedTargetField?.comment ? "" : targetField?.data?.comment || "",
-            logic: getLogicString(targetField?.data),
+            ...createMap("", mappedSourceField?.["@id"], mappedTargetField?.["@id"]),
+            comment: mappedTargetField?.comment || targetField?.data?.comment || "",
+            logic: mappedTargetField?.logic || getLogicString(targetField?.data) || "",
           };
         }),
     };
@@ -306,12 +327,15 @@ export const transformEtlModel = (
     },
     tableToTableMaps: {
       "@type": "java.util.ArrayList",
-      "@items": mappedTableToTableMaps,
+      "@items": mappedTableToTableMaps.map(({ edgeId, ...item }) => item),
     },
     tableMapToFieldToFieldMaps: {
       "@type": "java.util.HashMap",
-      "@keys": mappedTableToTableMaps,
-      "@items": mappedFieldToFieldMaps,
+      "@keys": mappedTableToTableMaps.map(({ edgeId, ...item }) => item),
+      "@items": mappedFieldToFieldMaps.map((item) => ({
+        ...item,
+        "@items": item["@items"].map(({ edgeId, ...fieldItem }) => fieldItem),
+      })),
     },
   };
 };

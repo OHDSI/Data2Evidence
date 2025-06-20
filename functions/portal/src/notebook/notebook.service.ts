@@ -53,12 +53,13 @@ export class NotebookService {
     branch: string;
   } | null> {
     try {
-      const config = await this.configService.getConfigByType(
-        "notebook-git-config"
-      );
-      console.log(`Git config: ${config?.value}`);
-      if (config?.value) {
-        return JSON.parse(config.value);
+      const config = await this.configService.getConfigValuesByTypes([
+        "notebook-git-config",
+      ]);
+      const value = config["notebook-git-config"];
+      console.log(`Git config: ${value}`);
+      if (value) {
+        return JSON.parse(value);
       }
       return null;
     } catch (error) {
@@ -972,7 +973,7 @@ export class NotebookService {
       await this.ensureLatestFromTemplateRemote(
         repoDir,
         templateRepoUrl,
-        templateBranch,
+        templateBranch
       );
 
       let files: string[] = [];
@@ -1017,7 +1018,7 @@ export class NotebookService {
 
   async createNotebookFromTemplate(
     templateId: string,
-    name: string,
+    name: string
   ): Promise<INotebook> {
     try {
       const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;

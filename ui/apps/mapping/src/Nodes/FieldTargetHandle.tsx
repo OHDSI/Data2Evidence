@@ -4,7 +4,7 @@ import { MappingHandle, MappingHandleProps } from "./MappingHandle";
 import { TransformConfigDialog } from "../Field/components/TransformConfigDialog";
 import { ConstantValueDialog } from "../Field/components/ConstantValueDialog";
 import { CommentDialog } from "../Field/components/CommentDialog";
-import { useField } from "../contexts";
+import { useActiveFieldMap, useField } from "../contexts";
 import "./FieldTargetHandle.scss";
 
 interface FieldTargetHandleProps extends MappingHandleProps {}
@@ -14,10 +14,18 @@ export const FieldTargetHandle = (props: FieldTargetHandleProps) => {
   const [isConstantDialogOpen, setIsConstantDialogOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const { edges } = useField();
+  const { sourceHandles, targetHandles } = useActiveFieldMap();
 
   const isLinked = useMemo(
-    () => edges.some((e) => e.targetHandle === `${props.data.tableName}-${props.data.label}`),
-    [edges]
+    () =>
+      edges
+        .filter((e) => e.targetHandle === `${props.data.tableName}-${props.data.label}`)
+        .some(
+          (e) =>
+            sourceHandles.some((h) => `${h.data.tableName}-${h.data.label}` === e.sourceHandle) &&
+            targetHandles.some((h) => `${h.data.tableName}-${h.data.label}` === e.targetHandle)
+        ),
+    [edges, targetHandles, sourceHandles]
   );
 
   const handleOpenTransformDialog = useCallback(() => {
