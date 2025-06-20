@@ -529,7 +529,7 @@ services:
       DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/notebooks.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-develop}
-
+      TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
