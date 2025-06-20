@@ -6,6 +6,7 @@
     :component-type="model.props.type"
     :is-catalog-attribute="isCatalogAttribute"
     :options-limit="200"
+    :max-selections="maxSelections"
     :concept-set-config="conceptSetConfig"
     @update:value="handleUpdateValue"
     @search-change="handleSearchChange"
@@ -21,19 +22,19 @@ export default {
   props: {
     model: {
       type: Object,
-      required: true
+      required: true,
     },
     externalValue: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     externalDomainValues: {
       type: Object,
       default: () => ({
         values: [],
         isLoading: false,
-        loadedStatus: 'NO_RESULTS'
-      })
+        loadedStatus: 'NO_RESULTS',
+      }),
     },
     externalTexts: {
       type: Object,
@@ -44,13 +45,17 @@ export default {
         createConceptSet: 'Create concept set',
         loadingSuggestions: 'Loading suggestions...',
         tooManyValues: 'Too many values',
-        noSuggestions: 'No suggestions found'
-      })
+        noSuggestions: 'No suggestions found',
+      }),
     },
     isCatalogAttribute: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    maxSelections: {
+      type: Number,
+      default: null,
+    },
   },
   emits: ['update:value', 'search-change', 'concept-set-action'],
   components: {
@@ -62,9 +67,9 @@ export default {
         domainFilter: this.model.props.domainFilter,
         standardConceptCodeFilter: this.model.props.standardConceptCodeFilter,
         // For query filter, we don't have selectedDataset, so we'll pass null
-        selectedDatasetId: null
+        selectedDatasetId: null,
       }
-    }
+    },
   },
   methods: {
     handleUpdateValue(value) {
@@ -76,7 +81,7 @@ export default {
     handleConceptSetAction({ values, config }) {
       // For query filter, we'll emit the event to let the parent handle it
       this.$emit('concept-set-action', { values, config })
-    }
-  }
+    },
+  },
 }
 </script>

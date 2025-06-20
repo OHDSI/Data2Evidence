@@ -28,13 +28,15 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement>()
 
+
 // Get criteria options based on section
 const criteriaOptions = computed(() => {
   const descriptionType =
     props.sectionId === 'initialEvents' ? 'initial' : props.sectionId === 'censoringEvents' ? 'censoring' : 'group'
 
   try {
-    return criteriaConfigLoader.getCriteriaOptions(props.sectionId, descriptionType)
+    const options = criteriaConfigLoader.getCriteriaOptions(props.sectionId, descriptionType)
+    return options
   } catch (error) {
     console.warn(`Failed to load criteria for section ${props.sectionId}:`, error)
     return []
@@ -106,6 +108,7 @@ onUnmounted(() => {
           :title="option.description"
         >
           <div class="criteria-selector-dropdown__option-content">
+            <i class="criteria-selector-dropdown__option-icon" :class="option.icon || 'fa-plus-circle'"></i>
             <div class="criteria-selector-dropdown__option-text">
               <span class="criteria-selector-dropdown__option-title">{{ option.title }}</span>
               <span class="criteria-selector-dropdown__option-description">{{ option.description }}</span>
@@ -116,6 +119,9 @@ onUnmounted(() => {
 
       <div v-if="criteriaOptions.length === 0" class="criteria-selector-dropdown__empty">
         <p>No criteria types available</p>
+        <p class="debug-info">
+          Section "{{ sectionId }}" not found. Available: initialEvents, censoringEvents, criteriaGroup
+        </p>
       </div>
     </div>
   </div>

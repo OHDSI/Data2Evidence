@@ -1,32 +1,39 @@
-export default [
-  {
-    id: 'filter_1749626300526_hwumpmee4',
-    title: 'Condition Occurrence',
-    type: 'inclusion',
-    events: [
+export default {
+  entryEvents: {},
+  inclusionCriteria: {
+    qualifyingEventsLimit: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
+    criteria: [
       {
-        id: 'event_1749626300526',
-        conceptSet: 'Condition Occurrence concept set',
-        chips: [],
-        criteriaType: 'conditionOccurrence',
+        id: 'criteria_1749626300526',
+        title: 'Criteria 1',
+        description: 'Description 1',
+        criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+        events: [
+          {
+            id: 'event_1749626300526',
+            eventType: 'conditionOccurrence',
+            attributes: [],
+            isExpanded: true,
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
+            },
+          },
+          {
+            id: 'event_1749626302603',
+            eventType: 'conditionOccurrence',
+            attributes: [],
+            isExpanded: true,
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
+            },
+          },
+        ],
       },
     ],
-    isExpanded: true,
-    operator: 'AND',
   },
-  {
-    id: 'filter_1749626302603_j4uptf11m',
-    title: 'Condition Occurrence',
-    type: 'inclusion',
-    events: [
-      {
-        id: 'event_1749626302603',
-        conceptSet: 'Condition Occurrence concept set',
-        chips: [],
-        criteriaType: 'conditionOccurrence',
-      },
-    ],
-    isExpanded: true,
-    operator: 'AND',
-  },
-]
+}
+

@@ -17,6 +17,7 @@ export default {
     Type: 'All',
   },
   InclusionRules: [],
+  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA',
@@ -24,4 +25,3 @@ export default {
   },
   CensorWindow: {},
 }
-

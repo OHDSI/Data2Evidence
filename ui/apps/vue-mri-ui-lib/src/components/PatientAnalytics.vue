@@ -36,11 +36,12 @@
             ></sharedBookmarks>
             <bookmarks
               @unloadBookmarkEv="toggleCohorts(false)"
+              @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
               :init-bookmark-id="this.querystring.bmkId"
               v-if="getMriFrontendConfig && displayCohorts"
             ></bookmarks>
 
-            <filters v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"></filters>
+            <filters ref="filtersRef" v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"></filters>
           </div>
         </pane>
 
@@ -432,6 +433,18 @@ export default {
     },
     updateMinSplitterWidth() {
       this.splitterMinWidth = (400 / window.innerWidth) * 100
+    },
+    async handleLoadAtlasCohortDefinition(atlasJson) {
+      try {
+        // Access the QueryFilter component in Filters.vue through the ref
+        if (this.$refs.filtersRef && this.$refs.filtersRef.$refs.queryFilterRef) {
+          await this.$refs.filtersRef.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+        } else {
+          console.error('QueryFilter ref not found in Filters component')
+        }
+      } catch (error) {
+        console.error('Error loading Atlas cohort definition into QueryFilter:', error)
+      }
     },
   },
   components: {

@@ -1,136 +1,111 @@
-export default [
-  {
-    id: 'filter_1749629649220_8wx84fbpe',
-    title: 'Condition Occurrence',
-    type: 'inclusion',
-    events: [
+export default {
+  entryEvents: {},
+  inclusionCriteria: {
+    qualifyingEventsLimit: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
+    criteria: [
       {
-        id: 'event_1749629649220',
-        conceptSet: 'Condition Occurrence concept set',
-        chips: [],
-        criteriaType: 'conditionOccurrence',
-      },
-      {
-        id: 'nested_1749629708440_e8pm9n10q',
-        conceptSet: 'Nested Criteria',
-        chips: [],
-        isEditing: false,
-        operator: 'OR',
-        criteriaType: 'conditionOccurrence',
-        isAttributeBased: true,
-        parentEventId: 'event_1749629649220',
-        isNested: true,
-        nestedEvents: [
+        id: 'criteria_1749626300526',
+        title: 'Criteria 1',
+        description: 'Description 1',
+        criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+        events: [
           {
-            id: 'nested_child_1749629718044_j3e5r7ex3',
-            conceptSet: 'Add Condition Occurrence',
-            chips: [],
-            isEditing: false,
-            operator: 'OR',
-            criteriaType: 'conditionOccurrence',
-            isAttributeBased: false,
-            parentEventId: 'nested_1749629708440_e8pm9n10q',
-            isNested: false,
-            nestedEvents: [],
-            nestedOperator: 'AND',
-          },
-          {
-            id: 'nested_1749629722051_wyu4fu5bu',
-            conceptSet: 'Nested Criteria',
-            chips: [],
-            isEditing: false,
-            operator: 'OR',
-            criteriaType: 'conditionOccurrence',
-            isAttributeBased: true,
-            parentEventId: 'nested_child_1749629718044_j3e5r7ex3',
-            isNested: true,
-            nestedEvents: [
+            id: 'event_1749626300526',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [
               {
-                id: 'nested_child_1749629733098_13si1q0n5',
-                conceptSet: 'Add Condition Occurrence',
-                chips: [],
-                isEditing: false,
-                operator: 'OR',
-                criteriaType: 'conditionOccurrence',
-                isAttributeBased: false,
-                parentEventId: 'nested_1749629722051_wyu4fu5bu',
-                isNested: false,
-                nestedEvents: [],
-                nestedOperator: 'AND',
-              },
-              {
-                id: 'nested_1749629760564_4eprl7fob',
-                conceptSet: 'Nested Criteria',
-                chips: [],
-                isEditing: false,
-                operator: 'OR',
-                criteriaType: 'conditionOccurrence',
-                isAttributeBased: true,
-                parentEventId: 'nested_child_1749629733098_13si1q0n5',
-                isNested: true,
-                nestedEvents: [
-                  {
-                    id: 'nested_child_1749629765241_nt4vmz5bl',
-                    conceptSet: 'Add Condition Occurrence',
-                    chips: [],
-                    isEditing: false,
-                    operator: 'OR',
-                    criteriaType: 'conditionOccurrence',
-                    isAttributeBased: false,
-                    parentEventId: 'nested_1749629760564_4eprl7fob',
-                    isNested: false,
-                    nestedEvents: [],
-                    nestedOperator: 'AND',
-                  },
-                  {
-                    id: 'attr_1749629769869_rtdr8m0gb',
-                    conceptSet: 'Gender',
-                    chips: [],
-                    isEditing: false,
-                    operator: 'OR',
-                    criteriaType: 'conditionOccurrence',
-                    isAttributeBased: true,
-                    parentEventId: 'nested_child_1749629765241_nt4vmz5bl',
-                    attributeConfig: {
-                      id: 'gender',
-                      name: 'Gender',
-                      description: 'Filter by patient gender',
-                      type: 'conceptSet',
-                      category: 'criteria-specific',
+                id: 'attribute_1749626300526',
+                attributeType: 'nested',
+                nestedCriteria: {
+                  id: 'criteria_1749626300528',
+                  criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                  events: [
+                    {
+                      id: 'event_1749626300529',
+                      eventType: 'conditionOccurrence',
+                      isExpanded: true,
+                      attributes: [
+                        {
+                          id: 'attribute_1749626300526',
+                          attributeType: 'nested',
+                          nestedCriteria: {
+                            id: 'criteria_1749626300528',
+                            criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                            events: [
+                              {
+                                id: 'event_1749626300529',
+                                eventType: 'conditionOccurrence',
+                                isExpanded: true,
+                                attributes: [
+                                  {
+                                    id: 'attribute_1749626300526',
+                                    attributeType: 'nested',
+                                    nestedCriteria: {
+                                      id: 'criteria_1749626300528',
+                                      criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                                      events: [
+                                        {
+                                          id: 'event_1749626300529',
+                                          eventType: 'conditionOccurrence',
+                                          isExpanded: true,
+                                          attributes: [
+                                            {
+                                              id: 'attribute_1749626300527',
+                                              attributeId: 'gender',
+                                              type: 'conceptSet',
+                                            },
+                                          ],
+                                          cardinality: {
+                                            type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                                            count: 1,
+                                            using: 'ALL',
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                                cardinality: {
+                                  type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                                  count: 1,
+                                  using: 'ALL',
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                      cardinality: {
+                        type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+                        count: 1,
+                        using: 'ALL',
+                      },
                     },
-                  },
-                ],
-                nestedOperator: 'AND',
-                attributeConfig: {
-                  id: 'nested',
-                  name: 'Nested Criteria',
-                  description: 'Add nested criteria group',
-                  type: 'nested',
-                  category: 'criteria-specific',
+                  ],
                 },
               },
             ],
-            nestedOperator: 'AND',
-            attributeConfig: {
-              id: 'nested',
-              name: 'Nested Criteria',
-              description: 'Add nested criteria group',
-              type: 'nested',
-              category: 'criteria-specific',
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
+            },
+          },
+          {
+            id: 'event_1749626302603',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [],
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
             },
           },
         ],
-        nestedOperator: 'AND',
-        attributeConfig: {
-          id: 'nested',
-          name: 'Nested Criteria',
-          description: 'Add nested criteria group',
-          type: 'nested',
-          category: 'criteria-specific',
-        },
       },
     ],
-    isExpanded: true,
-    operator: 'AND',
   },
-]
+}
+

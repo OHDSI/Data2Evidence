@@ -6,12 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, defineProps, defineEmits } from 'vue'
-import {
-  QueryFilterCardModel,
-  QueryFilterChip as QueryFilterChipType,
-  QueryFilterEvent,
-} from '../models/QueryFilterModel'
-import QueryFilterChip from './QueryFilterChip.vue'
+import { QueryFilterCardModel, QueryFilterEvent } from '../models/QueryFilterModel'
 import QueryFilterNestedEvent from './QueryFilterNestedEvent.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
@@ -33,8 +28,6 @@ const emit = defineEmits([
   'edit-event',
   'duplicate-event',
   'remove-event',
-  'add-chip',
-  'remove-chip',
   'show-menu',
   'remove-filter',
   'add-any-event',
@@ -57,7 +50,6 @@ const addEvent = () => {
   // Use the model's method to add a new event
   const newEvent = props.filter.addEvent({
     conceptSet: 'New Concept Set',
-    chips: [],
   })
   emit('update:filter', props.filter)
   emit('add-event', props.filter.id, newEvent.id)
@@ -74,11 +66,6 @@ const duplicateEvent = (eventId: string) => {
     const duplicatedEvent = props.filter.addEvent({
       conceptSet: `${event.conceptSet} (Copy)`,
       conceptSetId: event.conceptSetId,
-      chips: event.chips.map(chip => ({
-        ...chip,
-        id: `chip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      })),
-      operator: event.operator,
     })
     emit('update:filter', props.filter)
     emit('duplicate-event', props.filter.id, eventId, duplicatedEvent.id)
@@ -97,20 +84,6 @@ const showEventMenu = (eventId: string) => {
   emit('show-menu', props.filter.id, eventId)
 }
 
-const addChip = (eventId: string) => {
-  // For now, emit to parent to handle chip selection
-  // In real implementation, this would open a concept selector
-  emit('add-chip', props.filter.id, eventId)
-}
-
-const removeChip = (eventId: string, chipId: string) => {
-  const removed = props.filter.removeChipFromEvent(eventId, chipId)
-  if (removed) {
-    emit('update:filter', props.filter)
-    emit('remove-chip', props.filter.id, eventId, chipId)
-  }
-}
-
 const removeFilter = () => {
   emit('remove-filter', props.filter.id)
 }
@@ -118,24 +91,6 @@ const removeFilter = () => {
 const toggleOperator = () => {
   props.filter.operator = props.filter.operator === 'OR' ? 'AND' : 'OR'
   emit('update:filter', props.filter)
-}
-
-// Helper to add a chip programmatically (can be called from parent)
-const addChipToEvent = (eventId: string, chip: Partial<QueryFilterChipType>) => {
-  const newChip: QueryFilterChipType = {
-    id: chip.id || `chip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-    label: chip.label || 'New Chip',
-    value: chip.value || '',
-    color: chip.color,
-    conceptId: chip.conceptId,
-    domainId: chip.domainId,
-  }
-
-  const added = props.filter.addChipToEvent(eventId, newChip)
-  if (added) {
-    emit('update:filter', props.filter)
-  }
-  return added
 }
 
 // Handle attribute selection and removal
@@ -238,7 +193,6 @@ const handleNestedCriteriaSelected = (nestedEventId: string, option: CriteriaOpt
   const newEvent = props.filter.addNestedEvent(nestedEventId, {
     conceptSet: displayTitle,
     criteriaType: option.id,
-    chips: [],
   })
   emit('update:filter', props.filter)
   // Don't emit add-event for nested events - they're handled internally
@@ -306,7 +260,6 @@ const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
     const newEvent = props.filter.addEvent({
       conceptSet: displayTitle,
       criteriaType: option.id,
-      chips: [],
       isDemographic: true, // Mark as demographic to handle differently in export
     })
     emit('update:filter', props.filter)
@@ -315,7 +268,6 @@ const handleAnyEventCriteriaSelected = (option: CriteriaOption) => {
     const newEvent = props.filter.addEvent({
       conceptSet: displayTitle,
       criteriaType: option.id,
-      chips: [],
     })
     emit('update:filter', props.filter)
   }
@@ -351,12 +303,6 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
     },
   }
 }
-
-
-// Expose the addChipToEvent method for parent access if needed
-defineExpose({
-  addChipToEvent,
-})
 </script>
 
 <template>
@@ -443,13 +389,16 @@ defineExpose({
                 :external-domain-values="conceptSetDomainValues"
                 :external-texts="conceptSetTexts"
                 :is-catalog-attribute="false"
-                @update:value="(value) => handleConceptSetSelected(group.parentEvent.id, value[0])"
-                @search-change="(query) => handleConceptSetSearchChange(group.parentEvent.id, query)"
-                @concept-set-action="(action) => handleConceptSetAction(group.parentEvent.id, action)"
+                @update:value="value => handleConceptSetSelected(group.parentEvent.id, value[0])"
+                @search-change="query => handleConceptSetSearchChange(group.parentEvent.id, query)"
+                @concept-set-action="action => handleConceptSetAction(group.parentEvent.id, action)"
               />
               <span v-else class="query-filter-event__label">
                 {{ group.parentEvent.conceptSet || 'Event concept set' }}
-                <span v-if="group.parentEvent.conceptSetLoading" style="margin-left: 8px; font-style: italic; color: #666;">
+                <span
+                  v-if="group.parentEvent.conceptSetLoading"
+                  style="margin-left: 8px; font-style: italic; color: #666"
+                >
                   (Loading concept details...)
                 </span>
               </span>
@@ -490,7 +439,6 @@ defineExpose({
               </button>
             </div>
           </div>
-
         </div>
 
         <!-- Attribute-based conditions -->
@@ -525,7 +473,6 @@ defineExpose({
             </div>
           </div>
 
-
           <!-- Nested criteria content -->
           <div v-if="attrEvent.isNested" class="query-filter-event__nested-content">
             <!-- Add event button for nested criteria -->
@@ -556,8 +503,6 @@ defineExpose({
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
                 @remove-event="handleNestedEventRemove"
-                @add-chip="addChip"
-                @remove-chip="removeChip"
                 @attribute-selected="handleNestedAttributeSelected"
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"
@@ -581,8 +526,6 @@ defineExpose({
                 @edit-event="editEvent"
                 @duplicate-event="duplicateEvent"
                 @remove-event="handleNestedEventRemove"
-                @add-chip="addChip"
-                @remove-chip="removeChip"
                 @attribute-selected="handleNestedAttributeSelected"
                 @attribute-removed="handleNestedAttributeRemoved"
                 @criteria-selected="handleNestedCriteriaSelected"

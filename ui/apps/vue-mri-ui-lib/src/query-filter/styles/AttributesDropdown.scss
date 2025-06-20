@@ -44,16 +44,48 @@
   &__menu {
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 0;
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    z-index: 1000;
+    z-index: 9999;
     min-width: 300px;
     max-width: 400px;
     max-height: 500px;
     overflow-y: auto;
+
+    // Smart positioning: if close to right edge, align to right instead
+    &.align-right {
+      left: auto;
+      right: 0;
+    }
+
+    // Flip to top when insufficient space below
+    &.flip-vertical {
+      top: auto;
+      bottom: 100%;
+    }
+
+    // Limit height when space is constrained
+    &.constrained-height {
+      max-height: 300px;
+    }
+
+    // Ensure the dropdown doesn't go off-screen
+    transform: translateX(0);
+
+    // For very small trigger buttons, adjust positioning
+    &.wide-menu {
+      transform: translateX(-50%);
+      left: 50%;
+
+      &.align-right {
+        transform: translateX(50%);
+        left: auto;
+        right: 50%;
+      }
+    }
   }
 
   &__header {
@@ -172,3 +204,4 @@
     }
   }
 }
+

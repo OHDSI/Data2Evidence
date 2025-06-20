@@ -18,7 +18,8 @@ export default {
   },
   InclusionRules: [
     {
-      name: 'Condition Occurrence',
+      name: 'Criteria 1',
+      description: 'Description 1',
       expression: {
         Type: 'ALL',
         CriteriaList: [
@@ -92,51 +93,9 @@ export default {
               Count: 1,
             },
           },
-        ],
-        DemographicCriteriaList: [],
-        Groups: [],
-      },
-    },
-    {
-      name: 'Condition Occurrence',
-      expression: {
-        Type: 'ALL',
-        CriteriaList: [
           {
             Criteria: {
-              ConditionOccurrence: {
-                CorrelatedCriteria: {
-                  Type: 'ALL',
-                  CriteriaList: [
-                    {
-                      Criteria: {
-                        ConditionOccurrence: {},
-                      },
-                      StartWindow: {
-                        Start: {
-                          Coeff: -1,
-                        },
-                        End: {
-                          Coeff: 1,
-                        },
-                        UseEventEnd: false,
-                      },
-                      Occurrence: {
-                        Type: 2,
-                        Count: 1,
-                      },
-                    },
-                  ],
-                  DemographicCriteriaList: [
-                    {
-                      Age: {
-                        Op: 'gt',
-                      },
-                    },
-                  ],
-                  Groups: [],
-                },
-              },
+              ConditionOccurrence: {},
             },
             StartWindow: {
               Start: {
@@ -158,6 +117,7 @@ export default {
       },
     },
   ],
+  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA',
@@ -165,4 +125,3 @@ export default {
   },
   CensorWindow: {},
 }
-

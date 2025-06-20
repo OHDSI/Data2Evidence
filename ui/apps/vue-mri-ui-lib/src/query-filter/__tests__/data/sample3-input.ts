@@ -1,66 +1,61 @@
-export default [
-  {
-    id: 'filter_1749626300526_hwumpmee4',
-    title: 'Condition Occurrence',
-    type: 'inclusion',
-    events: [
+export default {
+  entryEvents: {},
+  inclusionCriteria: {
+    qualifyingEventsLimit: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
+    criteria: [
       {
-        id: 'event_1749626300526',
-        conceptSet: 'Condition Occurrence concept set',
-        chips: [],
-        criteriaType: 'conditionOccurrence',
-      },
-      {
-        id: 'nested_1749626456178_tg17wt4wa',
-        conceptSet: 'Nested Criteria',
-        chips: [],
-        isEditing: false,
-        operator: 'OR',
-        criteriaType: 'conditionOccurrence',
-        isAttributeBased: true,
-        parentEventId: 'event_1749626300526',
-        isNested: true,
-        nestedEvents: [
+        id: 'criteria_1749626300526',
+        title: 'Criteria 1',
+        description: 'Description 1',
+        criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+        events: [
           {
-            id: 'nested_child_1749626460392_mg78bpunn',
-            conceptSet: 'Add Condition Occurrence',
-            chips: [],
-            isEditing: false,
-            operator: 'OR',
-            criteriaType: 'conditionOccurrence',
-            isAttributeBased: false,
-            parentEventId: 'nested_1749626456178_tg17wt4wa',
-            isNested: false,
-            nestedEvents: [],
-            nestedOperator: 'AND',
+            id: 'event_1749626300526',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [
+              {
+                id: 'attribute_1749626300526',
+                attributeType: 'nested',
+                nestedCriteria: {
+                  id: 'criteria_1749626300528',
+                  criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+                  events: [
+                    {
+                      id: 'event_1749626300529',
+                      eventType: 'conditionOccurrence',
+                      isExpanded: true,
+                      attributes: [],
+                      cardinality: {
+                        type: 'AT_LEAST',
+                        count: 1,
+                        using: 'ALL',
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            cardinality: {
+              type: 'AT_LEAST',
+              count: 1,
+              using: 'ALL',
+            },
+          },
+          {
+            id: 'event_1749626302603',
+            eventType: 'conditionOccurrence',
+            isExpanded: true,
+            attributes: [],
+            cardinality: {
+              type: 'AT_LEAST',
+              count: 1,
+              using: 'ALL',
+            },
           },
         ],
-        nestedOperator: 'AND',
-        attributeConfig: {
-          id: 'nested',
-          name: 'Nested Criteria',
-          description: 'Add nested criteria group',
-          type: 'nested',
-          category: 'criteria-specific',
-        },
       },
     ],
-    isExpanded: true,
-    operator: 'AND',
   },
-  {
-    id: 'filter_1749626302603_j4uptf11m',
-    title: 'Condition Occurrence',
-    type: 'inclusion',
-    events: [
-      {
-        id: 'event_1749626302603',
-        conceptSet: 'Condition Occurrence concept set',
-        chips: [],
-        criteriaType: 'conditionOccurrence',
-      },
-    ],
-    isExpanded: true,
-    operator: 'AND',
-  },
-]
+}
+

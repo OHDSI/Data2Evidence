@@ -119,8 +119,6 @@
         <d4l-spinner />
       </div>
       <div v-else>
-        <!-- TODO: Put here for convenience during dev. move it to the filter cards section later -->
-        <QueryFilter ref="queryFilterRef" />
         <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
           {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
         </div>
@@ -150,16 +148,16 @@
 
     <cohortListDialog
       :openListDialog="showCohortListDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showCohortListDialog = false"
     >
     </cohortListDialog>
 
     <addCohort
       :openAddDialog="showAddCohortDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showAddCohortDialog = false"
       :cohortDefinitionType="cohortDefinitionType"
       :atlasCohortDefinitionId="atlasCohortDefinitionId"
@@ -188,7 +186,7 @@
 </template>
 
 <script lang="ts">
-declare var sap
+declare var sap: any
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
@@ -204,7 +202,6 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-import QueryFilter from '../query-filter/components/QueryFilter.vue'
 
 export default {
   compatConfig: {
@@ -345,13 +342,11 @@ export default {
         // Set as active bookmark to create the tab
         this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
 
-        // Load into QueryFilter component
-        if (this.$refs.queryFilterRef) {
-          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+        // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
+        this.$emit('loadAtlasCohortDefinition', atlasJson)
 
-          // Switch to Patient Analytics view after loading
-          this.$emit('unloadBookmarkEv')
-        }
+        // Switch to Patient Analytics view after loading
+        this.$emit('unloadBookmarkEv')
       } catch (error) {
         console.error('Failed to load Atlas bookmark:', error)
         this.messageStrip = {
@@ -611,7 +606,6 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
-    QueryFilter,
   },
 }
 </script>
