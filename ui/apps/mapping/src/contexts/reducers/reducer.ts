@@ -11,12 +11,8 @@ import {
   setFieldNodes,
   setFieldEdges,
   addFieldConnection,
-  setFieldSourceHandles,
-  setFieldTargetHandles,
-  setActiveFieldSourceHandles,
   setActiveFieldTargetHandles,
-  setActiveSourceTable,
-  setActiveTargetTable,
+  setActiveTableEdgeId,
 } from "./field";
 import { setScannedSchema } from "./scanned-schema";
 import { setCdmTables, setCdmVersion } from "./cdm-table";
@@ -71,11 +67,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.SET_FIELD_NODES, setFieldNodes],
   [ACTION_TYPES.SET_FIELD_EDGES, setFieldEdges],
   [ACTION_TYPES.ADD_FIELD_CONNECTION, addFieldConnection],
-  [ACTION_TYPES.SET_FIELD_SOURCE_HANDLES, setFieldSourceHandles],
-  [ACTION_TYPES.SET_FIELD_TARGET_HANDLES, setFieldTargetHandles],
-  [ACTION_TYPES.SET_ACTIVE_SOURCE_TABLE, setActiveSourceTable],
-  [ACTION_TYPES.SET_ACTIVE_FIELD_SOURCE_HANDLES, setActiveFieldSourceHandles],
-  [ACTION_TYPES.SET_ACTIVE_TARGET_TABLE, setActiveTargetTable],
+  [ACTION_TYPES.SET_ACTIVE_SOURCE_TABLE, setActiveTableEdgeId],
   [ACTION_TYPES.SET_ACTIVE_FIELD_TARGET_HANDLES, setActiveFieldTargetHandles],
   [ACTION_TYPES.SET_SCANNED_SCHEMA, setScannedSchema],
   [ACTION_TYPES.SET_CDM_VERSION, setCdmVersion],
