@@ -57,8 +57,6 @@ class DataModelType(BaseModel):
         return values
 
 
-
-
 class DataModelBase(BaseModel):
     use_cache_db: bool
     database_code: str = Field(...)

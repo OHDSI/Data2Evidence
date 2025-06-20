@@ -48,6 +48,11 @@ module.exports = (env, argv) => {
           target: "https://localhost:41100",
           secure: false,
         },
+        {
+          context: ["/resources/concept-mapping"],
+          target: "https://localhost:41100",
+          secure: false,
+        },
       ],
     },
     entry: {

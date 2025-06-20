@@ -75,6 +75,7 @@ export const dbSvcConverter = (
         if (val.type === "HANA") {
             val.values = overrideValues(val.values, val.dbSvcValues);
             const config = {
+                authentication_mode: val.values.authentication_mode,
                 host: val.values.host,
                 port: val.values.port,
                 databaseName: val.values.databaseName,
@@ -165,6 +166,7 @@ const remapMridbToVcap = (
             name: mridb.name,
             tags: mridb.tags,
             credentials: {
+                authentication_mode: mridb.values.authentication_mode,
                 host: mridb.values.host,
                 port: mridb.values.port,
                 code: mridb.values.code,

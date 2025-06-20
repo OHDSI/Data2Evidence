@@ -172,10 +172,6 @@ TLS__INTERNAL__CRT:
 TLS__INTERNAL__KEY:
   comment: Internal Microservice TLS Communication Private
   publish: true
-TREX_PULL_POLICY:
-  comment: null
-  publish: false
-  type: string
 USE_CACHEDB:
   comment: boolean
   publish: false

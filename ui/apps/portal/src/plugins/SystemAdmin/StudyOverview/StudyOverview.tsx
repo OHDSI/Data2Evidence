@@ -12,6 +12,7 @@ import {
   VisibilityOnIcon,
   VisibilityOffIcon,
   Button,
+  Tooltip,
 } from "@portal/components";
 import { CloseDialogType, Study, StudyAttribute } from "../../../types";
 import { useDialogHelper, useDatasets, useDatabases } from "../../../hooks";
@@ -392,7 +393,15 @@ const StudyOverview: FC = () => {
                     <TableCell>
                       {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}
                     </TableCell>
-                    <TableCell>{`${dataset.dataModel} [${dataset.plugin}]`}</TableCell>
+                    <TableCell>
+                      {dataset.dataModel
+                        ? `${dataset.dataModel} [${dataset.plugin}]`
+                        : dataset.fhir_project_id && (
+                            <Tooltip placement="top" title={dataset.fhir_project_id}>
+                              <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
+                            </Tooltip>
+                          )}
+                    </TableCell>
 
                     <TableCell className="col-action">
                       <ActionSelector
