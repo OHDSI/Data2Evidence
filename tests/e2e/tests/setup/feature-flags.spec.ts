@@ -37,7 +37,6 @@ test('setup-feature-flags', async ({ page }) => {
   await page.getByTestId('button').click()
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-  // await page.getByText('PG-CDMDEFAULT').first().click()
   await page.getByText('Demo dataset').first().click()
   await expect(page.getByRole('link', { name: 'Concepts' })).toBeVisible()
   await page.getByRole('link', { name: 'Cohorts' }).click()
