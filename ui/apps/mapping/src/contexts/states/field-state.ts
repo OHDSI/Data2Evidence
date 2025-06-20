@@ -100,8 +100,10 @@ export type FieldTargetState = NodeProps<FieldTargetHandleData>;
 export interface FieldState {
   nodes: Node<FieldNodeData>[];
   edges: Edge[];
-  sourceHandles: { [tableName: string]: FieldSourceState[] };
-  targetHandles: { [tableName: string]: FieldTargetState[] };
-  activeSourceTable?: string;
-  activeTargetTable?: string;
+  activeTableEdgeId?: string;
+}
+
+export interface FieldMapState {
+  sourceHandles: FieldSourceState[];
+  targetHandles: FieldTargetState[];
 }
