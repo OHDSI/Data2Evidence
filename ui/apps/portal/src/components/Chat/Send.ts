@@ -24,8 +24,6 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
 
     const reader = response.body.getReader();
     const textDecoder = new TextDecoder();
-    let buffer = "";
-    let lastMessage = "";
 
     try {
       while (true) {
@@ -36,31 +34,7 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
         }
 
         const chunk = textDecoder.decode(value, { stream: true });
-        buffer += chunk;
-
-        // If we have a newline, process the complete lines
-        if (buffer.includes("\n")) {
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              let newPart = trimmedLine;
-              if (trimmedLine.startsWith(lastMessage)) {
-                newPart = trimmedLine.slice(lastMessage.length);
-              }
-              if (newPart && newPart !== lastMessage) {
-                observer.next(newPart + "\n");
-              }
-              lastMessage = trimmedLine;
-            }
-          }
-        }
-
-        if (buffer.trim() && buffer.trim() !== lastMessage) {
-          observer.next(buffer.trim());
-        }
+        observer.next(chunk);
       }
     } finally {
       reader.releaseLock();
