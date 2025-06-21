@@ -28,7 +28,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [bearerToken, setBearerToken] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const VIEWER_BASE_URL = "https://localhost:4000/portal"; // TODO: change to the actual viewer url
+  const VIEWER_BASE_URL = `https://localhost:41100/strategus-results/${study.id}/`;
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -48,7 +48,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   useEffect(() => {
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
-        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/gateway; secure; SameSite=Strict;`;
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
         console.log("Cookie set in iframe:", iframeRef.current.contentWindow.document.cookie);
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
