@@ -86,7 +86,7 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
       onClose={onClose}
     >
       <PluginRenderer
-        path="/concept-mapping/module.js"
+        path="/resources/concept-mapping/module.js"
         userId={pluginMetadata.userId}
         getToken={pluginMetadata.getToken}
         data={pluginData}

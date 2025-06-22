@@ -35,22 +35,10 @@
 
   .snapshotmetadata__filtergroup {
     padding-right: 20px;
+    margin-bottom: 2em;
   }
 
   .snapshotcohort__filtergroup {
     padding-right: 20px;
-  }
-
-  .snapshotlocation__radiogroup {
-    margin-top: 2em;
-    color: var(--color-primary);
-    .MuiFormLabel-root {
-      color: var(--color-primary);
-      margin-bottom: 16px;
-      font-weight: 500;
-    }
-    .MuiIconButton-label {
-      color: var(--color-primary);
-    }
   }
 }

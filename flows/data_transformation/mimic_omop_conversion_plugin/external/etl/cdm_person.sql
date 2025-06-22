@@ -85,7 +85,7 @@ FROM (SELECT
         WHEN p.gender = 'M' THEN 8507 -- MALE
         ELSE 0 
     END                             AS gender_concept_id,
-    p.anchor_year                   AS year_of_birth,
+    p.anchor_year-p.anchor_age       AS year_of_birth,
     CAST(NULL AS bigint)             AS month_of_birth,
     CAST(NULL AS bigint)             AS day_of_birth,
     CAST(NULL AS timestamp)          AS birth_datetime,

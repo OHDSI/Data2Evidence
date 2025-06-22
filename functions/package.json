@@ -109,12 +109,6 @@
           "env": "portal"
         },
         {
-          "source": "/dataflow-mgmt",
-          "function": "/jobplugins",
-          "env": "jobplugins",
-          "imports": "/jobplugins/import.json"
-        },
-        {
           "source": "/usermgmt",
           "function": "/alp-usermgmt",
           "imports": "/alp-usermgmt/import.json",
@@ -358,6 +352,7 @@
           "portal.dataset.metadataConfig.attribute.write",
           "portal.dataset.metadataConfig.attribute.delete",
           "portal.config.read",
+          "portal.configSecret.read",
           "portal.config.write",
           "portal.userArtifact.read",
           "portal.userArtifact.write",
@@ -367,6 +362,8 @@
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
+          "portal.gitStudies.read",
           "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
@@ -531,6 +528,7 @@
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
+          "jobplugins.flowRun.strategus.removeResults.add",
           "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
         ]
@@ -578,6 +576,16 @@
           "httpMethods": [
             "GET",
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "scopes": [
+            "jobplugins.flowRun.strategus.removeResults.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {
@@ -1140,6 +1148,33 @@
           ]
         },
         {
+          "path": "^/system-portal/notebook/templates$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates/(.*)$",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/notebook",
           "scopes": [
             "portal.notebook.add"
@@ -1164,6 +1199,24 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/remote-diff-check$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {
@@ -1279,6 +1332,15 @@
           "path": "^/system-portal/config(.*)",
           "scopes": [
             "portal.config.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/config/secret(.*)",
+          "scopes": [
+            "portal.configSecret.read"
           ],
           "httpMethods": [
             "GET"
@@ -1459,6 +1521,24 @@
           ]
         },
         {
+          "path": "^/system-portal/git-studies/studies",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/study/strategus",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
           "scopes": [
             "gateway.dashboardGate.content"
@@ -1624,7 +1704,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/(.*)",
+          "path": "^/jobplugins/dataflow/(.*)",
           "scopes": [
             "dataflowmgmt.dataflow.read"
           ],
@@ -1633,7 +1713,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow(.*)",
+          "path": "^/jobplugins/dataflow(.*)",
           "scopes": [
             "dataflowmgmt.dataflow.add"
           ],
@@ -1642,7 +1722,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/file/csv$",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -1651,7 +1731,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
           "scopes": [
             "dataflowmgmt.dataflow.delete"
           ],
@@ -1660,7 +1740,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.dataflow.revision.delete"
           ],
@@ -1669,7 +1749,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/(.*)",
+          "path": "^/jobplugins/analysisflow/(.*)",
           "scopes": [
             "dataflowmgmt.analysisflow.read"
           ],
@@ -1678,7 +1758,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow(.*)",
+          "path": "^/jobplugins/analysisflow(.*)",
           "scopes": [
             "dataflowmgmt.analysisflow.add"
           ],
@@ -1687,7 +1767,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
           "scopes": [
             "dataflowmgmt.analysisflow.delete"
           ],
@@ -1696,7 +1776,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "scopes": [
             "dataflowmgmt.analysisflow.revision.delete"
           ],
@@ -1705,16 +1785,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/db-svc/(run|dataset-attributes|fetch-version-info)$",
-          "scopes": [
-            "dataflowmgmt.dbsvc.flowRun.run"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/prefect/flow/list$",
+          "path": "^/jobplugins/prefect/flow/list$",
           "scopes": [
             "dataflowmgmt.prefect.flow.read"
           ],
@@ -1723,7 +1794,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/metadata/list$",
+          "path": "^/jobplugins/prefect/flow/metadata/list$",
           "scopes": [
             "dataflowmgmt.prefect.flow.read"
           ],
@@ -1732,7 +1803,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/datamodels/list$",
+          "path": "^/jobplugins/prefect/flow/datamodels/list$",
           "scopes": [
             "dataflowmgmt.prefect.flow.read"
           ],
@@ -1741,7 +1812,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/deployment$",
+          "path": "^/jobplugins/prefect/flow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/deployment$",
           "scopes": [
             "dataflowmgmt.prefect.flow.deployment.read"
           ],
@@ -1750,7 +1821,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus",
+          "path": "^/jobplugins/prefect/jupyter-kernel/flow-run/strategus",
           "scopes": [
             "rD2E.jupyter.kernel.flowRun.add",
             "portal.dataset.read"
@@ -1760,7 +1831,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow$",
+          "path": "^/jobplugins/prefect/flow$",
           "scopes": [
             "dataflowmgmt.prefect.flow.add"
           ],
@@ -1769,7 +1840,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/file-deployment$",
+          "path": "^/jobplugins/prefect/flow/file-deployment$",
           "scopes": [
             "dataflowmgmt.prefect.flow.fileDeployment.add"
           ],
@@ -1778,7 +1849,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/git-deployment$",
+          "path": "^/jobplugins/prefect/flow/git-deployment$",
           "scopes": [
             "dataflowmgmt.prefect.flow.fileDeployment.add"
           ],
@@ -1787,7 +1858,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/default-deployment$",
+          "path": "^/jobplugins/prefect/flow/default-deployment$",
           "scopes": [
             "dataflowmgmt.prefect.flow.fileDeployment.add"
           ],
@@ -1797,7 +1868,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow/(.*)",
+          "path": "^/jobplugins/prefect/flow/(.*)",
           "scopes": [
             "dataflowmgmt.prefect.flow.delete"
           ],
@@ -1806,7 +1877,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/(.*)",
+          "path": "^/jobplugins/prefect/flow-run/(.*)",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.read"
           ],
@@ -1815,7 +1886,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.cancel"
           ],
@@ -1824,7 +1895,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/deployment",
+          "path": "^/jobplugins/prefect/flow-run/deployment",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.add"
           ],
@@ -1833,7 +1904,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/(.*)",
+          "path": "^/jobplugins/prefect/flow-run/(.*)",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.add"
           ],
@@ -1842,7 +1913,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/analysis-run/(.*)",
+          "path": "^/jobplugins/prefect/analysis-run/(.*)",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.add"
           ],
@@ -1851,7 +1922,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/task-run/(.*)",
+          "path": "^/jobplugins/prefect/task-run/(.*)",
           "scopes": [
             "dataflowmgmt.prefect.taskRun.read"
           ],
@@ -1860,7 +1931,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/test-run",
+          "path": "^/jobplugins/prefect/test-run",
           "scopes": [
             "dataflowmgmt.prefect.testRun.add"
           ],
@@ -1869,7 +1940,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/state",
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/state",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.state"
           ],
@@ -1878,71 +1949,7 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dqd/data-quality/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/(results|overview)$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cohort/[0-9]+/flow-run/latest$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.cohort.flowRun.latest.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/flow-run$",
-          "scopes": [
-            "portal.dataset.resource.read",
-            "dataflowmgmt.dqd.dataQuality.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-(quality|characterization)/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/flow-run/latest$",
-          "scopes": [
-            "dataflowmgmt.dqd.job.dataset.flowRun.latest.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-(quality|characterization)/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/release/([0-9]+)/flow-run$",
-          "scopes": [
-            "dataflowmgmt.dqd.job.dataset.release.flowRun.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/category|/domain)?/history$$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-quality/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/domain/continuity$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/schema-mapping/list",
+          "path": "^/jobplugins/dqd/data-characterization/schema-mapping/list",
           "scopes": [
             "dataflowmgmt.dqd.dataCharacterization.schemaMapping.read"
           ],
@@ -1951,40 +1958,12 @@
           ]
         },
         {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/results/(.*)",
-          "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/dqd/data-characterization/flow-run$",
-          "scopes": [
-            "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
-            "portal.dataset.read"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/job-history/flow-runs",
+          "path": "^/jobplugins/job-history/flow-runs",
           "scopes": [
             "dataflowmgmt.jobHistory.filter.read"
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/dataflow-mgmt/db-svc/run",
-          "scopes": [
-            "dataflowmgmt.dbSvc.flowRun.add"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {

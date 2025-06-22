@@ -22,6 +22,10 @@ RUN for lib in \
     gzip -d ${lib}.duckdb_extension.gz; \
     done
 
+WORKDIR /usr/src/cdw_data
+# Copy cdw-svc built in duckdb file into trex
+COPY --chown=root:root ./functions/cdw-svc/src/duckdb/cdw_config_svc_validation_schema ./built_in/cdw_config_svc_validation_schema
+
 WORKDIR /usr/src
 
 # Allows usage of npx
@@ -34,15 +38,15 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
     fi
 
 # Build main function
-COPY core /usr/src/core
+COPY ./services/trex/core /usr/src/core
 RUN mkdir -p /usr/src/data/cache
 RUN chown -R docker:alp /usr/src/data/cache
 RUN mkdir -p /usr/src/data/plugins
-COPY _npmrc /usr/src/data/plugins/.npmrc
-COPY package.json.plugin /usr/src/data/plugins/package.json
-COPY bunfig.toml /usr/src/data/plugins/bunfig.toml
+COPY ./services/trex/_npmrc /usr/src/data/plugins/.npmrc
+COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
+COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
 
-COPY package.json /usr/src
+COPY ./services/trex/package.json /usr/src
 
 RUN npm install
 

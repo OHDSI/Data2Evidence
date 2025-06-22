@@ -52,7 +52,7 @@
           "target": "/resources/mapping"
         },
         {
-          "source": "/concept-mapping",
+          "source": "/resources/concept-mapping",
           "target": "/resources/concept-mapping"
         },
         {
@@ -341,6 +341,13 @@
             "enabled": true,
             "pluginPath": "plugins/SystemAdmin/StudyOverview/module",
             "route": "dataset-overview"
+          },
+          {
+            "name": "Studies",
+            "nameI18nKey": "UI_PLUGIN_STUDIES",
+            "enabled": true,
+            "pluginPath": "plugins/SystemAdmin/StudyPage/module",
+            "route": "study-page"
           },
           {
             "name": "Jobs",

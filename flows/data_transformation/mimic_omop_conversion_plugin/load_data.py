@@ -35,7 +35,7 @@ def load_mimic_data(conn, mimic_dir):
         if not dir_name in ['hosp','icu']:
             continue
         try:
-            sql_qry = f"COPY {table_name} FROM '{file_path}' (HEADER);"
+            sql_qry = f"""COPY {table_name} FROM '{file_path}' (ESCAPE '\"', HEADER);"""
             conn.execute(sql_qry)
             logger.info(f"Loading {table_name} done")
         except Exception as e:
@@ -57,7 +57,7 @@ def load_vocab(conn, vocab_dir):
         try:
             query = f"""
             TRUNCATE TABLE {table_name};
-            COPY {table_name} FROM '{file}' (DATEFORMAT '%Y%m%d', DELIMITER '\t', FORMAT CSV, HEADER, QUOTE '"');
+            COPY {table_name} FROM '{file}' (DATEFORMAT '%Y%m%d', DELIMITER '\t', FORMAT CSV, HEADER, QUOTE '"',ESCAPE '\"');
             """
             conn.execute(query)
             logger.info(f"Loading {table_name} done")
