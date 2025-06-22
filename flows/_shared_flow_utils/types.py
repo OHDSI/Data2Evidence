@@ -46,6 +46,7 @@ class SupportedDatabaseDialects(str, Enum):
     HANA = "hana"
     POSTGRES = "postgres"
     DUCKDB = "duckdb"
+    BIGQUERY = "bigquery"
 
 
 class RequestType(str, Enum):
@@ -101,4 +102,3 @@ class User:
   userId: str
   name: Optional[str]
   email: Optional[str]
-
