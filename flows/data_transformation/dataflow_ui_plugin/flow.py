@@ -1,8 +1,10 @@
+import os
+import json
 import traceback
 from functools import partial
 from collections import OrderedDict
 from prefect_dask import DaskTaskRunner
-import json
+
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -18,6 +20,9 @@ from .types import NodeType
 
 @flow(log_prints=True)
 def dataflow_ui_plugin(json_graph, options):
+
+    os.environ['plugin_name'] = 'dataflow_ui_plugin'
+
     logger = get_run_logger()
 
     # Grab root flow id
@@ -57,7 +62,7 @@ def dataflow_ui_plugin(json_graph, options):
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
-            nodes_out[k] = serialize_result(n[k])
+            nodes_out[k] = n[k].serialize_result()
 
     # Create a markdown artifact instead of persisting as a JSON file
     artifact_key = f"{FlowRunContext.get().flow_run.id}-nodes-output"
@@ -66,14 +71,6 @@ def dataflow_ui_plugin(json_graph, options):
         markdown=json.dumps(nodes_out),
         description="Nodes output stored as JSON"
     )
-
-def serialize_result(result):
-    return {
-        "result": serialize_to_json(result.result),
-        "error": result.error,
-        "errorMessage": result.result if result.error else None,
-        "nodeName": result.node.name
-    }
 
 def execute_subflow_cluster(node_graph, input, test):
     scheduler_address = get_scheduler_address(node_graph)
@@ -194,7 +191,7 @@ def execute_node_task(nodename, node_type, node, input, test):
     else:
         match node_type:
             # Nodes that do not accept input
-            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING:
+            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING:
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
