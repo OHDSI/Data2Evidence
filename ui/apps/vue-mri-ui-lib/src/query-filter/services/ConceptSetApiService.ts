@@ -3,7 +3,12 @@
  */
 import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
-import type { ConceptSetItem, ConceptDetail, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type {
+  ConceptSetItem,
+  ConceptDetail,
+  ConceptSetDomainValues,
+  CreateConceptSetRequest,
+} from '../types/ConceptSetTypes'
 
 /**
  * Build authentication headers for API requests
@@ -270,5 +275,34 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
   } catch (error) {
     console.error('Error loading single concept set details:', error)
     return []
+  }
+}
+
+/**
+ * Create a new concept set
+ */
+export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> => {
+  if (!datasetId) {
+    throw new Error('Missing datasetId for concept set creation')
+  }
+
+  try {
+    const headers = await buildApiHeaders(datasetId)
+    headers['Content-Type'] = 'application/json'
+
+    const url = buildApiUrl('/terminology/concept-set')
+
+    const response = await axios.post(url, conceptSetData, {
+      params: {
+        datasetId: datasetId,
+      },
+      headers,
+    })
+
+    // Backend returns the created concept set ID
+    return response.data
+  } catch (error) {
+    console.error('Error creating concept set:', error)
+    throw error
   }
 }
