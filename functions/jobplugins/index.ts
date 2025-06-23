@@ -31,9 +31,9 @@ app.use(
   new DataCharacterizationController().router
 );
 app.use("/jobplugins/datamodel", new DataModelFlowController().router);
-app.use("/dataflow-mgmt/dataflow", new DataTransformationController().router);
-app.use("/dataflow-mgmt/prefect", new PrefectController().router);
-app.use("/dataflow-mgmt/analysisflow", new AnalysisController().router);
+app.use("/jobplugins/dataflow", new DataTransformationController().router);
+app.use("/jobplugins/prefect", new PrefectController().router);
+app.use("/jobplugins/analysisflow", new AnalysisController().router);
 app.use("/jobplugins/cachedb", new CachedbController().router);
 app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
 app.use("/jobplugins/perseus", new PerseusController().router);
