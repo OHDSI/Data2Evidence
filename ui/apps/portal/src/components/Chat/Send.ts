@@ -1,10 +1,10 @@
-import env from "../../env";
 import { StreamSend, StreamingAdapterObserver } from "@nlux/react";
 import fetchRequest from "../../fetch/request";
 
+const MAX_CHUNK_SIZE = 32;
 export const createSend = (datasetId: string, context: string): StreamSend => {
   return async (prompt: string, observer: StreamingAdapterObserver) => {
-    const response = await fetchRequest(`${env.REACT_APP_DN_BASE_URL}code-suggestion/chat?datasetId=${datasetId}`, {
+    const response = await fetchRequest(`code-suggestion/chat?datasetId=${datasetId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -24,32 +24,19 @@ export const createSend = (datasetId: string, context: string): StreamSend => {
 
     const reader = response.body.getReader();
     const textDecoder = new TextDecoder();
-    let buffer = "";
 
     try {
       while (true) {
         const { value, done } = await reader.read();
-
-        if (done) {
-          break;
-        }
+        if (done) break;
 
         const chunk = textDecoder.decode(value, { stream: true });
-        buffer += chunk;
-
-        // If we have a newline, process the complete lines
-        if (buffer.includes("\n")) {
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              observer.next(trimmedLine + "\n");
-            }
-          }
-        } else {
-          observer.next(buffer + "\n");
+        let start = 0;
+        while (start < chunk.length) {
+          const end = start + MAX_CHUNK_SIZE;
+          const piece = chunk.slice(start, end);
+          observer.next(piece);
+          start = end;
         }
       }
     } finally {
