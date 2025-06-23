@@ -411,6 +411,10 @@ const loadConceptSetDetailsForAllEvents = async () => {
   console.log('Loading concept set details for all events...')
   const criteria = criteriaManager.getCriteria()
 
+  // Collect all unique concept sets that need details loaded
+  const conceptSetsToLoad: ConceptSetItem[] = []
+  const eventsByConceptSetId = new Map<string, QueryFilterEvent[]>()
+
   for (const group of criteria.criteria) {
     for (const event of group.events) {
       if (event.conceptSetId) {
@@ -428,25 +432,77 @@ const loadConceptSetDetailsForAllEvents = async () => {
           console.log(`Linked concept set ${conceptSet.text} to event ${event.id}`)
         }
 
-        // Load concept set details if not already loaded
+        // Check if we need to load details for this concept set
         if (!event.conceptSetDetails || event.conceptSetDetails.length === 0) {
-          try {
-            console.log(`Loading details for concept set: ${conceptSet.text} (ID: ${conceptSet.value})`)
-            event.conceptSetLoading = true
-            const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet)
-            event.conceptSetDetails = conceptSetDetails
-            event.conceptSetLoading = false
-            console.log(`Loaded ${conceptSetDetails.length} concept details for ${conceptSet.text}`)
+          event.conceptSetLoading = true
 
-            // Debug: Log first concept detail to verify format
-            if (conceptSetDetails.length > 0) {
-              console.log('Sample concept detail:', conceptSetDetails[0])
-            }
-          } catch (error) {
-            console.warn(`Failed to load concept set details for event ${event.id}:`, error)
-            event.conceptSetLoading = false
+          // Add to batch loading list
+          if (!conceptSetsToLoad.some(cs => cs.value === conceptSet.value)) {
+            conceptSetsToLoad.push(conceptSet)
+          }
+
+          // Track which events need this concept set
+          if (!eventsByConceptSetId.has(conceptSet.value)) {
+            eventsByConceptSetId.set(conceptSet.value, [])
+          }
+          eventsByConceptSetId.get(conceptSet.value)!.push(event)
+        }
+      }
+    }
+  }
+
+  if (conceptSetsToLoad.length === 0) {
+    console.log('No concept sets need details loaded')
+    return
+  }
+
+  console.log(
+    `Batch loading details for ${conceptSetsToLoad.length} concept sets:`,
+    conceptSetsToLoad.map(cs => `${cs.text} (ID: ${cs.value})`)
+  )
+
+  try {
+    const datasetId = getDatasetIdFromStore()
+    if (!datasetId) {
+      console.error('Missing datasetId for batch concept set details loading')
+      return
+    }
+
+    // Process concept sets in batches of 10
+    const batchSize = 10
+    for (let i = 0; i < conceptSetsToLoad.length; i += batchSize) {
+      const batch = conceptSetsToLoad.slice(i, i + batchSize)
+      console.log(
+        `Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(conceptSetsToLoad.length / batchSize)}:`,
+        batch.map(cs => cs.text)
+      )
+
+      // Load details for this batch
+      const batchResults = await loadConceptSetDetails(batch, datasetId)
+
+      // Apply results to all events that need each concept set
+      for (const [conceptSetId, conceptSetDetails] of Object.entries(batchResults)) {
+        const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+
+        for (const event of eventsForThisConceptSet) {
+          event.conceptSetDetails = conceptSetDetails
+          event.conceptSetLoading = false
+          console.log(`Loaded ${conceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`)
+
+          // Debug: Log first concept detail to verify format
+          if (conceptSetDetails.length > 0) {
+            console.log('Sample concept detail:', conceptSetDetails[0])
           }
         }
+      }
+    }
+  } catch (error) {
+    console.error('Error in batch loading concept set details:', error)
+
+    // Clear loading state for all events
+    for (const events of eventsByConceptSetId.values()) {
+      for (const event of events) {
+        event.conceptSetLoading = false
       }
     }
   }
@@ -464,7 +520,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
     )
   }
 
-  console.log('Finished loading concept set details for all events')
+  console.log('Finished batch loading concept set details for all events')
 }
 
 const sanitizeConceptSetName = (name: string): string => {

@@ -1078,25 +1078,32 @@ export class QueryFilterCriteriaManager {
     atlasDef.ConceptSets = conceptSets
 
     // Also add CodesetId to the criteria (use Atlas sequential IDs)
+    let ruleIndex = 0
     atlasDef.InclusionRules.forEach((rule: any) => {
+      let criteriaIndex = 0
       rule.expression.CriteriaList.forEach((criteriaItem: any) => {
-        // Find the corresponding event to get the conceptSetId
-        ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
-          group.events.forEach(event => {
-            if (!event.isAttributeBased && event.conceptSetId) {
-              const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
-              if (criteriaItem.Criteria[criteriaType]) {
-                const atlasId = systemIdToAtlasId.get(event.conceptSetId)
-                if (atlasId !== undefined) {
-                  criteriaItem.Criteria[criteriaType].CodesetId = atlasId // Use Atlas sequential ID
-                } else {
-                  console.error(`Missing Atlas ID mapping for concept set ${event.conceptSetId}`)
-                }
+        // Find the corresponding event for this specific criteriaItem
+        const correspondingGroup = (this.inclusionCriteria.criteria || [])[ruleIndex]
+        if (correspondingGroup && correspondingGroup.events[criteriaIndex]) {
+          const event = correspondingGroup.events[criteriaIndex]
+          if (!event.isAttributeBased && event.conceptSetId) {
+            const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
+            if (criteriaItem.Criteria[criteriaType]) {
+              const atlasId = systemIdToAtlasId.get(event.conceptSetId)
+              if (atlasId !== undefined) {
+                criteriaItem.Criteria[criteriaType].CodesetId = atlasId // Use Atlas sequential ID
+                console.log(
+                  `Set CodesetId ${atlasId} for criteria ${criteriaIndex} in rule ${ruleIndex} (event: ${event.conceptSet})`
+                )
+              } else {
+                console.error(`Missing Atlas ID mapping for concept set ${event.conceptSetId}`)
               }
             }
-          })
-        })
+          }
+        }
+        criteriaIndex++
       })
+      ruleIndex++
     })
 
     return atlasDef
