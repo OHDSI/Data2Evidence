@@ -45,12 +45,12 @@ test('test', async ({ browser }) => {
   await page.getByRole('button', { name: 'Job Runs' }).click();
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible();
   await expect(page.locator('.p-content > .p-content')).toBeVisible();
-  await expect(page.getByText('data_quality_dashboard').first()).toBeVisible();
+  await page.getByText('data_quality_dashboard').first().waitFor({ state: 'visible' });
   await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible();
   // Check job logs for job: dqd_demo
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
   await expect(page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:')).toBeVisible();
   await page.getByText('Logs', { exact: true }).click();
-  await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run',{ timeout: 10000 });
+  await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run');
   await context.close(); // clean up
 });
