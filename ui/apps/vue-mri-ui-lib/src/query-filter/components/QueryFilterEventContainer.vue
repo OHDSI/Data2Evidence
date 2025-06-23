@@ -17,7 +17,7 @@ import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
-  parentGroup: QueryFilterGroup
+  parentGroup?: QueryFilterGroup
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
@@ -192,7 +192,6 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
     display: flex;
     gap: 8px;
     margin-top: 0;
-    margin-bottom: 8px;
     padding: 0;
     background: transparent;
     border: none;

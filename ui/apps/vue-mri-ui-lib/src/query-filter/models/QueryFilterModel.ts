@@ -82,14 +82,21 @@ export interface QueryFilterAttribute {
   }
 }
 
-export interface EntryEvent {}
+export interface EntryEvent {
+  primaryCriteriaLimit: 'ALL' | 'EARLIEST' | 'LATEST'
+  events: QueryFilterEvent[]
+  priorDays: number
+  postDays: number
+}
+export interface ExitEvent {
+  endStrategy: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
+  censoringCriteria: QueryFilterEvent[]
+}
 
 export interface InclusionCriteria {
   qualifyingEventsLimit: 'ALL' | 'EARLIEST' | 'LATEST'
   criteria: QueryFilterGroup[]
 }
-
-export type FilterType = 'inclusion' | 'exclusion' | 'primary'
 
 export class QueryFilterCardModel {
   id: string
@@ -586,12 +593,40 @@ export class QueryFilterCardModel {
 
 export class QueryFilterCriteriaManager {
   private entryEvents: EntryEvent
+  private exitEvents: ExitEvent
   private inclusionCriteria: InclusionCriteria
 
   constructor(data: any = {}) {
     try {
       // Always initialize all properties
-      this.entryEvents = data.entryEvents || {}
+
+      if (data.entryEvents) {
+        this.entryEvents = {
+          primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'ALL',
+          events: data.entryEvents.events || [],
+          priorDays: data.entryEvents.priorDays || 0,
+          postDays: data.entryEvents.postDays || 0,
+        }
+      } else {
+        this.entryEvents = {
+          primaryCriteriaLimit: 'ALL',
+          events: [],
+          priorDays: 0,
+          postDays: 0,
+        }
+      }
+
+      if (data.exitEvents) {
+        this.exitEvents = {
+          endStrategy: data.exitEvents.endStrategy || 'CONT_OBS',
+          censoringCriteria: data.exitEvents.censoringCriteria || [],
+        }
+      } else {
+        this.exitEvents = {
+          endStrategy: 'CONT_OBS',
+          censoringCriteria: [],
+        }
+      }
 
       if (data.inclusionCriteria) {
         this.inclusionCriteria = {
@@ -633,6 +668,16 @@ export class QueryFilterCriteriaManager {
 
   setCriteriaType(type: 'ALL' | 'EARLIEST' | 'LATEST'): void {
     this.inclusionCriteria.qualifyingEventsLimit = type
+  }
+
+  // Primary criteria management
+  getPrimaryEvents(): EntryEvent {
+    return this.entryEvents
+  }
+
+  // Primary criteria management
+  getCensoringCriteria(): ExitEvent {
+    return this.exitEvents
   }
 
   // Group management
@@ -868,11 +913,11 @@ export class QueryFilterCriteriaManager {
       PrimaryCriteria: {
         CriteriaList: [],
         ObservationWindow: {
-          PriorDays: 0,
-          PostDays: 0,
+          PriorDays: this.entryEvents.priorDays || 0,
+          PostDays: this.entryEvents.postDays || 0,
         },
         PrimaryCriteriaLimit: {
-          Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'), // Maps criteriaType → Atlas Type
+          Type: this.mapCriteriaTypeToAtlas(this.entryEvents.primaryCriteriaLimit || 'ALL'),
         },
       },
       QualifiedLimit: {
@@ -1166,6 +1211,7 @@ export class QueryFilterCriteriaManager {
     return {
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
+      exitEvents: this.exitEvents,
     }
   }
 
@@ -1331,6 +1377,19 @@ export class QueryFilterCriteriaManager {
   // Update qualifying events limit
   updateQualifyingEventsLimit(limit: 'ALL' | 'EARLIEST' | 'LATEST') {
     this.inclusionCriteria.qualifyingEventsLimit = limit
+  }
+  updatePrimaryCriteriaLimit(limit: 'ALL' | 'EARLIEST' | 'LATEST') {
+    this.entryEvents.primaryCriteriaLimit = limit
+  }
+  updateEndStrategy(limit: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') {
+    this.exitEvents.endStrategy = limit
+  }
+  updateEntryDays(type: 'PRIOR' | 'POST', days: number) {
+    if (type === 'PRIOR') {
+      this.entryEvents.priorDays = days
+    } else if (type === 'POST') {
+      this.entryEvents.postDays = days
+    }
   }
 
   // Add criteria group

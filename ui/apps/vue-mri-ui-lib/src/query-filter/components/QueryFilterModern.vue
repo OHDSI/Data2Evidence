@@ -27,6 +27,7 @@ import {
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
+import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -88,7 +89,7 @@ const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptS
 
 const getDatasetIdFromStore = (): string | null => {
   // Try to get datasetId from the store or a fixed value for now
-  return store?.state?.selectedDataset?.id || '4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
+  return store?.state?.selectedDataset?.id || '180792d3-e654-4d6c-bae6-8965504a6c9c'
 }
 
 const loadConceptSets = async () => {
@@ -198,6 +199,24 @@ const handleCriteriaUpdated = (updatedCriteriaManager: QueryFilterCriteriaManage
 const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
   criteriaManager.updateQualifyingEventsLimit(limit)
   console.log('Qualifying limit updated:', limit)
+}
+
+// Handle primary criteria limit updates
+const handleUpdatePrimaryCriteriaLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
+  criteriaManager.updatePrimaryCriteriaLimit(limit)
+  console.log('Primary criteria limit updated:', limit)
+}
+
+// Handle exit strategy updates
+const handleUpdateExitStrategy = (limit:  'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
+  criteriaManager.updateEndStrategy(limit)
+  console.log('Exit strategy updated:', limit)
+}
+
+// Handle entry days updates
+const handleUpdateEntryDays = (type: "PRIOR" | 'POST', days: number) => {
+  criteriaManager.updateEntryDays(type, days)
+  console.log('Entry days updated:', days, 'Type:', type)
 }
 
 // Handle adding new criteria group
@@ -444,6 +463,19 @@ defineExpose({
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
       <div class="query-filter-container">
+        <div class="query-filter-container__section">
+          <QueryFilterEntryExit
+            type="ENTRY"
+            :primary-events-data="criteriaManager.getPrimaryEvents()"
+            :concept-sets="allConceptSets"
+            :concept-set-domain-values="conceptSetDomainValues"
+            :concept-set-texts="tagInputTexts"
+            @update-limit="handleUpdatePrimaryCriteriaLimit"
+            @update-entry-days="handleUpdateEntryDays"
+          />
+        </div>
+      </div>
+      <div class="query-filter-container">
         <!-- New Hierarchical Component Structure -->
         <div class="query-filter-container__section">
           <QueryFilterCriteria
@@ -457,6 +489,19 @@ defineExpose({
             @add-criteria-group="handleAddCriteriaGroup"
             @update-criteria-group="handleUpdateCriteriaGroup"
             @remove-criteria-group="handleRemoveCriteriaGroup"
+          />
+        </div>
+      </div>
+
+      <div class="query-filter-container">
+        <div class="query-filter-container__section">
+          <QueryFilterEntryExit
+            type="EXIT"
+            :exit-criteria-data="criteriaManager.getCensoringCriteria()"
+            :concept-sets="allConceptSets"
+            :concept-set-domain-values="conceptSetDomainValues"
+            :concept-set-texts="tagInputTexts"
+            @update-limit="handleUpdateExitStrategy"
           />
         </div>
       </div>
@@ -583,20 +628,27 @@ defineExpose({
   }
 
   .query-filter-main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
     background: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    overflow: hidden;
-    margin-bottom: 16px;
+    padding: 16px 0 16px 0;
+    // overflow: hidden;
+    // margin-bottom: 16px;
   }
 
   .query-filter-container {
-    padding: 16px;
-    margin: 16px;
-    margin: 4px &__section {
-      margin-bottom: 0; // Remove bottom margin since container handles spacing
-    }
+    width: 90%;
+    // padding: 16px;
+    // margin: 16px;
+    // margin: 4px &__section {
+    //   margin-bottom: 0; // Remove bottom margin since container handles spacing
+    // }
   }
 
   .debug-toggle-section {
