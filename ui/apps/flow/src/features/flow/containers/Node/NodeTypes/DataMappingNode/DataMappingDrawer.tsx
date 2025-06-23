@@ -71,6 +71,7 @@ export const DataMappingDrawer: FC<DataMappingDrawerProps> = ({
     return {
       mappingSuggestion: pluginMetadata.data.mappingSuggestion,
       data: node.data.data,
+      nodeId: node.id,
       onChange: (data: any) => onFormDataChange({ data }),
     };
   }, [node.data.data, pluginMetadata.data.mappingSuggestion]);
