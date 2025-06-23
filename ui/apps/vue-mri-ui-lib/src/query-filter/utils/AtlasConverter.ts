@@ -118,7 +118,9 @@ export const convertAtlasToFilters = (
   }
 
   const convertCriteriaListToEvents = (criteriaList: any[]): QueryFilterEvent[] => {
+    console.log(`🔧 convertCriteriaListToEvents called with ${criteriaList?.length || 0} criteria`)
     if (!criteriaList || criteriaList.length === 0) {
+      console.log(`🔧 No criteria to convert, returning empty array`)
       return []
     }
 
@@ -134,7 +136,8 @@ export const convertAtlasToFilters = (
 
       const event: any = {
         id: `event_${Math.random().toString(36).substring(2)}`,
-        eventType: criteriaType,
+        eventType: criteriaType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
+        criteriaType: criteriaType, // For nested events, this should be the medical event type initially
         isExpanded: true,
         cardinality: {
           type: 'AT_LEAST',
@@ -179,19 +182,44 @@ export const convertAtlasToFilters = (
         })
       }
 
-      // Handle CorrelatedCriteria (nested structure)
+      // Handle CorrelatedCriteria (nested structure) - Convert to attributes format
       if (criteriaObj.CorrelatedCriteria) {
+        console.log(`🔧 AtlasConverter: Found CorrelatedCriteria for event ${event.id}`)
+        console.log(`🔧 CorrelatedCriteria:`, criteriaObj.CorrelatedCriteria)
+        console.log(`🔧 CriteriaList length:`, criteriaObj.CorrelatedCriteria.CriteriaList?.length || 0)
+
+        const nestedEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
+        console.log(`🔧 Converted nested events:`, nestedEvents)
+
         const nestedAttribute = {
-          id: `attribute_${Math.random().toString(36).substring(2)}`,
-          attributeType: 'nested' as const,
+          id: 'nested', // Use 'nested' ID to match UI filter logic
+          name: 'Nested Criteria',
+          title: 'Nested Criteria',
+          description: 'Nested criteria conditions',
+          type: 'nested',
+          category: 'criteria-specific',
           nestedCriteria: {
             id: `criteria_${Math.random().toString(36).substring(2)}`,
             criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
-            events: convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || []),
+            events: nestedEvents,
           },
         }
 
-        event.attributes!.push(nestedAttribute)
+        console.log(`🔧 Created nestedAttribute:`, nestedAttribute)
+
+        // Initialize attributes if not exists
+        if (!event.attributes) {
+          event.attributes = []
+        }
+        event.attributes.push(nestedAttribute)
+
+        console.log(`🔧 Event after adding attributes:`, {
+          id: event.id,
+          conceptSet: event.conceptSet,
+          hasAttributes: !!event.attributes,
+          attributesLength: event.attributes?.length || 0,
+          attributesData: event.attributes,
+        })
       }
 
       events.push(event)

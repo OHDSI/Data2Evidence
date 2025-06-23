@@ -51,7 +51,7 @@ const eventsData = computed({
 
 // Filter events to only show main events (not nested/attribute events)
 const mainEvents = computed(() => {
-  return eventsData.value.filter(event => !event.isAttributeBased && !event.parentEventId)
+  return eventsData.value.filter(event => !event.parentEventId)
 })
 
 // Handle adding new event from criteria selector
@@ -62,11 +62,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
     criteriaType: option.id,
     isExpanded: true,
     selectedAttributes: [],
-    isAttributeBased: false,
     isDemographic: false,
-    isNested: false,
-    nestedEvents: [],
-    nestedOperator: 'AND',
     conceptSetDetails: [],
     conceptSetLoading: false,
     cardinality: {
@@ -87,11 +83,7 @@ const addNewEvent = () => {
     criteriaType: 'conditionOccurrence',
     isExpanded: true,
     selectedAttributes: [],
-    isAttributeBased: false,
     isDemographic: false,
-    isNested: false,
-    nestedEvents: [],
-    nestedOperator: 'AND',
     conceptSetDetails: [],
     conceptSetLoading: false,
     cardinality: {

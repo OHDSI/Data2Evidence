@@ -165,11 +165,11 @@ const getDatasetIdFromProps = (): string => {
 
 // Handle attribute selection
 const handleAttributeSelected = (attribute: AttributeConfig) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const currentAttributes = eventData.value.selectedAttributes || []
+  const currentAttributes = eventData.value.attributes || []
+  const currentSelectedAttributes = eventData.value.selectedAttributes || []
 
   // Check if attribute is already selected to prevent duplicates
-  if (currentAttributeObjects.some(attr => attr.id === attribute.id)) {
+  if (currentAttributes.some(attr => attr.id === attribute.id)) {
     console.warn(`Attribute ${attribute.id} is already selected`)
     return
   }
@@ -177,9 +177,9 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
   // Store both the ID (for compatibility) and the full object
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: [...currentAttributes, attribute.id],
-    attributeObjects: [
-      ...currentAttributeObjects,
+    selectedAttributes: [...currentSelectedAttributes, attribute.id],
+    attributes: [
+      ...currentAttributes,
       {
         ...attribute,
         // Initialize based on attribute type
@@ -201,13 +201,13 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
 
 // Handle attribute removal
 const handleAttributeRemoved = (attributeId: string) => {
-  const currentAttributes = eventData.value.selectedAttributes || []
-  const currentAttributeObjects = eventData.value.attributeObjects || []
+  const currentSelectedAttributes = eventData.value.selectedAttributes || []
+  const currentAttributes = eventData.value.attributes || []
 
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: currentAttributes.filter(id => id !== attributeId),
-    attributeObjects: currentAttributeObjects.filter(obj => obj.id !== attributeId),
+    selectedAttributes: currentSelectedAttributes.filter(id => id !== attributeId),
+    attributes: currentAttributes.filter(obj => obj.id !== attributeId),
   }
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
@@ -233,28 +233,28 @@ const updateNestedCriteria = (updatedCriteria: any) => {
 
 // Handle attribute concept set selection
 const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItem) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+  const currentAttributes = eventData.value.attributes || []
+  const updatedAttributes = currentAttributes.map(attr =>
     attr.id === attributeId ? { ...attr, conceptSet, conceptSetId: conceptSet.value } : attr
   )
 
   const updatedEvent = {
     ...eventData.value,
-    attributeObjects: updatedAttributeObjects,
+    attributes: updatedAttributes,
   }
   eventData.value = updatedEvent
 }
 
 // Handle attribute nested criteria updates
 const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria: any) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+  const currentAttributes = eventData.value.attributes || []
+  const updatedAttributes = currentAttributes.map(attr =>
     attr.id === attributeId ? { ...attr, nestedCriteria } : attr
   )
 
   const updatedEvent = {
     ...eventData.value,
-    attributeObjects: updatedAttributeObjects,
+    attributes: updatedAttributes,
   }
   eventData.value = updatedEvent
 }
@@ -396,8 +396,8 @@ const getConceptSetDisplayName = (): string => {
         </div>
 
         <!-- Selected Attributes Display -->
-        <div v-if="eventData.attributeObjects?.length" class="selected-attributes">
-          <div v-for="attribute in eventData.attributeObjects" :key="attribute.id" class="attribute-component">
+        <div v-if="eventData.attributes?.length" class="selected-attributes">
+          <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
             <!-- Attribute Header -->
             <div class="attribute-header">
               <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
