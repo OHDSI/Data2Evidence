@@ -12,6 +12,8 @@ import { ref, computed, nextTick } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import EditIcon from './icons/EditIcon.vue'
+import CloseIcon from './icons/CloseIcon.vue'
 
 interface Props {
   group: QueryFilterGroup
@@ -137,56 +139,54 @@ const toggleGroupType = () => {
   <div class="query-filter-criteria-group">
     <!-- Group with Full-Height Sidebar -->
     <div class="group-layout">
-      <!-- Full-Height Sidebar -->
-      <div
-        class="group-sidebar"
-        :class="`group-sidebar--${localGroup.criteriaType?.toLowerCase() || 'all'}`"
-        @click="!readonly && toggleGroupType()"
-        :title="readonly ? '' : 'Click to change match type'"
-      >
-        <span class="sidebar-label">{{ localGroup.criteriaType || 'ALL' }}</span>
-      </div>
-
-      <!-- Group Content Area -->
-      <div class="group-main">
-        <!-- Group Header -->
-        <div v-if="!hideHeader" class="group-header">
-          <div class="group-header__left">
-            <div class="group-title-container">
-              <!-- Editable Title with Pencil Button -->
-              <div class="title-edit-wrapper">
-                <input
-                  v-if="isEditingTitle && !readonly"
-                  ref="titleInputRef"
-                  v-model="localGroup.title"
-                  class="group-title-input"
-                  placeholder="Group Title"
-                  @blur="finishEditingTitle"
-                  @keydown="handleTitleKeydown"
-                  @input="updateTitle(($event.target as HTMLInputElement).value)"
-                />
-                <h4 v-else class="group-title-display" @click="readonly ? null : startEditingTitle()">
-                  {{ localGroup.title || 'Untitled Group' }}
-                </h4>
-                <button
-                  v-if="!readonly && !isEditingTitle"
-                  class="btn-edit-title"
-                  @click="startEditingTitle"
-                  title="Edit group title"
-                >
-                  ✏️
-                </button>
-              </div>
+      <!-- Group Header -->
+      <div v-if="!hideHeader" class="group-header">
+        <div class="group-header__left">
+          <div class="group-title-container">
+            <!-- Editable Title with Pencil Button -->
+            <div class="title-edit-wrapper">
+              <input
+                v-if="isEditingTitle && !readonly"
+                ref="titleInputRef"
+                v-model="localGroup.title"
+                class="group-title-input"
+                placeholder="Group Title"
+                @blur="finishEditingTitle"
+                @keydown="handleTitleKeydown"
+                @input="updateTitle(($event.target as HTMLInputElement).value)"
+              />
+              <h4 v-else class="group-title-display" @click="readonly ? null : startEditingTitle()">
+                {{ localGroup.title || 'Untitled Group' }}
+              </h4>
+              <button
+                v-if="!readonly && !isEditingTitle"
+                class="btn-edit-title"
+                @click="startEditingTitle"
+                title="Edit group title"
+              >
+                <EditIcon />
+              </button>
             </div>
-          </div>
-
-          <div class="group-header__right">
-            <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
-              ×
-            </button>
           </div>
         </div>
 
+        <div class="group-header__right">
+          <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
+            <CloseIcon />
+          </button>
+        </div>
+      </div>
+      <!-- Group Content Area -->
+      <div class="group-main">
+        <!-- Full-Height Sidebar -->
+        <div
+          class="group-sidebar"
+          :class="`group-sidebar--${localGroup.criteriaType?.toLowerCase() || 'all'}`"
+          @click="!readonly && toggleGroupType()"
+          :title="readonly ? '' : 'Click to change match type'"
+        >
+          <span class="sidebar-label">{{ localGroup.criteriaType || 'ALL' }}</span>
+        </div>
         <!-- Group Content -->
         <div class="group-content">
           <!-- Events Container -->
@@ -207,6 +207,7 @@ const toggleGroupType = () => {
 
 <style lang="scss" scoped>
 .query-filter-criteria-group {
+  margin-top: 16px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   &:not(:last-child) {
@@ -217,12 +218,12 @@ const toggleGroupType = () => {
 
   .group-layout {
     display: flex;
+    flex-direction: column;
   }
 
   .group-main {
     flex: 1;
     display: flex;
-    flex-direction: column;
   }
 
   .group-header {
@@ -364,9 +365,9 @@ const toggleGroupType = () => {
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #dc3545;
-      color: #dc3545;
-      background: #fff5f5;
+      border-color: #000080;
+      color: #000080;
+      background: #f2f0f1;
     }
   }
 
@@ -380,7 +381,7 @@ const toggleGroupType = () => {
     transition: all 0.2s ease;
     position: relative;
     align-self: stretch; // Makes sidebar match the height of its flex container
-    border-radius: 8px 0 0 8px; // Round left corners
+    border-radius: 0 0 0 8px; // Round left corners
 
     // Default styling (ALL)
     background: #000080;
@@ -440,8 +441,7 @@ const toggleGroupType = () => {
   .group-content {
     flex: 1;
     padding: 12px;
-    padding-left: 4px;
-    border-radius: 0 0 8px 0; // Round bottom-right corner
+    background: #f2f0f1;
   }
 }
 </style>

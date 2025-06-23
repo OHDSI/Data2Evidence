@@ -165,6 +165,7 @@ const buttonClasses = computed(() => {
   background-color: transparent;
   border: none;
   box-shadow: none;
+  font-weight: 600;
 }
 
 /* Colors - Contained */

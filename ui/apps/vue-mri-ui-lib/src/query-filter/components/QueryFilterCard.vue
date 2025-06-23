@@ -12,6 +12,7 @@ import AttributesDropdown from './AttributesDropdown.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { type AttributeConfig, type CriteriaOption } from '../utils/CriteriaConfigLoader'
+import CloseIcon from './icons/CloseIcon.vue'
 
 const props = defineProps<{
   filter: QueryFilterCardModel
@@ -435,7 +436,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 aria-label="Remove event"
                 title="Remove event"
               >
-                ×
+                <CloseIcon />
               </button>
             </div>
           </div>
@@ -468,7 +469,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 aria-label="Remove attribute event"
                 title="Remove attribute event"
               >
-                ×
+                <CloseIcon />
               </button>
             </div>
           </div>

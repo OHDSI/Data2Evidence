@@ -7,6 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import criteriaConfigLoader, { type AttributeConfig } from '../utils/CriteriaConfigLoader'
+import MenuIcon from './icons/MenuIcon.vue'
 
 interface Props {
   criteriaType: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
@@ -223,7 +224,7 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
       :aria-haspopup="true"
       :title="hasAttributes ? 'Configure attributes' : 'No attributes available'"
     >
-      {{ buttonLabel }}
+      <MenuIcon />
     </button>
 
     <div
@@ -293,4 +294,3 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
 <style lang="scss" scoped>
 @import '../styles/AttributesDropdown';
 </style>
-

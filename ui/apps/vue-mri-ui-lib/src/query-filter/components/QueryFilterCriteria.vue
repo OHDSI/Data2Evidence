@@ -12,6 +12,8 @@ import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import ButtonMaterial from './ButtonMaterial.vue'
+import AddIcon from './icons/AddIcon.vue'
 
 interface Props {
   criteriaData?: any
@@ -100,6 +102,20 @@ const handleGroupRemove = (groupIndex: number) => {
 
       <!-- Criteria Groups Only -->
       <div class="criteria-groups-content">
+        <!-- Add Group Button (Outside the sidebar layout) -->
+        <div v-if="!readonly" class="add-group-container">
+          <!-- <button class="btn-add-group" @click="addNewGroup">
+            <span class="btn-add-group__icon">+</span>
+            <span class="btn-add-group__text">Add Criteria Group</span>
+          </button> -->
+
+         <ButtonMaterial variant="text" color="primary" @click="addNewGroup">
+      <template #startIcon>
+        <AddIcon /> 
+      </template>
+        Add group
+    </ButtonMaterial>
+        </div>
         <QueryFilterCriteriaGroup
           v-for="(group, index) in currentCriteriaData.criteria"
           :key="group.id"
@@ -113,14 +129,6 @@ const handleGroupRemove = (groupIndex: number) => {
           @remove-group="handleGroupRemove(index)"
         />
       </div>
-    </div>
-
-    <!-- Add Group Button (Outside the sidebar layout) -->
-    <div v-if="!readonly" class="add-group-container">
-      <button class="btn-add-group" @click="addNewGroup">
-        <span class="btn-add-group__icon">+</span>
-        <span class="btn-add-group__text">Add Criteria Group</span>
-      </button>
     </div>
   </div>
 </template>
@@ -226,7 +234,7 @@ const handleGroupRemove = (groupIndex: number) => {
     padding: 12px 6px;
     background: #000080; // Blue to match other sidebars
     position: relative;
-    border-radius: 8px 0 0 8px; // Round left corners
+    border-radius: 0 0 0 8px; // Round left corners
 
     // Add subtle border to indicate different states
     &::after {
@@ -254,17 +262,12 @@ const handleGroupRemove = (groupIndex: number) => {
 
   .criteria-groups-content {
     flex: 1;
-    padding: 0 0 0 4px; // Add left padding for spacing from sidebar
-  }
-
-  .criteria-groups-layout {
-    margin-bottom: 8px;
+    padding: 16px;
   }
 
   .add-group-container {
     display: flex;
     justify-content: center;
-    padding: 8px 0;
   }
 
   .btn-add-group {

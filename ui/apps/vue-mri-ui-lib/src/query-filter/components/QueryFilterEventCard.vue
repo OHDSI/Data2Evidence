@@ -16,6 +16,7 @@ import type { QueryFilterCardinality, QueryFilterEvent } from '../models/QueryFi
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { AttributeConfig } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
+import CloseIcon from './icons/CloseIcon.vue'
 
 interface Props {
   event: QueryFilterEvent
@@ -349,7 +350,9 @@ const sideBarRef = ref(null)
             @attribute-selected="handleAttributeSelected"
             @attribute-removed="handleAttributeRemoved"
           />
-          <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">×</button>
+          <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">
+            <CloseIcon />
+          </button>
         </div>
       </div>
 
@@ -596,10 +599,11 @@ const sideBarRef = ref(null)
     }
   }
 
+
   .btn-remove-event:hover {
-    border-color: #dc3545;
-    color: #dc3545;
-    background: #fff5f5;
+      border-color: #000080;
+      color: #000080;
+      background: #f2f0f1;
   }
 
   .event-body {
