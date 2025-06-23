@@ -61,9 +61,8 @@ const actions = {
       params: bm,
     })
   },
-  refreshPatientCount({ commit, state, rootGetters, dispatch }) {
-    if (!rootGetters.getPatientListTotalRequested) {
-      dispatch('setPatientListTotalRequested', true)
+  refreshPatientCount({ rootGetters, dispatch, getters }) {
+    if (getters.getDisplayTotalGuardedPatientCount) {
       const configMetadata = rootGetters.getMriFrontendConfig.getConfigMetadata()
       const request = {
         cards: {
@@ -91,8 +90,7 @@ const actions = {
         type: 'total',
         params: request,
       })
-    }
-    if (state.patientTotalRequested) {
+    } else {
       dispatch('requestTotalPatientCount')
     }
   },

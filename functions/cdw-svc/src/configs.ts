@@ -18,6 +18,8 @@ const Env = z
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
 
+    USE_TREX_DB_CONN: z.string(),
+
     TLS__INTERNAL__KEY: z.string().optional(),
     TLS__INTERNAL__CRT: z.string().optional(),
     DUCKDB_PATH: z.string(),
@@ -52,7 +54,7 @@ const Env = z
     PG__IDLE_TIMEOUT_IN_MS: z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
-      .transform(Number)
+      .transform(Number),
   })
   .superRefine(
     (
