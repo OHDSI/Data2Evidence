@@ -401,7 +401,9 @@ const getConceptSetDisplayName = (): string => {
           <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
             <!-- Attribute Header -->
             <div class="attribute-header">
-              <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
+              <span class="attribute-title">{{
+                attribute.title || attribute.name || (attribute.id === 'nested' ? 'Nested Criteria' : attribute.id)
+              }}</span>
               <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
             </div>
 
@@ -449,19 +451,6 @@ const getConceptSetDisplayName = (): string => {
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Nested Criteria (Recursive) -->
-    <div v-if="hasNestedAttributes && nestedCriteria" class="nested-criteria-section">
-      <QueryFilterNestedCriteria
-        :nested-criteria="nestedCriteria"
-        :concept-sets="conceptSets"
-        :concept-set-domain-values="conceptSetDomainValues"
-        :concept-set-texts="conceptSetTexts"
-        :dataset-id="datasetId"
-        :readonly="readonly"
-        @update:nested-criteria="updateNestedCriteria"
-      />
     </div>
   </div>
 </template>

@@ -407,10 +407,14 @@ export class QueryFilterCriteriaManager {
       // Process attributes - keep original attributes format
       if (event.attributes && event.attributes.length > 0) {
         event.attributes.forEach((attr: any) => {
-          if (attr.attributeType === 'nested' && attr.nestedCriteria) {
+          // Normalize attributeType from either attributeType or type field
+          const attributeType = attr.attributeType || (attr.type === 'nested' ? 'nested' : attr.type)
+
+          if (attributeType === 'nested' && attr.nestedCriteria) {
             // Keep nested criteria in the attributes format, just process the events
             const processedAttr = {
-              ...attr,
+              id: attr.id,
+              attributeType: 'nested', // Ensure normalized attributeType
               nestedCriteria: {
                 ...attr.nestedCriteria,
                 events: this.transformNestedEvents(attr.nestedCriteria.events || [], mainEvent.id),
@@ -418,7 +422,7 @@ export class QueryFilterCriteriaManager {
             }
             remainingAttributes.push(processedAttr)
             processedAttributes.push(attr)
-          } else if ((attr.attributeId || attr.id) && attr.attributeType && attr.attributeType !== 'nested') {
+          } else if ((attr.attributeId || attr.id) && attributeType && attributeType !== 'nested') {
             // Handle direct attributes (like age, gender on demographic events)
             if (!mainEvent.selectedAttributes) {
               mainEvent.selectedAttributes = []
@@ -431,12 +435,12 @@ export class QueryFilterCriteriaManager {
               id: attributeId,
               name: attributeId,
               description: '',
-              type: attr.attributeType || attr.type || 'conceptSet',
+              type: attributeType || 'conceptSet',
               category: 'criteria-specific',
             }
 
             // Store operator and value for age attributes
-            if (attributeId === 'age' && attr.attributeType === 'numericRange') {
+            if (attributeId === 'age' && attributeType === 'numericRange') {
               mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
               mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
             }
@@ -475,10 +479,14 @@ export class QueryFilterCriteriaManager {
       // Handle further nesting if this event has attributes
       if (event.attributes && event.attributes.length > 0) {
         nestedChildEvent.attributes = event.attributes.map((attr: any) => {
-          if (attr.attributeType === 'nested' && attr.nestedCriteria) {
+          // Normalize attributeType from either attributeType or type field
+          const attributeType = attr.attributeType || (attr.type === 'nested' ? 'nested' : attr.type)
+
+          if (attributeType === 'nested' && attr.nestedCriteria) {
             // Recursively process nested criteria, keeping attributes format
             return {
-              ...attr,
+              id: attr.id,
+              attributeType: 'nested', // Ensure normalized attributeType
               nestedCriteria: {
                 ...attr.nestedCriteria,
                 events: this.transformNestedEvents(attr.nestedCriteria.events || [], nestedChildEvent.id),
@@ -506,7 +514,6 @@ export class QueryFilterCriteriaManager {
     ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
       const allGroupEvents = this.collectAllEvents(group.events)
-
       allGroupEvents.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
@@ -765,7 +772,9 @@ export class QueryFilterCriteriaManager {
         // Collect from attributes.nestedCriteria structure
         if (event.attributes) {
           event.attributes.forEach(attr => {
-            if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+            const attrAny = attr as any
+            const attributeType = attr.attributeType || (attrAny.type === 'nested' ? 'nested' : attrAny.type)
+            if (attributeType === 'nested' && attr.nestedCriteria?.events) {
               collectRecursively(attr.nestedCriteria.events)
             }
           })
@@ -917,9 +926,10 @@ export class QueryFilterCriteriaManager {
 
       // Handle further nested criteria recursively - Check attributes format
       if (nestedEvent.attributes) {
-        const furtherNestedCriteria = nestedEvent.attributes.filter(
-          (attr: any) => attr.attributeType === 'nested' && attr.nestedCriteria?.events
-        )
+        const furtherNestedCriteria = nestedEvent.attributes.filter((attr: any) => {
+          const attributeType = attr.attributeType || (attr.type === 'nested' ? 'nested' : attr.type)
+          return attributeType === 'nested' && attr.nestedCriteria?.events
+        })
 
         // Handle demographic attributes like Gender
         const demographicAttributes = nestedEvent.attributes.filter(

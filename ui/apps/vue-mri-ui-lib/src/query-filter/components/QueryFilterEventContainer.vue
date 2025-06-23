@@ -37,23 +37,15 @@ const emit = defineEmits<{
   'event-removed': [eventIndex: number]
 }>()
 
-// Local events array
-const localEvents = ref<QueryFilterEvent[]>([...props.events])
-
-// Sync with props when they change
+// Work directly with props.events for reactivity
 const eventsData = computed({
-  get: () => localEvents.value,
+  get: () => props.events,
   set: (value: QueryFilterEvent[]) => {
-    localEvents.value = value
     emit('update-events', value)
   },
 })
 
-// Filter events to only show main events (not nested/attribute events)
-const mainEvents = computed(() => {
-  return eventsData.value.filter(event => !event.parentEventId)
-})
-
+const mainEvents = computed(() => eventsData.value)
 // Handle adding new event from criteria selector
 const handleCriteriaSelected = (option: CriteriaOption) => {
   const newEvent: QueryFilterEvent = {
@@ -177,12 +169,12 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
         :readonly="readonly"
         @update:event="
           updateEvent(
-            eventsData.findIndex(e => e.id === event.id),
+            mainEvents.findIndex(e => e.id === event.id),
             $event
           )
         "
-        @remove-event="removeEvent(eventsData.findIndex(e => e.id === event.id))"
-        @duplicate-event="duplicateEvent(eventsData.findIndex(e => e.id === event.id))"
+        @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
+        @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
         @concept-set-selected="handleConceptSetSelected(event.id, $event)"
         @attribute-selected="handleAttributeSelected(event.id, $event)"
         @attribute-removed="handleAttributeRemoved(event.id, $event)"

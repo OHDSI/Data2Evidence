@@ -1,5 +1,4 @@
 // Components
-export { default as QueryFilterCard } from './components/QueryFilterCard.vue'
 export { default as QueryFilterEvent } from './components/QueryFilterEvent.vue'
 export { default as QueryFilterNestedEvent } from './components/QueryFilterNestedEvent.vue'
 export { default as QueryFilterNestedCriteria } from './components/QueryFilterNestedCriteria.vue'
