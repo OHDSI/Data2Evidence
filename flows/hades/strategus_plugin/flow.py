@@ -11,7 +11,6 @@ from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_
 from .flowutils import get_node_list, get_incoming_edges
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
 
-
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
     logger = get_run_logger()
