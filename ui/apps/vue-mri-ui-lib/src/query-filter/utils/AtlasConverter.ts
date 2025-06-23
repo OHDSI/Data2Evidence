@@ -27,30 +27,60 @@ export const convertAtlasToFilters = (
   const cohortName = atlasJson.name
 
   const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping => {
+    console.log(`Looking for concept set with CodesetId: ${codesetId}`)
     const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
 
     if (atlasConceptSet) {
-      const actualConceptSetId = atlasConceptSet.id
-      const localConceptSet = availableConceptSets.find(cs => cs.value == actualConceptSetId.toString())
+      const atlasId = atlasConceptSet.id
+      const systemConceptSetId = atlasConceptSet.conceptSetId
+      console.log(
+        `Found Atlas concept set: ${atlasConceptSet.name} (Atlas ID: ${atlasId}, System ID: ${systemConceptSetId})`
+      )
+
+      // Require conceptSetId to be set
+      if (!systemConceptSetId) {
+        console.error(
+          `Atlas concept set ${atlasConceptSet.name} has no conceptSetId - concept set was not properly processed`
+        )
+        return {
+          name: `Concept Set ${codesetId}`,
+          id: codesetId.toString(),
+          conceptSetItem: null,
+        }
+      }
+      const localConceptSet = availableConceptSets.find(cs => cs.value == systemConceptSetId.toString())
 
       if (localConceptSet) {
+        console.log(`Found local concept set: ${localConceptSet.text} (ID: ${localConceptSet.value})`)
         return {
           name: localConceptSet.text || localConceptSet.display_value || atlasConceptSet.name,
-          id: actualConceptSetId.toString(),
+          id: systemConceptSetId.toString(),
           conceptSetItem: localConceptSet,
         }
+      } else {
+        console.warn(`Local concept set not found for system ID: ${systemConceptSetId}`)
       }
 
       const conceptSetItem: ConceptSetItem = {
-        value: actualConceptSetId.toString(),
+        value: systemConceptSetId.toString(),
         text: atlasConceptSet.name,
         display_value: atlasConceptSet.name,
       }
 
       return {
         name: atlasConceptSet.name,
-        id: actualConceptSetId.toString(),
+        id: systemConceptSetId.toString(),
         conceptSetItem: conceptSetItem,
+      }
+    }
+
+    // If no Atlas ConceptSet found, try to find it in local available concept sets
+    const localConceptSet = availableConceptSets.find(cs => cs.value == codesetId.toString())
+    if (localConceptSet) {
+      return {
+        name: localConceptSet.text || localConceptSet.display_value || `Concept Set ${codesetId}`,
+        id: codesetId.toString(),
+        conceptSetItem: localConceptSet,
       }
     }
 

@@ -19,11 +19,13 @@ import type {
   TagInputModel,
   ConceptSetAction,
   ConceptSetDetails,
+  CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
   loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
+  createConceptSet,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
@@ -265,11 +267,113 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
     console.log('Available concept sets:', allConceptSets.value.length)
 
+    // Parse the Atlas expression
+    const atlasExpression = JSON.parse(atlasJson.expression)
+
+    // Extract concept set IDs from criteria even if ConceptSets array is empty
+    const extractConceptSetIds = (expression: any): Set<number> => {
+      const conceptSetIds = new Set<number>()
+
+      // Extract from InclusionRules
+      expression.InclusionRules?.forEach((rule: any) => {
+        rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+          const criteria = criteriaItem.Criteria || criteriaItem
+          Object.values(criteria).forEach((criteriaObj: any) => {
+            if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
+              conceptSetIds.add(criteriaObj.CodesetId)
+            }
+          })
+        })
+      })
+
+      return conceptSetIds
+    }
+
+    // Get concept set IDs referenced in the Atlas JSON
+    const referencedConceptSetIds = extractConceptSetIds(atlasExpression)
+    console.log('Referenced concept set IDs:', Array.from(referencedConceptSetIds))
+
+    // Check if referenced concept sets exist locally
+    for (const conceptSetId of referencedConceptSetIds) {
+      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId.toString())
+      if (existingConceptSet) {
+        console.log(`Found existing concept set ${conceptSetId}: ${existingConceptSet.text}`)
+      } else {
+        console.error(
+          `Referenced concept set ${conceptSetId} not found locally and no ConceptSets definition provided in Atlas JSON`
+        )
+      }
+    }
+
+    // Handle concept sets from ConceptSets array (if provided)
+    if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
+      console.log('Processing Atlas concept sets:', atlasExpression.ConceptSets.length)
+
+      const handledConceptSets: ConceptSetItem[] = []
+      const idMapping: Record<number, number> = {} // originalId → sequentialId
+      let conceptSetsUpdated = false
+
+      for (let index = 0; index < atlasExpression.ConceptSets.length; index++) {
+        const atlasConceptSet = atlasExpression.ConceptSets[index]
+        try {
+          const originalId = atlasConceptSet.id
+          const handledConceptSet = await handleConceptSetFromAtlas(atlasConceptSet)
+          if (!handledConceptSet) {
+            console.error(`Failed to handle concept set: ${atlasConceptSet.name}`)
+          } else {
+            console.log(`Successfully handled concept set: ${handledConceptSet.text}`)
+            handledConceptSets.push(handledConceptSet)
+
+            // Use sequential ID starting from 0 for Atlas JSON
+            const sequentialId = index
+            const systemConceptSetId = parseInt(handledConceptSet.value)
+
+            // Update Atlas concept set with sequential ID and system concept set ID
+            atlasConceptSet.id = sequentialId
+            atlasConceptSet.conceptSetId = systemConceptSetId
+
+            // Track the ID mapping (original → sequential)
+            idMapping[originalId] = sequentialId
+            console.log(`Atlas ID mapping: ${originalId} → ${sequentialId} (System ID: ${systemConceptSetId})`)
+
+            // Add new concept sets to allConceptSets immediately for the converter
+            if (!allConceptSets.value.find(cs => cs.value === handledConceptSet.value)) {
+              allConceptSets.value.push(handledConceptSet)
+              conceptSetsUpdated = true
+            }
+          }
+        } catch (error) {
+          console.error(`Error handling concept set ${atlasConceptSet.name}:`, error)
+        }
+      }
+
+      // If we created any new concept sets, reload to get complete data from API
+      if (conceptSetsUpdated) {
+        console.log('Reloading concept sets after updates to get complete data...')
+        await loadConceptSets()
+
+        // Update CodesetId references in criteria to match the new concept set IDs
+        console.log('Updating CodesetId references in Atlas JSON...')
+        console.log('ID mapping to apply:', idMapping)
+        updateCodesetIdReferences(atlasExpression, idMapping)
+      }
+    } else {
+      console.log('No ConceptSets array found in Atlas JSON - will use existing local concept sets')
+    }
+
     // Clear existing criteria
     criteriaManager.clearAllCriteria()
 
-    // Convert Atlas JSON to hierarchical criteria
-    const tempManager = convertAtlasToFilters(JSON.parse(atlasJson.expression), allConceptSets.value)
+    // Convert Atlas JSON to hierarchical criteria with updated concept sets
+    console.log(
+      'Available concept sets for conversion:',
+      allConceptSets.value.map(cs => `${cs.text} (ID: ${cs.value})`)
+    )
+    console.log(
+      'Atlas ConceptSets for conversion:',
+      atlasExpression.ConceptSets?.map((cs: any) => `${cs.name} (ID: ${cs.id})`)
+    )
+    const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value)
     console.log('Converted Atlas JSON to tempManager:', tempManager)
 
     // Copy the criteria to our reactive manager
@@ -280,23 +384,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     // Force reactivity update
     await nextTick()
 
-    // Load concept set details for events that have selectedConceptSet
-    setTimeout(async () => {
-      const criteria = criteriaManager.getCriteria()
-      for (const group of criteria.criteria) {
-        for (const event of group.events) {
-          if (event.selectedConceptSet && event.conceptSetId) {
-            try {
-              const conceptSetDetails = await loadSingleConceptSetDetails(event.selectedConceptSet)
-              event.conceptSetDetails = conceptSetDetails
-              event.conceptSetLoading = false
-            } catch (error) {
-              console.warn(`Failed to load concept set details for event ${event.id}:`, error)
-            }
-          }
-        }
-      }
-    }, 200)
+    // Load concept set details for all events with concept sets
+    await loadConceptSetDetailsForAllEvents()
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
     throw error
@@ -316,6 +405,189 @@ const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
     console.error('Error loading single concept set details:', error)
     return []
   }
+}
+
+const loadConceptSetDetailsForAllEvents = async () => {
+  console.log('Loading concept set details for all events...')
+  const criteria = criteriaManager.getCriteria()
+
+  for (const group of criteria.criteria) {
+    for (const event of group.events) {
+      if (event.conceptSetId) {
+        // Find the concept set in allConceptSets
+        let conceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+
+        if (!conceptSet) {
+          console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets for event ${event.id}`)
+          continue
+        }
+
+        // Set selectedConceptSet if not already set
+        if (!event.selectedConceptSet) {
+          event.selectedConceptSet = conceptSet
+          console.log(`Linked concept set ${conceptSet.text} to event ${event.id}`)
+        }
+
+        // Load concept set details if not already loaded
+        if (!event.conceptSetDetails || event.conceptSetDetails.length === 0) {
+          try {
+            console.log(`Loading details for concept set: ${conceptSet.text} (ID: ${conceptSet.value})`)
+            event.conceptSetLoading = true
+            const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet)
+            event.conceptSetDetails = conceptSetDetails
+            event.conceptSetLoading = false
+            console.log(`Loaded ${conceptSetDetails.length} concept details for ${conceptSet.text}`)
+
+            // Debug: Log first concept detail to verify format
+            if (conceptSetDetails.length > 0) {
+              console.log('Sample concept detail:', conceptSetDetails[0])
+            }
+          } catch (error) {
+            console.warn(`Failed to load concept set details for event ${event.id}:`, error)
+            event.conceptSetLoading = false
+          }
+        }
+      }
+    }
+  }
+
+  // Force reactivity update and trigger watcher
+  await nextTick()
+
+  // Manually trigger selectedConceptSets update to ensure UI synchronization
+  const currentConceptSets = conceptSetsFromCriteria.value
+  if (currentConceptSets.length > 0) {
+    selectedConceptSets.value = [...currentConceptSets]
+    console.log(
+      `Updated selectedConceptSets with ${currentConceptSets.length} concept sets:`,
+      currentConceptSets.map(cs => `${cs.text} (ID: ${cs.value})`)
+    )
+  }
+
+  console.log('Finished loading concept set details for all events')
+}
+
+const sanitizeConceptSetName = (name: string): string => {
+  // Only allow letters, numbers and spaces, replace anything else with empty string
+  return name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
+}
+
+const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+  // Update CodesetId references in PrimaryCriteria
+  if (atlasExpression.PrimaryCriteria?.CriteriaList) {
+    atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
+      Object.keys(criteriaItem).forEach(key => {
+        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
+          const originalCodesetId = criteriaItem[key].CodesetId
+          const newId = idMapping[originalCodesetId]
+
+          if (newId && newId !== originalCodesetId) {
+            console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
+            criteriaItem[key].CodesetId = newId
+          }
+        }
+      })
+    })
+  }
+
+  // Update CodesetId references in InclusionRules
+  if (atlasExpression.InclusionRules) {
+    atlasExpression.InclusionRules.forEach((rule: any) => {
+      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+        if (criteriaItem.Criteria) {
+          Object.keys(criteriaItem.Criteria).forEach(key => {
+            if (
+              criteriaItem.Criteria[key] &&
+              typeof criteriaItem.Criteria[key] === 'object' &&
+              criteriaItem.Criteria[key].CodesetId !== undefined
+            ) {
+              const originalCodesetId = criteriaItem.Criteria[key].CodesetId
+              const newId = idMapping[originalCodesetId]
+
+              if (newId && newId !== originalCodesetId) {
+                console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
+                criteriaItem.Criteria[key].CodesetId = newId
+              }
+            }
+          })
+        }
+      })
+    })
+  }
+}
+
+const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
+  const datasetId = getDatasetIdFromStore()
+  if (!datasetId) {
+    console.error('Missing datasetId for concept set handling')
+    return null
+  }
+
+  // Check if concept set already exists locally
+  if (atlasConceptSet.id) {
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.id.toString())
+    if (existingConceptSet) {
+      console.log(`Found existing concept set: ${existingConceptSet.text}`)
+      return existingConceptSet
+    }
+  }
+
+  // Create new concept set if it doesn't exist
+  if (atlasConceptSet.expression?.items && atlasConceptSet.name) {
+    try {
+      const sanitizedName = sanitizeConceptSetName(atlasConceptSet.name)
+      console.log(`Creating new concept set: ${sanitizedName} (original: ${atlasConceptSet.name})`)
+
+      // Extract concepts from Atlas format
+      const concepts = atlasConceptSet.expression.items
+        .map((item: any) => ({
+          id: item.concept?.CONCEPT_ID || item.concept?.concept_id,
+          useDescendants: item.includeDescendants !== false, // Default to true
+          useMapped: item.includeMapped !== false, // Default to true
+          isExcluded: item.isExcluded === true, // Default to false
+        }))
+        .filter((concept: any) => concept.id) // Only include items with valid concept IDs
+
+      if (concepts.length === 0) {
+        console.error(`No valid concepts found in Atlas concept set: ${sanitizedName}`)
+        return null
+      }
+
+      const createRequest: CreateConceptSetRequest = {
+        name: sanitizedName,
+        concepts,
+        shared: false, // Default to not shared
+        userName: 'system', // Default userName
+      }
+
+      // Create the concept set via API
+      const newConceptSetId = await createConceptSet(createRequest, datasetId)
+      console.log(`Created concept set with ID: ${newConceptSetId}`)
+
+      // Create a temporary concept set item to return immediately
+      // The actual reload will happen at the end of all concept set processing
+      const tempConceptSet: ConceptSetItem = {
+        value: newConceptSetId.toString(),
+        text: sanitizedName,
+        display_value: sanitizedName,
+        conceptIds: concepts.map(c => c.id),
+        concepts: concepts,
+      }
+
+      console.log(`Successfully created concept set: ${tempConceptSet.text} (System ID: ${newConceptSetId})`)
+      return tempConceptSet
+    } catch (error) {
+      console.error(`Error creating concept set ${atlasConceptSet.name}:`, error)
+      return null
+    }
+  }
+
+  console.error(
+    `Cannot handle concept set: missing required data (id: ${atlasConceptSet.id}, name: ${
+      atlasConceptSet.name
+    }, items: ${atlasConceptSet.expression?.items?.length || 0})`
+  )
+  return null
 }
 
 // Handle concept set updates
