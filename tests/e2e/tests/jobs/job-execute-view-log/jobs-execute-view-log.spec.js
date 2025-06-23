@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('jobs-execute-view-log', async ({ page }) => {
   // Create DQD job with name dqd_demo
-  await page.goto('https://localhost:41100/portal');
+  await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
