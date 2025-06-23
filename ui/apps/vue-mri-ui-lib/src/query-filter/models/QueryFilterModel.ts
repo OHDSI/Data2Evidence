@@ -762,16 +762,7 @@ export class QueryFilterCriteriaManager {
       eventList.forEach(event => {
         allEvents.push(event)
 
-        // Collect from new attributes.nestedCriteria structure
-        if (event.attributes) {
-          event.attributes.forEach(attr => {
-            if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
-              collectRecursively(attr.nestedCriteria.events)
-            }
-          })
-        }
-
-        // Collect from attributes.nestedCriteria structure - UI format
+        // Collect from attributes.nestedCriteria structure
         if (event.attributes) {
           event.attributes.forEach(attr => {
             if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {

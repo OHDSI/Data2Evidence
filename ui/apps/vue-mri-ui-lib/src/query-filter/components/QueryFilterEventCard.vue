@@ -181,7 +181,8 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
     attributes: [
       ...currentAttributes,
       {
-        ...attribute,
+        id: attribute.id,
+        attributeType: attribute.type === 'nested' ? 'nested' : 'standard',
         // Initialize based on attribute type
         conceptSet: attribute.id === 'nested' ? null : undefined,
         nestedCriteria:
