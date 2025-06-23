@@ -8,6 +8,7 @@ import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
 import { StrategusStudy } from "../../../../types/strategusStudy";
+import env from "../../../../env";
 import "./StudyCard.scss";
 
 interface StudyCardProps {
@@ -27,8 +28,8 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  const VIEWER_BASE_URL = `https://localhost:41100/strategus-results/${study.id}/`;
+  console.log(env.REACT_APP_DN_BASE_URL);
+  const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -49,7 +50,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
         iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
-        console.log("Cookie set in iframe:", iframeRef.current.contentWindow.document.cookie);
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
       }
@@ -267,14 +267,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 </>
               )}
             </div>
-            {/* <div className="study-card__action" onClick={handleDownloadResults}>
-              <DownloadStudyIcon className="study-card__action-icon" />
-              <span>Download results</span>
-            </div>
-            <div className="study-card__action" onClick={handleShareResults}>
-              <ShareStudyIcon className="study-card__action-icon" />
-              <span>Share results</span>
-            </div> */}
           </div>
         </div>
       </Card>
