@@ -98,8 +98,10 @@ class AppTokenPayload(BaseModel):
   extension_termsOfUseConsentVersion: str
   email: str
 
+
 class User(BaseModel):
   user_id: Optional[str] = ""
   name: Optional[str] = ""
   email: Optional[str] = ""
+
 
