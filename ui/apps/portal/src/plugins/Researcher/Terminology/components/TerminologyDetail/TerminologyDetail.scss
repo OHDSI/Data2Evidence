@@ -6,9 +6,15 @@
 
   &__tabs {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1px;
     margin-top: 11px;
+    &_container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
   }
 
   &__related-concepts {

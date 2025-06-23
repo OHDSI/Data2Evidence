@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { Box, Button, Dialog, FormControl, IconButton, TextField, TrashIcon } from "@portal/components";
-import { useField } from "../../contexts";
+import { useActiveFieldMap } from "../../contexts";
 import "./CommentDialog.scss";
 
 type CloseDialogType = "success" | "cancelled";
@@ -14,8 +14,8 @@ interface CommentDialogProps {
 
 export const CommentDialog: FC<CommentDialogProps> = ({ handleId, open, onClose }) => {
   const [value, setValue] = useState<string>("");
-  const { activeTargetHandles, setActiveFieldTargetHandles } = useField();
-  const handle = activeTargetHandles.find((h) => h.id === handleId);
+  const { targetHandles, setFieldTargetHandles } = useActiveFieldMap();
+  const handle = targetHandles.find((h) => h.id === handleId);
   const comment = handle?.data.comment;
 
   useEffect(() => {
@@ -23,18 +23,18 @@ export const CommentDialog: FC<CommentDialogProps> = ({ handleId, open, onClose 
   }, [comment]);
 
   const handleApply = useCallback(() => {
-    setActiveFieldTargetHandles(
-      activeTargetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, comment: value } } : h))
+    setFieldTargetHandles(
+      targetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, comment: value } } : h))
     );
     typeof onClose === "function" && onClose("success");
-  }, [activeTargetHandles, value]);
+  }, [targetHandles, value]);
 
   const handleRemove = useCallback(() => {
-    setActiveFieldTargetHandles(
-      activeTargetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, comment: undefined } } : h))
+    setFieldTargetHandles(
+      targetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, comment: undefined } } : h))
     );
     typeof onClose === "function" && onClose("success");
-  }, [activeTargetHandles]);
+  }, [targetHandles]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
