@@ -76,7 +76,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   }, [study.id]);
 
   usePollingEffect(fetchViewerStatus, [fetchViewerStatus, selectedDatasetId, viewerStatus], {
-    isEnabled: isStartingViewer || isStoppingViewer,
+    isEnabled: viewerStatus === "starting" || viewerStatus === "stopping",
     intervalSeconds: 2.5,
   });
 
