@@ -50,7 +50,7 @@
 	}
 
 	@strategus_websocket {
-		path /strategus-viewer/*
+		path /strategus-results/*
 		header Connection *Upgrade*
 		header Upgrade websocket
 	}
