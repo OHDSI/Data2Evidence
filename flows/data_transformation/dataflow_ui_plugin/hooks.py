@@ -64,6 +64,8 @@ def node_task_execution_hook(task, task_run, state, nodename, nodetype, nodeobj,
                 pass
             case NodeType.DATAMAPPING:
                 pass
+            case NodeType.CONCEPTMAPPING:
+                pass
             case _:
                 logger.error("ERR: Unknown Node " + nodetype)
 

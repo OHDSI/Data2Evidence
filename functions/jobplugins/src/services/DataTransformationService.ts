@@ -85,13 +85,13 @@ export class TransformationService {
       const transformedRes = res
         .map((artifact) => {
           const parsedData = JSON.parse(artifact.data);
+
           return Object.entries(parsedData).map(([nodeName, nodeData]) => {
             const data = nodeData as NodeData;
-            const simplifiedData = this.simplifyJson(data);
             return {
               nodeName,
               taskRunResult: {
-                result: simplifiedData,
+                result: data,
               },
               error: data.error,
               errorMessage: data.error ? data.errorMessage : null,
@@ -104,30 +104,6 @@ export class TransformationService {
       console.log(`Data transformation result not found: ${error.message}`);
       throw new Error("Data transformation result not found");
     }
-  }
-
-  private simplifyJson(object: Object) {
-    // Base case
-    if (typeof object !== "object" || object === null) {
-      return object;
-    }
-    // Keep first 50 elements of array
-    if (Array.isArray(object)) {
-      return object.slice(0, 50).map((item) => this.simplifyJson(item));
-    }
-
-    const simplifiedObject = {};
-    // Keep first 50 key-value pairs of object
-    const keys = Object.keys(object).slice(0, 50);
-    for (const key of keys) {
-      const value = object[key];
-      if (typeof value === "object") {
-        simplifiedObject[key] = this.simplifyJson(value);
-      } else {
-        simplifiedObject[key] = value;
-      }
-    }
-    return simplifiedObject;
   }
 
   async getCanvasList() {
@@ -343,7 +319,7 @@ export class TransformationService {
     token: string
   ) {
     const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType(
+    const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
     if (!gitConfig) {
@@ -577,7 +553,7 @@ export class TransformationService {
     token: string
   ) {
     const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType(
+    const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
     if (!gitConfig) {
@@ -713,7 +689,7 @@ export class TransformationService {
 
   async overwriteCanvasFromRemote(canvasId: string, token: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType(
+    const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
     if (!gitConfig) {
@@ -922,7 +898,7 @@ export class TransformationService {
 
   async checkCanvasDiffFromRemote(canvasId: string, token: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType(
+    const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
     if (!gitConfig) {
@@ -1001,7 +977,7 @@ export class TransformationService {
 
   async overwriteAllCanvasesFromRemote(token: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const gitConfig = await portalServerApi.getConfigByType(
+    const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
     if (!gitConfig) {

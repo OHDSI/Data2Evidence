@@ -15,7 +15,7 @@ def DBDao(**kwargs) -> DaoBase:
     match testinstance.dialect:
         case SupportedDatabaseDialects.POSTGRES:
             return IbisDao(**vars(testinstance))
-        case SupportedDatabaseDialects.HANA | SupportedDatabaseDialects.DUCKDB:
+        case SupportedDatabaseDialects.HANA | SupportedDatabaseDialects.DUCKDB | SupportedDatabaseDialects.BIGQUERY:
             return SqlAlchemyDao(**vars(testinstance))
         case _:
             supported_dialects = [dialect.value for dialect in SupportedDatabaseDialects]

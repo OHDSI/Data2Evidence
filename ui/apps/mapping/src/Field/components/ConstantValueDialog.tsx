@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { Box, Button, Dialog, FormControl, IconButton, TextField, TrashIcon } from "@portal/components";
-import { useField } from "../../contexts";
+import { useActiveFieldMap } from "../../contexts";
 import "./ConstantValueDialog.scss";
 
 type CloseDialogType = "success" | "cancelled";
@@ -14,8 +14,8 @@ interface ConstantValueDialogProps {
 
 export const ConstantValueDialog: FC<ConstantValueDialogProps> = ({ handleId, open, onClose }) => {
   const [value, setValue] = useState<string | number>("");
-  const { activeTargetHandles, setActiveFieldTargetHandles } = useField();
-  const handle = activeTargetHandles.find((h) => h.id === handleId);
+  const { targetHandles, setFieldTargetHandles } = useActiveFieldMap();
+  const handle = targetHandles.find((h) => h.id === handleId);
   const constantValue = handle?.data.constantValue;
 
   useEffect(() => {
@@ -23,18 +23,18 @@ export const ConstantValueDialog: FC<ConstantValueDialogProps> = ({ handleId, op
   }, [constantValue]);
 
   const handleApply = useCallback(() => {
-    setActiveFieldTargetHandles(
-      activeTargetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, constantValue: value } } : h))
+    setFieldTargetHandles(
+      targetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, constantValue: value } } : h))
     );
     typeof onClose === "function" && onClose("success");
-  }, [activeTargetHandles, value]);
+  }, [targetHandles, value]);
 
   const handleRemove = useCallback(() => {
-    setActiveFieldTargetHandles(
-      activeTargetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, constantValue: undefined } } : h))
+    setFieldTargetHandles(
+      targetHandles.map((h) => (h.id === handleId ? { ...h, data: { ...h.data, constantValue: undefined } } : h))
     );
     typeof onClose === "function" && onClose("success");
-  }, [activeTargetHandles]);
+  }, [targetHandles]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
