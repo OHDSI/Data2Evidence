@@ -91,8 +91,6 @@ export default {
   data() {
     return {
       chartConfig: [],
-      patientTotalRequested: false,
-      patientListTotalRequested: false,
       disableCensoring: true,
       unHideIcon: '',
       hideIcon: '',
@@ -104,8 +102,6 @@ export default {
     getHasAssignedConfig(val) {
       if (val) {
         this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-        this.setPatientTotalRequested(false)
-        this.setPatientListTotalRequested(false)
         this.refreshPatientCount()
       }
     },
@@ -115,19 +111,17 @@ export default {
   },
   mounted() {
     try {
-    this.$nextTick(() => {
-      window.addEventListener('click', this.closeSubMenu)
-    })
-    this.requestTotalPatientCount()
-    // The config is available when component mounts already to check if interactive mode is used
-    this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-    this.setPatientListTotalRequested(false)
-    this.refreshPatientCount()
-    this.loadValuesForAttributePath({
-      attributePathUid: 'conceptSets',
-      searchQuery: '',
-      attributeType: 'conceptSet',
-    })
+      this.$nextTick(() => {
+        window.addEventListener('click', this.closeSubMenu)
+      })
+      // The config is available when component mounts already to check if interactive mode is used
+      this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
+      this.refreshPatientCount()
+      this.loadValuesForAttributePath({
+        attributePathUid: 'conceptSets',
+        searchQuery: '',
+        attributeType: 'conceptSet',
+      })
     } catch (e) {
       console.error(e)
     }
@@ -159,25 +153,20 @@ export default {
       }
       return false
     },
-    getSelectedDatasetText(){
-      return this.getSelectedDataset.name == "" ? "Untitled" : this.getSelectedDataset.name
-    }
+    getSelectedDatasetText() {
+      return this.getSelectedDataset.name == '' ? 'Untitled' : this.getSelectedDataset.name
+    },
   },
   methods: {
     ...mapActions([
       'setActiveChart',
-      'firePatientCountQuery',
-      'firePatientListCountQuery',
       'setFireRequest',
       'toggleConfigSelectionDialog',
       'setDatasetVersion',
       'setDataset',
       'requestDatasetVersions',
       'loadValuesForAttributePath',
-      'setPatientListTotalRequested',
-      'setPatientTotalRequested',
-      'requestTotalPatientCount',
-      'refreshPatientCount'
+      'refreshPatientCount',
     ]),
     openSettingsConfig() {
       const eventBus = sap.ui.getCore().getEventBus()
