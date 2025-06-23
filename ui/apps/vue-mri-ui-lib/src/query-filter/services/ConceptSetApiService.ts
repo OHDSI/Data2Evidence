@@ -97,6 +97,8 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   }
 }
 
+const cachedConcepts: { [key: number]: ConceptDetail } = {}
+
 /**
  * Fetch concept details by ID
  */
@@ -106,6 +108,9 @@ export const fetchConceptById = async (
   headers: Record<string, string>
 ): Promise<ConceptDetail | null> => {
   try {
+    if (cachedConcepts[conceptId]) {
+      return cachedConcepts[conceptId]
+    }
     const url = buildApiUrl('/terminology/concept/searchById')
 
     const requestBody = {
@@ -115,6 +120,9 @@ export const fetchConceptById = async (
 
     const response = await axios.post(url, requestBody, { headers })
     const data = response.data
+    if (data[0]) {
+      cachedConcepts[conceptId] = data[0]
+    }
     return Array.isArray(data) && data.length > 0 ? data[0] : null
   } catch (error) {
     console.error(`Error fetching concept by ID ${conceptId}:`, error)
