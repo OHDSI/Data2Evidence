@@ -9,16 +9,16 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { EntryEvent, ExitEvent, QueryFilterCriteriaManager, QueryFilterEvent } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
-import { ref } from 'vue'
 import ObservationPeriodBlock from './ObservationPeriodBlock.vue'
 
 interface Props {
   type: 'ENTRY' | 'EXIT'
-  criteriaData?: any
+  primaryEventsData?: EntryEvent
+  exitCriteriaData?: ExitEvent
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
@@ -26,50 +26,22 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  criteriaData: () => ({ criteriaType: 'ALL', criteria: [] }),
   conceptSets: () => [],
   readonly: false,
 })
 
 const emit = defineEmits<{
-  'update:criteria': [criteria: any]
-  'criteria-updated': [criteriaManager: QueryFilterCriteriaManager]
-  'update-qualifying-limit': [limit: 'ALL' | 'EARLIEST' | 'LATEST']
-  'add-criteria-group': [groupData: any]
-  'update-criteria-group': [index: number, groupData: any]
-  'remove-criteria-group': [index: number]
+  'update-limit': [limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG']
+  'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
-// Get current criteria data (now from props instead of criteriaManager)
-const currentCriteriaData = computed(() => props.criteriaData)
 
-// Handle qualifying events limit selection
-const updateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  emit('update-qualifying-limit', limit)
+const updateLimitValue = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
+  emit('update-limit', limit)
 }
-
-// Handle adding new criteria group
-const addNewGroup = () => {
-  const newGroup = {
-    id: `criteria_${Date.now()}`,
-    title: `Criteria ${currentCriteriaData.value.criteria.length + 1}`,
-    description: `Description for Criteria ${currentCriteriaData.value.criteria.length + 1}`,
-    criteriaType: 'ALL' as 'ALL',
-    events: [],
-  }
-
-  emit('add-criteria-group', newGroup)
-}
-
-// Handle group updates
-const handleGroupUpdate = (groupIndex: number, updatedGroup: any) => {
-  emit('update-criteria-group', groupIndex, updatedGroup)
-}
-
-// Handle group removal
-const handleGroupRemove = (groupIndex: number) => {
-  emit('remove-criteria-group', groupIndex)
+const updateEntryDaysValue = (type: 'PRIOR' | 'POST', days: number) => {
+  emit('update-entry-days', type, days)
 }
 
 const initialEventsLimitOptions = [
@@ -90,7 +62,34 @@ const buttonOptions = computed(() => {
 
 const isEntry = computed(() => props.type === 'ENTRY')
 
-const initialEventsLimit = ref('')
+const initialEventsLimit = computed(() => {
+    if (isEntry.value) {
+      return props.primaryEventsData?.primaryCriteriaLimit || 'ALL'
+    } else {
+      return props.exitCriteriaData?.endStrategy || 'CONT_OBS'
+    }
+})
+
+const priorDays = computed(() => {
+  return isEntry.value && props.primaryEventsData?.priorDays || 0
+})
+
+const postDays = computed(() => {
+  return isEntry.value && props.primaryEventsData?.postDays || 0
+})
+
+const eventsData = computed(() => {    
+  return isEntry.value ? props.primaryEventsData?.events || [] : props.exitCriteriaData?.censoringCriteria || []
+})
+
+const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
+  if (isEntry.value) {
+    props.primaryEventsData.events = [...updatedEvents]
+  } else {    
+    props.exitCriteriaData.censoringCriteria = [...updatedEvents]
+  }
+}
+
 </script>
 
 <template>
@@ -101,24 +100,23 @@ const initialEventsLimit = ref('')
       </div>
 
       <div class="qualifying-events-controls">
-        <GroupButtons :options="buttonOptions" :small="!isEntry" :model-value="initialEventsLimit" />
+        <GroupButtons :options="buttonOptions" :small="!isEntry" :limitValue="initialEventsLimit" @update-limit-value="updateLimitValue"/>
       </div>
 
       <div class="shadow-container">
-        <ObservationPeriodBlock v-if="isEntry" />
+        <ObservationPeriodBlock v-if="isEntry" :priorDays="priorDays" :postDays="postDays" @update-entry-days="updateEntryDaysValue"/>
       </div>
     </div>
 
     <div class="events-container">
       <div class="sidebar">ALL</div>
       <QueryFilterEventContainer
-        :criteria-data="currentCriteriaData"
+        :events="eventsData"
         :concept-sets="props.conceptSets"
         :concept-set-domain-values="props.conceptSetDomainValues"
         :concept-set-texts="props.conceptSetTexts"
         :readonly="readonly"
-        @update:criteria="emit('update:criteria', $event)"
-        @criteria-updated="emit('criteria-updated', $event)"
+        @update-events="handleEventsUpdate"
       />
     </div>
   </div>
@@ -130,8 +128,6 @@ const initialEventsLimit = ref('')
     display: flex;
     justify-content: space-between;
     align-items: center;
-    // margin-bottom: 16px;
-    // padding-bottom: 16px;
     border-bottom: 1px solid #e0e0e0;
     position: relative;
     padding: 16px;
