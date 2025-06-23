@@ -56,13 +56,11 @@ def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
             if dc_read_role_exists:
                 logger.info(f"'{dc_read_role_exists}' role already exists")
 
+                # grant read role read privileges to dc read role
+                logger.info(f"Granting read privileges to '{dc_hana_read_role}'..")
+                dbdao.grant_read_privileges(schema, dc_hana_read_role)
             else:
-                logger.error(f"'{dc_read_role_exists}' does not exist! Creating read role '{dc_hana_read_role}'..")
-                dbdao.create_read_role(dc_read_role_exists)
-
-            # grant dc read role read privileges to dc read role
-            logger.info(f"Granting read privileges to '{dc_hana_read_role}'..")
-            dbdao.grant_read_privileges(schema, dc_hana_read_role)
+                logger.error(f"'{dc_read_role_exists}' does not exist!")
     
     else:
         # Check if schema read role exists
