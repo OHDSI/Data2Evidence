@@ -18,6 +18,7 @@ interface Props {
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
+  datasetId?: string | null
   readonly?: boolean
 }
 
@@ -108,6 +109,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :concept-sets="conceptSets"
           :concept-set-domain-values="conceptSetDomainValues"
           :concept-set-texts="conceptSetTexts"
+          :dataset-id="datasetId"
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"

@@ -802,6 +802,10 @@ export class QueryFilterCriteriaManager {
       const nestedChildEvent: QueryFilterEvent = {
         id: event.id,
         conceptSet: event.conceptSet || '',
+        conceptSetId: event.conceptSetId,
+        conceptSetDetails: event.conceptSetDetails,
+        selectedConceptSet: event.selectedConceptSet,
+        conceptSetLoading: event.conceptSetLoading,
         criteriaType: event.eventType,
         isExpanded: event.isExpanded,
         cardinality: event.cardinality,
@@ -861,6 +865,12 @@ export class QueryFilterCriteriaManager {
   // Conversion methods
   convertToAtlasFormat(): any {
     // Build Atlas cohort definition from hierarchical structure
+    
+    // Initialize mapping objects early so they can be used throughout the method
+    const conceptSets: any[] = []
+    const usedConceptSetIds = new window.Set() as Set<string>
+    const systemIdToAtlasId = new window.Map() as Map<string, number> // System ID → Atlas sequential ID
+    
     const atlasDef: any = {
       ConceptSets: [], // Will be populated from events
       PrimaryCriteria: {
@@ -886,11 +896,11 @@ export class QueryFilterCriteriaManager {
           Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
           CriteriaList: group.events.flatMap(event =>
             [event]
-              .filter(e => !e.isAttributeBased && e.criteriaType !== 'demographic') // Only non-demographic main events
+              .filter(e => !e.isAttributeBased && e.eventType !== 'demographic') // Only non-demographic main events
               .map(event => {
                 const criteria: any = {
                   Criteria: {
-                    [this.mapEventTypeToAtlas(event.criteriaType)]: {}, // Maps filter events → Atlas Criteria
+                    [this.mapEventTypeToAtlas(event.eventType)]: {}, // Maps filter events → Atlas Criteria
                   },
                   StartWindow: {
                     Start: {
@@ -922,17 +932,59 @@ export class QueryFilterCriteriaManager {
                   }
                 }
 
-                // Check for nested events (correlated criteria)
+                // Check for nested events (correlated criteria) - Legacy format
                 const nestedEvents = group.events.filter(
                   e => e.isAttributeBased && e.parentEventId === event.id && e.isNested
                 )
 
-                if (nestedEvents.length > 0) {
-                  const { criteriaList, demographicCriteriaList } = this.buildNestedCriteria(
-                    nestedEvents,
-                    group.events,
-                    event.id
-                  )
+                // Check for nested criteria in attributes - New format
+                const attributeNestedCriteria =
+                  event.attributes?.filter(attr => attr.attributeType === 'nested' && attr.nestedCriteria?.events) || []
+
+                // Check for nested criteria in attributeObjects - UI format
+                const attributeObjectsNestedCriteria =
+                  event.attributeObjects?.filter(attr => attr.id === 'nested' && attr.nestedCriteria?.events) || []
+
+                if (
+                  nestedEvents.length > 0 ||
+                  attributeNestedCriteria.length > 0 ||
+                  attributeObjectsNestedCriteria.length > 0
+                ) {
+                  let criteriaList: any[] = []
+                  let demographicCriteriaList: any[] = []
+
+                  // Process legacy nested events
+                  if (nestedEvents.length > 0) {
+                    const legacyResult = this.buildNestedCriteria(nestedEvents, group.events, event.id)
+                    criteriaList = criteriaList.concat(legacyResult.criteriaList)
+                    demographicCriteriaList = demographicCriteriaList.concat(legacyResult.demographicCriteriaList)
+                  }
+
+                  // Process new format nested criteria from attributes
+                  attributeNestedCriteria.forEach(attrObj => {
+                    if (attrObj.nestedCriteria?.events) {
+                      const newFormatResult = this.buildNestedCriteriaFromAttributes(
+                        attrObj.nestedCriteria.events,
+                        systemIdToAtlasId,
+                        event.id
+                      )
+                      criteriaList = criteriaList.concat(newFormatResult.criteriaList)
+                      demographicCriteriaList = demographicCriteriaList.concat(newFormatResult.demographicCriteriaList)
+                    }
+                  })
+
+                  // Process nested criteria from attributeObjects - UI format
+                  attributeObjectsNestedCriteria.forEach(attrObj => {
+                    if (attrObj.nestedCriteria?.events) {
+                      const uiFormatResult = this.buildNestedCriteriaFromAttributes(
+                        attrObj.nestedCriteria.events,
+                        systemIdToAtlasId,
+                        event.id
+                      )
+                      criteriaList = criteriaList.concat(uiFormatResult.criteriaList)
+                      demographicCriteriaList = demographicCriteriaList.concat(uiFormatResult.demographicCriteriaList)
+                    }
+                  })
 
                   if (criteriaList.length > 0 || demographicCriteriaList.length > 0) {
                     criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
@@ -948,7 +1000,7 @@ export class QueryFilterCriteriaManager {
               })
           ),
           DemographicCriteriaList: group.events
-            .filter(event => !event.isAttributeBased && event.criteriaType === 'demographic')
+            .filter(event => !event.isAttributeBased && event.eventType === 'demographic')
             .flatMap(event => {
               // Process demographic events and their age attributes
               const demographicEvents = [event]
@@ -1045,12 +1097,12 @@ export class QueryFilterCriteriaManager {
     // CensoringCriteria, CollapseSettings, and CensorWindow are already set above
 
     // Generate ConceptSets from events with conceptSetDetails
-    const conceptSets: any[] = []
-    const usedConceptSetIds = new window.Set() as Set<string>
-    const systemIdToAtlasId = new window.Map() as Map<string, number> // System ID → Atlas sequential ID
 
     ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
-      group.events.forEach(event => {
+      // Collect all events including nested ones
+      const allGroupEvents = this.collectAllEvents(group.events)
+
+      allGroupEvents.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
           if (!usedConceptSetIds.has(systemConceptSetId)) {
@@ -1107,6 +1159,43 @@ export class QueryFilterCriteriaManager {
     })
 
     return atlasDef
+  }
+
+  // Helper method to recursively collect all events including nested ones
+  private collectAllEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
+    const allEvents: QueryFilterEvent[] = []
+
+    const collectRecursively = (eventList: QueryFilterEvent[]) => {
+      eventList.forEach(event => {
+        allEvents.push(event)
+
+        // Collect from legacy nested events structure
+        if (event.nestedEvents && event.nestedEvents.length > 0) {
+          collectRecursively(event.nestedEvents)
+        }
+
+        // Collect from new attributes.nestedCriteria structure
+        if (event.attributes) {
+          event.attributes.forEach(attr => {
+            if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+              collectRecursively(attr.nestedCriteria.events)
+            }
+          })
+        }
+
+        // Collect from attributeObjects.nestedCriteria structure - UI format
+        if (event.attributeObjects) {
+          event.attributeObjects.forEach(attrObj => {
+            if (attrObj.id === 'nested' && attrObj.nestedCriteria?.events) {
+              collectRecursively(attrObj.nestedCriteria.events)
+            }
+          })
+        }
+      })
+    }
+
+    collectRecursively(events)
+    return allEvents
   }
 
   // Helper methods for mapping values to Atlas format
@@ -1316,6 +1405,82 @@ export class QueryFilterCriteriaManager {
           criteriaList.push(criteria)
         })
       }
+    })
+
+    return { criteriaList, demographicCriteriaList }
+  }
+
+  // Helper method to build nested criteria from attributes.nestedCriteria format
+  private buildNestedCriteriaFromAttributes(
+    nestedEvents: any[],
+    systemIdToAtlasId: Map<string, number>,
+    parentEventId?: string
+  ): { criteriaList: any[]; demographicCriteriaList: any[] } {
+    const criteriaList: any[] = []
+    const demographicCriteriaList: any[] = []
+
+    nestedEvents.forEach(nestedEvent => {
+      const criteria: any = {
+        Criteria: {
+          ConditionOccurrence: {},
+        },
+        StartWindow: {
+          Start: {
+            Coeff: -1,
+          },
+          End: {
+            Coeff: 1,
+          },
+          UseEventEnd: false,
+        },
+        Occurrence: {
+          Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+          Count: nestedEvent.cardinality?.count || 1,
+        },
+      }
+
+      // Add concept set reference using systemIdToAtlasId mapping
+      if (nestedEvent.conceptSetId) {
+        const atlasConceptSetId = systemIdToAtlasId.get(nestedEvent.conceptSetId)
+        if (atlasConceptSetId !== undefined) {
+          criteria.Criteria.ConditionOccurrence.CodesetId = atlasConceptSetId
+        }
+      }
+
+      // Handle further nested criteria recursively
+      if (nestedEvent.attributes) {
+        const furtherNestedCriteria = nestedEvent.attributes.filter(
+          (attr: any) => attr.attributeType === 'nested' && attr.nestedCriteria?.events
+        )
+
+        if (furtherNestedCriteria.length > 0) {
+          let nestedCriteriaList: any[] = []
+          let nestedDemographicCriteriaList: any[] = []
+
+          furtherNestedCriteria.forEach((attrObj: any) => {
+            if (attrObj.nestedCriteria?.events) {
+              const result = this.buildNestedCriteriaFromAttributes(
+                attrObj.nestedCriteria.events,
+                systemIdToAtlasId,
+                nestedEvent.id
+              )
+              nestedCriteriaList = nestedCriteriaList.concat(result.criteriaList)
+              nestedDemographicCriteriaList = nestedDemographicCriteriaList.concat(result.demographicCriteriaList)
+            }
+          })
+
+          if (nestedCriteriaList.length > 0 || nestedDemographicCriteriaList.length > 0) {
+            criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+              Type: 'ALL',
+              CriteriaList: nestedCriteriaList,
+              DemographicCriteriaList: nestedDemographicCriteriaList,
+              Groups: [],
+            }
+          }
+        }
+      }
+
+      criteriaList.push(criteria)
     })
 
     return { criteriaList, demographicCriteriaList }

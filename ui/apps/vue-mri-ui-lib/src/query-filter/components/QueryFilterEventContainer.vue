@@ -21,6 +21,7 @@ interface Props {
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
+  datasetId?: string | null
   readonly?: boolean
 }
 
@@ -46,6 +47,11 @@ const eventsData = computed({
     localEvents.value = value
     emit('update-events', value)
   },
+})
+
+// Filter events to only show main events (not nested/attribute events)
+const mainEvents = computed(() => {
+  return eventsData.value.filter(event => !event.isAttributeBased && !event.parentEventId)
 })
 
 // Handle adding new event from criteria selector
@@ -167,17 +173,24 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
     <div class="events-list">
       <!-- Use new QueryFilterEventCard component for single event focus -->
       <QueryFilterEventCard
-        v-for="(event, index) in eventsData"
+        v-for="(event, index) in mainEvents"
         :key="event.id"
         :event="event"
         :event-index="index"
+        :all-events="eventsData"
         :concept-sets="conceptSets"
         :concept-set-domain-values="conceptSetDomainValues"
         :concept-set-texts="conceptSetTexts"
+        :dataset-id="datasetId"
         :readonly="readonly"
-        @update:event="updateEvent(index, $event)"
-        @remove-event="removeEvent(index)"
-        @duplicate-event="duplicateEvent(index)"
+        @update:event="
+          updateEvent(
+            eventsData.findIndex(e => e.id === event.id),
+            $event
+          )
+        "
+        @remove-event="removeEvent(eventsData.findIndex(e => e.id === event.id))"
+        @duplicate-event="duplicateEvent(eventsData.findIndex(e => e.id === event.id))"
         @concept-set-selected="handleConceptSetSelected(event.id, $event)"
         @attribute-selected="handleAttributeSelected(event.id, $event)"
         @attribute-removed="handleAttributeRemoved(event.id, $event)"

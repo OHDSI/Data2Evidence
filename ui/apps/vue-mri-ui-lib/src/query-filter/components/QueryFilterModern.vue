@@ -42,16 +42,33 @@ const store = instance?.appContext.config.globalProperties.$store
 const showDebug = ref(false)
 
 // Maintain backward compatibility with existing tag input model
-const tagInputModel = computed<TagInputModel>(() => ({
-  id: 'concept-set-test',
-  props: {
-    type: 'conceptSet',
-    value: selectedConceptSetValues.value,
-    attributePath: 'condition_occurrence.concept_id',
-    domainFilter: 'Condition',
-    standardConceptCodeFilter: 'Standard',
-  },
-}))
+const tagInputModel = computed<TagInputModel>(() => {
+  try {
+    return {
+      id: 'concept-set-test',
+      props: {
+        type: 'conceptSet',
+        value: selectedConceptSetValues.value,
+        attributePath: 'condition_occurrence.concept_id',
+        domainFilter: 'Condition',
+        standardConceptCodeFilter: 'Standard',
+      },
+    }
+  } catch (error) {
+    console.error('Error in tagInputModel computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return {
+      id: 'concept-set-test',
+      props: {
+        type: 'conceptSet',
+        value: [],
+        attributePath: 'condition_occurrence.concept_id',
+        domainFilter: 'Condition',
+        standardConceptCodeFilter: 'Standard',
+      },
+    }
+  }
+})
 
 const selectedConceptSets = ref<ConceptSetItem[]>([])
 
@@ -90,11 +107,12 @@ const tagInputTexts = getTagInputTexts()
 const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-const getDatasetId = (): string | null => {
+// Computed dataset ID that will be passed to child components
+const datasetId = computed(() => {
   // Try to get datasetId from store first
-  const datasetId = store?.state?.selectedDataset?.id
-  if (datasetId) {
-    return datasetId
+  const storeDatasetId = store?.state?.selectedDataset?.id
+  if (storeDatasetId) {
+    return storeDatasetId
   }
 
   // Fallback to portalAPI studyId if store is not available
@@ -103,30 +121,35 @@ const getDatasetId = (): string | null => {
     return portalAPI.studyId
   }
 
-  throw new Error('Dataset ID is required but not available from store or portalAPI')
+  return null
+})
+
+const getDatasetId = (): string | null => {
+  return datasetId.value
 }
 
 const loadConceptSets = async () => {
-  try {
-    const datasetId = getDatasetId()
-
-    conceptSetDomainValues.value.isLoading = true
-
-    try {
-      const result = await apiLoadConceptSets(datasetId)
-      allConceptSets.value = result.values
-      conceptSetDomainValues.value = result
-    } catch (error) {
-      console.error('Error loading concept sets:', error)
-      allConceptSets.value = []
-      conceptSetDomainValues.value = {
-        values: [],
-        isLoading: false,
-        loadedStatus: 'NO_RESULTS',
-      }
-    }
-  } catch (error) {
+  const currentDatasetId = getDatasetId()
+  
+  if (!currentDatasetId) {
     console.warn('Cannot load concept sets: Dataset ID not available from store or portalAPI')
+    allConceptSets.value = []
+    conceptSetDomainValues.value = {
+      values: [],
+      isLoading: false,
+      loadedStatus: 'NO_RESULTS',
+    }
+    return
+  }
+
+  conceptSetDomainValues.value.isLoading = true
+
+  try {
+    const result = await apiLoadConceptSets(currentDatasetId)
+    allConceptSets.value = result.values
+    conceptSetDomainValues.value = result
+  } catch (error) {
+    console.error('Error loading concept sets:', error)
     allConceptSets.value = []
     conceptSetDomainValues.value = {
       values: [],
@@ -142,23 +165,23 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
     return
   }
 
-  try {
-    const datasetId = getDatasetId()
-
-    loadingConceptDetails.value = true
-
-    try {
-      const result = await apiLoadConceptSetDetails(selectedConceptSets, datasetId)
-      conceptSetDetails.value = result
-    } catch (error) {
-      console.error('Error loading concept set details:', error)
-      conceptSetDetails.value = {}
-    } finally {
-      loadingConceptDetails.value = false
-    }
-  } catch (error) {
+  const currentDatasetId = getDatasetId()
+  if (!currentDatasetId) {
     console.warn('Cannot load concept set details: Dataset ID not available from store or portalAPI')
     conceptSetDetails.value = {}
+    return
+  }
+
+  loadingConceptDetails.value = true
+
+  try {
+    const result = await apiLoadConceptSetDetails(selectedConceptSets, currentDatasetId)
+    conceptSetDetails.value = result
+  } catch (error) {
+    console.error('Error loading concept set details:', error)
+    conceptSetDetails.value = {}
+  } finally {
+    loadingConceptDetails.value = false
   }
 }
 
@@ -166,11 +189,25 @@ const filterConceptSetsLocal = (searchQuery: string) => {
   conceptSetDomainValues.value = filterConceptSets(allConceptSets.value, searchQuery)
 }
 
-const tagInputDomainValues = computed(() => conceptSetDomainValues.value)
+const tagInputDomainValues = computed(() => {
+  try {
+    return conceptSetDomainValues.value
+  } catch (error) {
+    console.error('Error in tagInputDomainValues computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+  }
+})
 
 const selectedConceptSetValues = computed(() => {
-  // selectedConceptSets is kept in sync with conceptSetsFromCriteria via watcher
-  return selectedConceptSets.value
+  try {
+    // selectedConceptSets is kept in sync with conceptSetsFromCriteria via watcher
+    return selectedConceptSets.value
+  } catch (error) {
+    console.error('Error in selectedConceptSetValues computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return []
+  }
 })
 
 const initializeComponent = () => {
@@ -243,28 +280,56 @@ const handleRemoveCriteriaGroup = (index: number) => {
 // Note: handleCriteriaSelected removed - not needed in modern component
 
 const applyFilters = () => {
-  console.log('Applying filters:', getAllFilters())
-  alert('Filters applied! Check console for configuration.')
+  try {
+    console.log('Applying filters:', getAllFilters())
+    alert('Filters applied! Check console for configuration.')
+  } catch (error) {
+    console.error('Error in applyFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+    alert('Error applying filters! Check console for details.')
+  }
 }
 
 const clearFilters = () => {
-  if (confirm('Are you sure you want to clear all filters?')) {
-    criteriaManager.clearAllCriteria()
-    selectedConceptSets.value = []
+  try {
+    if (confirm('Are you sure you want to clear all filters?')) {
+      criteriaManager.clearAllCriteria()
+      selectedConceptSets.value = []
+    }
+  } catch (error) {
+    console.error('Error in clearFilters:', error)
+    console.error('Error details:', error.message, error.stack)
   }
 }
 
 const exportFilters = () => {
-  const config = JSON.stringify(getAllFilters(), null, 2)
-  console.log('Exported configuration:', config)
+  try {
+    const config = JSON.stringify(getAllFilters(), null, 2)
+    console.log('Exported configuration:', config)
+  } catch (error) {
+    console.error('Error in exportFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 const getAllFilters = () => {
-  return criteriaManager.toJSON()
+  try {
+    return criteriaManager.toJSON()
+  } catch (error) {
+    console.error('Error in getAllFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { inclusionCriteria: { criteria: [] }, entryEvents: {} }
+  }
 }
 
 const convertToAtlasFormat = () => {
-  return criteriaManager.convertToAtlasFormat()
+  try {
+    return criteriaManager.convertToAtlasFormat()
+  } catch (error) {
+    console.error('Error in convertToAtlasFormat:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { ConceptSets: [], PrimaryCriteria: { CriteriaList: [] }, InclusionRules: [] }
+  }
 }
 
 type AtlasBookmark = {
@@ -669,6 +734,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 // Handle concept set updates
 const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
   try {
+    console.log('handleConceptSetUpdate called with:', value)
     if (Array.isArray(value) && selectedConceptSets) {
       selectedConceptSets.value = [...value]
       console.log('Concept set updated (stored locally):', value)
@@ -677,6 +743,7 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
     }
   } catch (error) {
     console.error('Error in handleConceptSetUpdate:', error)
+    console.error('Error details:', error.message, error.stack)
     if (selectedConceptSets && Array.isArray(value)) {
       selectedConceptSets.value = value
     }
@@ -684,18 +751,28 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
 }
 
 const handleSearchChange = (searchQuery: string) => {
-  console.log('Search query changed:', searchQuery)
-  filterConceptSetsLocal(searchQuery)
+  try {
+    console.log('handleSearchChange called with:', searchQuery)
+    filterConceptSetsLocal(searchQuery)
+  } catch (error) {
+    console.error('Error in handleSearchChange:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
-  console.log('Concept set action:', values, config)
+  try {
+    console.log('handleConceptSetAction called with:', { values, config })
 
-  const datasetId = getDatasetId()
-  const conceptSetId = values?.value
+    const currentDatasetId = getDatasetId()
+    if (!currentDatasetId) {
+      console.error('Cannot open terminology - dataset ID not available')
+      return
+    }
+    const conceptSetId = values?.value
 
-  const domainFilter = tagInputModel.value.props.domainFilter
-  const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
+    const domainFilter = tagInputModel.value.props.domainFilter
+    const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
 
   const defaultFilters = [
     { id: 'domainId', value: domainFilter ? [domainFilter] : [] },
@@ -768,7 +845,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   const event = new CustomEvent('alp-terminology-open', {
     detail: {
       props: {
-        selectedDatasetId: datasetId,
+        selectedDatasetId: currentDatasetId,
         selectedConceptSetId: conceptSetId,
         mode: 'CONCEPT_SET',
         onClose: handleCloseCallback,
@@ -778,6 +855,10 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   })
 
   window.dispatchEvent(event)
+  } catch (error) {
+    console.error('Error in handleConceptSetAction:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 // Expose functions so parent components can access them
@@ -799,6 +880,7 @@ defineExpose({
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
+            :dataset-id="datasetId"
             @criteria-updated="handleCriteriaUpdated"
             @update:criteria="handleCriteriaUpdated"
             @update-qualifying-limit="handleUpdateQualifyingLimit"
