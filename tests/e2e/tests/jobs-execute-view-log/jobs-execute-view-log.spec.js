@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
   // Create DQD job with name dqd_demo
-  await page.goto('https://localhost:443/portal');
+  await page.goto('https://localhost:41100/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
@@ -13,7 +13,7 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: 'Datasets' }).click();
   const value = await page.getByRole('cell').nth(1).textContent();
   await page.getByRole('link', { name: 'Jobs' }).click();
-  await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible();
   await page.getByRole('button', { name: 'Jobs' }).click();
   await page.getByRole('searchbox', { name: 'Search deployments' }).click();
   await page.getByRole('searchbox', { name: 'Search deployments' }).fill('dqd');
