@@ -70,6 +70,7 @@ const conceptSetsFromCriteria = computed(() => {
           seenIds.add(event.conceptSetId)
         } else if (event.selectedConceptSet) {
           // Fallback to selectedConceptSet if lookup fails
+          console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
           conceptSets.push(event.selectedConceptSet)
           seenIds.add(event.conceptSetId)
         }
@@ -89,25 +90,34 @@ const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
 const getDatasetIdFromStore = (): string | null => {
-  // Try to get datasetId from the store or a fixed value for now
-  return store?.state?.selectedDataset?.id || '4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
+  const datasetId = store?.state?.selectedDataset?.id
+  if (!datasetId) {
+    throw new Error('Dataset ID is required but not available in store')
+  }
+  return datasetId
 }
 
 const loadConceptSets = async () => {
-  const datasetId = getDatasetIdFromStore()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept set API call')
-    return
-  }
-
-  conceptSetDomainValues.value.isLoading = true
-
   try {
-    const result = await apiLoadConceptSets(datasetId)
-    allConceptSets.value = result.values
-    conceptSetDomainValues.value = result
+    const datasetId = getDatasetIdFromStore()
+
+    conceptSetDomainValues.value.isLoading = true
+
+    try {
+      const result = await apiLoadConceptSets(datasetId)
+      allConceptSets.value = result.values
+      conceptSetDomainValues.value = result
+    } catch (error) {
+      console.error('Error loading concept sets:', error)
+      allConceptSets.value = []
+      conceptSetDomainValues.value = {
+        values: [],
+        isLoading: false,
+        loadedStatus: 'NO_RESULTS',
+      }
+    }
   } catch (error) {
-    console.error('Error loading concept sets:', error)
+    console.warn('Cannot load concept sets: Dataset ID not available in store')
     allConceptSets.value = []
     conceptSetDomainValues.value = {
       values: [],
@@ -123,22 +133,23 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
     return
   }
 
-  const datasetId = getDatasetIdFromStore()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept details API call')
-    return
-  }
-
-  loadingConceptDetails.value = true
-
   try {
-    const result = await apiLoadConceptSetDetails(selectedConceptSets, datasetId)
-    conceptSetDetails.value = result
+    const datasetId = getDatasetIdFromStore()
+
+    loadingConceptDetails.value = true
+
+    try {
+      const result = await apiLoadConceptSetDetails(selectedConceptSets, datasetId)
+      conceptSetDetails.value = result
+    } catch (error) {
+      console.error('Error loading concept set details:', error)
+      conceptSetDetails.value = {}
+    } finally {
+      loadingConceptDetails.value = false
+    }
   } catch (error) {
-    console.error('Error loading concept set details:', error)
+    console.warn('Cannot load concept set details: Dataset ID not available in store')
     conceptSetDetails.value = {}
-  } finally {
-    loadingConceptDetails.value = false
   }
 }
 
@@ -153,7 +164,7 @@ const selectedConceptSetValues = computed(() => {
   return selectedConceptSets.value
 })
 
-const initializeSampleData = () => {
+const initializeComponent = () => {
   // Clear the criteria manager instead of filters
   criteriaManager.clearAllCriteria()
   selectedConceptSets.value = []
@@ -185,7 +196,7 @@ watch(
 
 onMounted(() => {
   console.log('QueryFilterModern component mounted')
-  initializeSampleData()
+  initializeComponent()
   console.log('Loading initial concept sets...')
   loadConceptSets()
 })

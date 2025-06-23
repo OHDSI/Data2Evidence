@@ -43,7 +43,7 @@ export const convertAtlasToFilters = (
           `Atlas concept set ${atlasConceptSet.name} has no conceptSetId - concept set was not properly processed`
         )
         return {
-          name: `Concept Set ${codesetId}`,
+          name: `Unknown Concept Set (ID: ${codesetId})`,
           id: codesetId.toString(),
           conceptSetItem: null,
         }
@@ -85,7 +85,7 @@ export const convertAtlasToFilters = (
     }
 
     return {
-      name: `Concept Set ${codesetId}`,
+      name: `Unknown Concept Set (ID: ${codesetId})`,
       id: codesetId.toString(),
       conceptSetItem: null,
     }

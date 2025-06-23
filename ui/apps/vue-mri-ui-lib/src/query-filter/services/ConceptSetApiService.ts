@@ -306,7 +306,6 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
     // Extract concept IDs from the concept set data
     let conceptIds = extractConceptIds(conceptSet)
 
-    // For demo purposes, if no concept IDs found, use some sample IDs
     if (conceptIds.length === 0) {
       console.warn(`No concept IDs found for concept set ${conceptSet.value}`)
     }
