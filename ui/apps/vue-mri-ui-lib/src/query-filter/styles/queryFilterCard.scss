@@ -42,7 +42,6 @@
     &.active::after {
       opacity: 0;
     }
-    
     // Hide separator on the tab before the active one
     &:has(+ .active)::after {
       opacity: 0;
@@ -58,7 +57,6 @@
     // Special border radius handling
     &--earliest {
       border-radius: 6px 0 0 6px;
-      
       &.active {
         border-radius: 6px 0 0 6px;
         // Extend slightly to the left to cover any gap
@@ -75,7 +73,6 @@
 
     &--latest {
       border-radius: 0 6px 6px 0;
-      
       &.active {
         border-radius: 0 6px 6px 0;
       }
@@ -98,8 +95,6 @@
 .query-filter-container {
   background: white;
   border-radius: 8px;
-  padding: 16px 0;
-  margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   &__section {
@@ -231,4 +226,3 @@
     margin: 4px 0;
   }
 }
-
