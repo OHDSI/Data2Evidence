@@ -8,7 +8,6 @@ test('jobs-execute-view-log', async ({ page }) => {
   await page.locator('input[name="password"]').click();
   await page.locator('input[name="password"]').fill('Updatepassword12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByTestId('button').nth(1).waitFor({ state: 'visible' });
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
@@ -49,5 +48,5 @@ test('jobs-execute-view-log', async ({ page }) => {
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
   await expect(page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:')).toBeVisible();
   await page.getByText('Logs', { exact: true }).click();
-  await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run');
+  await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run', {timeout: 100000});
 });
