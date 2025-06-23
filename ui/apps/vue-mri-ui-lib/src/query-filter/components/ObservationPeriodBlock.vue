@@ -12,27 +12,15 @@ import { ref, watch } from 'vue'
 import DropdownMenu from './DropdownMenu.vue'
 
 interface Props {
-  modelValue?: string
+  priorDays?: number
+  postDays?: number
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update-entry-days'])
 
-// Watch for external changes to modelValue
-// watch(
-//   () => props.modelValue,
-//   newValue => {
-//     selectedOption.value = newValue
-//   }
-// )
-
-// Emit changes when selection changes
-// watch(selectedOption, newValue => {
-//   emit('update:modelValue', newValue)
-// })
-
-const daysBefore = ref('0')
-const daysAfter = ref('0')
+const daysBefore = ref(props.priorDays || 0)
+const daysAfter = ref(props.priorDays || 0)
 const boxBefore = ref(null)
 const boxAfter = ref(null)
 
@@ -40,11 +28,33 @@ const dayOptions = ['0', '1', '7', '14', '21', '30', '60', '90', '120', '180', '
 
 const selectDay = (type, value) => {
   if (type === 'before') {
-    daysBefore.value = value
+    daysBefore.value = parseInt(value, 10)
   } else if (type === 'after') {
-    daysAfter.value = value
+    daysAfter.value = parseInt(value, 10)
   }
 }
+
+watch(
+  () => props.priorDays,
+  newValue => {
+    daysBefore.value = newValue
+  }
+)
+watch(
+  () => props.postDays,
+  newValue => {
+    daysAfter.value = newValue
+  }
+)
+
+watch(daysBefore, newValue => {
+  emit('update-entry-days', 'PRIOR',newValue)
+})
+watch(daysAfter, newValue => {
+  emit('update-entry-days', 'POST', newValue)
+})
+
+
 </script>
 
 <template>
