@@ -2,10 +2,7 @@ import { useCallback, useContext } from "react";
 import { Connection, EdgeChange, NodeChange, NodeProps } from "reactflow";
 import { AppContext, AppDispatchContext } from "../AppContext";
 import { ACTION_TYPES } from "../reducers/reducer";
-import {
-  TableSourceHandleData,
-  TableTargetHandleData,
-} from "../states/table-state";
+import { TableSourceHandleData, TableTargetHandleData } from "../states/table-state";
 
 export const useTable = () => {
   const {
@@ -17,33 +14,27 @@ export const useTable = () => {
     dispatch({ type: ACTION_TYPES.SET_TABLE_NODES, payload: nodes });
   }, []);
 
-  const setTableEdges = useCallback((edges: EdgeChange[]) => {
-    dispatch({ type: ACTION_TYPES.SET_TABLE_EDGES, payload: edges });
+  const setTableEdges = useCallback((payload: { reset: boolean; changes: EdgeChange[] }) => {
+    dispatch({ type: ACTION_TYPES.SET_TABLE_EDGES, payload });
   }, []);
 
   const addTableConnection = useCallback((connection: Connection) => {
     dispatch({ type: ACTION_TYPES.ADD_TABLE_CONNECTION, payload: connection });
   }, []);
 
-  const setTableSourceHandles = useCallback(
-    (handles: Partial<NodeProps<TableSourceHandleData>>[]) => {
-      dispatch({
-        type: ACTION_TYPES.SET_TABLE_SOURCE_HANDLES,
-        payload: handles,
-      });
-    },
-    []
-  );
+  const setTableSourceHandles = useCallback((handles: Partial<NodeProps<TableSourceHandleData>>[]) => {
+    dispatch({
+      type: ACTION_TYPES.SET_TABLE_SOURCE_HANDLES,
+      payload: handles,
+    });
+  }, []);
 
-  const setTableTargetHandles = useCallback(
-    (handles: Partial<NodeProps<TableTargetHandleData>>[]) => {
-      dispatch({
-        type: ACTION_TYPES.SET_TABLE_TARGET_HANDLES,
-        payload: handles,
-      });
-    },
-    []
-  );
+  const setTableTargetHandles = useCallback((handles: Partial<NodeProps<TableTargetHandleData>>[]) => {
+    dispatch({
+      type: ACTION_TYPES.SET_TABLE_TARGET_HANDLES,
+      payload: handles,
+    });
+  }, []);
 
   return {
     nodes,

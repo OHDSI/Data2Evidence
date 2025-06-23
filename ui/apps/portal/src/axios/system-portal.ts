@@ -264,18 +264,10 @@ export class SystemPortal {
     });
   }
 
-  public getOverviewDescription() {
-    return request({
-      baseURL: SYSTEM_PORTAL_URL,
-      url: "config/overview-description",
-      method: "GET",
-    });
-  }
-
   public getConfigsByTypes(types: ConfigTypes[]) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
-      url: "config/public/types",
+      url: "config/types",
       method: "GET",
       params: { types: JSON.stringify(types) },
     });
@@ -296,6 +288,23 @@ export class SystemPortal {
       url: `config`,
       method: "PUT",
       data: config,
+    });
+  }
+
+  public getStudiesFromRepo() {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "git-studies/studies",
+      method: "GET",
+    });
+  }
+
+  public getStudyStrategusJson(studyId: string) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "git-studies/study/strategus",
+      method: "GET",
+      params: { studyId },
     });
   }
 }

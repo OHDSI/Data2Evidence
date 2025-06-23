@@ -12,14 +12,9 @@ export const useOverviewDescription = (isPublic?: boolean, refetch = 0): [Config
   const [error, setError] = useState<AppError>();
 
   const fetchoverviewDescription = useCallback(async () => {
-    let overviewDescription;
     try {
       setLoading(refetch ? false : true);
-      if (isPublic) {
-        overviewDescription = await api.systemPortal.getPublicOverviewDescription();
-      } else {
-        overviewDescription = await api.systemPortal.getOverviewDescription();
-      }
+      const overviewDescription = await api.systemPortal.getPublicOverviewDescription();
       setOverviewDescription(overviewDescription);
     } catch (error: any) {
       if ("message" in error) {
