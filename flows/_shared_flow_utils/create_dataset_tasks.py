@@ -4,6 +4,7 @@ import os
 from typing import TYPE_CHECKING
 
 from prefect import task
+from prefect.variables import Variable
 from prefect.logging import get_run_logger
 from prefect.logging.loggers import task_run_logger
 
@@ -46,9 +47,24 @@ def enable_and_create_audit_policies_task(dbdao: DaoBase, schema: str):
 
 @task(log_prints=True)
 def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
-    if not (dbdao.dialect == SupportedDatabaseDialects.HANA and dbdao.tenant_configs.authMode == AuthMode.JWT):
-        logger = get_run_logger()
-        
+    logger = get_run_logger()
+
+    if (dbdao.dialect == SupportedDatabaseDialects.HANA and dbdao.tenant_configs.authMode == AuthMode.JWT):
+        dc_hana_read_role = Variable.get("dc_hana_read_role")
+        if dc_hana_read_role is not None and dc_hana_read_role != "":
+            dc_read_role_exists = dbdao.check_role_exists(dc_hana_read_role)
+            if dc_read_role_exists:
+                logger.info(f"'{dc_read_role_exists}' role already exists")
+
+            else:
+                logger.error(f"'{dc_read_role_exists}' does not exist! Creating read role '{dc_hana_read_role}'..")
+                dbdao.create_read_role(dc_read_role_exists)
+
+            # grant dc read role read privileges to dc read role
+            logger.info(f"Granting read privileges to '{dc_hana_read_role}'..")
+            dbdao.grant_read_privileges(schema, dc_hana_read_role)
+    
+    else:
         # Check if schema read role exists
         match dbdao.dialect:
             case SupportedDatabaseDialects.HANA:
