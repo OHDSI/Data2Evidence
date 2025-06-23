@@ -22,16 +22,18 @@ interface StudyCardProps {
   onShareResults?: (study: StrategusStudy) => void;
 }
 
+type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down";
+
 export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
   const { getText, i18nKeys } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [isStartingViewer, setIsStartingViewer] = useState<boolean>(false);
-  const [isStoppingViewer, setIsStoppingViewer] = useState<boolean>(false);
-  const [isViewerUp, setisViewerUp] = useState<boolean>(false);
+  const [bearerToken, setBearerToken] = useState<string>("");
+  const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("idle");
+  const isViewerUp = viewerStatus === "up";
+  const isStartingViewer = viewerStatus === "starting";
+  const isStoppingViewer = viewerStatus === "stopping";
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
-  const [shouldPollViewerStatus, setShouldPollViewerStatus] = useState(false);
-  const [bearerToken, setBearerToken] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
 
@@ -67,14 +69,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     }
     const response = await api.strategusResults.getStrategusResultViewerStatus(study.id);
     if (response.running) {
-      setisViewerUp(true);
-      setShouldPollViewerStatus(false);
+      setViewerStatus("up");
+    } else {
+      setViewerStatus("down");
     }
   }, [study.id]);
 
-  usePollingEffect(fetchViewerStatus, [fetchViewerStatus, selectedDatasetId], {
-    isEnabled: shouldPollViewerStatus,
-    intervalSeconds: 3,
+  usePollingEffect(fetchViewerStatus, [fetchViewerStatus, selectedDatasetId, viewerStatus], {
+    isEnabled: isStartingViewer || isStoppingViewer,
+    intervalSeconds: 2.5,
   });
 
   const handleOpenIframeViewer = useCallback(() => {
@@ -138,7 +141,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           autoClose: 5000,
         });
       } finally {
-        console.log(`[${study.id}] Setting isRunning to false`);
         setIsRunning(false);
       }
     },
@@ -148,13 +150,11 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const handleStartViewer = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-
       if (!selectedDatasetId || !study.id) {
         return;
       }
       try {
-        setIsStartingViewer(true);
-        setShouldPollViewerStatus(true);
+        setViewerStatus("starting");
         await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
         setFeedback({
           type: "success",
@@ -168,8 +168,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           message: getText(i18nKeys.STUDY_CARD__ERROR_START_VIEWER, [study.name || study.id || "Unknown"]),
           autoClose: 5000,
         });
-      } finally {
-        setIsStartingViewer(false);
+        setViewerStatus("idle");
       }
     },
     [
@@ -185,15 +184,12 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const handleStopViewer = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-      console.log("i am called");
       if (!selectedDatasetId || !study.id) {
         return;
       }
       try {
-        setIsStoppingViewer(true);
-        setShouldPollViewerStatus(true);
+        setViewerStatus("stopping");
         await api.strategusResults.stopStrategusResultViewer(study.id);
-        setisViewerUp(false);
         setFeedback({
           type: "success",
           message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STOPPED, [study.name || study.id || "Unknown"]),
@@ -206,8 +202,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           message: getText(i18nKeys.STUDY_CARD__ERROR_STOP_VIEWER, [study.name || study.id || "Unknown"]),
           autoClose: 5000,
         });
-      } finally {
-        setIsStoppingViewer(false);
+        setViewerStatus("idle");
       }
     },
     [
@@ -246,7 +241,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           autoClose: 5000,
         });
       } finally {
-        console.log(`[${study.id}] Setting isCleaningUp to false`);
         setIsCleaningUp(false);
       }
     },
