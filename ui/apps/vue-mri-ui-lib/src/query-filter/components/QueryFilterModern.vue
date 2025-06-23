@@ -29,6 +29,7 @@ import {
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
+import { getPortalAPI } from '../../utils/PortalUtils'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -89,17 +90,25 @@ const tagInputTexts = getTagInputTexts()
 const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-const getDatasetIdFromStore = (): string | null => {
+const getDatasetId = (): string | null => {
+  // Try to get datasetId from store first
   const datasetId = store?.state?.selectedDataset?.id
-  if (!datasetId) {
-    throw new Error('Dataset ID is required but not available in store')
+  if (datasetId) {
+    return datasetId
   }
-  return datasetId
+
+  // Fallback to portalAPI studyId if store is not available
+  const portalAPI = getPortalAPI()
+  if (portalAPI?.studyId) {
+    return portalAPI.studyId
+  }
+
+  throw new Error('Dataset ID is required but not available from store or portalAPI')
 }
 
 const loadConceptSets = async () => {
   try {
-    const datasetId = getDatasetIdFromStore()
+    const datasetId = getDatasetId()
 
     conceptSetDomainValues.value.isLoading = true
 
@@ -117,7 +126,7 @@ const loadConceptSets = async () => {
       }
     }
   } catch (error) {
-    console.warn('Cannot load concept sets: Dataset ID not available in store')
+    console.warn('Cannot load concept sets: Dataset ID not available from store or portalAPI')
     allConceptSets.value = []
     conceptSetDomainValues.value = {
       values: [],
@@ -134,7 +143,7 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
   }
 
   try {
-    const datasetId = getDatasetIdFromStore()
+    const datasetId = getDatasetId()
 
     loadingConceptDetails.value = true
 
@@ -148,7 +157,7 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
       loadingConceptDetails.value = false
     }
   } catch (error) {
-    console.warn('Cannot load concept set details: Dataset ID not available in store')
+    console.warn('Cannot load concept set details: Dataset ID not available from store or portalAPI')
     conceptSetDetails.value = {}
   }
 }
@@ -404,7 +413,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
 }
 
 const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const datasetId = getDatasetIdFromStore()
+  const datasetId = getDatasetId()
   if (!datasetId) {
     console.warn('Missing datasetId for concept details API call')
     return []
@@ -473,7 +482,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
   )
 
   try {
-    const datasetId = getDatasetIdFromStore()
+    const datasetId = getDatasetId()
     if (!datasetId) {
       console.error('Missing datasetId for batch concept set details loading')
       return
@@ -584,7 +593,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
 }
 
 const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
-  const datasetId = getDatasetIdFromStore()
+  const datasetId = getDatasetId()
   if (!datasetId) {
     console.error('Missing datasetId for concept set handling')
     return null
@@ -682,7 +691,7 @@ const handleSearchChange = (searchQuery: string) => {
 const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   console.log('Concept set action:', values, config)
 
-  const datasetId = getDatasetIdFromStore()
+  const datasetId = getDatasetId()
   const conceptSetId = values?.value
 
   const domainFilter = tagInputModel.value.props.domainFilter
