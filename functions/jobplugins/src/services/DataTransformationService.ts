@@ -322,7 +322,7 @@ export class TransformationService {
     const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       this.logger.info(`Git config not set, skip git operations`);
       return;
     }
@@ -556,7 +556,7 @@ export class TransformationService {
     const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       this.logger.info(`Git config not set, skip git operations`);
       return;
     }
@@ -692,7 +692,7 @@ export class TransformationService {
     const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       this.logger.info("Git config not set, skip git operations");
       return {
         message: "Git config not set, skip git operations",
@@ -901,7 +901,7 @@ export class TransformationService {
     const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       return { hasDifferences: false, reason: "Git config not set" };
     }
 
@@ -980,7 +980,7 @@ export class TransformationService {
     const gitConfig = await portalServerApi.getConfigSecretByType(
       "dataflow-git-config"
     );
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       throw new Error("Git config not set, cannot sync from remote");
     }
 

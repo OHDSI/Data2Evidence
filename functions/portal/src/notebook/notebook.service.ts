@@ -592,7 +592,7 @@ export class NotebookService {
 
   async overwriteNotebookFromRemote(notebookId: string) {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       console.log("Git config not set, skip git operations");
       return {
         message: "Git config not set, skip git operations",
@@ -776,7 +776,7 @@ export class NotebookService {
 
   async checkNotebookDiffFromRemote(notebookId: string) {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       return { hasDifferences: false, reason: "Git config not set" };
     }
 
@@ -849,7 +849,7 @@ export class NotebookService {
 
   async overwriteAllNotebooksFromRemote() {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       throw new Error("Git config not set, cannot sync from remote");
     }
 
