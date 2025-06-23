@@ -12,19 +12,19 @@ import { ref, watch } from 'vue'
 
 interface Props {
   options?: { value: string; label: string }[]
-  modelValue?: string
+  limitValue?: string
   small?: boolean
 }
 
 const props = defineProps<Props>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update-limit-value'])
 
-const selectedOption = ref(props.modelValue || props.options[0]?.value || '')
+const selectedOption = ref(props.limitValue || props.options[0]?.value || '')
 
 // Watch for external changes to modelValue
 watch(
-  () => props.modelValue,
+  () => props.limitValue,
   newValue => {
     selectedOption.value = newValue
   }
@@ -32,10 +32,8 @@ watch(
 
 // Emit changes when selection changes
 watch(selectedOption, newValue => {
-  emit('update:modelValue', newValue)
+  emit('update-limit-value', newValue)
 })
-
-console.log(props.modelValue)
 </script>
 
 <template>
