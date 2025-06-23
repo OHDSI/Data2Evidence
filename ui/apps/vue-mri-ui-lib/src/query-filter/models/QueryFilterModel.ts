@@ -1047,20 +1047,29 @@ export class QueryFilterCriteriaManager {
     // Generate ConceptSets from events with conceptSetDetails
     const conceptSets: any[] = []
     const usedConceptSetIds = new window.Set() as Set<string>
+    const systemIdToAtlasId = new window.Map() as Map<string, number> // System ID → Atlas sequential ID
 
     ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
       group.events.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
-          const conceptSetId = event.conceptSetId
-          if (!usedConceptSetIds.has(conceptSetId)) {
-            usedConceptSetIds.add(conceptSetId)
-            conceptSets.push({
-              id: parseInt(conceptSetId),
-              name: event.conceptSet || `Concept Set ${conceptSetId}`,
+          const systemConceptSetId = event.conceptSetId
+          if (!usedConceptSetIds.has(systemConceptSetId)) {
+            usedConceptSetIds.add(systemConceptSetId)
+            const atlasSequentialId = conceptSets.length // Use sequential ID starting from 0
+            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+            const conceptSetDef: any = {
+              id: atlasSequentialId, // Sequential ID for Atlas JSON
+              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
               expression: {
                 items: event.conceptSetDetails,
               },
-            })
+            }
+
+            // Add conceptSetId field with system database ID
+            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+            conceptSets.push(conceptSetDef)
           }
         }
       })
@@ -1068,7 +1077,7 @@ export class QueryFilterCriteriaManager {
 
     atlasDef.ConceptSets = conceptSets
 
-    // Also add CodesetId to the criteria
+    // Also add CodesetId to the criteria (use Atlas sequential IDs)
     atlasDef.InclusionRules.forEach((rule: any) => {
       rule.expression.CriteriaList.forEach((criteriaItem: any) => {
         // Find the corresponding event to get the conceptSetId
@@ -1077,7 +1086,12 @@ export class QueryFilterCriteriaManager {
             if (!event.isAttributeBased && event.conceptSetId) {
               const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
               if (criteriaItem.Criteria[criteriaType]) {
-                criteriaItem.Criteria[criteriaType].CodesetId = parseInt(event.conceptSetId)
+                const atlasId = systemIdToAtlasId.get(event.conceptSetId)
+                if (atlasId !== undefined) {
+                  criteriaItem.Criteria[criteriaType].CodesetId = atlasId // Use Atlas sequential ID
+                } else {
+                  console.error(`Missing Atlas ID mapping for concept set ${event.conceptSetId}`)
+                }
               }
             }
           })
