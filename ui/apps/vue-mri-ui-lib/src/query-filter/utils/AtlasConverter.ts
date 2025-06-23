@@ -27,35 +27,65 @@ export const convertAtlasToFilters = (
   const cohortName = atlasJson.name
 
   const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping => {
+    console.log(`Looking for concept set with CodesetId: ${codesetId}`)
     const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
 
     if (atlasConceptSet) {
-      const actualConceptSetId = atlasConceptSet.id
-      const localConceptSet = availableConceptSets.find(cs => cs.value == actualConceptSetId.toString())
+      const atlasId = atlasConceptSet.id
+      const systemConceptSetId = atlasConceptSet.conceptSetId
+      console.log(
+        `Found Atlas concept set: ${atlasConceptSet.name} (Atlas ID: ${atlasId}, System ID: ${systemConceptSetId})`
+      )
+
+      // Require conceptSetId to be set
+      if (!systemConceptSetId) {
+        console.error(
+          `Atlas concept set ${atlasConceptSet.name} has no conceptSetId - concept set was not properly processed`
+        )
+        return {
+          name: `Unknown Concept Set (ID: ${codesetId})`,
+          id: codesetId.toString(),
+          conceptSetItem: null,
+        }
+      }
+      const localConceptSet = availableConceptSets.find(cs => cs.value == systemConceptSetId.toString())
 
       if (localConceptSet) {
+        console.log(`Found local concept set: ${localConceptSet.text} (ID: ${localConceptSet.value})`)
         return {
           name: localConceptSet.text || localConceptSet.display_value || atlasConceptSet.name,
-          id: actualConceptSetId.toString(),
+          id: systemConceptSetId.toString(),
           conceptSetItem: localConceptSet,
         }
+      } else {
+        console.warn(`Local concept set not found for system ID: ${systemConceptSetId}`)
       }
 
       const conceptSetItem: ConceptSetItem = {
-        value: actualConceptSetId.toString(),
+        value: systemConceptSetId.toString(),
         text: atlasConceptSet.name,
         display_value: atlasConceptSet.name,
       }
 
       return {
         name: atlasConceptSet.name,
-        id: actualConceptSetId.toString(),
+        id: systemConceptSetId.toString(),
         conceptSetItem: conceptSetItem,
       }
     }
 
+    // If no Atlas ConceptSet found, try to find it in local available concept sets
+    const localConceptSet = availableConceptSets.find(cs => cs.value == codesetId.toString())
+    if (localConceptSet) {
+      return {
+        name: localConceptSet.text || localConceptSet.display_value || `Concept Set ${codesetId}`,
+        id: codesetId.toString(),
+        conceptSetItem: localConceptSet,
+      }
+    }
+
     return {
-      name: `Concept Set ${codesetId}`,
+      name: `Unknown Concept Set (ID: ${codesetId})`,
       id: codesetId.toString(),
       conceptSetItem: null,
     }
@@ -88,7 +118,9 @@ export const convertAtlasToFilters = (
   }
 
   const convertCriteriaListToEvents = (criteriaList: any[]): QueryFilterEvent[] => {
+    console.log(`🔧 convertCriteriaListToEvents called with ${criteriaList?.length || 0} criteria`)
     if (!criteriaList || criteriaList.length === 0) {
+      console.log(`🔧 No criteria to convert, returning empty array`)
       return []
     }
 
@@ -104,7 +136,8 @@ export const convertAtlasToFilters = (
 
       const event: any = {
         id: `event_${Math.random().toString(36).substring(2)}`,
-        eventType: criteriaType,
+        eventType: criteriaType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
+        criteriaType: criteriaType, // For nested events, this should be the medical event type initially
         isExpanded: true,
         cardinality: {
           type: 'AT_LEAST',
@@ -149,19 +182,44 @@ export const convertAtlasToFilters = (
         })
       }
 
-      // Handle CorrelatedCriteria (nested structure)
+      // Handle CorrelatedCriteria (nested structure) - Convert to attributes format
       if (criteriaObj.CorrelatedCriteria) {
+        console.log(`🔧 AtlasConverter: Found CorrelatedCriteria for event ${event.id}`)
+        console.log(`🔧 CorrelatedCriteria:`, criteriaObj.CorrelatedCriteria)
+        console.log(`🔧 CriteriaList length:`, criteriaObj.CorrelatedCriteria.CriteriaList?.length || 0)
+
+        const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
+        console.log(`🔧 Converted nested criteria events:`, nestedCriteriaEvents)
+
         const nestedAttribute = {
-          id: `attribute_${Math.random().toString(36).substring(2)}`,
-          attributeType: 'nested' as const,
+          id: 'nested', // Use 'nested' ID to match UI filter logic
+          name: 'Nested Criteria',
+          title: 'Nested Criteria',
+          description: 'Nested criteria conditions',
+          type: 'nested',
+          category: 'criteria-specific',
           nestedCriteria: {
             id: `criteria_${Math.random().toString(36).substring(2)}`,
             criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
-            events: convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || []),
+            events: nestedCriteriaEvents,
           },
         }
 
-        event.attributes!.push(nestedAttribute)
+        console.log(`🔧 Created nestedAttribute:`, nestedAttribute)
+
+        // Initialize attributes if not exists
+        if (!event.attributes) {
+          event.attributes = []
+        }
+        event.attributes.push(nestedAttribute)
+
+        console.log(`🔧 Event after adding attributes:`, {
+          id: event.id,
+          conceptSet: event.conceptSet,
+          hasAttributes: !!event.attributes,
+          attributesLength: event.attributes?.length || 0,
+          attributesData: event.attributes,
+        })
       }
 
       events.push(event)

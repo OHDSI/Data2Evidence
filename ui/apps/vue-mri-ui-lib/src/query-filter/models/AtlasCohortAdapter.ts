@@ -12,6 +12,12 @@ export interface SimplifiedConcept {
   domainId: string
   isExcluded: boolean
   includeDescendants: boolean
+  includeMapped: boolean
+  standardConcept: string
+  standardConceptCaption: string
+  invalidReason: string
+  invalidReasonCaption: string
+  conceptClassId: string
 }
 
 export interface SimplifiedConceptSet {
@@ -60,6 +66,12 @@ export class AtlasCohortAdapter {
         domainId: item.concept.DOMAIN_ID,
         isExcluded: item.isExcluded,
         includeDescendants: item.includeDescendants,
+        includeMapped: item.includeMapped || false,
+        standardConcept: item.concept.STANDARD_CONCEPT || 'S',
+        standardConceptCaption: item.concept.STANDARD_CONCEPT_CAPTION || 'Standard',
+        invalidReason: item.concept.INVALID_REASON || 'V',
+        invalidReasonCaption: item.concept.INVALID_REASON_CAPTION || 'Valid',
+        conceptClassId: item.concept.CONCEPT_CLASS_ID || 'Clinical Finding',
       })),
     }))
 
@@ -134,10 +146,21 @@ export class AtlasCohortAdapter {
       conceptSet?.concepts
         .filter(c => !c.isExcluded)
         .map(concept => ({
-          CONCEPT_ID: concept.id,
-          CONCEPT_NAME: concept.name,
-          CONCEPT_CODE: concept.code,
-          DOMAIN_ID: concept.domainId,
+          concept: {
+            CONCEPT_ID: concept.id,
+            CONCEPT_NAME: concept.name,
+            STANDARD_CONCEPT: concept.standardConcept || 'S',
+            STANDARD_CONCEPT_CAPTION: concept.standardConceptCaption || 'Standard',
+            INVALID_REASON: concept.invalidReason || 'V',
+            INVALID_REASON_CAPTION: concept.invalidReasonCaption || 'Valid',
+            CONCEPT_CODE: concept.code,
+            DOMAIN_ID: concept.domainId,
+            VOCABULARY_ID: concept.vocabularyId || 'SNOMED',
+            CONCEPT_CLASS_ID: concept.conceptClassId || 'Clinical Finding',
+          },
+          isExcluded: concept.isExcluded || false,
+          includeDescendants: concept.includeDescendants || true,
+          includeMapped: concept.includeMapped || false,
         })) || []
 
     return {
@@ -201,20 +224,5 @@ export class AtlasCohortAdapter {
     }
 
     return criteriaList
-  }
-
-  private static getDomainColor(domainId: string): string {
-    const colorMap: Record<string, string> = {
-      Condition: '#e74c3c',
-      Drug: '#3498db',
-      Procedure: '#9b59b6',
-      Observation: '#f39c12',
-      Measurement: '#1abc9c',
-      Visit: '#2ecc71',
-      Device: '#95a5a6',
-      Death: '#34495e',
-    }
-
-    return colorMap[domainId] || '#7f8c8d'
   }
 }

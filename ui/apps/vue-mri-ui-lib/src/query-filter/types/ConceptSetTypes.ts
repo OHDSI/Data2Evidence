@@ -64,3 +64,15 @@ export interface ConceptSetAction {
 export interface ConceptSetDetails {
   [conceptSetId: string]: any[]
 }
+
+export interface CreateConceptSetRequest {
+  concepts: Array<{
+    id: number
+    useDescendants: boolean
+    useMapped: boolean
+    isExcluded: boolean
+  }>
+  name: string
+  shared: boolean
+  userName: string
+}

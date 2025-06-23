@@ -21,6 +21,7 @@ interface Props {
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
+  datasetId?: string | null
   readonly?: boolean
 }
 
@@ -36,18 +37,15 @@ const emit = defineEmits<{
   'event-removed': [eventIndex: number]
 }>()
 
-// Local events array
-const localEvents = ref<QueryFilterEvent[]>([...props.events])
-
-// Sync with props when they change
+// Work directly with props.events for reactivity
 const eventsData = computed({
-  get: () => localEvents.value,
+  get: () => props.events,
   set: (value: QueryFilterEvent[]) => {
-    localEvents.value = value
     emit('update-events', value)
   },
 })
 
+const mainEvents = computed(() => eventsData.value)
 // Handle adding new event from criteria selector
 const handleCriteriaSelected = (option: CriteriaOption) => {
   const newEvent: QueryFilterEvent = {
@@ -56,11 +54,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
     criteriaType: option.id,
     isExpanded: true,
     selectedAttributes: [],
-    isAttributeBased: false,
     isDemographic: false,
-    isNested: false,
-    nestedEvents: [],
-    nestedOperator: 'AND',
     conceptSetDetails: [],
     conceptSetLoading: false,
     cardinality: {
@@ -81,11 +75,7 @@ const addNewEvent = () => {
     criteriaType: 'conditionOccurrence',
     isExpanded: true,
     selectedAttributes: [],
-    isAttributeBased: false,
     isDemographic: false,
-    isNested: false,
-    nestedEvents: [],
-    nestedOperator: 'AND',
     conceptSetDetails: [],
     conceptSetLoading: false,
     cardinality: {
@@ -167,17 +157,24 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
     <div class="events-list">
       <!-- Use new QueryFilterEventCard component for single event focus -->
       <QueryFilterEventCard
-        v-for="(event, index) in eventsData"
+        v-for="(event, index) in mainEvents"
         :key="event.id"
         :event="event"
         :event-index="index"
+        :all-events="eventsData"
         :concept-sets="conceptSets"
         :concept-set-domain-values="conceptSetDomainValues"
         :concept-set-texts="conceptSetTexts"
+        :dataset-id="datasetId"
         :readonly="readonly"
-        @update:event="updateEvent(index, $event)"
-        @remove-event="removeEvent(index)"
-        @duplicate-event="duplicateEvent(index)"
+        @update:event="
+          updateEvent(
+            mainEvents.findIndex(e => e.id === event.id),
+            $event
+          )
+        "
+        @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
+        @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
         @concept-set-selected="handleConceptSetSelected(event.id, $event)"
         @attribute-selected="handleAttributeSelected(event.id, $event)"
         @attribute-removed="handleAttributeRemoved(event.id, $event)"

@@ -15,7 +15,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
           id: 'event_1',
           conceptSet: 'Test Event',
           criteriaType: 'conditionOccurrence',
-          isAttributeBased: false,
         },
       ],
     }
@@ -53,7 +52,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
       id: 'event_2',
       conceptSet: 'Second Event',
       criteriaType: 'drugExposure',
-      isAttributeBased: false,
     }
 
     mockGroup.events.push(secondEvent)
@@ -77,7 +75,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     mockGroup.events.forEach(event => {
       expect(event.id).toBeDefined()
       expect(event.conceptSet).toBeDefined()
-      expect(typeof event.isAttributeBased).toBe('boolean')
     })
   })
 
@@ -116,7 +113,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
       id: 'new_event',
       conceptSet: 'New Event',
       criteriaType: 'procedureOccurrence',
-      isAttributeBased: false,
     }
     mockGroup.events.push(newEvent)
 
@@ -150,7 +146,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
       id: 'nested_event',
       conceptSet: 'Nested Event',
       criteriaType: 'observation',
-      isAttributeBased: true,
       parentEventId: mockGroup.events[0].id,
     }
 

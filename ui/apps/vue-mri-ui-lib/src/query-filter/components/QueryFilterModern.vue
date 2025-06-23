@@ -19,15 +19,18 @@ import type {
   TagInputModel,
   ConceptSetAction,
   ConceptSetDetails,
+  CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
   loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
+  createConceptSet,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
+import { getPortalAPI } from '../../utils/PortalUtils'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -40,16 +43,33 @@ const store = instance?.appContext.config.globalProperties.$store
 const showDebug = ref(false)
 
 // Maintain backward compatibility with existing tag input model
-const tagInputModel = computed<TagInputModel>(() => ({
-  id: 'concept-set-test',
-  props: {
-    type: 'conceptSet',
-    value: selectedConceptSetValues.value,
-    attributePath: 'condition_occurrence.concept_id',
-    domainFilter: 'Condition',
-    standardConceptCodeFilter: 'Standard',
-  },
-}))
+const tagInputModel = computed<TagInputModel>(() => {
+  try {
+    return {
+      id: 'concept-set-test',
+      props: {
+        type: 'conceptSet',
+        value: selectedConceptSetValues.value,
+        attributePath: 'condition_occurrence.concept_id',
+        domainFilter: 'Condition',
+        standardConceptCodeFilter: 'Standard',
+      },
+    }
+  } catch (error) {
+    console.error('Error in tagInputModel computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return {
+      id: 'concept-set-test',
+      props: {
+        type: 'conceptSet',
+        value: [],
+        attributePath: 'condition_occurrence.concept_id',
+        domainFilter: 'Condition',
+        standardConceptCodeFilter: 'Standard',
+      },
+    }
+  }
+})
 
 const selectedConceptSets = ref<ConceptSetItem[]>([])
 
@@ -69,6 +89,7 @@ const conceptSetsFromCriteria = computed(() => {
           seenIds.add(event.conceptSetId)
         } else if (event.selectedConceptSet) {
           // Fallback to selectedConceptSet if lookup fails
+          console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
           conceptSets.push(event.selectedConceptSet)
           seenIds.add(event.conceptSetId)
         }
@@ -87,22 +108,45 @@ const tagInputTexts = getTagInputTexts()
 const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-const getDatasetIdFromStore = (): string | null => {
-  // Try to get datasetId from the store or a fixed value for now
-  return store?.state?.selectedDataset?.id || '180792d3-e654-4d6c-bae6-8965504a6c9c'
+// Computed dataset ID that will be passed to child components
+const datasetId = computed(() => {
+  // Try to get datasetId from store first
+  const storeDatasetId = store?.state?.selectedDataset?.id
+  if (storeDatasetId) {
+    return storeDatasetId
+  }
+
+  // Fallback to portalAPI studyId if store is not available
+  const portalAPI = getPortalAPI()
+  if (portalAPI?.studyId) {
+    return portalAPI.studyId
+  }
+
+  return null
+})
+
+const getDatasetId = (): string | null => {
+  return datasetId.value
 }
 
 const loadConceptSets = async () => {
-  const datasetId = getDatasetIdFromStore()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept set API call')
+  const currentDatasetId = getDatasetId()
+
+  if (!currentDatasetId) {
+    console.warn('Cannot load concept sets: Dataset ID not available from store or portalAPI')
+    allConceptSets.value = []
+    conceptSetDomainValues.value = {
+      values: [],
+      isLoading: false,
+      loadedStatus: 'NO_RESULTS',
+    }
     return
   }
 
   conceptSetDomainValues.value.isLoading = true
 
   try {
-    const result = await apiLoadConceptSets(datasetId)
+    const result = await apiLoadConceptSets(currentDatasetId)
     allConceptSets.value = result.values
     conceptSetDomainValues.value = result
   } catch (error) {
@@ -122,16 +166,17 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
     return
   }
 
-  const datasetId = getDatasetIdFromStore()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept details API call')
+  const currentDatasetId = getDatasetId()
+  if (!currentDatasetId) {
+    console.warn('Cannot load concept set details: Dataset ID not available from store or portalAPI')
+    conceptSetDetails.value = {}
     return
   }
 
   loadingConceptDetails.value = true
 
   try {
-    const result = await apiLoadConceptSetDetails(selectedConceptSets, datasetId)
+    const result = await apiLoadConceptSetDetails(selectedConceptSets, currentDatasetId)
     conceptSetDetails.value = result
   } catch (error) {
     console.error('Error loading concept set details:', error)
@@ -145,14 +190,28 @@ const filterConceptSetsLocal = (searchQuery: string) => {
   conceptSetDomainValues.value = filterConceptSets(allConceptSets.value, searchQuery)
 }
 
-const tagInputDomainValues = computed(() => conceptSetDomainValues.value)
-
-const selectedConceptSetValues = computed(() => {
-  // selectedConceptSets is kept in sync with conceptSetsFromCriteria via watcher
-  return selectedConceptSets.value
+const tagInputDomainValues = computed(() => {
+  try {
+    return conceptSetDomainValues.value
+  } catch (error) {
+    console.error('Error in tagInputDomainValues computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+  }
 })
 
-const initializeSampleData = () => {
+const selectedConceptSetValues = computed(() => {
+  try {
+    // selectedConceptSets is kept in sync with conceptSetsFromCriteria via watcher
+    return selectedConceptSets.value
+  } catch (error) {
+    console.error('Error in selectedConceptSetValues computed:', error)
+    console.error('Error details:', error.message, error.stack)
+    return []
+  }
+})
+
+const initializeComponent = () => {
   // Clear the criteria manager instead of filters
   criteriaManager.clearAllCriteria()
   selectedConceptSets.value = []
@@ -184,7 +243,7 @@ watch(
 
 onMounted(() => {
   console.log('QueryFilterModern component mounted')
-  initializeSampleData()
+  initializeComponent()
   console.log('Loading initial concept sets...')
   loadConceptSets()
 })
@@ -208,13 +267,13 @@ const handleUpdatePrimaryCriteriaLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') 
 }
 
 // Handle exit strategy updates
-const handleUpdateExitStrategy = (limit:  'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
+const handleUpdateExitStrategy = (limit: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
   criteriaManager.updateEndStrategy(limit)
   console.log('Exit strategy updated:', limit)
 }
 
 // Handle entry days updates
-const handleUpdateEntryDays = (type: "PRIOR" | 'POST', days: number) => {
+const handleUpdateEntryDays = (type: 'PRIOR' | 'POST', days: number) => {
   criteriaManager.updateEntryDays(type, days)
   console.log('Entry days updated:', days, 'Type:', type)
 }
@@ -240,28 +299,56 @@ const handleRemoveCriteriaGroup = (index: number) => {
 // Note: handleCriteriaSelected removed - not needed in modern component
 
 const applyFilters = () => {
-  console.log('Applying filters:', getAllFilters())
-  alert('Filters applied! Check console for configuration.')
+  try {
+    console.log('Applying filters:', getAllFilters())
+    alert('Filters applied! Check console for configuration.')
+  } catch (error) {
+    console.error('Error in applyFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+    alert('Error applying filters! Check console for details.')
+  }
 }
 
 const clearFilters = () => {
-  if (confirm('Are you sure you want to clear all filters?')) {
-    criteriaManager.clearAllCriteria()
-    selectedConceptSets.value = []
+  try {
+    if (confirm('Are you sure you want to clear all filters?')) {
+      criteriaManager.clearAllCriteria()
+      selectedConceptSets.value = []
+    }
+  } catch (error) {
+    console.error('Error in clearFilters:', error)
+    console.error('Error details:', error.message, error.stack)
   }
 }
 
 const exportFilters = () => {
-  const config = JSON.stringify(getAllFilters(), null, 2)
-  console.log('Exported configuration:', config)
+  try {
+    const config = JSON.stringify(getAllFilters(), null, 2)
+    console.log('Exported configuration:', config)
+  } catch (error) {
+    console.error('Error in exportFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 const getAllFilters = () => {
-  return criteriaManager.toJSON()
+  try {
+    return criteriaManager.toJSON()
+  } catch (error) {
+    console.error('Error in getAllFilters:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { inclusionCriteria: { criteria: [] }, entryEvents: {} }
+  }
 }
 
 const convertToAtlasFormat = () => {
-  return criteriaManager.convertToAtlasFormat()
+  try {
+    return criteriaManager.convertToAtlasFormat()
+  } catch (error) {
+    console.error('Error in convertToAtlasFormat:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { ConceptSets: [], PrimaryCriteria: { CriteriaList: [] }, InclusionRules: [] }
+  }
 }
 
 type AtlasBookmark = {
@@ -284,11 +371,113 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
     console.log('Available concept sets:', allConceptSets.value.length)
 
+    // Parse the Atlas expression
+    const atlasExpression = JSON.parse(atlasJson.expression)
+
+    // Extract concept set IDs from criteria even if ConceptSets array is empty
+    const extractConceptSetIds = (expression: any): Set<number> => {
+      const conceptSetIds = new Set<number>()
+
+      // Extract from InclusionRules
+      expression.InclusionRules?.forEach((rule: any) => {
+        rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+          const criteria = criteriaItem.Criteria || criteriaItem
+          Object.values(criteria).forEach((criteriaObj: any) => {
+            if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
+              conceptSetIds.add(criteriaObj.CodesetId)
+            }
+          })
+        })
+      })
+
+      return conceptSetIds
+    }
+
+    // Get concept set IDs referenced in the Atlas JSON
+    const referencedConceptSetIds = extractConceptSetIds(atlasExpression)
+    console.log('Referenced concept set IDs:', Array.from(referencedConceptSetIds))
+
+    // Check if referenced concept sets exist locally
+    for (const conceptSetId of referencedConceptSetIds) {
+      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId.toString())
+      if (existingConceptSet) {
+        console.log(`Found existing concept set ${conceptSetId}: ${existingConceptSet.text}`)
+      } else {
+        console.error(
+          `Referenced concept set ${conceptSetId} not found locally and no ConceptSets definition provided in Atlas JSON`
+        )
+      }
+    }
+
+    // Handle concept sets from ConceptSets array (if provided)
+    if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
+      console.log('Processing Atlas concept sets:', atlasExpression.ConceptSets.length)
+
+      const handledConceptSets: ConceptSetItem[] = []
+      const idMapping: Record<number, number> = {} // originalId → sequentialId
+      let conceptSetsUpdated = false
+
+      for (let index = 0; index < atlasExpression.ConceptSets.length; index++) {
+        const atlasConceptSet = atlasExpression.ConceptSets[index]
+        try {
+          const originalId = atlasConceptSet.id
+          const handledConceptSet = await handleConceptSetFromAtlas(atlasConceptSet)
+          if (!handledConceptSet) {
+            console.error(`Failed to handle concept set: ${atlasConceptSet.name}`)
+          } else {
+            console.log(`Successfully handled concept set: ${handledConceptSet.text}`)
+            handledConceptSets.push(handledConceptSet)
+
+            // Use sequential ID starting from 0 for Atlas JSON
+            const sequentialId = index
+            const systemConceptSetId = parseInt(handledConceptSet.value)
+
+            // Update Atlas concept set with sequential ID and system concept set ID
+            atlasConceptSet.id = sequentialId
+            atlasConceptSet.conceptSetId = systemConceptSetId
+
+            // Track the ID mapping (original → sequential)
+            idMapping[originalId] = sequentialId
+            console.log(`Atlas ID mapping: ${originalId} → ${sequentialId} (System ID: ${systemConceptSetId})`)
+
+            // Add new concept sets to allConceptSets immediately for the converter
+            if (!allConceptSets.value.find(cs => cs.value === handledConceptSet.value)) {
+              allConceptSets.value.push(handledConceptSet)
+              conceptSetsUpdated = true
+            }
+          }
+        } catch (error) {
+          console.error(`Error handling concept set ${atlasConceptSet.name}:`, error)
+        }
+      }
+
+      // If we created any new concept sets, reload to get complete data from API
+      if (conceptSetsUpdated) {
+        console.log('Reloading concept sets after updates to get complete data...')
+        await loadConceptSets()
+
+        // Update CodesetId references in criteria to match the new concept set IDs
+        console.log('Updating CodesetId references in Atlas JSON...')
+        console.log('ID mapping to apply:', idMapping)
+        updateCodesetIdReferences(atlasExpression, idMapping)
+      }
+    } else {
+      console.log('No ConceptSets array found in Atlas JSON - will use existing local concept sets')
+    }
+
     // Clear existing criteria
     criteriaManager.clearAllCriteria()
 
-    // Convert Atlas JSON to hierarchical criteria
-    const tempManager = convertAtlasToFilters(JSON.parse(atlasJson.expression), allConceptSets.value)
+    // Convert Atlas JSON to hierarchical criteria with updated concept sets
+    console.log(
+      'Available concept sets for conversion:',
+      allConceptSets.value.map(cs => `${cs.text} (ID: ${cs.value})`)
+    )
+    console.log(
+      'Atlas ConceptSets for conversion:',
+      atlasExpression.ConceptSets?.map((cs: any) => `${cs.name} (ID: ${cs.id})`)
+    )
+    const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value)
     console.log('Converted Atlas JSON to tempManager:', tempManager)
 
     // Copy the criteria to our reactive manager
@@ -299,23 +488,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     // Force reactivity update
     await nextTick()
 
-    // Load concept set details for events that have selectedConceptSet
-    setTimeout(async () => {
-      const criteria = criteriaManager.getCriteria()
-      for (const group of criteria.criteria) {
-        for (const event of group.events) {
-          if (event.selectedConceptSet && event.conceptSetId) {
-            try {
-              const conceptSetDetails = await loadSingleConceptSetDetails(event.selectedConceptSet)
-              event.conceptSetDetails = conceptSetDetails
-              event.conceptSetLoading = false
-            } catch (error) {
-              console.warn(`Failed to load concept set details for event ${event.id}:`, error)
-            }
-          }
-        }
-      }
-    }, 200)
+    // Load concept set details for all events with concept sets
+    await loadConceptSetDetailsForAllEvents()
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
     throw error
@@ -323,7 +497,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
 }
 
 const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const datasetId = getDatasetIdFromStore()
+  const datasetId = getDatasetId()
   if (!datasetId) {
     console.warn('Missing datasetId for concept details API call')
     return []
@@ -337,9 +511,249 @@ const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
   }
 }
 
+const loadConceptSetDetailsForAllEvents = async () => {
+  console.log('Loading concept set details for all events...')
+  const criteria = criteriaManager.getCriteria()
+
+  // Collect all unique concept sets that need details loaded
+  const conceptSetsToLoad: ConceptSetItem[] = []
+  const eventsByConceptSetId = new Map<string, QueryFilterEvent[]>()
+
+  for (const group of criteria.criteria) {
+    for (const event of group.events) {
+      if (event.conceptSetId) {
+        // Find the concept set in allConceptSets
+        let conceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+
+        if (!conceptSet) {
+          console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets for event ${event.id}`)
+          continue
+        }
+
+        // Set selectedConceptSet if not already set
+        if (!event.selectedConceptSet) {
+          event.selectedConceptSet = conceptSet
+          console.log(`Linked concept set ${conceptSet.text} to event ${event.id}`)
+        }
+
+        // Check if we need to load details for this concept set
+        if (!event.conceptSetDetails || event.conceptSetDetails.length === 0) {
+          event.conceptSetLoading = true
+
+          // Add to batch loading list
+          if (!conceptSetsToLoad.some(cs => cs.value === conceptSet.value)) {
+            conceptSetsToLoad.push(conceptSet)
+          }
+
+          // Track which events need this concept set
+          if (!eventsByConceptSetId.has(conceptSet.value)) {
+            eventsByConceptSetId.set(conceptSet.value, [])
+          }
+          eventsByConceptSetId.get(conceptSet.value)!.push(event)
+        }
+      }
+    }
+  }
+
+  if (conceptSetsToLoad.length === 0) {
+    console.log('No concept sets need details loaded')
+    return
+  }
+
+  console.log(
+    `Batch loading details for ${conceptSetsToLoad.length} concept sets:`,
+    conceptSetsToLoad.map(cs => `${cs.text} (ID: ${cs.value})`)
+  )
+
+  try {
+    const datasetId = getDatasetId()
+    if (!datasetId) {
+      console.error('Missing datasetId for batch concept set details loading')
+      return
+    }
+
+    // Process concept sets in batches of 10
+    const batchSize = 10
+    for (let i = 0; i < conceptSetsToLoad.length; i += batchSize) {
+      const batch = conceptSetsToLoad.slice(i, i + batchSize)
+      console.log(
+        `Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(conceptSetsToLoad.length / batchSize)}:`,
+        batch.map(cs => cs.text)
+      )
+
+      // Load details for this batch
+      const batchResults = await loadConceptSetDetails(batch, datasetId)
+
+      // Apply results to all events that need each concept set
+      for (const [conceptSetId, conceptSetDetails] of Object.entries(batchResults)) {
+        const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+
+        for (const event of eventsForThisConceptSet) {
+          event.conceptSetDetails = conceptSetDetails
+          event.conceptSetLoading = false
+          console.log(`Loaded ${conceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`)
+
+          // Debug: Log first concept detail to verify format
+          if (conceptSetDetails.length > 0) {
+            console.log('Sample concept detail:', conceptSetDetails[0])
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in batch loading concept set details:', error)
+
+    // Clear loading state for all events
+    for (const events of eventsByConceptSetId.values()) {
+      for (const event of events) {
+        event.conceptSetLoading = false
+      }
+    }
+  }
+
+  // Force reactivity update and trigger watcher
+  await nextTick()
+
+  // Manually trigger selectedConceptSets update to ensure UI synchronization
+  const currentConceptSets = conceptSetsFromCriteria.value
+  if (currentConceptSets.length > 0) {
+    selectedConceptSets.value = [...currentConceptSets]
+    console.log(
+      `Updated selectedConceptSets with ${currentConceptSets.length} concept sets:`,
+      currentConceptSets.map(cs => `${cs.text} (ID: ${cs.value})`)
+    )
+  }
+
+  console.log('Finished batch loading concept set details for all events')
+}
+
+const sanitizeConceptSetName = (name: string): string => {
+  // Only allow letters, numbers and spaces, replace anything else with empty string
+  return name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
+}
+
+const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+  // Update CodesetId references in PrimaryCriteria
+  if (atlasExpression.PrimaryCriteria?.CriteriaList) {
+    atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
+      Object.keys(criteriaItem).forEach(key => {
+        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
+          const originalCodesetId = criteriaItem[key].CodesetId
+          const newId = idMapping[originalCodesetId]
+
+          if (newId && newId !== originalCodesetId) {
+            console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
+            criteriaItem[key].CodesetId = newId
+          }
+        }
+      })
+    })
+  }
+
+  // Update CodesetId references in InclusionRules
+  if (atlasExpression.InclusionRules) {
+    atlasExpression.InclusionRules.forEach((rule: any) => {
+      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+        if (criteriaItem.Criteria) {
+          Object.keys(criteriaItem.Criteria).forEach(key => {
+            if (
+              criteriaItem.Criteria[key] &&
+              typeof criteriaItem.Criteria[key] === 'object' &&
+              criteriaItem.Criteria[key].CodesetId !== undefined
+            ) {
+              const originalCodesetId = criteriaItem.Criteria[key].CodesetId
+              const newId = idMapping[originalCodesetId]
+
+              if (newId && newId !== originalCodesetId) {
+                console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
+                criteriaItem.Criteria[key].CodesetId = newId
+              }
+            }
+          })
+        }
+      })
+    })
+  }
+}
+
+const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
+  const datasetId = getDatasetId()
+  if (!datasetId) {
+    console.error('Missing datasetId for concept set handling')
+    return null
+  }
+
+  // Check if concept set already exists locally
+  if (atlasConceptSet.id) {
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.id.toString())
+    if (existingConceptSet) {
+      console.log(`Found existing concept set: ${existingConceptSet.text}`)
+      return existingConceptSet
+    }
+  }
+
+  // Create new concept set if it doesn't exist
+  if (atlasConceptSet.expression?.items && atlasConceptSet.name) {
+    try {
+      const sanitizedName = sanitizeConceptSetName(atlasConceptSet.name)
+      console.log(`Creating new concept set: ${sanitizedName} (original: ${atlasConceptSet.name})`)
+
+      // Extract concepts from Atlas format
+      const concepts = atlasConceptSet.expression.items
+        .map((item: any) => ({
+          id: item.concept?.CONCEPT_ID || item.concept?.concept_id,
+          useDescendants: item.includeDescendants !== false, // Default to true
+          useMapped: item.includeMapped !== false, // Default to true
+          isExcluded: item.isExcluded === true, // Default to false
+        }))
+        .filter((concept: any) => concept.id) // Only include items with valid concept IDs
+
+      if (concepts.length === 0) {
+        console.error(`No valid concepts found in Atlas concept set: ${sanitizedName}`)
+        return null
+      }
+
+      const createRequest: CreateConceptSetRequest = {
+        name: sanitizedName,
+        concepts,
+        shared: false, // Default to not shared
+        userName: 'system', // Default userName
+      }
+
+      // Create the concept set via API
+      const newConceptSetId = await createConceptSet(createRequest, datasetId)
+      console.log(`Created concept set with ID: ${newConceptSetId}`)
+
+      // Create a temporary concept set item to return immediately
+      // The actual reload will happen at the end of all concept set processing
+      const tempConceptSet: ConceptSetItem = {
+        value: newConceptSetId.toString(),
+        text: sanitizedName,
+        display_value: sanitizedName,
+        conceptIds: concepts.map(c => c.id),
+        concepts: concepts,
+      }
+
+      console.log(`Successfully created concept set: ${tempConceptSet.text} (System ID: ${newConceptSetId})`)
+      return tempConceptSet
+    } catch (error) {
+      console.error(`Error creating concept set ${atlasConceptSet.name}:`, error)
+      return null
+    }
+  }
+
+  console.error(
+    `Cannot handle concept set: missing required data (id: ${atlasConceptSet.id}, name: ${
+      atlasConceptSet.name
+    }, items: ${atlasConceptSet.expression?.items?.length || 0})`
+  )
+  return null
+}
+
 // Handle concept set updates
 const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
   try {
+    console.log('handleConceptSetUpdate called with:', value)
     if (Array.isArray(value) && selectedConceptSets) {
       selectedConceptSets.value = [...value]
       console.log('Concept set updated (stored locally):', value)
@@ -348,6 +762,7 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
     }
   } catch (error) {
     console.error('Error in handleConceptSetUpdate:', error)
+    console.error('Error details:', error.message, error.stack)
     if (selectedConceptSets && Array.isArray(value)) {
       selectedConceptSets.value = value
     }
@@ -355,100 +770,114 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
 }
 
 const handleSearchChange = (searchQuery: string) => {
-  console.log('Search query changed:', searchQuery)
-  filterConceptSetsLocal(searchQuery)
+  try {
+    console.log('handleSearchChange called with:', searchQuery)
+    filterConceptSetsLocal(searchQuery)
+  } catch (error) {
+    console.error('Error in handleSearchChange:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
-  console.log('Concept set action:', values, config)
+  try {
+    console.log('handleConceptSetAction called with:', { values, config })
 
-  const datasetId = getDatasetIdFromStore()
-  const conceptSetId = values?.value
-
-  const domainFilter = tagInputModel.value.props.domainFilter
-  const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
-
-  const defaultFilters = [
-    { id: 'domainId', value: domainFilter ? [domainFilter] : [] },
-    { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
-  ]
-
-  const handleCloseCallback = async (onCloseValues: any) => {
-    if (!onCloseValues?.currentConceptSet) {
+    const currentDatasetId = getDatasetId()
+    if (!currentDatasetId) {
+      console.error('Cannot open terminology - dataset ID not available')
       return
     }
+    const conceptSetId = values?.value
 
-    const conceptSetIdToFind = onCloseValues.currentConceptSet.id
+    const domainFilter = tagInputModel.value.props.domainFilter
+    const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
 
-    try {
-      // Reload all concept sets to get complete data with concepts and flags
-      await loadConceptSets()
+    const defaultFilters = [
+      { id: 'domainId', value: domainFilter ? [domainFilter] : [] },
+      { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
+    ]
 
-      // Find the concept set with complete data from the fresh API response
-      const completeConceptSet = allConceptSets.value.find((cs: ConceptSetItem) => cs.value == conceptSetIdToFind)
+    const handleCloseCallback = async (onCloseValues: any) => {
+      if (!onCloseValues?.currentConceptSet) {
+        return
+      }
 
-      if (completeConceptSet) {
-        // Use complete concept set data if found
+      const conceptSetIdToFind = onCloseValues.currentConceptSet.id
+
+      try {
+        // Reload all concept sets to get complete data with concepts and flags
+        await loadConceptSets()
+
+        // Find the concept set with complete data from the fresh API response
+        const completeConceptSet = allConceptSets.value.find((cs: ConceptSetItem) => cs.value == conceptSetIdToFind)
+
+        if (completeConceptSet) {
+          // Use complete concept set data if found
+          if (conceptSetId) {
+            // Updating existing concept set
+            console.log('Updating concept set:', completeConceptSet.text)
+            const currentSets = selectedConceptSets.value
+            const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
+            if (index !== -1) {
+              const updatedSets = [...currentSets]
+              updatedSets[index] = completeConceptSet
+              selectedConceptSets.value = updatedSets
+            }
+          } else {
+            // Adding new concept set
+            console.log('Creating new concept set:', completeConceptSet.text)
+            selectedConceptSets.value = [...selectedConceptSets.value, completeConceptSet]
+          }
+        } else {
+          // Fallback to basic data if concept set not found in reloaded data
+          console.warn(`Could not find concept set with ID ${conceptSetIdToFind} after reloading, using basic data`)
+        }
+      } catch (error) {
+        console.error('Error reloading concept sets after terminology update:', error)
+        // Fallback to basic data if reload fails
         if (conceptSetId) {
-          // Updating existing concept set
-          console.log('Updating concept set:', completeConceptSet.text)
           const currentSets = selectedConceptSets.value
           const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
           if (index !== -1) {
             const updatedSets = [...currentSets]
-            updatedSets[index] = completeConceptSet
+            updatedSets[index] = {
+              ...updatedSets[index],
+              text: onCloseValues.currentConceptSet.name,
+              display_value: onCloseValues.currentConceptSet.name,
+            }
             selectedConceptSets.value = updatedSets
           }
         } else {
-          // Adding new concept set
-          console.log('Creating new concept set:', completeConceptSet.text)
-          selectedConceptSets.value = [...selectedConceptSets.value, completeConceptSet]
-        }
-      } else {
-        // Fallback to basic data if concept set not found in reloaded data
-        console.warn(`Could not find concept set with ID ${conceptSetIdToFind} after reloading, using basic data`)
-      }
-    } catch (error) {
-      console.error('Error reloading concept sets after terminology update:', error)
-      // Fallback to basic data if reload fails
-      if (conceptSetId) {
-        const currentSets = selectedConceptSets.value
-        const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
-        if (index !== -1) {
-          const updatedSets = [...currentSets]
-          updatedSets[index] = {
-            ...updatedSets[index],
+          const newConceptSet = {
             text: onCloseValues.currentConceptSet.name,
             display_value: onCloseValues.currentConceptSet.name,
+            value: onCloseValues.currentConceptSet.id,
+            conceptIds: [],
+            concepts: [],
           }
-          selectedConceptSets.value = updatedSets
+          selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
         }
-      } else {
-        const newConceptSet = {
-          text: onCloseValues.currentConceptSet.name,
-          display_value: onCloseValues.currentConceptSet.name,
-          value: onCloseValues.currentConceptSet.id,
-          conceptIds: [],
-          concepts: [],
-        }
-        selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
       }
     }
-  }
 
-  const event = new CustomEvent('alp-terminology-open', {
-    detail: {
-      props: {
-        selectedDatasetId: datasetId,
-        selectedConceptSetId: conceptSetId,
-        mode: 'CONCEPT_SET',
-        onClose: handleCloseCallback,
-        defaultFilters,
+    const event = new CustomEvent('alp-terminology-open', {
+      detail: {
+        props: {
+          selectedDatasetId: currentDatasetId,
+          selectedConceptSetId: conceptSetId,
+          mode: 'CONCEPT_SET',
+          onClose: handleCloseCallback,
+          defaultFilters,
+        },
       },
-    },
-  })
+    })
 
-  window.dispatchEvent(event)
+    window.dispatchEvent(event)
+  } catch (error) {
+    console.error('Error in handleConceptSetAction:', error)
+    console.error('Error details:', error.message, error.stack)
+  }
 }
 
 // Expose functions so parent components can access them
@@ -483,6 +912,7 @@ defineExpose({
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
+            :dataset-id="datasetId"
             @criteria-updated="handleCriteriaUpdated"
             @update:criteria="handleCriteriaUpdated"
             @update-qualifying-limit="handleUpdateQualifyingLimit"

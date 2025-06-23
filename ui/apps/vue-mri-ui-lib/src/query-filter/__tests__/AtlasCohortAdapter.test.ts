@@ -254,8 +254,8 @@ describe('AtlasCohortAdapter', () => {
 
       // Should only have 1 concept (the non-excluded concept)
       expect(diabetesEvent.conceptSetDetails).toHaveLength(1)
-      expect(diabetesEvent.conceptSetDetails![0].CONCEPT_NAME).toBe('Diabetes mellitus')
-      expect(diabetesEvent.conceptSetDetails![0].CONCEPT_CODE).toBe('E10-E14')
+      expect(diabetesEvent.conceptSetDetails![0].concept.CONCEPT_NAME).toBe('Diabetes mellitus')
+      expect(diabetesEvent.conceptSetDetails![0].concept.CONCEPT_CODE).toBe('E10-E14')
     })
 
     it('should set correct concept set information', () => {
@@ -343,9 +343,9 @@ describe('AtlasCohortAdapter', () => {
       const event = filters[0].events[0]
 
       expect(event.conceptSetDetails).toHaveLength(3)
-      expect(event.conceptSetDetails![0].DOMAIN_ID).toBe('Condition')
-      expect(event.conceptSetDetails![1].DOMAIN_ID).toBe('Drug')
-      expect(event.conceptSetDetails![2].DOMAIN_ID).toBe('UnknownDomain')
+      expect(event.conceptSetDetails![0].concept.DOMAIN_ID).toBe('Condition')
+      expect(event.conceptSetDetails![1].concept.DOMAIN_ID).toBe('Drug')
+      expect(event.conceptSetDetails![2].concept.DOMAIN_ID).toBe('UnknownDomain')
     })
   })
 

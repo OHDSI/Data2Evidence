@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, getCurrentInstance } from 'vue'
 import QueryFilterNestedCriteria from './QueryFilterNestedCriteria.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -17,6 +17,7 @@ import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSet
 import type { AttributeConfig } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
 import CloseIcon from './icons/CloseIcon.vue'
+import { getPortalAPI } from '../../utils/PortalUtils'
 
 interface Props {
   event: QueryFilterEvent
@@ -24,6 +25,7 @@ interface Props {
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
+  datasetId?: string | null
   nestedLevel?: number
   readonly?: boolean
 }
@@ -42,6 +44,10 @@ const emit = defineEmits<{
   'attribute-selected': [attribute: AttributeConfig]
   'attribute-removed': [attributeId: string]
 }>()
+
+// Get store access for dataset ID
+const instance = getCurrentInstance()
+const store = instance?.appContext.config.globalProperties.$store
 
 // Local reactive copy of the event
 const localEvent = ref<QueryFilterEvent>({ ...props.event })
@@ -133,20 +139,36 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
   }
 }
 
-// Helper to get dataset ID (could be passed as prop in the future)
+// Helper to get dataset ID from props or fallback chain
 const getDatasetIdFromProps = (): string => {
-  // For now, use the same fallback as QueryFilterModern
-  // In the future, this could be passed as a prop
-  return '4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
+  // Use dataset ID passed as prop first
+  if (props.datasetId) {
+    return props.datasetId
+  }
+
+  // Fallback to store if prop not provided (legacy support)
+  const datasetId = store?.state?.selectedDataset?.id
+  if (datasetId) {
+    return datasetId
+  }
+
+  // Final fallback to portalAPI studyId if neither prop nor store available
+  const portalAPI = getPortalAPI()
+  if (portalAPI?.studyId) {
+    return portalAPI.studyId
+  }
+
+  // This should not happen in normal operation - indicates configuration issue
+  throw new Error('Dataset ID is required but not available from props, store or portalAPI')
 }
 
 // Handle attribute selection
 const handleAttributeSelected = (attribute: AttributeConfig) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const currentAttributes = eventData.value.selectedAttributes || []
+  const currentAttributes = eventData.value.attributes || []
+  const currentSelectedAttributes = eventData.value.selectedAttributes || []
 
   // Check if attribute is already selected to prevent duplicates
-  if (currentAttributeObjects.some(attr => attr.id === attribute.id)) {
+  if (currentAttributes.some(attr => attr.id === attribute.id)) {
     console.warn(`Attribute ${attribute.id} is already selected`)
     return
   }
@@ -154,11 +176,12 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
   // Store both the ID (for compatibility) and the full object
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: [...currentAttributes, attribute.id],
-    attributeObjects: [
-      ...currentAttributeObjects,
+    selectedAttributes: [...currentSelectedAttributes, attribute.id],
+    attributes: [
+      ...currentAttributes,
       {
-        ...attribute,
+        id: attribute.id,
+        attributeType: attribute.type === 'nested' ? 'nested' : 'standard',
         // Initialize based on attribute type
         conceptSet: attribute.id === 'nested' ? null : undefined,
         nestedCriteria:
@@ -178,13 +201,13 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
 
 // Handle attribute removal
 const handleAttributeRemoved = (attributeId: string) => {
-  const currentAttributes = eventData.value.selectedAttributes || []
-  const currentAttributeObjects = eventData.value.attributeObjects || []
+  const currentSelectedAttributes = eventData.value.selectedAttributes || []
+  const currentAttributes = eventData.value.attributes || []
 
   const updatedEvent = {
     ...eventData.value,
-    selectedAttributes: currentAttributes.filter(id => id !== attributeId),
-    attributeObjects: currentAttributeObjects.filter(obj => obj.id !== attributeId),
+    selectedAttributes: currentSelectedAttributes.filter(id => id !== attributeId),
+    attributes: currentAttributes.filter(obj => obj.id !== attributeId),
   }
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
@@ -210,28 +233,28 @@ const updateNestedCriteria = (updatedCriteria: any) => {
 
 // Handle attribute concept set selection
 const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItem) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+  const currentAttributes = eventData.value.attributes || []
+  const updatedAttributes = currentAttributes.map(attr =>
     attr.id === attributeId ? { ...attr, conceptSet, conceptSetId: conceptSet.value } : attr
   )
 
   const updatedEvent = {
     ...eventData.value,
-    attributeObjects: updatedAttributeObjects,
+    attributes: updatedAttributes,
   }
   eventData.value = updatedEvent
 }
 
 // Handle attribute nested criteria updates
 const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria: any) => {
-  const currentAttributeObjects = eventData.value.attributeObjects || []
-  const updatedAttributeObjects = currentAttributeObjects.map(attr =>
+  const currentAttributes = eventData.value.attributes || []
+  const updatedAttributes = currentAttributes.map(attr =>
     attr.id === attributeId ? { ...attr, nestedCriteria } : attr
   )
 
   const updatedEvent = {
     ...eventData.value,
-    attributeObjects: updatedAttributeObjects,
+    attributes: updatedAttributes,
   }
   eventData.value = updatedEvent
 }
@@ -341,23 +364,30 @@ const sideBarRef = ref(null)
           </div>
         </div>
 
-        <div class="event-header__right">
-          <AttributesDropdown
-            v-if="!readonly"
-            :criteria-type="eventData.criteriaType || 'conditionOccurrence'"
-            :event-id="eventData.id"
-            :all-events="[eventData]"
-            @attribute-selected="handleAttributeSelected"
-            @attribute-removed="handleAttributeRemoved"
-          />
-          <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">
-            <CloseIcon />
-          </button>
-        </div>
-      </div>
+        <!-- Selected Attributes Display -->
+        <div v-if="eventData.attributes?.length" class="selected-attributes">
+          <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
+            <!-- Attribute Header -->
+            <div class="attribute-header">
+              <span class="attribute-title">{{
+                attribute.title || attribute.name || (attribute.id === 'nested' ? 'Nested Criteria' : attribute.id)
+              }}</span>
+              <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
+            </div>
 
-      <div class="event-body">
-        <!-- Event Sidebar -->
+            <!-- Nested Criteria Attribute -->
+            <div v-if="attribute.id === 'nested'" class="attribute-nested">
+              <QueryFilterNestedCriteria
+                :nested-criteria="attribute.nestedCriteria"
+                :concept-sets="conceptSets"
+                :concept-set-domain-values="conceptSetDomainValues"
+                :concept-set-texts="conceptSetTexts"
+                :dataset-id="datasetId"
+                :readonly="readonly"
+                :hide-header="true"
+                @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+              />
+            </div>
 
         <!-- Event Content -->
         <div class="event-content">
@@ -434,18 +464,6 @@ const sideBarRef = ref(null)
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Nested Criteria (Recursive) -->
-    <div v-if="hasNestedAttributes && nestedCriteria" class="nested-criteria-section">
-      <QueryFilterNestedCriteria
-        :nested-criteria="nestedCriteria"
-        :concept-sets="conceptSets"
-        :concept-set-domain-values="conceptSetDomainValues"
-        :concept-set-texts="conceptSetTexts"
-        :readonly="readonly"
-        @update:nested-criteria="updateNestedCriteria"
-      />
     </div>
   </div>
   <CardinalityMenu

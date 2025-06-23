@@ -3,7 +3,12 @@
  */
 import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
-import type { ConceptSetItem, ConceptDetail, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type {
+  ConceptSetItem,
+  ConceptDetail,
+  ConceptSetDomainValues,
+  CreateConceptSetRequest,
+} from '../types/ConceptSetTypes'
 
 /**
  * Build authentication headers for API requests
@@ -92,6 +97,8 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   }
 }
 
+const cachedConcepts: { [key: number]: ConceptDetail } = {}
+
 /**
  * Fetch concept details by ID
  */
@@ -101,6 +108,9 @@ export const fetchConceptById = async (
   headers: Record<string, string>
 ): Promise<ConceptDetail | null> => {
   try {
+    if (cachedConcepts[conceptId]) {
+      return cachedConcepts[conceptId]
+    }
     const url = buildApiUrl('/terminology/concept/searchById')
 
     const requestBody = {
@@ -110,11 +120,57 @@ export const fetchConceptById = async (
 
     const response = await axios.post(url, requestBody, { headers })
     const data = response.data
+    if (data[0]) {
+      cachedConcepts[conceptId] = data[0]
+    }
     return Array.isArray(data) && data.length > 0 ? data[0] : null
   } catch (error) {
     console.error(`Error fetching concept by ID ${conceptId}:`, error)
     return null
   }
+}
+
+/**
+ * Fetch multiple concept details by IDs in batches
+ */
+export const fetchConceptsByIds = async (
+  datasetId: string,
+  conceptIds: number[],
+  headers: Record<string, string>,
+  batchSize: number = 10
+): Promise<Map<number, ConceptDetail | null>> => {
+  const resultMap = new Map<number, ConceptDetail | null>()
+
+  // Process concept IDs in batches
+  for (let i = 0; i < conceptIds.length; i += batchSize) {
+    const batch = conceptIds.slice(i, i + batchSize)
+    console.log(
+      `Fetching concept details batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+        conceptIds.length / batchSize
+      )}: IDs ${batch.join(', ')}`
+    )
+
+    // Create concurrent promises for this batch
+    const batchPromises = batch.map(async conceptId => {
+      try {
+        const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
+        return { conceptId, conceptDetail }
+      } catch (error) {
+        console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
+        return { conceptId, conceptDetail: null }
+      }
+    })
+
+    // Wait for all concepts in this batch to complete
+    const batchResults = await Promise.all(batchPromises)
+
+    // Add results to the map
+    for (const { conceptId, conceptDetail } of batchResults) {
+      resultMap.set(conceptId, conceptDetail)
+    }
+  }
+
+  return resultMap
 }
 
 /**
@@ -180,40 +236,58 @@ export const loadConceptSetDetails = async (
 
     const detailsMap: Record<string, any[]> = {}
 
+    // Collect all concept IDs that need to be fetched across all concept sets
+    const allConceptIds: number[] = []
+    const conceptSetToConceptIds: Record<string, number[]> = {}
+
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
       let conceptIds = extractConceptIds(conceptSet)
 
       if (conceptIds.length === 0) {
         console.warn(`No concept IDs found for concept set ${conceptSetId}`)
-      }
-
-      if (conceptIds && conceptIds.length > 0) {
-        const conceptDetails = []
-        const limitedConceptIds = conceptIds.slice(0, 20)
-        console.log(`Fetching details for concept set ${conceptSetId}:`, limitedConceptIds)
-
-        for (const conceptId of limitedConceptIds) {
-          try {
-            const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
-            if (conceptDetail) {
-              console.log(`Concept detail response for ID ${conceptId}:`, conceptDetail)
-
-              // Find the concept flags from the concept set
-              const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
-              const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
-              console.log(`Formatted concept for ID ${conceptId}:`, formattedConcept)
-              conceptDetails.push(formattedConcept)
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
-          }
-        }
-
-        detailsMap[conceptSetId] = conceptDetails
+        conceptSetToConceptIds[conceptSetId] = []
       } else {
-        detailsMap[conceptSetId] = []
+        // Limit to first 20 concepts per concept set to avoid too many requests
+        const limitedConceptIds = conceptIds.slice(0, 20)
+        conceptSetToConceptIds[conceptSetId] = limitedConceptIds
+        allConceptIds.push(...limitedConceptIds)
       }
+    }
+
+    if (allConceptIds.length === 0) {
+      console.log('No concept IDs to fetch across all concept sets')
+      return detailsMap
+    }
+
+    // Remove duplicates
+    const uniqueConceptIds = [...new Set(allConceptIds)]
+    console.log(
+      `Fetching details for ${uniqueConceptIds.length} unique concepts across ${selectedConceptSets.length} concept sets`
+    )
+
+    // Batch fetch all concept details
+    const conceptDetailsMap = await fetchConceptsByIds(datasetId, uniqueConceptIds, headers, 10)
+
+    // Process results for each concept set
+    for (const conceptSet of selectedConceptSets) {
+      const conceptSetId = conceptSet.value
+      const conceptIds = conceptSetToConceptIds[conceptSetId]
+      const conceptDetails = []
+
+      for (const conceptId of conceptIds) {
+        const conceptDetail = conceptDetailsMap.get(conceptId)
+        if (conceptDetail) {
+          console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
+
+          // Find the concept flags from the concept set
+          const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
+          const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
+          conceptDetails.push(formattedConcept)
+        }
+      }
+
+      detailsMap[conceptSetId] = conceptDetails
     }
 
     console.log('Loaded concept set details (Atlas format):', detailsMap)
@@ -240,7 +314,6 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
     // Extract concept IDs from the concept set data
     let conceptIds = extractConceptIds(conceptSet)
 
-    // For demo purposes, if no concept IDs found, use some sample IDs
     if (conceptIds.length === 0) {
       console.warn(`No concept IDs found for concept set ${conceptSet.value}`)
     }
@@ -270,5 +343,34 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
   } catch (error) {
     console.error('Error loading single concept set details:', error)
     return []
+  }
+}
+
+/**
+ * Create a new concept set
+ */
+export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> => {
+  if (!datasetId) {
+    throw new Error('Missing datasetId for concept set creation')
+  }
+
+  try {
+    const headers = await buildApiHeaders(datasetId)
+    headers['Content-Type'] = 'application/json'
+
+    const url = buildApiUrl('/terminology/concept-set')
+
+    const response = await axios.post(url, conceptSetData, {
+      params: {
+        datasetId: datasetId,
+      },
+      headers,
+    })
+
+    // Backend returns the created concept set ID
+    return response.data
+  } catch (error) {
+    console.error('Error creating concept set:', error)
+    throw error
   }
 }

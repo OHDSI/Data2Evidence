@@ -82,14 +82,50 @@ describe('QueryFilterCardModel', () => {
       const eventData = {
         conceptSet: 'Test Concept Set',
         criteriaType: 'conditionOccurrence',
-        conceptSetDetails: [{ id: 1, name: 'Test' }],
+        conceptSetDetails: [
+          {
+            concept: {
+              CONCEPT_ID: 1,
+              CONCEPT_NAME: 'Test',
+              STANDARD_CONCEPT: 'S',
+              STANDARD_CONCEPT_CAPTION: 'Standard',
+              INVALID_REASON: 'V',
+              INVALID_REASON_CAPTION: 'Valid',
+              CONCEPT_CODE: 'TEST1',
+              DOMAIN_ID: 'Condition',
+              VOCABULARY_ID: 'SNOMED',
+              CONCEPT_CLASS_ID: 'Clinical Finding',
+            },
+            isExcluded: false,
+            includeDescendants: true,
+            includeMapped: false,
+          },
+        ],
       }
 
       const event = model.addEvent(eventData)
 
       expect(event.conceptSet).toBe('Test Concept Set')
       expect(event.criteriaType).toBe('conditionOccurrence')
-      expect(event.conceptSetDetails).toEqual([{ id: 1, name: 'Test' }])
+      expect(event.conceptSetDetails).toEqual([
+        {
+          concept: {
+            CONCEPT_ID: 1,
+            CONCEPT_NAME: 'Test',
+            STANDARD_CONCEPT: 'S',
+            STANDARD_CONCEPT_CAPTION: 'Standard',
+            INVALID_REASON: 'V',
+            INVALID_REASON_CAPTION: 'Valid',
+            CONCEPT_CODE: 'TEST1',
+            DOMAIN_ID: 'Condition',
+            VOCABULARY_ID: 'SNOMED',
+            CONCEPT_CLASS_ID: 'Clinical Finding',
+          },
+          isExcluded: false,
+          includeDescendants: true,
+          includeMapped: false,
+        },
+      ])
     })
 
     it('should remove event by ID', () => {
@@ -147,8 +183,40 @@ describe('QueryFilterCardModel', () => {
     it('should handle concept set details', () => {
       const event = model.addEvent()
       const conceptSetDetails = [
-        { CONCEPT_ID: 1, CONCEPT_NAME: 'Diabetes', DOMAIN_ID: 'Condition' },
-        { CONCEPT_ID: 2, CONCEPT_NAME: 'Hypertension', DOMAIN_ID: 'Condition' },
+        {
+          concept: {
+            CONCEPT_ID: 1,
+            CONCEPT_NAME: 'Diabetes',
+            STANDARD_CONCEPT: 'S',
+            STANDARD_CONCEPT_CAPTION: 'Standard',
+            INVALID_REASON: 'V',
+            INVALID_REASON_CAPTION: 'Valid',
+            CONCEPT_CODE: 'E11',
+            DOMAIN_ID: 'Condition',
+            VOCABULARY_ID: 'SNOMED',
+            CONCEPT_CLASS_ID: 'Clinical Finding',
+          },
+          isExcluded: false,
+          includeDescendants: true,
+          includeMapped: false,
+        },
+        {
+          concept: {
+            CONCEPT_ID: 2,
+            CONCEPT_NAME: 'Hypertension',
+            STANDARD_CONCEPT: 'S',
+            STANDARD_CONCEPT_CAPTION: 'Standard',
+            INVALID_REASON: 'V',
+            INVALID_REASON_CAPTION: 'Valid',
+            CONCEPT_CODE: 'I10',
+            DOMAIN_ID: 'Condition',
+            VOCABULARY_ID: 'SNOMED',
+            CONCEPT_CLASS_ID: 'Clinical Finding',
+          },
+          isExcluded: false,
+          includeDescendants: true,
+          includeMapped: false,
+        },
       ]
 
       model.updateEvent(event.id, { conceptSetDetails })
@@ -170,9 +238,22 @@ describe('QueryFilterCardModel', () => {
     it('should handle selected concept set', () => {
       const event = model.addEvent()
       const selectedConceptSet = {
-        value: '1',
+        value: 1,
         text: 'Test Concept Set',
         display_value: 'Test Concept Set',
+        conceptIds: [1],
+        concepts: [
+          {
+            id: 1,
+            useMapped: false,
+            isExcluded: false,
+            useDescendants: true,
+          },
+        ],
+        shared: false,
+        userName: 'test',
+        createdDate: '2024-01-01T00:00:00.000Z',
+        modifiedDate: '2024-01-01T00:00:00.000Z',
       }
 
       model.updateEvent(event.id, { selectedConceptSet })
@@ -206,367 +287,6 @@ describe('QueryFilterCardModel', () => {
     })
   })
 
-  describe('nested events', () => {
-    describe('adding nested events', () => {
-      it('should add a nested event via addAttributeEvent with nested type', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        expect(nestedEvent.isNested).toBe(true)
-        expect(nestedEvent.nestedEvents).toEqual([])
-        expect(nestedEvent.nestedOperator).toBe('AND')
-        expect(nestedEvent.parentEventId).toBe(parentEvent.id)
-      })
-
-      it('should insert nested event after parent and its existing attribute children', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        // Add an attribute event first
-        const attributeEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'age',
-            name: 'Age',
-            description: 'Age criteria',
-            type: 'age',
-            category: 'criteria-specific',
-          },
-        })
-
-        // Add a nested event
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        // Should be: parent, attribute, nested
-        expect(model.events[0]).toBe(parentEvent)
-        expect(model.events[1]).toBe(attributeEvent)
-        expect(model.events[2]).toBe(nestedEvent)
-      })
-
-      it('should add events to nested containers', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-          criteriaType: 'conditionOccurrence',
-        })
-
-        expect(nestedEvent.nestedEvents).toHaveLength(1)
-        expect(nestedEvent.nestedEvents![0]).toBe(childEvent)
-        expect(childEvent.parentEventId).toBe(nestedEvent.id)
-      })
-
-      it('should throw error when adding to non-existent nested event', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-
-        expect(() => {
-          model.addNestedEvent('non-existent', { conceptSet: 'Child Event' })
-        }).toThrow('Nested event non-existent not found')
-      })
-    })
-
-    describe('multi-level nesting', () => {
-      it('should support multiple levels of nesting', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        // Level 1 nested event
-        const level1NestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested1',
-            name: 'Level 1 Nested',
-            description: 'Level 1 nested group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        // Add child to level 1
-        const level1Child = model.addNestedEvent(level1NestedEvent.id, {
-          conceptSet: 'Level 1 Child',
-        })
-
-        // Level 2 nested event (nested within level 1 child)
-        level1Child.isNested = true
-        level1Child.nestedEvents = []
-
-        const level2Child = model.addNestedEvent(level1Child.id, {
-          conceptSet: 'Level 2 Child',
-        })
-
-        expect(level1NestedEvent.nestedEvents).toHaveLength(1)
-        expect(level1Child.nestedEvents).toHaveLength(1)
-        expect(level2Child.parentEventId).toBe(level1Child.id)
-      })
-
-      it('should find events at any nesting level', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-        })
-
-        // Should be able to find the deeply nested child
-        const foundChild = model.getEvent(childEvent.id)
-        expect(foundChild).toBe(childEvent)
-      })
-
-      it('should add attribute events to deeply nested structures', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-        })
-
-        // Add attribute to the nested child
-        const attributeEvent = model.addAttributeEvent(childEvent.id, {
-          attributeConfig: {
-            id: 'age',
-            name: 'Age',
-            description: 'Age criteria',
-            type: 'age',
-            category: 'criteria-specific',
-          },
-        })
-
-        expect(attributeEvent.parentEventId).toBe(childEvent.id)
-        expect(attributeEvent.isAttributeBased).toBe(true)
-      })
-    })
-
-    describe('nested event management', () => {
-      it('should remove events from nested containers', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-        })
-
-        expect(nestedEvent.nestedEvents).toHaveLength(1)
-
-        const removed = model.removeNestedEvent(nestedEvent.id, childEvent.id)
-
-        expect(removed).toBe(true)
-        expect(nestedEvent.nestedEvents).toHaveLength(0)
-      })
-
-      it('should return false when removing from non-existent nested event', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-
-        const removed = model.removeNestedEvent('non-existent', 'child-id')
-
-        expect(removed).toBe(false)
-      })
-
-      it('should update nested operator', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        expect(nestedEvent.nestedOperator).toBe('AND')
-
-        const updated = model.updateNestedOperator(nestedEvent.id, 'OR')
-
-        expect(updated).toBe(true)
-        expect(nestedEvent.nestedOperator).toBe('OR')
-      })
-
-      it('should manage concept sets in nested events', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-          conceptSetDetails: [{ CONCEPT_ID: 1, CONCEPT_NAME: 'Test Concept', DOMAIN_ID: 'Condition' }],
-        })
-
-        expect(childEvent.conceptSetDetails).toHaveLength(1)
-        expect(childEvent.conceptSetDetails![0].CONCEPT_NAME).toBe('Test Concept')
-      })
-    })
-
-    describe('event group operations', () => {
-      it('should get event group including parent and attributes', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const attributeEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'age',
-            name: 'Age',
-            description: 'Age criteria',
-            type: 'age',
-            category: 'criteria-specific',
-          },
-        })
-
-        const eventGroup = model.getEventWithParent(parentEvent.id)
-
-        expect(eventGroup).toHaveLength(2)
-        expect(eventGroup[0]).toBe(parentEvent)
-        expect(eventGroup[1]).toBe(attributeEvent)
-      })
-
-      it('should check if event can be deleted', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const attributeEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'age',
-            name: 'Age',
-            description: 'Age criteria',
-            type: 'age',
-            category: 'criteria-specific',
-          },
-        })
-
-        // Parent with attributes cannot be deleted
-        expect(model.canDeleteEvent(parentEvent.id)).toBe(false)
-
-        // Attribute event can be deleted
-        expect(model.canDeleteEvent(attributeEvent.id)).toBe(true)
-      })
-    })
-
-    describe('recursive operations', () => {
-      it('should handle complex nested structures in serialization', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-          conceptSetDetails: [{ CONCEPT_ID: 1, CONCEPT_NAME: 'Test' }],
-        })
-
-        const json = model.toJSON()
-
-        expect(json.events).toHaveLength(2) // parent and nested in main events
-        expect(json.events[1].nestedEvents).toHaveLength(1) // child in nested
-        expect(json.events[1].nestedEvents![0].conceptSetDetails).toHaveLength(1)
-      })
-
-      it('should clone nested structures properly', () => {
-        const model = new QueryFilterCardModel({ title: 'Test Filter' })
-        const parentEvent = model.addEvent({ conceptSet: 'Parent Event' })
-
-        const nestedEvent = model.addAttributeEvent(parentEvent.id, {
-          attributeConfig: {
-            id: 'nested',
-            name: 'Nested Group',
-            description: 'A nested criteria group',
-            type: 'nested',
-            category: 'criteria-specific',
-          },
-        })
-
-        const childEvent = model.addNestedEvent(nestedEvent.id, {
-          conceptSet: 'Child Event',
-        })
-
-        const clone = model.clone()
-
-        expect(clone.events).toHaveLength(2)
-        expect(clone.events[1].nestedEvents).toHaveLength(1)
-        expect(clone.events[1].nestedEvents![0].conceptSet).toBe('Child Event')
-
-        // Ensure deep copy
-        expect(clone.events[1]).not.toBe(nestedEvent)
-        expect(clone.events[1].nestedEvents![0]).not.toBe(childEvent)
-      })
-    })
-  })
-
   describe('cloning and serialization', () => {
     it('should clone model with new ID', () => {
       const model = new QueryFilterCardModel({ title: 'Original' })
@@ -574,7 +294,25 @@ describe('QueryFilterCardModel', () => {
 
       // Add conceptSetDetails to the event
       model.updateEvent(event.id, {
-        conceptSetDetails: [{ CONCEPT_ID: 1, CONCEPT_NAME: 'Test', DOMAIN_ID: 'Condition' }],
+        conceptSetDetails: [
+          {
+            concept: {
+              CONCEPT_ID: 1,
+              CONCEPT_NAME: 'Test',
+              STANDARD_CONCEPT: 'S',
+              STANDARD_CONCEPT_CAPTION: 'Standard',
+              INVALID_REASON: 'V',
+              INVALID_REASON_CAPTION: 'Valid',
+              CONCEPT_CODE: 'TEST1',
+              DOMAIN_ID: 'Condition',
+              VOCABULARY_ID: 'SNOMED',
+              CONCEPT_CLASS_ID: 'Clinical Finding',
+            },
+            isExcluded: false,
+            includeDescendants: true,
+            includeMapped: false,
+          },
+        ],
       })
 
       const clone = model.clone()

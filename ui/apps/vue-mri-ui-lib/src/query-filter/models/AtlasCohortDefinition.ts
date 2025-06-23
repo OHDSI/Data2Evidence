@@ -34,6 +34,7 @@ export interface ConceptSetExpression {
 // Complete concept set definition
 export interface ConceptSet {
   id: number
+  conceptSetId?: number
   name: string
   expression: ConceptSetExpression
 }
