@@ -455,7 +455,7 @@ services:
             "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
             "TREX__SQL__PORT": "${TREX__SQL__PORT:-5432}",
             "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
-            "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}"
+            "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
           },
           "jupyter-gateway": {},
