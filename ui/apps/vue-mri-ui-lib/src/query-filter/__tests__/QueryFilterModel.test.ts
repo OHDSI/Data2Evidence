@@ -37,7 +37,7 @@ describe('QueryFilterCardModel', () => {
         isExpanded: false,
         events: [],
         cardinality: {
-          type: 'exactly' as const,
+          type: 'EXACTLY' as const,
           count: 2,
           using: 'ALL' as const,
         },

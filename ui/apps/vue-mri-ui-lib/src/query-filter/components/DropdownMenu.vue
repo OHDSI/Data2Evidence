@@ -26,10 +26,10 @@ const emitOption = (option: string) => {
 </script>
 
 <template>
-  <Popper :target="target" placement="bottom-start">
+  <Popper :target="target" placement="bottom-start" class="dropdown-menu-popper">
     <template #default="{ hide }">
       <div class="popover-content">
-        <div class="dropdown-menu">
+        <div class="dropdown-menu" @click.stop>
           <div
             class="dropdown-item"
             v-for="option in props.options"
@@ -49,7 +49,10 @@ const emitOption = (option: string) => {
   </Popper>
 </template>
 
-<style scoped>
+<style>
+.dropdown-menu-popper {
+  z-index: 1000;
+}
 .dropdown-menu {
   background: white;
   border-radius: 4px;

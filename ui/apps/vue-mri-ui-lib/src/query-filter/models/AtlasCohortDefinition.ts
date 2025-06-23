@@ -454,15 +454,15 @@ export function getCriteriaObject(item: CriteriaListItem): any {
 }
 
 // Helper types for cardinality mapping
-export type CardinalityType = 'exactly' | 'atMost' | 'AT_LEAST'
+export type CardinalityType = 'EXACTLY' | 'AT_MOST' | 'AT_LEAST'
 export type AtlasOccurrenceType = 0 | 1 | 2 // 0=exactly, 1=at most, 2=at least
 
 // Helper function to map cardinality to Atlas occurrence type
 export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurrenceType {
   switch (cardinality) {
-    case 'exactly':
+    case 'EXACTLY':
       return 0
-    case 'atMost':
+    case 'AT_MOST':
       return 1
     case 'AT_LEAST':
     default:

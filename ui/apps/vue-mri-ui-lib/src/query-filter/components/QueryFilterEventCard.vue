@@ -12,9 +12,10 @@ import { ref, computed } from 'vue'
 import QueryFilterNestedCriteria from './QueryFilterNestedCriteria.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
-import type { QueryFilterEvent } from '../models/QueryFilterModel'
+import type { QueryFilterCardinality, QueryFilterEvent } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { AttributeConfig } from '../utils/CriteriaConfigLoader'
+import CardinalityMenu from './CardinalityMenu.vue'
 
 interface Props {
   event: QueryFilterEvent
@@ -65,13 +66,10 @@ const nestedCriteria = computed(() => {
 })
 
 // Handle cardinality changes
-const updateCardinality = (field: 'type' | 'count', value: any) => {
+const updateCardinality = (updatedEventCardinality: QueryFilterCardinality) => {
   const updatedEvent = {
     ...eventData.value,
-    cardinality: {
-      ...eventData.value.cardinality,
-      [field]: value,
-    },
+    cardinality: updatedEventCardinality,
   }
   eventData.value = updatedEvent
 }
@@ -276,14 +274,15 @@ const getEventTypeDisplay = (eventType?: string) => {
 }
 
 // Get cardinality display text
-const getCardinalityDisplay = (cardinality?: any) => {
+const getCardinalityDisplay = () => {
+  const cardinality = eventData.value.cardinality
   if (!cardinality) return 'At least 1'
 
   const typeText =
     {
       AT_LEAST: 'At least',
-      exactly: 'Exactly',
-      atMost: 'At most',
+      EXACTLY: 'Exactly',
+      AT_MOST: 'At most',
     }[cardinality.type] || cardinality.type
 
   return `${typeText} ${cardinality.count}`
@@ -311,6 +310,8 @@ const getConceptSetDisplayName = (): string => {
 
   return ''
 }
+
+const sideBarRef = ref(null)
 </script>
 
 <template>
@@ -349,8 +350,8 @@ const getConceptSetDisplayName = (): string => {
     <!-- Event Body with Sidebar -->
     <div class="event-body">
       <!-- Event Sidebar -->
-      <div class="event-sidebar">
-        <span class="sidebar-label">AT LEAST 1</span>
+      <div class="event-sidebar" ref="sideBarRef">
+        <span class="sidebar-label">{{  getCardinalityDisplay() }}</span>
       </div>
 
       <!-- Event Content -->
@@ -439,6 +440,7 @@ const getConceptSetDisplayName = (): string => {
       />
     </div>
   </div>
+  <CardinalityMenu type="EVENT" :target="sideBarRef" :name-prefix="eventData.id" @updateCardinalityField="updateCardinality" :cardinality="eventData.cardinality"/>
 </template>
 
 <style lang="scss" scoped>
@@ -594,6 +596,7 @@ const getConceptSetDisplayName = (): string => {
     padding: 12px 6px;
     background: #000080; // Blue similar to nested criteria
     position: relative;
+    cursor: pointer;
 
     // Add subtle border to indicate different states
     &::after {

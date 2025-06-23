@@ -4,9 +4,9 @@
  * with support for Atlas cohort definition conversion.
  */
 export interface QueryFilterCardinality {
-  type: 'AT_LEAST' | 'exactly' | 'atMost'
+  type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
   count: number
-  using: 'ALL'
+  using: 'ALL' | 'DISTINCT_CONCEPT' | 'DISTINCT_START_DATE' | 'DISTINCT_VISIT'
 }
 
 export interface QueryFilterGroup {

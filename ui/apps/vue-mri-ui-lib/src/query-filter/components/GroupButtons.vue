@@ -14,6 +14,7 @@ interface Props {
   options?: { value: string; label: string }[]
   limitValue?: string
   small?: boolean
+  namePrefix?: string
 }
 
 const props = defineProps<Props>()
@@ -22,6 +23,7 @@ const emit = defineEmits(['update-limit-value'])
 
 const selectedOption = ref(props.limitValue || props.options[0]?.value || '')
 
+const prefix = props.namePrefix ? `${props.namePrefix}-` : ''
 // Watch for external changes to modelValue
 watch(
   () => props.limitValue,
@@ -38,19 +40,19 @@ watch(selectedOption, newValue => {
 
 <template>
   <div class="group-button">
-    <template v-for="(option, index) in options" :key="option.value">
+    <template v-for="(option, index) in options" :key="`${option.value}-${index}-${prefix}`">
       <input
         type="radio"
         class="button-check"
         name="button-radio"
-        :id="`input-${option.value}-${index}`"
+        :id="`input-${option.value}-${index}-${prefix}`"
         v-model="selectedOption"
         :value="option.value"
         autocomplete="off"
       />
       <label
         class="button button-outline-primary"
-        :for="`input-${option.value}-${index}`"
+        :for="`input-${option.value}-${index}-${prefix}`"
         :class="{ active: selectedOption === option.value, small: props.small }"
       >
         {{ option.label }}
