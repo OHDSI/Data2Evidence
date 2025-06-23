@@ -48,6 +48,7 @@
     "./src/utils/cachedb": "./src/utils/cachedb.ts",
     "./src/utils/CdwConfigCachedbPostgresConnection": "./src/utils/CdwConfigCachedbPostgresConnection.ts",
     "./src/utils/CdwConfigCachedbDBConnectionUtil": "./src/utils/CdwConfigCachedbDBConnectionUtil.ts",
+    "./src/utils/trexConnection": "./src/utils/trexConnection.ts",
     "../_shared/alp-config-utils/src/utils/FFHConfig": "../_shared/alp-config-utils/src/utils/FFHConfig.ts",
     "../_shared/alp-config-utils/src/utils/mriConfigConnection": "../_shared/alp-config-utils/src/utils/mriConfigConnection.ts",
     "../_shared/alp-config-utils/src/utils/ruleValidator": "../_shared/alp-config-utils/src/utils/ruleValidator.ts",
