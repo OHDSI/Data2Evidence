@@ -160,7 +160,6 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
 
   .events-container {
     display: flex;
-    min-height: 100px;
     .sidebar {
       width: 30px;
       display: flex;
@@ -175,7 +174,7 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
     }
     .query-filter-event-container {
       flex: 1;
-      padding: 16px;
+      padding: 8px 16px;
     }
   }
 

@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, useSlots } from 'vue'
 
 const props = defineProps({
   variant: {
@@ -37,8 +37,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['click'])
+const slots = useSlots()
 
 const isPressed = ref(false)
+
+const hasStartIcon = computed(() => !!slots.startIcon)
+const hasEndIcon = computed(() => !!slots.endIcon)
 
 const handleMouseDown = () => {
   if (!props.disabled) {
@@ -84,7 +88,11 @@ const buttonClasses = computed(() => {
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   >
-    <slot></slot>
+    <slot name="startIcon"></slot>
+    <span v-if="$slots.default" :class="{ 'button-text': hasStartIcon || hasEndIcon }">
+      <slot></slot>
+    </span>
+    <slot name="endIcon"></slot>
   </button>
 </template>
 
@@ -96,7 +104,6 @@ const buttonClasses = computed(() => {
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   font-weight: 500;
   line-height: 1.75;
-  text-transform: uppercase;
   letter-spacing: 0.02857em;
   border-radius: 4px;
   border: none;
@@ -278,11 +285,11 @@ const buttonClasses = computed(() => {
 
 /* Colors - Text */
 .material-button--text.material-button--primary {
-  color: #1976d2;
+  color: #000080;
 }
 
 .material-button--text.material-button--primary:hover {
-  background-color: rgba(25, 118, 210, 0.04);
+  background-color: rgba(88, 87, 87, 0.05);
 }
 
 .material-button--text.material-button--secondary {
@@ -352,5 +359,36 @@ const buttonClasses = computed(() => {
 .material-button--pressed {
   transform: scale(0.98);
 }
-</style>
 
+/* Icon spacing */
+.material-button :deep(svg) {
+  width: 1.8em;
+  height: 1.8em;
+  fill: currentColor;
+}
+
+.material-button--small :deep(svg) {
+  width: 1em;
+  height: 1em;
+}
+
+.material-button--large :deep(svg) {
+  width: 1.8em;
+  height: 1.8em;
+}
+
+.button-text {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+.material-button--small .button-text {
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.material-button--large .button-text {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+</style>

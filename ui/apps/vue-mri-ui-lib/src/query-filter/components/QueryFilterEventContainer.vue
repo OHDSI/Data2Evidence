@@ -190,11 +190,9 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
 .query-filter-event-container {
   .add-event-controls {
     display: flex;
-    gap: 8px;
-    margin-top: 0;
-    padding: 0;
-    background: transparent;
-    border: none;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 8px;
   }
 
   .btn-add-event-simple {

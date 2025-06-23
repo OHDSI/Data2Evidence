@@ -7,6 +7,8 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import criteriaConfigLoader, { type CriteriaOption } from '../utils/CriteriaConfigLoader'
+import ButtonMaterial from './ButtonMaterial.vue'
+import AddIcon from './icons/AddIcon.vue'
 
 interface Props {
   sectionId: string // 'initialEvents', 'censoringEvents', 'criteriaGroup'
@@ -25,7 +27,6 @@ const emit = defineEmits<{
 
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement>()
-
 
 // Get criteria options based on section
 const criteriaOptions = computed(() => {
@@ -74,20 +75,12 @@ onUnmounted(() => {
 
 <template>
   <div class="criteria-selector-dropdown" ref="dropdownRef">
-    <button
-      class="criteria-selector-dropdown__trigger"
-      :class="{
-        'is-open': isOpen,
-        'is-disabled': disabled,
-      }"
-      @click="toggleDropdown"
-      :disabled="disabled"
-      :aria-expanded="isOpen"
-      :aria-haspopup="true"
-    >
-      <span class="criteria-selector-dropdown__text">{{ buttonText }}</span>
-      <i class="criteria-selector-dropdown__icon" :class="isOpen ? 'icon-chevron-up' : 'icon-chevron-down'"></i>
-    </button>
+    <ButtonMaterial variant="text" color="primary" :disabled="disabled" @click="toggleDropdown">
+      <template #startIcon>
+        <AddIcon /> 
+      </template>
+        Add event
+    </ButtonMaterial>
 
     <div v-if="isOpen" class="criteria-selector-dropdown__menu" role="menu">
       <div class="criteria-selector-dropdown__header">
@@ -126,4 +119,3 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '../styles/CriteriaSelectorDropdown';
 </style>
-
