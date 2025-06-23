@@ -17,6 +17,7 @@ from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 
+os.environ['plugin_name'] = 'strategus_plugin'
 class Node:
     def __init__(self, node):
         self.id = node["id"]
