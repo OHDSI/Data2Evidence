@@ -442,7 +442,8 @@
           "demo.setup",
           "mlflow",
           "strategus.results.read",
-          "strategus.results.write"
+          "strategus.results.write",
+          "strategus.results.delete"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content"
@@ -2357,7 +2358,8 @@
           "path": "^/strategus-results",
           "scopes": [
             "strategus.results.read",
-            "strategus.results.write"
+            "strategus.results.write",
+            "strategus.results.delete"
           ]
         }
       ]
