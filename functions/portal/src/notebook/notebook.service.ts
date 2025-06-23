@@ -53,12 +53,13 @@ export class NotebookService {
     branch: string;
   } | null> {
     try {
-      const config = await this.configService.getConfigByType(
-        "notebook-git-config"
-      );
-      console.log(`Git config: ${config?.value}`);
-      if (config?.value) {
-        return JSON.parse(config.value);
+      const config = await this.configService.getConfigValuesByTypes([
+        "notebook-git-config",
+      ]);
+      const value = config["notebook-git-config"];
+      console.log(`Git config: ${value}`);
+      if (value) {
+        return JSON.parse(value);
       }
       return null;
     } catch (error) {
@@ -591,7 +592,7 @@ export class NotebookService {
 
   async overwriteNotebookFromRemote(notebookId: string) {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       console.log("Git config not set, skip git operations");
       return {
         message: "Git config not set, skip git operations",
@@ -775,7 +776,7 @@ export class NotebookService {
 
   async checkNotebookDiffFromRemote(notebookId: string) {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       return { hasDifferences: false, reason: "Git config not set" };
     }
 
@@ -848,7 +849,7 @@ export class NotebookService {
 
   async overwriteAllNotebooksFromRemote() {
     const gitConfig = await this.getGitConfig();
-    if (!gitConfig) {
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
       throw new Error("Git config not set, cannot sync from remote");
     }
 
@@ -972,7 +973,7 @@ export class NotebookService {
       await this.ensureLatestFromTemplateRemote(
         repoDir,
         templateRepoUrl,
-        templateBranch,
+        templateBranch
       );
 
       let files: string[] = [];
@@ -1017,7 +1018,7 @@ export class NotebookService {
 
   async createNotebookFromTemplate(
     templateId: string,
-    name: string,
+    name: string
   ): Promise<INotebook> {
     try {
       const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;

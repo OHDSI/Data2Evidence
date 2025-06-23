@@ -1,7 +1,7 @@
 import React from "react";
 import { NodeProps, useUpdateNodeInternals } from "reactflow";
 import { debounce } from "lodash";
-import { useField } from "../contexts";
+import { useActiveFieldMap } from "../contexts";
 import { FieldSourceHandle } from "./FieldSourceHandle";
 import { FieldTargetHandle } from "./FieldTargetHandle";
 import "./BaseNode.scss";
@@ -9,9 +9,9 @@ import "./FieldNode.scss";
 
 export const FieldNode = (props: NodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const { activeSourceHandles, activeTargetHandles } = useField();
+  const { sourceHandles, targetHandles } = useActiveFieldMap();
   const isSource = props.data.type === "source";
-  const data = isSource ? activeSourceHandles : activeTargetHandles;
+  const data = isSource ? sourceHandles : targetHandles;
 
   const handleWheel = debounce(() => {
     updateNodeInternals(props.id);
