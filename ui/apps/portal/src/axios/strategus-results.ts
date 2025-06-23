@@ -14,4 +14,23 @@ export class StrategusResults {
       },
     });
   }
+
+  public stopStrategusResultViewer(studyId: string) {
+    return request({
+      baseURL: STRATEGUS_RESULTS_URL,
+      url: "/",
+      method: "DELETE",
+      data: {
+        studyId,
+      },
+    });
+  }
+
+  public getStrategusResultViewerStatus(studyId: string) {
+    return request({
+      baseURL: STRATEGUS_RESULTS_URL,
+      url: `/${studyId}/status`,
+      method: "GET",
+    });
+  }
 }

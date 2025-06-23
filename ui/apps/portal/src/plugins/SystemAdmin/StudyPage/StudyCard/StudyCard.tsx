@@ -3,6 +3,8 @@ import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
 import { Card, RunStudyIcon, TrashIcon } from "@portal/components";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
+import { usePollingEffect } from "../../../../hooks";
+import { Button } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
@@ -24,6 +26,8 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const { getText, i18nKeys } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isStartingViewer, setIsStartingViewer] = useState<boolean>(false);
+  const [isStoppingViewer, setIsStoppingViewer] = useState<boolean>(false);
+  const [isViewerUp, setisViewerUp] = useState<boolean>(false);
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
@@ -123,37 +127,78 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     [selectedDatasetId, setFeedback, study]
   );
 
-  const handleStartViewer = useCallback(async () => {
-    if (!selectedDatasetId || !study.id) {
-      return;
-    }
-    try {
-      setIsStartingViewer(true);
-      await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED, [study.name || study.id || "Unknown"]),
-        autoClose: 5000,
-      });
-    } catch (error) {
-      console.error(error);
-      setFeedback({
-        type: "error",
-        message: getText(i18nKeys.STUDY_CARD__ERROR_START_VIEWER, [study.name || study.id || "Unknown"]),
-        autoClose: 5000,
-      });
-    } finally {
-      setIsStartingViewer(false);
-    }
-  }, [
-    getText,
-    selectedDatasetId,
-    setFeedback,
-    study.id,
-    study.name,
-    i18nKeys.STUDY_CARD__ERROR_START_VIEWER,
-    i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED,
-  ]);
+  const handleStartViewer = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      if (!selectedDatasetId || !study.id) {
+        return;
+      }
+      try {
+        setIsStartingViewer(true);
+        await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } catch (error) {
+        console.error(error);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STUDY_CARD__ERROR_START_VIEWER, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } finally {
+        setIsStartingViewer(false);
+      }
+    },
+    [
+      getText,
+      selectedDatasetId,
+      setFeedback,
+      study,
+      i18nKeys.STUDY_CARD__ERROR_START_VIEWER,
+      i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED,
+    ]
+  );
+
+  const handleStopViewer = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      if (!selectedDatasetId || !study.id) {
+        return;
+      }
+      try {
+        setIsStoppingViewer(true);
+        await api.strategusResults.stopStrategusResultViewer(study.id);
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STOPPED, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } catch (error) {
+        console.error(error);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STUDY_CARD__ERROR_STOP_VIEWER, [study.name || study.id || "Unknown"]),
+          autoClose: 5000,
+        });
+      } finally {
+        setIsStoppingViewer(false);
+      }
+    },
+    [
+      getText,
+      selectedDatasetId,
+      setFeedback,
+      study,
+      i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STOPPED,
+      i18nKeys.STUDY_CARD__ERROR_STOP_VIEWER,
+    ]
+  );
+
   const handleCleanupStudy = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -211,61 +256,61 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           </div>
 
           <div className="study-card__actions">
-            <div
-              className={`study-card__action ${isRunning ? "study-card__action--loading" : ""}`}
+            <Button
               onClick={handleRunStudy}
-            >
-              {isRunning ? (
-                <>
+              startIcon={
+                isRunning ? (
                   <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__RUNNING)}</span>
-                </>
-              ) : (
-                <>
+                ) : (
                   <RunStudyIcon className="study-card__action-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__RUN_STUDY)}</span>
-                </>
-              )}
-            </div>
+                )
+              }
+              text={isRunning ? getText(i18nKeys.STUDY_CARD__RUNNING) : getText(i18nKeys.STUDY_CARD__RUN_STUDY)}
+              disabled={selectedDatasetId ? false : true}
+              variant="text"
+            />
 
-            <div
-              className={`study-card__action ${isStartingViewer ? "study-card__action--loading" : ""}`}
+            <Button
               onClick={handleStartViewer}
-            >
-              {isStartingViewer ? (
-                <>
+              startIcon={
+                isStartingViewer ? (
                   <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)}</span>
-                </>
-              ) : (
-                <>
+                ) : (
                   <PlayCircleFilled className="study-card__action-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__START_VIEWER)}</span>
-                </>
-              )}
-            </div>
+                )
+              }
+              text={
+                isStartingViewer
+                  ? getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)
+                  : getText(i18nKeys.STUDY_CARD__START_VIEWER)
+              }
+              disabled={selectedDatasetId ? false : true}
+              variant="text"
+            />
 
-            <div className="study-card__action" onClick={handleOpenIframeViewer}>
-              <OpenInBrowser className="study-card__action-icon" />
-              <span>Open Viewer</span>
-            </div>
+            <Button
+              onClick={handleOpenIframeViewer}
+              startIcon={<OpenInBrowser className="study-card__action-icon" />}
+              text="Open viewer"
+              disabled={selectedDatasetId ? false : true}
+              variant="text"
+            />
 
-            <div
-              className={`study-card__action ${isCleaningUp ? "study-card__action--loading" : ""}`}
+            <Button
               onClick={handleCleanupStudy}
-            >
-              {isCleaningUp ? (
-                <>
+              startIcon={
+                isCleaningUp ? (
                   <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__CLEANING_UP)}</span>
-                </>
-              ) : (
-                <>
+                ) : (
                   <TrashIcon className="study-card__action-icon" />
-                  <span>{getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)}</span>
-                </>
-              )}
-            </div>
+                )
+              }
+              text={
+                isCleaningUp ? getText(i18nKeys.STUDY_CARD__CLEANING_UP) : getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)
+              }
+              disabled={selectedDatasetId ? false : true}
+              variant="text"
+            />
           </div>
         </div>
       </Card>
