@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import { Readable } from "stream";
-import { createStrategusResultsViewer } from "./services.ts";
+import {
+  startStrategusResultsViewer,
+  stopStrategusResultsViewer,
+} from "./services.ts";
 
 export class StrategusResultsRouter {
   public router = express.Router();
@@ -15,14 +18,50 @@ export class StrategusResultsRouter {
         const token = req.headers["authorization"];
         const studyId = req.body.studyId;
         const datasetId = req.body.datasetId;
-        await createStrategusResultsViewer(token, studyId, datasetId);
+        await startStrategusResultsViewer(token, studyId, datasetId);
         res.status(200).json({
           message: `Strategus Results Viewer created successfully for study: ${studyId}`,
         });
       } catch (error) {
         res.status(500).json({
-          message: "An error occurred while processing strategus results",
-          details: error instanceof Error ? error.message : "Unknown error",
+          message: "An error occurred starting strategus result viewer",
+        });
+      }
+    });
+
+    this.router.delete("/", async (req: Request, res: Response) => {
+      try {
+        const token = req.headers["authorization"];
+        const studyId = req.body.studyId;
+        const result = await stopStrategusResultsViewer(token, studyId);
+        if (result.stopped) {
+          res.status(200).json(result);
+        } else {
+          res.status(404).json(result);
+        }
+      } catch (error) {
+        res.status(500).json({
+          message: "An error occurred while stopping strategus result viewer",
+        });
+      }
+    });
+
+    this.router.get("/:studyId/status", async (req: Request, res: Response) => {
+      const { studyId } = req.params;
+
+      const strategusViewerHost = `http://${studyId}:3838`;
+      try {
+        const response = await fetch(strategusViewerHost, { method: "GET" });
+
+        if (response.ok) {
+          res.status(200).end();
+        } else {
+          res.status(404).end();
+        }
+      } catch (error) {
+        res.status(503).json({
+          up: false,
+          message: `Strategus Viewer for study ${studyId} is down.`,
         });
       }
     });

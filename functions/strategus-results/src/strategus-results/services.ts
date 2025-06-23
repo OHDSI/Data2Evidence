@@ -10,10 +10,11 @@ import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
 import { PortalServerAPI } from "./api/PortalServerAPI.ts";
 
 interface IKernelModel extends Kernel.IModel {
+  id: string;
   username: string;
 }
 
-export const createStrategusResultsViewer = async (
+export const startStrategusResultsViewer = async (
   token: string,
   studyId: string,
   datasetId: string
@@ -33,7 +34,10 @@ export const createStrategusResultsViewer = async (
     const portalServerApi = new PortalServerAPI(token);
     const { databaseCode } = await portalServerApi.getDataset(datasetId);
 
-    const kernel: IKernelConnection = await getKernel(studyId, manager);
+    const kernelConnection: IKernelConnection = await getKernelConnection(
+      studyId,
+      manager
+    );
     const readCredentials = await getReadCredentials(databaseCode);
 
     const { name, host, port, readUser, readPassword } = readCredentials;
@@ -49,7 +53,7 @@ export const createStrategusResultsViewer = async (
       .replace("$DATABASE_PASSWORD", readPassword)
       .replace("$STUDY_ID", studyId);
 
-    const future = await kernel.requestExecute({
+    const future = await kernelConnection.requestExecute({
       code: r_code,
       stop_on_error: true,
     });
@@ -64,7 +68,7 @@ export const createStrategusResultsViewer = async (
           executionError = new Error(
             `Code execution error: ${msg.content.ename} - ${msg.content.evalue}`
           );
-          kernel.dispose();
+          kernelConnection.dispose();
           reject(executionError);
         }
       };
@@ -93,23 +97,65 @@ export const createStrategusResultsViewer = async (
   }
 };
 
+export const stopStrategusResultsViewer = async (
+  token: string,
+  studyId: string
+): Promise<{ stopped: boolean; message: string }> => {
+  try {
+    const manager = new KernelManager({
+      standby: "when-hidden",
+      serverSettings: ServerConnection.makeSettings({
+        baseUrl: services["jupyter-gateway"],
+        token: token,
+        appendToken: true,
+      }),
+    });
+
+    const runningKernel = await getKernel(studyId, manager);
+
+    if (runningKernel) {
+      await manager.shutdown(runningKernel.id);
+      return { stopped: true, message: `Kernel for study ${studyId} stopped.` };
+    } else {
+      return {
+        stopped: false,
+        message: `No running kernel found for study ${studyId}.`,
+      };
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
 const getKernel = async (
   studyId: string,
   manager: KernelManager
-): Promise<IKernelConnection> => {
+): Promise<IKernelModel | undefined> => {
   try {
     await manager.ready;
     await manager.refreshRunning();
 
-    const running = manager.running();
-    const existingKernel: IKernelConnection = running.find(
+    const runningKernels: Kernel.IModel[] = manager.running();
+
+    return runningKernels.find(
       (kernel: IKernelModel) => kernel.username === studyId
     );
+  } catch (error) {
+    throw new Error("Failed to ");
+  }
+};
 
-    if (existingKernel) {
-      console.log(`Kernel found for study ${studyId}:`, existingKernel.id);
+const getKernelConnection = async (
+  studyId: string,
+  manager: KernelManager
+): Promise<IKernelConnection> => {
+  try {
+    const runningKernel = await getKernel(studyId, manager);
+
+    if (runningKernel) {
+      console.log(`Kernel found for study ${studyId}:`, runningKernel.id);
       return manager.connectTo({
-        model: { name: "r_ohdsi_docker", id: existingKernel.id },
+        model: { name: "r_ohdsi_docker", id: runningKernel.id },
       });
     } else {
       console.log(`No kernel found for study ${studyId}, creating new kernel`);
