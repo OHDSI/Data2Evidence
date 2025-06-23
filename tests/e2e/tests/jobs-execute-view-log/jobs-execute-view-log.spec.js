@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('test', async ({ page }) => {
+test('test', async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
   // Create DQD job with name dqd_demo
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
@@ -50,4 +52,5 @@ test('test', async ({ page }) => {
   await expect(page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:')).toBeVisible();
   await page.getByText('Logs', { exact: true }).click();
   await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run',{ timeout: 10000 });
+  await context.close(); // clean up
 });
