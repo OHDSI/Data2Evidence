@@ -26,7 +26,7 @@ export class StrategusResults {
     });
   }
 
-  public getStrategusResultViewerStatus(studyId: string) {
+  public getStrategusResultViewerStatus(studyId: string): Promise<{ running: boolean; message: string }> {
     return request({
       baseURL: STRATEGUS_RESULTS_URL,
       url: `/${studyId}/status`,

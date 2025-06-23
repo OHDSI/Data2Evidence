@@ -30,6 +30,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isViewerUp, setisViewerUp] = useState<boolean>(false);
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
+  const [shouldPollViewerStatus, setShouldPollViewerStatus] = useState(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
@@ -47,6 +48,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     };
 
     fetchToken();
+    fetchViewerStatus();
   }, []);
 
   useEffect(() => {
@@ -58,6 +60,22 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       }
     }
   }, [isIframeViewerOpen, bearerToken]);
+
+  const fetchViewerStatus = useCallback(async () => {
+    if (!study.id) {
+      return;
+    }
+    const response = await api.strategusResults.getStrategusResultViewerStatus(study.id);
+    if (response.running) {
+      setisViewerUp(true);
+      setShouldPollViewerStatus(false);
+    }
+  }, [study.id]);
+
+  usePollingEffect(fetchViewerStatus, [fetchViewerStatus, selectedDatasetId], {
+    isEnabled: shouldPollViewerStatus,
+    intervalSeconds: 3,
+  });
 
   const handleOpenIframeViewer = useCallback(() => {
     setIsIframeViewerOpen(true);
@@ -136,6 +154,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       }
       try {
         setIsStartingViewer(true);
+        setShouldPollViewerStatus(true);
         await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
         setFeedback({
           type: "success",
@@ -166,13 +185,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const handleStopViewer = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-
+      console.log("i am called");
       if (!selectedDatasetId || !study.id) {
         return;
       }
       try {
         setIsStoppingViewer(true);
+        setShouldPollViewerStatus(true);
         await api.strategusResults.stopStrategusResultViewer(study.id);
+        setisViewerUp(false);
         setFeedback({
           type: "success",
           message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STOPPED, [study.name || study.id || "Unknown"]),
@@ -270,29 +291,49 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               variant="text"
             />
 
-            <Button
-              onClick={handleStartViewer}
-              startIcon={
-                isStartingViewer ? (
-                  <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                ) : (
-                  <PlayCircleFilled className="study-card__action-icon" />
-                )
-              }
-              text={
-                isStartingViewer
-                  ? getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)
-                  : getText(i18nKeys.STUDY_CARD__START_VIEWER)
-              }
-              disabled={selectedDatasetId ? false : true}
-              variant="text"
-            />
+            {isViewerUp ? (
+              <Button
+                onClick={handleStopViewer}
+                startIcon={
+                  isStoppingViewer ? (
+                    <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                  ) : (
+                    <PlayCircleFilled className="study-card__action-icon" />
+                  )
+                }
+                text={
+                  isStoppingViewer
+                    ? getText(i18nKeys.STUDY_CARD__STOPPING_VIEWER)
+                    : getText(i18nKeys.STUDY_CARD__STOP_VIEWER)
+                }
+                disabled={selectedDatasetId ? false : true}
+                variant="text"
+              />
+            ) : (
+              <Button
+                onClick={handleStartViewer}
+                startIcon={
+                  isStartingViewer ? (
+                    <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                  ) : (
+                    <PlayCircleFilled className="study-card__action-icon" />
+                  )
+                }
+                text={
+                  isStartingViewer
+                    ? getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)
+                    : getText(i18nKeys.STUDY_CARD__START_VIEWER)
+                }
+                disabled={selectedDatasetId ? false : true}
+                variant="text"
+              />
+            )}
 
             <Button
               onClick={handleOpenIframeViewer}
               startIcon={<OpenInBrowser className="study-card__action-icon" />}
               text="Open viewer"
-              disabled={selectedDatasetId ? false : true}
+              disabled={!isViewerUp || !selectedDatasetId}
               variant="text"
             />
 

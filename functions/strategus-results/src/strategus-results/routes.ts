@@ -54,13 +54,19 @@ export class StrategusResultsRouter {
         const response = await fetch(strategusViewerHost, { method: "GET" });
 
         if (response.ok) {
-          res.status(200).end();
+          res.status(200).send({
+            running: true,
+            message: `Strategus Viewer for study ${studyId} is up.`,
+          });
         } else {
-          res.status(404).end();
+          res.status(404).end({
+            running: false,
+            message: `Strategus Viewer for study ${studyId} is down.`,
+          });
         }
       } catch (error) {
         res.status(503).json({
-          up: false,
+          running: false,
           message: `Strategus Viewer for study ${studyId} is down.`,
         });
       }
