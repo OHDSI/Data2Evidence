@@ -364,31 +364,20 @@ const sideBarRef = ref(null)
           </div>
         </div>
 
-        <!-- Selected Attributes Display -->
-        <div v-if="eventData.attributes?.length" class="selected-attributes">
-          <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
-            <!-- Attribute Header -->
-            <div class="attribute-header">
-              <span class="attribute-title">{{
-                attribute.title || attribute.name || (attribute.id === 'nested' ? 'Nested Criteria' : attribute.id)
-              }}</span>
-              <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">×</button>
-            </div>
+        <div class="event-header__right">
+          <AttributesDropdown
+            v-if="!readonly"
+            :criteria-type="eventData.criteriaType || 'conditionOccurrence'"
+            :event-id="eventData.id"
+            :all-events="[eventData]"
+            @attribute-selected="handleAttributeSelected"
+            @attribute-removed="handleAttributeRemoved"
+          />
+          <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">×</button>
+        </div>
+      </div>
 
-            <!-- Nested Criteria Attribute -->
-            <div v-if="attribute.id === 'nested'" class="attribute-nested">
-              <QueryFilterNestedCriteria
-                :nested-criteria="attribute.nestedCriteria"
-                :concept-sets="conceptSets"
-                :concept-set-domain-values="conceptSetDomainValues"
-                :concept-set-texts="conceptSetTexts"
-                :dataset-id="datasetId"
-                :readonly="readonly"
-                :hide-header="true"
-                @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
-              />
-            </div>
-
+      <div class="event-body">
         <!-- Event Content -->
         <div class="event-content">
           <!-- Concept Set Selection -->
@@ -410,11 +399,13 @@ const sideBarRef = ref(null)
           </div>
 
           <!-- Selected Attributes Display -->
-          <div v-if="eventData.attributeObjects?.length" class="selected-attributes">
-            <div v-for="attribute in eventData.attributeObjects" :key="attribute.id" class="attribute-component">
+          <div v-if="eventData.attributes?.length" class="selected-attributes">
+            <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
               <!-- Attribute Header -->
               <div class="attribute-header">
-                <span class="attribute-title">{{ attribute.title || attribute.name }}</span>
+                <span class="attribute-title">{{
+                  attribute.title || attribute.name || (attribute.id === 'nested' ? 'Nested Criteria' : attribute.id)
+                }}</span>
                 <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">
                   ×
                 </button>
@@ -427,6 +418,7 @@ const sideBarRef = ref(null)
                   :concept-sets="conceptSets"
                   :concept-set-domain-values="conceptSetDomainValues"
                   :concept-set-texts="conceptSetTexts"
+                  :dataset-id="datasetId"
                   :readonly="readonly"
                   :hide-header="true"
                   @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
@@ -465,6 +457,8 @@ const sideBarRef = ref(null)
         </div>
       </div>
     </div>
+
+    <!-- Event Body with Sidebar -->
   </div>
   <CardinalityMenu
     type="EVENT"
@@ -617,11 +611,10 @@ const sideBarRef = ref(null)
     }
   }
 
-
   .btn-remove-event:hover {
-      border-color: #000080;
-      color: #000080;
-      background: #f2f0f1;
+    border-color: #000080;
+    color: #000080;
+    background: #f2f0f1;
   }
 
   .event-body {
