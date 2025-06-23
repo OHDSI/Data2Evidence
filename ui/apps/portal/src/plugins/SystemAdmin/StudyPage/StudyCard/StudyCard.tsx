@@ -28,7 +28,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  console.log(env.REACT_APP_DN_BASE_URL);
   const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
 
   useEffect(() => {
