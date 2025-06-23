@@ -39,7 +39,6 @@ test('setup-feature-flags', async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
   await page.getByText('Demo dataset').first().click()
   await expect(page.getByRole('link', { name: 'Concepts' })).toBeVisible()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
   await expect(page.getByRole('link', { name: 'Cohorts' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Notebooks' })).toBeVisible()
 })
