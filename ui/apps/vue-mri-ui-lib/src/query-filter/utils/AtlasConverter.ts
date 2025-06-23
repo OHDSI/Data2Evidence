@@ -188,8 +188,8 @@ export const convertAtlasToFilters = (
         console.log(`🔧 CorrelatedCriteria:`, criteriaObj.CorrelatedCriteria)
         console.log(`🔧 CriteriaList length:`, criteriaObj.CorrelatedCriteria.CriteriaList?.length || 0)
 
-        const nestedEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
-        console.log(`🔧 Converted nested events:`, nestedEvents)
+        const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
+        console.log(`🔧 Converted nested criteria events:`, nestedCriteriaEvents)
 
         const nestedAttribute = {
           id: 'nested', // Use 'nested' ID to match UI filter logic
@@ -201,7 +201,7 @@ export const convertAtlasToFilters = (
           nestedCriteria: {
             id: `criteria_${Math.random().toString(36).substring(2)}`,
             criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
-            events: nestedEvents,
+            events: nestedCriteriaEvents,
           },
         }
 

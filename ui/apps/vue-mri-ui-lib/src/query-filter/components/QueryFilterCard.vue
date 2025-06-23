@@ -104,7 +104,7 @@ const handleAttributeSelected = (eventId: string, attribute: AttributeConfig & {
 const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   // Find and remove the attribute-based event with this attributeId
   const attributeEvent = props.filter.events.find(
-    e => e.isAttributeBased && e.parentEventId === eventId && e.attributeConfig?.id === attributeId
+    e => e.parentEventId === eventId && e.attributeConfig?.id === attributeId
   )
 
   if (attributeEvent) {
@@ -124,7 +124,7 @@ const eventGroups = computed(() => {
   }> = []
 
   // Find all parent events (non-attribute-based)
-  const parentEvents = props.filter.events.filter(e => !e.isAttributeBased)
+  const parentEvents = props.filter.events.filter(e => !e.parentEventId)
 
   parentEvents.forEach(parent => {
     const attributeEvents = props.filter.events.filter(e => e.parentEventId === parent.id)
@@ -143,15 +143,17 @@ const getNestedEventGroup = (eventId: string) => {
 
   // Find all events in nested structures that are related to this event
   props.filter.events.forEach(event => {
-    if (event.isNested && event.nestedEvents) {
-      event.nestedEvents.forEach(nestedEvent => {
-        if (nestedEvent.id === eventId) {
-          // Add the event itself
-          relatedEvents.push(nestedEvent)
-        }
-        // Add any attribute-based events that belong to this event
-        if (nestedEvent.isAttributeBased && nestedEvent.parentEventId === eventId) {
-          relatedEvents.push(nestedEvent)
+    if (event.attributes) {
+      event.attributes.forEach(attr => {
+        if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+          attr.nestedCriteria.events.forEach(nestedEvent => {
+            if (nestedEvent.id === eventId) {
+              relatedEvents.push(nestedEvent)
+            }
+            if (nestedEvent.parentEventId === eventId) {
+              relatedEvents.push(nestedEvent)
+            }
+          })
         }
       })
     }
@@ -162,24 +164,26 @@ const getNestedEventGroup = (eventId: string) => {
 
 // Group nested events by their parent relationships
 const getNestedEventGroups = (nestedContainer: QueryFilterEvent) => {
-  if (!nestedContainer.nestedEvents) return []
-
   const groups: Array<{
     parent: QueryFilterEvent
     attributes: QueryFilterEvent[]
   }> = []
 
-  // Find all parent events (non-attribute-based) in the nested structure
-  const parentEvents = nestedContainer.nestedEvents.filter(e => !e.isAttributeBased)
+  if (!nestedContainer.attributes) return groups
 
-  parentEvents.forEach(parent => {
-    const attributeEvents =
-      nestedContainer.nestedEvents?.filter(e => e.isAttributeBased && e.parentEventId === parent.id) || []
+  nestedContainer.attributes.forEach(attr => {
+    if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+      const parentEvents = attr.nestedCriteria.events.filter(e => !e.parentEventId)
 
-    groups.push({
-      parent,
-      attributes: attributeEvents,
-    })
+      parentEvents.forEach(parent => {
+        const attributeEvents = attr.nestedCriteria.events.filter(e => e.parentEventId === parent.id) || []
+
+        groups.push({
+          parent,
+          attributes: attributeEvents,
+        })
+      })
+    }
   })
 
   return groups
@@ -216,18 +220,21 @@ const handleNestedAttributeSelected = (eventId: string, attribute: AttributeConf
 }
 
 const handleNestedAttributeRemoved = (eventId: string, attributeId: string) => {
-  // Find and remove the attribute-based event from nested structures
   props.filter.events.forEach(event => {
-    if (event.isNested && event.nestedEvents) {
-      const attributeEventIndex = event.nestedEvents.findIndex(
-        e => e.isAttributeBased && e.parentEventId === eventId && e.attributeConfig?.id === attributeId
-      )
+    if (event.attributes) {
+      event.attributes.forEach(attr => {
+        if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+          const attributeEventIndex = attr.nestedCriteria.events.findIndex(
+            e => e.parentEventId === eventId && e.attributeConfig?.id === attributeId
+          )
 
-      if (attributeEventIndex > -1) {
-        event.nestedEvents.splice(attributeEventIndex, 1)
-        emit('update:filter', props.filter)
-        emit('attribute-removed', props.filter.id, eventId, attributeId)
-      }
+          if (attributeEventIndex > -1) {
+            attr.nestedCriteria.events.splice(attributeEventIndex, 1)
+            emit('update:filter', props.filter)
+            emit('attribute-removed', props.filter.id, eventId, attributeId)
+          }
+        }
+      })
     }
   })
 }
@@ -446,7 +453,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
           v-for="attrEvent in group.attributeEvents"
           :key="attrEvent.id"
           class="query-filter-event query-filter-event--attribute"
-          :class="{ 'query-filter-event--nested': attrEvent.isNested }"
+          :class="{ 'query-filter-event--nested': attrEvent.attributes?.length > 0 }"
         >
           <div class="query-filter-event__header">
             <span class="query-filter-event__label query-filter-event__label--attribute">
@@ -454,7 +461,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
             </span>
             <div class="query-filter-event__actions">
               <button
-                v-if="!attrEvent.isNested"
+                v-if="!attrEvent.attributes?.length"
                 class="btn-icon"
                 @click="editEvent(attrEvent.id)"
                 aria-label="Edit attribute event"
@@ -474,7 +481,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
           </div>
 
           <!-- Nested criteria content -->
-          <div v-if="attrEvent.isNested" class="query-filter-event__nested-content">
+          <div v-if="attrEvent.attributes?.length" class="query-filter-event__nested-content">
             <!-- Add event button for nested criteria -->
             <div class="nested-add-event-container">
               <criteria-selector-dropdown
@@ -496,7 +503,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 :parent-event-id="attrEvent.id"
                 :level="0"
                 :operator="filter.operator"
-                :sibling-count="attrEvent.nestedEvents?.length || 0"
+                :sibling-count="attrEvent.attributes?.length || 0"
                 :concept-sets="conceptSets"
                 :concept-set-domain-values="conceptSetDomainValues"
                 :concept-set-texts="conceptSetTexts"
@@ -518,7 +525,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
                 :parent-event-id="attrEvent.id"
                 :level="0"
                 :operator="filter.operator"
-                :sibling-count="attrEvent.nestedEvents?.length || 0"
+                :sibling-count="attrEvent.attributes?.length || 0"
                 :concept-sets="conceptSets"
                 :concept-set-domain-values="conceptSetDomainValues"
                 :concept-set-texts="conceptSetTexts"
@@ -535,7 +542,7 @@ const getConceptSetModel = (event: QueryFilterEvent) => {
             </div>
 
             <!-- Empty state for nested criteria -->
-            <div v-if="!attrEvent.nestedEvents?.length" class="nested-empty-state">
+            <div v-if="!attrEvent.attributes?.some(attr => attr.attributeType === 'nested')" class="nested-empty-state">
               <p>No nested events added yet</p>
             </div>
           </div>

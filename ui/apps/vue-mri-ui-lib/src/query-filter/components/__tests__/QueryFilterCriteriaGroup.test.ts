@@ -75,7 +75,6 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     mockGroup.events.forEach(event => {
       expect(event.id).toBeDefined()
       expect(event.conceptSet).toBeDefined()
-      // Legacy isAttributeBased test removed
     })
   })
 

@@ -148,11 +148,7 @@ export class QueryFilterCardModel {
     let insertIndex = parentIndex + 1
 
     // Find the last attribute event that belongs to this parent
-    while (
-      insertIndex < this.events.length &&
-      // Legacy isAttributeBased check removed &&
-      this.events[insertIndex].parentEventId === parentEventId
-    ) {
+    while (insertIndex < this.events.length && this.events[insertIndex].parentEventId === parentEventId) {
       insertIndex++
     }
 
@@ -893,14 +889,14 @@ export class QueryFilterCriteriaManager {
 
   // Helper method to build nested criteria from attributes.nestedCriteria format
   private buildNestedCriteriaFromAttributes(
-    nestedEvents: any[],
+    nestedCriteriaEvents: any[],
     systemIdToAtlasId: Map<string, number>,
     parentEventId?: string
   ): { criteriaList: any[]; demographicCriteriaList: any[] } {
     const criteriaList: any[] = []
     const demographicCriteriaList: any[] = []
 
-    nestedEvents.forEach((nestedEvent, index) => {
+    nestedCriteriaEvents.forEach((nestedEvent, index) => {
       const criteria: any = {
         Criteria: {
           ConditionOccurrence: {},

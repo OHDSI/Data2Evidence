@@ -14,7 +14,7 @@ const props = defineProps<{
   condition: QueryFilterEvent
   isParent?: boolean
   isAttribute?: boolean
-  isNested?: boolean
+  hasNestedAttributes?: boolean
   allConditions: QueryFilterEvent[]
   showRemoveButton?: boolean
 }>()
@@ -36,7 +36,7 @@ const handleAttributeRemoved = (attributeId: string) => {
     :class="{
       'query-filter-condition--parent': isParent,
       'query-filter-condition--attribute': isAttribute,
-      'query-filter-condition--nested': isNested,
+      'query-filter-condition--nested': hasNestedAttributes,
     }"
   >
     <div class="query-filter-condition__header">
@@ -45,7 +45,7 @@ const handleAttributeRemoved = (attributeId: string) => {
       </span>
       <div class="query-filter-condition__actions">
         <button
-          v-if="!isNested"
+          v-if="!hasNestedAttributes"
           class="btn-icon"
           @click="$emit('edit', condition.id)"
           aria-label="Edit condition"
@@ -89,3 +89,4 @@ const handleAttributeRemoved = (attributeId: string) => {
 <style lang="scss" scoped>
 @import '../styles/QueryFilterEvent';
 </style>
+

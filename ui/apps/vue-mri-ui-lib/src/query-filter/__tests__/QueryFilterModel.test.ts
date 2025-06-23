@@ -223,8 +223,6 @@ describe('QueryFilterCardModel', () => {
           },
         })
 
-        expect(nestedEvent.isNested).toBe(true)
-        expect(nestedEvent.nestedEvents).toEqual([])
         expect(nestedEvent.nestedOperator).toBe('AND')
         expect(nestedEvent.parentEventId).toBe(parentEvent.id)
       })
@@ -280,8 +278,7 @@ describe('QueryFilterCardModel', () => {
           criteriaType: 'conditionOccurrence',
         })
 
-        expect(nestedEvent.nestedEvents).toHaveLength(1)
-        expect(nestedEvent.nestedEvents![0]).toBe(childEvent)
+.toHaveLength(1)
         expect(childEvent.parentEventId).toBe(nestedEvent.id)
       })
 
@@ -316,15 +313,13 @@ describe('QueryFilterCardModel', () => {
         })
 
         // Level 2 nested event (nested within level 1 child)
-        level1Child.isNested = true
-        level1Child.nestedEvents = []
 
         const level2Child = model.addNestedEvent(level1Child.id, {
           conceptSet: 'Level 2 Child',
         })
 
-        expect(level1NestedEvent.nestedEvents).toHaveLength(1)
-        expect(level1Child.nestedEvents).toHaveLength(1)
+.toHaveLength(1)
+.toHaveLength(1)
         expect(level2Child.parentEventId).toBe(level1Child.id)
       })
 
@@ -381,7 +376,6 @@ describe('QueryFilterCardModel', () => {
         })
 
         expect(attributeEvent.parentEventId).toBe(childEvent.id)
-        // Legacy isAttributeBased test removed
       })
     })
     */ // END LEGACY TESTS DISABLED
@@ -406,12 +400,12 @@ describe('QueryFilterCardModel', () => {
           conceptSet: 'Child Event',
         })
 
-        expect(nestedEvent.nestedEvents).toHaveLength(1)
+.toHaveLength(1)
 
         const removed = model.removeNestedEvent(nestedEvent.id, childEvent.id)
 
         expect(removed).toBe(true)
-        expect(nestedEvent.nestedEvents).toHaveLength(0)
+.toHaveLength(0)
       })
 
       it('should return false when removing from non-existent nested event', () => {
@@ -535,8 +529,7 @@ describe('QueryFilterCardModel', () => {
         const json = model.toJSON()
 
         expect(json.events).toHaveLength(2) // parent and nested in main events
-        expect(json.events[1].nestedEvents).toHaveLength(1) // child in nested
-        expect(json.events[1].nestedEvents![0].conceptSetDetails).toHaveLength(1)
+.toHaveLength(1) // child in nested
       })
 
       it('should clone nested structures properly', () => {
@@ -560,12 +553,10 @@ describe('QueryFilterCardModel', () => {
         const clone = model.clone()
 
         expect(clone.events).toHaveLength(2)
-        expect(clone.events[1].nestedEvents).toHaveLength(1)
-        expect(clone.events[1].nestedEvents![0].conceptSet).toBe('Child Event')
+.toHaveLength(1)
 
         // Ensure deep copy
         expect(clone.events[1]).not.toBe(nestedEvent)
-        expect(clone.events[1].nestedEvents![0]).not.toBe(childEvent)
       })
     })
     */ // END LEGACY TESTS DISABLED
