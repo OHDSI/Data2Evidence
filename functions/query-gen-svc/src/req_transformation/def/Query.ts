@@ -174,6 +174,10 @@ export class Query extends Expression {
 
     private buildOrderBy() {
         this.__request.orderBy.forEach((e) => {
+            // Dont build orderBy if alias is PEE
+            if (e.alias === "PEE") {
+                return;
+            }
             let order = new OrderBy(Keys.CQLTERM_PROPERTY, e.path, e.alias, e.pathId, e.axis, e.order);
             if (e.aggregation) {
                 order.setAttribute("aggregation", e.aggregation);
