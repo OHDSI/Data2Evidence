@@ -11,6 +11,7 @@ test('jobs-execute-view-log', async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
+  await expect(page.getByRole('cell', { name: 'Demo dataset' })).toBeVisible();
   const value = await page.getByRole('cell').nth(1).textContent();
   await page.getByRole('link', { name: 'Jobs' }).click();
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible();
