@@ -442,7 +442,8 @@
           "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
-          "gateway.dashboardGate.content"
+          "gateway.dashboardGate.content",
+          "gateway.external.dashboards.read"
         ],
         "TENANT_VIEWER": [
           "PA.DatasetOverview.svc",
