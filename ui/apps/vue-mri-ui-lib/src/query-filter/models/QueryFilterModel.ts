@@ -9,6 +9,45 @@ export interface QueryFilterCardinality {
   using: 'ALL'
 }
 
+export interface ConceptSetDetailConcept {
+  CONCEPT_ID: number
+  CONCEPT_NAME: string
+  STANDARD_CONCEPT: string
+  STANDARD_CONCEPT_CAPTION: string
+  INVALID_REASON: string
+  INVALID_REASON_CAPTION: string
+  CONCEPT_CODE: string
+  DOMAIN_ID: string
+  VOCABULARY_ID: string
+  CONCEPT_CLASS_ID: string
+}
+
+export interface ConceptSetDetail {
+  concept: ConceptSetDetailConcept
+  isExcluded: boolean
+  includeDescendants: boolean
+  includeMapped: boolean
+}
+
+export interface SelectedConceptSetConcept {
+  id: number
+  useMapped: boolean
+  isExcluded: boolean
+  useDescendants: boolean
+}
+
+export interface SelectedConceptSet {
+  value: number
+  text: string
+  display_value: string
+  conceptIds: number[]
+  concepts: SelectedConceptSetConcept[]
+  shared: boolean
+  userName: string
+  createdDate: string
+  modifiedDate: string
+}
+
 export interface QueryFilterGroup {
   id: string
   title: string
@@ -41,15 +80,14 @@ export interface QueryFilterEvent {
     operator?: string
     value?: number
   }
-  selectedConceptSet?: any
-  conceptSetDetails?: any[]
+  selectedConceptSet?: SelectedConceptSet
+  conceptSetDetails?: ConceptSetDetail[]
   conceptSetLoading?: boolean
   cardinality?: QueryFilterCardinality
   isExpanded?: boolean
   attributes?: QueryFilterAttribute[]
   eventType?: string
 }
-
 export interface QueryFilterAttribute {
   id: string
   attributeType: 'nested' | 'standard'
