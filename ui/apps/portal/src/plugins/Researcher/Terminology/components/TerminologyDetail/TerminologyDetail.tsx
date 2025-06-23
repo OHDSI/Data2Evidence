@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useState, useCallback, Dispatch, SetStateAction } from "react";
 import { Table, TableBody, TableHead, Tabs, Tab, Typography, Paper } from "@mui/material";
-import { TableRow, TableCell, Loader } from "@portal/components";
+import CloseIcon from "@mui/icons-material/Close";
+import { TableRow, TableCell, Loader, IconButton } from "@portal/components";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { TerminologyDetailsList } from "../../utils/types";
 import { Terminology } from "../../../../../axios/terminology";
@@ -9,6 +10,7 @@ import { i18nKeys } from "../../../../../contexts/app-context/states";
 import "./TerminologyDetail.scss";
 
 interface TerminologyDetailProps {
+  setShowDetails: Dispatch<SetStateAction<boolean>>;
   userId?: string;
   setConceptId: Dispatch<SetStateAction<null | number>>;
   conceptId: number;
@@ -20,7 +22,13 @@ enum TerminologyDetailsTab {
   RelatedConcepts = "Related Concepts",
 }
 
-const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, conceptId, datasetId }) => {
+const TerminologyDetail: FC<TerminologyDetailProps> = ({
+  setShowDetails,
+  userId,
+  setConceptId,
+  conceptId,
+  datasetId,
+}) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<TerminologyDetailsList | null>();
@@ -29,6 +37,11 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
 
   const handleTabSelectionChange = useCallback((event: React.SyntheticEvent, value: TerminologyDetailsTab) => {
     setTabValue(value);
+  }, []);
+
+  const closePage = useCallback(() => {
+    setShowDetails(false);
+    setConceptId(null);
   }, []);
 
   useEffect(() => {
@@ -68,19 +81,23 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({ userId, setConceptId, c
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", marginLeft: "5px" }}>
-      <div className="terminology_detail__tabs" style={{ display: "flex" }}>
-        <Tabs value={tabValue} onChange={handleTabSelectionChange}>
-          <Tab
-            disableRipple
-            label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
-            value={TerminologyDetailsTab.Hierarchy}
-          />
-          <Tab
-            disableRipple
-            label={getText(i18nKeys.TERMINOLOGY_DETAIL__RELATED_CONCEPTS)}
-            value={TerminologyDetailsTab.RelatedConcepts}
-          />
-        </Tabs>
+      <div className="terminology_detail__tabs">
+        <div className="terminology_detail__tabs_container">
+          <Tabs value={tabValue} onChange={handleTabSelectionChange}>
+            <Tab
+              disableRipple
+              label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
+              value={TerminologyDetailsTab.Hierarchy}
+            />
+            <Tab
+              disableRipple
+              label={getText(i18nKeys.TERMINOLOGY_DETAIL__RELATED_CONCEPTS)}
+              value={TerminologyDetailsTab.RelatedConcepts}
+            />
+          </Tabs>
+        </div>
+
+        <IconButton startIcon={<CloseIcon />} disableRipple onClick={closePage} />
       </div>
       <Paper
         className="terminology_detail__container"
