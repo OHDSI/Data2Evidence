@@ -1,24 +1,33 @@
 import json
 import duckdb
 import logging
-import pandas as pd
+from typing import Any
 import traceback as tb
 from rpy2 import robjects
-from sqlalchemy import text
 from functools import partial
-from jsonpath_ng import jsonpath, parse
-import os
+from jsonpath_ng import parse
+
+import pandas as pd
+from pandas.api.types import is_scalar, is_list_like, is_dict_like
+
+from genson import SchemaBuilder
+from genson.schema.node import SchemaGenerationError
+
 from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
-from .types import NodeType, TableSourceType, DataMappingType
+from .types import (NodeType, 
+                    TableSourceType, 
+                    DataMappingType, 
+                    ConceptMappingType)
+
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
-os.environ['plugin_name'] = 'dataflow_ui_plugin'
+
 
 class Node:
     def __init__(self, name, node):
@@ -41,18 +50,60 @@ class Result:
     def __init__(self, error: bool, data, node: Node, task_run_context):
         self.error = error
         self.node = node
-        self.result = data # preserves the data type of the node result
+        self.result = data # preserves the actual data of the node result
         self.task_run_id = str(task_run_context.get("id"))
         self.task_run_name = str(task_run_context.get("name"))
         self.flow_run_id = str(task_run_context.get("flow_run_id"))
 
-    def create_serializable_result(self):
-        return {
-            "result": serialize_to_json(self.result),
-            "error": self.error, 
+
+    def serialize_result(self):
+        base_result = {
+            "error": self.error,
             "errorMessage": self.result if self.error else None,
             "nodeName": self.node.name
         }
+
+        if self.error: return base_result
+        base_result.update(self.__create_result_schema(self.result))
+        return base_result
+    
+
+    def __is_strictly_list_like(self, obj):
+        return is_list_like(obj) and not is_dict_like(obj)
+    
+
+    def __create_result_schema(self, result_value: Any):
+        result_schema = {
+            "length": len(result_value) if hasattr(result_value, "__len__") else None,
+            "type": str(type(result_value))
+        }
+
+        if isinstance(result_value, pd.DataFrame):
+            result_schema["schema"] = result_value.dtypes.apply(lambda x: x.name).to_dict()
+            return result_schema
+
+        try:
+            builder = SchemaBuilder()
+            if self.__is_strictly_list_like(result_value):
+                builder.add_object(list(result_value))
+            elif is_dict_like(result_value):
+                builder.add_object(result_value)
+            else:
+                return result_schema
+
+            schema = builder.to_schema()
+            schema.pop("$schema", None)
+            schema.pop("required", None)
+            result_schema["schema"] = schema
+
+
+        except SchemaGenerationError:
+            if self.__is_strictly_list_like(result_value):
+                result_schema["schema"] = [self.__create_result_schema(v) for v in result_value]
+            elif is_dict_like(result_value):
+                result_schema["schema"] = {k: self.__create_result_schema(v) for k, v in result_value.items()}
+            
+        return result_schema
 
 
 class Py2TableNode(Node):
@@ -317,6 +368,31 @@ class DBReader(Node):
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
+class ConceptMappingNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+
+        self.concept_mapping_data = _node["data"]["csvData"]["data"]
+        
+    def test(self, task_run_context) -> Result:
+        return self.task(task_run_context)
+    
+    def task(self, task_run_context) -> Result:
+        try:
+            checked_concepts = (
+                {
+                    "domain_id": cm.domainId,
+                    "concept_id": cm.conceptId,
+                    "concept_name": cm.conceptName,
+                    "source_code": cm.source_code,
+                    "validity": cm.validity if cm.validity else None
+                } for item in self.concept_mapping_data
+                if (cm := ConceptMappingType(**item)).status == "checked"
+            )
+            concept_mapping_df = pd.DataFrame(checked_concepts)
+            return Result(False,  concept_mapping_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
 
 
 class DataMappingNode(Node):
@@ -476,7 +552,7 @@ class DataMappingNode(Node):
 
         
     def test(self, task_run_context) -> Result:
-        return task(self, task_run_context)
+        return self.task(self, task_run_context)
 
 
     def task(self, task_run_context) -> Result:
@@ -550,12 +626,9 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DbWriter(nodename, node)
         case NodeType.DATAMAPPING:
             nodeobj = DataMappingNode(nodename, node)
+        case NodeType.CONCEPTMAPPING:
+            nodeobj = ConceptMappingNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
     return nodeobj
-
-
-def serialize_result_to_json(result: Result):
-    result_to_store = result.create_serializable_result()
-    return result_to_store
