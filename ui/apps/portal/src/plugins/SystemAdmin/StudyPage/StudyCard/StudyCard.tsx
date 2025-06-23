@@ -1,10 +1,11 @@
+import { ArrowBack, OpenInBrowser, PlayCircleFilled } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
-import { PlayCircleFilled } from "@mui/icons-material";
 import { CircularProgress } from "@mui/material";
 import { Card, RunStudyIcon, TrashIcon } from "@portal/components";
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
+import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
 import { StrategusStudy } from "../../../../types/strategusStudy";
 import "./StudyCard.scss";
@@ -23,6 +24,45 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isStartingViewer, setIsStartingViewer] = useState<boolean>(false);
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
+  const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
+  const [bearerToken, setBearerToken] = useState<string>("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const VIEWER_BASE_URL = `https://localhost:41100/strategus-results/${study.id}/`;
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const token = await getAuthToken(false);
+        if (token) {
+          setBearerToken(token);
+        }
+      } catch (error) {
+        console.error("Error fetching auth token:", error);
+      }
+    };
+
+    fetchToken();
+  }, []);
+
+  useEffect(() => {
+    if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
+      try {
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
+        console.log("Cookie set in iframe:", iframeRef.current.contentWindow.document.cookie);
+      } catch (error) {
+        console.error("Error setting cookie in iframe:", error);
+      }
+    }
+  }, [isIframeViewerOpen, bearerToken]);
+
+  const handleOpenIframeViewer = useCallback(() => {
+    setIsIframeViewerOpen(true);
+  }, []);
+
+  const handleCloseIframeViewer = useCallback(() => {
+    setIsIframeViewerOpen(false);
+  }, []);
 
   const handleRunStudy = useCallback(
     async (e: React.MouseEvent) => {
@@ -149,88 +189,113 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   );
 
   return (
-    <Card className="study-card" borderRadius={18}>
-      <div className="study-card__content">
-        <div className="study-card__header">
-          <div className="study-card__title">
-            <HighlightText text={study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)} searchText={highlightText} />
-          </div>
-          {study.email && (
-            <div className="study-card__contact">
-              <MailOutline className="study-card__contact-icon" />
-              {study.email}
+    <>
+      <Card className="study-card" borderRadius={18}>
+        <div className="study-card__content">
+          <div className="study-card__header">
+            <div className="study-card__title">
+              <HighlightText text={study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)} searchText={highlightText} />
             </div>
-          )}
-        </div>
+            {study.email && (
+              <div className="study-card__contact">
+                <MailOutline className="study-card__contact-icon" />
+                {study.email}
+              </div>
+            )}
+          </div>
 
-        <div className="study-card__summary">
-          <HighlightText
-            text={study.description || getText(i18nKeys.STUDY_CARD__NO_STUDY_SUMMARY)}
-            searchText={highlightText}
+          <div className="study-card__summary">
+            <HighlightText
+              text={study.description || getText(i18nKeys.STUDY_CARD__NO_STUDY_SUMMARY)}
+              searchText={highlightText}
+            />
+          </div>
+
+          <div className="study-card__actions">
+            <div
+              className={`study-card__action ${isRunning ? "study-card__action--loading" : ""}`}
+              onClick={handleRunStudy}
+            >
+              {isRunning ? (
+                <>
+                  <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__RUNNING)}</span>
+                </>
+              ) : (
+                <>
+                  <RunStudyIcon className="study-card__action-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__RUN_STUDY)}</span>
+                </>
+              )}
+            </div>
+
+            <div
+              className={`study-card__action ${isStartingViewer ? "study-card__action--loading" : ""}`}
+              onClick={handleStartViewer}
+            >
+              {isStartingViewer ? (
+                <>
+                  <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)}</span>
+                </>
+              ) : (
+                <>
+                  <PlayCircleFilled className="study-card__action-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__START_VIEWER)}</span>
+                </>
+              )}
+            </div>
+
+            <div className="study-card__action" onClick={handleOpenIframeViewer}>
+              <OpenInBrowser className="study-card__action-icon" />
+              <span>Open Viewer</span>
+            </div>
+
+            <div
+              className={`study-card__action ${isCleaningUp ? "study-card__action--loading" : ""}`}
+              onClick={handleCleanupStudy}
+            >
+              {isCleaningUp ? (
+                <>
+                  <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__CLEANING_UP)}</span>
+                </>
+              ) : (
+                <>
+                  <TrashIcon className="study-card__action-icon" />
+                  <span>{getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)}</span>
+                </>
+              )}
+            </div>
+            {/* <div className="study-card__action" onClick={handleDownloadResults}>
+              <DownloadStudyIcon className="study-card__action-icon" />
+              <span>Download results</span>
+            </div>
+            <div className="study-card__action" onClick={handleShareResults}>
+              <ShareStudyIcon className="study-card__action-icon" />
+              <span>Share results</span>
+            </div> */}
+          </div>
+        </div>
+      </Card>
+
+      {isIframeViewerOpen && (
+        <div className="study-card__fullscreen-overlay">
+          <div className="study-card__fullscreen-header">
+            <button onClick={handleCloseIframeViewer} className="study-card__back-button">
+              <ArrowBack className="study-card__back-icon" />
+              <span>Back</span>
+            </button>
+            <span className="study-card__viewer-title">Results Viewer - {study.name || study.id}</span>
+          </div>
+          <iframe
+            ref={iframeRef}
+            src={VIEWER_BASE_URL}
+            title="Fullscreen Iframe Viewer"
+            className="study-card__fullscreen-iframe"
           />
         </div>
-
-        <div className="study-card__actions">
-          <div
-            className={`study-card__action ${isRunning ? "study-card__action--loading" : ""}`}
-            onClick={handleRunStudy}
-          >
-            {isRunning ? (
-              <>
-                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__RUNNING)}</span>
-              </>
-            ) : (
-              <>
-                <RunStudyIcon className="study-card__action-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__RUN_STUDY)}</span>
-              </>
-            )}
-          </div>
-
-          <div
-            className={`study-card__action ${isStartingViewer ? "study-card__action--loading" : ""}`}
-            onClick={handleStartViewer}
-          >
-            {isStartingViewer ? (
-              <>
-                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)}</span>
-              </>
-            ) : (
-              <>
-                <PlayCircleFilled className="study-card__action-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__START_VIEWER)}</span>
-              </>
-            )}
-          </div>
-
-          <div
-            className={`study-card__action ${isCleaningUp ? "study-card__action--loading" : ""}`}
-            onClick={handleCleanupStudy}
-          >
-            {isCleaningUp ? (
-              <>
-                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__CLEANING_UP)}</span>
-              </>
-            ) : (
-              <>
-                <TrashIcon className="study-card__action-icon" />
-                <span>{getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)}</span>
-              </>
-            )}
-          </div>
-          {/* <div className="study-card__action" onClick={handleDownloadResults}>
-            <DownloadStudyIcon className="study-card__action-icon" />
-            <span>Download results</span>
-          </div>
-          <div className="study-card__action" onClick={handleShareResults}>
-            <ShareStudyIcon className="study-card__action-icon" />
-            <span>Share results</span>
-          </div> */}
-        </div>
-      </div>
-    </Card>
+      )}
+    </>
   );
 };
