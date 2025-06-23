@@ -29,7 +29,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   const handleMessage = useCallback((role: "assistant" | "user", message: string | string[]) => {
     const newMessage = {
       role,
-      message: Array.isArray(message) ? message.join("\n") : message,
+      message: Array.isArray(message) ? message.join("") : message,
     };
     setHistory((prev) => [...prev, newMessage]);
   }, []);
