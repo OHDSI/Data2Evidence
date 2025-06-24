@@ -178,7 +178,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   }, [openTemplateDialog]);
 
   // Check Jupyter Notebook Name if it exist in the database
-  const checkNotebookName = async (name: string) => {
+  const checkNotebookName = useCallback(async (name: string) => {
     const allNotebooks: any[] = await api.studyNotebook.getNotebookList(activeDatasetId);
     let isFound = true;
     let nameCount = 0;
@@ -197,10 +197,10 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     }
 
     return notebookName;
-  };
+  }, []);
 
   // Import Jupyter Notebook and create the notebook.
-  const importJupyterNb = async (event: any) => {
+  const importJupyterNb = useCallback(async (event: any) => {
     const myFile = event.target.files[0];
     const text = await myFile.text();
     try {
@@ -226,7 +226,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         message: getText(i18nKeys.STARBOARD__ERROR_IMPORT),
       });
     }
-  };
+  }, []);
 
   const handleChatClose = useCallback(
     (chatHistory: ChatItem[]) => {
