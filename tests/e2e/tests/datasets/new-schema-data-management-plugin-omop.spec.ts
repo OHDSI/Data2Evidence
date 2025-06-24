@@ -1,3 +1,6 @@
+// Demo setup doesn't have data management plugin, so this test is commented out.
+// Also it fails while creating views
+
 // import { test, expect } from '@playwright/test';
 
 // test('dataset-new-schema-data-management-plugin-omop', async ({ page }) => {
