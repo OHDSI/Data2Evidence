@@ -16,8 +16,8 @@ import type { QueryFilterCardinality, QueryFilterEvent } from '../models/QueryFi
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { AttributeConfig } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
-import CloseIcon from './icons/CloseIcon.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
+import TrashIcon from './icons/TrashIcon.vue'
 
 interface Props {
   event: QueryFilterEvent
@@ -373,7 +373,11 @@ const sideBarRef = ref(null)
             @attribute-selected="handleAttributeSelected"
             @attribute-removed="handleAttributeRemoved"
           />
-          <button v-if="!readonly" class="btn-remove-event" @click="removeEvent" title="Remove this event">×</button>
+          <div class="btn-remove-event-container" v-if="!readonly">
+            <button class="btn-remove-event" @click="removeEvent" title="Remove this event">
+              <TrashIcon />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -522,7 +526,6 @@ const sideBarRef = ref(null)
 
     &__right {
       display: flex;
-      gap: 6px;
     }
   }
 
@@ -591,30 +594,24 @@ const sideBarRef = ref(null)
     color: #666;
   }
 
-  .btn-remove-event {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #d0d0d0;
-    background: #fff;
-    border-radius: 4px;
-    color: #666;
-    font-size: 14px;
-    cursor: pointer;
+  .btn-remove-event-container {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .btn-remove-event {
+    border: 1px solid transparent;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
     transition: all 0.2s ease;
+    padding: 6px 8px;
 
     &:hover {
-      border-color: #1976d2;
-      color: #1976d2;
+      color: #000080;
+      background: #f2f0f1;
     }
-  }
-
-  .btn-remove-event:hover {
-    border-color: #000080;
-    color: #000080;
-    background: #f2f0f1;
   }
 
   .event-body {

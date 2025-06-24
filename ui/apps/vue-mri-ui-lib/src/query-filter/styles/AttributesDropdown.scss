@@ -28,15 +28,17 @@
 
     &.is-disabled {
       color: #d1d5db;
-      cursor: not-allowed;
+      cursor: default;
+      svg {
+        fill: #d1d5db;
+      }
     }
 
     &.has-selections {
-      background: #ddd6fe;
-      color: #5b21b6;
+      background: #e5e6f2;
 
       &:hover:not(.is-disabled) {
-        background: #c4b5fd;
+        background: #e5e6f2;
       }
     }
   }
