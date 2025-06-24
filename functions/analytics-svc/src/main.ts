@@ -194,20 +194,9 @@ const initRoutes = async (app: express.Application) => {
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != DB.HANA
                 ) {
-                    try {
-                        const dbm = Trex.databaseManager();
-                        const conn = dbm.getConnection(
-                            credentials.code,
-                            credentials.schema,
-                            credentials.vocabSchema,
-                            { duckdb: translateHanaToDuckdb }
-                        );
-
-                        req.dbConnections = { analyticsConnection: conn };
-                    } catch (error) {
-                        console.log("Error getting trex connection, ", error);
-                        throw error;
-                    }
+                    req.dbConnections = getTrexDbConnection({
+                        analyticsCredentials: credentials,
+                    });
                 }
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
                 else if (
@@ -311,7 +300,7 @@ const initRoutes = async (app: express.Application) => {
                     let queryParams = {
                         action: "getMyConfig",
                         datasetId,
-                        configId: req.paConfigId
+                        configId: req.paConfigId,
                     };
 
                     configResults = await mriConfigConnection.getMriConfig(
@@ -361,7 +350,7 @@ const initRoutes = async (app: express.Application) => {
                     let qParams = {
                         action: "getMyConfig",
                         datasetId,
-                        configId: req.paConfigId
+                        configId: req.paConfigId,
                     };
                     configResults = await mriConfigConnection.getMriConfig(
                         req,
@@ -405,19 +394,26 @@ const initRoutes = async (app: express.Application) => {
                         let configVersion = req.paConfigVersion;
 
                         //Only for tests choose metadata from the request body
-                        if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+                        if (
+                            envVarUtils.isTestEnv() ||
+                            envVarUtils.isHttpTestRun()
+                        ) {
                             let configData = Array.isArray(body)
-                                            ? body[0].configData
-                                            : body.configData;
+                                ? body[0].configData
+                                : body.configData;
 
-                            if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                            if (
+                                configData &&
+                                (configData.length > 0 ||
+                                    Object.keys(configData).length > 0)
+                            ) {
                                 configId = configData.configId;
                                 configVersion = configData.configVersion;
                             } else {
-                                throw new Error("Config metadata undefined!")
+                                throw new Error("Config metadata undefined!");
                             }
                         }
-                      
+
                         const datasetId = req.body.datasetId;
                         const mriConfig =
                             await mriConfigConnection.getStudyConfig(
@@ -624,6 +620,49 @@ let initSettingsFromEnvVars = () => {
     EnvVarUtils.loadDevSettings();
 };
 
+const getTrexDbConnection = ({
+    analyticsCredentials,
+}): { analyticsConnection: Connection.ConnectionInterface } => {
+    try {
+        const dbm = Trex.databaseManager();
+        const trex_publication = dbm.getFirstPublication(
+            analyticsCredentials.code
+        );
+        const trex_pg_direct_connection_alias = `${trex_publication}_trexpg`;
+
+        const parseSql = (
+            temp: string,
+            schemaNames: string,
+            vocabSchemaNames: string,
+            parameters: any
+        ): string => {
+            // Specifically for trex db connection, direct pg connection alias is different from cachedb.
+            // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
+            temp = temp.replace(
+                /\$\$SCHEMA_DIRECT_CONN\$\$./g,
+                `${trex_pg_direct_connection_alias}.$$$$SCHEMA$$$$.`
+            );
+            return translateHanaToDuckdb(
+                temp,
+                schemaNames,
+                vocabSchemaNames,
+                parameters
+            );
+        };
+        const conn = dbm.getConnection(
+            analyticsCredentials.code,
+            analyticsCredentials.schema,
+            analyticsCredentials.vocabSchema,
+            { duckdb: parseSql }
+        );
+
+        return { analyticsConnection: conn };
+    } catch (error) {
+        console.log("Error getting trex connection, ", error);
+        throw error;
+    }
+};
+
 const getDBConnections = async ({
     analyticsCredentials,
     userObj,
@@ -709,8 +748,11 @@ const getDBConnections = async ({
                     "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
                 );
             }
-            analyticsCredentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-cohorts`;
-            analyticsCredentials['SESSIONVARIABLE:APPLICATIONUSER'] = userObj.getUser();
+            analyticsCredentials[
+                "SESSIONVARIABLE:APPLICATION"
+            ] = `${env.PROJECT_NAME}-cohorts`;
+            analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+                userObj.getUser();
         }
 
         analyticsConnectionPromise =
