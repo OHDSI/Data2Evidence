@@ -54,7 +54,8 @@ const ImportDialog: FC<ImportDialogProps> = ({ open, onClose, selectedDatasetId,
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPageData, setCurrentPageData] = useState([]);
   const [showDomainMapping, setShowDomainMapping] = useState(false);
-  const [domainFilterOptions, setDomainFilterOptions] = useState<string[]>([]);
+  const domainFilterOptions: string[] = ["ICD-9","ICD-10","SNOMED","CPT-4","HCPCS","RxNorm","MeSH","LOINC"];
+
   const importDataCount: number = conceptMappingState.importData.data.length;
 
   const handleClose = useCallback(
@@ -127,22 +128,6 @@ const ImportDialog: FC<ImportDialogProps> = ({ open, onClose, selectedDatasetId,
       >
     );
   }, [page, rowsPerPage, conceptMappingState.importData.data]);
-
-  const getDomainFilterOptions = useCallback(async () => {
-    try {
-      const filterOptions = await api.Terminology.getAllFilterOptions(selectedDatasetId);
-      const domainFilterOptions = Object.keys(filterOptions.filterOptions.domainId);
-      setDomainFilterOptions(domainFilterOptions);
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showDomainMapping) {
-      getDomainFilterOptions();
-    }
-  }, [showDomainMapping, getDomainFilterOptions]);
 
   return (
     <Dialog fullWidth maxWidth="lg" title={titleString} open={open} closable onClose={() => handleClose("cancelled")}>
