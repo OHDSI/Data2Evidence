@@ -45,7 +45,7 @@ const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
 // Debug mode toggle
-const showDebug = ref(true)
+const showDebug = ref(false)
 
 // Save dialog state
 const showSaveDialog = ref(false)
@@ -1254,7 +1254,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 .query-filter-modern {
-  height: 100%;
+  height: calc(100% - 35px);
   overflow: auto;
   position: relative;
 
