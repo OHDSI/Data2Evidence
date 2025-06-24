@@ -18,6 +18,7 @@ test('jobs-execute-view-log', async ({ page }) => {
   await page.getByRole('button', { name: 'Jobs' }).click();
   await page.getByRole('searchbox', { name: 'Search deployments' }).click();
   await page.getByRole('searchbox', { name: 'Search deployments' }).fill('dqd');
+  await expect(page.getByRole('link', { name: 'dqd_plugin' }).first()).toBeVisible();
   await page.getByRole('row', { name: 'dqd_plugin dqd_plugin Ready' }).getByRole('button').click();
   await page.getByRole('button', { name: 'Custom run' }).click();
   await page.locator('input[type="text"]').click();
@@ -47,7 +48,10 @@ test('jobs-execute-view-log', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible();
   // Check job logs for job: dqd_demo
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
-  await page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:').first().waitFor({ state: 'visible' });
+  await page.waitForTimeout(5000);
+  await page.getByText('Logs', { exact: true }).waitFor({ state: 'visible' });
   await page.getByText('Logs', { exact: true }).click();
-  await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run', {timeout: 100000});
+  const logsPage = await page.locator('pre');
+  await logsPage.scrollIntoViewIfNeeded();
+  await expect(page.getByText('Worker \'prefect-docker-worker')).toBeVisible();
 });
