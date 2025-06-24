@@ -311,7 +311,7 @@ export class QueryFilterCriteriaManager {
       if (data.entryEvents) {
         this.entryEvents = {
           primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'ALL',
-          events: data.entryEvents.events || [],
+          events: this.transformEvents(data.entryEvents.events || []),
           priorDays: data.entryEvents.priorDays || 0,
           postDays: data.entryEvents.postDays || 0,
         }
@@ -668,6 +668,7 @@ export class QueryFilterCriteriaManager {
                     Occurrence: {
                       Type: this.mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
                       Count: event.cardinality?.count || 1, // Maps cardinality.count → Atlas Occurrence.Count
+                      ...this.mapCardinalityExtras(event.cardinality?.using),
                     },
                   }
 
@@ -886,9 +887,9 @@ export class QueryFilterCriteriaManager {
 
   private mapCardinalityTypeToAtlas(type: string): number {
     switch (type) {
-      case 'exactly':
+      case 'EXACTLY':
         return 0 // Atlas Type 0 = exactly
-      case 'atMost':
+      case 'AT_MOST':
         return 1 // Atlas Type 1 = at most
       case 'AT_LEAST':
       default:
@@ -939,6 +940,21 @@ export class QueryFilterCriteriaManager {
         return 'nbt' // Not between - may need verification
       default:
         return 'gt'
+    }
+  }
+
+  private mapCardinalityExtras(using: string): Record<string, any> {
+    switch (using) {
+      case 'ALL':
+        return { CountColumn: 'START_DATE' }
+      case 'DISTINCT_CONCEPT':
+        return { CountColumn: 'DOMAIN_CONCEPT', IsDistinct: true }
+      case 'DISTINCT_START_DATE':
+        return { CountColumn: 'START_DATE', IsDistinct: true }
+      case 'DISTINCT_VISIT':
+        return { CountColumn: 'VISIT_ID', IsDistinct: true }
+      default:
+        break
     }
   }
 

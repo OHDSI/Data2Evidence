@@ -37,7 +37,7 @@ const occurenceCountColumnOptions = [
   { value: 'ALL', label: 'All' },
   { value: 'DISTINCT_CONCEPT', label: 'Distinct concept' },
   { value: 'DISTINCT_START_DATE', label: 'Distinct start date' },
-  { value: 'DISTINCT_VISIT', label: 'Distinct start date' },
+  { value: 'DISTINCT_VISIT', label: 'Distinct visit date' },
 ]
 
 // Component refs for Popper
