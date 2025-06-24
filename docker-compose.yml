@@ -85,7 +85,12 @@ x-envs:
        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
       }
-
+  trex_sql: &x-trex-sql
+    TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
+    TREX__SQL__PORT: 5432
+    TREX__SQL__USER: postgres
+    TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:-pencil} # Password for the trex sql interface
+    TREX__SQL__DBNAME: postgres
   # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
   tls: &x-tls
     TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
@@ -143,6 +148,7 @@ services:
         - *x-minio
         - *x-pg
         - *x-perseus
+        - *x-trex-sql
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
@@ -443,6 +449,11 @@ services:
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+            "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+            "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+            "TREX__SQL__PORT": "${TREX__SQL__PORT:-5432}",
+            "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+            "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
           },
           "jupyter-gateway": {},
@@ -516,7 +527,7 @@ services:
       DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/notebooks.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-develop}
-
+      TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
