@@ -97,7 +97,7 @@
           "target": "/resources/mri-ui5/PatientAnalyticsConfig/ui5/i18n/"
         },
         {
-          "source": "^/ui/gateway/dashboard",
+          "source": "/ui/gateway/dashboard",
           "target": "/resources/gateway/dist"
         },
         {

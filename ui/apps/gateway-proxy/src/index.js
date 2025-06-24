@@ -6,14 +6,13 @@ import {
   generateCodeVerifier,
   generateState,
 } from '@logto/browser';
-import { endpoint, appId, appSecret, resourceScopes } from './consts';
+import { endpoint, appId, resourceScopes } from './consts';
 import Home from './pages/Home';
 
 import './index.scss';
 
 const fetcher = createRequester(async (...args) => {
   const [input, init] = args;
-  console.log('fetcher called with:', input, init);
   if(typeof input === 'string' && input.includes('/oidc/token')) {
     console.log('change path to /oauth/token');
     input = input.replace('/oidc/token', '/oauth/token');
@@ -21,10 +20,6 @@ const fetcher = createRequester(async (...args) => {
   return fetch(input, {
     ...init,
     headers: {
-      Authorization: `Basic ${Buffer.from(
-        `${appId}:${appSecret}`,
-        'utf8'
-      ).toString('base64')}`,
       ...init?.headers,
     },
   });
