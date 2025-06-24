@@ -112,6 +112,7 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
       <div class="sidebar">ALL</div>
       <QueryFilterEventContainer
         :events="eventsData"
+        :event-type="type"
         :concept-sets="props.conceptSets"
         :concept-set-domain-values="props.conceptSetDomainValues"
         :concept-set-texts="props.conceptSetTexts"

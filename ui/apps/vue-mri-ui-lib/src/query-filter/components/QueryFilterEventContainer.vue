@@ -17,6 +17,7 @@ import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
+  eventType?: 'ENTRY' | 'EXIT'
   parentGroup?: QueryFilterGroup
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
@@ -46,6 +47,12 @@ const eventsData = computed({
 })
 
 const mainEvents = computed(() => eventsData.value)
+
+// Determine the correct section ID based on event type
+const sectionId = computed(() => {
+  // initialEvents is used for inclusion criteria as well
+  return props.eventType === 'EXIT' ? 'censoringEvents' : 'initialEvents'
+})
 // Handle adding new event from criteria selector
 const handleCriteriaSelected = (option: CriteriaOption) => {
   const newEvent: QueryFilterEvent = {
@@ -147,7 +154,7 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
     <!-- Add Event Controls - positioned at top, right after group title -->
     <div v-if="!readonly" class="add-event-controls">
       <CriteriaSelectorDropdown
-        section-id="initialEvents"
+        :section-id="sectionId"
         button-text="+ Add event"
         @criteria-selected="handleCriteriaSelected"
       />
