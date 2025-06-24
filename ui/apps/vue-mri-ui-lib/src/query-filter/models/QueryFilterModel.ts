@@ -624,6 +624,33 @@ export class QueryFilterCriteriaManager {
       })
     })
 
+    // Also collect concept sets from exitEvents.censoringCriteria
+    if (this.exitEvents?.censoringCriteria) {
+      this.exitEvents.censoringCriteria.forEach(event => {
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
+          const systemConceptSetId = event.conceptSetId
+          if (!usedConceptSetIds.has(systemConceptSetId)) {
+            usedConceptSetIds.add(systemConceptSetId)
+            const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
+            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+            const conceptSetDef: any = {
+              id: atlasSequentialId, // Sequential ID for Atlas JSON
+              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+              expression: {
+                items: event.conceptSetDetails,
+              },
+            }
+
+            // Add conceptSetId field with system database ID
+            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+            conceptSets.push(conceptSetDef)
+          }
+        }
+      })
+    }
+
     const atlasDef: any = {
       ConceptSets: conceptSets, // Now populated with all concept sets
       PrimaryCriteria: {
@@ -784,7 +811,11 @@ export class QueryFilterCriteriaManager {
         }
       }),
       EndStrategy: {},
-      CensoringCriteria: [],
+      CensoringCriteria: (this.exitEvents?.censoringCriteria || []).map(event => ({
+        [this.mapEventTypeToAtlas(event.eventType)]: {
+          CodesetId: systemIdToAtlasId.get(event.conceptSetId), // Use Atlas sequential ID
+        },
+      })),
       CollapseSettings: {
         CollapseType: 'ERA',
         EraPad: 0,
