@@ -1,0 +1,28 @@
+import { test, expect } from '@playwright/test';
+
+test.use({
+  ignoreHTTPSErrors: true
+});
+
+test('test', async ({ page }) => {
+  await page.goto('https://localhost:443/sign-in');
+  await page.locator('input[name="identifier"]').click();
+  await page.locator('input[name="identifier"]').fill('admin');
+  await page.locator('input[name="password"]').click();
+  await page.locator('input[name="password"]').fill('Updatepassword12345');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.goto('https://localhost:443/portal/researcher');
+  await page.getByTestId('button').nth(1).click();
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
+  await page.getByRole('link', { name: 'Datasets' }).click();
+  await page.getByRole('button', { name: 'Select action' }).nth(2).click();
+  await page.getByRole('option', { name: 'Update dataset' }).click();
+  await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Demo dataset updated');
+  await page.locator('#simplemde-editor-1-wrapper').getByRole('textbox').fill('Demo  updated');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('link', { name: 'Account' }).click();
+  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
+  await expect(page.getByRole('main')).toContainText('Demo dataset updated');
+  await page.getByText('Demo dataset', { exact: true }).click();
+  await expect(page.getByRole('paragraph')).toContainText('Demo dataset updated');
+});
