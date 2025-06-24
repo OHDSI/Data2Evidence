@@ -39,6 +39,7 @@ export default {
             Occurrence: {
               Type: 2, // options: 0: exactly, 1: at most, 2: at least
               Count: 1,
+              CountColumn: 'START_DATE',
             },
           },
           {
@@ -57,6 +58,7 @@ export default {
             Occurrence: {
               Type: 2,
               Count: 1,
+              CountColumn: 'START_DATE',
             },
           },
         ],
