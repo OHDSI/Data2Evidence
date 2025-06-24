@@ -168,18 +168,6 @@
                   "resultsSchema": {
                     "title": "Resultsschema",
                     "type": "string"
-                  },
-                  "excludeAnalysisIds": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Excludeanalysisids"
                   }
                 },
                 "required": [
