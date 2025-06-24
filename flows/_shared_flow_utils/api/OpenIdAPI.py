@@ -45,16 +45,21 @@ class OpenIdAPI(BaseAPI):
         else:
             return result.json()['access_token']
 
-    def isTokenExpiredOrEmpty(self, token: str | None):
-        if (not token):
+    def isTokenExpiredOrEmpty(self, token: str | None) -> bool:
+        if not token:
             return True
 
-        signing_key = self.getSigningKey(token)
         try:
-            jwt.decode(token, signing_key, audience=self.scope,
+            signing_key = self.getSigningKey(token)
+            jwt.decode(token, 
+                       key=signing_key,
+                       audience=self.scope,
                        algorithms=["ES384"])
             # Token can be successfully decoded and is still valid.
             return False
         except jwt.ExpiredSignatureError:
             # Token has expired
+            return True
+        except jwt.InvalidTokenError:
+            # Handle other JWT validation errors
             return True
