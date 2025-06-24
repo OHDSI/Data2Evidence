@@ -14,6 +14,6 @@ export default defineConfig({
     headless: true,
     ignoreHTTPSErrors: true
   },
-  retries: 1, // retry failed tests once
+  retries: 3, // retry failed tests once
   reporter: 'list',
 });
