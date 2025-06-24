@@ -41,7 +41,7 @@ const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
 // Debug mode toggle
-const showDebug = ref(false)
+const showDebug = ref(true)
 
 // Maintain backward compatibility with existing tag input model
 const tagInputModel = computed<TagInputModel>(() => {
@@ -386,7 +386,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
           if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
             conceptSetIds.add(criteriaObj.CodesetId)
           }
-          
+
           // Handle nested CorrelatedCriteria recursively
           if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
             criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
@@ -455,8 +455,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
             const sequentialId = index
             const systemConceptSetId = parseInt(handledConceptSet.value)
 
-            // Update Atlas concept set with sequential ID and system concept set ID
-            atlasConceptSet.id = sequentialId
+            // Update Atlas concept set with system concept set ID (ID will be updated later by updateCodesetIdReferences)
             atlasConceptSet.conceptSetId = systemConceptSetId
 
             // Track the ID mapping (original → sequential)
@@ -656,6 +655,19 @@ const sanitizeConceptSetName = (name: string): string => {
 }
 
 const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+  // Update the ConceptSets array IDs first - this is crucial for converter lookup
+  if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
+    atlasExpression.ConceptSets.forEach((conceptSet: any) => {
+      const originalId = conceptSet.id
+      const newId = idMapping[originalId]
+
+      if (newId !== undefined && newId !== originalId) {
+        console.log(`Updating ConceptSet.id: ${originalId} → ${newId} for concept set "${conceptSet.name}"`)
+        conceptSet.id = newId
+      }
+    })
+  }
+
   // Update CodesetId references in PrimaryCriteria
   if (atlasExpression.PrimaryCriteria?.CriteriaList) {
     atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
@@ -664,7 +676,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
           const originalCodesetId = criteriaItem[key].CodesetId
           const newId = idMapping[originalCodesetId]
 
-          if (newId && newId !== originalCodesetId) {
+          if (newId !== undefined && newId !== originalCodesetId) {
             console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
             criteriaItem[key].CodesetId = newId
           }
@@ -687,7 +699,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
               const originalCodesetId = criteriaItem.Criteria[key].CodesetId
               const newId = idMapping[originalCodesetId]
 
-              if (newId && newId !== originalCodesetId) {
+              if (newId !== undefined && newId !== originalCodesetId) {
                 console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
                 criteriaItem.Criteria[key].CodesetId = newId
               }
@@ -707,6 +719,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
           const newId = idMapping[originalCodesetId]
 
           if (newId !== undefined && newId !== originalCodesetId) {
+            console.log(`Updating CensoringCriteria CodesetId: ${originalCodesetId} → ${newId}`)
             criteriaItem[key].CodesetId = newId
           }
         }
@@ -1124,7 +1137,6 @@ defineExpose({
     width: 90%;
     display: flex;
     justify-content: space-between;
-
   }
   .query-filter-container {
     width: 90%;
