@@ -23,6 +23,11 @@ export const markAsSaved = (state: AppState) => ({
   saved: true,
 });
 
+export const setNodeId = (state: AppState, payload: string) => ({
+  ...state,
+  nodeId: payload,
+});
+
 export const setVocabularybDatasetId = (state: AppState, payload: Partial<AppState>) => ({
   ...state,
   ...payload,
