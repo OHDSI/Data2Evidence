@@ -32,6 +32,7 @@ import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
+import SplashScreen from '@/components/SplashScreen.vue'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -42,6 +43,9 @@ const store = instance?.appContext.config.globalProperties.$store
 
 // Debug mode toggle
 const showDebug = ref(false)
+
+// Loading state
+const isLoading = ref(false)
 
 // Maintain backward compatibility with existing tag input model
 const tagInputModel = computed<TagInputModel>(() => {
@@ -372,6 +376,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
     console.log('Available concept sets:', allConceptSets.value.length)
 
+    isLoading.value = true
+
     // Parse the Atlas expression
     const atlasExpression = JSON.parse(atlasJson.expression)
 
@@ -513,8 +519,10 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
 
     // Load concept set details for all events with concept sets
     await loadConceptSetDetailsForAllEvents()
+    isLoading.value = false
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
+    isLoading.value = false
     throw error
   }
 }
@@ -928,6 +936,9 @@ defineExpose({
 
 <template>
   <div class="query-filter-modern">
+    <!-- Overlay SplashScreen -->
+    <SplashScreen v-if="isLoading" class="splash-overlay" />
+
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
       <div class="query-filter-header-container">
@@ -1080,6 +1091,22 @@ defineExpose({
 .query-filter-modern {
   height: 100%;
   overflow: auto;
+  position: relative;
+
+  // Overlay styles for SplashScreen
+  .splash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .query-filter-debug-header {
     margin-bottom: 16px;
     padding: 12px;
@@ -1124,7 +1151,6 @@ defineExpose({
     width: 90%;
     display: flex;
     justify-content: space-between;
-
   }
   .query-filter-container {
     width: 90%;
