@@ -1143,15 +1143,25 @@ export class QueryFilterCriteriaManager {
   }
 
   // Set criteria (for Atlas loading)
-  setData({ inclusionCriteria, entryEvents }: { inclusionCriteria: InclusionCriteria; entryEvents: any }) {
+  setData({
+    inclusionCriteria,
+    entryEvents,
+    exitEvents,
+  }: {
+    inclusionCriteria: InclusionCriteria
+    entryEvents: EntryEvent
+    exitEvents: ExitEvent
+  }) {
     this.inclusionCriteria = inclusionCriteria
     this.entryEvents = entryEvents
+    this.exitEvents = exitEvents
   }
 
   getData() {
     return {
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
+      exitEvents: this.exitEvents,
     }
   }
 

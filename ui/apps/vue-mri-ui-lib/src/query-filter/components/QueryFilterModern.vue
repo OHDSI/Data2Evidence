@@ -378,16 +378,38 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     const extractConceptSetIds = (expression: any): Set<number> => {
       const conceptSetIds = new Set<number>()
 
+      // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
+      const extractFromCriteria = (criteriaItem: any) => {
+        const criteria = criteriaItem.Criteria || criteriaItem
+        Object.values(criteria).forEach((criteriaObj: any) => {
+          if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
+            conceptSetIds.add(criteriaObj.CodesetId)
+          }
+          
+          // Handle nested CorrelatedCriteria recursively
+          if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
+            criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
+              extractFromCriteria(nestedItem)
+            })
+          }
+        })
+      }
+
       // Extract from InclusionRules
       expression.InclusionRules?.forEach((rule: any) => {
         rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
-          const criteria = criteriaItem.Criteria || criteriaItem
-          Object.values(criteria).forEach((criteriaObj: any) => {
-            if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
-              conceptSetIds.add(criteriaObj.CodesetId)
-            }
-          })
+          extractFromCriteria(criteriaItem)
         })
+      })
+
+      // Extract from PrimaryCriteria
+      expression.PrimaryCriteria?.CriteriaList?.forEach((criteriaItem: any) => {
+        extractFromCriteria(criteriaItem)
+      })
+
+      // Extract from CensoringCriteria
+      expression.CensoringCriteria?.forEach((criteriaItem: any) => {
+        extractFromCriteria(criteriaItem)
       })
 
       return conceptSetIds
@@ -674,6 +696,22 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
       })
     })
   }
+
+  // Update CodesetId references in CensoringCriteria
+  if (atlasExpression.CensoringCriteria) {
+    atlasExpression.CensoringCriteria.forEach((criteriaItem: any) => {
+      Object.keys(criteriaItem).forEach(key => {
+        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
+          const originalCodesetId = criteriaItem[key].CodesetId
+          const newId = idMapping[originalCodesetId]
+
+          if (newId !== undefined && newId !== originalCodesetId) {
+            criteriaItem[key].CodesetId = newId
+          }
+        }
+      })
+    })
+  }
 }
 
 const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
@@ -683,11 +721,11 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
     return null
   }
 
-  // Check if concept set already exists locally
-  if (atlasConceptSet.id) {
-    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.id.toString())
+  // Check if concept set already exists by conceptSetId (system ID)
+  if (atlasConceptSet.conceptSetId) {
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId.toString())
     if (existingConceptSet) {
-      console.log(`Found existing concept set: ${existingConceptSet.text}`)
+      console.log(`Found existing concept set by conceptSetId: ${existingConceptSet.text}`)
       return existingConceptSet
     }
   }
