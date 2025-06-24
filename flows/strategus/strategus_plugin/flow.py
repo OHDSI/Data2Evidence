@@ -171,7 +171,7 @@ def runStrategus(json_graph, options):
 
     analysisSpec = json_graph.get('analysisSpecification', {})
     
-    if(type(analysisSpec) == str):
+    if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
     
     defaultExecutionSettings = json.dumps({
