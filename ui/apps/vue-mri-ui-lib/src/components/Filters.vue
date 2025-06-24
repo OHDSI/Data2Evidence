@@ -9,8 +9,7 @@ export default {
 <template>
   <div class="filters">
     <div ref="filtercardScrollContainer" class="filters-content">
-      <QueryFilter v-if="useQueryFilter" ref="queryFilterRef" />
-      <boolcontainer v-else :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
+      <boolcontainer :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
     </div>
     <filtersFooter
       @add="addFilterCardHandler"
@@ -25,7 +24,6 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
 import filtersFooter from './FiltersFooter.vue'
-import { QueryFilter } from '../query-filter'
 
 interface AddFilterCardPayload {
   configPath: string

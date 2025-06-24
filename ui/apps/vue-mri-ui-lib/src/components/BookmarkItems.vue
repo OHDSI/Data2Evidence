@@ -49,10 +49,8 @@ const {
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
   compareCohortsSelectionList: Bookmark[]
-  useQueryFilterForAtlas?: boolean
+  useQueryFilterForAtlas: boolean
 }>()
-// TODO: use config from PA
-const { useQueryFilterForAtlas = true } = props
 
 const bookmarksDisplaySorted = computed(() => {
   return [...props.bookmarksDisplay].sort((a, b) => {
@@ -113,8 +111,8 @@ const loadAtlasBookmark = atlasDefinitionId => {
 
 const handleBookmarkClick = bookmarkDisplay => {
   if (['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay))) {
-    loadBookmarkCheck(bookmarkDisplay.bookmark.id, bookmarkDisplay.bookmark.chartType)
-  } else if (useQueryFilterForAtlas) {
+    loadBookmarkCheck(bookmarkDisplay.bookmark.id, bookmarkDisplay.bookmark.chartType)    
+  } else if (props.useQueryFilterForAtlas) {
     loadAtlasBookmark(bookmarkDisplay.atlasCohortDefinition.id)
   } else {
     openAtlasLink(bookmarkDisplay.atlasCohortDefinition.id)
