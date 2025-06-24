@@ -119,6 +119,7 @@ export default {
             Occurrence: {
               Type: 2,
               Count: 1,
+              CountColumn: 'START_DATE',
             },
           },
           {
@@ -137,6 +138,7 @@ export default {
             Occurrence: {
               Type: 2,
               Count: 1,
+              CountColumn: 'START_DATE',
             },
           },
         ],
