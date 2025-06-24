@@ -228,6 +228,16 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     [setConversationHistory]
   );
 
+  const handleChatOpen = useCallback(() => {
+    setOpen(!open);
+    setTimeout(() => {
+      const container = document.querySelector(".nlux-chatSegments-container");
+      if (container && container.lastElementChild) {
+        (container.lastElementChild as HTMLElement).scrollIntoView({ behavior: "auto", block: "end" });
+      }
+    }, 0);
+  }, [open]);
+
   useEffect(() => {
     fetchNotebooks();
   }, [fetchNotebooks]);
@@ -278,13 +288,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           <div id="starboard-root" />
           <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
           <div className="starboard-button-container">
-            <Fab
-              color="primary"
-              aria-label="assistant"
-              onClick={() => {
-                setOpen(!open);
-              }}
-            >
+            <Fab color="primary" aria-label="assistant" onClick={handleChatOpen}>
               <ChatIcon />
             </Fab>
           </div>
