@@ -40,6 +40,8 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
   const [open, setOpen] = useState(false);
   const { setConversationHistory } = useConversationHistory();
 
+  const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
+
   const activeDatasetId = metadata?.studyId!;
 
   const setupPYQE = `\n#%% [python]
@@ -162,8 +164,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [fetchNotebooks, updateActiveNotebook, setFeedback, activeDatasetId]
   );
-
-  const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
 
   const handleCreateNotebook = useCallback(() => {
     openTemplateDialog();

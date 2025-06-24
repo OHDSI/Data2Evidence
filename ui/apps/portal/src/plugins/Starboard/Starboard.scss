@@ -10,9 +10,19 @@
 
   &-content {
     display: flex;
+    gap: 10px;
   }
 }
 
 #starboard-root {
-  flex:1
+  flex: 7 1 0%;
+}
+
+/* If chat is not rendered, starboard-root should take 100% */
+.starboard-content:has(.chat-container:empty),
+.starboard-content:not(:has(.chat-container)) {
+  #starboard-root {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
 }

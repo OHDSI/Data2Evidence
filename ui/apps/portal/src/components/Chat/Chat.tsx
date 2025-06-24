@@ -64,9 +64,10 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
       className="chat-container"
       in={open}
       onExited={() => {
-        if (onClose) onClose(history);
+        handleClose();
       }}
       unmountOnExit
+      timeout={0}
     >
       <AiChat
         api={api}

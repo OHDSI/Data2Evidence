@@ -1,9 +1,12 @@
-.nlux_msg_sent, .nlux-comp-sendIcon-container{
-    background-color: #000080 !important;
+.nlux_msg_sent,
+.nlux-comp-sendIcon-container {
+  background-color: #000080 !important;
 }
 
 .chat {
-    &-container {
-        flex:1
-    }
+  &-container {
+    flex: 3 1 0%;
+    min-width: 0;
+    height: 100%;
+  }
 }
