@@ -1,0 +1,19 @@
+name: Sync Milestone Dates to Project Fields
+
+on:
+  issues:
+    types: [milestoned, demilestoned]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync_dates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Milestone to Issue Dates
+        uses: campbellbarton/github-issue-milestone-sync-date@v1.1.0
+        with:
+          start-date-field: "Start date"
+          target-date-field: "Target date"
