@@ -16,4 +16,5 @@ export default defineConfig({
   },
   retries: 3, // retry failed tests once
   reporter: 'list',
+  workers: 1
 });
