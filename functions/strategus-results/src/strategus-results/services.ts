@@ -141,7 +141,7 @@ const getKernel = async (
       (kernel: IKernelModel) => kernel.username === studyId
     );
   } catch (error) {
-    throw new Error("Failed to ");
+    throw new Error("Failed to get kernel");
   }
 };
 
