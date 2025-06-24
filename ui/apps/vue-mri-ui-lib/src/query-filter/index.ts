@@ -14,7 +14,6 @@ export { default as QueryFilterEventCard } from './components/QueryFilterEventCa
 // Models and types
 export * from './models/QueryFilterModel'
 export * from './models/AtlasCohortDefinition'
-export * from './models/AtlasCohortAdapter'
 
 // Utils
 export * from './utils/CriteriaConfigLoader'
