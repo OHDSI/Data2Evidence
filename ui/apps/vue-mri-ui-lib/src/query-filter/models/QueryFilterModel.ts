@@ -823,25 +823,13 @@ export class QueryFilterCriteriaManager {
       CensorWindow: {},
     }
 
-    // Add PrimaryCriteria if any events have conceptSetDetails with actual data
-    const hasConceptSets = (this.inclusionCriteria.criteria || []).some((group: QueryFilterGroup) =>
-      group.events.some(e => e.conceptSetDetails && e.conceptSetDetails.length > 0)
-    )
-    if (hasConceptSets) {
-      atlasDef.PrimaryCriteria.CriteriaList = [
-        {
-          ObservationPeriod: {
-            PeriodStartDate: {
-              Value: '1800-01-01',
-              Op: 'gt',
-            },
-            PeriodEndDate: {
-              Value: '2999-01-01',
-              Op: 'lt',
-            },
-          },
-        },
-      ]
+    // Convert entryEvents to PrimaryCriteria.CriteriaList
+    if (this.entryEvents?.events && this.entryEvents.events.length > 0) {
+      atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events.map(event => ({
+        [this.mapEventTypeToAtlas(event.eventType)]: {
+          CodesetId: systemIdToAtlasId.get(event.conceptSetId)
+        }
+      }))
       atlasDef.cdmVersionRange = '>=5.0.0'
     }
 
