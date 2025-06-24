@@ -31,6 +31,7 @@ import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValue
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
+import ButtonMaterial from './ButtonMaterial.vue'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -929,6 +930,14 @@ defineExpose({
   <div class="query-filter-modern">
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
+      <div class="query-filter-header-container">
+        <div class="header-container-right"></div>
+        <div class="header-container-left">
+          <div class="left-button-group">
+            <ButtonMaterial>Save</ButtonMaterial>
+          </div>
+        </div>
+      </div>
       <div class="query-filter-container">
         <div class="query-filter-container__section">
           <QueryFilterEntryExit
@@ -1069,6 +1078,8 @@ defineExpose({
 
 <style lang="scss" scoped>
 .query-filter-modern {
+  height: 100%;
+  overflow: auto;
   .query-filter-debug-header {
     margin-bottom: 16px;
     padding: 12px;
@@ -1106,10 +1117,15 @@ defineExpose({
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     padding: 16px 0 16px 0;
-    // overflow: hidden;
     // margin-bottom: 16px;
   }
 
+  .query-filter-header-container {
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+
+  }
   .query-filter-container {
     width: 90%;
     // padding: 16px;

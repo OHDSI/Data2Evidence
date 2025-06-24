@@ -463,9 +463,9 @@ export default {
     },
     async handleLoadAtlasCohortDefinition(atlasJson) {
       try {
-        // Access the QueryFilter component in Filters.vue through the ref
+        await this.$nextTick()
         if (this.$refs.queryFilterRef) {
-          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)          
         } else {
           console.error('QueryFilter ref not found in Filters component')
         }
