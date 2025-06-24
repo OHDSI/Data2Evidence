@@ -7,11 +7,12 @@ import "./MappingLayout.css";
 
 interface MappingLayoutProps {
   mappingSuggestion?: boolean;
+  nodeId?: string;
   data?: AppState;
 }
 
-export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, data }) => {
-  const { load, reset, setMappingSuggestion, setPage, state } = useApp();
+export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, nodeId, data }) => {
+  const { load, reset, setMappingSuggestion, setNodeId, setPage, state } = useApp();
 
   useEffect(() => {
     if (data) {
@@ -20,6 +21,7 @@ export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, data 
       reset();
     }
     setPage("table");
+    setNodeId(nodeId || "");
     setMappingSuggestion(mappingSuggestion || false);
   }, [mappingSuggestion, data]);
 
