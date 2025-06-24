@@ -186,6 +186,11 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
     .query-filter-event-container {
       flex: 1;
       padding: 8px 16px;
+
+      // Hide event sidebar in this component. Affects nested components..
+      ::v-deep(.event-sidebar) {
+        display: none;
+      }
     }
   }
 
