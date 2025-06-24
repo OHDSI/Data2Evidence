@@ -11,11 +11,7 @@ export default {
     <div ref="filtercardScrollContainer" class="filters-content">
       <boolcontainer :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
     </div>
-    <filtersFooter
-      @add="addFilterCardHandler"
-      @save-atlas-cohort="handleSaveAtlasCohort"
-      :is-using-query-filter="useQueryFilter"
-    ></filtersFooter>
+    <filtersFooter @add="addFilterCardHandler" :is-using-query-filter="useQueryFilter"></filtersFooter>
   </div>
 </template>
 
@@ -58,46 +54,5 @@ const addFilterCardHandler = ({ configPath }: AddFilterCardPayload) => {
 
 const toggleExclusion = (isToggled: boolean) => {
   showExclusion.value = isToggled
-}
-
-const handleSaveAtlasCohort = async (cohortData: any) => {
-  if (useQueryFilter.value && queryFilterRef.value) {
-    // Get the Atlas JSON from QueryFilter component
-    const atlasJson = queryFilterRef.value.convertToAtlasFormat()
-
-    // Create a complete cohort definition with all required fields
-    const now = Date.now() // Use timestamp instead of ISO string
-    const cohortDefinition = {
-      name: cohortData.name,
-      description: cohortData.description || `Cohort definition created from QueryFilter`,
-      expressionType: 'SIMPLE_EXPRESSION',
-      expression: JSON.stringify(atlasJson),
-      tags: cohortData.tags || [],
-      createdBy: 'current_user', // This should come from user context
-      createdDate: now,
-      modifiedBy: 'current_user', // This should come from user context
-      modifiedDate: now,
-    }
-    console.log('cohortData', cohortData)
-    try {
-      if (cohortData.id) {
-        // Parse ID as integer
-        const numericId = parseInt(cohortData.id)
-
-        // Update existing cohort
-        await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
-          content: {
-            id: numericId,
-            ...cohortDefinition,
-          },
-        })
-      } else {
-        // Create new cohort
-        await store.dispatch('fireCreateAtlasCohortDefinitionQuery', { content: cohortDefinition })
-      }
-    } catch (error) {
-      console.error('Error saving Atlas cohort:', error)
-    }
-  }
 }
 </script>

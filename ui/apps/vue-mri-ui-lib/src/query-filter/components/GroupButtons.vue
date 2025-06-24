@@ -24,6 +24,7 @@ const emit = defineEmits(['update-limit-value'])
 const selectedOption = ref(props.limitValue || props.options[0]?.value || '')
 
 const prefix = props.namePrefix ? `${props.namePrefix}-` : ''
+const radioGroupName = `button-radio-${prefix}group`
 // Watch for external changes to modelValue
 watch(
   () => props.limitValue,
@@ -44,7 +45,7 @@ watch(selectedOption, newValue => {
       <input
         type="radio"
         class="button-check"
-        name="button-radio"
+        :name="radioGroupName"
         :id="`input-${option.value}-${index}-${prefix}`"
         v-model="selectedOption"
         :value="option.value"
@@ -155,4 +156,3 @@ watch(selectedOption, newValue => {
   font-size: 0.75rem;
 }
 </style>
-

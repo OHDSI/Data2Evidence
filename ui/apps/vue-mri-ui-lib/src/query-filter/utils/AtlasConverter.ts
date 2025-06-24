@@ -39,14 +39,8 @@ export const convertAtlasToFilters = (
 
       // Require conceptSetId to be set
       if (!systemConceptSetId) {
-        console.error(
-          `Atlas concept set ${atlasConceptSet.name} has no conceptSetId - concept set was not properly processed`
-        )
-        return {
-          name: `Unknown Concept Set (ID: ${codesetId})`,
-          id: codesetId.toString(),
-          conceptSetItem: null,
-        }
+        console.error(`Atlas concept set ${atlasConceptSet.name} has no conceptSetId`)
+        return null
       }
       const localConceptSet = availableConceptSets.find(cs => cs.value == systemConceptSetId.toString())
 
@@ -309,7 +303,7 @@ export const convertAtlasToFilters = (
   // Process CensoringCriteria for exitEvents
   const exitEvents = {
     endStrategy: 'CONT_OBS' as const,
-    censoringCriteria: [] as QueryFilterEvent[]
+    censoringCriteria: [] as QueryFilterEvent[],
   }
 
   if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
@@ -322,13 +316,13 @@ export const convertAtlasToFilters = (
     primaryCriteriaLimit: 'ALL' as const,
     events: [] as QueryFilterEvent[],
     priorDays: 0,
-    postDays: 0
+    postDays: 0,
   }
 
   if (cohortDefinition.PrimaryCriteria?.CriteriaList) {
     console.log(`🔧 Processing ${cohortDefinition.PrimaryCriteria.CriteriaList.length} primary criteria`)
     entryEvents.events = convertCriteriaListToEvents(cohortDefinition.PrimaryCriteria.CriteriaList)
-    
+
     // Add observation window if present
     if (cohortDefinition.PrimaryCriteria.ObservationWindow) {
       entryEvents.priorDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PriorDays || 0

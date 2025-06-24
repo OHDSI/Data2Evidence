@@ -33,6 +33,9 @@ import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
+import messageBox from '../../components/MessageBox.vue'
+import appButton from '../../lib/ui/app-button.vue'
+import appCheckbox from '../../lib/ui/app-checkbox.vue'
 
 // No props needed currently - removed Props interface to fix TypeScript error
 
@@ -42,7 +45,14 @@ const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
 // Debug mode toggle
-const showDebug = ref(false)
+const showDebug = ref(true)
+
+// Save dialog state
+const showSaveDialog = ref(false)
+const cohortName = ref('')
+const shareBookmark = ref(false)
+const isInvalidName = ref(false)
+const maxLength = 40
 
 // Loading state
 const isLoading = ref(false)
@@ -216,6 +226,15 @@ const selectedConceptSetValues = computed(() => {
   }
 })
 
+const getText = (key: string, ...args: any[]) => {
+  return store?.getters?.getText?.(key, ...args) || key
+}
+
+// Save dialog validation computed properties
+const hasExceededLength = computed(() => {
+  return cohortName.value.length >= maxLength
+})
+
 const initializeComponent = () => {
   // Clear the criteria manager instead of filters
   criteriaManager.clearAllCriteria()
@@ -377,9 +396,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Available concept sets:', allConceptSets.value.length)
 
     isLoading.value = true
-
-    // Parse the Atlas expression
-    const atlasExpression = JSON.parse(atlasJson.expression)
+    const atlasExpression = atlasJson.expression
 
     // Extract concept set IDs from criteria even if ConceptSets array is empty
     const extractConceptSetIds = (expression: any): Set<number> => {
@@ -392,7 +409,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
           if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
             conceptSetIds.add(criteriaObj.CodesetId)
           }
-          
+
           // Handle nested CorrelatedCriteria recursively
           if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
             criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
@@ -461,8 +478,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
             const sequentialId = index
             const systemConceptSetId = parseInt(handledConceptSet.value)
 
-            // Update Atlas concept set with sequential ID and system concept set ID
-            atlasConceptSet.id = sequentialId
+            // Update Atlas concept set with system concept set ID (ID will be updated later by updateCodesetIdReferences)
             atlasConceptSet.conceptSetId = systemConceptSetId
 
             // Track the ID mapping (original → sequential)
@@ -664,6 +680,19 @@ const sanitizeConceptSetName = (name: string): string => {
 }
 
 const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+  // Update the ConceptSets array IDs first - this is crucial for converter lookup
+  if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
+    atlasExpression.ConceptSets.forEach((conceptSet: any) => {
+      const originalId = conceptSet.id
+      const newId = idMapping[originalId]
+
+      if (newId !== undefined && newId !== originalId) {
+        console.log(`Updating ConceptSet.id: ${originalId} → ${newId} for concept set "${conceptSet.name}"`)
+        conceptSet.id = newId
+      }
+    })
+  }
+
   // Update CodesetId references in PrimaryCriteria
   if (atlasExpression.PrimaryCriteria?.CriteriaList) {
     atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
@@ -672,7 +701,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
           const originalCodesetId = criteriaItem[key].CodesetId
           const newId = idMapping[originalCodesetId]
 
-          if (newId && newId !== originalCodesetId) {
+          if (newId !== undefined && newId !== originalCodesetId) {
             console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
             criteriaItem[key].CodesetId = newId
           }
@@ -695,7 +724,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
               const originalCodesetId = criteriaItem.Criteria[key].CodesetId
               const newId = idMapping[originalCodesetId]
 
-              if (newId && newId !== originalCodesetId) {
+              if (newId !== undefined && newId !== originalCodesetId) {
                 console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
                 criteriaItem.Criteria[key].CodesetId = newId
               }
@@ -715,6 +744,7 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
           const newId = idMapping[originalCodesetId]
 
           if (newId !== undefined && newId !== originalCodesetId) {
+            console.log(`Updating CensoringCriteria CodesetId: ${originalCodesetId} → ${newId}`)
             criteriaItem[key].CodesetId = newId
           }
         }
@@ -927,6 +957,80 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
   }
 }
 
+// Save dialog methods
+const openSaveDialog = () => {
+  showSaveDialog.value = true
+
+  // Default to existing bookmark name if available
+  const activeBookmark = store?.getters?.getActiveBookmark
+  cohortName.value = activeBookmark?.bookmarkname || activeBookmark?.name || ''
+
+  isInvalidName.value = false
+}
+
+const closeSaveDialog = () => {
+  showSaveDialog.value = false
+  cohortName.value = ''
+  isInvalidName.value = false
+}
+
+const saveAtlasCohort = async () => {
+  try {
+    if (!cohortName.value.trim()) {
+      isInvalidName.value = true
+      return
+    }
+
+    if (hasExceededLength.value) {
+      return
+    }
+
+    // Get the Atlas format JSON
+    const atlasExpression = convertToAtlasFormat()
+
+    // Get current user info
+    const portalAPI = getPortalAPI()
+    const username = portalAPI?.username || 'system'
+    const currentDatasetId = getDatasetId()
+
+    if (!currentDatasetId) {
+      console.error('Cannot save cohort: Dataset ID not available')
+      return
+    }
+
+    // Create cohort definition object
+    const cohortDefinition = {
+      name: cohortName.value.trim(),
+      description: `Atlas cohort definition created from QueryFilter`,
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: atlasExpression,
+      tags: [],
+      createdBy: username,
+      createdDate: Date.now(),
+      modifiedBy: username,
+      modifiedDate: Date.now(),
+      hasWriteAccess: true,
+      hasReadAccess: true,
+    }
+
+    console.log('Saving Atlas cohort:', cohortDefinition)
+
+    const activeBookmark = store?.getters?.getActiveBookmark
+
+    await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
+      content: {
+        id: parseInt(activeBookmark.bmkId),
+        ...cohortDefinition,
+      },
+    })
+
+    console.log('Atlas cohort saved successfully')
+    closeSaveDialog()
+  } catch (error) {
+    console.error('Error saving Atlas cohort:', error)
+  }
+}
+
 // Expose functions so parent components can access them
 defineExpose({
   convertToAtlasFormat,
@@ -945,7 +1049,7 @@ defineExpose({
         <div class="header-container-right"></div>
         <div class="header-container-left">
           <div class="left-button-group">
-            <ButtonMaterial>Save</ButtonMaterial>
+            <ButtonMaterial @click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1084,6 +1188,67 @@ defineExpose({
         </div>
       </div>
     </div>
+
+    <!-- Save Dialog -->
+    <messageBox v-if="showSaveDialog" dim="true" @close="closeSaveDialog">
+      <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') || 'Save Cohort' }}</template>
+      <template v-slot:body>
+        <div>
+          <div class="save-bookmark">
+            <div class="form-group">
+              <div class="name">
+                <div class="row">
+                  <div class="col-sm-12 form-check col-form-label">
+                    <label>Enter a name for the cohort:</label>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <input
+                      class="form-control"
+                      :class="{ 'is-invalid': isInvalidName }"
+                      :placeholder="getText('MRI_PA_COLL_ENTER_NAME') || 'Enter cohort name'"
+                      v-model="cohortName"
+                      tabindex="0"
+                      required
+                      :maxlength="maxLength"
+                    />
+                    <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
+                      Please enter a valid name
+                    </div>
+                    <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
+                      Cohort name must not exceed {{ maxLength }} characters
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row row-checkbox">
+                <appCheckbox
+                  v-model="shareBookmark"
+                  :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT') || 'Share this cohort with other users'"
+                  :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE') || 'Make this cohort available to other users'"
+                ></appCheckbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template v-slot:footer>
+        <div class="flex-spacer"></div>
+        <appButton
+          :click="saveAtlasCohort"
+          :text="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
+          :tooltip="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
+          :disabled="hasExceededLength || !cohortName.trim()"
+        ></appButton>
+        <appButton
+          :click="closeSaveDialog"
+          :text="getText('MRI_PA_BUTTON_CANCEL') || 'Cancel'"
+          :tooltip="getText('MRI_PA_BUTTON_CANCEL') || 'Cancel'"
+        ></appButton>
+      </template>
+    </messageBox>
   </div>
 </template>
 

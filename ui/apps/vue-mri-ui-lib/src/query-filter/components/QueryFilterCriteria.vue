@@ -14,6 +14,7 @@ import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import ButtonMaterial from './ButtonMaterial.vue'
 import AddIcon from './icons/AddIcon.vue'
+import GroupButtons from './GroupButtons.vue'
 
 interface Props {
   criteriaData?: any
@@ -47,6 +48,16 @@ const updateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
   emit('update-qualifying-limit', limit)
 }
 
+const qualifyingEventsOptions = [
+  { value: 'EARLIEST', label: 'Earliest' },
+  { value: 'ALL', label: 'All' },
+  { value: 'LATEST', label: 'Latest' },
+]
+
+const currentQualifyingLimit = computed(() => {
+  return currentCriteriaData.value.criteriaType || 'ALL'
+})
+
 // Handle adding new criteria group
 const addNewGroup = () => {
   const newGroup = {
@@ -75,23 +86,20 @@ const handleGroupRemove = (groupIndex: number) => {
   <div class="query-filter-criteria">
     <!-- Qualifying Events Limit Controls -->
     <div class="criteria-header">
-      <h3 class="criteria-title">Inclusion Criteria</h3>
+      <div class="criteria-title-container">
+        <h3 class="criteria-title">Inclusion Criteria</h3>
+      </div>
 
       <div class="qualifying-events-controls">
-        <button
-          v-for="limit in ['EARLIEST', 'ALL', 'LATEST']"
-          :key="limit"
-          class="qualifying-events-btn"
-          :class="{
-            'qualifying-events-btn--active': currentCriteriaData.criteriaType === limit,
-            'qualifying-events-btn--readonly': readonly,
-          }"
-          :disabled="readonly"
-          @click="updateQualifyingLimit(limit as 'ALL' | 'EARLIEST' | 'LATEST')"
-        >
-          {{ limit }}
-        </button>
+        <GroupButtons
+          :options="qualifyingEventsOptions"
+          :limitValue="currentQualifyingLimit"
+          :namePrefix="'criteria'"
+          @update-limit-value="updateQualifyingLimit"
+        />
       </div>
+
+      <div class="shadow-container"></div>
     </div>
 
     <!-- Criteria Groups with Sidebar -->
@@ -110,12 +118,12 @@ const handleGroupRemove = (groupIndex: number) => {
             <span class="btn-add-group__text">Add Criteria Group</span>
           </button> -->
 
-         <ButtonMaterial variant="text" color="primary" @click="addNewGroup">
-      <template #startIcon>
-        <AddIcon /> 
-      </template>
-        Add group
-    </ButtonMaterial>
+          <ButtonMaterial variant="text" color="primary" @click="addNewGroup">
+            <template #startIcon>
+              <AddIcon />
+            </template>
+            Add group
+          </ButtonMaterial>
         </div>
         <QueryFilterCriteriaGroup
           v-for="(group, index) in currentCriteriaData.criteria"
@@ -139,10 +147,21 @@ const handleGroupRemove = (groupIndex: number) => {
 .query-filter-criteria {
   .criteria-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e0e0e0;
     position: relative;
     padding: 16px;
+
+    .criteria-title-container,
+    .shadow-container {
+      flex: 1;
+    }
+    .qualifying-events-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   }
 
   .criteria-title {
@@ -150,78 +169,6 @@ const handleGroupRemove = (groupIndex: number) => {
     font-size: 18px;
     font-weight: 600;
     color: #fe5e59;
-  }
-
-  .qualifying-events-controls {
-    display: inline-flex;
-    background: white;
-    border-radius: 8px;
-    border: 2px solid #000080;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    overflow: hidden;
-    width: 280px;
-  }
-
-  .qualifying-events-btn {
-    flex: 1;
-    padding: 8px 12px;
-    border: none;
-    background: transparent;
-    border-radius: 6px;
-    &:not(:first-child) {
-      border-left: #000080 2px solid;
-    }
-    font-size: 14px;
-    font-weight: 600;
-    color: #000080;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    white-space: nowrap;
-
-    &:hover:not(:disabled):not(.qualifying-events-btn--active) {
-      background: rgba(30, 58, 138, 0.05);
-    }
-
-    &--active {
-      background: #000080;
-      color: white;
-      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
-    }
-
-    &--readonly {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    // Remove border radius for middle button
-    &:not(:first-child):not(:last-child) {
-      border-radius: 0;
-    }
-
-    // First button - rounded left only
-    &:first-child {
-      border-radius: 6px 0 0 6px;
-    }
-
-    // Last button - rounded right only
-    &:last-child {
-      border-radius: 0 6px 6px 0;
-    }
-
-    // If only one button (shouldn't happen but just in case)
-    &:only-child {
-      border-radius: 6px;
-    }
   }
 
   .criteria-groups-layout {

@@ -63,33 +63,32 @@ const buttonOptions = computed(() => {
 const isEntry = computed(() => props.type === 'ENTRY')
 
 const initialEventsLimit = computed(() => {
-    if (isEntry.value) {
-      return props.primaryEventsData?.primaryCriteriaLimit || 'ALL'
-    } else {
-      return props.exitCriteriaData?.endStrategy || 'CONT_OBS'
-    }
+  if (isEntry.value) {
+    return props.primaryEventsData?.primaryCriteriaLimit || 'ALL'
+  } else {
+    return props.exitCriteriaData?.endStrategy || 'CONT_OBS'
+  }
 })
 
 const priorDays = computed(() => {
-  return isEntry.value && props.primaryEventsData?.priorDays || 0
+  return (isEntry.value && props.primaryEventsData?.priorDays) || 0
 })
 
 const postDays = computed(() => {
-  return isEntry.value && props.primaryEventsData?.postDays || 0
+  return (isEntry.value && props.primaryEventsData?.postDays) || 0
 })
 
-const eventsData = computed(() => {    
+const eventsData = computed(() => {
   return isEntry.value ? props.primaryEventsData?.events || [] : props.exitCriteriaData?.censoringCriteria || []
 })
 
 const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
   if (isEntry.value) {
     props.primaryEventsData.events = [...updatedEvents]
-  } else {    
+  } else {
     props.exitCriteriaData.censoringCriteria = [...updatedEvents]
   }
 }
-
 </script>
 
 <template>
@@ -100,11 +99,22 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
       </div>
 
       <div class="qualifying-events-controls">
-        <GroupButtons :options="buttonOptions" :small="!isEntry" :limitValue="initialEventsLimit" @update-limit-value="updateLimitValue"/>
+        <GroupButtons
+          :options="buttonOptions"
+          :small="!isEntry"
+          :limitValue="initialEventsLimit"
+          :namePrefix="type.toLowerCase()"
+          @update-limit-value="updateLimitValue"
+        />
       </div>
 
       <div class="shadow-container">
-        <ObservationPeriodBlock v-if="isEntry" :priorDays="priorDays" :postDays="postDays" @update-entry-days="updateEntryDaysValue"/>
+        <ObservationPeriodBlock
+          v-if="isEntry"
+          :priorDays="priorDays"
+          :postDays="postDays"
+          @update-entry-days="updateEntryDaysValue"
+        />
       </div>
     </div>
 
@@ -323,4 +333,3 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
   }
 }
 </style>
-
