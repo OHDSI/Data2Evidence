@@ -47,7 +47,7 @@ test('jobs-execute-view-log', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible();
   // Check job logs for job: dqd_demo
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
-  await expect(page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:')).toBeVisible();
+  await page.getByText('LogsTask RunsSubflow RunsArtifactsDetailsParametersJob Variables Level:').first().waitFor({ state: 'visible' });
   await page.getByText('Logs', { exact: true }).click();
   await expect(page.getByRole('code')).toContainText('Worker \'prefect-docker-worker\' submitting flow run', {timeout: 100000});
 });
