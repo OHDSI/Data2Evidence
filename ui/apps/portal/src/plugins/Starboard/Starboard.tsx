@@ -274,19 +274,20 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         activeDatasetId={activeDatasetId}
       />
       <Card>
-        <Fab
-          color="primary"
-          aria-label="assistant"
-          onClick={() => {
-            setOpen(!open);
-          }}
-          className="chat-button"
-        >
-          <ChatIcon />
-        </Fab>
         <div className="starboard-content">
           <div id="starboard-root" />
           <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
+          <div className="starboard-button-container">
+            <Fab
+              color="primary"
+              aria-label="assistant"
+              onClick={() => {
+                setOpen(!open);
+              }}
+            >
+              <ChatIcon />
+            </Fab>
+          </div>
         </div>
       </Card>
       {showTemplateDialog && (

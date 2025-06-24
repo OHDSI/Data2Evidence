@@ -4,18 +4,23 @@
     overflow: hidden;
     padding: 32px;
   }
-  .chat-button {
-    align-self: flex-end;
+
+  &-button-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
   }
 
   &-content {
     display: flex;
     gap: 10px;
+    height: calc(100vh - 240px);
   }
 }
 
 #starboard-root {
   flex: 7 1 0%;
+  overflow: auto;
 }
 
 /* If chat is not rendered, starboard-root should take 100% */
