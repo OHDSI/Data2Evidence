@@ -1,35 +1,46 @@
-import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
-import ChatIcon from "@mui/icons-material/Chat";
-import Fab from "@mui/material/Fab";
-import { ChatItem } from "@nlux/react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { Card, Loader } from "@portal/components";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import React, { FC, useCallback, useEffect, useState } from "react";
-import { api } from "../../axios/api";
-import Chat from "../../components/Chat/Chat";
+import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
+
 import { useConversationHistory, useFeedback, useTranslation } from "../../contexts";
 import { i18nKeys } from "../../contexts/app-context/states";
-import env from "../../env";
 import { useDialogHelper } from "../../hooks";
+import { api } from "../../axios/api";
+
 import { EmptyNotebook } from "./components/EmptyNotebook";
 import { Header } from "./components/NotebookHeader/NotebookHeader";
 import { NotebookTemplateDialog } from "./components/NotebookTemplateDialog/NotebookTemplateDialog";
-import "./Starboard.scss";
 import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
 import { StarboardNotebook } from "./utils/notebook";
+
+import Chat from "../../components/Chat/Chat";
+import ChatIcon from "@mui/icons-material/Chat";
+import Fab from "@mui/material/Fab";
+import { ChatItem } from "@nlux/react";
+import env from "../../env";
+import "./Starboard.scss";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
-  const [open, setOpen] = useState(false);
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const activeDatasetId = metadata?.studyId!;
-  // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
+  const [unsaved, setUnsaved] = useState(false);
+
+  const [runtime, setRuntime] = useState<StarboardEmbed>();
+  const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
+  const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
+  const [isShared, setIsShared] = useState<boolean | undefined>();
+
+  const [open, setOpen] = useState(false);
+  const { setConversationHistory } = useConversationHistory();
+
+  const activeDatasetId = metadata?.studyId!;
 
   const setupPYQE = `\n#%% [python]
 import os
@@ -40,14 +51,6 @@ await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-p
 os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
 os.environ['TOKEN'] = '${jwtToken}'
 os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
-
-  const [runtime, setRuntime] = useState<StarboardEmbed>();
-  const [unsaved, setUnsaved] = useState(false);
-
-  const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
-  const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
-  const [isShared, setIsShared] = useState<boolean | undefined>();
-  const { setConversationHistory } = useConversationHistory();
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -74,10 +77,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [setFeedback, getText, updateActiveNotebook, activeDatasetId]
   );
-
-  useEffect(() => {
-    fetchNotebooks();
-  }, [fetchNotebooks]);
 
   const loadNotebookContent = useCallback(
     async (notebookContent: string) => {
@@ -108,13 +107,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [jwtToken, metadata, activeDatasetId, setupPYQE]
   );
-
-  useEffect(() => {
-    if (notebooks?.length !== 0 && activeNotebook && activeNotebook !== undefined) {
-      const notebookContent = activeNotebook?.notebookContent || "";
-      loadNotebookContent(notebookContent);
-    }
-  }, [activeNotebook, loadNotebookContent, notebooks]);
 
   const handleReadContent = useCallback(() => {
     return runtime?.notebookContent || "";
@@ -236,6 +228,17 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     [setConversationHistory]
   );
 
+  useEffect(() => {
+    fetchNotebooks();
+  }, [fetchNotebooks]);
+
+  useEffect(() => {
+    if (notebooks?.length !== 0 && activeNotebook && activeNotebook !== undefined) {
+      const notebookContent = activeNotebook?.notebookContent || "";
+      loadNotebookContent(notebookContent);
+    }
+  }, [activeNotebook, loadNotebookContent, notebooks]);
+
   if (loading) {
     return <Loader />;
   }
@@ -260,7 +263,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   return (
     <div className="starboard">
       <Header
-        metadata={metadata}
         notebooks={notebooks}
         activeNotebook={activeNotebook}
         updateActiveNotebook={updateActiveNotebook}
