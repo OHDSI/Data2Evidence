@@ -624,6 +624,77 @@ export class QueryFilterCriteriaManager {
       })
     })
 
+    // Also collect concept sets from entryEvents.events
+    if (this.entryEvents?.events) {
+      this.entryEvents.events.forEach(event => {
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
+          const systemConceptSetId = event.conceptSetId
+          if (!usedConceptSetIds.has(systemConceptSetId)) {
+            usedConceptSetIds.add(systemConceptSetId)
+            const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
+            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+            const conceptSetDef: any = {
+              id: atlasSequentialId, // Sequential ID for Atlas JSON
+              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+              expression: {
+                items: event.conceptSetDetails,
+              },
+            }
+
+            // Add conceptSetId field with system database ID
+            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+            conceptSets.push(conceptSetDef)
+          }
+        }
+      })
+    }
+
+    // Also collect concept sets from exitEvents.censoringCriteria
+    if (this.exitEvents?.censoringCriteria) {
+      console.log(
+        '🔧 convertToAtlasFormat: Collecting concept sets from censoring criteria:',
+        this.exitEvents.censoringCriteria.length
+      )
+      this.exitEvents.censoringCriteria.forEach((event, index) => {
+        console.log(`🔧 Censoring event ${index}:`, {
+          conceptSetId: event.conceptSetId,
+          conceptSet: event.conceptSet,
+          hasDetails: !!event.conceptSetDetails?.length,
+          detailsCount: event.conceptSetDetails?.length || 0,
+        })
+        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
+          const systemConceptSetId = event.conceptSetId
+          if (!usedConceptSetIds.has(systemConceptSetId)) {
+            usedConceptSetIds.add(systemConceptSetId)
+            const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
+            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+            const conceptSetDef: any = {
+              id: atlasSequentialId, // Sequential ID for Atlas JSON
+              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+              expression: {
+                items: event.conceptSetDetails,
+              },
+            }
+
+            // Add conceptSetId field with system database ID
+            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+            conceptSets.push(conceptSetDef)
+            console.log(
+              `🔧 Added censoring concept set:`,
+              conceptSetDef.name,
+              `(Atlas ID: ${atlasSequentialId}, System ID: ${systemConceptSetId})`
+            )
+          }
+        } else {
+          console.log(`🔧 Skipping censoring event ${index}: missing details or already processed`)
+        }
+      })
+    }
+
     const atlasDef: any = {
       ConceptSets: conceptSets, // Now populated with all concept sets
       PrimaryCriteria: {
@@ -784,7 +855,11 @@ export class QueryFilterCriteriaManager {
         }
       }),
       EndStrategy: {},
-      CensoringCriteria: [],
+      CensoringCriteria: (this.exitEvents?.censoringCriteria || []).map(event => ({
+        [this.mapEventTypeToAtlas(event.eventType)]: {
+          CodesetId: systemIdToAtlasId.get(event.conceptSetId), // Use Atlas sequential ID
+        },
+      })),
       CollapseSettings: {
         CollapseType: 'ERA',
         EraPad: 0,
@@ -792,25 +867,13 @@ export class QueryFilterCriteriaManager {
       CensorWindow: {},
     }
 
-    // Add PrimaryCriteria if any events have conceptSetDetails with actual data
-    const hasConceptSets = (this.inclusionCriteria.criteria || []).some((group: QueryFilterGroup) =>
-      group.events.some(e => e.conceptSetDetails && e.conceptSetDetails.length > 0)
-    )
-    if (hasConceptSets) {
-      atlasDef.PrimaryCriteria.CriteriaList = [
-        {
-          ObservationPeriod: {
-            PeriodStartDate: {
-              Value: '1800-01-01',
-              Op: 'gt',
-            },
-            PeriodEndDate: {
-              Value: '2999-01-01',
-              Op: 'lt',
-            },
-          },
+    // Convert entryEvents to PrimaryCriteria.CriteriaList
+    if (this.entryEvents?.events && this.entryEvents.events.length > 0) {
+      atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events.map(event => ({
+        [this.mapEventTypeToAtlas(event.eventType)]: {
+          CodesetId: systemIdToAtlasId.get(event.conceptSetId),
         },
-      ]
+      }))
       atlasDef.cdmVersionRange = '>=5.0.0'
     }
 
@@ -1143,15 +1206,25 @@ export class QueryFilterCriteriaManager {
   }
 
   // Set criteria (for Atlas loading)
-  setData({ inclusionCriteria, entryEvents }: { inclusionCriteria: InclusionCriteria; entryEvents: any }) {
+  setData({
+    inclusionCriteria,
+    entryEvents,
+    exitEvents,
+  }: {
+    inclusionCriteria: InclusionCriteria
+    entryEvents: EntryEvent
+    exitEvents: ExitEvent
+  }) {
     this.inclusionCriteria = inclusionCriteria
     this.entryEvents = entryEvents
+    this.exitEvents = exitEvents
   }
 
   getData() {
     return {
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
+      exitEvents: this.exitEvents,
     }
   }
 

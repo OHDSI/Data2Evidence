@@ -306,8 +306,38 @@ export const convertAtlasToFilters = (
     })
   }
 
-  // Add the inclusionCriteria structure to the filter
-  const data = { inclusionCriteria, entryEvents: {} }
+  // Process CensoringCriteria for exitEvents
+  const exitEvents = {
+    endStrategy: 'CONT_OBS' as const,
+    censoringCriteria: [] as QueryFilterEvent[]
+  }
+
+  if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
+    console.log(`🔧 Processing ${cohortDefinition.CensoringCriteria.length} censoring criteria`)
+    exitEvents.censoringCriteria = convertCriteriaListToEvents(cohortDefinition.CensoringCriteria)
+  }
+
+  // Process PrimaryCriteria for entryEvents
+  const entryEvents = {
+    primaryCriteriaLimit: 'ALL' as const,
+    events: [] as QueryFilterEvent[],
+    priorDays: 0,
+    postDays: 0
+  }
+
+  if (cohortDefinition.PrimaryCriteria?.CriteriaList) {
+    console.log(`🔧 Processing ${cohortDefinition.PrimaryCriteria.CriteriaList.length} primary criteria`)
+    entryEvents.events = convertCriteriaListToEvents(cohortDefinition.PrimaryCriteria.CriteriaList)
+    
+    // Add observation window if present
+    if (cohortDefinition.PrimaryCriteria.ObservationWindow) {
+      entryEvents.priorDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PriorDays || 0
+      entryEvents.postDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PostDays || 0
+    }
+  }
+
+  // Add all three structures to the data
+  const data = { inclusionCriteria, entryEvents, exitEvents }
   // Create and return QueryFilterCriteriaManager
   return new QueryFilterCriteriaManager(data)
 }
