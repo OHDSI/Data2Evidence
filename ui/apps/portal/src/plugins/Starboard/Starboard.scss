@@ -7,4 +7,12 @@
   .chat-button {
     align-self: flex-end;
   }
+
+  &-content {
+    display: flex;
+  }
+}
+
+#starboard-root {
+  flex:1
 }

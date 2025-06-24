@@ -2,3 +2,8 @@
     background-color: #000080 !important;
 }
 
+.chat {
+    &-container {
+        flex:1
+    }
+}

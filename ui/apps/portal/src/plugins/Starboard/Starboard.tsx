@@ -276,15 +276,17 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           color="primary"
           aria-label="assistant"
           onClick={() => {
-            setOpen(true);
+            setOpen(!open);
           }}
           className="chat-button"
         >
           <ChatIcon />
         </Fab>
-        <div id="starboard-root" />
+        <div className="starboard-content">
+          <div id="starboard-root" />
+          <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
+        </div>
       </Card>
-      <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
       {showTemplateDialog && (
         <NotebookTemplateDialog
           open={showTemplateDialog}
