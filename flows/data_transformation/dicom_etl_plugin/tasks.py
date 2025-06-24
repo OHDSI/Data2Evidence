@@ -20,6 +20,42 @@ if TYPE_CHECKING:
     from _shared_flow_utils.dao.DBDao import DBDao
 
 
+
+def chunker(df, chunksize):
+    for start in range(0, len(df), chunksize):
+        yield df.iloc[start:start + chunksize]
+
+def transform_chunk(chunk, image_occurrence_df, image_feature_df):
+    # Get person_id and image_occurrence_id from image_occurrence dataset
+    eav_df = chunk.merge(
+        image_occurrence_df[["person_id",
+                             "image_occurrence_id", "image_series_uid"]],
+        how="left", left_on="image_series_uid", right_on="image_series_uid"
+    )
+
+    # Get value_as_number, value_as_concept_id from image_feature dataset
+    eav_df = eav_df.merge(
+        image_feature_df[["value_as_number", "concept_id_y",
+                          "measurement_source_value", "id"]],
+        how="left", left_on="id", right_on="id"
+    )
+
+    eav_df = eav_df.rename(columns={
+        "concept_id": "data_element_concept_id",
+        "VR": "metadata_source_value_representation",
+        "tag": "metadata_source_tag",
+        "value": "metadata_source_value",
+        "concept_id_y": "value_as_concept_id"
+    })
+
+    return eav_df
+
+
+def process_df_in_chunks(df, image_occurrence_df, image_feature_df, chunksize=50000):
+    for chunk in chunker(df, chunksize):
+        yield transform_chunk(chunk, image_occurrence_df, image_feature_df)  
+
+
 @task(log_prints=True)
 def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFrame,
                image_feature_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
@@ -55,62 +91,39 @@ def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFra
         "etl_modified_datetime",
     ]
 
-    # Get person_id and image_occurrence_id from image_occurrence dataset
-    eav_df = mapped_concepts_df.merge(
-        image_occurrence_df[["person_id",
-                             "image_occurrence_id", "image_series_uid"]],
-        how="left", left_on="image_series_uid", right_on="image_series_uid"
-    )
+    for transformed_chunk in process_df_in_chunks(mapped_concepts_df, image_occurrence_df, image_feature_df):
+        # Add new columns
+        eav_table_id = dbdao.get_next_record_id(schema_name, table_name, "metadata_id")
+        transformed_chunk["metadata_id"] = transformed_chunk["id"] + eav_table_id - 1
+        transformed_chunk["metadata_source_group_number"] = transformed_chunk["metadata_source_tag"].str[:4]
+        transformed_chunk["is_sequence"] = transformed_chunk["metadata_source_value_representation"].apply(
+            lambda x: x == "SQ")
+        transformed_chunk["etl_created_datetime"] = pd.Timestamp.now()
+        transformed_chunk["etl_modified_datetime"] = transformed_chunk["etl_created_datetime"]
 
-    # Get value_as_number, value_as_concept_id from image_feature dataset
-    eav_df = eav_df.merge(
-        image_feature_df[["value_as_number", "concept_id_y",
-                          "measurement_source_value", "id"]],
-        how="left", left_on="id", right_on="id"
-    )
+        # Fix data types
+        transformed_chunk["metadata_source_value"] = transformed_chunk["metadata_source_value"].apply(
+            coerce_to_string)
+        transformed_chunk["parent_sequence_id"] = transformed_chunk["parent_sequence_id"] .astype(
+            'Int64')
+        transformed_chunk["sequence_length"] = transformed_chunk["sequence_length"] .astype('Int64')
+        transformed_chunk["instance_number"] = transformed_chunk["instance_number"] .astype('Int64')
 
-    eav_df = eav_df.rename(columns={
-        "concept_id": "data_element_concept_id",
-        "VR": "metadata_source_value_representation",
-        "tag": "metadata_source_tag",
-        "value": "metadata_source_value",
-        "concept_id_y": "value_as_concept_id"
-    })
+        transformed_chunk_numeric = transformed_chunk[~transformed_chunk['value_as_number'].isna()]
 
-    # Add new columns
-    eav_df["metadata_id"] = eav_df["id"] + eav_table_id - 1
-    eav_df["metadata_source_group_number"] = eav_df["metadata_source_tag"].str[:4]
-    eav_df["is_sequence"] = eav_df["metadata_source_value_representation"].apply(
-        lambda x: x == "SQ")
-    eav_df["etl_created_datetime"] = pd.Timestamp.now()
-    eav_df["etl_modified_datetime"] = eav_df["etl_created_datetime"]
+        # Insert numeric records
+        transformed_chunk_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
+                                                chunksize=50000, method=psql_insert_copy)
+        logger.info(
+            f"Successfully ingested {len(transformed_chunk_numeric)} numeric records into '{schema_name}.{table_name}' table!")
 
-    # Fix data types
-    eav_df["metadata_source_value"] = eav_df["metadata_source_value"].apply(
-        coerce_to_string)
-    eav_df["parent_sequence_id"] = eav_df["parent_sequence_id"] .astype(
-        'Int64')
-    eav_df["sequence_length"] = eav_df["sequence_length"] .astype('Int64')
-    eav_df["instance_number"] = eav_df["instance_number"] .astype('Int64')
-
-    eav_df_numeric = eav_df[~eav_df['value_as_number'].isna()]
-    logger.info(f"eav_df_numeric length is {len(eav_df_numeric)}")
-
-    eav_df = eav_df[eav_df['value_as_number'].isna()]
-    logger.info(f"eav_df length is {len(eav_df)}")
-
-    # Insert numeric records
-    eav_df_numeric[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
-                                             chunksize=50000, method=psql_insert_copy)
-    logger.info(
-        f"Successfully ingested {len(eav_df_numeric)} numeric records into '{schema_name}.{table_name}' table!")
-
-    # Insert non-numeric records
-    ingestion_columns.remove("value_as_number")
-    eav_df[ingestion_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
-                                     chunksize=50000, method=psql_insert_copy)
-    logger.info(
-        f"Successfully ingested {len(eav_df)} non-numeric records into '{schema_name}.{table_name}' table!")
+        # Insert non-numeric records
+        non_numeric_columns = [x for x in ingestion_columns if x != "value_as_number"]
+        transformed_chunk_non_numeric = transformed_chunk[transformed_chunk['value_as_number'].isna()]
+        transformed_chunk_non_numeric[non_numeric_columns].to_sql(table_name, dbdao.engine, if_exists='append', index=False, schema=schema_name,
+                                        chunksize=50000, method=psql_insert_copy)
+        logger.info(
+        f"Successfully ingested {len(transformed_chunk_non_numeric)} non-numeric records into '{schema_name}.{table_name}' table!")
 
 
 @task(log_prints=True)
@@ -334,15 +347,13 @@ def transform_for_image_feature(mapped_concepts_df: pd.DataFrame,
 
     # Attempt to map concept_ids for CS values
     with dbdao.ibis_connect() as conn:
-        concept_table = conn.table(
-            name="concept", database=vocab_schema_name)
+        concept_table = conn.table("concept", database=vocab_schema_name)
         concept_df = concept_table[["concept_id",
                                     "concept_code", "concept_name"]].execute()
         concept_df['concept_code'] = concept_df['concept_code'].astype(str)
         concept_df['concept_code'] = concept_df['concept_code'].str.upper()
 
-        concept_relationship_table = conn.table(
-            name="concept_relationship", database=vocab_schema_name)
+        concept_relationship_table = conn.table("concept_relationship", database=vocab_schema_name)
         concept_relationship_df = concept_relationship_table.filter(concept_relationship_table.relationship_id == "Maps to value")[
             ["concept_id_1", "concept_id_2"]].execute()
 
@@ -411,8 +422,11 @@ def transform_for_image_feature(mapped_concepts_df: pd.DataFrame,
 
 
 @task(log_prints=True)
-def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_schema_name: str, dbdao: DBDao,
-                                   person_patient_mapping: PersonPatientMapping, next_record_ids: tuple[int, int, int]) -> pd.DataFrame:
+def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, 
+                                   vocab_schema_name: str, 
+                                   dbdao: DBDao,
+                                   person_patient_mapping: PersonPatientMapping, 
+                                   next_record_ids: tuple[int, int, int]) -> pd.DataFrame:
 
     task_logger = get_run_logger()
 
@@ -446,7 +460,7 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_schem
     patient_id_col = person_patient_mapping.patient_id_column_name
 
     with dbdao.ibis_connect() as conn:
-        mapping_table = conn.table(name=person_patient_mapping.table_name,
+        mapping_table = conn.table(person_patient_mapping.table_name,
                                    database=person_patient_mapping.schema_name)
 
         mapping_df = mapping_table[[person_id_col, patient_id_col]].execute()
@@ -464,8 +478,8 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_schem
 
     # Get concept id for modality and body part
     with dbdao.ibis_connect() as conn:
-        concept_table = conn.table(
-            name="concept", database=vocab_schema_name)
+        task_logger.info(f"Connecting to vocab schema {vocab_schema_name} to get concept ids for tags..")
+        concept_table = conn.table("concept", database=vocab_schema_name)
         concept_df = concept_table.filter(concept_table.vocabulary_id == "DICOM")[
             ["concept_id", "concept_code"]].execute()
         concept_df['concept_code'] = concept_df['concept_code'].astype(str)
@@ -474,6 +488,10 @@ def transform_for_image_occurrence(mapped_concepts_df: pd.DataFrame, vocab_schem
     # Todo: Update with standard concept ids
     # Get concept id for BodyPartExamined -> anatomic_site_concept_id
     task_logger.info("Mapping BodyPartExamined tag to concept_id..")
+
+    # convert 00180015 to string
+    image_occurrence_df['00180015'] = image_occurrence_df['00180015'].astype(str)
+
     image_occurrence_df = image_occurrence_df.merge(concept_df[["concept_id", "concept_code"]],
                                                     how="left", left_on="00180015", right_on="concept_code")
     image_occurrence_df.rename(
@@ -525,8 +543,7 @@ def get_concept_ids_for_tags(extracted_data_df: pd.DataFrame, vocab_schema_name:
     task_logger = get_run_logger()
 
     with dbdao.ibis_connect() as conn:
-        concept_table = conn.table(
-            name="concept", database=vocab_schema_name)
+        concept_table = conn.table("concept", database=vocab_schema_name)
         concept_df = concept_table.filter(concept_table.vocabulary_id == "DICOM")[["concept_id",
                                                                                    "concept_name",
                                                                                    "concept_code"
@@ -556,7 +573,7 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
     logger.info(f"Extracting metadata from {len(dicom_files)} files..")
 
     for filepath in dicom_files:
-        with dcmread(filepath) as dicom_f:
+        with dcmread(filepath, stop_before_pixels=True, force=True) as dicom_f:
 
             study_instance_uid = dicom_f.get(
                 "StudyInstanceUID")  # [0x0020, 0x000D]
@@ -576,7 +593,7 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
 
             for data_elem in dicom_f:
                 # Filter out values that are too large to store in db
-                if convert_tag_to_string(data_elem.tag) == "7FE00010" or data_elem.VR == "UN":
+                if data_elem.VR == "UN":
                     continue  # skip
                 else:
                     try:
