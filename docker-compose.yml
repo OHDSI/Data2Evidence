@@ -434,6 +434,8 @@ services:
             "PYTHON_VERIFY_SSL": "false",
             "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
             "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+            "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
+            "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
             "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-5}",
             "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
             "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
