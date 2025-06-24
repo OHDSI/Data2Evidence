@@ -2,14 +2,18 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests',
-  timeout: 240000,
+  timeout: 120000, // 2 minutes per test
 
+  expect: {
+    timeout: 20000 // 20 seconds for expect conditions
+  },
   use: {
+    actionTimeout: 30000, // 30 seconds for each action
+    navigationTimeout: 60000, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
-    ignoreHTTPSErrors: true,
-    actionTimeout: 120000,
-    navigationTimeout: 120000
+    ignoreHTTPSErrors: true
   },
+  retries: 1, // retry failed tests once
   reporter: 'list',
 });
