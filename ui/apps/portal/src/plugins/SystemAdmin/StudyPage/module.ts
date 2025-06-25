@@ -1,4 +1,4 @@
 import { SystemAdminPagePlugin } from "@portal/plugin";
-import { StudyPage } from ".";
+import { StudyPage } from "./StudyPage";
 
 export const plugin = new SystemAdminPagePlugin(StudyPage);

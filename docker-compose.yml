@@ -459,7 +459,8 @@ services:
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
           },
           "jupyter-gateway": {},
-          "mlflow": {}
+          "mlflow": {},
+          "strategus-results": {}
         }
       SERVICE_ROUTES: |-
         {
@@ -690,6 +691,13 @@ services:
           }
 
           @jupyter_websocket {
+            path /jupyter/*
+            header Connection *Upgrade*
+            header Upgrade websocket
+          }
+
+          @strategus_websocket {
+            path /strategus-results/*
             header Connection *Upgrade*
             header Upgrade websocket
           }
@@ -716,6 +724,24 @@ services:
             }
 
             reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
+          }
+
+          handle @strategus_websocket {
+            @study_id path_regexp /strategus-results/([^/]+)
+            handle @study_id {
+              uri strip_prefix /strategus-results/{re.1}
+              reverse_proxy {re.1}:3838 {
+                transport http {
+                  read_buffer 8192
+                }
+                header_up Host {re.1}:3838
+                header_up Connection {http.request.header.Connection}
+                header_up Upgrade {http.request.header.Upgrade}
+                header_up Sec-WebSocket-Key {http.request.header.Sec-WebSocket-Key}
+                header_up Sec-WebSocket-Version {http.request.header.Sec-WebSocket-Version}
+                header_up Sec-WebSocket-Protocol {http.request.header.Sec-WebSocket-Protocol}
+              }
+            }
           }
 
           ## call gateway if there are no matched files
@@ -1120,6 +1146,8 @@ services:
       alp:
         priority: 20
       data:
+        priority: 10
+      enterprise-gateway:
         priority: 10
     platform: linux/amd64
     volumes:
