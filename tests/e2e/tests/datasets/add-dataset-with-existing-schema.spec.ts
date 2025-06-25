@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('add-dataset-with-existing-schema', async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto(`https://localhost:${process.env.CI ? 443 : 41100}/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -33,8 +33,8 @@ test('add-dataset-with-existing-schema', async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.locator('tbody')).toContainText(datasetNewSchema)
 
-  // Wait for 20 seconds for the schema to be created in the database
-  await page.waitForTimeout(20000)
+  // Wait for 1 minute for the schema to be created in the database
+  await page.waitForTimeout(60000)
 
   // Copy the schema name for later use
   const schemaText = await page.getByRole('cell', { name: /^CDM_NEWTESTDATASET_/ }).textContent()
