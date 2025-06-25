@@ -197,7 +197,6 @@ export class QueryFilterCardModel {
     return newEvent
   }
 
-  // Get all events that belong to a parent (including the parent itself)
   getEventWithParent(parentEventId: string): QueryFilterEvent[] {
     const events: QueryFilterEvent[] = []
     const parent = this.getEvent(parentEventId)
@@ -208,7 +207,6 @@ export class QueryFilterCardModel {
     return events
   }
 
-  // Check if an event can be deleted (not the parent event or has no attribute children)
   canDeleteEvent(eventId: string): boolean {
     const event = this.getEvent(eventId)
     if (!event) return false

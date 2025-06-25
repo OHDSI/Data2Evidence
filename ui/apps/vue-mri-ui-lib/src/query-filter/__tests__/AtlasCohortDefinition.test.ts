@@ -38,8 +38,8 @@ describe('AtlasCohortDefinition Type Guards', () => {
       expect(isConditionOccurrence({})).toBe(false)
       expect(isConditionOccurrence(null)).toBeFalsy()
       expect(isConditionOccurrence(undefined)).toBeFalsy()
-      expect(isConditionOccurrence({ CodesetId: 1 })).toBe(false) // Missing ConditionTypeExclude
-      expect(isConditionOccurrence({ ConditionTypeExclude: false })).toBe(false) // Missing CodesetId
+      expect(isConditionOccurrence({ CodesetId: 1 })).toBe(false)
+      expect(isConditionOccurrence({ ConditionTypeExclude: false })).toBe(false)
     })
   })
 
@@ -364,7 +364,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         ConditionOccurrence: conditionOccurrence,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(conditionOccurrence)
     })
@@ -378,7 +378,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         DrugExposure: drugExposure,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(drugExposure)
     })
@@ -395,7 +395,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         DrugEra: drugEra,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(drugEra)
     })
@@ -408,7 +408,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         ProcedureOccurrence: procedureOccurrence,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(procedureOccurrence)
     })
@@ -421,7 +421,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         Observation: observation,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(observation)
     })
@@ -434,7 +434,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         VisitOccurrence: visitOccurrence,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(visitOccurrence)
     })
@@ -447,7 +447,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         DeviceExposure: deviceExposure,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(deviceExposure)
     })
@@ -460,7 +460,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         Measurement: measurement,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(measurement)
     })
@@ -473,7 +473,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         Death: death,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(death)
     })
@@ -489,7 +489,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
       const item: CriteriaListItem = {
         ObservationPeriod: observationPeriod,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(observationPeriod)
     })
@@ -512,7 +512,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
         ConditionOccurrence: conditionOccurrence,
         DrugExposure: drugExposure,
       }
-      
+
       const result = getCriteriaObject(item)
       expect(result).toBe(conditionOccurrence)
     })
@@ -540,11 +540,11 @@ describe('AtlasCohortDefinition Helper Functions', () => {
           Op: 'bt',
         },
       }
-      
+
       const item: CriteriaListItem = {
         ConditionOccurrence: complexCondition,
       }
-      
+
       expect(getCriteriaType(item)).toBe('ConditionOccurrence')
       expect(getCriteriaObject(item)).toBe(complexCondition)
       expect(isConditionOccurrence(getCriteriaObject(item))).toBe(true)
@@ -555,7 +555,7 @@ describe('AtlasCohortDefinition Helper Functions', () => {
         CodesetId: 1,
         ConditionTypeExclude: false,
       }
-      
+
       expect(isConditionOccurrence(minimalCondition)).toBe(true)
     })
   })

@@ -1,8 +1,6 @@
 /**
  * TypeScript types for OHDSI Atlas Cohort Definition JSON structure
  */
-
-// Concept definition as used in ConceptSets
 export interface Concept {
   CONCEPT_ID: number
   CONCEPT_NAME: string
@@ -18,7 +16,6 @@ export interface Concept {
   VALID_END_DATE: string
 }
 
-// Individual concept set item
 export interface ConceptSetItem {
   concept: Concept
   isExcluded: boolean
@@ -26,12 +23,10 @@ export interface ConceptSetItem {
   includeMapped: boolean
 }
 
-// Concept set expression
 export interface ConceptSetExpression {
   items: ConceptSetItem[]
 }
 
-// Complete concept set definition
 export interface ConceptSet {
   id: number
   conceptSetId?: number
@@ -39,7 +34,6 @@ export interface ConceptSet {
   expression: ConceptSetExpression
 }
 
-// Criteria types
 export interface ConditionOccurrence {
   CodesetId?: number
   ConditionTypeExclude?: boolean
@@ -51,7 +45,7 @@ export interface ConditionOccurrence {
   Age?: NumericRange
   ProviderSpecialty?: ConceptSet[]
   VisitType?: ConceptSet[]
-  CorrelatedCriteria?: CorrelatedCriteria // Added support for nested criteria
+  CorrelatedCriteria?: CorrelatedCriteria
 }
 
 export interface DrugExposure {
@@ -186,7 +180,6 @@ export interface ObservationPeriod {
   Gender?: ConceptSet[]
 }
 
-// Criteria list item (union of all possible criteria types)
 export interface CriteriaListItem {
   ConditionOccurrence?: ConditionOccurrence
   DrugExposure?: DrugExposure
@@ -200,7 +193,6 @@ export interface CriteriaListItem {
   ObservationPeriod?: ObservationPeriod
 }
 
-// Date and numeric range types
 export interface DateRange {
   Value: string // ISO date string
   Extent: string // ISO date string
@@ -213,66 +205,55 @@ export interface NumericRange {
   Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
 }
 
-// Observation window
 export interface ObservationWindow {
   PriorDays: number
   PostDays: number
 }
 
-// Primary criteria limit
 export interface PrimaryCriteriaLimit {
   Type: 'First' | 'All' | 'Last'
 }
 
-// Primary criteria
 export interface PrimaryCriteria {
   CriteriaList: CriteriaListItem[]
   ObservationWindow: ObservationWindow
   PrimaryCriteriaLimit: PrimaryCriteriaLimit
 }
 
-// Qualified limit
 export interface QualifiedLimit {
   Type: 'First' | 'All' | 'Last'
 }
 
-// Expression limit
 export interface ExpressionLimit {
   Type: 'First' | 'All' | 'Last'
 }
 
-// Date offset for end strategy
 export interface DateOffset {
   DateField: 'StartDate' | 'EndDate'
   Offset: number
 }
 
-// Custom era for end strategy
 export interface CustomEra {
   CodesetId: number
   GapDays: number
   Offset: number
 }
 
-// End strategy
 export interface EndStrategy {
   DateOffset?: DateOffset
   CustomEra?: CustomEra
 }
 
-// Collapse settings
 export interface CollapseSettings {
   CollapseType: 'ERA'
   EraPad: number
 }
 
-// Censor window
 export interface CensorWindow {
   StartDate?: string
   EndDate?: string
 }
 
-// Correlated criteria for nested events
 export interface CorrelatedCriteria {
   Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
   Count?: number
@@ -281,10 +262,9 @@ export interface CorrelatedCriteria {
   Groups: GroupCriteria[]
 }
 
-// Inclusion rule
 export interface InclusionRule {
   name: string
-  description?: string // Added support for description
+  description?: string
   expression: {
     Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
     Count?: number
@@ -294,7 +274,6 @@ export interface InclusionRule {
   }
 }
 
-// Criteria group for inclusion rules
 export interface CriteriaGroup {
   Criteria?: CriteriaListItem
   StartWindow?: Window
@@ -303,7 +282,6 @@ export interface CriteriaGroup {
   RestrictVisit?: boolean
 }
 
-// Window settings
 export interface Window {
   Start: {
     Days?: number
@@ -317,14 +295,12 @@ export interface Window {
   UseEventEnd?: boolean
 }
 
-// Occurrence settings
 export interface OccurrenceSettings {
   Type: number
   Count: number
   IsDistinct?: boolean
 }
 
-// Demographic criteria
 export interface DemographicCriteria {
   Age?: NumericRange
   Gender?: ConceptSet[]
@@ -334,7 +310,6 @@ export interface DemographicCriteria {
   OccurrenceEndDate?: DateRange
 }
 
-// Group criteria
 export interface GroupCriteria {
   Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
   Count?: number
@@ -343,13 +318,10 @@ export interface GroupCriteria {
   Groups?: GroupCriteria[]
 }
 
-// Censoring criteria
 export interface CensoringCriteria {
-  // Similar structure to criteria list items
   [key: string]: any
 }
 
-// Main cohort definition interface
 export interface AtlasCohortDefinition {
   cdmVersionRange: string
   PrimaryCriteria: PrimaryCriteria
@@ -365,7 +337,6 @@ export interface AtlasCohortDefinition {
   description?: string
 }
 
-// Atlas cohort definition API response wrapper
 export interface AtlasCohortDefinitionResponse {
   id: number
   name: string
@@ -381,7 +352,6 @@ export interface AtlasCohortDefinitionResponse {
   hasReadAccess: boolean
 }
 
-// Type guards
 export function isConditionOccurrence(criteria: any): criteria is ConditionOccurrence {
   return criteria && typeof criteria.CodesetId === 'number' && 'ConditionTypeExclude' in criteria
 }
@@ -422,7 +392,6 @@ export function isObservationPeriod(criteria: any): criteria is ObservationPerio
   return criteria && ('PeriodStartDate' in criteria || 'PeriodEndDate' in criteria)
 }
 
-// Helper to get criteria type from a criteria list item
 export function getCriteriaType(item: CriteriaListItem): string | null {
   if (item.ConditionOccurrence) return 'ConditionOccurrence'
   if (item.DrugExposure) return 'DrugExposure'
@@ -437,7 +406,6 @@ export function getCriteriaType(item: CriteriaListItem): string | null {
   return null
 }
 
-// Helper to get the criteria object from a criteria list item
 export function getCriteriaObject(item: CriteriaListItem): any {
   return (
     item.ConditionOccurrence ||
@@ -454,11 +422,9 @@ export function getCriteriaObject(item: CriteriaListItem): any {
   )
 }
 
-// Helper types for cardinality mapping
 export type CardinalityType = 'EXACTLY' | 'AT_MOST' | 'AT_LEAST'
-export type AtlasOccurrenceType = 0 | 1 | 2 // 0=exactly, 1=at most, 2=at least
+export type AtlasOccurrenceType = 0 | 1 | 2
 
-// Helper function to map cardinality to Atlas occurrence type
 export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurrenceType {
   switch (cardinality) {
     case 'EXACTLY':
@@ -471,7 +437,6 @@ export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurr
   }
 }
 
-// Helper function to map criteria type to Atlas primary criteria type
 export function mapCriteriaTypeToAtlas(criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'): 'All' | 'First' | 'Last' {
   switch (criteriaType) {
     case 'EARLIEST':

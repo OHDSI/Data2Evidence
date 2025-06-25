@@ -10,9 +10,6 @@ import type {
   CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
 
-/**
- * Build authentication headers for API requests
- */
 const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
   const portalAPI = getPortalAPI()
   const headers: Record<string, string> = {}
@@ -29,9 +26,6 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
   return headers
 }
 
-/**
- * Build API URL with proper host configuration
- */
 const buildApiUrl = (path: string): string => {
   const portalAPI = getPortalAPI()
 
@@ -42,9 +36,6 @@ const buildApiUrl = (path: string): string => {
   }
 }
 
-/**
- * Load concept sets from the terminology service
- */
 export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept set API call')
@@ -99,9 +90,6 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
 
 const cachedConcepts: { [key: number]: ConceptDetail } = {}
 
-/**
- * Fetch concept details by ID
- */
 export const fetchConceptById = async (
   datasetId: string,
   conceptId: number,
@@ -130,9 +118,6 @@ export const fetchConceptById = async (
   }
 }
 
-/**
- * Fetch multiple concept details by IDs in batches
- */
 export const fetchConceptsByIds = async (
   datasetId: string,
   conceptIds: number[],
@@ -141,7 +126,6 @@ export const fetchConceptsByIds = async (
 ): Promise<Map<number, ConceptDetail | null>> => {
   const resultMap = new Map<number, ConceptDetail | null>()
 
-  // Process concept IDs in batches
   for (let i = 0; i < conceptIds.length; i += batchSize) {
     const batch = conceptIds.slice(i, i + batchSize)
     console.log(
@@ -150,7 +134,6 @@ export const fetchConceptsByIds = async (
       )}: IDs ${batch.join(', ')}`
     )
 
-    // Create concurrent promises for this batch
     const batchPromises = batch.map(async conceptId => {
       try {
         const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
@@ -161,10 +144,8 @@ export const fetchConceptsByIds = async (
       }
     })
 
-    // Wait for all concepts in this batch to complete
     const batchResults = await Promise.all(batchPromises)
 
-    // Add results to the map
     for (const { conceptId, conceptDetail } of batchResults) {
       resultMap.set(conceptId, conceptDetail)
     }
@@ -173,9 +154,6 @@ export const fetchConceptsByIds = async (
   return resultMap
 }
 
-/**
- * Format concept detail for Atlas compatibility
- */
 const formatConceptForAtlas = (
   conceptDetail: ConceptDetail,
   conceptId: number,
@@ -207,16 +185,10 @@ const formatConceptForAtlas = (
   }
 }
 
-/**
- * Extract concept IDs from concept set data
- */
 const extractConceptIds = (conceptSet: ConceptSetItem): number[] => {
   return conceptSet.conceptIds || []
 }
 
-/**
- * Load concept set details for multiple concept sets
- */
 export const loadConceptSetDetails = async (
   selectedConceptSets: ConceptSetItem[],
   datasetId: string
@@ -236,7 +208,6 @@ export const loadConceptSetDetails = async (
 
     const detailsMap: Record<string, any[]> = {}
 
-    // Collect all concept IDs that need to be fetched across all concept sets
     const allConceptIds: number[] = []
     const conceptSetToConceptIds: Record<string, number[]> = {}
 
@@ -248,7 +219,6 @@ export const loadConceptSetDetails = async (
         console.warn(`No concept IDs found for concept set ${conceptSetId}`)
         conceptSetToConceptIds[conceptSetId] = []
       } else {
-        // Limit to first 20 concepts per concept set to avoid too many requests
         const limitedConceptIds = conceptIds.slice(0, 20)
         conceptSetToConceptIds[conceptSetId] = limitedConceptIds
         allConceptIds.push(...limitedConceptIds)
@@ -260,16 +230,13 @@ export const loadConceptSetDetails = async (
       return detailsMap
     }
 
-    // Remove duplicates
     const uniqueConceptIds = [...new Set(allConceptIds)]
     console.log(
       `Fetching details for ${uniqueConceptIds.length} unique concepts across ${selectedConceptSets.length} concept sets`
     )
 
-    // Batch fetch all concept details
     const conceptDetailsMap = await fetchConceptsByIds(datasetId, uniqueConceptIds, headers, 10)
 
-    // Process results for each concept set
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
       const conceptIds = conceptSetToConceptIds[conceptSetId]
@@ -280,7 +247,6 @@ export const loadConceptSetDetails = async (
         if (conceptDetail) {
           console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
 
-          // Find the concept flags from the concept set
           const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
           const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
           conceptDetails.push(formattedConcept)
@@ -298,9 +264,6 @@ export const loadConceptSetDetails = async (
   }
 }
 
-/**
- * Load concept set details for a single concept set
- */
 export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, datasetId: string): Promise<any[]> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept details API call')
@@ -311,7 +274,6 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
     const headers = await buildApiHeaders()
     headers['Content-Type'] = 'application/json'
 
-    // Extract concept IDs from the concept set data
     let conceptIds = extractConceptIds(conceptSet)
 
     if (conceptIds.length === 0) {
@@ -320,7 +282,6 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
 
     const conceptDetails = []
 
-    // Fetch details for each concept ID (limit to first 20 to avoid too many requests)
     const limitedConceptIds = conceptIds.slice(0, 20)
     console.log(`Fetching details for concept set ${conceptSet.value}:`, limitedConceptIds)
 
@@ -328,9 +289,7 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
       try {
         const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
         if (conceptDetail) {
-          // Find the concept flags from the concept set
           const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
-          // Format the concept detail in Atlas-compatible structure
           const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
           conceptDetails.push(formattedConcept)
         }
@@ -346,9 +305,6 @@ export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, da
   }
 }
 
-/**
- * Create a new concept set
- */
 export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> => {
   if (!datasetId) {
     throw new Error('Missing datasetId for concept set creation')
@@ -367,7 +323,6 @@ export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, 
       headers,
     })
 
-    // Backend returns the created concept set ID
     return response.data
   } catch (error) {
     console.error('Error creating concept set:', error)

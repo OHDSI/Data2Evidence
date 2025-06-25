@@ -12,7 +12,7 @@ import { convertAtlasToFilters } from '../utils/AtlasConverter'
 
 describe('Atlas Round-Trip Conversion', () => {
   test('should maintain exact structure for simple Atlas definition', () => {
-    // 1. Create the simplest possible Atlas JSON
+    // Create simple Atlas JSON
     const simpleAtlas: any = {
       cdmVersionRange: '>=5.0.0',
       ConceptSets: [

@@ -37,7 +37,6 @@ export const convertAtlasToFilters = (
         `Found Atlas concept set: ${atlasConceptSet.name} (Atlas ID: ${atlasId}, System ID: ${systemConceptSetId})`
       )
 
-      // Require conceptSetId to be set
       if (!systemConceptSetId) {
         console.error(`Atlas concept set ${atlasConceptSet.name} has no conceptSetId`)
         return null
@@ -68,7 +67,6 @@ export const convertAtlasToFilters = (
       }
     }
 
-    // If no Atlas ConceptSet found, try to find it in local available concept sets
     const localConceptSet = availableConceptSets.find(cs => cs.value == codesetId.toString())
     if (localConceptSet) {
       return {

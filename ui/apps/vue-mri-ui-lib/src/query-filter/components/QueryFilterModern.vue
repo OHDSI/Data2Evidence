@@ -37,27 +37,21 @@ import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 
-// No props needed currently - removed Props interface to fix TypeScript error
-
-// Use the new hierarchical criteria manager instead of the old filter manager
+// Use the hierarchical criteria manager
 const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties.$store
 
-// Debug mode toggle
 const showDebug = ref(false)
 
-// Save dialog state
 const showSaveDialog = ref(false)
 const cohortName = ref('')
 const shareBookmark = ref(false)
 const isInvalidName = ref(false)
 const maxLength = 40
 
-// Loading state
 const isLoading = ref(false)
 
-// Maintain backward compatibility with existing tag input model
 const tagInputModel = computed<TagInputModel>(() => {
   try {
     return {
@@ -88,7 +82,6 @@ const tagInputModel = computed<TagInputModel>(() => {
 
 const selectedConceptSets = ref<ConceptSetItem[]>([])
 
-// Computed property to extract concept sets from loaded criteria
 const conceptSetsFromCriteria = computed(() => {
   const conceptSets: ConceptSetItem[] = []
   const seenIds = new Set<string>()
@@ -97,13 +90,11 @@ const conceptSetsFromCriteria = computed(() => {
   criteria.criteria.forEach(group => {
     group.events.forEach(event => {
       if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
-        // Look up the concept set by ID in allConceptSets
         const foundConceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
         if (foundConceptSet) {
           conceptSets.push(foundConceptSet)
           seenIds.add(event.conceptSetId)
         } else if (event.selectedConceptSet) {
-          // Fallback to selectedConceptSet if lookup fails
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
           conceptSets.push(event.selectedConceptSet)
           seenIds.add(event.conceptSetId)
@@ -123,15 +114,12 @@ const tagInputTexts = getTagInputTexts()
 const allConceptSets = ref<ConceptSetItem[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
-// Computed dataset ID that will be passed to child components
 const datasetId = computed(() => {
-  // Try to get datasetId from store first
   const storeDatasetId = store?.state?.selectedDataset?.id
   if (storeDatasetId) {
     return storeDatasetId
   }
 
-  // Fallback to portalAPI studyId if store is not available
   const portalAPI = getPortalAPI()
   if (portalAPI?.studyId) {
     return portalAPI.studyId
@@ -217,7 +205,6 @@ const tagInputDomainValues = computed(() => {
 
 const selectedConceptSetValues = computed(() => {
   try {
-    // selectedConceptSets is kept in sync with conceptSetsFromCriteria via watcher
     return selectedConceptSets.value
   } catch (error) {
     console.error('Error in selectedConceptSetValues computed:', error)
@@ -230,13 +217,11 @@ const getText = (key: string, ...args: any[]) => {
   return store?.getters?.getText?.(key, ...args) || key
 }
 
-// Save dialog validation computed properties
 const hasExceededLength = computed(() => {
   return cohortName.value.length >= maxLength
 })
 
 const initializeComponent = () => {
-  // Clear the criteria manager instead of filters
   criteriaManager.clearAllCriteria()
   selectedConceptSets.value = []
 }
