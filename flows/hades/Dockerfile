@@ -91,7 +91,8 @@ RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https:/
 # private d2e repo auth - ssh key
 # public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
 RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.1.1", upgrade="never")'
+RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
@@ -121,16 +122,18 @@ WORKDIR /app
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 COPY --chown=docker:docker  ./__init__.py .
 
-COPY --chown=docker:docker --chmod=711 ./strategus/requirements_strategus.txt .
+COPY --chown=docker:docker --chmod=711 ./hades/requirements_hades.txt .
 ENV RUN_TYPE=$BUILD_TYPE
 RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip install -r requirements_strategus.txt
+RUN pip install -r requirements_hades.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./strategus flows
+COPY --chown=docker:docker --chmod=711 ./hades flows
 
 RUN rm -f .Renviron
 
+# Change the ownership of /app folder to docker user for CohortGen error logs 
+RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
