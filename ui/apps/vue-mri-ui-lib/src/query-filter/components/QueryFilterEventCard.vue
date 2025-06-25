@@ -189,7 +189,7 @@ const handleAttributeSelected = (attribute: AttributeConfig) => {
           attribute.id === 'nested'
             ? {
                 id: `nested_${Date.now()}`,
-                criteriaType: 'ANY' as const,
+                criteriaType: 'ALL' as const,
                 events: [],
               }
             : undefined,
