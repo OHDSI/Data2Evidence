@@ -8,6 +8,7 @@ import { Gateway } from "./gateway";
 import { Translation } from "./translation";
 import { Trex } from "./trex";
 import { Demo } from "./demo";
+import { StrategusResults } from "./strategus-results";
 
 export const api = {
   userMgmt: new UserMgmt(),
@@ -20,4 +21,5 @@ export const api = {
   translation: new Translation(),
   trex: new Trex(),
   demo: new Demo(),
+  strategusResults: new StrategusResults(),
 };
