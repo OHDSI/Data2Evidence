@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('dataset-id-schema-name-copy', async ({ page }) => {
+test('copy-dataset-id-schema-name', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
