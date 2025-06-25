@@ -44,8 +44,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const projectId = "PVT_kwDOAGRAXc4A2L7H";
-            const startDateFieldId = "182595135";
-            const endDateFieldId = "182595136";
+            const startDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLj8";
+            const endDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLkA";
 
             const issueNodeId = "${{ github.event.issue.node_id }}";
 
