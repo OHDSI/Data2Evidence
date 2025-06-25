@@ -24,22 +24,25 @@ test('setup-metadata', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Testing')
   await page.getByRole('button', { name: 'Save' }).click()
   await page.reload()
-
   // Assert new attribute exists
-  await expect(page.getByRole('cell', { name: 'test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Testing' })).toBeVisible()
-  await expect(
-    page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByTestId('table-cell').nth(2)
-  ).toBeVisible()
-  await expect(
-    page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByTestId('table-cell').nth(3)
-  ).toBeVisible()
+  await expect(page.getByRole('row', { name: 'test Testing DATASET STRING' })).toBeVisible()
+
+  // Edit attribute
+  await page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByRole('button').first().click()
+  await page.getByRole('textbox', { name: 'Attribute Name' }).click()
+  await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Testing edited')
+  await page.getByRole('button', { name: 'Category DATASET' }).click()
+  await page.getByRole('option', { name: 'FILE' }).click()
+  await page.getByRole('button', { name: 'Datatype STRING' }).click()
+  await page.getByRole('option', { name: 'NUMBER' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  await page.reload()
+  // Assert attribute has been edited
+  await expect(page.getByRole('row', { name: 'test Testing edited FILE NUMBER' })).toBeVisible()
 
   // Delete attribute
-  await page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByRole('button').nth(1).click()
+  await page.getByRole('row', { name: 'test Testing edited FILE NUMBER' }).getByRole('button').nth(1).click()
   await page.getByRole('button', { name: 'Delete' }).click()
   // Assert deleted attribute does not exist
-  await expect(
-    page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByTestId('table-cell').nth(2)
-  ).not.toBeVisible()
+  await expect(page.getByRole('row', { name: 'test Testing edited FILE NUMBER' })).not.toBeVisible()
 })
