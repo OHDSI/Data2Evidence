@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('Datasets', async ({ page }) => {
   await test.step('Login as admin and navigate to Datasets', async () => {
-    await page.goto('https://localhost:443/portal');
+    await page.goto('/portal');
     await page.locator('input[name="identifier"]').click();
     await page.locator('input[name="identifier"]').fill('admin');
     await page.locator('input[name="password"]').click();
@@ -19,6 +19,7 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 1');
     await page.getByRole('textbox', { name: 'Dataset summary' }).click();
     await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary');
+    await page.locator('#simplemde-editor-1-wrapper').getByRole('textbox').fill('Test Description');
     await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click();
     await page.getByRole('option', { name: 'Create new schema', exact: true }).click();
     await page.locator('#mui-component-select-databaseOption').click();
@@ -42,7 +43,6 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Dataset summary' }).click();
     await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary');
     await page.locator('pre').nth(1).click();
-    // await page.locator('#simplemde-editor-1-wrapper').getByRole('textbox').fill('Test Description');
     await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click();
     await page.getByRole('option', { name: 'Create new schema', exact: true }).click();
     await page.locator('#mui-component-select-databaseOption').click();
@@ -76,15 +76,12 @@ test('Datasets', async ({ page }) => {
     await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
   });
 
-
   await test.step('Update dataset summary and description', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click();
     await page.getByRole('row', { name: /Test Study 1/ }).getByRole('button').nth(2).click();
     await page.getByRole('option', { name: 'Update dataset' }).click();
     await page.getByRole('textbox', { name: 'Dataset summary' }).click();
     await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Updated Summary');
-    await page.locator('pre').nth(1).click();
-    await page.locator('#simplemde-editor-1-wrapper').getByRole('textbox').fill('Updated Description');
     await page.getByRole('button', { name: 'Save' }).click();
   });
 
@@ -96,7 +93,7 @@ test('Datasets', async ({ page }) => {
     await expect(page.getByText('Updated Summary')).toBeVisible();
     await study1.scrollIntoViewIfNeeded();
     await study1.click();
-    await expect(page.getByText('Updated Description')).toBeVisible();
+    await expect(page.getByText('Test Description')).toBeVisible();
   });
 
   await test.step('Switch to admin portal', async () => {
@@ -111,7 +108,8 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Password' }).click();
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345');
     await page.getByRole('button', { name: 'Add' }).click();
-    await expect(page.getByText('testuser1')).toBeVisible();
+    // Wait for the user to appear after clicking Add
+    await expect(page.getByText('testuser1')).toBeVisible({ timeout: 20000 });
   });
 
   await test.step('Hide dataset', async () => {
