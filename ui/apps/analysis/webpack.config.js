@@ -28,7 +28,7 @@ module.exports = (env, argv) => {
       },
       proxy: [
         {
-          context: ['/dataflow-mgmt'],
+          context: ['/jobplugins'],
           target: 'https://localhost:41100',
           secure: false
         }

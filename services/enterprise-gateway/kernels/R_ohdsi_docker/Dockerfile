@@ -23,6 +23,7 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
+    python3-pip \
     less\
     libcurl4-openssl-dev \
     libssl-dev \
@@ -78,6 +79,11 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=F
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+
+# mlflow
+RUN pip3 install --upgrade pip
+RUN pip3 install mlflow==2.22.1
+RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
 
 # OHDSI studies viewer
 RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.6-1.tar.gz", repos = NULL, type = "source")'
