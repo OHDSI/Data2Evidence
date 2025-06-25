@@ -229,7 +229,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   );
 
   const handleChatOpen = useCallback(() => {
-    setOpen(!open);
+    setOpen((prev) => !prev);
     setTimeout(() => {
       const chatSegmentsContainer = document.querySelector(".nlux-chatSegments-container");
       if (chatSegmentsContainer && chatSegmentsContainer.lastElementChild) {
