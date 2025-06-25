@@ -80,7 +80,7 @@ sequenceDiagram
 
 ### Key Conversion Functions
 
-#### `convertAtlasToFilters()` - AtlasConverter.ts:18-337
+#### `convertAtlasToFilters(atlasJson, availableConceptSets)` - AtlasConverter.ts
 
 The main conversion function that transforms Atlas JSON into UI models:
 
@@ -89,7 +89,7 @@ The main conversion function that transforms Atlas JSON into UI models:
 3. **Nested Handling**: Processes `CorrelatedCriteria` recursively
 4. **Attribute Mapping**: Converts Atlas operators to internal format
 
-#### `convertCriteriaListToEvents()` - AtlasConverter.ts:114-223
+#### `convertCriteriaListToEvents(criteriaList)` - AtlasConverter.ts
 
 Recursive function that processes Atlas criteria lists:
 
@@ -121,7 +121,7 @@ The Query Filter integrates with the application's bookmark system through the V
 3. **Import Process**: Standard Atlas import workflow is triggered
 4. **UI Population**: Visual interface is populated with bookmark data
 
-The main integration point is in `QueryFilterModern.vue:393-544` where `loadAtlasCohortDefinition()` processes bookmark data.
+The main integration point is in `QueryFilterModern.vue` where `loadAtlasCohortDefinition(atlasJson)` processes bookmark data.
 
 ## Making Changes - Visual Editing
 
@@ -186,7 +186,7 @@ sequenceDiagram
 
 ### Key Save Functions
 
-#### `saveAtlasCohort()` - QueryFilterModern.vue:977-1032
+#### `saveAtlasCohort()` - QueryFilterModern.vue
 
 Orchestrates the save process:
 
@@ -195,7 +195,7 @@ Orchestrates the save process:
 3. **Metadata**: Adds creation/modification timestamps and user info
 4. **Persistence**: Dispatches Vuex action to save via API
 
-#### `convertToAtlasFormat()` - QueryFilterModel.ts:571
+#### `convertToAtlasFormat()` - QueryFilterModel.ts
 
 Transforms UI model back to Atlas JSON structure (method of QueryFilterCriteriaManager class):
 
@@ -215,7 +215,7 @@ The system handles two main types of recursion:
 Atlas `CorrelatedCriteria` structures can be nested arbitrarily deep. The conversion handles this through recursive processing:
 
 ```javascript
-// AtlasConverter.ts - convertCriteriaListToEvents()
+// AtlasConverter.ts - convertCriteriaListToEvents(criteriaList)
 if (criteriaObj.CorrelatedCriteria) {
   const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || []) // Recursive call
 
