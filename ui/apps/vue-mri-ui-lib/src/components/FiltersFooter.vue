@@ -180,11 +180,6 @@ export default {
       required: false,
       default: false,
     },
-    isUsingQueryFilter: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
   },
   data() {
     return {
@@ -222,11 +217,6 @@ export default {
       'getBookmarkByNameAndUsername',
     ]),
     hasChanges() {
-      // When using QueryFilter (Atlas bookmarks), always allow saving
-      if (this.isUsingQueryFilter) {
-        return true
-      }
-
       // For regular D2E bookmarks, use existing logic with null checks
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },

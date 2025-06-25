@@ -11,7 +11,7 @@ export default {
     <div ref="filtercardScrollContainer" class="filters-content">
       <boolcontainer :id="query.model.result" @toggle="toggleExclusion"></boolcontainer>
     </div>
-    <filtersFooter @add="addFilterCardHandler" :is-using-query-filter="useQueryFilter"></filtersFooter>
+    <filtersFooter @add="addFilterCardHandler"></filtersFooter>
   </div>
 </template>
 
@@ -26,9 +26,6 @@ interface AddFilterCardPayload {
 }
 
 const store = useStore()
-
-// TODO: This should come from the PA config
-const useQueryFilter = ref<boolean>(true)
 
 const showExclusion = ref<boolean>(false)
 const filtercardScrollContainer = ref<HTMLElement>()
