@@ -71,7 +71,6 @@ x-envs:
        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
-       "dataflowMgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
@@ -195,7 +194,6 @@ services:
               "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
               "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "dataflowMgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/dataflow-mgmt",
               "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
               "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
@@ -434,6 +432,8 @@ services:
             "PYTHON_VERIFY_SSL": "false",
             "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
             "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+            "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
+            "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
             "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-5}",
             "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
             "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
@@ -459,7 +459,8 @@ services:
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
           },
           "jupyter-gateway": {},
-          "mlflow": {}
+          "mlflow": {},
+          "strategus-results": {}
         }
       SERVICE_ROUTES: |-
         {
@@ -469,7 +470,6 @@ services:
         "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
         "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "dataflowMgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/dataflow-mgmt",
         "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
         "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
         "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
@@ -691,6 +691,13 @@ services:
           }
 
           @jupyter_websocket {
+            path /jupyter/*
+            header Connection *Upgrade*
+            header Upgrade websocket
+          }
+
+          @strategus_websocket {
+            path /strategus-results/*
             header Connection *Upgrade*
             header Upgrade websocket
           }
@@ -717,6 +724,24 @@ services:
             }
 
             reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
+          }
+
+          handle @strategus_websocket {
+            @study_id path_regexp /strategus-results/([^/]+)
+            handle @study_id {
+              uri strip_prefix /strategus-results/{re.1}
+              reverse_proxy {re.1}:3838 {
+                transport http {
+                  read_buffer 8192
+                }
+                header_up Host {re.1}:3838
+                header_up Connection {http.request.header.Connection}
+                header_up Upgrade {http.request.header.Upgrade}
+                header_up Sec-WebSocket-Key {http.request.header.Sec-WebSocket-Key}
+                header_up Sec-WebSocket-Version {http.request.header.Sec-WebSocket-Version}
+                header_up Sec-WebSocket-Protocol {http.request.header.Sec-WebSocket-Protocol}
+              }
+            }
           }
 
           ## call gateway if there are no matched files
@@ -1122,6 +1147,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 10
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
@@ -1387,5 +1414,6 @@ services:
     networks:
       alp:
       data:
+      enterprise-gateway:
     command: mlflow server --host 0.0.0.0 --port 5000
     profiles: [mlflow]
