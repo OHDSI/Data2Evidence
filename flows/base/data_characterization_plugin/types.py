@@ -9,7 +9,6 @@ class DCOptionsType(BaseModel):
     vocabSchemaName: str
     releaseDate: Optional[str] = None
     resultsSchema: str
-    excludeAnalysisIds: Optional[str] = None
 
     @property
     def use_cache_db(self) -> str:
