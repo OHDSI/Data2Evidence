@@ -1,1 +1,0 @@
-export { StudyPage } from "./StudyPage";
