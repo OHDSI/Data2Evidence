@@ -1,6 +1,8 @@
-import ibis
-from datetime import date, datetime
 from typing import Any
+from datetime import date, datetime
+
+import ibis
+from ibis.common.exceptions import IbisTypeError
 
 from ..types import (FieldHandle, SqlViewMode, FunctionType, DatePartType)
 
@@ -29,16 +31,19 @@ def apply_case(expr, case_values: dict[str, list[dict]]) -> ibis.expr.types.Expr
     """
     Apply a case function to an ibis column expression.
     """
-    cases = [ (expr == case["in"], case["out"]) for case in case_values["cases"] \
-             if "isDefault" not in case.keys() or case["isDefault"] is False ]
-    
-    default_case = next(filter(
-        lambda x: "isDefault" in x.keys() and x["isDefault"] is True, 
-        case_values["cases"]
-        ), None)
-    default_value = default_case.get("out", None) if default_case else None
+    try:
+        cases = [ (expr == case["in"], case["out"]) for case in case_values["cases"] \
+                if "isDefault" not in case.keys() or case["isDefault"] is False ]
+        
+        default_case = next(filter(
+            lambda x: "isDefault" in x.keys() and x["isDefault"] is True, 
+            case_values["cases"]
+            ), None)
+        default_value = default_case.get("out", None) if default_case else None
 
-    case_expr = ibis.cases(*cases, else_=default_value)
+        case_expr = ibis.cases(*cases, else_=default_value)
+    except IbisTypeError:
+        raise ValueError("Invalid case expression: Ensure 'in' values are compatible with the column data type.")
     return case_expr
 
 
