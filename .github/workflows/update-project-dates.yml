@@ -4,7 +4,6 @@ on:
   issues:
     types: [milestoned, demilestoned]
 
-
 jobs:
   update-issue-dates:
     runs-on: ubuntu-latest
@@ -47,8 +46,30 @@ jobs:
             const projectId = "PVT_kwDOAGRAXc4A2L7H";
             const startDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLj8";
             const endDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLkA";
-
             const issueNodeId = "${{ github.event.issue.node_id }}";
+
+            // Fetch ProjectV2Item ID for this issue in the project
+            const projectItems = await github.graphql(`
+              query($projectId: ID!, $issueId: ID!) {
+                node(id: $projectId) {
+                  ... on ProjectV2 {
+                    items(first: 100, filterBy: {contentId: $issueId}) {
+                      nodes {
+                        id
+                        content {
+                          ... on Issue { id }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { projectId, issueId: issueNodeId });
+            const items = projectItems.node.items.nodes;
+            if (!items.length) {
+              throw new Error("Issue is not part of the project. Cannot update/clear fields.");
+            }
+            const projectItemId = items[0].id;
 
             if (context.payload.action === 'milestoned') {
               const startDate = '${{ steps.get_previous_milestone.outputs.previous_milestone_due_date }}';
@@ -63,11 +84,11 @@ jobs:
 
               if (startDate && startDateFieldId) {
                 console.log(`Setting Start Date to: ${startDate}`);
-                await github.graphql(updateMutation, { projectId, itemId: issueNodeId, fieldId: startDateFieldId, value: startDate });
+                await github.graphql(updateMutation, { projectId, itemId: projectItemId, fieldId: startDateFieldId, value: startDate });
               }
               if (endDate && endDateFieldId) {
                 console.log(`Setting End Date to: ${endDate}`);
-                await github.graphql(updateMutation, { projectId, itemId: issueNodeId, fieldId: endDateFieldId, value: endDate });
+                await github.graphql(updateMutation, { projectId, itemId: projectItemId, fieldId: endDateFieldId, value: endDate });
               }
             }
             else if (context.payload.action === 'demilestoned') {
@@ -80,10 +101,10 @@ jobs:
 
               if (startDateFieldId) {
                 console.log('Clearing Start Date field.');
-                await github.graphql(clearMutation, { projectId, itemId: issueNodeId, fieldId: startDateFieldId });
+                await github.graphql(clearMutation, { projectId, itemId: projectItemId, fieldId: startDateFieldId });
               }
               if (endDateFieldId) {
                 console.log('Clearing End Date field.');
-                await github.graphql(clearMutation, { projectId, itemId: issueNodeId, fieldId: endDateFieldId });
+                await github.graphql(clearMutation, { projectId, itemId: projectItemId, fieldId: endDateFieldId });
               }
             }
