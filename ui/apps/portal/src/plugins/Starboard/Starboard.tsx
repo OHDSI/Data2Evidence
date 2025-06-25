@@ -1,5 +1,5 @@
 import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
-import AssistantIcon from "@mui/icons-material/Assistant";
+import ChatIcon from "@mui/icons-material/Chat";
 import Fab from "@mui/material/Fab";
 import { ChatItem } from "@nlux/react";
 import { Card, Loader } from "@portal/components";
@@ -280,7 +280,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           }}
           className="chat-button"
         >
-          <AssistantIcon />
+          <ChatIcon />
         </Fab>
         <div id="starboard-root" />
       </Card>

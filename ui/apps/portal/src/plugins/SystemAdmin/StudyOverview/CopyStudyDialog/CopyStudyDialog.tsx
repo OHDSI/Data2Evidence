@@ -135,14 +135,6 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
     fetchCohortDefinitionList();
   }, [fetchCopyStudyMetadata, fetchCohortDefinitionList]);
 
-  const handleSnapshotLocationChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      event.preventDefault();
-      setFormData({ ...formData, snapshotLocation: event.target?.value || "" });
-    },
-    [formData]
-  );
-
   const [feedback, setFeedback] = useState<Feedback>({});
 
   const handleClose = useCallback(
@@ -177,14 +169,6 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       event.preventDefault();
       if (!study?.id) return;
 
-      if (formData.snapshotLocation === "") {
-        setFeedback({
-          type: "error",
-          message: getText(i18nKeys.COPY_STUDY_DIALOG__SNAPSHOT_LOCATION_REQUIRED),
-        });
-        return;
-      }
-
       // If cohort filter checkbox is selected but no cohort was selected
       if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
         setFeedback({
@@ -208,7 +192,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       }
 
       setFeedback({});
-      const { name, date, snapshotLocation, copyStudySchemaMetadata, cohortDefinitionId } = formData;
+      const { name, date, copyStudySchemaMetadata, cohortDefinitionId } = formData;
 
       // Create snapshot copy config object
       const snapshotCopyConfig: SnapshotCopyConfig = {};
@@ -237,7 +221,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       const input: CopyStudyInput = {
         newStudyName: name,
         sourceStudyId: study.id,
-        snapshotLocation: `${snapshotLocation}`,
+        snapshotLocation: "DB",
         dataModel: study.dataModel,
       };
       // If snapshotCopyConfig is not empty, add to CopyStudyInput
@@ -405,27 +389,6 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
                 error={copyStudyMetadataFetchError}
               ></SchemaFilter>
             )}
-          </div>
-          <div className="snapshotlocation__radiogroup">
-            <FormControl component="fieldset">
-              <FormLabel component="legend">{getText(i18nKeys.COPY_STUDY_DIALOG__SNAPSHOT_LOCATION_1)}</FormLabel>
-              <RadioGroup
-                name={getText(i18nKeys.COPY_STUDY_DIALOG__SNAPSHOT_LOCATION_2)}
-                value={formData.snapshotLocation}
-                onChange={handleSnapshotLocationChange}
-              >
-                <FormControlLabel
-                  value="DB"
-                  control={<Radio />}
-                  label={getText(i18nKeys.COPY_STUDY_DIALOG__STORE_SNAPSHOTS_IN_DB)}
-                />
-                <FormControlLabel
-                  value="PARQUET"
-                  control={<Radio />}
-                  label={getText(i18nKeys.COPY_STUDY_DIALOG__STORE_SNAPSHOTS_AS_PARQUET)}
-                />
-              </RadioGroup>
-            </FormControl>
           </div>
           <Divider />
           <div className="button-group-actions">

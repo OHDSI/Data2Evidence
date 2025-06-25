@@ -40,6 +40,7 @@ env=.env
 context=""
 fhir=""
 demo=""
+minio=""
 dicom=""
 cachedb=""
 jupyter=""
@@ -53,6 +54,7 @@ while [[ $# -gt 0 ]]; do
         -d|--function-path) function_path="$2"; shift ;;
         -e|--demo) demo=--profile="demodb" ;;
         -f|--fhir) fhir=--profile="fhir" ;;
+        -g|--minio) minio=--profile="minio" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
@@ -237,6 +239,7 @@ case $cmd in
         echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
         echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
         echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
+        echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
