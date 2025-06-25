@@ -4,7 +4,7 @@ test.use({
   ignoreHTTPSErrors: true
 })
 
-test('test', async ({ page }) => {
+test('admin-users', async ({ page }) => {
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
