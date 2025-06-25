@@ -23,7 +23,7 @@ test('attributes', async ({ page }) => {
   await page.getByRole('button', { name: 'Add Attribute' }).click()
   await page.getByRole('textbox', { name: 'Attribute Id' }).click()
   await page.getByRole('textbox', { name: 'Attribute Id' }).fill('testattribute')
-  await page.getByRole('textbox', { name: 'Attribute Id' }).press('Tab')
+  await page.getByRole('textbox', { name: 'Attribute Name' }).click()
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('testattribute')
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByRole('cell', { name: 'testattribute' }).first()).toBeVisible()
