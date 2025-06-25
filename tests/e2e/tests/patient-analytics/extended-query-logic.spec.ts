@@ -24,9 +24,9 @@ test('patient-analytics-extended-query-logic', async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2694 / 2694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('[id="__BVID__34__BV_toggle_"]').click()
+  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.dropdown').click()
   await page.getByText('Month of Birth').click()
-  await page.locator('[id="__BVID__34__BV_toggle_"]').click()
+  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.dropdown').click()
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByRole('textbox').fill('6')
   await page.getByRole('textbox').press('Enter')
