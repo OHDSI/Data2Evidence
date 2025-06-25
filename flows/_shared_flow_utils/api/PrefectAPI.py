@@ -1,3 +1,4 @@
+from jwt import decode
 from datetime import timedelta
 
 from prefect import task
@@ -17,21 +18,19 @@ def get_token_value(auth_token: AuthToken) -> str:
 def get_third_party_token_value(auth_token: AuthToken) -> str:
     return auth_token.thirdpartytoken.get_secret_value()
 
-def buildUserFromToken(token: AppTokenPayload):
-    if(token):
-        name = token.get("name")
-        oid = token.get("oid")
-        sub = token.get("sub")
-        email = token.get("email")
-        user: User = {
-            "userId": oid if oid is not None else sub,
-            "name": name,
-            "email": email,
+def build_user_from_token(token: str) -> User:
+    if token:
+        # decode token
+        decoded_token = decode(token, options={"verify_signature": False})
+        user = {
+            "user_id": decoded_token.get("oid", decoded_token.get("sub", "")),
+            "name": decoded_token.get("name", ""),
+            "email": decoded_token.get("email", "")
         }
     else:
-        user: User = {
-            "userId": "",
+        user = {
+            "user_id": "",
             "name": "",
             "email": "",
         }
-    return user
+    return User(**user)
