@@ -231,9 +231,13 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   const handleChatOpen = useCallback(() => {
     setOpen(!open);
     setTimeout(() => {
-      const container = document.querySelector(".nlux-chatSegments-container");
-      if (container && container.lastElementChild) {
-        (container.lastElementChild as HTMLElement).scrollIntoView({ behavior: "auto", block: "end" });
+      const chatSegmentsContainer = document.querySelector(".nlux-chatSegments-container");
+      if (chatSegmentsContainer && chatSegmentsContainer.lastElementChild) {
+        (chatSegmentsContainer.lastElementChild as HTMLElement).scrollIntoView({ behavior: "auto", block: "end" });
+      }
+      const chatInputContainer = document.querySelector(".nlux-comp-composer textarea") as HTMLTextAreaElement;
+      if (chatInputContainer) {
+        chatInputContainer.focus();
       }
     }, 0);
   }, [open]);
