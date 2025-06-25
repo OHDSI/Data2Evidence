@@ -5,10 +5,12 @@
 
 .chat {
   &-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
     flex: 3 1 0%;
     min-width: 0;
     height: 100%;
     overflow: auto;
-    flex-direction: column;
   }
 }
