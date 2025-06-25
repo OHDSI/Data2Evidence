@@ -219,18 +219,7 @@ export class QueryFilterCardModel {
     return true
   }
 
-  addNestedAttributeEvent(parentEventId: string, attributeConfig: any): QueryFilterEvent {
-    throw new Error('Legacy addNestedAttributeEvent method is not supported. Use attributes instead.')
-  }
-
-  updateNestedOperator(nestedEventId: string, operator: 'AND' | 'OR'): boolean {
-    throw new Error('Legacy updateNestedOperator method is not supported. Use attributes instead.')
-  }
-
   // Legacy
-  removeNestedEvent(nestedEventId: string, eventId: string): boolean {
-    throw new Error('Legacy removeNestedEvent method is not supported. Use attributes instead.')
-  }
 
   removeEvent(eventId: string): boolean {
     const index = this.events.findIndex(e => e.id === eventId)
@@ -584,8 +573,8 @@ export class QueryFilterCriteriaManager {
 
     // Initialize mapping objects early so they can be used throughout the method
     const conceptSets: any[] = []
-    const usedConceptSetIds = new window.Set() as Set<string>
-    const systemIdToAtlasId = new window.Map() as Map<string, number> // System ID → Atlas sequential ID
+    const usedConceptSetIds = new Set<string>()
+    const systemIdToAtlasId = new Map<string, number>() // System ID → Atlas sequential ID
 
     // FIRST: Build concept sets and mapping before processing InclusionRules
     ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {

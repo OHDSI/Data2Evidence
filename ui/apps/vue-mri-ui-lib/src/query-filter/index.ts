@@ -1,4 +1,3 @@
-// Components
 export { default as QueryFilterEvent } from './components/QueryFilterEvent.vue'
 export { default as QueryFilterNestedEvent } from './components/QueryFilterNestedEvent.vue'
 export { default as QueryFilterNestedCriteria } from './components/QueryFilterNestedCriteria.vue'
@@ -11,10 +10,7 @@ export { default as QueryFilterCriteriaGroup } from './components/QueryFilterCri
 export { default as QueryFilterEventContainer } from './components/QueryFilterEventContainer.vue'
 export { default as QueryFilterEventCard } from './components/QueryFilterEventCard.vue'
 
-// Models and types
 export * from './models/QueryFilterModel'
 export * from './models/AtlasCohortDefinition'
 
-// Utils
 export * from './utils/CriteriaConfigLoader'
-

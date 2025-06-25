@@ -1,7 +1,7 @@
-import { convertAtlasToFilters, getConceptSetMappings, ConceptSetItem } from '../AtlasConverter'
-import { QueryFilterCardModel, QueryFilterCriteriaManager } from '../../models/QueryFilterModel'
+import { convertAtlasToFilters, getConceptSetMappings } from '../AtlasConverter'
+import { QueryFilterCriteriaManager } from '../../models/QueryFilterModel'
 import sample6Expected from '../../__tests__/data/sample6-expected'
-import sample6Input from '../../__tests__/data/sample6-input'
+import { ConceptSetItem } from '@/query-filter/types/ConceptSetTypes'
 
 describe('AtlasConverter', () => {
   const mockConceptSets: ConceptSetItem[] = [
@@ -21,14 +21,14 @@ describe('AtlasConverter', () => {
         PrimaryCriteria: {
           CriteriaList: [],
           ObservationWindow: { PriorDays: 0, PostDays: 0 },
-          PrimaryCriteriaLimit: { Type: 'All' as const }
+          PrimaryCriteriaLimit: { Type: 'All' as const },
         },
         QualifiedLimit: { Type: 'All' as const },
         ExpressionLimit: { Type: 'All' as const },
         CensoringCriteria: [],
         CollapseSettings: { CollapseType: 'ERA' as const, EraPad: 0 },
         CensorWindow: {},
-        cdmVersionRange: '>=5.0.0'
+        cdmVersionRange: '>=5.0.0',
       }
       const result = convertAtlasToFilters(emptyAtlas, mockConceptSets)
       expect(result).toBeInstanceOf(QueryFilterCriteriaManager)
@@ -43,13 +43,13 @@ describe('AtlasConverter', () => {
           {
             id: 1,
             name: 'Test Condition Set',
-            expression: { items: [] }
+            expression: { items: [] },
           },
         ],
         PrimaryCriteria: {
           CriteriaList: [],
           ObservationWindow: { PriorDays: 0, PostDays: 0 },
-          PrimaryCriteriaLimit: { Type: 'All' as const }
+          PrimaryCriteriaLimit: { Type: 'All' as const },
         },
         QualifiedLimit: { Type: 'All' as const },
         ExpressionLimit: { Type: 'All' as const },
@@ -83,7 +83,7 @@ describe('AtlasConverter', () => {
       expect(criteria).toBeDefined()
       expect(criteria.criteria).toHaveLength(1)
       expect(criteria.criteria[0].events).toHaveLength(1)
-      
+
       const firstEvent = criteria.criteria[0].events[0]
       expect(firstEvent.eventType).toBe('conditionOccurrence')
     })
@@ -96,7 +96,7 @@ describe('AtlasConverter', () => {
         PrimaryCriteria: {
           CriteriaList: [],
           ObservationWindow: { PriorDays: 0, PostDays: 0 },
-          PrimaryCriteriaLimit: { Type: 'All' as const }
+          PrimaryCriteriaLimit: { Type: 'All' as const },
         },
         QualifiedLimit: { Type: 'All' as const },
         ExpressionLimit: { Type: 'All' as const },
@@ -138,18 +138,18 @@ describe('AtlasConverter', () => {
           {
             id: 1,
             name: 'Test Condition Set',
-            expression: { items: [] }
+            expression: { items: [] },
           },
           {
             id: 999,
             name: 'Missing Drug Set',
-            expression: { items: [] }
+            expression: { items: [] },
           },
         ],
         PrimaryCriteria: {
           CriteriaList: [],
           ObservationWindow: { PriorDays: 0, PostDays: 0 },
-          PrimaryCriteriaLimit: { Type: 'All' as const }
+          PrimaryCriteriaLimit: { Type: 'All' as const },
         },
         QualifiedLimit: { Type: 'All' as const },
         ExpressionLimit: { Type: 'All' as const },

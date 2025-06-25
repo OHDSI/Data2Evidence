@@ -1,13 +1,6 @@
-/**
- * Utility functions for converting between Atlas cohort definitions and QueryFilter UI models
- */
-import { QueryFilterCardModel, QueryFilterEvent, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterEvent, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
-export interface ConceptSetItem {
-  value: string
-  text?: string
-  display_value?: string
-}
+import type { ConceptSetItem } from '../types/ConceptSetTypes'
 
 export interface ConceptSetMapping {
   name: string
@@ -26,16 +19,11 @@ export const convertAtlasToFilters = (
   const cohortDefinition = atlasJson
   const cohortName = atlasJson.name
 
-  const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping => {
-    console.log(`Looking for concept set with CodesetId: ${codesetId}`)
+  const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping | null => {
     const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
 
     if (atlasConceptSet) {
-      const atlasId = atlasConceptSet.id
       const systemConceptSetId = atlasConceptSet.conceptSetId
-      console.log(
-        `Found Atlas concept set: ${atlasConceptSet.name} (Atlas ID: ${atlasId}, System ID: ${systemConceptSetId})`
-      )
 
       if (!systemConceptSetId) {
         console.error(`Atlas concept set ${atlasConceptSet.name} has no conceptSetId`)
@@ -44,7 +32,6 @@ export const convertAtlasToFilters = (
       const localConceptSet = availableConceptSets.find(cs => cs.value == systemConceptSetId.toString())
 
       if (localConceptSet) {
-        console.log(`Found local concept set: ${localConceptSet.text} (ID: ${localConceptSet.value})`)
         return {
           name: localConceptSet.text || localConceptSet.display_value || atlasConceptSet.name,
           id: systemConceptSetId.toString(),
@@ -110,9 +97,7 @@ export const convertAtlasToFilters = (
   }
 
   const convertCriteriaListToEvents = (criteriaList: any[]): QueryFilterEvent[] => {
-    console.log(`🔧 convertCriteriaListToEvents called with ${criteriaList?.length || 0} criteria`)
     if (!criteriaList || criteriaList.length === 0) {
-      console.log(`🔧 No criteria to convert, returning empty array`)
       return []
     }
 
@@ -176,12 +161,7 @@ export const convertAtlasToFilters = (
 
       // Handle CorrelatedCriteria (nested structure) - Convert to attributes format
       if (criteriaObj.CorrelatedCriteria) {
-        console.log(`🔧 AtlasConverter: Found CorrelatedCriteria for event ${event.id}`)
-        console.log(`🔧 CorrelatedCriteria:`, criteriaObj.CorrelatedCriteria)
-        console.log(`🔧 CriteriaList length:`, criteriaObj.CorrelatedCriteria.CriteriaList?.length || 0)
-
         const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
-        console.log(`🔧 Converted nested criteria events:`, nestedCriteriaEvents)
 
         const nestedAttribute = {
           id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -193,21 +173,11 @@ export const convertAtlasToFilters = (
           },
         }
 
-        console.log(`🔧 Created nestedAttribute:`, nestedAttribute)
-
         // Initialize attributes if not exists
         if (!event.attributes) {
           event.attributes = []
         }
         event.attributes.push(nestedAttribute)
-
-        console.log(`🔧 Event after adding attributes:`, {
-          id: event.id,
-          conceptSet: event.conceptSet,
-          hasAttributes: !!event.attributes,
-          attributesLength: event.attributes?.length || 0,
-          attributesData: event.attributes,
-        })
       }
 
       events.push(event)
@@ -301,7 +271,6 @@ export const convertAtlasToFilters = (
   }
 
   if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
-    console.log(`🔧 Processing ${cohortDefinition.CensoringCriteria.length} censoring criteria`)
     exitEvents.censoringCriteria = convertCriteriaListToEvents(cohortDefinition.CensoringCriteria)
   }
 
@@ -314,7 +283,6 @@ export const convertAtlasToFilters = (
   }
 
   if (cohortDefinition.PrimaryCriteria?.CriteriaList) {
-    console.log(`🔧 Processing ${cohortDefinition.PrimaryCriteria.CriteriaList.length} primary criteria`)
     entryEvents.events = convertCriteriaListToEvents(cohortDefinition.PrimaryCriteria.CriteriaList)
 
     // Add observation window if present
