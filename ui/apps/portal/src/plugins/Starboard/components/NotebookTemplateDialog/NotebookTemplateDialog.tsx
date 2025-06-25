@@ -50,10 +50,6 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       setTemplates(templateList);
     } catch (error) {
       console.error("Failed to load templates:", error);
-      setFeedback({
-        type: "error",
-        message: getText(i18nKeys.STARBOARD__ERROR_LOAD_TEMPLATES),
-      });
     } finally {
       setLoading(false);
     }
