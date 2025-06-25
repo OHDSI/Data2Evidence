@@ -186,12 +186,8 @@ export const convertAtlasToFilters = (
         console.log(`🔧 Converted nested criteria events:`, nestedCriteriaEvents)
 
         const nestedAttribute = {
-          id: 'nested', // Use 'nested' ID to match UI filter logic
-          name: 'Nested Criteria',
-          title: 'Nested Criteria',
-          description: 'Nested criteria conditions',
-          type: 'nested',
-          category: 'criteria-specific',
+          id: `attribute_${Math.random().toString(36).substring(2)}`,
+          attributeType: 'nested',
           nestedCriteria: {
             id: `criteria_${Math.random().toString(36).substring(2)}`,
             criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',

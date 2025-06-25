@@ -164,6 +164,7 @@ const getDatasetIdFromProps = (): string => {
 
 // Handle attribute selection
 const handleAttributeSelected = (attribute: AttributeConfig) => {
+  // attribute here is in the shape that the dropdown emits, not to be confused with the criteria json structure
   const currentAttributes = eventData.value.attributes || []
   const currentSelectedAttributes = eventData.value.selectedAttributes || []
 
@@ -408,7 +409,9 @@ const sideBarRef = ref(null)
               <!-- Attribute Header -->
               <div class="attribute-header">
                 <span class="attribute-title">{{
-                  attribute.title || attribute.name || (attribute.id === 'nested' ? 'Nested Criteria' : attribute.id)
+                  attribute.title ||
+                  attribute.name ||
+                  (attribute.attributeType === 'nested' ? 'Nested Criteria' : attribute.id)
                 }}</span>
                 <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">
                   ×
@@ -416,7 +419,7 @@ const sideBarRef = ref(null)
               </div>
 
               <!-- Nested Criteria Attribute -->
-              <div v-if="attribute.id === 'nested'" class="attribute-nested">
+              <div v-if="attribute.attributeType === 'nested'" class="attribute-nested">
                 <QueryFilterNestedCriteria
                   :nested-criteria="attribute.nestedCriteria"
                   :concept-sets="conceptSets"

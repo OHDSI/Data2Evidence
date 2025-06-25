@@ -762,7 +762,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 
   // Check if concept set already exists by conceptSetId (system ID)
   if (atlasConceptSet.conceptSetId) {
-    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId.toString())
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId)
     if (existingConceptSet) {
       console.log(`Found existing concept set by conceptSetId: ${existingConceptSet.text}`)
       return existingConceptSet
