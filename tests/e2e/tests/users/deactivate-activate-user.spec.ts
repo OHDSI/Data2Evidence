@@ -62,7 +62,7 @@ test('deactivate-activate-user', async ({ page }) => {
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('testuser')
   await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('testpassword')
+  await page.locator('input[name="password"]').fill('J*%YqaKNbnqH@')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click() // account button
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
