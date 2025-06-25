@@ -4,9 +4,6 @@ on:
   issues:
     types: [milestoned, demilestoned]
 
-permissions:
-  contents: write
-  issues: write
 
 jobs:
   update-issue-dates:
@@ -45,7 +42,7 @@ jobs:
       - name: Update or Clear Project Item Fields
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_PROJECT_PAT }}
           script: |
             const projectId = "PVT_kwDOAGRAXc4A2L7H";
             const startDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLj8";
