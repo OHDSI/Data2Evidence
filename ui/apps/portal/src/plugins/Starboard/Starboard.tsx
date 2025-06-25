@@ -170,55 +170,61 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   }, [openTemplateDialog]);
 
   // Check Jupyter Notebook Name if it exist in the database
-  const checkNotebookName = useCallback(async (name: string) => {
-    const allNotebooks: any[] = await api.studyNotebook.getNotebookList(activeDatasetId);
-    let isFound = true;
-    let nameCount = 0;
-    let notebookName = name;
+  const checkNotebookName = useCallback(
+    async (name: string) => {
+      const allNotebooks: any[] = await api.studyNotebook.getNotebookList(activeDatasetId);
+      let isFound = true;
+      let nameCount = 0;
+      let notebookName = name;
 
-    // Loop continues when the name + number is found
-    while (isFound) {
-      const exist = allNotebooks.some((note) => note.name === notebookName);
-      if (exist) {
-        // Found a notebook with matching name
-        nameCount++;
-        notebookName = name + ` ${nameCount}`;
-      } else {
-        isFound = false;
+      // Loop continues when the name + number is found
+      while (isFound) {
+        const exist = allNotebooks.some((note) => note.name === notebookName);
+        if (exist) {
+          // Found a notebook with matching name
+          nameCount++;
+          notebookName = name + ` ${nameCount}`;
+        } else {
+          isFound = false;
+        }
       }
-    }
 
-    return notebookName;
-  }, []);
+      return notebookName;
+    },
+    [api, activeDatasetId]
+  );
 
   // Import Jupyter Notebook and create the notebook.
-  const importJupyterNb = useCallback(async (event: any) => {
-    const myFile = event.target.files[0];
-    const text = await myFile.text();
-    try {
-      let notebookName = myFile.name.replace(".ipynb", "");
-      notebookName = await checkNotebookName(notebookName);
-      const notebook_json = await JSON.parse(text);
-      const jupyterFile = notebook_json;
-      // Starboard Notebook in NotebookContent typeof data
-      const starboardNotebook = convertJupyterToStarboard(jupyterFile, {});
-      // Converting NotebookContent to Starboard String
-      const notebookContent = notebookContentToText(starboardNotebook);
-      const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
-        activeDatasetId,
-        notebookName,
-        notebookContent
-      );
-      fetchNotebooks(true);
-      updateActiveNotebook(newNotebook);
-    } catch (err) {
-      console.error(err);
-      setFeedback({
-        type: "error",
-        message: getText(i18nKeys.STARBOARD__ERROR_IMPORT),
-      });
-    }
-  }, []);
+  const importJupyterNb = useCallback(
+    async (event: any) => {
+      const myFile = event.target.files[0];
+      const text = await myFile.text();
+      try {
+        let notebookName = myFile.name.replace(".ipynb", "");
+        notebookName = await checkNotebookName(notebookName);
+        const notebook_json = await JSON.parse(text);
+        const jupyterFile = notebook_json;
+        // Starboard Notebook in NotebookContent typeof data
+        const starboardNotebook = convertJupyterToStarboard(jupyterFile, {});
+        // Converting NotebookContent to Starboard String
+        const notebookContent = notebookContentToText(starboardNotebook);
+        const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
+          activeDatasetId,
+          notebookName,
+          notebookContent
+        );
+        fetchNotebooks(true);
+        updateActiveNotebook(newNotebook);
+      } catch (err) {
+        console.error(err);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STARBOARD__ERROR_IMPORT),
+        });
+      }
+    },
+    [activeDatasetId, fetchNotebooks, updateActiveNotebook, setFeedback, getText]
+  );
 
   const handleChatClose = useCallback(
     (chatHistory: ChatItem[]) => {
