@@ -15,8 +15,10 @@ from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 
 from _shared_flow_utils.types import UserType
+from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 
+os.environ['plugin_name'] = 'strategus_plugin'
 class Node:
     def __init__(self, node):
         self.id = node["id"]
@@ -878,9 +880,10 @@ class StrategusNode(Node):
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_name):
+def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
+            database_code = dbSettings['database_code']
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -891,20 +894,11 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
-                user=db_credentials.adminUser,
-                password=db_credentials.adminPassword.get_secret_value(),
+                connectionString=construct_jdbc_url(db_credentials),
+                user=db_credentials.readUser,
+                password=db_credentials.readPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
             )
-
-            # TODO: remove hardcode
-            # rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-            #         dbms='postgresql', 
-            #         connectionString=f'jdbc:postgresql://alp-demodb:5432/postgres',
-            #         user='',
-            #         password='',
-            #         pathToDriver = databaseConnectorJarFolder
-            #     )
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
@@ -913,8 +907,56 @@ def execute_r_strategus(analysisSpec, executionSettings, database_code, schema_n
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
         except Exception as e:
             print('Error: ', e)
-            return RuntimeError('Execution of strategus has failed')
+            raise RuntimeError('Execution of strategus has failed')
 
+@flow(name="upload-strategus-results",
+      log_prints=True)
+def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
+    with ro.default_converter.context():
+        try:
+            database_code = dbSettings['database_code']
+            results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
+            rStrategus = importr('Strategus')
+            rParallelLogger = importr('ParallelLogger')
+            rDatabaseConnector = importr('DatabaseConnector')
+            databaseConnectorJarFolder = '/app/inst/drivers'
+
+            dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code)
+            db_credentials = dbdao.tenant_configs
+            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
+                dbms='postgresql', 
+                connectionString=construct_jdbc_url(db_credentials),
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
+                pathToDriver = databaseConnectorJarFolder
+            )
+            rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
+
+            # if schema exists, drop and recreate the schema
+            if(not dbdao.check_schema_exists(results_schema)):
+                dbdao.create_schema(results_schema)
+
+            # create results datamodel settings
+            resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
+                resultsDatabaseSchema = results_schema,
+                resultsFolder = path_to_results,
+            )
+            # create results datamodel 
+            rStrategus.createResultDataModel(
+                analysisSpecifications = rAnalysisSpec,
+                resultsDataModelSettings = resultsDataModelSettings,
+                resultsConnectionDetails = rConnectionDetails
+            )
+            # upload results to the database
+            rStrategus.uploadResults(
+                resultsConnectionDetails = rConnectionDetails,
+                analysisSpecifications = rAnalysisSpec,
+                resultsDataModelSettings = resultsDataModelSettings
+            )
+        except Exception as e:
+            print('Error: ', e)
+            raise RuntimeError('Uploading results of strategus has failed')
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
@@ -926,3 +968,18 @@ def get_input_nodes_by_class_type_from_results(inputs: Dict[str, Result], nodeTy
 
 def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
+
+def construct_jdbc_url(db_credentials):
+    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
+
+@flow(name="drop-strategus-results-schema", log_prints=True)
+def drop_strategus_results_schema(dbSettings):
+    database_code = dbSettings['database_code']
+    results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
+    dbdao = DBDao(use_cache_db=False,
+                  database_code=database_code)
+    
+    if(dbdao.check_schema_exists(results_schema)):
+        dbdao.drop_schema(results_schema, True)
+    else:
+        raise Exception(f"Schema {results_schema} not found")

@@ -5,9 +5,9 @@ import {
   SCOPE,
 } from "@danet/core";
 import fs from "fs";
-import * as path from "path";
 import http from "http";
 import git from "isomorphic-git";
+import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { DEFAULT_ERROR_MESSAGE } from "../common/const.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
@@ -15,11 +15,15 @@ import { ConfigService } from "../config/config.service.ts";
 import { INotebook, INotebookBaseDto, INotebookUpdateDto } from "../types.d.ts";
 import { ServiceName } from "../user-artifact/enums/index.ts";
 import { UserArtifactService } from "../user-artifact/user-artifact.service.ts";
+import { NotebookTemplateDto } from "./dto/notebook-template.dto.ts";
+import { env } from "../env.ts";
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class NotebookService {
   private readonly userId: string;
   private readonly gitRepoPath = "./NotebookRepository";
+  private readonly templateRepoPath = "./NotebookTemplateRepository";
+  private readonly notebooksFolder = "notebooks";
   private readonly gitConfig = {
     defaultAuthor: {
       name: "Notebook System",
@@ -34,18 +38,28 @@ export class NotebookService {
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
 
-    // Ensure git repo directory exists
+    // Ensure git repo directories exist
     if (!fs.existsSync(this.gitRepoPath)) {
       fs.mkdirSync(this.gitRepoPath, { recursive: true });
     }
+    if (!fs.existsSync(this.templateRepoPath)) {
+      fs.mkdirSync(this.templateRepoPath, { recursive: true });
+    }
   }
 
-  private async getGitConfig(): Promise<{ repoUrl: string; pat: string; branch: string } | null> {
+  private async getGitConfig(): Promise<{
+    repoUrl: string;
+    pat: string;
+    branch: string;
+  } | null> {
     try {
-      const config = await this.configService.getConfigByType("notebook-git-config");
-      console.log(`Git config: ${config?.value}`);
-      if (config?.value) {
-        return JSON.parse(config.value);
+      const config = await this.configService.getConfigValuesByTypes([
+        "notebook-git-config",
+      ]);
+      const value = config["notebook-git-config"];
+      console.log(`Git config: ${value}`);
+      if (value) {
+        return JSON.parse(value);
       }
       return null;
     } catch (error) {
@@ -59,7 +73,9 @@ export class NotebookService {
       const gitConfig = await this.getGitConfig();
       return gitConfig?.repoUrl || "";
     } catch (error) {
-      console.error(`Failed to get git remote URL from config ${error}, using default`);
+      console.error(
+        `Failed to get git remote URL from config ${error}, using default`
+      );
       return "";
     }
   }
@@ -67,10 +83,12 @@ export class NotebookService {
   private async getDefaultBranch(): Promise<string> {
     try {
       const gitConfig = await this.getGitConfig();
-      return gitConfig?.branch || "main";
+      return gitConfig?.branch || "";
     } catch (error) {
-      console.error(`Failed to get default branch from config ${error}, using default`);
-      return "main";
+      console.error(
+        `Failed to get default branch from config ${error}, using default`
+      );
+      return "";
     }
   }
 
@@ -249,14 +267,17 @@ export class NotebookService {
     notebookEntity: any,
     commitMessage: string
   ) {
-    const repoDir = this.gitRepoPath; // Use a single repository for all notebooks
-    const fileName = `${notebookId}.json`; // Each notebook gets its own file
-    const filePath = path.join(repoDir, fileName);
+    const repoDir = this.gitRepoPath;
+    const notebooksDir = path.join(repoDir, this.notebooksFolder);
+    const fileName = `${notebookId}.json`;
+    const filePath = path.join(notebooksDir, fileName);
     const defaultBranch = await this.getDefaultBranch();
     const gitRemoteUrl = await this.getGitRemoteUrl();
 
     if (!gitRemoteUrl || !defaultBranch) {
-      console.log("Git remote URL or default branch not configured, skipping Git operations");
+      console.log(
+        "Git remote URL or default branch not configured, skipping Git operations"
+      );
       return;
     }
 
@@ -392,11 +413,22 @@ export class NotebookService {
       }
 
       const notebookData = JSON.stringify(notebookEntity, null, 2);
+
+      // Ensure notebooks directory exists
+      if (!fs.existsSync(notebooksDir)) {
+        fs.mkdirSync(notebooksDir, { recursive: true });
+      }
+
       fs.writeFileSync(filePath, notebookData);
 
-      await git.add({ fs, dir: repoDir, filepath: fileName });
+      const relativeFilePath = path.join(this.notebooksFolder, fileName);
+      await git.add({ fs, dir: repoDir, filepath: relativeFilePath });
 
-      const status = await git.status({ fs, dir: repoDir, filepath: fileName });
+      const status = await git.status({
+        fs,
+        dir: repoDir,
+        filepath: relativeFilePath,
+      });
       if (status !== "unmodified") {
         try {
           const commitId = await git.commit({
@@ -438,13 +470,16 @@ export class NotebookService {
 
   private async deleteFromGitRepo(notebookId: string, commitMessage: string) {
     const repoDir = this.gitRepoPath;
+    const notebooksDir = path.join(repoDir, this.notebooksFolder);
     const fileName = `${notebookId}.json`;
-    const filePath = path.join(repoDir, fileName);
+    const filePath = path.join(notebooksDir, fileName);
     const defaultBranch = await this.getDefaultBranch();
     const gitRemoteUrl = await this.getGitRemoteUrl();
 
     if (!gitRemoteUrl || !defaultBranch) {
-      console.log("Git remote URL or default branch not configured, skipping Git operations");
+      console.log(
+        "Git remote URL or default branch not configured, skipping Git operations"
+      );
       return;
     }
 
@@ -470,7 +505,7 @@ export class NotebookService {
       // Fetch latest changes
       try {
         const remotes = await git.listRemotes({ fs, dir: repoDir });
-        const hasOrigin = remotes.some((r) => r.remote === "origin");
+        const hasOrigin = remotes.some((r: any) => r.remote === "origin");
 
         if (hasOrigin) {
           try {
@@ -517,11 +552,11 @@ export class NotebookService {
         throw new Error(`File ${fileName} does not exist in repository`);
       }
 
-
       try {
         // Remove the file from the filesystem and git
         fs.unlinkSync(filePath);
-        await git.remove({ fs, dir: repoDir, filepath: fileName });
+        const relativeFilePath = path.join(this.notebooksFolder, fileName);
+        await git.remove({ fs, dir: repoDir, filepath: relativeFilePath });
 
         const commitId = await git.commit({
           fs,
@@ -552,6 +587,525 @@ export class NotebookService {
     } catch (error) {
       console.error(`Git operation failed during deletion: ${error.message}`);
       throw new Error(`Git operation failed during deletion: ${error.message}`);
+    }
+  }
+
+  async overwriteNotebookFromRemote(notebookId: string) {
+    const gitConfig = await this.getGitConfig();
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
+      console.log("Git config not set, skip git operations");
+      return {
+        message: "Git config not set, skip git operations",
+        overwritten: false,
+        notebookId: notebookId,
+      };
+    }
+
+    const {
+      repoUrl: gitRemoteUrl,
+      branch: defaultBranch,
+      pat: gitCredentials,
+    } = gitConfig;
+
+    if (!gitRemoteUrl || !defaultBranch) {
+      throw new Error("Git remote URL or default branch not configured");
+    }
+
+    const repoDir = this.gitRepoPath;
+    const notebooksDir = path.join(repoDir, this.notebooksFolder);
+    const fileName = `${notebookId}.json`;
+    const filePath = path.join(notebooksDir, fileName);
+
+    try {
+      await this.ensureLatestFromRemote(
+        repoDir,
+        gitRemoteUrl,
+        defaultBranch,
+        gitCredentials
+      );
+
+      // Check if file exists in remote
+      if (!fs.existsSync(filePath)) {
+        return {
+          message: `Notebook ${notebookId} not found in remote repository, no action taken`,
+          overwritten: false,
+          notebookId: notebookId,
+        };
+      }
+
+      const remoteNotebookData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      const localNotebook = await this.getNotebook(notebookId);
+
+      if (localNotebook) {
+        // Compare the actual notebook content
+        const localNotebookContent = JSON.stringify(
+          localNotebook.notebookContent || ""
+        );
+        const remoteNotebookContent = JSON.stringify(
+          remoteNotebookData.notebookContent || ""
+        );
+
+        if (localNotebookContent === remoteNotebookContent) {
+          return {
+            message: `Notebook ${notebookId} content is identical to remote, no action taken`,
+            overwritten: false,
+            notebookId: notebookId,
+          };
+        }
+      }
+
+      // Update notebook from remote data
+      const updatedNotebook = {
+        id: notebookId,
+        name:
+          remoteNotebookData.name ||
+          localNotebook?.name ||
+          `Imported Notebook ${notebookId}`,
+        notebookContent: remoteNotebookData.notebookContent || "",
+        isShared: remoteNotebookData.isShared || false,
+        userId: this.userId,
+      };
+
+      if (localNotebook) {
+        const updatedServiceEntity = this.addOwner({
+          userId: this.userId,
+          id: notebookId,
+          serviceArtifact: updatedNotebook,
+        });
+        await this.userArtifactService.updateServiceArtifactEntity(
+          ServiceName.NOTEBOOKS,
+          updatedServiceEntity
+        );
+      } else {
+        const newServiceEntity = this.addOwner(updatedNotebook, true);
+        await this.userArtifactService.createServiceArtifact(
+          ServiceName.NOTEBOOKS,
+          {
+            serviceName: ServiceName.NOTEBOOKS,
+            serviceArtifact: newServiceEntity,
+          }
+        );
+      }
+
+      console.log(`Overwritten notebook ${notebookId} from remote`);
+
+      return {
+        message: `Successfully overwritten notebook ${notebookId} from remote due to content mismatch`,
+        overwritten: true,
+        notebookId: notebookId,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to overwrite notebook from remote: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
+  private async ensureLatestFromRemote(
+    repoDir: string,
+    gitRemoteUrl: string,
+    defaultBranch: string,
+    gitCredentials: string
+  ) {
+    // Ensure directory exists
+    if (!fs.existsSync(repoDir)) {
+      fs.mkdirSync(repoDir, { recursive: true });
+    }
+
+    let isGitRepo = false;
+    try {
+      await git.resolveRef({ fs, dir: repoDir, ref: "HEAD" });
+      isGitRepo = true;
+    } catch (e) {
+      isGitRepo = false;
+    }
+
+    if (!isGitRepo) {
+      console.log(`Cloning repository from ${gitRemoteUrl}`);
+      await git.clone({
+        fs,
+        http,
+        dir: repoDir,
+        url: gitRemoteUrl,
+        singleBranch: true,
+        depth: 1,
+        ref: defaultBranch,
+        onAuth: () => ({
+          username: gitCredentials,
+        }),
+      });
+      console.log(`Successfully cloned repository`);
+    } else {
+      try {
+        await git.fetch({
+          fs,
+          http,
+          dir: repoDir,
+          remote: "origin",
+          ref: defaultBranch,
+          onAuth: () => ({
+            username: gitCredentials,
+          }),
+        });
+
+        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
+        if (currentBranch !== defaultBranch) {
+          await git.checkout({ fs, dir: repoDir, ref: defaultBranch });
+        }
+
+        // Force update to match remote exactly
+        try {
+          await git.checkout({
+            fs,
+            dir: repoDir,
+            ref: `origin/${defaultBranch}`,
+            force: true,
+          });
+          console.log(`Force updated local repository to match remote`);
+        } catch (checkoutError) {
+          console.error(`Failed to force checkout: ${checkoutError.message}`);
+          throw new Error(`Failed to force checkout: ${checkoutError.message}`);
+        }
+      } catch (fetchError) {
+        console.error(`Failed to fetch from remote: ${fetchError.message}`);
+        throw new Error(`Failed to fetch from remote: ${fetchError.message}`);
+      }
+    }
+  }
+
+  async checkNotebookDiffFromRemote(notebookId: string) {
+    const gitConfig = await this.getGitConfig();
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
+      return { hasDifferences: false, reason: "Git config not set" };
+    }
+
+    const {
+      repoUrl: gitRemoteUrl,
+      branch: defaultBranch,
+      pat: gitCredentials,
+    } = gitConfig;
+
+    if (!gitRemoteUrl || !defaultBranch) {
+      return {
+        hasDifferences: false,
+        reason: "Git remote URL or default branch not configured",
+      };
+    }
+
+    const repoDir = this.gitRepoPath;
+    const notebooksDir = path.join(repoDir, this.notebooksFolder);
+    const fileName = `${notebookId}.json`;
+    const filePath = path.join(notebooksDir, fileName);
+
+    try {
+      await this.ensureLatestFromRemote(
+        repoDir,
+        gitRemoteUrl,
+        defaultBranch,
+        gitCredentials
+      );
+
+      if (!fs.existsSync(filePath)) {
+        return {
+          hasDifferences: false,
+          reason: "Notebook not found in remote repository",
+        };
+      }
+
+      const remoteNotebookData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      try {
+        const localNotebook = await this.getNotebook(notebookId);
+
+        const localNotebookContent = JSON.stringify(
+          localNotebook.notebookContent || ""
+        );
+        const remoteNotebookContent = JSON.stringify(
+          remoteNotebookData.notebookContent || ""
+        );
+        console.log(`localNotebookContent: ${localNotebookContent}`);
+        console.log(`remoteNotebookContent: ${remoteNotebookContent}`);
+        const hasDifferences = localNotebookContent !== remoteNotebookContent;
+
+        return {
+          hasDifferences,
+          reason: hasDifferences
+            ? "Content differs from remote"
+            : "Content is identical to remote",
+        };
+      } catch (notFoundError) {
+        console.log(`No local notebook found for ${notebookId}`);
+        return { hasDifferences: true, reason: "No local notebook found" };
+      }
+    } catch (error) {
+      console.error(`Failed to check notebook diff: ${error.message}`);
+      return {
+        hasDifferences: false,
+        reason: `Error checking differences: ${error.message}`,
+      };
+    }
+  }
+
+  async overwriteAllNotebooksFromRemote() {
+    const gitConfig = await this.getGitConfig();
+    if (!gitConfig || Object.keys(gitConfig).length === 0) {
+      throw new Error("Git config not set, cannot sync from remote");
+    }
+
+    const {
+      repoUrl: gitRemoteUrl,
+      branch: defaultBranch,
+      pat: gitCredentials,
+    } = gitConfig;
+
+    if (!gitRemoteUrl || !defaultBranch) {
+      throw new Error("Git remote URL or default branch not configured");
+    }
+
+    const repoDir = this.gitRepoPath;
+
+    try {
+      // Ensure we have the latest from remote
+      await this.ensureLatestFromRemote(
+        repoDir,
+        gitRemoteUrl,
+        defaultBranch,
+        gitCredentials
+      );
+
+      // Clear all local notebooks for this user
+      const existingNotebooks = await this.getNotebooksByUserId();
+      for (const notebook of existingNotebooks) {
+        await this.userArtifactService.deleteUserServiceArtifact(
+          this.userId,
+          ServiceName.NOTEBOOKS,
+          notebook.id
+        );
+      }
+
+      let files: string[] = [];
+      const notebooksDir = path.join(repoDir, this.notebooksFolder);
+      if (fs.existsSync(notebooksDir)) {
+        files = fs
+          .readdirSync(notebooksDir)
+          .filter((file) => file.endsWith(".json"));
+      } else {
+        console.log(`Notebooks folder does not exist`);
+        return {
+          message: `No notebooks folder found`,
+          processedCount: 0,
+          results: [],
+        };
+      }
+
+      const results: any[] = [];
+
+      for (const fileName of files) {
+        const notebookId = fileName.replace(".json", "");
+        const filePath = path.join(notebooksDir, fileName);
+
+        try {
+          const remoteNotebookData = JSON.parse(
+            fs.readFileSync(filePath, "utf8")
+          );
+
+          const notebookEntity = this.addOwner(
+            {
+              id: notebookId,
+              name: remoteNotebookData.name || `Notebook ${notebookId}`,
+              notebookContent: remoteNotebookData.notebookContent || "",
+              isShared: remoteNotebookData.isShared || false,
+              userId: this.userId,
+            },
+            true
+          );
+
+          await this.userArtifactService.createServiceArtifact(
+            ServiceName.NOTEBOOKS,
+            {
+              serviceName: ServiceName.NOTEBOOKS,
+              serviceArtifact: notebookEntity,
+            }
+          );
+
+          results.push({
+            notebookId: notebookId,
+            name: notebookEntity.name,
+          });
+        } catch (fileError) {
+          console.error(
+            `Failed to process file ${fileName}: ${fileError.message}`
+          );
+          results.push({
+            notebookId: notebookId,
+            error: `Failed to process: ${fileError.message}`,
+          });
+        }
+      }
+
+      console.log(
+        `Successfully overwritten all notebooks from remote. Processed ${files.length} files`
+      );
+
+      return {
+        message: `Successfully overwritten all notebooks from remote`,
+        processedCount: files.length,
+        results: results,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to overwrite all notebooks from remote: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
+  async getTemplates(): Promise<NotebookTemplateDto[]> {
+    try {
+      const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;
+      const templateBranch = env.NOTEBOOK_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = this.notebooksFolder;
+      const subDirPath = path.join(repoDir, subDir);
+
+      await this.ensureLatestFromTemplateRemote(
+        repoDir,
+        templateRepoUrl,
+        templateBranch
+      );
+
+      let files: string[] = [];
+      if (fs.existsSync(subDirPath)) {
+        files = fs
+          .readdirSync(subDirPath)
+          .filter((file) => file.endsWith(".json"));
+      } else {
+        console.log(`Template notebooks folder does not exist in repository`);
+        return [];
+      }
+
+      const templates: NotebookTemplateDto[] = [];
+
+      for (const fileName of files) {
+        const templateId = fileName.replace(".json", "");
+        const filePath = path.join(subDirPath, fileName);
+
+        try {
+          const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+          templates.push({
+            id: templateId,
+            name: templateData.name || templateId,
+            description: templateData.description || `Template: ${templateId}`,
+            notebookContent: templateData.notebookContent || templateData,
+          });
+        } catch (fileError) {
+          console.error(
+            `Failed to process template file ${fileName}: ${fileError.message}`
+          );
+        }
+      }
+
+      console.log(`Found ${templates.length} notebook templates`);
+      return templates;
+    } catch (error) {
+      console.error(`Failed to fetch notebook templates: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async createNotebookFromTemplate(
+    templateId: string,
+    name: string
+  ): Promise<INotebook> {
+    try {
+      const templateRepoUrl = env.NOTEBOOK_TEMPLATE_REPO_URL;
+      const templateBranch = env.NOTEBOOK_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = this.notebooksFolder;
+      const fileName = `${templateId}.json`;
+      const filePath = path.join(repoDir, subDir, fileName);
+
+      await this.ensureLatestFromTemplateRemote(
+        repoDir,
+        templateRepoUrl,
+        templateBranch
+      );
+
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`Template ${templateId} not found`);
+      }
+
+      const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      const notebookDto: INotebookBaseDto = {
+        name,
+        notebookContent: templateData.notebookContent || templateData,
+      };
+
+      const result = await this.createNotebook(notebookDto);
+
+      console.log(
+        `Created new notebook from template ${templateId} with id ${result.id}`
+      );
+
+      return result;
+    } catch (error) {
+      console.error(
+        `Failed to create notebook from template: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
+  private async ensureLatestFromTemplateRemote(
+    repoDir: string,
+    gitRemoteUrl: string,
+    defaultBranch: string,
+    gitCredentials?: string
+  ) {
+    try {
+      if (!gitRemoteUrl) {
+        throw new Error("Git remote URL is not configured");
+      }
+
+      const isRepo = fs.existsSync(path.join(repoDir, ".git"));
+      const authConfig = gitCredentials
+        ? { onAuth: () => ({ username: gitCredentials }) }
+        : {};
+
+      if (isRepo) {
+        // Repository exists, pull latest changes
+        console.log(`Pulling latest changes for template repo...`);
+        await git.pull({
+          fs,
+          http,
+          dir: repoDir,
+          author: this.gitConfig.defaultAuthor,
+          ...authConfig,
+        });
+        console.log(`Successfully pulled latest changes for template repo`);
+      } else {
+        // Repository doesn't exist, clone it
+        console.log(`Cloning template repository from ${gitRemoteUrl}...`);
+        await git.clone({
+          fs,
+          http,
+          dir: repoDir,
+          url: gitRemoteUrl,
+          ref: defaultBranch,
+          singleBranch: true,
+          depth: 1,
+          ...authConfig,
+        });
+        console.log(`Successfully cloned template repository`);
+      }
+    } catch (error) {
+      console.error(`Failed to sync with template remote: ${error.message}`);
+      throw error;
     }
   }
 }

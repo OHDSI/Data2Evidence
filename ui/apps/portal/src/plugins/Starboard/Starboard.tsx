@@ -1,21 +1,23 @@
-import React, { FC, useCallback, useEffect, useState } from "react";
-import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import { StarboardNotebook } from "./utils/notebook";
 import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
+import ChatIcon from "@mui/icons-material/Chat";
+import Fab from "@mui/material/Fab";
+import { ChatItem } from "@nlux/react";
 import { Card, Loader } from "@portal/components";
+import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../axios/api";
-import { useFeedback, useTranslation } from "../../contexts";
-import { EmptyNotebook } from "./components/EmptyNotebook";
-import { Header } from "./components/NotebookHeader/NotebookHeader";
-import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
+import Chat from "../../components/Chat/Chat";
+import { useConversationHistory, useFeedback, useTranslation } from "../../contexts";
 import { i18nKeys } from "../../contexts/app-context/states";
 import env from "../../env";
+import { useDialogHelper } from "../../hooks";
+import { EmptyNotebook } from "./components/EmptyNotebook";
+import { Header } from "./components/NotebookHeader/NotebookHeader";
+import { NotebookTemplateDialog } from "./components/NotebookTemplateDialog/NotebookTemplateDialog";
 import "./Starboard.scss";
-import Fab from "@mui/material/Fab";
-import AssistantIcon from "@mui/icons-material/Assistant";
-import Chat from "../../components/Chat/Chat";
-import { useConversationHistory } from "../../contexts";
-import { ChatItem } from "@nlux/react";
+import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
+import { StarboardNotebook } from "./utils/notebook";
+
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
@@ -118,19 +120,62 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     return runtime?.notebookContent || "";
   }, [runtime]);
 
-  const createNotebook = useCallback(async () => {
-    try {
-      const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(activeDatasetId, "Untitled", "");
-      fetchNotebooks(true);
-      updateActiveNotebook(newNotebook);
-    } catch (err) {
-      console.error(err);
-      setFeedback({
-        type: "error",
-        message: getText(i18nKeys.STARBOARD__ERROR_CREATE),
-      });
-    }
-  }, [fetchNotebooks, updateActiveNotebook, setFeedback, getText, activeDatasetId]);
+  const createNotebook = useCallback(
+    async (name?: string) => {
+      try {
+        const notebookName = name || "Untitled";
+        const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
+          activeDatasetId,
+          notebookName,
+          ""
+        );
+        fetchNotebooks(true);
+        updateActiveNotebook(newNotebook);
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.STARBOARD__SUCCESS_CREATE_NOTEBOOK, [notebookName]),
+        });
+      } catch (err) {
+        console.error(err);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STARBOARD__ERROR_CREATE),
+        });
+      }
+    },
+    [fetchNotebooks, updateActiveNotebook, setFeedback, getText, activeDatasetId]
+  );
+
+  const createNotebookFromTemplate = useCallback(
+    async (templateId: string, name: string) => {
+      try {
+        const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebookFromTemplate(
+          templateId,
+          name,
+          activeDatasetId
+        );
+        fetchNotebooks(true);
+        updateActiveNotebook(newNotebook);
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.STARBOARD__SUCCESS_CREATE_FROM_TEMPLATE, [name]),
+        });
+      } catch (err) {
+        console.error(err);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STARBOARD__ERROR_CREATE_FROM_TEMPLATE),
+        });
+      }
+    },
+    [fetchNotebooks, updateActiveNotebook, setFeedback, activeDatasetId]
+  );
+
+  const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
+
+  const handleCreateNotebook = useCallback(() => {
+    openTemplateDialog();
+  }, [openTemplateDialog]);
 
   // Check Jupyter Notebook Name if it exist in the database
   const checkNotebookName = async (name: string) => {
@@ -196,7 +241,20 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   }
 
   if (notebooks?.length === 0) {
-    return <EmptyNotebook createNotebook={createNotebook} importJupyterNb={importJupyterNb} />;
+    return (
+      <>
+        <EmptyNotebook createNotebook={handleCreateNotebook} importJupyterNb={importJupyterNb} />
+        {showTemplateDialog && (
+          <NotebookTemplateDialog
+            open={showTemplateDialog}
+            onClose={closeTemplateDialog}
+            onCreateBlank={(name: string) => createNotebook(name)}
+            onCreateFromTemplate={createNotebookFromTemplate}
+            activeDatasetId={activeDatasetId}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -207,7 +265,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         activeNotebook={activeNotebook}
         updateActiveNotebook={updateActiveNotebook}
         currentContent={handleReadContent}
-        createNotebook={createNotebook}
+        createNotebook={handleCreateNotebook}
         fetchNotebooks={fetchNotebooks}
         isShared={isShared}
         setIsShared={setIsShared}
@@ -222,11 +280,20 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
           }}
           className="chat-button"
         >
-          <AssistantIcon />
+          <ChatIcon />
         </Fab>
         <div id="starboard-root" />
       </Card>
       <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
+      {showTemplateDialog && (
+        <NotebookTemplateDialog
+          open={showTemplateDialog}
+          onClose={closeTemplateDialog}
+          onCreateBlank={(name: string) => createNotebook(name)}
+          onCreateFromTemplate={createNotebookFromTemplate}
+          activeDatasetId={activeDatasetId}
+        />
+      )}
     </div>
   );
 };

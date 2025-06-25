@@ -14,6 +14,7 @@ import {
   IFrontendBookmark,
   IAtlasCohortDefinition,
   IFormattedAtlasCohortDefinition,
+  IMaterializedBookmarkCohortDefinition,
 } from '../types'
 import { PortalAPI } from '../api/PortalAPI'
 import { AnalyticsSvcAPI } from '../api/AnalyticsAPI'
@@ -56,10 +57,16 @@ export function createBookmarkDto(
     cdm_config_version: cdmConfigVersion,
     user_id: userName,
     shared: shareBookmark,
+    materializedCohortDefinitions: [],
   }
 }
 
-export function formatUserArtifactData(paConfigId: string, data: any[], userName: string): IFormattedBookmark[] {
+export function formatUserArtifactData(
+  paConfigId: string,
+  data: any[],
+  userName: string,
+  datasetId: string
+): IFormattedBookmark[] {
   return data
     .filter(
       row =>
@@ -75,7 +82,7 @@ export function formatUserArtifactData(paConfigId: string, data: any[], userName
       version: row.version,
       user_id: row.user_id,
       shared: row.shared,
-      cohortDefinitionId: row.cohortDefinitionId,
+      cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(row, datasetId),
     }))
 }
 
@@ -104,12 +111,12 @@ export async function _loadAllBookmarks(
 
     // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
-    const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
+    const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName, datasetId)
 
     // Get and format atlas cohort definitions
     const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
     const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
-      _formatAtlasCohortDefinition(atlasCohortDefinition)
+      _formatAtlasCohortDefinition(atlasCohortDefinition, datasetId)
     )
 
     // Get and format materialized cohorts
@@ -162,7 +169,7 @@ export async function loadSingleBookmark(
   try {
     const portalAPI = new PortalAPI(token)
     const result = await portalAPI.getBookmarkById(bookmarkId, datasetId)
-    const formattedRows = formatUserArtifactData(paConfigId, result, userName)
+    const formattedRows = formatUserArtifactData(paConfigId, result, userName, datasetId)
     const returnValue = _convertBookmarkIFR({
       bookmarks: formattedRows,
     })
@@ -251,10 +258,14 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
       throw `Unable to find bookmark with id:${bookmarkId}, aborting delete bookmark`
     }
 
-    // If bookmark has a cohortDefinitionId, delete cohort before deleting bookmark
-    if (currentBookmark.cohortDefinitionId) {
+    // If bookmark has a cohortDefinitionId in this datasetId, delete cohort before deleting bookmark
+    const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
+      currentBookmark,
+      datasetId
+    )
+    if (materializedBookmarkCohortDefinitionId) {
       const analyticsSvcAPI = new AnalyticsSvcAPI(token)
-      await analyticsSvcAPI.deleteCohort(datasetId, currentBookmark.cohortDefinitionId)
+      await analyticsSvcAPI.deleteCohort(datasetId, materializedBookmarkCohortDefinitionId)
     }
 
     const result = await portalAPI.deleteBookmark(bookmarkId, datasetId)
@@ -315,9 +326,14 @@ export async function _renameBookmark(
 
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
     const updatedBookmark = result.artifacts.bookmarks.find(bookmark => bookmark.id === bookmarkId)
-    if (updatedBookmark.cohortDefinitionId) {
+
+    const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
+      updatedBookmark,
+      datasetId
+    )
+    if (materializedBookmarkCohortDefinitionId) {
       const analyticsSvcAPI = new AnalyticsSvcAPI(token)
-      await analyticsSvcAPI.renameCohortDefinition(datasetId, updatedBookmark.cohortDefinitionId, newBookmarkName)
+      await analyticsSvcAPI.renameCohortDefinition(datasetId, materializedBookmarkCohortDefinitionId, newBookmarkName)
     }
 
     callback(null, result)
@@ -568,21 +584,15 @@ const _formatMaterializedCohort = (cohortDefinition: IMaterializedCohort): IForm
 })
 
 const _formatAtlasCohortDefinition = (
-  atlasCohortDefinition: IAtlasCohortDefinition
+  atlasCohortDefinition: IAtlasCohortDefinition,
+  datasetId: string
 ): IFormattedAtlasCohortDefinition => ({
   id: atlasCohortDefinition.id,
   name: atlasCohortDefinition.name,
   username: atlasCohortDefinition.createdBy,
   createdOn: new Date(atlasCohortDefinition.createdDate).toISOString(),
   updatedOn: new Date(atlasCohortDefinition.modifiedDate).toISOString(),
-
-  // Only add key cohortDefinitionId if materializedCohortDefinitionIds array is not empty. If array is not empty, get last value of array, which is the latest materialized cohort
-  ...(atlasCohortDefinition.materializedCohortDefinitionIds.length > 0 && {
-    cohortDefinitionId:
-      atlasCohortDefinition.materializedCohortDefinitionIds[
-        atlasCohortDefinition.materializedCohortDefinitionIds.length - 1
-      ],
-  }),
+  cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(atlasCohortDefinition, datasetId),
 })
 
 /*
@@ -617,4 +627,24 @@ const _filterUntaggedMaterializedCohorts = (
   })
 
   return filteredMaterializedCohorts
+}
+
+const _getBookmarkMaterializedCohortDefinitionId = (bookmark: any, datasetId: string): number | undefined => {
+  const materializedBookmarkCohortDefinitions: IMaterializedBookmarkCohortDefinition[] =
+    bookmark.materializedCohortDefinitions
+  // If bookmark does not have cohortDefinitions key, return undefined
+  if (materializedBookmarkCohortDefinitions === undefined) {
+    return undefined
+  }
+
+  // Find materializedBookmarkCohortDefinition with datasetId
+  const materializedBookmarkCohortDefinition = materializedBookmarkCohortDefinitions.find(
+    e => e.datasetId === datasetId
+  )
+
+  if (materializedBookmarkCohortDefinition === undefined) {
+    return undefined
+  } else {
+    return materializedBookmarkCohortDefinition.cohortDefinitionId
+  }
 }

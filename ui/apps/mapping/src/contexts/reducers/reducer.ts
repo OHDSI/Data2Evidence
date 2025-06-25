@@ -1,5 +1,14 @@
 import { AppState } from "../states";
-import { reset, clearHandles, markAsSaved, load, setVocabularybDatasetId, setMappingSuggestion, setPage } from "./app";
+import {
+  reset,
+  clearHandles,
+  markAsSaved,
+  load,
+  setVocabularybDatasetId,
+  setNodeId,
+  setMappingSuggestion,
+  setPage,
+} from "./app";
 import {
   setTableNodes,
   setTableEdges,
@@ -11,12 +20,8 @@ import {
   setFieldNodes,
   setFieldEdges,
   addFieldConnection,
-  setFieldSourceHandles,
-  setFieldTargetHandles,
-  setActiveFieldSourceHandles,
   setActiveFieldTargetHandles,
-  setActiveSourceTable,
-  setActiveTargetTable,
+  setActiveTableEdgeId,
 } from "./field";
 import { setScannedSchema } from "./scanned-schema";
 import { setCdmTables, setCdmVersion } from "./cdm-table";
@@ -28,6 +33,7 @@ export enum ACTION_TYPES {
   CLEAR_HANDLES = "CLEAR_HANDLES",
   MARK_AS_SAVED = "MARK_AS_SAVED",
   SET_VOCABULARY_DATASET_ID = "SET_VOCABULARY_DATASET_ID",
+  SET_NODE_ID = "SET_NODE_ID",
   SET_MAPPING_SUGGESTION = "SET_MAPPING_SUGGESTION",
   OPEN_SAVE_MAPPING_DIALOG = "OPEN_SAVE_MAPPING_DIALOG",
   OPEN_LOAD_MAPPING_DIALOG = "OPEN_LOAD_MAPPING_DIALOG",
@@ -60,6 +66,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.CLEAR_HANDLES, clearHandles],
   [ACTION_TYPES.MARK_AS_SAVED, markAsSaved],
   [ACTION_TYPES.SET_VOCABULARY_DATASET_ID, setVocabularybDatasetId],
+  [ACTION_TYPES.SET_NODE_ID, setNodeId],
   [ACTION_TYPES.SET_MAPPING_SUGGESTION, setMappingSuggestion],
   [ACTION_TYPES.OPEN_SAVE_MAPPING_DIALOG, openSaveMappingDialog],
   [ACTION_TYPES.OPEN_LOAD_MAPPING_DIALOG, openLoadMappingDialog],
@@ -71,11 +78,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.SET_FIELD_NODES, setFieldNodes],
   [ACTION_TYPES.SET_FIELD_EDGES, setFieldEdges],
   [ACTION_TYPES.ADD_FIELD_CONNECTION, addFieldConnection],
-  [ACTION_TYPES.SET_FIELD_SOURCE_HANDLES, setFieldSourceHandles],
-  [ACTION_TYPES.SET_FIELD_TARGET_HANDLES, setFieldTargetHandles],
-  [ACTION_TYPES.SET_ACTIVE_SOURCE_TABLE, setActiveSourceTable],
-  [ACTION_TYPES.SET_ACTIVE_FIELD_SOURCE_HANDLES, setActiveFieldSourceHandles],
-  [ACTION_TYPES.SET_ACTIVE_TARGET_TABLE, setActiveTargetTable],
+  [ACTION_TYPES.SET_ACTIVE_SOURCE_TABLE, setActiveTableEdgeId],
   [ACTION_TYPES.SET_ACTIVE_FIELD_TARGET_HANDLES, setActiveFieldTargetHandles],
   [ACTION_TYPES.SET_SCANNED_SCHEMA, setScannedSchema],
   [ACTION_TYPES.SET_CDM_VERSION, setCdmVersion],

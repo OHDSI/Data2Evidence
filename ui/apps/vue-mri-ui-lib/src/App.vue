@@ -47,13 +47,14 @@ export default {
     this.requestMriConfig()
   },
   mounted() {
+    this.setLocale()
+
     const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
       // Update the config in state before doing further queries
       this.requestMriConfig().then(() => {
         this.setFireRequest()
-        this.requestTotalPatientCount()
         this.refreshPatientCount()
       })
     }
@@ -86,7 +87,7 @@ export default {
       'toggleConfigSelectionDialog',
       'setFireRequest',
       'refreshPatientCount',
-      'requestTotalPatientCount',
+      'setLocale',
     ]),
     ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
     okFatal() {
