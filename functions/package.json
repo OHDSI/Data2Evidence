@@ -264,6 +264,12 @@
           "imports": "/d2e-webapi/deno.json"
         },
         {
+          "source": "/strategus-results",
+          "function": "/strategus-results",
+          "env": "strategus-results",
+          "imports": "/strategus-results/import.json"
+        },
+        {
           "source": "/mlflow",
           "service": "mlflow",
           "rmsrc": true
@@ -439,6 +445,9 @@
           "whiteRabbit.post",
           "demo.setup",
           "gateway.external.dashboards.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
           "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
@@ -2355,6 +2364,14 @@
           "path": "^/mlflow(.*)",
           "scopes": [
             "mlflow"
+          ]
+        },
+        {
+          "path": "^/strategus-results",
+          "scopes": [
+            "strategus.results.read",
+            "strategus.results.write",
+            "strategus.results.delete"
           ]
         }
       ]
