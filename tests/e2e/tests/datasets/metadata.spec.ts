@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('test', async ({ page }) => {
+test('metadata', async ({ page }) => {
   await page.goto('https://localhost:443/sign-in')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
