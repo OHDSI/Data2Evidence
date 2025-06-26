@@ -192,6 +192,74 @@ const actions = {
         })
       })
   },
+  fireUpdateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { content }) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+
+    const params = JSON.stringify(content)
+    return dispatch('ajaxAuth', {
+      url: `/d2e-webapi/cohortdefinition/${content.id}`,
+      method: 'PUT',
+      params,
+      cancelToken,
+      datasetId: rootGetters.getSelectedDataset.id,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        if (response.data.noDataReason) {
+          response.data.noDataReason = getters.getText(response.data.noDataReason)
+        }
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
+        dispatch('setToastMessage', {
+          text: rootGetters.getText('MRI_PA_UPDATE_ATLAS_COHORT_DEFINITION_SUCCESS'),
+        })
+        return response.data
+      })
+      .catch(error => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, {
+          response: {
+            data: 'An error occurred',
+          },
+        })
+        dispatch('setAlertMessage', {
+          message: rootGetters.getText('MRI_PA_UPDATE_ATLAS_COHORT_DEFINITION_ERROR'),
+        })
+        throw error
+      })
+  },
+  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
+    if (cancel) {
+      cancel('cancel')
+    }
+    const cancelToken = new axios.CancelToken(c => {
+      cancel = c
+    })
+
+    return dispatch('ajaxAuth', {
+      url: `/d2e-webapi/cohortdefinition/${cohortDefinitionId}`,
+      method: 'GET',
+      cancelToken,
+      datasetId: rootGetters.getSelectedDataset.id,
+    })
+      .then(response => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
+        return response.data
+      })
+      .catch(error => {
+        commit(types.COHORT_DEFINITION_RESPONSE_SET, {
+          response: {
+            data: 'An error occurred while fetching cohort definition',
+          },
+        })
+        throw error
+      })
+  },
   fireCreateAtlasMaterializedCohortQuery({ state, commit, dispatch, rootGetters }, { url }) {
     if (cancel) {
       cancel('cancel')
