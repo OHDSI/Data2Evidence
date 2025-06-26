@@ -21,11 +21,11 @@ test('smoketest_mri', async ({ page }) => {
     await expect(section.getByText('Active')).toBeVisible({timeout: 20000});
   });
   
-  await test.step('Check Patient Analystics config overview section for OMOP_DM', async () => {
+  await test.step('Check Patient Analytics config overview section for OMOP_DM', async () => {
     await page.getByRole('button').filter({ hasText: /^$/ }).first().click();
     await page.locator('div').filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ }).getByTestId('button').click();
-    await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-inner"]').click();
-    await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click();
+    await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-inner"]').click();
+    await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-arrow"]').click();
     await page.getByRole('option', { name: 'OMOP_DM' }).click();
   
     // Confirm that “OMOP_DM” should exist and it is based on “OMOP”
@@ -40,6 +40,8 @@ test('smoketest_mri', async ({ page }) => {
   })
 
   await test.step('Navigate back to the researcher portal, click Cohort', async () => {
+    await page.getByRole('link', { name: 'Account' }).click();
+    await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
     await page.getByText('Demo dataset').nth(1).click();
     await page.getByRole('link', { name: 'Cohorts' }).click();
     await page.getByRole('button', { name: 'D2E' }).click()
@@ -52,7 +54,7 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
-    //Add Concet set
+    //Add Concept set
     await page.getByRole('button', { name: '+' }).click();
     await page.getByRole('textbox', { name: 'Concept set name' }).click();
     await page.getByRole('textbox', { name: 'Concept set name' }).fill('Osteoarthritis');
@@ -63,9 +65,8 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('button', { name: 'Search' }).click();
     await page.getByRole('row', { name: '396275006 Osteoarthritis' }).locator('path').click();
     await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    // await expect(page.getByText('Osteoarthritis')).toBeVisible()
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
     await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   })
 
@@ -90,7 +91,6 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('row', { name: '65363002 Otitis media' }).locator('path').click();
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
-    // await expect(page.getByText('Otitis media')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   })
@@ -108,7 +108,6 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click();
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click();
-    // await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   })
@@ -147,9 +146,10 @@ test('smoketest_mri', async ({ page }) => {
     // Click the 'Remove Filter Card' under this specific card
     await dropdownMenu.getByText('Remove Filter Card', { exact: true }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   })
 
-  await test.step('Reset the Condition Occurrance A filter card', async () => {
+  await test.step('Reset the Condition Occurrence A filter card', async () => {
      // Find the card header with label 'Condition Occurrence A'
     const cardHeader = page.locator('.card-header label', { hasText: 'Condition Occurrence A' });
     await expect(cardHeader).toBeVisible();
@@ -164,6 +164,7 @@ test('smoketest_mri', async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible();
     // Click elsewhere to remove focus from the dropdown and close it
     await page.click('body');
+    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   });
 
   await test.step('Reset the Condition Occurrence A filter card attributes', async () => {
@@ -173,6 +174,7 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByText('Basic Data').nth(3).click();
     await page.locator('#pane-right').getByText('Month of Birth').click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   });
 
   await test.step('Sort the Age column in ascending order in patient list', async () => {  
@@ -184,6 +186,7 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click();
     await page.getByText('Remove', { exact: true }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByText('Ethnicity concept id')).not.toBeVisible({timeout: 20000});
   });
 
   await test.step('Export the cohort data to a ZIP file', async () => {
