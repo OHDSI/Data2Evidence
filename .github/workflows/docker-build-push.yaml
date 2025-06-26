@@ -102,9 +102,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-strategus
+          - AZ_REG_REPOSITORY: d2e/flow-hades
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/hades/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-transformation
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile

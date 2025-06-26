@@ -2,18 +2,13 @@ import { Logger } from "@alp/alp-base-utils";
 import * as config from "../../utils/DBSvcConfig";
 import * as dbUtils from "../../utils/DBSvcDBUtils";
 import { DBDAO } from "../../dao/DBDAO";
-import PortalServerAPI from "../PortalServerAPI";
 
 const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
 
-    const { dialect, databaseCode, schemaName } =
-        await new PortalServerAPI().getStudy(
-            req.headers.authorization,
-            datasetId
-        );
+    const { dialect, databaseCode, schemaName } = req.selectedstudyDbMetadata;
     try {
         let dbDao = new DBDAO(dialect, databaseCode);
         const dbConnection = await dbDao.getDBConnectionByTenantPromise(
@@ -81,11 +76,7 @@ export async function checkIfSchemaExists(req, res, next) {
 export async function getSnapshotSchemaMetadata(req, res, next) {
     const datasetId = req.query.datasetId;
 
-    const { dialect, databaseCode, schemaName } =
-        await new PortalServerAPI().getStudy(
-            req.headers.authorization,
-            datasetId
-        );
+    const { dialect, databaseCode, schemaName } = req.selectedstudyDbMetadata;
 
     try {
         let dbDao = new DBDAO(dialect, databaseCode);
