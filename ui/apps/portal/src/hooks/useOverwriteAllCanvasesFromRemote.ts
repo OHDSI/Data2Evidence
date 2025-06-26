@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { request } from "../axios/request";
 import { AppError } from "../types";
 
-const JOBPLUGIN_URL = "dataflow-mgmt/";
+const JOBPLUGIN_URL = "jobplugins/";
 
 interface OverwriteAllFromRemoteResponse {
   message: string;

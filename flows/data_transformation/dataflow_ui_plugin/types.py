@@ -48,6 +48,7 @@ class JoinType(str, Enum):
     
 
 class Edge(BaseModel):
+    id: str
     sourceHandle: str # source table or sourcetable-sourcefield
     targetHandle: str # target table or targettable-targetfield
 
@@ -94,19 +95,18 @@ class FieldHandle(BaseModel):
     data: FieldHandleData
 
 
-class FieldType(BaseModel):
-    edges: list[Edge] # Field to field mapping
-    sourceHandles: dict[str, list[FieldHandle]] # Contains column metadata of source tables
-    targetHandles: dict[str, list[FieldHandle]] # Contains column metadata of target tables
+class FieldMapType(BaseModel):
+    targetHandles: list[FieldHandle]
 
 
-class TableType(BaseModel):
+class TableFieldType(BaseModel):
     edges: list[Edge] # Table to table mapping
 
 
 class DataMappingType(BaseModel):
-    table: TableType
-    field : FieldType
+    table: TableFieldType # table to table mapping
+    field : TableFieldType # # contains field to field mapping
+    fieldMap: dict[str, FieldMapType] # functions for target table col
 
 
 class ColumnType(str, Enum):
