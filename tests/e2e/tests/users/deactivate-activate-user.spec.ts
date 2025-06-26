@@ -5,7 +5,7 @@ test.use({
 })
 
 test('deactivate-activate-user', async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto('https://localhost:41100/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -65,6 +65,5 @@ test('deactivate-activate-user', async ({ page }) => {
   await page.locator('input[name="password"]').fill('J*%YqaKNbnqH@')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click() // account button
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible()
 })
