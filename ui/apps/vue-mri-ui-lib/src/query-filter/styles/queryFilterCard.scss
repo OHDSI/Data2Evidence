@@ -1,0 +1,228 @@
+// Tab navigation styles
+.query-filter-tabs {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  border: 1px solid #1e3a8a;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  width: 240px;
+
+  &__tab {
+    background: white;
+    border: none;
+    padding: 6px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e3a8a;
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+    flex: 1;
+    text-align: center;
+
+    // Add separator line after each tab except the last
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #1e3a8a;
+      transition: opacity 0.2s;
+    }
+
+    // Hide separator when this tab is active
+    &.active::after {
+      opacity: 0;
+    }
+    // Hide separator on the tab before the active one
+    &:has(+ .active)::after {
+      opacity: 0;
+    }
+
+    &.active {
+      background: #1e3a8a;
+      color: white;
+      position: relative;
+      z-index: 1;
+    }
+
+    // Special border radius handling
+    &--earliest {
+      border-radius: 6px 0 0 6px;
+      &.active {
+        border-radius: 6px 0 0 6px;
+        // Extend slightly to the left to cover any gap
+        margin-left: -1px;
+        padding-left: 21px;
+      }
+    }
+
+    &--all {
+      &.active {
+        border-radius: 0;
+      }
+    }
+
+    &--latest {
+      border-radius: 0 6px 6px 0;
+      &.active {
+        border-radius: 0 6px 6px 0;
+      }
+    }
+
+    // When middle tab is active, adjust neighbors
+    &--all.active {
+      & ~ .query-filter-tabs__tab--latest {
+        border-radius: 0 6px 6px 0;
+      }
+    }
+
+    &--earliest.active ~ &--all {
+      border-radius: 0;
+    }
+  }
+}
+
+// Container for the filter system
+.query-filter-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  &__section {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+    padding-left: 16px;
+  }
+
+  &__section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ef4444;
+    margin: 0;
+  }
+}
+
+@import 'icons';
+
+// Animation classes
+.query-filter-enter-active,
+.query-filter-leave-active {
+  transition: all 0.3s ease;
+}
+
+.query-filter-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.query-filter-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .query-filter-card {
+    &__sidebar {
+      width: 32px;
+
+      .sidebar-label {
+        font-size: 11px;
+      }
+    }
+  }
+
+  .query-filter-tabs {
+    &__tab {
+      font-size: 13px;
+      padding: 6px 12px;
+    }
+  }
+}
+
+// Utility classes for query filters
+.query-filter {
+  &--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  &--error {
+    border-color: #ef4444 !important;
+
+    .query-filter-card__sidebar {
+      background: #ef4444;
+    }
+  }
+}
+
+// Context menu styles for filter operations
+.query-filter-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 180px;
+  z-index: 1000;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+
+    &--danger {
+      color: #ef4444;
+
+      &:hover {
+        background: #fee2e2;
+      }
+    }
+
+    .icon {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+  }
+}
