@@ -50,7 +50,9 @@ test('dataflow-create-edit-save-delete', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByRole('button', { name: 'Test_DE' })).toBeVisible()
   await page.getByLabel('Show version history').getByRole('button').click()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page.getByText('Version history of "Test_DE"')).toBeVisible()
+  await expect(page.getByText('Version #2')).toBeVisible()
+  await expect(page.getByText('Test_DE for testing')).toBeVisible()
   await page.getByRole('button', { name: 'close' }).click()
 
   // Delete dataflow
