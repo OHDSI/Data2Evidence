@@ -27,11 +27,11 @@
   &__dataset-select {
     .MuiOutlinedInput-root {
       border-radius: 6px;
-      
+
       &:hover .MuiOutlinedInput-notchedOutline {
         border-color: #000080;
       }
-      
+
       &.Mui-focused .MuiOutlinedInput-notchedOutline {
         border-color: #000080;
       }
@@ -55,23 +55,13 @@
     gap: 16px;
 
     &--disabled {
-      .study-card__action {
-        cursor: not-allowed;
-        color: #ccc;
-        pointer-events: none;
-        
-        &:hover {
-          text-decoration: none;
+      // Grey out the icon
+      .study-card__action-icon {
+        opacity: 0.1;
+        filter: grayscale(100%);
+        svg {
           color: #ccc;
-        }
-        // Grey out the icon
-        .study-card__action-icon {
-          opacity: 0.1;
-          filter: grayscale(100%);
-          svg {
-            color: #ccc;
-            fill: #ccc;
-          }
+          fill: #ccc;
         }
       }
     }
