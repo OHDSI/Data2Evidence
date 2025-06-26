@@ -447,7 +447,7 @@
           "gateway.external.dashboards.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete"
+          "strategus.results.delete",
           "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
