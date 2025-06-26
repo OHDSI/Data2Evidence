@@ -206,7 +206,7 @@ export const i18nDefault = {
     COHORT_DELETE_DIALOG__ERROR_OCCURRED: "An error has occurred.",
     COHORT_DELETE_DIALOG__NAME: "Name",
     COHORT_HIERARCHY__ERROR: "Please try again.",
-    COHORT_HIERARCHY__ERROR_DESCRIPTION: "An error has errored.",
+    COHORT_HIERARCHY__ERROR_DESCRIPTION: "An error has occured.",
     COHORT_FILTER__COHORT: "Cohort",
     COHORT_FILTER__NO_COHORTS: "No cohorts found in study",
     COHORT_FILTER__SELECT_COHORT_FILTER: "Select cohort filter",
