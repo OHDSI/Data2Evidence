@@ -1,7 +1,7 @@
 @import './mri-variables';
 @mixin wrapper-components {
   .fullHeight {
-    height: calc(100vh - 56px);
+    height: calc(100vh - 56px - 24px);
     display: flex;
   }
   .hidden {
