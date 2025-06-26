@@ -60,5 +60,5 @@ test('dataflow-create-edit-save-delete', async ({ page }) => {
   await page.getByRole('textbox').click()
   await page.getByRole('textbox').fill('Test_DE')
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByTestId('button')).toBeVisible()
+  await expect(page.getByText('Create your first dataflow')).toBeVisible() // Ensure cleanup
 })
