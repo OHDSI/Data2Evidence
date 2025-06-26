@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 import pandas as pd
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
@@ -901,7 +902,7 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
             )
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
-            rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
+            rAnalysisSpec = rParallelLogger.convertJsonToSettings(json.dumps(analysisSpec))
 
             print('Strategus execution started...')
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
