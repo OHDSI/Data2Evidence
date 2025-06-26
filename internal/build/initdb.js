@@ -1,66 +1,289 @@
-const _execSync = require('child_process').execSync;
-const path = require('path');
+const fs = require("fs");
+const hdb = require("hdb");
+const csv = require("fast-csv");
+const path = require("path");
 
-if (process.argv.length < 3)
-    console.log("usage: node build/initdb.js <demo|test|rmonly> schema");
+const { functionsAndProcedures } = require("./db-functions-procedures.js");
+const user = process.env.HDIUSER;
+const dbCredentials = {
+  host: process.env.HANASERVER,
+  port: process.env.HDIPORT,
+  databaseName: process.env.DATABASE,
+  user,
+  password: process.env.HDIPW,
+};
+const client = hdb.createClient(dbCredentials);
+const TESTSCHEMA = process.env.TESTSCHEMA;
 
-var includeData = process.argv[2] === 'test' ? false : true;
-var rmonly = process.argv[2] === 'rmonly' ? true : false;
-var schema = process.argv.length === 4 ? process.argv[3] : process.env.TESTSCHEMA;
-var HDI___SYS_DI__USER = process.env.HDIUSER;
+var rmOnly = process.argv[2] === "rmonly" ? true : false;
+var includeData = process.argv[2] === "test" ? true : false;
 
-var _env = {
-    PATH: process.env.PATH,
-    HDI__HOST: process.env.HANASERVER,
-    HDI__PORT: process.env.HDIPORT,
-    HDI___SYS_DI__USER: HDI___SYS_DI__USER,
-    HDI___SYS_DI__PASSWORD: process.env.HDIPW,
-    SCHEMA: schema
+async function initNWConnection() {
+  console.log(`Initializing network connection ...`);
+  client.on("error", function (err) {
+    console.error("Network connection error", err);
+    throw err;
+  });
+  console.log(`Network connection status: ${client.readyState}`);
+  return null;
 }
 
-_env[`HDI__${schema}__USER`] = process.env.HDIUSER;
-_env[`HDI__${schema}__PASSWORD`] = process.env.HDIPW;
-console.log(_env);
+async function loadDDLScript() {
+  // console.log(`loadDDLScript...`);
+  const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
 
-function exec(cmd) { console.log(_execSync(cmd, { env: _env, cwd: "services/mri-db" }).toString()); }
+  const tmp = sqlScript.split(";");
+  const tmp2 = tmp.slice(0, tmp.length - 1);
 
-function main() {
-    try {
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js drop-container -f ${schema}`);
-    } catch (err) {
-        console.log("Can't drop container. It does not exist.");
-    }
-    if (!rmonly) {
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js create-container -X ${HDI___SYS_DI__USER} ${schema}`);
+  const queries = [];
 
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js write -r ${schema} src/ cfg/`);
+  tmp2.forEach((element) => {
+    queries.push(
+      element.replaceAll("PLACE_HOLDER_STR", ";,.:-") // replace with the actual delimiting characters
+    );
+  });
 
-        // exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/data/`);
-        if (!includeData) {
-            console.log("including data")
-            exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js delete -r ${schema} src/config_data/`);
+  return queries;
+}
+
+async function createDBArtefacts(sqlStatements) {
+  // console.log(`runDDLScript...`);
+  let executeQueries = new Promise((resolve, reject) => {
+    client.connect((err) => {
+      if (err) {
+        reject(err);
+      }
+      sqlStatements.forEach((query, index) => {
+        // console.log(`query: ${query}`);
+        client.exec(query.replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA).replaceAll("HTTPTEST_USER", user), (err) => {
+          if (err) {
+            reject(err);
+          }
+          if (index === sqlStatements.length - 1) {
+            client.end();
+            resolve(sqlStatements.length);
+          }
+        });
+      });
+    });
+  });
+
+  let result = await executeQueries;
+
+  return result;
+}
+
+async function dropTestSchema() {
+  let executeQueries = new Promise((resolve, reject) => {
+    client.connect((err) => {
+      if (err) {
+        reject(err);
+      }
+      client.exec(`DROP SCHEMA ${TESTSCHEMA} CASCADE`, (err) => {
+        if (err) {
+          reject(err);
         }
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js make ${schema} @ src/ cfg/`);
+        console.log(`Dropped test schema[${TESTSCHEMA}] succussfully ...`);
+        client.end();
+        resolve(null);
+      });
+    });
+  });
+  return await executeQueries;
+}
 
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} SELECT ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} EXECUTE ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} INSERT ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} DELETE ${HDI___SYS_DI__USER}`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} UPDATE ${HDI___SYS_DI__USER}`);
+async function createTestSchema() {
+  console.log(`Creating test schema ...`);
 
-        // Grant same priveleges found in TENANT_READ_ROLE of other schemas
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} SELECT TENANT_READ_USER`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} EXECUTE TENANT_READ_USER`);
-        exec(`node ../../node_modules/@alp/alp-dbcli/hdi.js grant-container-schema-privilege ${schema} 'CREATE TEMPORARY TABLE' TENANT_READ_USER`);
+  // load tables & views ddl script
+  const queries = await loadDDLScript();
 
-        exec(`yarn inittables`);
+  // run tables & views ddl script
+  let result = await createDBArtefacts(queries);
+  console.log(`Created ${result} tables, views & grant privileges succussfully ...`);
+
+  // run functions & procedures ddl script
+  result = await createDBArtefacts(functionsAndProcedures);
+  console.log(`Created ${result} functions & procedures succussfully ...`);
+
+  return null;
+}
+
+async function insertDataToTable(csvFile, query, dirName, delimiter) {
+  let loadCSV = new Promise((resolve, reject) => {
+    let data = [];
+    let filePath = path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "services",
+      "mri-db",
+      "src",
+      dirName,
+      csvFile
+    );
+    fs.createReadStream(filePath)
+      .pipe(csv.parse({ headers: true, delimiter, escape: "\\" }))
+      .on("error", (error) => reject(error))
+      .on("data", (row) => {
+        let r = [];
+        Object.values(row).forEach((c) => {
+          r.push(c === "" ? null : c);
+        });
+        data.push(r);
+      })
+      .on("end", (rowCount) => {
+        // console.log(`Parsed ${rowCount} rows`);
+        resolve(data);
+      });
+  });
+
+  let result = await loadCSV.then((data) => {
+    // console.log(`data: ${JSON.stringify(data)}`);
+    return new Promise((resolve, reject) => {
+      client.connect((err) => {
+        if (err) {
+          reject(err);
+        }
+        client.prepare(
+          query.replaceAll("HTTPTEST_SCHEMA", TESTSCHEMA),
+          (err, statement) => {
+            if (err) {
+              console.error("Prepare error:", err);
+              reject(err);
+            }
+            statement.exec(data, (err, affectedRows) => {
+              if (err) {
+                console.error("Exec error:", err);
+                reject(err);
+              }
+              // console.log("Array of affected rows:", affectedRows);
+              client.end();
+              resolve(affectedRows ? affectedRows.length : 0);
+            });
+          }
+        );
+        // });
+      });
+    });
+  });
+
+  // console.log(`affectedRows: ${result}`);
+  return result;
+}
+
+async function loadTestData() {
+  console.log(`Loading test data ...`);
+  const csvFileSQLArray = [
+    [
+      "PATIENT_KEY.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Patient_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "INTERACTIONS_KEY.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Interactions_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "OBSERVATIONS_KEY.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Observations_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "PATIENT_ATTR.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Patient_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, TO_DATE(?), TO_DATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TO_SECONDDATE(?), ?, TO_SECONDDATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "OBSERVATIONS_ATTR.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Observations_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, HEXTOBIN(?), ?, ?, TO_DECIMAL(?), ?, TO_TIMESTAMP(?), ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "INTERACTION_MEASURES.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Measures" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, TO_DECIMAL(?))`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "INTERACTION_DETAILS.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Details" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "INTERACTIONS_ATTR.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Interactions_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, HEXTOBIN(?), HEXTOBIN(?), HEXTOBIN(?), ?, ?, ?, ?, ?, TO_TIMESTAMP(?), TO_TIMESTAMP(?), ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "CONCEPT_TERMS.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."legacy.ots.internal::Entities.ConceptTerms" VALUES (?, ?, ?, ?, ?, ?, ?, ?, TO_BOOLEAN(?), ?, ?)`,
+      "data/cdw",
+      ",",
+    ],
+    [
+      "AssignmentHeader.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_AssignmentHeader" VALUES(?, ?, ?, ?, ?, TO_TIMESTAMP(?), ?, TO_TIMESTAMP(?));`,
+      "config_data",
+      ",",
+    ],
+    [
+      "AssignmentDetail.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_AssignmentDetail" VALUES(?, ?, ?, ?);`,
+      "config_data",
+      ",",
+    ],
+    [
+      "Config.csv",
+      `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_Config" VALUES(?, ?, ?, ?, ?, TO_NCLOB(?), ?, ?, ?, TO_TIMESTAMP(?), ?, TO_TIMESTAMP(?));`,
+      "config_data",
+      "!",
+    ],
+  ];
+
+  for (let i = 0; i < csvFileSQLArray.length; i++) {
+    let affectedRows = await insertDataToTable(
+      csvFileSQLArray[i][0],
+      csvFileSQLArray[i][1],
+      csvFileSQLArray[i][2],
+      csvFileSQLArray[i][3]
+    );
+    console.log(
+      `Inserted ${affectedRows} records from ${csvFileSQLArray[i][0]} ...`
+    );
+  }
+  console.log(`Data loading completed ...`);
+}
+
+async function main() {
+  try {
+    await initNWConnection();
+
+    if (rmOnly) {
+      // drop test schema
+      await dropTestSchema();
+    } else {
+      // setup test schema
+      await createTestSchema();
+
+      if (includeData) {
+        // insert test data
+        await loadTestData();
+      }
     }
+    process.exit(0);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
 
-try {
-    main()
-} catch (e) {
-    console.error("Failed. Retrying once ...");
-
-    main();
-}
+main();
