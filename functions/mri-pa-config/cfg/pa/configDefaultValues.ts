@@ -89,7 +89,8 @@ export const configDefaultValues = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": false
+        "atlasCohortDefinition": false,
+        "usePaAtlas": false
     },
     "configInformations": {
         "note": ""

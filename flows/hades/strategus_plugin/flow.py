@@ -170,6 +170,10 @@ def runStrategus(json_graph, options):
         json_graph = json.loads(json_graph)
 
     analysisSpec = json_graph.get('analysisSpecification', {})
+    
+    if isinstance(analysisSpec, str):
+        analysisSpec = json.loads(analysisSpec)
+    
     defaultExecutionSettings = json.dumps({
         "workDatabaseSchema": schema_name,
         "cdmDatabaseSchema": schema_name,

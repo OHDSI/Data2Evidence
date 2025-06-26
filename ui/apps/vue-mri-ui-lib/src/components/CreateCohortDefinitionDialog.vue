@@ -12,6 +12,7 @@
         :click="onClickCreateCohortDefinition"
         :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_DOWNLOAD')"
         v-focus
+        :disabled="isLoading"
       ></appButton>
       <appButton :click="cancel" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
     </template>
@@ -24,6 +25,7 @@ import appButton from '../lib/ui/app-button.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { convertIFRToExtCohort } from '../utils/IfrToExtCohort'
 
 export default {
   compatConfig: {
@@ -32,7 +34,9 @@ export default {
   name: 'download-cohort-definition-dialog',
   props: ['closeEv'],
   data() {
-    return {}
+    return {
+      isLoading: false,
+    }
   },
   computed: {
     ...mapGetters([
@@ -41,6 +45,10 @@ export default {
       'getActiveBookmark',
       'getSelectedDataset',
       'getActiveBookmark',
+      'getBookmarksData',
+      'getIFR',
+      'getBookmarkFromIFR',
+      'getMriFrontendConfig'
     ]),
   },
   watch: {},
@@ -57,10 +65,12 @@ export default {
       }
       this.$emit('closeEv')
     },
-    onClickCreateCohortDefinition() {
-      const callback = () => {
-        const expression = this.getCohortDefinitionResponse()?.data || ''
-
+    async onClickCreateCohortDefinition() {
+      this.isLoading = true
+      const IFRDefinition = { filter: this.getIFR }
+      const datasetId = this.getSelectedDataset?.id
+      try {
+        const expression = await convertIFRToExtCohort(IFRDefinition, datasetId, this.getMriFrontendConfig.getPaConfigId())
         const now = +new Date()
         const content = {
           id: 0, // 0 is used by webapi for new cohort definitions
@@ -78,10 +88,12 @@ export default {
         this.fireCreateAtlasCohortDefinitionQuery({
           content,
         }).then(() => {
+          this.isLoading = false
           this.$emit('closeEv')
         })
+      } catch (error) {
+        console.error('Error converting IFR to external cohort:', error)
       }
-      this.fireD2EToAtlasCohortDefinitionQuery().then(callback)
     },
   },
   components: {

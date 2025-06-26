@@ -144,7 +144,7 @@ const getters = {
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
         // check bookmark exists, if yes, should use the bookmark name
-        const bookmark = bookmarks.find(bookmark => bookmark?.cohortDefinitionId === cohortDefinition.id)
+        const bookmark = bookmarks.find(bookmark => (bookmark?.cohortDefinitionId === cohortDefinition.id && bookmark.bookmarkname === cohortDefinition?.cohortDefinitionName))
         const atlasCohortDefinition = atlasCohortDefinitions.find(cd => cd.cohortDefinitionId === cohortDefinition.id)
         if (!bookmark && !atlasCohortDefinition) {
           return displayBookmarks.push({
@@ -191,7 +191,7 @@ const getters = {
 
       // bookmarks without a materialized cohort
       bookmarks.forEach(bookmark => {
-        const materializedCohort = materializedCohorts.find(cohort => cohort.id === bookmark?.cohortDefinitionId)
+        const materializedCohort = materializedCohorts.find(cohort => (bookmark.bookmarkname === cohort?.cohortDefinitionName && cohort.id === bookmark?.cohortDefinitionId))
 
         if (materializedCohort) {
           return
