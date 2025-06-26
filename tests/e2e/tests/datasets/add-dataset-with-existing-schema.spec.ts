@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('add-dataset-with-existing-schema', async ({ page }) => {
+  console.log('Sign in')
   await page.goto(`https://localhost:${process.env.CI ? 443 : 41100}/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -12,9 +13,11 @@ test('add-dataset-with-existing-schema', async ({ page }) => {
   const datasetExistingSchema = 'New automated test dataset 2'
   const vocabSchemaName = 'demo_cdm'
 
-  // Add new dataset with new schema
+  console.log('Switch to admin portal')
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+
+  console.log('Add new dataset')
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetNewSchema)
@@ -33,19 +36,19 @@ test('add-dataset-with-existing-schema', async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.locator('tbody')).toContainText(datasetNewSchema)
 
-  // Wait for 1 minute for the schema to be created in the database
+  console.log('Wait for 1 minute for the schema to be created in the database')
   await page.waitForTimeout(60000)
 
-  // Copy the schema name for later use
+  console.log('Copy the schema name for later use')
   const schemaText = await page.getByRole('cell', { name: /^CDM_NEWTESTDATASET_/ }).textContent()
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
-  // Clean up
+  console.log('Delete the newly created dataset')
   await page.locator('tr', { hasText: datasetNewSchema }).getByRole('button', { name: 'Select action' }).click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
-  // Add dataset with existing schema
+  console.log('Add dataset with existing schema')
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetExistingSchema)
   await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetExistingSchema)
@@ -63,7 +66,7 @@ test('add-dataset-with-existing-schema', async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.locator('tbody')).toContainText(datasetExistingSchema)
 
-  // Clean up
+  console.log('Clean up')
   await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
