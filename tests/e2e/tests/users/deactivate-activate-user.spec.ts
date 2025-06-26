@@ -5,7 +5,7 @@ test.use({
 })
 
 test('deactivate-activate-user', async ({ page }) => {
-  await page.goto('https://localhost:41100/portal')
+  await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
