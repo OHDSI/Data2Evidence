@@ -23,6 +23,7 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
+    python3-pip \
     less\
     libcurl4-openssl-dev \
     libssl-dev \
@@ -79,6 +80,11 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 
+# mlflow
+RUN pip3 install --upgrade pip
+RUN pip3 install mlflow==2.22.1
+RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
+
 # OHDSI studies viewer
 RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.6-1.tar.gz", repos = NULL, type = "source")'
 RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinydashboard","svglite","car","rstatix", "kableExtra", "ggpubr"), dependencies=TRUE, repos="https://cloud.r-project.org")'
@@ -95,6 +101,7 @@ COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app
 WORKDIR /app/rD2E
 # R CMD build . && R CMD check $(ls -t . | head -n1)
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
+RUN chown jovyan /app && chmod 711 /app
 
 WORKDIR /app
 RUN rm .Renviron

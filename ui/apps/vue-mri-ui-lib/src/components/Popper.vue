@@ -1,6 +1,6 @@
 <template>
   <div ref="content" style="display: none">
-    <slot />
+    <slot :hide="hide"/>
   </div>
 </template>
 
@@ -77,7 +77,7 @@ export default {
     wrapperHTML: {
       // Single HTML element without any child
       type: String,
-      default: '<div class="popper" role="popper"></div>',
+      default: '<div class="popper" role="popper" style="z-index: 1;"></div>',
     },
     showOnCreate: { type: Boolean, default: false },
     outsideDismiss: { type: Boolean, default: true },
@@ -408,6 +408,8 @@ export default {
       if (!(element && element.nodeType)) {
         element = document
       }
+      console.log(`Selecting element with selector: ${selector} in`, element);
+      
       return element.querySelector(selector) || null
     },
   },
