@@ -1,16 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 test('smoketest_mri', async ({ page }) => {
-  await page.goto('https://localhost:443/portal');
+  await page.goto('https://localhost:41100/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
   await page.locator('input[name="password"]').fill('Updatepassword12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByTestId('button').nth(1).click();
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
-
+  
   await test.step('Check config overview section for OMOP_DM', async () => {
+    await page.getByTestId('button').nth(1).click();
+    await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
     await page.getByRole('link', { name: 'Setup' }).click();
     await page.locator('div').filter({ hasText: /^CDM ConfigConfigure CDMConfigure$/ }).getByTestId('button').click();
     await page.getByText('OMOP_DM').click();
@@ -57,17 +57,21 @@ test('smoketest_mri', async ({ page }) => {
     //Add Concept set
     await page.getByRole('button', { name: '+' }).click();
     await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Osteoarthritis');
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sprain of wrist');
     await page.getByRole('textbox', { name: 'search terms' }).click();
     await page.getByRole('textbox', { name: 'Concept set name' }).dblclick();
     await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Osteoarthritis');
+    await page.getByRole('textbox', { name: 'search terms' }).fill('Sprain of wrist');
     await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '396275006 Osteoarthritis' }).locator('path').click();
+    await page.getByRole('row', { name: '70704007 Sprain of wrist' }).locator('path').click();
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
+    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist');
+    await page.getByText('Sprain of wrist').click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    await expect(page.getByText('677 / 2694')).toBeVisible()
   })
 
   await test.step('Update x1 filter to condition concept name', async () => {
@@ -75,7 +79,8 @@ test('smoketest_mri', async ({ page }) => {
     await page.locator('#pane-right').getByText('Condition Occurrence A').click();
     await page.locator('#pane-right').getByText('Condition concept Name').click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page.locator('.ewdrag')).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
   })
 
   await test.step('Add another concept set to Condition Occurrence', async () => {
@@ -92,7 +97,13 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"] > div > .col > div > .app-tag-input > .multiselect > .multiselect__tags').first().click();
+    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media');
+    await page.getByText('Otitis media').click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    await expect(page.getByText('2193 / 2694')).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible();
   })
 
   await test.step('Add another filter card for Condition Occurrence', async () => {
@@ -109,7 +120,14 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click();
+    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis');
+    await page.getByText('Viral sinusitis').click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    await expect(page.getByText('2188 / 2694')).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible();
   })
 
   await test.step('Add advanced Time filter', async () => {
@@ -122,7 +140,7 @@ test('smoketest_mri', async ({ page }) => {
     await page.locator('div:nth-child(4) > .col > .app-single-select > .multiselect > .multiselect__select').click();
     await page.locator('span').filter({ hasText: 'Condition Occurrence B' }).nth(2).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page.getByText('2156 / 2694')).toBeVisible()
   })
   await test.step('Save the filter card', async () => {
     await page.getByRole('button', { name: 'Save' }).click();
@@ -146,7 +164,7 @@ test('smoketest_mri', async ({ page }) => {
     // Click the 'Remove Filter Card' under this specific card
     await dropdownMenu.getByText('Remove Filter Card', { exact: true }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page.getByText('2193 / 2694')).toBeVisible()
   })
 
   await test.step('Reset the Condition Occurrence A filter card', async () => {
@@ -164,21 +182,37 @@ test('smoketest_mri', async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible();
     // Click elsewhere to remove focus from the dropdown and close it
     await page.click('body');
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).toBeVisible();
   });
 
   await test.step('Reset the Condition Occurrence A filter card attributes', async () => {
-    // await page.locator('div').filter({ hasText: /^Select an Attribute$/ }).getByRole('button').click();
-    // await page.getByText('Reset Selection').click();
+    await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click();
+    await page.getByText('Reset Selection').click();
     await page.getByRole('button', { name: 'Basic Data Patient Count ◢' }).click();
     await page.getByText('Basic Data').nth(3).click();
     await page.locator('#pane-right').getByText('Month of Birth').click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).not.toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).not.toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible();
   });
 
-  await test.step('Sort the Age column in ascending order in patient list', async () => {  
+  await test.step('Sort the Age column in ascending order in patient list', async () => {
     await page.getByRole('button', { name: '' }).click();
+    await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click();
+    await page.getByText('Remove').click();
+    // Check if tbody has more than 1 row
+    const rowCount = await page.locator('tbody tr').count();
+    expect(rowCount).toBeGreaterThan(1);
+    // Confirm patientlist-control has rowcount="2694"
+    const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount');
+    expect(rowCountAttr).toBe('2694');
+    
     await page.getByRole('table').getByText('Age').click();
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click();
     await page.getByText(' Sort Ascending').click();
