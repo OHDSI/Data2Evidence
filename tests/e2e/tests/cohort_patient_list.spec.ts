@@ -30,23 +30,35 @@ test('patient-analytics-patient-list', async ({ page }) => {
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
     await page.getByTitle('Condition Occurrence A -').getByRole('button').click();
     await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Viral sinusitis 1');
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis');
     await page.getByRole('textbox', { name: 'search terms' }).click();
     await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis');
+    await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis');
     await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click();
+    await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click();
     await page.getByRole('button', { name: 'Create' }).click();
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
     await page.getByRole('textbox', { name: 'Enter search term' }).fill('viral');
-    await page.getByText('Viral sinusitis 1').click();
-    await expect(page.getByText('1968 / 2694')).toBeVisible()
+    await page.getByText('Chronic sinusitis').click();
+    await expect(page.getByText('629 / 2694')).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' })).toBeVisible();
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
     await page.getByRole('button', { name: '' }).click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    //Remove Race
+    await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click();
+    await page.getByText('Remove').click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    // Check if tbody has more than 1 row
+    const rowCount = await page.locator('tbody tr').count();
+    expect(rowCount).toBeGreaterThan(1);
+    // Confirm patientlist-control has rowcount="812"
+    const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount');
+    expect(rowCountAttr).toBe('629');
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click();
     await page.getByText(' Sort Ascending').click();
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click();
@@ -56,9 +68,12 @@ test('patient-analytics-patient-list', async ({ page }) => {
     //Add Observation interaction
     await page.getByRole('button', { name: 'Add Interaction' }).click();
     await page.locator('#pane-right').getByText('Observation', { exact: true }).click();
-    await page.getByRole('cell', { name: 'Observation ' }).locator('span').click();
-    await page.getByText('Add Attribute').click();
-    await page.locator('thead').getByText('Observation Id').click();
+    // Confirm that 'Observation' exists in the table header
+    await expect(page.locator('thead')).toContainText('Observation');
+    await page.getByRole('cell', { name: 'Basic Data ' }).locator('span').click();
+    //Add attribute
+    await page.locator('#pane-right').getByText('Ethnicity concept id').click();
+    await page.getByTitle('Basic Data - Ethnicity concept id').locator('span').click();
     //Export to ZIP file
     await page.getByTitle('Export to File').click();
     await page.getByRole('menuitem', { name: 'Export to ZIP File' }).click();
