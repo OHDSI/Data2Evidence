@@ -26,6 +26,7 @@ test('dataset-user-permission', async ({ page }) => {
   await page.getByTestId('dialog').getByTestId('button').click();
   await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'admin' }).click();
+  await page.waitForTimeout(3000);
   await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible();
 
   console.log('Revoke access to admin user')
