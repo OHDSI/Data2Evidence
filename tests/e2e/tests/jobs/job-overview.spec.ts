@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test('attribute-display', async ({ page }) => {
   console.log('Sign in')
-  await page.goto(`https://localhost:${process.env.CI ? 443 : 41100}/portal`)
+  await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
