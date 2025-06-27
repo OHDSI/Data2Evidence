@@ -55,5 +55,10 @@
 		<Switch state="{analyticsModel>config/panelOptions/atlasCohortDefinition}" 
 			tooltip="{i18n>MRI_PA_CFG_ATLAS_COHORT_DEFINITION_SETTING_TOOLTIP}">
 		</Switch>
+		
+		<Label text="{i18n>MRI_PA_CFG_USE_PA_ATLAS_SETTING_LABEL}"/>
+		<Switch state="{analyticsModel>config/panelOptions/usePaAtlas}" 
+			tooltip="{i18n>MRI_PA_CFG_USE_PA_ATLAS_SETTING_TOOLTIP}">
+		</Switch>
 	</f:SimpleForm>
 </mvc:View>

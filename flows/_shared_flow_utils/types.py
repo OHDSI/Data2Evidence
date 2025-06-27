@@ -91,14 +91,18 @@ class EntityCountDistributionType(BaseModel):
 class AuthToken(RunInput):
     token: SecretStr
     thirdpartytoken: SecretStr
+    thirdpartyrefreshtoken: SecretStr
 
-class AppTokenPayload:
+class AppTokenPayload(BaseModel):
   given_name: str
   family_name: str
   extension_termsOfUseConsentVersion: str
   email: str
 
-class User:
-  userId: str
-  name: Optional[str]
-  email: Optional[str]
+
+class User(BaseModel):
+  user_id: Optional[str] = ""
+  name: Optional[str] = ""
+  email: Optional[str] = ""
+
+

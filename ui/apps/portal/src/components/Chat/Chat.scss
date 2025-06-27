@@ -1,4 +1,19 @@
-.nlux_msg_sent, .nlux-comp-sendIcon-container{
-    background-color: #000080 !important;
+.nlux_msg_sent,
+.nlux-comp-sendIcon-container {
+  background-color: #000080 !important;
 }
 
+.nlux-comp-chatItem--received {
+    padding-right: 30px !important
+}
+
+.chat {
+  &-container {
+    display: flex;
+    flex-direction: column-reverse;
+    overflow: auto;
+    flex: 4 1 0%;
+    min-width: 0;
+    height: 100%;
+  }
+}

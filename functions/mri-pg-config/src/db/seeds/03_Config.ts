@@ -13293,7 +13293,8 @@ const paConfig = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": false
+        "atlasCohortDefinition": false,
+		'usePaAtlas': false,
     }
 };
 
@@ -26245,7 +26246,8 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true
+        "atlasCohortDefinition": true,
+		'usePaAtlas': true,
     }
 };
 
