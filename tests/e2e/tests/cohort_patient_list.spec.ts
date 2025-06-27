@@ -40,7 +40,7 @@ test('patient-analytics-patient-list', async ({ page }) => {
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('viral');
+    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis');
     await page.getByText('Chronic sinusitis').click();
     await expect(page.getByText('629 / 2694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' })).toBeVisible();
