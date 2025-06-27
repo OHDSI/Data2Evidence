@@ -188,7 +188,7 @@ const getCardinalityCount = () => {
   />
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .cardinality-menu-popper {
   z-index: 1000;
 }
@@ -268,4 +268,3 @@ const getCardinalityCount = () => {
   }
 }
 </style>
-

@@ -49,7 +49,7 @@ const emitOption = (option: string) => {
   </Popper>
 </template>
 
-<style>
+<style scoped>
 .dropdown-menu-popper {
   z-index: 1000;
 }
@@ -81,4 +81,3 @@ const emitOption = (option: string) => {
   background-color: #cccfe5;
 }
 </style>
-
