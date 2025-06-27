@@ -110,6 +110,11 @@ jobs:
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
 
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
+
       - name: Setup Test DB
         run: |
           yarn --prefer-offline
