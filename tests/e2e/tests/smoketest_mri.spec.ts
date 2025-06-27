@@ -204,8 +204,10 @@ test('smoketest_mri', async ({ page }) => {
 
   await test.step('Sort the Age column in ascending order in patient list', async () => {
     await page.getByRole('button', { name: '' }).click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click();
     await page.getByText('Remove').click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     // Check if tbody has more than 1 row
     const rowCount = await page.locator('tbody tr').count();
     expect(rowCount).toBeGreaterThan(1);
