@@ -16,12 +16,34 @@ test('metadata', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Type' }).fill('test')
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('test')
-  await page.locator('.u-padding-vertical--small > .MuiFormControl-root').click()
-  await page.getByRole('option', { name: 'Publisher' }).click()
-  await page.getByPlaceholder(' ').click()
-  await page.getByPlaceholder(' ').fill('ALP')
-  await page.getByRole('button', { name: 'Open' }).click()
-  await expect(page.getByRole('button', { name: 'Open' })).toBeVisible()
+
+  const publisherButton = page.getByRole('button', { name: 'Publisher' })
+  if (await publisherButton.isVisible()) {
+    await page
+      .locator('div')
+      .filter({ hasText: /^PublisherValue$/ })
+      .getByPlaceholder(' ')
+      .click()
+    await page
+      .locator('div')
+      .filter({ hasText: /^PublisherValue$/ })
+      .getByPlaceholder(' ')
+      .fill('ALP')
+  } else {
+    await page.getByRole('button', { name: 'add metadata' }).click()
+    await page.locator('div > .u-padding-vertical--small').last().click()
+    await page.getByRole('option', { name: 'Publisher' }).click()
+    await page
+      .locator('div')
+      .filter({ hasText: /^PublisherValue$/ })
+      .getByPlaceholder(' ')
+      .click()
+    await page
+      .locator('div')
+      .filter({ hasText: /^PublisherValue$/ })
+      .getByPlaceholder(' ')
+      .fill('ALP')
+  }
   await page.getByRole('combobox', { name: 'Tags' }).click()
   await page.getByRole('option', { name: 'COVID' }).click()
   await expect(page.getByRole('button', { name: 'COVID' })).toBeVisible()

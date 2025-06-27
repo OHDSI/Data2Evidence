@@ -9,7 +9,7 @@ test('parent-interaction', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await page.getByTestId('card').first().click()
+  await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await expect(page.getByRole('status')).toBeVisible()
   await expect(page.getByRole('status')).toBeHidden()

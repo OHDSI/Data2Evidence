@@ -18,7 +18,7 @@ test('dataset-overview-chart', async ({ page }) => {
 
   //React echarts canvas element items cannot be selected
   await expect(page.locator('canvas').first()).toBeVisible()
-  await page.getByTestId('card').first().click()
+  await page.getByText('Demo dataset').first().click()
 
   const tbodyText = await page.getByRole('cell', { name: '{"Observation Period Count' }).innerText()
   const hasMetadata = tbodyText.includes('"Observation Period Count":')
