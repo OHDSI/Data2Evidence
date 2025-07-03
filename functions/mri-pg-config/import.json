@@ -25,6 +25,7 @@
   "./src/db/seeds/03_Config": "./src/db/seeds/03_Config.ts",
   "./src/db/seeds/04_UserDefaultConfig": "./src/db/seeds/04_UserDefaultConfig.ts",
   "./src/db/configs/fhirConfigDuckdb": "./src/db/configs/fhirConfigDuckdb.ts",
+  "./src/db/configs/uctConfigDuckdb": "./src/db/configs/uctConfigDuckdb.ts",
   "./src/db/knexfile": "./src/db/knexfile.ts",
   "./src/db/knexfile-admin": "./src/db/knexfile-admin.ts",
   "./src/env": "./src/env.ts"

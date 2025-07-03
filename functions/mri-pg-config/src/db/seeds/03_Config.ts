@@ -1,6 +1,7 @@
 import { Knex } from "knex";
 import { env } from "../../env"
 import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb";
+import { cdwUCTConfigDuckdb, paUCTConfigDuckdb } from "../configs/uctConfigDuckdb";
 
 export async function seed(knex: Knex): Promise<void> {
   // Inserts seed entries
@@ -113,6 +114,34 @@ export async function seed(knex: Knex): Promise<void> {
         Name: "FHIR_DM",
         Type: "HC/HPH/CDW",
         Data: cdwFHIRConfigDuckdb,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
+      },
+	  {
+        Id: "7f83344b-4b1c-43a1-b099-d233a6844bb0",
+        Version: "A",
+        Status: "",
+        Name: "UCT",
+        Type: "HC/MRI/PA",
+        Data: paUCTConfigDuckdb,
+        ParentId: "f6f08d4b-669e-485b-89c6-bb684020bfd1",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
+      },
+      {
+        Id: "f6f08d4b-669e-485b-89c6-bb684020bfd1",
+        Version: "1",
+        Status: "A",
+        Name: "UCT_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwUCTConfigDuckdb,
         ParentId: "",
         ParentVersion: "",
         Creator: "ALICE",
