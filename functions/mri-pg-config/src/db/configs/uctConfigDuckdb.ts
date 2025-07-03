@@ -941,6 +941,7 @@ export const cdwUCTConfigDuckdb = {
                     "type": "text",
                     "expression": "@REF.datasource_name",
                     "defaultPlaceholder": "@REF",
+                    "defaultFilter": "@REF.datasource_id = @episode_evidences.datasource_id",
                     "referenceFilter": "CAST (@REF.datasource_name AS VARCHAR) LIKE_REGEXPR '@SEARCH_QUERY' FLAG 'i'",
                     "referenceExpression": "@REF.datasource_name",
                     "order": 5,
