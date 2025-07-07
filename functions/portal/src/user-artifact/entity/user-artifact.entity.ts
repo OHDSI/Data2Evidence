@@ -8,11 +8,13 @@ export class UserArtifact extends Audit {
   userId: string
 
   @PrimaryColumn({
+    name: "service_name",
     type: "enum",
     enum: ServiceName,
   })
-  service_name: ServiceName;
+  serviceName: ServiceName;
 
+  // TODO: ADD Types for each user artifact
   @Column('jsonb')
-  artifacts: Record<ServiceName, any[]>
+  artifacts: any[]
 }
