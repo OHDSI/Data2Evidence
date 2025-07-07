@@ -17,7 +17,7 @@ export class SplitUserArtifact1749110029676 implements MigrationInterface {
       `ALTER TABLE "portal"."user_artifact" ADD CONSTRAINT "PK_07a468802447e3d895378e511aa" PRIMARY KEY ("user_id", "service_name");`
     );
 
-    // Split user artifacts where service_name === null into individual rows and insert into db
+    // Split user artifacts where service_name === MIGRATION_STEP_SPLIT into individual rows and insert into db
     await queryRunner.query(
       `
       INSERT INTO
