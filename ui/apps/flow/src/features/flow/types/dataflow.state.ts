@@ -130,3 +130,17 @@ export interface TestDataflowDto {
 }
 
 export type FlowStatus = "draft" | "saved";
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  nodes: NodeState[];
+  edges: EdgeState[];
+}
+
+export interface CreateFromTemplateDto {
+  templateId: string;
+  name: string;
+  comment?: string;
+}

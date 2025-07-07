@@ -68,7 +68,7 @@ const onClickCreateCohortDefinition = async () => {
       name: name.value || 'Imported Atlas Cohort Definition',
       tags: [],
       createdBy: getPortalAPI().username,
-      expression: input.value,
+      expression: JSON.parse(input.value),
       modifiedBy: getPortalAPI().username,
       createdDate: now,
       description: description.value || '',

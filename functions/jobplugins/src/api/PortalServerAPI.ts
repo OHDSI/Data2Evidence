@@ -58,48 +58,9 @@ export class PortalServerAPI {
     }
   }
 
-  async getFlowRunResults(filePaths) {
+  async getConfigSecretByType(type: string) {
     try {
-      let url = `${this.baseURL}/prefect/results`;
-      const params = new URLSearchParams();
-      if (filePaths.length === 1) {
-        params.append("filePath", filePaths[0]);
-      } else {
-        filePaths.forEach((path) => params.append("filePaths[]", path));
-      }
-      url += `?${params.toString()}`;
-      console.info(url);
-
-      // Get client credentials token
-      const openIdApi = new OpenIDAPI();
-      const clientCredentialsToken =
-        await openIdApi.getClientCredentialsToken();
-
-      // Get options with client credentials token instead of user token
-      const options = this.createOptions(
-        "GET",
-        `Bearer ${clientCredentialsToken}`
-      );
-
-      const result = await fetch(url, options);
-      if (!result.ok) {
-        throw new Error(
-          `Error while getting flow run results with filePath ${filePaths}`
-        );
-      }
-      const data = await result.json();
-      return Array.isArray(data) ? data : [data];
-    } catch (error) {
-      console.error(
-        `Error while getting flow run results with filePath ${filePaths}: ${error}`
-      );
-      throw error;
-    }
-  }
-
-  async getConfigByType(type: string) {
-    try {
-      const url = `${this.baseURL}/config/${type}`;
+      const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
       const result = await fetch(url, options);
       if (!result.ok) {

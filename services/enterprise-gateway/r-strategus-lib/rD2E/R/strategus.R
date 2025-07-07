@@ -7,26 +7,33 @@
 #' using the OHDSI Strategus R package.
 #'
 #' @param analysisSpecification AnalysisSpecification object created by Strategus::createEmptyAnalysisSpecificiations
-#' @param executionSettings ExecutionSettings object created by Strategus::createCdmExecutionSettings
+#' @param executionSettings optional, ExecutionSettings object created by Strategus::createCdmExecutionSettings
 #' @return Response object with flow run details, id and status
 #' @export
-run_strategus_flow <- function(analysisSpecification, executionSettings) {
-  # host <- "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
+run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, options = list()) {
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  url <- paste0(host, "/dataflow-mgmt/prefect/jupyter-kernel/flow-run/strategus")
+  url <- paste0(host, "/jobplugins/prefect/jupyter-kernel/flow-run/strategus")
+  json_graph = list()
   
-  analysisSpec <- ParallelLogger::convertSettingsToJson(analysisSpecification)
-  execSettings <- ParallelLogger::convertSettingsToJson(executionSettings)
-  json_graph = list(
-        analysisSpecification = analysisSpec,
-        executionSettings = execSettings
+  if (!is.null(analysisSpecification)) {
+    json_graph$analysisSpecification <- ParallelLogger::convertSettingsToJson(
+      analysisSpecification
     )
-  options = list(
-        mode = 'kernel',
-        datasetId = dataset_id
+  }
+  if (!is.null(executionSettings)) {
+    json_graph$executionSettings <- ParallelLogger::convertSettingsToJson(
+      executionSettings
     )
+  }
+  if (length(options) == 0) {
+    options <- create_options()
+  }
+
+  if(options$study_id == '') {
+    stop("Error: study_id must be set in options")
+  }
+
   parameters <- list(
     json_graph = json_graph,
     options = options
@@ -73,4 +80,24 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
     deploymentId = result$id,
     infrastructureDocId = result$infrastructure_document_id
   )
+}
+
+#' create options for running the Strategus flow in D2E
+#'
+#' This function creates options for a flow run in Prefect in D2E.
+#' So far, the only option is to upload_results.
+#'
+#' @param study_id string value indicating the study ID to be used in the flow run
+#' @param upload_results boolean value indicating whether to upload results after the flow run
+#'   (default is FALSE)
+#' @return Response object with options for the flow run
+#' @export
+create_options <- function(study_id = '', upload_results = FALSE) {
+  dataset_id <- Sys.getenv("TREX__DATASET_ID")
+  return(list(
+      mode = 'kernel',
+      datasetId = dataset_id,
+      uploadResults = upload_results,
+      study_id = study_id
+  ))
 }

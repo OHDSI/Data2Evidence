@@ -40,8 +40,8 @@ env=.env
 context=""
 fhir=""
 demo=""
+minio=""
 dicom=""
-cachedb=""
 jupyter=""
 mlflow=""
 compose=""
@@ -53,10 +53,10 @@ while [[ $# -gt 0 ]]; do
         -d|--function-path) function_path="$2"; shift ;;
         -e|--demo) demo=--profile="demodb" ;;
         -f|--fhir) fhir=--profile="fhir" ;;
+        -g|--minio) minio=--profile="minio" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
-        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -98,7 +98,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $mlflow $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -237,6 +237,7 @@ case $cmd in
         echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
         echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
         echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
+        echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
@@ -296,7 +297,6 @@ Options:
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
- -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
  -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file

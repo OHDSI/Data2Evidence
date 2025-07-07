@@ -1,23 +1,23 @@
-import React, { ChangeEvent, FC, useCallback, useMemo } from "react";
+import { Button, Checkbox, EditIcon, IconButton } from "@portal/components";
 import { saveAs } from "file-saver";
-import { Button, EditIcon, IconButton, Checkbox } from "@portal/components";
-import { useDialogHelper } from "../../../../hooks";
+import React, { ChangeEvent, FC, useCallback, useMemo } from "react";
+import { api } from "../../../../axios/api";
 import { useFeedback, useTranslation, useUser } from "../../../../contexts";
+import { useDialogHelper } from "../../../../hooks";
 import {
-  convertStarboardToJupyter,
   convertJupyterToStarboard,
+  convertStarboardToJupyter,
   notebookContentToText,
   textToNotebookContent,
 } from "../../utils/jupystar";
 import { StarboardNotebook } from "../../utils/notebook";
-import { api } from "../../../../axios/api";
 import DeleteNotebookDialog from "../DeleteNotebookDialog/DeleteNotebookDialog";
 import { EditTitleDialog } from "../EditTitleDialog/EditTitleDialog";
 import NotebookSelect from "../NotebookSelect/NotebookSelect";
+import { SyncFromRemoteButton } from "../SyncFromRemoteButton/SyncFromRemoteButton";
 import "./NotebookHeader.scss";
 
 interface HeaderProps {
-  metadata: any;
   notebooks: StarboardNotebook[] | undefined;
   activeNotebook: StarboardNotebook | undefined;
   updateActiveNotebook: (notebook?: StarboardNotebook) => void;
@@ -30,7 +30,6 @@ interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({
-  metadata,
   notebooks,
   activeNotebook,
   updateActiveNotebook,
@@ -248,6 +247,11 @@ export const Header: FC<HeaderProps> = ({
             text={getText(i18nKeys.HEADER__DELETE)}
             onClick={handleDeleteNotebook}
             disabled={isNotUserNotebook}
+          />
+          <SyncFromRemoteButton
+            activeNotebook={activeNotebook}
+            fetchNotebooks={fetchNotebooks}
+            activeDatasetId={activeDatasetId}
           />
         </div>
       </div>

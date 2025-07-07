@@ -1,8 +1,10 @@
+import os
+import json
 import traceback
 from functools import partial
 from collections import OrderedDict
 from prefect_dask import DaskTaskRunner
-import json
+
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -13,10 +15,14 @@ from prefect.artifacts import create_markdown_artifact
 from .hooks import *
 from .flowutils import *
 from .nodes import generate_nodes_flow
+from .types import NodeType
 
 
 @flow(log_prints=True)
 def dataflow_ui_plugin(json_graph, options):
+
+    os.environ['plugin_name'] = 'dataflow_ui_plugin'
+
     logger = get_run_logger()
 
     # Grab root flow id
@@ -56,7 +62,7 @@ def dataflow_ui_plugin(json_graph, options):
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
-            nodes_out[k] = serialize_result(n[k])
+            nodes_out[k] = n[k].serialize_result()
 
     # Create a markdown artifact instead of persisting as a JSON file
     artifact_key = f"{FlowRunContext.get().flow_run.id}-nodes-output"
@@ -65,14 +71,6 @@ def dataflow_ui_plugin(json_graph, options):
         markdown=json.dumps(nodes_out),
         description="Nodes output stored as JSON"
     )
-
-def serialize_result(result):
-    return {
-        "result": serialize_to_json(result.result),
-        "error": result.error,
-        "errorMessage": result.result if result.error else None,
-        "nodeName": result.node.name
-    }
 
 def execute_subflow_cluster(node_graph, input, test):
     scheduler_address = get_scheduler_address(node_graph)
@@ -150,21 +148,10 @@ def execute_nodes_flow(graph, sorted_nodes, test):
         for nodename in sorted_nodes:
             node = graph["nodes"][nodename]
             _input = get_incoming_edges(graph, nodes, nodename)
-            if node["type"] not in [
-                "csv_node",
-                "sql_node",
-                "python_node",
-                "py2table_node",
-                "db_reader_node",
-                "db_writer_node",
-                "sql_query_node",
-                "r_node",
-                "data_mapping_node",
-                "subflow"
-            ]:
+            if node["type"] not in [node_type.value for node_type in NodeType]:
                 get_run_logger().error(f"gen.py: execute_nodes: {node['type']} Node Type not known")
             else: 
-                if node["type"] == "subflow":
+                if node["type"] == NodeType.SUBFLOW:
                     # execute as a subflow with runner
                     result_of_subflow = execute_subflow_cluster(
                         node, _input, test)
@@ -203,7 +190,8 @@ def execute_node_task(nodename, node_type, node, input, test):
         result = _node.test(task_run_context)
     else:
         match node_type:
-            case 'csv_node' | 'db_reader_node':
+            # Nodes that do not accept input
+            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING:
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)

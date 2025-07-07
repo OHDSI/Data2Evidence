@@ -25,7 +25,7 @@ export const dataflowRequest = (
         : req.headers.authorization;
 
     const { hostname, port, protocol } = new URL(
-        env.SERVICE_ROUTES.dataflowMgmt
+        env.SERVICE_ROUTES.jobplugins
     );
     const protocolLib = protocol === "https:" ? https : http;
     const data = JSON.stringify(payload);
@@ -36,7 +36,7 @@ export const dataflowRequest = (
         hostname,
         port,
         protocol,
-        path: `/${path}`,
+        path: `/jobplugins/${path}`,
         headers: {
             "authorization": accessToken,
             "user-agent": "ALP Service",

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import ReactFlow, { Controls, EdgeChange, PanOnScrollMode } from "reactflow";
 import { nodeTypes } from "../Nodes";
 import { api } from "../axios/api";
-import { useApp, useCdmSchema, useField, useTable } from "../contexts";
+import { useApp, useCdmSchema, useActiveFieldMap, useField, useTable } from "../contexts";
 import { transformEtlModel } from "../utils/etl-transformer";
 import { saveBlobAs } from "../utils/utils";
 import { TableToTable } from "./TableToTable";
@@ -13,16 +13,8 @@ import "./FieldMapLayout.scss";
 export const FieldMapLayout = () => {
   const { setPage, state } = useApp();
   const [loading, setLoading] = useState(false);
-  const {
-    nodes,
-    edges: fieldEdges,
-    activeSourceHandles: sourceFields,
-    activeTargetHandles: targetFields,
-    targetHandles: allTargetFields,
-    setFieldNodes,
-    setFieldEdges,
-    addFieldConnection,
-  } = useField();
+  const { nodes, edges: fieldEdges, setFieldNodes, setFieldEdges, addFieldConnection } = useField();
+  const { sourceHandles: sourceFields, targetHandles: targetFields, fieldMap } = useActiveFieldMap();
 
   const { edges: tableEdges, sourceHandles: sourceTables, targetHandles: targetTables } = useTable();
   const { cdmVersion } = useCdmSchema();
@@ -64,8 +56,9 @@ export const FieldMapLayout = () => {
         state.cdmTables,
         tableEdges,
         fieldEdges,
-        allTargetFields
+        fieldMap
       );
+      console.debug("ETL Model:", model);
       const response = await api.whiteRabbit.createEtlReport(model);
       const flowRunId = response.flowRunId;
 
@@ -88,7 +81,7 @@ export const FieldMapLayout = () => {
       console.error("Failed to generate ETL report", error);
       setLoading(false);
     }
-  }, [fieldEdges, tableEdges, sourceFields, targetFields, allTargetFields, sourceTables, targetTables, cdmVersion]);
+  }, [fieldEdges, tableEdges, sourceFields, targetFields, fieldMap, sourceTables, targetTables, cdmVersion]);
 
   return (
     <div className="field-map-layout">

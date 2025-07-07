@@ -14,7 +14,7 @@
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
     <% } %>
   </head>
-  <body style="margin: 0px">
+  <body style="margin: 0px; display: flex; flex-direction: column">
     <button
       id="mriBtnLogout"
       onclick="logoutfn()"
@@ -36,7 +36,7 @@
     >
       <div>PORTAL HEADER</div>
     </div>
-    <div class="vue-main" style="height: calc(100vh - 80px)"></div>
+    <div class="vue-main" style="height: 100%"></div>
     <span class="plugin-container"></span>
 
     <script>
@@ -49,6 +49,7 @@
         },
         isLocal: true,
         username: 'admin', // Change to your logto username
+        locale: 'en',
       }
     </script>
 

@@ -5,10 +5,11 @@ from prefect.logging import get_run_logger
 
 from .types import *
 from .tasks import *
+import os
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.DicomServerAPI import DicomServerAPI
-
+os.environ['plugin_name'] = 'dicom_etl_plugin'
 
 @flow(log_prints=True)
 def dicom_etl_plugin(options: DICOMETLOptions):
@@ -35,7 +36,6 @@ def dicom_etl_plugin(options: DICOMETLOptions):
             upload_files = options.upload_files
             person_patient_mapping = options.person_to_patient_mapping
             person_mapping_schema = person_patient_mapping.schema_name
-            mapping_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
             # Check if schemas exist
             mi_schema_exists = dbdao.check_schema_exists(schema=medical_imaging_schema)
@@ -82,8 +82,11 @@ def dicom_etl_plugin(options: DICOMETLOptions):
                 new_image_occurrence_id, new_procedure_occurrence_id, new_visit_occurrence_id)
 
             # Transform for image occurrence
-            image_occurrence_df = transform_for_image_occurrence(mapped_concepts_df, dbdao,
-                                                                 mapping_dbdao, person_patient_mapping, next_record_ids)
+            image_occurrence_df = transform_for_image_occurrence(mapped_concepts_df, 
+                                                                 vocab_schema,
+                                                                 dbdao, 
+                                                                 person_patient_mapping, 
+                                                                 next_record_ids)
 
             new_image_feature_id = dbdao.get_next_record_id(
                 medical_imaging_schema, "image_feature", "image_feature_id")

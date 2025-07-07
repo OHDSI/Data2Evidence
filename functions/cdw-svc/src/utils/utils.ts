@@ -8,6 +8,7 @@ import { env } from "../configs";
 import { getDuckdbDBConnection } from "./DuckdbConnection";
 import * as _textLib from "./text";
 import { getCachedbDbConnections } from "./cachedb";
+import { getTrexConnection } from "./trexConnection";
 import * as xsenv from "@sap/xsenv";
 import { DBConnectionUtil as dbConnectionUtil } from "@alp/alp-base-utils";
 /**
@@ -465,8 +466,12 @@ const filterVcapByTag = (
 export async function getAnalyticsConnection(userObj, token?: string) {
   let analyticsCredentials;
   let analyticsConnection;
+
   if (env.USE_DUCKDB === "true") {
-    if (env.USE_CACHEDB === "true") {
+    // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
+    if (env.USE_TREX_DB_CONN === "true") {
+      analyticsConnection = getTrexConnection();
+    } else if (env.USE_CACHEDB === "true") {
       // Get duckdb db connection via alp-cachedb
       analyticsConnection = await getCachedbDbConnections({
         userObj,
@@ -491,13 +496,15 @@ export async function getAnalyticsConnection(userObj, token?: string) {
       delete analyticsCredentials.pfx;
     }
 
-    if (env.USE_HANA_JWT_AUTHC === "true") {
-      delete analyticsCredentials.user
-      delete analyticsCredentials.password
+    if (analyticsCredentials.authentication_mode === "JWT") {
+      delete analyticsCredentials.user;
+      delete analyticsCredentials.password;
       if (userObj.thirdPartyToken) {
-          analyticsCredentials["token"] = userObj.thirdPartyToken;
+        analyticsCredentials["token"] = userObj.thirdPartyToken;
       } else {
-          throw new Error("Intermediary IDP token doesnt exist for HANA JWT Authentication!");
+        throw new Error(
+          "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+        );
       }
     }
 

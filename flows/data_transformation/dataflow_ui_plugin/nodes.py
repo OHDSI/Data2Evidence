@@ -1,20 +1,31 @@
-import json
 import ibis
+import json
 import duckdb
 import logging
-import pandas as pd
+from typing import Any
 import traceback as tb
-from io import StringIO
 from rpy2 import robjects
-from sqlalchemy import text
 from functools import partial
-from jsonpath_ng import jsonpath, parse
+from jsonpath_ng import parse
+from pydantic import ValidationError
+
+import pandas as pd
+from pandas.api.types import is_scalar, is_list_like, is_dict_like
+
+from genson import SchemaBuilder
+from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
-from .types import JoinType
+from .types import (NodeType, 
+                    TableSourceType, 
+                    DataMappingType, 
+                    ConceptMappingType)
+
+from .nodeutils.querygenerator import *
+from .nodeutils.csvutils import convert_csv_to_dataframe
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
@@ -41,18 +52,60 @@ class Result:
     def __init__(self, error: bool, data, node: Node, task_run_context):
         self.error = error
         self.node = node
-        self.result = data # preserves the data type of the node result
+        self.result = data # preserves the actual data of the node result
         self.task_run_id = str(task_run_context.get("id"))
         self.task_run_name = str(task_run_context.get("name"))
         self.flow_run_id = str(task_run_context.get("flow_run_id"))
 
-    def create_serializable_result(self):
-        return {
-            "result": serialize_to_json(self.result),
-            "error": self.error, 
+
+    def serialize_result(self):
+        base_result = {
+            "error": self.error,
             "errorMessage": self.result if self.error else None,
             "nodeName": self.node.name
         }
+
+        if self.error: return base_result
+        base_result.update(self.__create_result_schema(self.result))
+        return base_result
+    
+
+    def __is_strictly_list_like(self, obj):
+        return is_list_like(obj) and not is_dict_like(obj)
+    
+
+    def __create_result_schema(self, result_value: Any):
+        result_schema = {
+            "length": len(result_value) if hasattr(result_value, "__len__") else None,
+            "type": str(type(result_value))
+        }
+
+        if isinstance(result_value, pd.DataFrame):
+            result_schema["schema"] = result_value.dtypes.apply(lambda x: x.name).to_dict()
+            return result_schema
+
+        try:
+            builder = SchemaBuilder()
+            if self.__is_strictly_list_like(result_value):
+                builder.add_object(list(result_value))
+            elif is_dict_like(result_value):
+                builder.add_object(result_value)
+            else:
+                return result_schema
+
+            schema = builder.to_schema()
+            schema.pop("$schema", None)
+            schema.pop("required", None)
+            result_schema["schema"] = schema
+
+
+        except SchemaGenerationError:
+            if self.__is_strictly_list_like(result_value):
+                result_schema["schema"] = [self.__create_result_schema(v) for v in result_value]
+            elif is_dict_like(result_value):
+                result_schema["schema"] = {k: self.__create_result_schema(v) for k, v in result_value.items()}
+            
+        return result_schema
 
 
 class Py2TableNode(Node):
@@ -90,7 +143,7 @@ class Py2TableNode(Node):
             return pd.DataFrame(data)
 
     def _exec(self, _input: dict[str, Result]) -> pd.DataFrame:
-        source_node = self.ui_map.get("source").split(".")[0] # Todo: After change payload, use: self.ui_map.get("source") 
+        source_node = self.ui_map.get("source").split(".")[0]
         path = self.ui_map.get("path")
         result_obj = _input.get(source_node).result
 
@@ -242,30 +295,17 @@ class CsvNode(Node):
         self.hasheader = _node["hasheader"] # Todo: Not inside payload from backend
         self.encoding = _node.get("encoding", "utf8") # Todo: Not inside payload from backend
 
-    def __resolve_delimiter(self) -> str:
-        match self.delimiter.strip():
-            case "/t" | "\\t" | r"\t":
-                return "\t"
-            case ",":
-                return ","
-            case _:
-                raise ValueError(f"Unsupported delimiter: {self.delimiter}")
-
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        csv_response = SupabaseStorageAPI().get_csv_file(self.file)
+        csv_response = SupabaseStorageAPI().get_csv_file(self.id, self.file)
 
-        if self.hasheader:
-            df = pd.read_csv(StringIO(csv_response), 
-                             delimiter=self.__resolve_delimiter(), 
-                             encoding=self.encoding)
-        else:
-            df = pd.read_csv(StringIO(csv_response), 
-                             header=None, names=self.names, 
-                             delimiter=self.__resolve_delimiter(), 
-                             encoding=self.encoding)
-        return df
-
+        return convert_csv_to_dataframe(
+            csv_response, 
+            hasheader=self.hasheader, 
+            delimiter=self.delimiter, 
+            names=self.names, 
+            encoding=self.encoding
+        )
 
     def test(self, task_run_context):
         df = self._load_csv_into_dataframe()
@@ -285,7 +325,7 @@ class DbWriter(Node):
         self.schema_name = _node["schemaname"]
         self.table_name = _node["dbtablename"]
         self.database = _node["database"] 
-        self.dataframe = _node["dataframe"][0] # Todo: after change payload, use _node["dataframe"]
+        self.dataframe = _node["dataframe"]
         self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
@@ -300,7 +340,9 @@ class DbWriter(Node):
             result = df_to_write.to_sql(self.table_name, 
                                         dbconn, 
                                         schema=self.schema_name, 
-                                        if_exists='replace')
+                                        if_exists='append',
+                                        index=False)
+            
             return Result(False,  result, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -328,198 +370,201 @@ class DBReader(Node):
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
-class SqlQueryNode(Node):
-    """
-    Execute queries on database with read user connection.
-    
-    Attributes:
-        params: A dictionary mapping parameters in sql expression to input nodes.
-        sqlquery: The sql query to execute.
-        testsqlquery: The test sql query to execute.
-        is_select: To flag if the sqlquery/testsqlquery is a select statement.
-        database: The database code.
-        schema: The name of a default schema to use.
-        use_cache_db: Boolean flag to use cache db. 
-    """
+class ConceptMappingNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.sqlquery = _node["sqlquery"]
-        if "testsqlquery" in _node:
-            self.testsqlquery = _node["testsqlquery"]
-        else:
-            self.testsqlquery = _node["sqlquery"]
-        self.params = {}
-        self._is_select = _node.get("is_select", False)
-        if "params" in _node:
-            self.params = _node["params"]
-        self.database = _node["database"]
-        self.schema = "cdmdefault" # Use as the default schema for all dialects
-        self.use_cache_db = False
 
-
-    def __compile_with_params(self, sqlquery: str, bind_params: dict) -> str:
-        # Use sqlalchemy as ibis does not support bound parameters with raw sql
-        if not bind_params:
-            return sqlquery
-        raw_sql = text(sqlquery).bindparams(**bind_params).compile(compile_kwargs={"literal_binds": True})
-        return str(raw_sql)
-
-    def _exec(self, _input: dict[str, Result], sqlquery: str) -> pd.DataFrame | None:
-        con = None
+        self.concept_mapping_data = _node["data"]["csvData"]["data"]
+        
+    def test(self, task_run_context) -> Result:
+        return self.task(task_run_context)
+    
+    def task(self, task_run_context) -> Result:
         try:
-            # Todo: Connect to db without specifying schema
-            tenant_configs = DBDao(use_cache_db=self.use_cache_db, 
-                                   database_code=self.database).tenant_configs
-            con = ibis.postgres.connect(database=self.database,
-                                        host=tenant_configs.host,
-                                        user=tenant_configs.adminUser,
-                                        password=tenant_configs.adminPassword.get_secret_value())
-            retrieved_params = {param: _input[node].result 
-                                for param, node in self.params.items()}
-            
-            compiled_query = self.__compile_with_params(sqlquery, retrieved_params)
-            result = con.raw_sql(compiled_query)
-            if self._is_select:
-                return result.to_pandas()
-            return
-        except Exception as e:
-            raise e
-
-    def test(self, _input: dict[str, Result], task_run_context):
-        try:
-            df = self._exec(_input, self.testsqlquery)
-            return Result(False,  df, self, task_run_context)
-        except Exception as e:
-            return Result(True, tb.format_exc(), self, task_run_context)
-
-    def task(self, _input: dict[str, Result], task_run_context):
-        try:
-            df = self._exec(_input, self.sqlquery)
-            return Result(False,  df, self, task_run_context)
+            checked_concepts = (
+                {
+                    "domain_id": cm.domainId,
+                    "concept_id": cm.conceptId,
+                    "concept_name": cm.conceptName,
+                    "source_code": cm.source_code,
+                    "validity": cm.validity if cm.validity else None
+                } for item in self.concept_mapping_data
+                if (cm := ConceptMappingType(**item)).status == "checked"
+            )
+            concept_mapping_df = pd.DataFrame(checked_concepts)
+            return Result(False,  concept_mapping_df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
-# Todo: link up with JSON from UI
 class DataMappingNode(Node):
-    """
-    Map fields from multiple source dataframes to target tables.
-    
-    Attributes:
-        source_node_dfs: A dictionary mapping each source table to a input node containing a source dataframe.
-        table_joins: A dictionary specifying how a left table should be joined to a right table.
-        data_mapping: A dictionary mapping the columns from a source table to a columns of a target table. 
-    """
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.data_mapping = _node["data_mapping"]
-        self.table_joins = _node["table_joins"]
-        self.source_node_dfs = _node["tables"]
 
-    def __create_target_table(self, _input: dict[str, Result], target_table: str) -> pd.DataFrame:
-        con = None
+
+        # Fail node generation if scan report data validation fails
+        self.etl_mapping = DataMappingType(**_node["data"])
+
+    def create_target_table_df(self, target_table_name: str) -> pd.DataFrame:
+        """
+        Creates and returns a pandas DataFrame for the specified target table.
+        Args:
+            target_table_name (str): The name of the target table.
+        Returns:
+            pd.DataFrame: A DataFrame containing the data from the target table.
+        Raises:
+            Exception: Propagates any exceptions encountered during database connection or querying.
+        """
+       
+        # Todo: Remove hard code after scan report json is updated
+        table_source = "csv"
+        database_code = "demodb"
+
+        db_con = None
         try:
-            # create temporary in-memory table and register input dfs as tables
-            con = ibis.duckdb.connect()
-            ibis_mem_tables = {}
-            source_table_list = [mapping["input_table"] for mapping in self.data_mapping 
-                                 if mapping["output_table"]==target_table]
-            for source_table in source_table_list:
-                source_node = self.source_node_dfs.get(source_table)
-                source_table_df = _input[source_node].result
-                ibis_mem_tables[source_table] = con.register(table_name=source_table, source=source_table_df)
-            
-            # create a base select statement by joining all input tables
-            base_expr = self.__create_joined_tables_expression(target_table, ibis_mem_tables)
-            
-            # create a select statement with mapped field inputs
-            select_expr = self.__create_select_expression(target_table, base_expr, ibis_mem_tables)
+            if table_source == TableSourceType.CSV:
+                # Use duckdb as ibis backend for csv files
+                db_con = ibis.duckdb.connect()
+                target_df = self.generate_query(db_con, target_table_name, table_source)
 
-            output_df = select_expr.execute()
-            return output_df
-        
+            if table_source  == TableSourceType.DB:
+                # Use db as ibis backend depending on database_code
+                db_con = DBDao(use_cache_db=False, database_code=database_code).ibis_connect()
+                with db_con as con:
+                    target_df = self.generate_query(con, target_table_name, table_source)
+
         except Exception as e:
-            raise e
+            raise
         finally:
-            if con:
-                con.close()
+            if db_con and table_source == TableSourceType.CSV:
+                db_con.disconnect()
 
-    def __order_joins(self, target_table_joins: list) -> list:
-        sorted_joins = []
+        return target_df
+    
+    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, ) -> pd.DataFrame:
+        table_mappings = self.etl_mapping.table.edges
+        column_mappings = self.etl_mapping.field.edges
+
+        # Todo: Remove hard code after scan report json is updated
+        schema_name = "synthea"
+        hasheader = True
+        delimiter = ","
+        encoding = "utf8"
         
-        left_tables = set(x["left_table_name"] for x in target_table_joins)
-        right_tables = set(x["right_table_name"] for x in target_table_joins)
-        leftmost_table = (left_tables - right_tables).pop()
-        current_table = leftmost_table
-        tables_to_visit = set()
+        source_table_queries = {}
+        for mapping in table_mappings:
+            if mapping.targetHandle == target_table_name:
+                source_table_name = mapping.sourceHandle
+                field_map_key = mapping.id
 
-        # while left_nodes != {} and current_table is not None:
-        while current_table is not None:
-            if current_table not in left_tables:
-                pass
-            else:
-                left_tables.remove(current_table)
-                for join in target_table_joins:
-                    if join["left_table_name"] == current_table:
-                        tables_to_visit.add(join["right_table_name"])
-                        sorted_joins.append(join)
+            if mapping.targetHandle == target_table_name:
+                if table_source == TableSourceType.CSV:
+                    # Register source table from CSV
+                    csv_file_name = source_table_name + ".csv"
+                    csv_response = SupabaseStorageAPI().get_csv_file(self.id, csv_file_name)
+                    source_df = convert_csv_to_dataframe(
+                        csv_response,
+                        hasheader=hasheader,
+                        delimiter=delimiter,
+                        names=None,
+                        encoding=encoding
+                        )
+                    temp_table_obj = con.create_table(source_table_name, source_df)
+                elif table_source == TableSourceType.DB:
+                    temp_table_obj = con.table(source_table_name, database=schema_name)
+                
+                source_table_obj = temp_table_obj.mutate({
+                        name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
+                        for name, dtype in temp_table_obj.schema().items()
+                    })
 
-            if len(tables_to_visit) == 0:
-                current_table = None
-            else:
-                current_table = tables_to_visit.pop()
+                selected_columns = []
+                mapped_target_columns = set()
+
+                target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
+                
+                for column_mapping in column_mappings:
+                    if column_mapping.sourceHandle.startswith(source_table_name) \
+                        and column_mapping.targetHandle.startswith(target_table_name):
+
+                        source_column_name = column_mapping.sourceHandle.split("-")[-1]
+                        target_column_name = column_mapping.targetHandle.split("-")[-1]
+
+                        mapped_target_columns.add(target_column_name)
+
+                        # Todo: Update to apply function to column if specified in mapping
+                        selected_columns.append(
+                            apply_ibis_func(
+                                expr=source_table_obj[source_column_name],
+                                table_columns=target_column_properties,
+                                target_column=target_column_name
+                            ) \
+                            .cast(convert_column_type(target_column_name, target_column_properties)) \
+                            .name(target_column_name)
+                        )
+                        
+                # Select target columns with a constant value
+                for col in target_column_properties:
+                    if col.data.constantValue:
+                        selected_columns.append(
+                            ibis.literal(
+                                convert_value( # Convert to dtype of target column
+                                    col.data.constantValue, col.data.columnType
+                                )
+                            ).name(col.data.label)
+                        )
+
+                        mapped_target_columns.add(col.data.label)
+
+                # For unmapped target columns, cast null value as appropriate type columns
+                target_column_names = [col.data.label for col in target_column_properties]
+
+                unmapped_target_columns: set[str] = set(target_column_names) - mapped_target_columns
+                selected_columns.extend(
+                    ibis.null() \
+                        .cast(convert_column_type(col_name, target_column_properties)) \
+                        .name(col_name) for col_name in unmapped_target_columns
+                )
+
+                query = source_table_obj.select(selected_columns)
+                # Todo: Add where clause for lookup columns
+                # sql = query.compile() # Uncomment to see individual table compiled query
+                source_table_queries[source_table_name] = query
+
+        # Use UNION ALL on source tables for the same target table as there is no join information
+        if len(source_table_queries) > 1:
+            union_all_query = union_all_tables(source_table_queries)
             
-        return sorted_joins
+        else:
+            union_all_query = list(source_table_queries.values())[0]
 
+        union_all_sql = union_all_query.compile(pretty=True)
 
-    def __create_joined_tables_expression(self, target_table: str, ibis_mem_tables: dict):
-        target_table_joins = [config for config in self.table_join_config_list if config["target_table"]==target_table]
-        ordered_joins = self.__order_joins(target_table_joins)
+        print(f"SQL Query for {target_table_name}:")
+        print(union_all_sql)
 
-        # chain joins
-        # start with left most table and join from left to right
-        join_expr = ibis_mem_tables.get(ordered_joins[0]["left_table_name"])
+        if table_source == TableSourceType.DB:
+            target_df = con.execute(union_all_query)
+        else:
+            target_df = con.execute(union_all_query)
+        return target_df
+    
 
-        for config in ordered_joins:
-            left_table = ibis_mem_tables.get(config["left_table_name"])
-            right_table = ibis_mem_tables.get(config["right_table_name"])
-            left_table_join_col = config["left_table_join_on"]
-            right_table_join_col = config["right_table_join_on"]
-            
-            # Apply join on left table and right table
-            match config.join_type:
-                case JoinType.LEFT_OUTER:
-                    join_expr = join_expr.left_join(right_table, left_table[left_table_join_col]==right_table[right_table_join_col])
-                case JoinType.FULL_OUTER:
-                    join_expr = join_expr.outer_join(right_table, left_table[left_table_join_col]==right_table[right_table_join_col])
-                case _:
-                    join_expr = join_expr.inner_join(right_table, left_table[left_table_join_col]==right_table[right_table_join_col])
-
-        return join_expr
-
-
-    def __create_select_expression(self, target_table: str, base_expr, ibis_mem_tables: dict):
-        selected_columns = []
-        for mapping in self.data_mapping:
-            if mapping["output_table"] == target_table:
-                tbl_to_select = ibis_mem_tables.get(mapping["input_table"])
-                for col in mapping["fields"]:
-                    selected_columns.append(tbl_to_select[col["source_field"]].name(col["target_field"]))
-                    
-        select_expr = base_expr.select(selected_columns)
         
-        return select_expr
+    def test(self, task_run_context) -> Result:
+        return self.task(self, task_run_context)
 
-    def test(self, _input: dict[str, Result], task_run_context):
-        return self.task(_input, task_run_context)
 
-    def task(self, _input: dict[str, Result], task_run_context):  # executes the retrieved sql query
+    def task(self, task_run_context) -> Result:
         try:
-            target_table_dfs = {}
-            target_table_list = set(mapping["output_table"] for mapping in self.data_mapping)
+            table_mapping = self.etl_mapping.table.edges
+            target_table_list = set(t.targetHandle for t in table_mapping)
 
+            # store output dataframes for each target table
+            target_table_dfs = {}
             for target_table in target_table_list:
-                target_table_dfs[target_table] = self.__create_target_table(_input, target_table)
+                target_table_dfs[target_table] = self.create_target_table_df(target_table)
+
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
         else:
@@ -535,7 +580,7 @@ def generate_nodes_flow(graph, sorted_nodes):
         nodetype = node["type"]
 
         # check if node is a subflow
-        if nodetype == "subflow":
+        if nodetype == NodeType.SUBFLOW:
             subflow_obj = Flow(node)
             graph["nodes"][nodename]["nodeobj"] = subflow_obj
             for subflow_nodename in subflow_obj.sorted_nodes:
@@ -564,32 +609,26 @@ def generate_nodes_flow(graph, sorted_nodes):
       )
 def generate_node_task(nodename, node, nodetype):
     nodeobj = None
-    # TODO: nodetype to make global variable
     match nodetype:
-        case "csv_node":
+        case NodeType.CSV:
             nodeobj = CsvNode(nodename, node)
-        case "sql_node":
+        case NodeType.SQL:
             nodeobj = SqlNode(nodename, node)
-        case "python_node":
+        case NodeType.PYTHON:
             nodeobj = PythonNode(nodename, node)
-        case "py2table_node":
+        case NodeType.PY2TABLE:
             nodeobj = Py2TableNode(nodename, node)
-        case "r_node":
+        case NodeType.RNODE:
             nodeobj = RNode(nodename, node)
-        case "db_reader_node":
+        case NodeType.DBREADER:
             nodeobj = DBReader(nodename, node)
-        case "db_writer_node":
+        case NodeType.DBWRITER:
             nodeobj = DbWriter(nodename, node)
-        case "sql_query_node":
-            nodeobj = SqlQueryNode(nodename, node)
-        case "data_mapping_node":
+        case NodeType.DATAMAPPING:
             nodeobj = DataMappingNode(nodename, node)
+        case NodeType.CONCEPTMAPPING:
+            nodeobj = ConceptMappingNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
     return nodeobj
-
-
-def serialize_result_to_json(result: Result):
-    result_to_store = result.create_serializable_result()
-    return result_to_store

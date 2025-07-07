@@ -102,9 +102,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-strategus
+          - AZ_REG_REPOSITORY: d2e/flow-hades
             DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/strategus/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./flows/hades/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-transformation
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile
@@ -136,7 +136,7 @@ jobs:
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
+            DOCKER_BUILD_CONTEXT_PATH: .
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -221,6 +221,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_FILE_PATH }}
           platforms: "linux/amd64"
           push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          pull: ${{ matrix.pull_base == 'true' || false }}
           tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
           provenance: false
           build-args: |

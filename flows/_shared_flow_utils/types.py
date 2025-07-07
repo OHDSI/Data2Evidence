@@ -1,4 +1,3 @@
-import re
 from enum import Enum
 from typing import Optional, Literal
 from pydantic import BaseModel, SecretStr
@@ -47,6 +46,7 @@ class SupportedDatabaseDialects(str, Enum):
     HANA = "hana"
     POSTGRES = "postgres"
     DUCKDB = "duckdb"
+    BIGQUERY = "bigquery"
 
 
 class RequestType(str, Enum):
@@ -54,16 +54,6 @@ class RequestType(str, Enum):
     POST = "post"
     PUT = "put"
     DELETE = "delete"
-
-
-class LiquibaseAction(str, Enum):
-    UPDATE = "update"  # Create and update schema
-    UPDATECOUNT = "updateCount"  # Create schema with count
-    STATUS = "status"  # Get Version Info
-    ROLLBACK_COUNT = "rollbackCount"  # Rollback on n changesets
-    ROLLBACK_TAG = "rollback"  # Rollback on tag
-    # mark all changesets in databasechangelog table as executed
-    CHANGELOG_SYNC = "changelog-sync"
 
 
 class InternalPluginType(str, Enum):
@@ -101,12 +91,18 @@ class EntityCountDistributionType(BaseModel):
 class AuthToken(RunInput):
     token: SecretStr
     thirdpartytoken: SecretStr
+    thirdpartyrefreshtoken: SecretStr
+
+class AppTokenPayload(BaseModel):
+  given_name: str
+  family_name: str
+  extension_termsOfUseConsentVersion: str
+  email: str
 
 
-CHARACTERIZATION_DATA_MODEL = "characterization"
-OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi"]
-CHANGESET_AVAILABLE_REGEX = re.compile(r"db/migrations/\S+")
-LB_ERROR_MESSAGE_REGEX = re.compile(r"Unexpected error running Liquibase:")
-PASSWORD_REGEX = re.compile(r"password=\S+")
-SSL_TRUST_STORE_REGEX = re.compile(
-    r"&sslTrustStore=-----BEGIN CERTIFICATE-----[a-zA-Z0-9\+\/]+-----END CERTIFICATE-----")
+class User(BaseModel):
+  user_id: Optional[str] = ""
+  name: Optional[str] = ""
+  email: Optional[str] = ""
+
+

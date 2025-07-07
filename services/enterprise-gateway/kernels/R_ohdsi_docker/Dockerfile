@@ -23,7 +23,18 @@ RUN apt-get update && \
     ed \
     gcc \
     git \
-    less
+    python3-pip \
+    less\
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    pandoc \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libblas-dev \    
+    liblapack-dev  \
+    gfortran \
+    libmagick++-dev
 
 # # GitHub setup & test
 # RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
@@ -69,6 +80,18 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 
+# mlflow
+RUN pip3 install --upgrade pip
+RUN pip3 install mlflow==2.22.1
+RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
+
+# OHDSI studies viewer
+RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.6-1.tar.gz", repos = NULL, type = "source")'
+RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinydashboard","svglite","car","rstatix", "kableExtra", "ggpubr"), dependencies=TRUE, repos="https://cloud.r-project.org")'
+RUN Rscript -e 'remotes::install_github("ohdsi/OhdsiShinyAppBuilder")'
+RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiReportGenerator", dependencies = TRUE,quiet=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@RC-3.2.0", dependencies=TRUE,quiet=FALSE)'
+
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
@@ -78,6 +101,7 @@ COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app
 WORKDIR /app/rD2E
 # R CMD build . && R CMD check $(ls -t . | head -n1)
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
+RUN chown jovyan /app && chmod 711 /app
 
 WORKDIR /app
 RUN rm .Renviron

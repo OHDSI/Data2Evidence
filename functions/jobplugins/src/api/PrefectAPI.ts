@@ -124,7 +124,7 @@ export class PrefectAPI {
   }
 
   async getFlowRunsArtifacts(ids: string[]) {
-    const errorMessage = `Error while getting prefect flow run artifacts by ids: ${ids}`;
+    const errorMessage = `Error while getting prefect artifacts by flow run ids: ${ids}`;
     try {
       const data: Record<string, string | object> = {
         artifacts: {
@@ -340,12 +340,16 @@ export class PrefectAPI {
     const thirdPartyToken: string | undefined = decode(
       this.token.replace(/bearer /i, ""),
     )['thirdPartyToken'];
+    const thirdPartyRefreshToken: string | undefined = decode(
+      this.token.replace(/bearer /i, ""),
+    )['thirdPartyRefreshToken'];
 
     const options = this.createOptions("POST", {
       key: key,
       value: JSON.stringify({ 
         token: this.token,
-        thirdpartytoken: thirdPartyToken || ''
+        thirdpartytoken: thirdPartyToken || '',
+        thirdpartyrefreshtoken: thirdPartyRefreshToken || '',
       }), // 'value' must be a string always. Convert the json object to a string
     });
     const errorMessage =

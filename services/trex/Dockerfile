@@ -1,35 +1,9 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:7c2bf9375d5046cc10c6cb4e257a0711fcec8b12f4550c2b7e0c2da964c9a5dd AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:8e6d325837250ee2a37cd410d17f30194b4d6b7e1e9b46034c562b2a9a16f766 AS base
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
     && adduser docker staff \
     && adduser docker alp
-
-WORKDIR /usr/src
-
-COPY core /usr/src/core
-RUN mkdir -p /usr/src/data/cache
-RUN chown -R docker:alp /usr/src/data/cache
-RUN mkdir -p /usr/src/data/plugins
-COPY _npmrc /usr/src/data/plugins/.npmrc
-COPY package.json.plugin /usr/src/data/plugins/package.json
-COPY bunfig.toml /usr/src/data/plugins/bunfig.toml
-
-COPY package.json /usr/src
-
-RUN npm install
-
-RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip 
-RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip 
-
-# Allows usage of npx
-RUN if [ "$(uname -m)" = "aarch64" ]; then \
-    npm install @oven/bun-linux-aarch64; \
-    ln -sf /usr/src/node_modules/bun-linux-aarch64/bin/bun /usr/src/node_modules/.bin/bun; \
-    else \
-    npm install @oven/bun-linux-x64-baseline; \
-    ln -sf /usr/src/node_modules/bun-linux-x64-baseline/bin/bun /usr/src/node_modules/.bin/bun; \
-    fi
 
 # Create folder to store duckdb extensions for offline plugins
 ENV duckdb_version=1.2.1
@@ -48,6 +22,36 @@ RUN for lib in \
     gzip -d ${lib}.duckdb_extension.gz; \
     done
 
+WORKDIR /usr/src/cdw_data
+# Copy cdw-svc built in duckdb file into trex
+COPY --chown=root:root ./functions/cdw-svc/src/duckdb/cdw_config_svc_validation_schema ./built_in/cdw_config_svc_validation_schema
+
 WORKDIR /usr/src
+
+# Allows usage of npx
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+    npm install @oven/bun-linux-aarch64; \
+    ln -sf /usr/src/node_modules/bun-linux-aarch64/bin/bun /usr/src/node_modules/.bin/bun; \
+    else \
+    npm install @oven/bun-linux-x64-baseline; \
+    ln -sf /usr/src/node_modules/bun-linux-x64-baseline/bin/bun /usr/src/node_modules/.bin/bun; \
+    fi
+
+# Build main function
+COPY ./services/trex/core /usr/src/core
+RUN mkdir -p /usr/src/data/cache
+RUN chown -R docker:alp /usr/src/data/cache
+RUN mkdir -p /usr/src/data/plugins
+COPY ./services/trex/_npmrc /usr/src/data/plugins/.npmrc
+COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
+COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
+
+COPY ./services/trex/package.json /usr/src
+
+RUN npm install
+
+RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
+RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
+
 CMD ["npm", "run", "start"]
 EXPOSE 33000

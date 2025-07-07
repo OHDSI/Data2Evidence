@@ -17,12 +17,7 @@
     "env_names_dev": "local remote base-all base-local base-remote alp-dev-sg-3"
   },
   "scripts": {
-    "gen:dotenv": "npm run init",
-    "init": "ENV_TYPE=remote ./scripts/cli.sh -v develop -n .env.remote init",
     "init:minerva": "PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh -v develop -n .env.local init",
-    "start": "ENV_TYPE=remote ./scripts/cli.sh -v develop -e -n .env.remote -p 3000 start",
-    "start:ci": "npm run start:minerva",
-    "remote:minerva": "ENV_TYPE=remote ./scripts/cli.sh -v develop  -e -n .env.remote -f -j",
     "local:minerva": "PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100",
     "build:minerva": "npm run local:minerva -- build",
     "start:minerva": "npm run local:minerva -- start",
@@ -42,7 +37,8 @@
     "internal": "npm run-script --prefix internal"
   },
   "optionalDependencies": {
-    "@alp/alp-dbcli": "file:cache/drivers/alp-dbcli-v1.0.0.tgz"
+    "hdb": "0.19.12",
+    "fast-csv": "5.0.2"
   },
   "devDependencies": {
     "@types/node": "^18",

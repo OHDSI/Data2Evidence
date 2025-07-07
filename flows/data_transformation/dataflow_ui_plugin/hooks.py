@@ -1,6 +1,7 @@
 from prefect.server.schemas.states import StateType
 from prefect.logging.loggers import flow_run_logger, task_run_logger
 
+from .types import NodeType
 
 def generate_nodes_flow_hook(flow, flow_run, state, graph, sorted_nodes):
     logger = flow_run_logger(flow_run, flow)
@@ -45,23 +46,25 @@ def node_task_execution_hook(task, task_run, state, nodename, nodetype, nodeobj,
 
         match nodetype:
             # clean up based on node type
-            case "csv_node":
+            case NodeType.CSV:
                 pass
-            case "sql_node":
+            case NodeType.SQL:
                 pass
-            case "python_node":
+            case NodeType.PYTHON:
                 pass
-            case "py2table_node":
+            case NodeType.PY2TABLE:
                 pass
-            case "r_node":
+            case NodeType.RNODE:
                 pass
-            case "db_reader_node":
+            case NodeType.DBREADER:
                 pass
-            case "db_writer_node":
+            case NodeType.DBWRITER:
                 pass
-            case "sql_query_node":
+            case NodeType.SQLQUERY:
                 pass
-            case "data_mapping_node":
+            case NodeType.DATAMAPPING:
+                pass
+            case NodeType.CONCEPTMAPPING:
                 pass
             case _:
                 logger.error("ERR: Unknown Node " + nodetype)

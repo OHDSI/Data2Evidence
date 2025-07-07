@@ -1,6 +1,6 @@
 import React, { FC, useMemo, useCallback, useState } from "react";
 import { AiChat, ChatItem, useAiChatApi, useAsStreamAdapter } from "@nlux/react";
-import { Drawer } from "@mui/material";
+import Collapse from "@mui/material/Collapse";
 import "@nlux/themes/nova.css";
 
 import { createSend, noOpSend } from "./Send";
@@ -29,7 +29,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   const handleMessage = useCallback((role: "assistant" | "user", message: string | string[]) => {
     const newMessage = {
       role,
-      message: Array.isArray(message) ? message.join("\n") : message,
+      message: Array.isArray(message) ? message.join("") : message,
     };
     setHistory((prev) => [...prev, newMessage]);
   }, []);
@@ -60,14 +60,14 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
   }
 
   return (
-    <Drawer
-      variant="temporary"
-      open={open}
-      onClose={handleClose}
-      anchor="right"
-      PaperProps={{
-        sx: { width: "35%", overflowY: "hidden" },
+    <Collapse
+      className="chat-container"
+      in={open}
+      onExited={() => {
+        handleClose();
       }}
+      unmountOnExit
+      timeout={0}
     >
       <AiChat
         api={api}
@@ -78,7 +78,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
         messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
         initialConversation={conversationHistory}
       />
-    </Drawer>
+    </Collapse>
   );
 };
 
