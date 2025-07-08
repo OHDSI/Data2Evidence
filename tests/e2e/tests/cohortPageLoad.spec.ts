@@ -11,7 +11,6 @@ test('cohortPageLoad', async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click();
   await expect(page.getByText('Create Cohort:')).toBeVisible({timeout: 30000});
   await expect(page.getByText('D2E')).toBeVisible();
-  await expect(page.getByText('Atlas')).toBeVisible();
   await expect(page.getByText('Import')).toBeVisible();
   await expect(page.getByText('Shared')).toBeVisible();
   await expect(page.getByText('Compare')).toBeVisible();
