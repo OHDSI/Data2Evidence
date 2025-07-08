@@ -13,7 +13,7 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
     await page.getByRole('link', { name: 'Setup' }).click();
     await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
-    await page.locator('div').filter({ hasText: /^CDM ConfigurationConfigure CDMConfigure$/ }).getByTestId('button').click();
+    await page.locator('div').filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ }).getByTestId('button').click();
     await page.getByText('OMOP_DM').click();
     await page.locator('[id="__container13--Grid"] div').filter({ hasText: 'ALICE' }).click();
     
