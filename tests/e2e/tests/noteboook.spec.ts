@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('Notebook', async ({ page }) => {
-  await page.goto('https://localhost:443/portal');
+  await page.goto('https://localhost:41100/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
@@ -13,7 +13,7 @@ test('Notebook', async ({ page }) => {
 
   //Look for new notebook with title "Untitled"
   // await expect(page.getByText('Untitled')).toBeVisible();
-
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Changes saved')).toBeVisible();
 
