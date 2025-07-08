@@ -11,4 +11,5 @@ test('setup-page', async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
   await expect(page.locator('div').filter({ hasText: 'SetupDatabasesDatabase' }).nth(3)).toBeVisible()
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 })

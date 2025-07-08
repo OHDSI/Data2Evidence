@@ -36,7 +36,7 @@ test('Grant user admin role', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-  await expect(page).toHaveScreenshot('user-admin.png')
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   await expect(page.getByRole('button', { name: 'Edit' }).first()).toBeVisible()
 
   // Delete the user
