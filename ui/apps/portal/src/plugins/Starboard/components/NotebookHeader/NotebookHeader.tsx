@@ -18,7 +18,6 @@ import { SyncFromRemoteButton } from "../SyncFromRemoteButton/SyncFromRemoteButt
 import "./NotebookHeader.scss";
 
 interface HeaderProps {
-  metadata: any;
   notebooks: StarboardNotebook[] | undefined;
   activeNotebook: StarboardNotebook | undefined;
   updateActiveNotebook: (notebook?: StarboardNotebook) => void;
@@ -31,7 +30,6 @@ interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({
-  metadata,
   notebooks,
   activeNotebook,
   updateActiveNotebook,
