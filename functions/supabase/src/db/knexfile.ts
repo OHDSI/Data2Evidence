@@ -2,7 +2,7 @@ import { Knex } from "knex";
 import * as path from "path";
 import { env } from "../env.ts";
 
-let ssl: any = JSON.parse(env.PG_SSL.toLowerCase())
+let ssl: any = JSON.parse(env.PG__SSL.toLowerCase())
 if (env.PG_CA_ROOT_CERT) {
   ssl = {
     rejectUnauthorized: true,
