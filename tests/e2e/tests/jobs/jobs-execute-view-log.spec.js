@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('jobs-execute-view-log', async ({ page }) => {
-  // Create DQD job with name dqd_demo
+test('jobs-execute-view-log-and-result', async ({ page }) => {
+
+  // Jobs: Execute Job - Create DQD job with name dqd_demo
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
@@ -46,7 +47,9 @@ test('jobs-execute-view-log', async ({ page }) => {
   await expect(page.locator('.p-content > .p-content')).toBeVisible();
   await page.getByText('data_quality_dashboard').first().waitFor({ state: 'visible' });
   await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible();
-  // Check job logs for job: dqd_demo
+  
+  // Jobs: View Logs - Check job logs for job: dqd_demo
+  await page.waitForTimeout(50000);
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
   await page.waitForTimeout(5000);
   await page.getByText('Logs', { exact: true }).waitFor({ state: 'visible' });
@@ -54,4 +57,13 @@ test('jobs-execute-view-log', async ({ page }) => {
   const logsPage = await page.locator('pre');
   await logsPage.scrollIntoViewIfNeeded();
   await expect(page.getByText('Worker \'prefect-docker-worker')).toBeVisible();
+
+  // Jobs: View Results - View results for job dqd_demo
+  await page.getByText('Job RunsJobsBlocksVariables', { timeout: 1000 }).scrollIntoViewIfNeeded();
+  await page.getByText('Completed', { exact: true }).waitFor({ state: 'visible', timeout: 300000 });
+  await page.getByRole('button', { name: 'View Results' }).waitFor({ state: 'visible', timeout: 300000 });
+  await page.getByRole('button', { name: 'View Results' }).click();
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible();
+  await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset: demo_cdm .+/);
+  await expect(page.getByRole('dialog')).toHaveText(/.+1047 out of 1933 passed checks are Not Applicable, due to empty tables or fields.+/);
 });
