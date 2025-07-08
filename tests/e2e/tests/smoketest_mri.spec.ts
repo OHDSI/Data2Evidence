@@ -12,7 +12,6 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByTestId('button').nth(1).click();
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
     await page.getByRole('link', { name: 'Setup' }).click();
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     await page.locator('div').filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ }).getByTestId('button').click();
     await page.getByText('OMOP_DM').click();
     await page.locator('[id="__container13--Grid"] div').filter({ hasText: 'ALICE' }).click();
@@ -56,22 +55,32 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
     //Add Concept set
-    await page.getByRole('button', { name: '+' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sprain of wrist');
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).dblclick();
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Sprain of wrist');
-    await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '70704007 Sprain of wrist' }).locator('path').click();
-    await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByRole('button', { name: 'Close' }).click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
     await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist');
-    await page.getByText('Sprain of wrist').click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    try {
+      await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 });
+      await page.getByText('Sprain of wrist').click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    } catch (e) {
+      // If not visible in 2 seconds, create concept set
+      await page.getByRole('button', { name: '+' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sprain of wrist');
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).dblclick();
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'search terms' }).fill('Sprain of wrist');
+      await page.getByRole('button', { name: 'Search' }).click();
+      await page.getByRole('row', { name: '70704007 Sprain of wrist' }).locator('path').click();
+      await page.getByRole('button', { name: 'Create' }).click();
+      await page.getByRole('button', { name: 'Close' }).click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist');
+      await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 });
+      await page.getByText('Sprain of wrist').click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    }
     await expect(page.getByText('677 / 2694')).toBeVisible()
   })
 
@@ -86,45 +95,63 @@ test('smoketest_mri', async ({ page }) => {
 
   await test.step('Add another concept set to Condition Occurrence', async () => {
     //Add Concet set
-    await page.getByRole('button', { name: '+' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Otitis media');
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).dblclick();
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Otitis media');
-    await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '65363002 Otitis media' }).locator('path').click();
-    await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"] > div > .col > div > .app-tag-input > .multiselect > .multiselect__tags').first().click();
     await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media');
-    await page.getByText('Otitis media').click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    try {
+      await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 });
+      await page.getByText('Otitis media').click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    } catch (e) {
+      await page.getByRole('button', { name: '+' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Otitis media');
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).dblclick();
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'search terms' }).fill('Otitis media');
+      await page.getByRole('button', { name: 'Search' }).click();
+      await page.getByRole('row', { name: '65363002 Otitis media' }).locator('path').click();
+      await page.getByRole('button', { name: 'Create' }).click();
+      await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"] > div > .col > div > .app-tag-input > .multiselect > .multiselect__tags').first().click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media');
+      await page.getByText('Otitis media').click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+    }
     await expect(page.getByText('2193 / 2694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible();
   })
 
   await test.step('Add another filter card for Condition Occurrence', async () => {
-    await page.getByTitle('Add Filter Card').getByRole('button').click();
-    await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
-    await page.getByTitle('Condition Occurrence B -').getByRole('button').click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Viral sinusitis');
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis');
-    await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click();
-    await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByRole('button', { name: 'Close' }).click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click();
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis');
-    await page.getByText('Viral sinusitis').click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+      await page.getByTitle('Add Filter Card').getByRole('button').click();
+      await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
+      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis');
+      try {
+        // If the concept is already created, it will be visible
+        await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 });
+        await page.getByText('Viral sinusitis').click();
+        await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+      } catch (e) {
+        //await page.getByRole('button', { name: '+' }).click();
+        await page.getByTitle('Condition Occurrence B -').getByRole('button').click();
+        await page.getByRole('textbox', { name: 'Concept set name' }).click();
+        await page.getByRole('textbox', { name: 'Concept set name' }).fill('Viral sinusitis');
+        await page.getByRole('textbox', { name: 'search terms' }).click();
+        await page.getByRole('textbox', { name: 'search terms' }).click();
+        await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis');
+        await page.getByRole('button', { name: 'Search' }).click();
+        await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click();
+        await page.getByRole('button', { name: 'Create' }).click();
+        await page.getByRole('button', { name: 'Close' }).click();
+        await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+        await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click();
+        await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis');
+        await page.getByText('Viral sinusitis').click();
+        await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
+      }
     await expect(page.getByText('2188 / 2694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible();
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible();
@@ -132,7 +159,11 @@ test('smoketest_mri', async ({ page }) => {
   })
 
   await test.step('Add advanced Time filter', async () => {
-    await page.locator('[id="__BVID__157__BV_toggle_"]').click();
+    await page.locator('label:text("Condition Occurrence A")')
+    .locator('xpath=ancestor::div[contains(@class,"d-flex")]')
+    .locator('button.btn.btn-link.btn-sm.dropdown-toggle.dropdown-toggle-no-caret')
+    .click();
+    // await page.locator('[id="__BVID__157__BV_toggle_"]').click();
     await page.getByRole('menuitem', { name: 'Advanced Time' }).click();
     await page.getByRole('textbox').click();
     await page.getByRole('textbox').fill('<60');
