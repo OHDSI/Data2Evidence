@@ -16,14 +16,14 @@ test('parent-interaction', async ({ page }) => {
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).toBeHidden()
-  await expect(page.getByText('1000 / 1000')).toBeVisible()
+  await expect(page.getByText('2694 / 2694')).toBeVisible()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Visit' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await page.getByRole('tab', { name: ' Condition Occurrence A ' }).locator('button').last().click()
   await page.getByRole('menuitem', { name: 'Visit Occurrence Parent' }).click()
-  await expect(page.getByText('930 / 1000')).toBeVisible()
+  await expect(page.getByText('890 / 2694')).toBeVisible()
 
 
   //UI issues with CDW Config, will skip for now
