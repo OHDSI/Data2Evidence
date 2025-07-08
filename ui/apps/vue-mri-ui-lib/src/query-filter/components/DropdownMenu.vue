@@ -26,12 +26,12 @@ const emitOption = (option: string) => {
 </script>
 
 <template>
-  <Popper :target="target" placement="bottom-start" class="dropdown-menu-popper">
+  <Popper :target="target" placement="bottom-start" class="filter-dropdown-menu-popper">
     <template #default="{ hide }">
       <div class="popover-content">
-        <div class="dropdown-menu" @click.stop>
+        <div class="filter-dropdown-menu" @click.stop>
           <div
-            class="dropdown-item"
+            class="filter-dropdown-item"
             v-for="option in props.options"
             :key="option"
             @click="
@@ -50,10 +50,10 @@ const emitOption = (option: string) => {
 </template>
 
 <style>
-.dropdown-menu-popper {
+.filter-dropdown-menu-popper {
   z-index: 1000;
 }
-.dropdown-menu {
+.filter-dropdown-menu {
   background: white;
   border-radius: 4px;
   border: 1px solid #e5e7eb;
@@ -63,7 +63,7 @@ const emitOption = (option: string) => {
   margin-top: 4px;
 }
 
-.dropdown-item {
+.filter-dropdown-item {
   padding: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -73,11 +73,11 @@ const emitOption = (option: string) => {
   justify-content: center;
 }
 
-.dropdown-item:last-child {
+.filter-dropdown-item:last-child {
   border-bottom: none;
 }
 
-.dropdown-item:hover {
+.filter-dropdown-item:hover {
   background-color: #cccfe5;
 }
 </style>
