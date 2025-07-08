@@ -243,7 +243,28 @@ test('smoketest_mri', async ({ page }) => {
     await page.getByRole('button', { name: '' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click();
-    await page.getByText('Remove').click();
+    // If multiple 'Remove' buttons are found, click the one closest to the 'Race ' cell
+    const raceCell = await page.getByRole('cell', { name: 'Race ' });
+    const removeButtons = await page.getByText('Remove').elementHandles();
+    if (removeButtons.length === 1) {
+      await removeButtons[0].click();
+    } else if (removeButtons.length > 1) {
+      // Find the closest Remove button to the Race cell
+      const raceBox = await raceCell.boundingBox();
+      let minDistance = Infinity;
+      let closestButton = removeButtons[0];
+      for (const btn of removeButtons) {
+        const btnBox = await btn.boundingBox();
+        if (btnBox && raceBox) {
+          const distance = Math.abs(btnBox.y - raceBox.y) + Math.abs(btnBox.x - raceBox.x);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestButton = btn;
+          }
+        }
+      }
+      await closestButton.click();
+    }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     // Check if tbody has more than 1 row
     const rowCount = await page.locator('tbody tr').count();
