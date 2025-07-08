@@ -271,7 +271,7 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    if (!bearerToken && originalUrl.startsWith("/strategus-results/")) {
+    if (!bearerToken && (originalUrl.startsWith("/strategus-results/") || originalUrl.startsWith("/gateway/dashboard/"))) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
