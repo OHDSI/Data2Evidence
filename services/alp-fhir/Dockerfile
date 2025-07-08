@@ -1,4 +1,4 @@
-FROM medplum_server:local AS builder
+FROM ghcr.io/data2evidence/d2e-medplum:main AS builder
 
 COPY config.json .
 

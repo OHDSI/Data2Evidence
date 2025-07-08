@@ -28,7 +28,7 @@ cp temp.json /home/docker/app/medplum/packages/server/medplum.config.json
 
 echo "Configuration file processed and copied"
 
-# Step 4: Start the Medplum server using Deno 2
+# Step 4: Start the Medplum server with Deno 2
 echo "Starting Medplum server with Deno 2..."
 
 # Export all environment variables for Deno
