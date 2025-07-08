@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('dataset-overview-chart', async ({ page }) => {
+  test.setTimeout(5 * 60 * 1000)
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -13,11 +14,14 @@ test('dataset-overview-chart', async ({ page }) => {
   await page.getByRole('button', { name: 'Update dataset metadata' }).click()
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeEnabled()
+  await page.waitForTimeout(2 * 60 * 1000)
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
 
   //React echarts canvas element items cannot be selected
   await expect(page.locator('canvas').first()).toBeVisible()
+  await expect(page).toHaveScreenshot('dataset-overview-chart.png')
+
   await page.getByText('Demo dataset').first().click()
 
   const tbodyText = await page.getByRole('cell', { name: '{"Observation Period Count' }).innerText()
