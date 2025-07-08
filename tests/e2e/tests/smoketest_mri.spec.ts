@@ -76,9 +76,10 @@ test('smoketest_mri', async ({ page }) => {
       await page.getByRole('button', { name: 'Close' }).click();
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('');
       await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist');
       await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 });
-      await page.getByText('Sprain of wrist').click();
+      await page.getByText('Sprain of wrist').click({ timeout: 10000 });
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
     }
     await expect(page.getByText('677 / 2694')).toBeVisible()
@@ -115,9 +116,10 @@ test('smoketest_mri', async ({ page }) => {
       await page.getByRole('button', { name: 'Close' }).click({timeout: 20000});
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"] > div > .col > div > .app-tag-input > .multiselect > .multiselect__tags').first().click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('');
       await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media');
       await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 });
-      await page.getByText('Otitis media').click();
+      await page.getByText('Otitis media').click({ timeout: 10000 });
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
     }
     await expect(page.getByText('2193 / 2694')).toBeVisible()
@@ -149,9 +151,10 @@ test('smoketest_mri', async ({ page }) => {
         await page.getByRole('button', { name: 'Close' }).click();
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
         await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click();
+        await page.getByRole('textbox', { name: 'Enter search term' }).fill('');
         await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis');
         await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 });
-        await page.getByText('Viral sinusitis').click();
+        await page.getByText('Viral sinusitis').click({ timeout: 10000 });
         await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
       }
     await expect(page.getByText('2188 / 2694')).toBeVisible()
