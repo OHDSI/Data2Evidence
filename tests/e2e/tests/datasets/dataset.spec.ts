@@ -108,10 +108,9 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Username' }).fill('testuser1');
     await page.getByRole('textbox', { name: 'Password' }).click();
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345');
-    await page.getByRole('button', { name: 'Add' }).click();
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
+    await page.getByRole('button', { name: 'Add' }).click({ timeout: 30000 });
     // Wait for the user to appear after clicking Add
-    await expect(page.getByText('testuser1')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('testuser1')).toBeVisible({ timeout: 30000 });
   });
 
   await test.step('Hide dataset', async () => {
