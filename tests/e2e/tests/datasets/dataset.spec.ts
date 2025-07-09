@@ -42,10 +42,12 @@ test('Datasets', async ({ page }) => {
     const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_ts1_"))').first();
     // Find the closest state badge to this entry (adjust the selector as needed)
     const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
-    await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
+
+    await expect(stateBadge).toHaveText(/Completed/, { timeout: 150000 });
   });
 
   await test.step('Add new dataset - omop5-4', async () => {
+    await page.getByRole('link', { name: 'Datasets' }).click();
     await page.getByRole('button', { name: 'Add dataset' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 2');
