@@ -91,6 +91,7 @@ class EntityCountDistributionType(BaseModel):
 class AuthToken(RunInput):
     token: SecretStr
     thirdpartytoken: SecretStr
+    thirdpartyrefreshtoken: SecretStr
 
 class AppTokenPayload(BaseModel):
   given_name: str

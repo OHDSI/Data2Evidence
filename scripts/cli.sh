@@ -42,7 +42,6 @@ fhir=""
 demo=""
 minio=""
 dicom=""
-cachedb=""
 jupyter=""
 mlflow=""
 compose=""
@@ -58,7 +57,6 @@ while [[ $# -gt 0 ]]; do
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
-        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -100,7 +98,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $mlflow $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -299,7 +297,6 @@ Options:
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
- -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
  -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
