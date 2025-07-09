@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('Grant user admin role', async ({ page }) => {
+test('grant-user-admin-role', async ({ page }) => {
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -24,6 +24,7 @@ test('Grant user admin role', async ({ page }) => {
   await page.reload()
   await page.getByRole('button', { name: 'Edit' }).nth(1).click()
   await page.getByTestId('dialog').getByText('User Admin').click()
+  await expect(page.getByTestId('dialog').getByText('User Admin')).toBeChecked()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.reload()
   await expect(page.getByRole('row', { name: 'researcher_1 Viewer User' }).locator('div').nth(2)).toBeVisible()
@@ -36,8 +37,8 @@ test('Grant user admin role', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   await expect(page.getByRole('button', { name: 'Edit' }).first()).toBeVisible()
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Delete the user
   await page.getByRole('button', { name: 'Delete' }).nth(1).click()
