@@ -43,6 +43,7 @@ test('test', async ({ page }) => {
     .filter({ hasText: /^Demo dataset$/ })
     .locator('span')
     .filter({ hasText: 'Demo' })
+    .nth(1)
 
   // Wait for the element to appear first
   await expect(testSpan1).toHaveCSS('background-color', 'rgb(220, 222, 244)')
@@ -52,7 +53,7 @@ test('test', async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
 
   // Test that "Test" is highlighted with the expected background color
-  const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'dataset' })
+  const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'dataset' }).nth(1)
   await expect(testSpan2).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
