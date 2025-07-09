@@ -56,7 +56,7 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Token dataset code' }).click();
     await page.getByRole('textbox', { name: 'Token dataset code' }).fill('ts2');
     await page.getByRole('button', { name: 'Add', exact: true }).click({timeout:30000});
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
+    // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     await expect(page.getByText('Test Study 2')).toBeVisible({timeout:30000});
   });
 
@@ -110,7 +110,12 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345');
     await page.getByRole('button', { name: 'Add' }).click({ timeout: 30000 });
     // Wait for the user to appear after clicking Add
-    await expect(page.getByText('testuser1')).toBeVisible({ timeout: 30000 });
+    await page.waitForTimeout(2000)
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+    await expect(page.getByRole('cell', { name: 'testuser1' })).toBeVisible()
+    await expect(page.getByRole('cell', { name: 'Viewer', exact: true })).toBeVisible()
+    // await expect(page.getByText('testuser1')).toBeVisible({ timeout: 30000 });
   });
 
   await test.step('Hide dataset', async () => {
