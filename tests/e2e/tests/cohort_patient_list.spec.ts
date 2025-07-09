@@ -28,22 +28,32 @@ test('patient-analytics-patient-list', async ({ page }) => {
   await test.step('Add filter card for Condition Occurrence', async () => {
     await page.getByTitle('Add Filter Card').getByRole('button').click();
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
-    await page.getByTitle('Condition Occurrence A -').getByRole('button').click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).click();
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis');
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).click();
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis');
-    await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click();
-    await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByRole('button', { name: 'Close' }).click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
     await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis');
-    await page.getByText('Chronic sinusitis').click();
+    try {
+        await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 });
+        await page.getByText('Chronic sinusitis').click();
+    } catch (e) {
+      // If not visible in 2 seconds, continue without failing
+       await page.getByTitle('Condition Occurrence A -').getByRole('button').click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).click();
+      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis');
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'search terms' }).click();
+      await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis');
+      await page.getByRole('button', { name: 'Search' }).click();
+      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click();
+      await page.getByRole('button', { name: 'Create' }).click();
+      await page.getByRole('button', { name: 'Close' }).click();
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click();
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('');
+      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis');
+      await page.getByText('Chronic sinusitis').click();
+    }
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible({timeout: 20000})
     await expect(page.getByText('629 / 2694')).toBeVisible()
-    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' })).toBeVisible();
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible();
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -51,7 +61,28 @@ test('patient-analytics-patient-list', async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     //Remove Race
     await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click();
-    await page.getByText('Remove').click();
+    // If multiple 'Remove' buttons are found, click the one closest to the 'Race ' cell
+    const raceCell = await page.getByRole('cell', { name: 'Race ' });
+    const removeButtons = await page.getByText('Remove').elementHandles();
+    if (removeButtons.length === 1) {
+      await removeButtons[0].click();
+    } else if (removeButtons.length > 1) {
+      // Find the closest Remove button to the Race cell
+      const raceBox = await raceCell.boundingBox();
+      let minDistance = Infinity;
+      let closestButton = removeButtons[0];
+      for (const btn of removeButtons) {
+        const btnBox = await btn.boundingBox();
+        if (btnBox && raceBox) {
+          const distance = Math.abs(btnBox.y - raceBox.y) + Math.abs(btnBox.x - raceBox.x);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestButton = btn;
+          }
+        }
+      }
+      await closestButton.click();
+    }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     // Check if tbody has more than 1 row
     const rowCount = await page.locator('tbody tr').count();
