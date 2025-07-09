@@ -43,6 +43,9 @@ test('test', async ({ page }) => {
     .filter({ hasText: /^Test Summary$/ })
     .locator('span')
     .filter({ hasText: 'Test' })
+
+  // Wait for the element to appear first
+  await testSpan1.waitFor()
   await expect(testSpan1).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
