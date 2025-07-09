@@ -5,7 +5,7 @@ test.use({
 })
 
 test('test', async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto('https://localhost:41100/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="identifier"]').press('Tab')
@@ -67,7 +67,7 @@ test('test', async ({ page }) => {
   await page.waitForTimeout(3000)
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('')
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
-  await page.waitForTimeout(2000)
+  await page.waitForTimeout(5000)
 
   // Demo setup only has one dataset, so scrolling to bottom is not enough to make the header scrolled
   // Clone the dataset div to create more content for scrolling
