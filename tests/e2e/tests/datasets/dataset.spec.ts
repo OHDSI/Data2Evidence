@@ -36,6 +36,15 @@ test('Datasets', async ({ page }) => {
     await expect(page.getByText('Test Study 1')).toBeVisible();
   });
 
+  await test.step('Check job completion - cdm omop 5.3', async () => {
+    await page.getByRole('link', { name: 'Jobs' }).click();
+    // Get the first (top) entry link
+    const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_ts1_"))').first();
+    // Find the closest state badge to this entry (adjust the selector as needed)
+    const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
+    await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
+  });
+
   await test.step('Add new dataset - omop5-4', async () => {
     await page.getByRole('button', { name: 'Add dataset' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click();
@@ -56,17 +65,7 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Token dataset code' }).click();
     await page.getByRole('textbox', { name: 'Token dataset code' }).fill('ts2');
     await page.getByRole('button', { name: 'Add', exact: true }).click({timeout:30000});
-    // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     await expect(page.getByText('Test Study 2')).toBeVisible({timeout:30000});
-  });
-
-  await test.step('Check job completion - cdm omop 5.3', async () => {
-    await page.getByRole('link', { name: 'Jobs' }).click();
-    // Get the first (top) entry link
-    const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_ts1_"))').first();
-    // Find the closest state badge to this entry (adjust the selector as needed)
-    const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
-    await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
   });
 
   await test.step('Check job completion - cdm omop 5.4', async () => {
