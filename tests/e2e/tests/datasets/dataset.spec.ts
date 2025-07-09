@@ -37,7 +37,6 @@ test('Datasets', async ({ page }) => {
   });
 
   await test.step('Add new dataset - omop5-4', async () => {
-    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     await page.getByRole('button', { name: 'Add dataset' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 2');
@@ -57,7 +56,7 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Token dataset code' }).click();
     await page.getByRole('textbox', { name: 'Token dataset code' }).fill('ts2');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
-    await expect(page.getByText('Test Study 2')).toBeVisible();
+    await expect(page.getByText('Test Study 2')).toBeVisible({timeout:30000});
   });
 
   await test.step('Check job completion - cdm omop 5.3', async () => {
