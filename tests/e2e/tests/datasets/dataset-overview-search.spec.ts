@@ -35,25 +35,24 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
-  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('test')
+  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('demo')
   await page.getByRole('button', { name: 'Search' }).nth(1).click()
   // Test that "Test" is highlighted with the expected background color
   const testSpan1 = page
     .locator('div')
-    .filter({ hasText: /^Test Summary$/ })
+    .filter({ hasText: /^Demo dataset$/ })
     .locator('span')
-    .filter({ hasText: 'Test' })
+    .filter({ hasText: 'Demo' })
 
   // Wait for the element to appear first
-  await testSpan1.waitFor()
   await expect(testSpan1).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
-  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('summary')
+  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('dataset')
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
 
   // Test that "Test" is highlighted with the expected background color
-  const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'Summary' })
+  const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'dataset' })
   await expect(testSpan2).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
