@@ -37,6 +37,7 @@ test('Datasets', async ({ page }) => {
   });
 
   await test.step('Add new dataset - omop5-4', async () => {
+    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     await page.getByRole('button', { name: 'Add dataset' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click();
     await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 2');
@@ -108,6 +109,7 @@ test('Datasets', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Password' }).click();
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345');
     await page.getByRole('button', { name: 'Add' }).click();
+    await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
     // Wait for the user to appear after clicking Add
     await expect(page.getByText('testuser1')).toBeVisible({ timeout: 20000 });
   });
