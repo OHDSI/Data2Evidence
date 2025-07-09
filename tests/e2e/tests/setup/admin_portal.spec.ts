@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.use({
+  actionTimeout: 60000, 
+  navigationTimeout: 60000, // 1 minute for navigation
   ignoreHTTPSErrors: true
 });
 

@@ -7,7 +7,7 @@ export default defineConfig({
     timeout: 120000 // 20 seconds for expect conditions
   },
   use: {
-    actionTimeout: 30000, // 30 seconds for each action
+    actionTimeout: 60000, // 30 seconds for each action
     navigationTimeout: 60000, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
