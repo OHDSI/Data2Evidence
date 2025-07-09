@@ -26,7 +26,7 @@ test('test', async ({ page }) => {
   const isChecked = await datasetSearchCheckbox.isChecked()
 
   if (!isChecked) {
-    await datasetSearchCheckbox.click()
+    await page.getByText('Dataset search').click()
   }
 
   await page.getByTestId('button').click()
