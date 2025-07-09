@@ -76,10 +76,13 @@ test('test', async ({ page }) => {
       '#root > div > div > main > div > div.overview__body > div > div > div:nth-child(1)'
     )
     if (originalDiv) {
-      const clonedDiv = originalDiv.cloneNode(true)
-      originalDiv.parentNode?.appendChild(clonedDiv)
+      const clonedDiv1 = originalDiv.cloneNode(true)
+      originalDiv.parentNode?.appendChild(clonedDiv1)
+      const clonedDiv2 = originalDiv.cloneNode(true)
+      originalDiv.parentNode?.appendChild(clonedDiv2)
     }
   })
+  await page.waitForTimeout(1000)
 
   await page.keyboard.press('End') // scroll to bottom
   await expect(page.locator('.home-header')).toHaveClass(/home-header--scrolled/)
