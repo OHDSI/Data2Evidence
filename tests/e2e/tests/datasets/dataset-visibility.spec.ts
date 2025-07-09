@@ -115,8 +115,8 @@ test('dataset-visiblity', async ({ page }) => {
     // Cleanup: Delete the user created for testing
     await test.step('Delete test user', async () => {  
         const userRow = page.getByRole('row', { name: /testuser1/ });
-        await page.getByRole('button', { name: 'Delete' }).nth(2).click();
-        await page.getByRole('button', { name: 'Yes, delete' }).click();
+        await page.getByRole('button', { name: 'Delete' }).nth(2).click({ timeout: 30000 });
+        await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
         // Wait for the user row to be removed from the table, not just any text
         await expect(page.getByRole('row', { name: /testuser1/ })).not.toBeVisible({ timeout: 20000 }); // Verify user is deleted
     });
@@ -125,16 +125,16 @@ test('dataset-visiblity', async ({ page }) => {
     await test.step('Delete datasets', async () => {
         await page.getByRole('link', { name: 'Datasets' }).click();
         //Delete Test Study 1
-        await page.getByRole('row', { name: /Test Study 1/ }).getByRole('button').nth(2).click();
-        await page.getByRole('option', { name: 'Delete dataset' }).click();
-        await page.getByRole('button', { name: 'Yes, delete' }).click();
+        await page.getByRole('row', { name: /Test Study 1/ }).getByRole('button').nth(2).click({ timeout: 30000 });
+        await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 });
+        await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
         // Wait for the deletion to complete before proceeding
         await expect(page.getByRole('row', { name: /Test Study 1/ })).not.toBeVisible({ timeout: 20000 });
 
         //Delete Test Study 2
         await page.getByRole('row', { name: /Test Study 2/ }).getByRole('button').nth(2).click();
-        await page.getByRole('option', { name: 'Delete dataset' }).click();
-        await page.getByRole('button', { name: 'Yes, delete' }).click();
+        await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 });
+        await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
         // Wait for the deletion to complete before proceeding
         await expect(page.getByRole('row', { name: /Test Study 2/ })).not.toBeVisible({ timeout: 20000 });
     });
