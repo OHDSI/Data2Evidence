@@ -74,6 +74,11 @@ export class PortalAPI {
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
       const result = await axios.post(url, input, options)
+
+      if (result.data.status === 400) {
+        throw new Error(result.error)
+      }
+
       return result.data
     } catch (error) {
       console.error(error)
@@ -87,6 +92,11 @@ export class PortalAPI {
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
       const result = await axios.put(url, input, options)
+
+      if (result.data.status === 400) {
+        throw new Error(result.error)
+      }
+
       return result.data
     } catch (error) {
       console.error(error)

@@ -23,6 +23,7 @@
     "isomorphic-git": "npm:isomorphic-git@1.27.1",
     "http": "npm:isomorphic-git@1.27.1/http/web/index.js",
     "fs": "node:fs",
-    "path": "node:path"
+    "path": "node:path",
+    "zod": "npm:zod@^3.25.76"
   }
 }
