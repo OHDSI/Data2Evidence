@@ -1,7 +1,7 @@
 import React, { FC, useCallback } from "react";
 import { Box, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
-import { NodeChoiceMap } from "../index";
+import { NODE_COLORS, NodeChoiceMap } from "../index";
 import { NodeTypeChoice } from "../type";
 import "./SelectNodeTypesDialog.scss";
 
@@ -42,7 +42,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       <Box className="select-node-type-dialog__content">
         {Object.keys(NodeChoiceMap)
           .filter((nodeType: NodeTypeChoice) =>
-            connectorType ? NodeChoiceMap[nodeType].tag === connectorType : true
+            connectorType ? NODE_COLORS[nodeType] === connectorType : true
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection

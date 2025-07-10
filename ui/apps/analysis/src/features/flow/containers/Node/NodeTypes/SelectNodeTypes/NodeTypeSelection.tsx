@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Box, Chip } from "@portal/components";
-import { NodeChoiceMap } from "../index";
+import { NODE_COLORS, NodeChoiceMap } from "../index";
 import "./NodeTypeSelection.scss";
 
 export interface NodeTypeSelectionProps {
@@ -18,10 +18,13 @@ export const NodeTypeSelection: FC<NodeTypeSelectionProps> = ({
         {NodeChoiceMap[nodeType].title}
       </div>
       <div className="node-type-selection__tag">
-      <Chip
-        label={NodeChoiceMap[nodeType].tag}
-        variant="filled"
-        size="small"
+        <Chip
+          label={NodeChoiceMap[nodeType].tag}
+          variant="filled"
+          size="small"
+          sx={{
+            border: `2.5px solid ${NODE_COLORS[nodeType]}`,
+          }}
         />
       </div>
       <div className="node-type-selection__desc">
