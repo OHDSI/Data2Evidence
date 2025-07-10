@@ -1,17 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test.use({
-  ignoreHTTPSErrors: true
-});
-
 test('Researcher-Dataset information', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').fill('Updatepassword12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.goto('https://localhost:443/portal/researcher');
+
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
+
   await page.getByRole('link', { name: 'Datasets' }).click();
   await page.getByRole('button', { name: 'Add dataset' }).click();
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click();
@@ -35,18 +32,15 @@ test('Researcher-Dataset information', async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByRole('link', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
-  await page.getByRole('img', { name: 'Data2Evidence' }).click();
 
-  await page.getByText('Demo datasetDemo datasetTotal').click();
+  await page.getByRole('img', { name: 'Data2Evidence' }).click();
+  await page.getByText(new RegExp('^Demo dataset$')).click();
   await expect(page.locator('tbody')).toContainText('2694');
   await expect(page.getByTestId('card-content')).toContainText('Demo dataset');
   await expect(page.getByTestId('select').locator('div')).toContainText('Demo dataset');
 
   await page.getByRole('img', { name: 'Data2Evidence' }).click();
-  await page.getByText('Demo datasetDemo datasetTotal').click();
-
-  await page.getByRole('button', { name: 'Demo dataset' }).click();
-  await page.getByRole('option', { name: 'test_dataset1' }).click();
+  await page.getByText(new RegExp('^test_dataset1$')).click();
   await expect(page.getByTestId('title')).toContainText('test_dataset1');
   await expect(page.getByTestId('select').locator('div')).toContainText('test_dataset1');
 });
