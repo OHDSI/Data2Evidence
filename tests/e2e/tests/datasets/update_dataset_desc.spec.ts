@@ -17,7 +17,8 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
   
-  await expect(page.getByRole('main')).toContainText('Demo dataset updated');
+  await expect(page.locator('div.dataset-card__title div.dataset-card__summary').filter({ hasText: new RegExp('^Demo dataset updated$') })).toContainText('Demo dataset updated');
+  
   await page.getByText('Demo dataset', { exact: true }).click();
   await expect(page.getByRole('paragraph')).toContainText('Demo dataset updated');
 });

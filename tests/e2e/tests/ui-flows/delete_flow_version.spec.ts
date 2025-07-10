@@ -9,6 +9,7 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'ETL' }).click();
+  await page.waitForTimeout(10000);
   await page.getByLabel('Create new dataflow').getByRole('button').click();
   await page.getByRole('textbox', { name: 'Name' }).fill('testcase_flow');
   await page.getByRole('textbox', { name: 'Name' }).press('Tab');

@@ -7,7 +7,7 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   await page.waitForTimeout(5000)
-  await page.getByText(new RegExp('^Demo dataset$')).click();
+  await page.locator('div.dataset-card__title').filter({ hasText: new RegExp('^Demo dataset$') }).click();  
 
   await page.getByRole('link', { name: 'Cohorts' }).click();
   await page.getByRole('button', { name: 'Atlas' }).click();

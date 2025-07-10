@@ -7,7 +7,7 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   await page.waitForTimeout(5000)
-  await page.getByText(new RegExp('^Demo dataset$')).click();
+  await page.locator('div.dataset-card__title').filter({ hasText: new RegExp('^Demo dataset$') }).click();  
 
   await page.getByRole('tab', { name: 'Data Quality' }).click();
   await expect(page.getByTestId('card-content')).toContainText('Corrected pass percentage for NA and Errors: 94% (886/943).');
