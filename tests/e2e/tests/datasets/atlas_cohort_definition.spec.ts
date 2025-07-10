@@ -6,7 +6,7 @@ test('test', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
 
-  await page.waitForTimeout(5000) // Wait for the metadata table to load
+  await page.waitForTimeout(5000)
   await page.getByText(new RegExp('^Demo dataset$')).click();
 
   await page.getByRole('link', { name: 'Cohorts' }).click();
