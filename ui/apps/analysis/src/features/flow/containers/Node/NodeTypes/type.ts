@@ -26,8 +26,8 @@ export type NodeType =
 export type NodeTypeChoice = Exclude<NodeType, "start">;
 
 export enum NodeTag {
-  Experimental = "experimental",
-  Stable = "stable",
+  Experimental = "Experimental",
+  Stable = "Stable",
 }
 
 export interface NodeChoiceAttr {

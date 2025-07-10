@@ -13,7 +13,13 @@ export const NodeTypeSelection: FC<NodeTypeSelectionProps> = ({
   onClick,
 }) => {
   return (
-    <Box className="node-type-selection" onClick={onClick}>
+    <Box
+      className="node-type-selection"
+      onClick={onClick}
+      sx={{
+        borderRight: `3px solid ${NODE_COLORS[nodeType]}`,
+      }}
+    >
       <div className="node-type-selection__title">
         {NodeChoiceMap[nodeType].title}
       </div>
@@ -22,9 +28,6 @@ export const NodeTypeSelection: FC<NodeTypeSelectionProps> = ({
           label={NodeChoiceMap[nodeType].tag}
           variant="filled"
           size="small"
-          sx={{
-            border: `2.5px solid ${NODE_COLORS[nodeType]}`,
-          }}
         />
       </div>
       <div className="node-type-selection__desc">
