@@ -55,6 +55,21 @@ test('patient-analytics-patient-list', async ({ page }) => {
     await expect(page.getByText('629 / 2694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible();
   })
+  //Save the filter card
+  await test.step('Save the filter card', async () => {
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test');
+    await page.getByRole('textbox', { name: 'Enter name' }).click();
+    await page.getByTitle('Allow bookmark to be visible').locator('div').click();
+    await page.locator('footer').getByRole('button', { name: 'Save' }).click();
+    // await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  });
+  //Check if the cohort is saved
+  await test.step('Check if the cohort is saved', async () => {
+    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
+    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible({timeout: 20000});
+  })
   //Go to patient list
   await test.step('Go to patient list', async () => {
     await page.getByRole('button', { name: '' }).click();
@@ -111,5 +126,15 @@ test('patient-analytics-patient-list', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export' }).click();
     const download = await downloadPromise;
+  })
+  //Delete cohort
+  await test.step('Delete cohort', async () => {    
+    // await page.getByRole('button', { name: '' }).click();
+    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
+    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible({timeout: 20000});
+    await page.locator('div:nth-child(5) > svg').first().click()
+    // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
+    await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
+    await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible({timeout: 20000});
   })
 })
