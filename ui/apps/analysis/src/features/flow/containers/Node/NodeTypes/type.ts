@@ -21,7 +21,8 @@ export type NodeType =
   | "outcomes_node"
   | "cohort_definition_set_node"
   | "exposure_node"
-  | "strategus_node";
+  | "strategus_node"
+  | "treatment_patterns_node";
 
 export type NodeTypeChoice = Exclude<NodeType, "start">;
 
@@ -226,6 +227,10 @@ export const NODE_CONNECTOR_MAPPING = {
         classifier: "module_specifications",
       },
     ],
+  },
+  treatment_patterns_node: {
+    type: "salmon",
+    connector_list: [],
   },
 };
 
