@@ -49,6 +49,7 @@ const {
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
   compareCohortsSelectionList: Bookmark[]
+  useQueryFilterForAtlas: boolean
 }>()
 
 const bookmarksDisplaySorted = computed(() => {
@@ -67,6 +68,7 @@ const emit = defineEmits([
   'addCohort',
   'openDataQualityDialog',
   'loadBookmarkCheck',
+  'loadAtlasBookmark',
 ])
 
 const onSelectBookmark = bookmarkDisplay => {
@@ -98,6 +100,25 @@ const loadBookmarkCheck = (bookmarkId, chartType) => {
   emit('loadBookmarkCheck', bookmarkId, chartType)
 }
 
+const loadAtlasBookmark = atlasDefinitionId => {
+  const selection = window.getSelection()
+  // Allows highlighting without clicking
+  if (selection.toString().length > 0) {
+    return
+  }
+  emit('loadAtlasBookmark', atlasDefinitionId)
+}
+
+const handleBookmarkClick = bookmarkDisplay => {
+  if (['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay))) {
+    loadBookmarkCheck(bookmarkDisplay.bookmark.id, bookmarkDisplay.bookmark.chartType)    
+  } else if (props.useQueryFilterForAtlas) {
+    loadAtlasBookmark(bookmarkDisplay.atlasCohortDefinition.id)
+  } else {
+    openAtlasLink(bookmarkDisplay.atlasCohortDefinition.id)
+  }
+}
+
 const getChartInfo = (chart: string, type: string) => {
   if (Constants.chartInfo[chart]) {
     return Constants.chartInfo[chart][type]
@@ -125,6 +146,12 @@ const openAtlasLink = (id: number) => {
     return
   }
   getPortalAPI()?.toggleAtlas(true, `/#/cohortdefinition/${id}`)
+}
+
+const getBookmarkCardClass = (bookmarkDisplay: any) => {
+  const type = getBookmarkType(bookmarkDisplay)
+  console.log('Bookmark type for', bookmarkDisplay.displayName, ':', type, 'disabled:', type === 'M')
+  return `item-card-body ${type === 'M' ? 'item-card-body-disabled' : ''}`
 }
 
 // Lifecycle hooks
@@ -170,16 +197,9 @@ onErrorCaptured((err, instance, info) => {
         background-color: white;
         font-size: 12px;
       "
+      @click="console.log('OUTER CARD CLICKED:', bookmarkDisplay.displayName)"
     >
-      <div
-        style="flex: 1"
-        :class="`item-card-body ${getBookmarkType(bookmarkDisplay) === 'M' ? 'item-card-body-disabled' : ''}`"
-        @click="
-          ;['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay))
-            ? loadBookmarkCheck(bookmarkDisplay.bookmark.id, bookmarkDisplay.bookmark.chartType)
-            : openAtlasLink(bookmarkDisplay.atlasCohortDefinition.id)
-        "
-      >
+      <div style="flex: 1" :class="getBookmarkCardClass(bookmarkDisplay)" @click="handleBookmarkClick(bookmarkDisplay)">
         <div style="padding: 24px">
           <div style="display: flex; justify-content: space-between">
             <div style="color: #ff5e59">

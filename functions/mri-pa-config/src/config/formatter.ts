@@ -153,6 +153,7 @@ export class Formatter {
           externalAccessPoints: mriConfig.panelOptions.externalAccessPoints,
           cohortEntryExit: mriConfig.panelOptions.cohortEntryExit,
           atlasCohortDefinition: mriConfig.panelOptions.atlasCohortDefinition,
+          usePaAtlas: mriConfig.panelOptions.usePaAtlas,
         };
 
         return config;
