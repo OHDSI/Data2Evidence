@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="modelValue"
+    v-if="isVisible"
     :class="alertClasses"
     class="app-alert"
     role="alert"
@@ -16,8 +16,17 @@
   </div>
 </template>
 
+<script lang="ts">
+export default {
+  name: 'AppAlert',
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
+
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, ref } from 'vue'
 
 interface Props {
   modelValue?: boolean
@@ -48,6 +57,8 @@ const emit = defineEmits<{
   dismissed: []
 }>()
 
+const autoDismissTimer = ref<NodeJS.Timeout | null>(null)
+
 const alertClasses = computed(() => {
   // Map 'error' to 'danger' for Bootstrap compatibility
   const variant = props.variant === 'error' ? 'danger' : props.variant
@@ -72,16 +83,13 @@ const isVisible = computed(() => {
   return props.modelValue
 })
 
-// Auto-dismiss functionality
-let autoDismissTimer: number | null = null
-
 const setupAutoDismiss = () => {
-  if (autoDismissTimer) {
-    clearTimeout(autoDismissTimer)
+  if (autoDismissTimer.value) {
+    clearTimeout(autoDismissTimer.value)
   }
 
   if (props.autoDismiss > 0 && isVisible.value) {
-    autoDismissTimer = setTimeout(() => {
+    autoDismissTimer.value = setTimeout(() => {
       dismiss()
     }, props.autoDismiss)
   }
@@ -93,9 +101,9 @@ watch(
   newValue => {
     if (newValue) {
       setupAutoDismiss()
-    } else if (autoDismissTimer) {
-      clearTimeout(autoDismissTimer)
-      autoDismissTimer = null
+    } else if (autoDismissTimer.value) {
+      clearTimeout(autoDismissTimer.value)
+      autoDismissTimer.value = null
     }
   }
 )
