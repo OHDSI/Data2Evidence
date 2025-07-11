@@ -31,7 +31,7 @@ test('Researcher-Dataset information', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('test_dataset1');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(10000);
   
   await page.getByRole('link', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
