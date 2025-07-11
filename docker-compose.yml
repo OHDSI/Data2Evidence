@@ -1197,6 +1197,7 @@ services:
         [
           "CMD",
           "wget",
+          "--proxy=off",
           "--no-verbose",
           "--tries=1",
           "--spider",
