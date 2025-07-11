@@ -4,9 +4,11 @@
 \alias{create_options}
 \title{create options for running the Strategus flow in D2E}
 \usage{
-create_options(upload_results = FALSE)
+create_options(study_id = "", upload_results = FALSE)
 }
 \arguments{
+\item{study_id}{string value indicating the study ID to be used in the flow run}
+
 \item{upload_results}{boolean value indicating whether to upload results after the flow run
 (default is FALSE)}
 }
