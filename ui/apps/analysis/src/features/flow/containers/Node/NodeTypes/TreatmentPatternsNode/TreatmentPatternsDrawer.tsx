@@ -344,7 +344,7 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
             value={formData.censorType}
             onChange={(e: SelectChangeEvent) =>
               onFormDataChange({
-                CensorType: e.target.value,
+                censorType: e.target.value,
               })
             }
           >
