@@ -14,3 +14,15 @@ export enum CensorType {
   Remove = "remove",
   Mean = "mean",
 }
+
+export enum TreatmentPatternsCohortType {
+  Target = "target",
+  Event = "event",
+  Exit = "exit",
+}
+
+export type TreatmentPatternsCohort = {
+  cohortId: string;
+  cohortName: string;
+  type: TreatmentPatternsCohortType;
+};

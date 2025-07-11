@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import {
   Box,
+  Button,
+  IconButton,
   TextInput,
   InputLabel,
   MenuItem,
@@ -10,6 +12,7 @@ import {
   Select,
   SelectChangeEvent,
 } from "@portal/components";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
@@ -22,6 +25,8 @@ import { TreatmentPatternsNodeData } from "./TreatmentPatternsNode";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import {
+  TreatmentPatternsCohort,
+  TreatmentPatternsCohortType,
   IncludeTreatments,
   FilterTreatments,
   CensorType,
@@ -34,7 +39,7 @@ export interface TreatmentPatternsDrawerProps
 }
 
 interface FormData extends TreatmentPatternsNodeData {}
-console.log(IncludeTreatments, FilterTreatments, CensorType);
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   cohorts: [],
@@ -51,6 +56,12 @@ const EMPTY_FORM_DATA: FormData = {
   ageWindow: 10,
   minCellCount: 5,
   censorType: CensorType.MinCellCount,
+};
+
+const EMPTY_TREATMENT_PATTERNS_COHORT: TreatmentPatternsCohort = {
+  cohortId: "",
+  cohortName: "",
+  type: TreatmentPatternsCohortType.Target,
 };
 
 export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
@@ -89,6 +100,13 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
       });
     }
   }, [node.data]);
+
+  const handleAddCohort = useCallback(() => {
+    onFormDataChange({
+      cohorts: [EMPTY_TREATMENT_PATTERNS_COHORT, ...formData.cohorts],
+    });
+  }, [onFormDataChange, formData.cohorts]);
+
   const handleOk = useCallback(() => {
     const updated: NodeState<TreatmentPatternsNodeData> = {
       ...nodeState,
@@ -99,6 +117,7 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
 
     typeof onClose === "function" && onClose();
   }, [formData]);
+
   return (
     <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
       <Box mb={4}>
@@ -109,6 +128,77 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
+      </Box>
+      <Box mb={4}>
+        <InputLabel shrink>Cohorts</InputLabel>
+        <Button variant="text" text="Add Cohort" onClick={handleAddCohort} />
+        {formData.cohorts.map((cohort, index) => (
+          <Box
+            key={index}
+            display="flex"
+            flexDirection="column"
+            gap={1}
+            marginTop="-1px"
+          >
+            <Box display="flex" gap={1} mb="-1px" alignItems="end">
+              <TextInput
+                label="Cohort Id"
+                value={cohort.cohortId}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  onFormDataChange({
+                    cohorts: formData.cohorts.map((cohort, i) =>
+                      i === index
+                        ? { ...cohort, cohortId: e.target.value }
+                        : cohort
+                    ),
+                  })
+                }
+              />
+              <TextInput
+                label="Cohort Name"
+                value={cohort.cohortName}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  onFormDataChange({
+                    cohorts: formData.cohorts.map((cohort, i) =>
+                      i === index
+                        ? { ...cohort, cohortName: e.target.value }
+                        : cohort
+                    ),
+                  })
+                }
+              />
+              <FormControl variant="standard" sx={{ width: "200px" }} fullWidth>
+                <InputLabel shrink>Type</InputLabel>
+                <Select
+                  value={cohort.type}
+                  onChange={(e: SelectChangeEvent) =>
+                    onFormDataChange({
+                      cohorts: formData.cohorts.map((cohort, i) =>
+                        i === index
+                          ? { ...cohort, type: e.target.value }
+                          : cohort
+                      ),
+                    })
+                  }
+                >
+                  {Object.values(TreatmentPatternsCohortType).map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <IconButton
+                startIcon={<ClearIcon />}
+                onClick={() =>
+                  onFormDataChange({
+                    cohorts: formData.cohorts.filter((_, i) => i !== index),
+                  })
+                }
+              />
+            </Box>
+          </Box>
+        ))}
       </Box>
       <Box mb={4}>
         <FormControl variant="standard" fullWidth>
