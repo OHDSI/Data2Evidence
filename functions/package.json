@@ -74,6 +74,10 @@
       ],
       "api": [
         {
+          "source": "/gateway/dashboard",
+          "service": "kpi-dashboard"
+        },
+        {
           "source": "/jobplugins",
           "function": "/jobplugins",
           "imports": "/jobplugins/import.json",
@@ -440,13 +444,15 @@
           "whiteRabbit.read",
           "whiteRabbit.post",
           "demo.setup",
-          "mlflow",
+          "gateway.external.dashboards.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete"
+          "strategus.results.delete",
+          "mlflow"
         ],
         "ALP_DASHBOARD_VIEWER": [
-          "gateway.dashboardGate.content"
+          "gateway.dashboardGate.content",
+          "gateway.external.dashboards.read"
         ],
         "TENANT_VIEWER": [
           "PA.DatasetOverview.svc",
@@ -543,6 +549,12 @@
         ]
       },
       "scopes": [
+        {
+          "path": "^/gateway/dashboard/(.*)",
+          "scopes": [
+            "gateway.external.dashboards.read"
+          ]
+        },
         {
           "path": "^/files-manager/api",
           "scopes": [

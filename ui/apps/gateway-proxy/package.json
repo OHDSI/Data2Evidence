@@ -1,0 +1,35 @@
+{
+  "name": "d2e-proxy-ui",
+  "version": "0.1.0",
+  "source": "public/index.html",
+  "scripts": {
+    "precommit": "lint-staged",
+    "start": "parcel public/index.html -p 3000",
+    "build": "rm -rf ../../resources/gateway/dist && parcel build public/index.html --no-autoinstall --public-url /ui/gateway/dashboard --dist-dir ../../resources/gateway/dist",
+    "lint": "eslint --ext .js src",
+    "stylelint": "stylelint \"src/**/*.scss\""
+  },
+  "dependencies": {
+    "@logto/browser": "^3.0.7",
+    "@logto/client": "^3.1.2"
+  },
+  "devDependencies": {
+    "@parcel/core": "^2.9.2",
+    "@parcel/transformer-sass": "^2.9.2",
+    "parcel-resolver-ignore": "^2.2.0",
+    "eslint": "^8.57.0",
+    "lint-staged": "^15.0.0",
+    "parcel": "^2.9.2",
+    "postcss": "^8.4.31",
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.3"
+  },
+  "eslintConfig": {
+    "extends": "@silverhand",
+    "globals": {
+      "window": true,
+      "document": true
+    }
+  },
+  "parcelIgnore": ["/portal/env.js"]
+}

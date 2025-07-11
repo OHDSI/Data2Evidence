@@ -9,7 +9,7 @@
   "EXPORT_MAPPING_DIALOG__REQUIRED": "Dies ist erforderlich",
   "EXPORT_MAPPING_DIALOG__NO_DATA": "Keine Daten verfügbar",
   "IMPORT_DIALOG__ADDITIONAL_INFO_COLUMN": "Zusätzliche Infospalte",
-  "IMPORT_DIALOG__CANCEL": "Stornieren",
+  "IMPORT_DIALOG__CANCEL": "Abbrechen",
   "IMPORT_DIALOG__COLUMN_MAPPING": "Spaltenzuordnung",
   "IMPORT_DIALOG__IMPORT": "Importieren",
   "IMPORT_DIALOG__SOURCE_CODE_COLUMN": "Quellcode-Spalte",

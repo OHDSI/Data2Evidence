@@ -89,13 +89,14 @@
         <div class="bookmark-content__header-title">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
+          <Button v-if="useAtlasLite" :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
+          </Button>
+
+          <!-- <Button v-if="usePaAtlas" :text="getText('MRI_PA_CREATE_PA_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
+          </Button> -->
+
           <Button
             v-if="enableAtlasCohortDefinition"
-            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
-            :onClick="openAtlasLink"
-          >
-          </Button>
-          <Button
             :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
           >
@@ -126,12 +127,14 @@
           <BookmarkItems
             :bookmarksDisplay="bookmarksDisplay"
             :compareCohortsSelectionList="aSelBookmarkList"
+            :useQueryFilterForAtlas="usePaAtlas"
             @onSelectBookmark="onSelectBookmark"
             @renameBookmark="renameBookmark"
             @deleteBookmark="deleteBookmark"
             @addCohort="addCohort"
             @openDataQualityDialog="openDataQualityDialog"
             @loadBookmarkCheck="loadBookmarkCheck"
+            @loadAtlasBookmark="loadAtlasBookmark"
           />
         </div>
       </div>
@@ -146,16 +149,16 @@
 
     <cohortListDialog
       :openListDialog="showCohortListDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showCohortListDialog = false"
     >
     </cohortListDialog>
 
     <addCohort
       :openAddDialog="showAddCohortDialog"
-      :bookmarkId="this.selectedBookmark.id"
-      :bookmarkName="this.selectedBookmark.name"
+      :bookmarkId="this.selectedBookmark?.id"
+      :bookmarkName="this.selectedBookmark?.name"
       @closeEv="showAddCohortDialog = false"
       :cohortDefinitionType="cohortDefinitionType"
       :atlasCohortDefinitionId="atlasCohortDefinitionId"
@@ -184,7 +187,7 @@
 </template>
 
 <script lang="ts">
-declare var sap
+declare var sap: any
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
@@ -261,6 +264,12 @@ export default {
     enableAtlasCohortDefinition() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
     },
+    useAtlasLite() {
+      return this.enableAtlasCohortDefinition && !this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
+    },
+    usePaAtlas() {      
+      return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
+    },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
     },
@@ -302,7 +311,7 @@ export default {
     },
     loadBookmarkCheck(bmkId, chartType) {
       if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
-        this.$emit('unloadBookmarkEv')
+        this.$emit('unloadBookmarkEv', false)
       } else {
         this.selectedBmkId = bmkId
         this.selectedChartType = chartType
@@ -316,13 +325,43 @@ export default {
     loadBookmark() {
       this.loadbookmarkToState({ bmkId: this.selectedBmkId, chartType: this.selectedChartType })
         .then(() => {
-          this.$emit('unloadBookmarkEv')
+          this.$emit('unloadBookmarkEv', false)
           this.selectedBmkId = ''
           this.selectedChartType = ''
         })
         .catch(() => {
           this.showIncompatibleMessage = true
         })
+    },
+    async loadAtlasBookmark(atlasDefinitionId) {
+      try {
+        // Get Atlas JSON using our new store action
+        const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
+
+        // Create a fake bookmark object for the tab display
+        const atlasBookmark = {
+          bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
+          bmkId: `${atlasDefinitionId}`,
+          isAtlas: true,
+          isNew: false, // Currently always false as we have to import one first
+        }
+
+        // Set as active bookmark to create the tab
+        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+
+        // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
+        this.$emit('loadAtlasCohortDefinition', atlasJson)
+
+        // Switch to Patient Analytics view after loading
+        this.$emit('unloadBookmarkEv', false, true)
+      } catch (error) {
+        console.error('Failed to load Atlas bookmark:', error)
+        this.messageStrip = {
+          show: true,
+          message: 'Failed to load Atlas cohort definition',
+          messageType: 'error',
+        }
+      }
     },
     closeRenameBookmark() {
       this.showRenameDialog = false
@@ -439,7 +478,7 @@ export default {
     },
     saveCohortChanges() {
       this.showSaveOrDiscardDialog = false
-      this.$emit('unloadBookmarkEv')
+      this.$emit('unloadBookmarkEv', false)
     },
     openAddNewCohort() {
       if (this.hasChanges) {
@@ -456,7 +495,7 @@ export default {
       this.cohortName = this.checkCohortName(this.cohortName)
       this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: this.cohortName, isNew: true })
       this.closeAddNewCohort()
-      this.$emit('unloadBookmarkEv')
+      this.$emit('unloadBookmarkEv', false)
       this.reset()
     },
     checkCohortName(bookmarkName, suffix = '') {
