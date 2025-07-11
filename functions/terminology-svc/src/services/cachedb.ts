@@ -380,11 +380,8 @@ export class CachedbService {
   }
 
   private mapConceptWithFhirValueSetExpansionContains(item: IConcept) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    // valid_end_date is in seconds while js timestamp is in ms
     const validity =
-      (item.valid_end_date || -1) > Number(new Date()) / 1000
+      Number(new Date(item.valid_end_date || -1)) > Number(new Date())
         ? "Valid"
         : "Invalid";
 
