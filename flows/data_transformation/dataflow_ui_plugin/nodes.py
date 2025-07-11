@@ -1,3 +1,4 @@
+import ibis
 import json
 import duckdb
 import logging
@@ -6,6 +7,7 @@ import traceback as tb
 from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
+from pydantic import ValidationError
 
 import pandas as pd
 from pandas.api.types import is_scalar, is_list_like, is_dict_like
@@ -399,6 +401,7 @@ class DataMappingNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
 
+
         # Fail node generation if scan report data validation fails
         self.etl_mapping = DataMappingType(**_node["data"])
 
@@ -414,8 +417,8 @@ class DataMappingNode(Node):
         """
        
         # Todo: Remove hard code after scan report json is updated
-        table_source = "database"
-        database_code = "alpdev_pg"
+        table_source = "csv"
+        database_code = "demodb"
 
         db_con = None
         try:
@@ -441,8 +444,6 @@ class DataMappingNode(Node):
     def generate_query(self, con, target_table_name: str, table_source: TableSourceType, ) -> pd.DataFrame:
         table_mappings = self.etl_mapping.table.edges
         column_mappings = self.etl_mapping.field.edges
-        target_column_properties = self.etl_mapping.field.targetHandles.get(target_table_name)
-        target_column_names = [col.data.label for col in target_column_properties]
 
         # Todo: Remove hard code after scan report json is updated
         schema_name = "synthea"
@@ -454,6 +455,7 @@ class DataMappingNode(Node):
         for mapping in table_mappings:
             if mapping.targetHandle == target_table_name:
                 source_table_name = mapping.sourceHandle
+                field_map_key = mapping.id
 
             if mapping.targetHandle == target_table_name:
                 if table_source == TableSourceType.CSV:
@@ -468,22 +470,18 @@ class DataMappingNode(Node):
                         encoding=encoding
                         )
                     temp_table_obj = con.create_table(source_table_name, source_df)
-                    source_table_obj = temp_table_obj.mutate({
-                        name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
-                        for name, dtype in temp_table_obj.schema().items()
-                    })
-
-
                 elif table_source == TableSourceType.DB:
                     temp_table_obj = con.table(source_table_name, database=schema_name)
-                    source_table_obj = temp_table_obj.mutate({
+                
+                source_table_obj = temp_table_obj.mutate({
                         name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
                         for name, dtype in temp_table_obj.schema().items()
                     })
 
-                
                 selected_columns = []
                 mapped_target_columns = set()
+
+                target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
                 
                 for column_mapping in column_mappings:
                     if column_mapping.sourceHandle.startswith(source_table_name) \
@@ -519,6 +517,8 @@ class DataMappingNode(Node):
                         mapped_target_columns.add(col.data.label)
 
                 # For unmapped target columns, cast null value as appropriate type columns
+                target_column_names = [col.data.label for col in target_column_properties]
+
                 unmapped_target_columns: set[str] = set(target_column_names) - mapped_target_columns
                 selected_columns.extend(
                     ibis.null() \
