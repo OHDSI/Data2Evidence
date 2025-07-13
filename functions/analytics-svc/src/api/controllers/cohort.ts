@@ -76,40 +76,6 @@ export async function getCohortAnalyticsConnection(req: IMRIRequest) {
     return analyticsConnection;
 }
 
-async function getStudyDetails(
-    datasetId: string,
-    res: Response
-): Promise<{
-    databaseCode: string;
-    schemaName: string;
-    vocabSchemaName: string;
-}> {
-    try {
-        const portalServerAPI = new PortalServerAPI();
-        const accessToken = await portalServerAPI.getClientCredentialsToken();
-        const studies = await portalServerAPI.getStudies(accessToken);
-
-        // find the matching element and get the study schema name
-        const studyMatch = studies.find((el) => el.id === datasetId);
-        if (!studyMatch) {
-            return res.status(500).send(
-                MRIEndpointErrorHandler({
-                    err: {
-                        name: "mri-pa",
-                        message: `Study metadata not found for the the given datasetId(${datasetId})!`,
-                    },
-                    language,
-                })
-            );
-        }
-        logger.debug(`Matched study details: ${JSON.stringify(studyMatch)}`);
-
-        return studyMatch;
-    } catch (err) {
-        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
-    }
-}
-
 export async function getAllCohorts(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
@@ -186,8 +152,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const token = req.headers.authorization;
         const { bookmarkId } = JSON.parse(req.body.syntax);
         const analyticsConnection = await getCohortAnalyticsConnection(req);
-        const { schemaName, databaseCode, vocabSchemaName } =
-            await getStudyDetails(datasetId, res);
+        const { schemaName, databaseCode, vocabSchemaName } = req.selectedstudyDbMetadata;
         const language = getUser(req).lang;
         const requestQuery: string[] | undefined = req.body?.query?.split(",");
         // Remap mriquery for use in createEndpointFromRequest
@@ -355,7 +320,7 @@ export async function generateCohortDefinition(
 ) {
     try {
         const datasetId = req.body.datasetId;
-        const { vocabSchemaName } = await getStudyDetails(datasetId, res);
+        const { vocabSchemaName } = req.selectedstudyDbMetadata;
         const language = getUser(req).lang;
         // Remap mriquery for use in createEndpointFromRequest
         const { cohortDefinition } = await createEndpointFromRequest(req);

@@ -1,0 +1,39 @@
+export default {
+  entryEvents: {},
+  inclusionCriteria: {
+    qualifyingEventsLimit: 'ALL', // options: 'ALL', 'EARLIEST', 'LATEST'
+    criteria: [
+      {
+        id: 'criteria_1749626300526',
+        title: 'Criteria 1',
+        description: 'Description 1',
+        criteriaType: 'ALL', // options: 'ALL', 'ANY', 'AT_LEAST', 'AT_MOST'
+        events: [
+          {
+            id: 'event_1749626300526',
+            eventType: 'conditionOccurrence',
+            attributes: [],
+            isExpanded: true,
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
+            },
+          },
+          {
+            id: 'event_1749626302603',
+            eventType: 'conditionOccurrence',
+            attributes: [],
+            isExpanded: true,
+            cardinality: {
+              type: 'AT_LEAST', // options: 'exactly', 'atMost', 'atLeast'
+              count: 1,
+              using: 'ALL',
+            },
+          },
+        ],
+      },
+    ],
+  },
+}
+

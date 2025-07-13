@@ -1,0 +1,120 @@
+// Icon definitions (using FontAwesome classes as fallback)
+.icon {
+  font-family: 'Font Awesome 5 Free', 'app-icons';
+  font-style: normal;
+  font-weight: 900;
+
+  &-chevron-down::before {
+    content: '\f078';
+  }
+
+  &-chevron-up::before {
+    content: '\f077';
+  }
+
+  &-chevron-right::before {
+    content: '\f054';
+  }
+
+  &-plus-circle::before {
+    content: '\f055';
+  }
+
+  &-plus::before {
+    content: '\f067';
+  }
+
+  &-times::before {
+    content: '\f00d';
+  }
+
+  &-pencil::before {
+    content: '\f303';
+  }
+
+  &-copy::before {
+    content: '\f0c5';
+  }
+
+  &-ellipsis-v::before {
+    content: '\f142';
+  }
+
+  &-hamburger::before {
+    content: '\f0c9';
+  }
+
+  // Common medical icons
+  &-heartbeat::before {
+    content: '\f21e';
+  }
+
+  &-stethoscope::before {
+    content: '\f0f1';
+  }
+
+  &-pills::before {
+    content: '\f484';
+  }
+
+  &-capsules::before {
+    content: '\f46b';
+  }
+
+  &-thermometer::before {
+    content: '\f491';
+  }
+
+  &-eye::before {
+    content: '\f06e';
+  }
+
+  &-calendar::before {
+    content: '\f133';
+  }
+
+  &-procedures::before,
+  &-clipboard::before {
+    content: '\f328';
+  }
+
+  &-hospital::before {
+    content: '\f0f8';
+  }
+
+  &-user::before {
+    content: '\f007';
+  }
+
+  &-times-circle::before {
+    content: '\f057';
+  }
+
+  &-medkit::before {
+    content: '\f0fa';
+  }
+
+  &-prescription::before {
+    content: '\f5b1';
+  }
+
+  &-vial::before {
+    content: '\f492';
+  }
+
+  &-id-card::before {
+    content: '\f2c2';
+  }
+
+  &-map-marker::before {
+    content: '\f041';
+  }
+
+  &-object-group::before {
+    content: '\f247';
+  }
+
+  &-recycle::before {
+    content: '\f1b8';
+  }
+}
