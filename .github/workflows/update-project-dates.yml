@@ -1,110 +1,25 @@
-name: Auto-update Issue Dates from Milestone
+name: Update Project Issue Dates
 
 on:
-  issues:
-    types: [milestoned, demilestoned]
+  workflow_dispatch:
 
 jobs:
-  update-issue-dates:
+  update-project-dates:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Milestone Information
-        if: github.event.action == 'milestoned'
-        id: get_info
-        run: |
-          echo "MILESTONE_DUE_DATE=${{ github.event.issue.milestone.due_on }}" >> $GITHUB_ENV
-          echo "MILESTONE_NUMBER=${{ github.event.issue.milestone.number }}" >> $GITHUB_ENV
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Get Previous Milestone Date
-        if: github.event.action == 'milestoned'
-        id: get_previous_milestone
-        uses: actions/github-script@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          script: |
-            const response = await github.rest.issues.listMilestones({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all',
-              sort: 'due_on',
-              direction: 'asc'
-            });
+          node-version: '18'
+          cache: 'npm'
 
-            const milestones = response.data;
-            const currentMilestoneIndex = milestones.findIndex(m => m.number == process.env.MILESTONE_NUMBER);
+      - name: Install dependencies
+        run: npm install @octokit/rest
 
-            let previousMilestoneDueDate = '';
-            if (currentMilestoneIndex > 0) {
-              previousMilestoneDueDate = milestones[currentMilestoneIndex - 1].due_on;
-            }
-            core.setOutput('previous_milestone_due_date', previousMilestoneDueDate);
-
-      - name: Update or Clear Project Item Fields
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PROJECT_PAT }}
-          script: |
-            const projectId = "PVT_kwDOAGRAXc4A2L7H";
-            const startDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLj8";
-            const endDateFieldId = "PVTF_lADOAGRAXc4A2L7HzgriLkA";
-            const issueNodeId = "${{ github.event.issue.node_id }}";
-
-            // Fetch ProjectV2Item ID for this issue in the project
-            const projectItems = await github.graphql(`
-              query($projectId: ID!, $issueId: ID!) {
-                node(id: $projectId) {
-                  ... on ProjectV2 {
-                    items(first: 100, filterBy: {contentId: $issueId}) {
-                      nodes {
-                        id
-                        content {
-                          ... on Issue { id }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            `, { projectId, issueId: issueNodeId });
-            const items = projectItems.node.items.nodes;
-            if (!items.length) {
-              throw new Error("Issue is not part of the project. Cannot update/clear fields.");
-            }
-            const projectItemId = items[0].id;
-
-            if (context.payload.action === 'milestoned') {
-              const startDate = '${{ steps.get_previous_milestone.outputs.previous_milestone_due_date }}';
-              const endDate = process.env.MILESTONE_DUE_DATE;
-
-              const updateMutation = `
-                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: Date!) {
-                  updateProjectV2ItemFieldValue(input: {
-                    projectId: $projectId, itemId: $itemId, fieldId: $fieldId, value: { date: $value }
-                  }) { projectV2Item { id } }
-                }`;
-
-              if (startDate && startDateFieldId) {
-                console.log(`Setting Start Date to: ${startDate}`);
-                await github.graphql(updateMutation, { projectId, itemId: projectItemId, fieldId: startDateFieldId, value: startDate });
-              }
-              if (endDate && endDateFieldId) {
-                console.log(`Setting End Date to: ${endDate}`);
-                await github.graphql(updateMutation, { projectId, itemId: projectItemId, fieldId: endDateFieldId, value: endDate });
-              }
-            }
-            else if (context.payload.action === 'demilestoned') {
-              const clearMutation = `
-                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
-                  clearProjectV2ItemFieldValue(input: {
-                    projectId: $projectId, itemId: $itemId, fieldId: $fieldId
-                  }) { projectV2Item { id } }
-                }`;
-
-              if (startDateFieldId) {
-                console.log('Clearing Start Date field.');
-                await github.graphql(clearMutation, { projectId, itemId: projectItemId, fieldId: startDateFieldId });
-              }
-              if (endDateFieldId) {
-                console.log('Clearing End Date field.');
-                await github.graphql(clearMutation, { projectId, itemId: projectItemId, fieldId: endDateFieldId });
-              }
-            }
+      - name: Update project issue dates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PROJECT_PAT }}
+        run: node scripts/update-roadmap.js
