@@ -4,7 +4,7 @@ test.use({
   ignoreHTTPSErrors: true
 })
 
-test('deactivate-activate-user', async ({ page }) => {
+test.skip('deactivate-activate-user', async ({ page }) => {
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')

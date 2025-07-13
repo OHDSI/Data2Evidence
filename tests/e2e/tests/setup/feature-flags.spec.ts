@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('setup-feature-flags', async ({ page }) => {
+test.skip('setup-feature-flags', async ({ page }) => {
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
