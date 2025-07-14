@@ -15,6 +15,7 @@ test('dqd_job', async ({ page }) => {
 
   console.log('Go to Jobs')
   await page.getByRole('link', { name: 'Jobs' }).click();
+  await page.getByRole('button', { name: 'Job Runs' }).click();
 
   console.log('Filter by dqd_plugin')
   // Wait for 10 seconds to ensure the page is loaded
