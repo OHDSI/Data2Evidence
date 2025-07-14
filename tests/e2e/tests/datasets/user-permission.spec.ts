@@ -25,11 +25,17 @@ test('dataset-user-permission', async ({ page }) => {
   console.log('Grant access to admin user')
   const addButton = page.getByTestId('dialog').getByTestId('button');
   await expect(addButton).toBeVisible();
+  console.log('Add button is visible');
   await addButton.click();
-  await expect(page.getByRole('menu')).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible({ timeout: 15000 });
+  // Wait for 5 seconds to ensure the menu items are visible
+  await page.waitForTimeout(5000);
+  await expect(page.getByRole('menu')).toBeVisible({ timeout: 10000 });
+  console.log('Menu is visible');
+  await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible({ timeout: 10000 });
+  console.log('Admin user is visible');
   await page.getByRole('menuitem', { name: 'admin' }).click();
   await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible({ timeout: 10000 });
+  console.log('Admin user is added to the table');
 
   console.log('Revoke access to admin user')
   await expect(page.getByRole('button', { name: 'Revoke' })).toBeVisible();
