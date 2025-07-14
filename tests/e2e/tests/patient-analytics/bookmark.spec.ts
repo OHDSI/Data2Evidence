@@ -341,14 +341,22 @@ test('patient_analytics_bookmark', async ({ page }) => {
         await page.getByRole('button', { name: 'Sign in' }).click();
         await page.getByText('Demo dataset').nth(1).click();
         await page.getByRole('link', { name: 'Cohorts' }).click();
-        await page.locator('div:nth-child(2) > .footer > div:nth-child(5) > svg').click()
+        // Click delete for "Atlas Cohort Definition"
+        await page.locator('.item-card', { hasText: 'Atlas Cohort Definition' })
+          .locator('.footer .icon-button[title="Delete Saved Filter"]')
+          .click();
         await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
-        await page.getByTitle('Delete Saved Filter').getByRole('img').click()
+
+        // Click delete for "D2E Cohort Definition"
+        await page.locator('.item-card', { hasText: 'D2E Cohort Definition' })
+          .locator('.footer .icon-button[title="Delete Saved Filter"]')
+          .click();
         await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
         await expect(page.getByText('Shared saved filter')).not.toBeVisible({timeout: 20000});
         //Logout as admin
         await page.getByRole('link', { name: 'Account' }).click();
         await page.getByRole('button', { name: 'Logout' }).click();
+        //Login as testuserB to confirm that the bookmarks are not visible
         await page.locator('input[name="identifier"]').click();
         await page.locator('input[name="identifier"]').fill('testuserB');
         await page.locator('input[name="password"]').click();
