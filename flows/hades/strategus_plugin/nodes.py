@@ -916,7 +916,7 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
-            results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
+            results_schema = f'results_{dbSettings["study_id"]}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -976,7 +976,7 @@ def construct_jdbc_url(db_credentials):
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
-    results_schema = f'results_{dbSettings["dataset_id"]}' # TODO: change to study_id
+    results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(use_cache_db=False,
                   database_code=database_code)
     
