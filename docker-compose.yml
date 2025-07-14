@@ -1409,7 +1409,7 @@ services:
   #     profiles: [fhir]
   mlflow:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
-    container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
+    container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow-test
     platform: linux/amd64
     logging:
       options:
