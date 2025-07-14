@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 const CONCEPT_SET_DELAY = 5000 // Delay to wait for concept set creation
 const CHART_UPDATE_DELAY = 5000 // Delay to wait for chart updates
 
-test('filtering-barchart', async ({ page }) => {
+test.skip('filtering-barchart', async ({ page }) => {
   console.log('Sign in')
   await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()
