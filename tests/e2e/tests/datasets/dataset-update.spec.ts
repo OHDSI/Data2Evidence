@@ -44,8 +44,26 @@ test('dataset-update', async ({ page }) => {
         await page.getByRole('option', { name: 'Update dataset' }).click();
         await page.getByRole('textbox', { name: 'Dataset summary' }).click();
         await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Updated Summary');
-        await page.getByRole('button', { name: 'Save' }).click();
-    });
+        await page.getByLabel('', { exact: true }).click();
+        await page.getByRole('option', { name: 'Schema Version', exact: true }).click();
+        await page.getByPlaceholder(' ').click();
+        await page.getByPlaceholder(' ').fill('0');
+        await page.getByRole('button', { name: 'add metadata' }).click();
+        await page.getByLabel('', { exact: true }).nth(1).click();
+        await page.getByRole('option', { name: 'Latest Available Schema' }).click();
+        await page.locator('div').filter({ hasText: /^Latest Available Schema VersionValue$/ }).getByPlaceholder(' ').click();
+        await page.locator('div').filter({ hasText: /^Latest Available Schema VersionValue$/ }).getByPlaceholder(' ').fill('1');
+        await page.getByRole('button', { name: 'Save' }).click({timeout: 30000});
+        await page.getByRole('row', { name: /Test Study 1/ }).getByRole('button').nth(2).click({timeout: 30000});
+        await page.getByRole('option', { name: 'Update schema' }).click();
+        await page.getByRole('button', { name: 'Yes, update' }).click({timeout: 30000});
+        await page.getByRole('link', { name: 'Jobs' }).click();
+        // Get the first (top) entry link
+        const firstEntry = page.locator('a:has(span:text("datamodel-update-cdm_ts_"))').first();
+        // Find the closest state badge to this entry (adjust the selector as needed)
+        const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
+        await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
+   });
 
     await test.step('Switch to Researcher portal', async () => {
         await page.getByRole('link', { name: 'Account' }).click();
