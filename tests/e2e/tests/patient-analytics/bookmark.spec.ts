@@ -31,7 +31,7 @@ test('patient_analytics_bookmark', async ({ page }) => {
         await expect(page.getByText('5 / 2694')).toBeVisible()
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     });
-    //Add Inlucsion filter card - Condition Occurrence
+    //Add Inclusion filter card - Condition Occurrence
     await test.step('Add inclusion filter card for Condition Occurrence', async () => {
         await page.getByTitle('Add Filter Card').getByRole('button').click();
         await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
@@ -346,25 +346,5 @@ test('patient_analytics_bookmark', async ({ page }) => {
           .locator('.footer .icon-button[title="Delete Saved Filter"]')
           .click();
         await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
-
-        // // Click delete for "D2E Cohort Definition"
-        // await page.locator('.item-card', { hasText: 'D2E Cohort Definition' })
-        //   .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        //   .click();
-        // await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
-        // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
-        // await expect(page.getByText('Shared saved filter')).not.toBeVisible({timeout: 20000});
-        // //Logout as admin
-        // await page.getByRole('link', { name: 'Account' }).click();
-        // await page.getByRole('button', { name: 'Logout' }).click();
-        // //Login as testuserB to confirm that the bookmarks are not visible
-        // await page.locator('input[name="identifier"]').click();
-        // await page.locator('input[name="identifier"]').fill('testuserB');
-        // await page.locator('input[name="password"]').click();
-        // await page.locator('input[name="password"]').fill('Updatepassword12345');
-        // await page.getByRole('button', { name: 'Sign in' }).click();
-        // await page.getByText('Demo dataset').nth(1).click();
-        // await page.getByRole('link', { name: 'Cohorts' }).click({timeout: 40000});
-        // await expect(page.getByText('Shared saved filter')).not.toBeVisible({timeout: 20000});
     });
 })
