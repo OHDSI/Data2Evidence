@@ -16,14 +16,20 @@ test('dqd_job', async ({ page }) => {
   console.log('Go to Jobs')
   await page.getByRole('link', { name: 'Jobs' }).click();
   await page.getByRole('button', { name: 'Job Runs' }).click();
+  console.log('Wait for 5 seconds to ensure the page is loaded');
+  await page.waitForTimeout(5000);
 
   console.log('Filter by dqd_plugin')
-  await page.getByRole('button', { name: 'All flows' }).click();
+  await page.getByRole('button', { name: 'All flows' }).click({ timeout: 10000 });
+  await page.getByRole('combobox', { name: 'Search' }).click();
+  await page.getByRole('combobox', { name: 'Search' }).fill('dqd_plugin');
   // Wait for 10 seconds to ensure the flows list is loaded
-  await page.waitForTimeout(10000);
+  console.log('Wait for 5 seconds to ensure the flows list is loaded');
+  await page.waitForTimeout(5000);
   console.log('All flows button clicked');
   await expect(page.getByRole('option', { name: 'dqd_plugin' })).toBeVisible();
   await page.getByRole('option', { name: 'dqd_plugin' }).click({ timeout: 10000 });
+  await page.getByRole('button', { name: 'All flows' }).click({ timeout: 10000 });
   console.log('dqd_plugin option clicked');
   await page.locator('div').filter({ hasText: /^Flowsdqd_plugin\+0$/ }).locator('svg').nth(1).click();
 
