@@ -11,8 +11,12 @@ test('copy-dataset-id-schema-name', async ({ page }) => {
   await page.getByRole('link', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
-  const dataset_id = await page.getByRole('cell').nth(1).textContent();
-  const schema_name = await page.getByRole('cell').nth(3).textContent();
+
+  // Click button for dataset ID and schema name
+  const dataset_id = await page.locator('button.alp-icon-button--icon-only').first().locator('xpath=ancestor::td').textContent();
+  const schema_name = await page.locator('button.alp-icon-button--icon-only').nth(1).locator('xpath=ancestor::td').textContent();
+
+  // Check if the cell contains the dataset ID and schema name
   await expect(page.locator('tbody')).toContainText(dataset_id);
   await expect(page.locator('tbody')).toContainText(schema_name);
 });
