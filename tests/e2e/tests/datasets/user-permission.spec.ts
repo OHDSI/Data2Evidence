@@ -23,11 +23,13 @@ test('dataset-user-permission', async ({ page }) => {
   await page.getByRole('tab', { name: 'Access' }).click();
 
   console.log('Grant access to admin user')
-  await page.getByTestId('dialog').getByTestId('button').click();
-  await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible();
+  const addButton = page.getByTestId('dialog').getByTestId('button');
+  await expect(addButton).toBeVisible();
+  await addButton.click();
+  await expect(page.getByRole('menu')).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible({ timeout: 15000 });
   await page.getByRole('menuitem', { name: 'admin' }).click();
-  await page.waitForTimeout(3000);
-  await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible({ timeout: 10000 });
 
   console.log('Revoke access to admin user')
   await expect(page.getByRole('button', { name: 'Revoke' })).toBeVisible();
