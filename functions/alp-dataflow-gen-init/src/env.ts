@@ -1,3 +1,4 @@
+import { AuthMode, DatabaseDialect, TransformedDBCredentials } from "./types";
 const _env = Deno.env.toObject();
 
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
@@ -72,3 +73,25 @@ export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
 export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
+
+
+export function getConfigDbCredentials(): TransformedDBCredentials {
+  return {
+    readUser: _env.PG_ADMIN_USER || null, // TODO: Update this to use a read-only user if available
+    readPassword: _env.PG_ADMIN_PASSWORD || null,
+    adminUser: _env.PG_ADMIN_USER || null,
+    adminPassword: _env.PG_ADMIN_PASSWORD || null,
+    dialect: DatabaseDialect.PG,
+    databaseCode: "config",
+    databaseName: "config",
+    host: _env.PG__HOST || "",
+    port: parseInt(_env.PG__PORT || "5432", 10),
+    encrypt: false,
+    validateCertificate: false,
+    sslTrustStore: "",
+    hostnameInCertificate: "",
+    enableAuditPolicies: false,
+    readRole: "",
+    authMode: AuthMode.PASSWORD,
+  };
+}
