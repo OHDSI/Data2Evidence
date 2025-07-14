@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
  
-test.skip('Logout', async ({ page }) => {
+test('Logout', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.skip('attribute-display', async ({ page }) => {
+test('attribute-display', async ({ page }) => {
   console.log('Sign in')
   await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()

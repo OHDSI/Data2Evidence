@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.skip('add-dataset-with-existing-schema', async ({ page }) => {
+test('add-dataset-with-existing-schema', async ({ page }) => {
   console.log('Sign in')
   await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()

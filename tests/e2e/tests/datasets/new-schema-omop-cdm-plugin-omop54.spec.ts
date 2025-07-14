@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.skip('dataset-new-schema-omop-cdm-plugin-54', async ({ page }) => {
+test('dataset-new-schema-omop-cdm-plugin-54', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
