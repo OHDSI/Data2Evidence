@@ -63,7 +63,7 @@ jobs:
             rkernel:
               - "./services/enterprise-gateway/r-strategus-lib/**"
               - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              - ".github/workflows/docker-build-push.yaml"
+              
 
   bld:
     needs: [check_file_changes]
