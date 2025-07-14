@@ -132,7 +132,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
-            build_arg1: true
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
