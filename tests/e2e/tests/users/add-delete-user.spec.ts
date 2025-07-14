@@ -33,6 +33,7 @@ test('add-delete-user', async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).nth(1).click();
   await page.getByRole('button', { name: 'Yes, delete' }).click();
   console.log('Check if user is deleted')
+  await page.reload();
   await page.waitForTimeout(3000);
   await expect(page.getByRole('cell', { name: 'test_user' })).not.toBeVisible();
 });
