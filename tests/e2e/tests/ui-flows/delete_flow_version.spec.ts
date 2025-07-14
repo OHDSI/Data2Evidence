@@ -9,11 +9,10 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'ETL' }).click();
-  await page.waitForTimeout(15000);
-  await page.getByLabel('Create new dataflow').getByRole('button').click();
-  await page.getByRole('textbox', { name: 'Name' }).fill('testcase_flow');
-  await page.getByRole('textbox', { name: 'Name' }).press('Tab');
-  await page.getByRole('textbox', { name: 'Comment' }).fill('testcase_flow');
+  await page.waitForTimeout(10000);
+
+  await page.locator('div.alp-button__container').filter({ hasText: new RegExp('^Create your first dataflow$') }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('testflow');
   await page.getByRole('button', { name: 'Create' }).click();
 
   await page.locator('div.node-type-selection__title').filter({ hasText: new RegExp('^Python$') }).click();  
