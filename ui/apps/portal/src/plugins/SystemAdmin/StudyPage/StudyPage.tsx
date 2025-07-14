@@ -22,12 +22,18 @@ export const StudyPage: FC<StudyPageProps> = () => {
   const { setFeedback } = useFeedback();
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
+  const [isNetworkStudies, setIsNetworkStudies] = useState<boolean>(false);
   const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
+  }, []);
+
+  const handleNetworkStudiesToggle = useCallback(() => {
+    setIsNetworkStudies((prev) => !prev);
+    setSelectedDatasetId("");
   }, []);
 
   useEffect(() => {
@@ -55,8 +61,50 @@ export const StudyPage: FC<StudyPageProps> = () => {
       }
     };
 
-    fetchStudies();
-  }, [setFeedback]);
+    const fetchLocalStudies = async () => {
+      setLoadingStudies(true);
+      setStudiesError(null);
+
+      try {
+        // TODO: Replace with actual logic to fetch local studies
+        const localStudiesData = [
+          {
+            strategus_json: "./studyA/strategus.json",
+            id: "local studyA",
+            name: "local studyA",
+          },
+          {
+            strategus_json: "./StrategusStudyRepoTemplate/inst/sampleStudy/sampleStudyAnalysisSpecification.json",
+            description: "Sample study description from ohdsi submodule-StrategusStudyRepoTemplate",
+            email: "we@data2evidence.care",
+            id: "local studyB",
+            name: "local studyB",
+          },
+          {
+            strategus_json: "./notfound",
+            description: "strategus.json does not exist for this study, test update",
+            email: "we@data2evidence.care",
+            id: "local studyC",
+            name: "local studyC",
+          },
+        ];
+
+        setStrategusStudies(localStudiesData);
+      } catch (error) {
+        console.error("Error fetching studies from service:", error);
+        setStudiesError("Failed to fetch studies from service");
+        setStrategusStudies([]);
+      } finally {
+        setLoadingStudies(false);
+      }
+    };
+
+    if (isNetworkStudies) {
+      fetchStudies();
+    } else {
+      fetchLocalStudies();
+    }
+  }, [setFeedback, isNetworkStudies]);
 
   if (loadingDatasets) return <Loader />;
 
@@ -99,7 +147,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
           </Select>
         </div>
         <FormControlLabel
-          control={<Switch />}
+          control={<Switch onClick={handleNetworkStudiesToggle} />}
           label={<Typography fontWeight={500}>{getText(i18nKeys.STUDY_PAGE__TOGGLE_NETWORK_STUDIES)}</Typography>}
           sx={{ fontWeight: 500 }}
         />
