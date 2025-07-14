@@ -352,6 +352,7 @@ test('patient_analytics_bookmark', async ({ page }) => {
           .locator('.footer .icon-button[title="Delete Saved Filter"]')
           .click();
         await page.getByRole('button', { name: 'Delete' }).click({timeout: 40000});
+        await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
         await expect(page.getByText('Shared saved filter')).not.toBeVisible({timeout: 20000});
         //Logout as admin
         await page.getByRole('link', { name: 'Account' }).click();
