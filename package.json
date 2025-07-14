@@ -46,7 +46,6 @@
     "yarn": "1.22.10"
   },
   "dependencies": {
-    "@octokit/rest": "^22.0.0",
     "dotenv": "^16.4.7",
     "zx": "^8.3.2"
   }
