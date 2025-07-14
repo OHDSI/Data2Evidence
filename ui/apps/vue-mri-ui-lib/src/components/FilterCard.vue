@@ -98,7 +98,7 @@
           </div>
         </div>
       </template>
-      <b-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
+      <app-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
         <div class="row">
           <div class="col">
             <!-- attributes -->
@@ -137,7 +137,7 @@
             </div>
           </template>
         </dialogBox>
-      </b-collapse>
+      </app-collapse>
     </app-card>
   </div>
 </template>
@@ -149,6 +149,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appBadge from '../lib/ui/app-badge.vue'
 import appCard from '../lib/ui/app-card.vue'
+import appCollapse from '../lib/ui/app-collapse.vue'
 import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
@@ -495,6 +496,7 @@ export default {
     appIcon,
     appBadge,
     appCard,
+    appCollapse,
     constraint,
     advancedtime,
     dialogBox,

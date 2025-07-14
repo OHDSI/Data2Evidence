@@ -22,7 +22,7 @@
           <br />
         </div>
       </template>
-      <b-collapse :id="id" role="tabpanel" v-model="showCollapse">
+      <app-collapse :id="id" role="tabpanel" v-model="showCollapse">
         <template v-for="(item, index) in model.props.timeFilterModel.timeFilters" :key="index">
           <div class="row">
             <div class="col">
@@ -116,7 +116,7 @@
             </div>
           </div>
         </template>
-      </b-collapse>
+      </app-collapse>
     </app-card>
   </div>
 </template>
@@ -124,6 +124,7 @@
 import appIcon from '../lib/ui/app-icon.vue'
 import bsButton from '../lib/ui/bs-button.vue'
 import appCard from '../lib/ui/app-card.vue'
+import appCollapse from '../lib/ui/app-collapse.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
@@ -352,6 +353,7 @@ export default {
     appIcon,
     bsButton,
     appCard,
+    appCollapse,
     appLabel,
   },
 }
