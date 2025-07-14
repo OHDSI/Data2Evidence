@@ -1207,6 +1207,7 @@ export const i18nDefault = {
     STUDY_PAGE__REPOSITORY_SERVICE_ISSUE: "Repository service issue: {0}",
     STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR: "No studies available due to repository error",
     STUDY_PAGE__NO_STUDIES_FOUND: "No studies found in repository",
+    STUDY_PAGE__TOGGLE_NETWORK_STUDIES: "Use network studies",
   },
 };
 

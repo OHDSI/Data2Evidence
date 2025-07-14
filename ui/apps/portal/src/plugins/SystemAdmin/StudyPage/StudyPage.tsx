@@ -1,6 +1,9 @@
 import { Loader, MenuItem, Select, SelectChangeEvent } from "@portal/components";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import React, { FC, useCallback, useEffect, useState } from "react";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
+import { Typography } from "@mui/material";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { useDatasets } from "../../../hooks";
@@ -95,6 +98,11 @@ export const StudyPage: FC<StudyPageProps> = () => {
             ))}
           </Select>
         </div>
+        <FormControlLabel
+          control={<Switch />}
+          label={<Typography fontWeight={500}>{getText(i18nKeys.STUDY_PAGE__TOGGLE_NETWORK_STUDIES)}</Typography>}
+          sx={{ fontWeight: 500 }}
+        />
       </div>
 
       <div className="study-page__content">

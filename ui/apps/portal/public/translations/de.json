@@ -988,5 +988,6 @@
   "STUDY_PAGE__ERROR_LOADING_DATASETS": "Fehler beim Laden der Datensätze: {0}",
   "STUDY_PAGE__REPOSITORY_SERVICE_ISSUE": "Repository-Service-Problem: {0}",
   "STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR": "Aufgrund eines Repository-Fehlers sind keine Studien verfügbar",
-  "STUDY_PAGE__NO_STUDIES_FOUND": "Keine Studien im Repository gefunden"
+  "STUDY_PAGE__NO_STUDIES_FOUND": "Keine Studien im Repository gefunden",
+  "STUDY_PAGE__TOGGLE_NETWORK_STUDIES": "Nutzen Sie Netzwerkstudien"
 }
