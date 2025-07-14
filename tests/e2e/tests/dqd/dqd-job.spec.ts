@@ -16,8 +16,11 @@ test('dqd_job', async ({ page }) => {
   console.log('Go to Jobs')
   await page.getByRole('link', { name: 'Jobs' }).click();
   await page.getByRole('button', { name: 'Job Runs' }).click();
-  console.log('Wait for 5 seconds to ensure the page is loaded');
-  await page.waitForTimeout(5000);
+  console.log('Wait for 15 seconds to ensure the page is loaded');
+  await page.waitForTimeout(15000);
+
+  // Debug: Take a screenshot to see what's on the page
+  await page.screenshot({ path: 'debug-jobs-page.png', fullPage: true });
 
   console.log('Filter by dqd_plugin')
   await page.getByRole('button', { name: 'All flows' }).click({ timeout: 10000 });
