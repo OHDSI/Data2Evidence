@@ -105,13 +105,13 @@
           </div>
           <div class="row">
             <div class="col">
-              <b-button
+              <bs-button
                 v-if="model.props.timeFilterModel.timeFilters.length > 1"
                 size="sm"
-                :variant="secondary"
+                variant="secondary"
                 @click="deleteTimeFilter(index)"
                 style="margin-bottom: 10px"
-                >{{ getText('MRI_PA_BUTTON_DELETE') }}</b-button
+                >{{ getText('MRI_PA_BUTTON_DELETE') }}</bs-button
               >
             </div>
           </div>
@@ -122,6 +122,7 @@
 </template>
 <script lang="ts">
 import appIcon from '../lib/ui/app-icon.vue'
+import bsButton from '../lib/ui/bs-button.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { ADVANCEDTIME_SET_TIMEFILTER_TITLE } from '../store/mutation-types'
@@ -347,6 +348,7 @@ export default {
   components: {
     helpPopover,
     appIcon,
+    bsButton,
   },
 }
 </script>
