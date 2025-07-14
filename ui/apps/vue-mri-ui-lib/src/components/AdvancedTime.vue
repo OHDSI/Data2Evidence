@@ -1,6 +1,6 @@
 <template>
   <div class="form-group advancedtime-filter">
-    <b-card>
+    <app-card>
       <template v-slot:header>
         <div class="d-flex">
           <div class="mr-auto">
@@ -117,12 +117,14 @@
           </div>
         </template>
       </b-collapse>
-    </b-card>
+    </app-card>
   </div>
 </template>
 <script lang="ts">
 import appIcon from '../lib/ui/app-icon.vue'
 import bsButton from '../lib/ui/bs-button.vue'
+import appCard from '../lib/ui/app-card.vue'
+import appLabel from '../lib/ui/app-label.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { ADVANCEDTIME_SET_TIMEFILTER_TITLE } from '../store/mutation-types'
@@ -349,6 +351,8 @@ export default {
     helpPopover,
     appIcon,
     bsButton,
+    appCard,
+    appLabel,
   },
 }
 </script>

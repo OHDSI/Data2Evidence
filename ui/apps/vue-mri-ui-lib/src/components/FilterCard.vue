@@ -22,7 +22,7 @@
         <appButton :click="onRenameSubmit" :text="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_BUTTON')"></appButton>
       </template>
     </messageBox>
-    <b-card v-bind:class="getClasses()">
+    <app-card v-bind:class="getClasses()">
       <template v-slot:header>
         <div class="d-flex" role="tab">
           <button
@@ -138,7 +138,7 @@
           </template>
         </dialogBox>
       </b-collapse>
-    </b-card>
+    </app-card>
   </div>
 </template>
 <script lang="ts">
@@ -148,6 +148,7 @@ import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appBadge from '../lib/ui/app-badge.vue'
+import appCard from '../lib/ui/app-card.vue'
 import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
@@ -493,6 +494,7 @@ export default {
     appLabel,
     appIcon,
     appBadge,
+    appCard,
     constraint,
     advancedtime,
     dialogBox,

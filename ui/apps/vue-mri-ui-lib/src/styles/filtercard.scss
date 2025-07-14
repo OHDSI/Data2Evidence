@@ -38,11 +38,11 @@
     background-color: $TableHeaderRowBG !important;
   }
 
-  .card {
+  .app-card {
     @include card;
   }
 
-  .card-header {
+  .app-card__header {
     @include card-header;
 
     label {
@@ -61,7 +61,7 @@
     }
   }
 
-  .card-body {
+  .app-card__body {
     padding: 0 0.75rem;
     min-height: 0;
   }
@@ -115,12 +115,12 @@
 .appBasicFilterCard {
   padding-bottom: 0rem;
 
-  .card {
+  .app-card {
     @include card;
     margin: 0 8px;
   }
 
-  .card-header {
+  .app-card__header {
     @include card-header;
   }
 }
@@ -132,11 +132,11 @@
 }
 
 .MriPaFilterCardNew {
-  .card {
+  .app-card {
     @include card;
   }
 
-  .card:before {
+  .app-card:before {
     content: '';
     position: absolute;
     top: 0;
