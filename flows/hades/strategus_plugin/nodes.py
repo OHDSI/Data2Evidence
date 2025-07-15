@@ -236,12 +236,12 @@ class CharacterizationModuleSpecNode(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CharacterizationModule/v0.5.0/SettingsFunctions.R")
-                rCreateCharacterizationModuleSpecifications = ro.globalenv['createCharacterizationModuleSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcm = rStrategus.CharacterizationModule['new']()
+                rcmCreateModuleSpec = rcm['createModuleSpecifications']
                 # ensure rCovariateSettings has at least one value
                 rCovariateSettings = get_results_by_class_type(input, DefaultCovariateSettingsNode)
-                rCharacterizationSpec = rCreateCharacterizationModuleSpecifications(
+                rCharacterizationSpec = rcmCreateModuleSpec(
                     targetIds = convert_py_to_R(self.targetIds), 
                     outcomeIds = convert_py_to_R(self.outcomeIds), 
                     covariateSettings = rCovariateSettings[0], 
@@ -362,9 +362,9 @@ class CohortDiagnosticsModuleSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource(Variable.get("cohort_diagnostics_module_settings_url"))
-                rCreateCohortDiagnosticsModuleSpecifications = ro.globalenv["createCohortDiagnosticsModuleSpecifications"]
+                rStrategus = ro.packages.importr('Strategus')
+                rcdm = rStrategus.CohortDiagnosticsModule['new']()
+                rCreateCohortDiagnosticsModuleSpecifications = rcdm['createCohortDiagnosticsModuleSpecifications']
                 rCohortDiagnosticsSpec = rCreateCohortDiagnosticsModuleSpecifications(
                     runInclusionStatistics = convert_py_to_R(self.runInclusionStatistics),
                     runIncludedSourceConcepts = convert_py_to_R(self.runIncludedSourceConcepts),
@@ -490,9 +490,9 @@ class CohortMethodModuleSpecNode(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/CohortMethodModule/v0.3.0/SettingsFunctions.R')
-                rCreateCohortMethodModuleSpecifications = ro.globalenv["createCohortMethodModuleSpecifications"]
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortMethodModule = rStrategus.CohortMethodModule['new']()
+                rCreateCohortMethodModuleSpecifications = rCohortMethodModule['createModuleSpecifications']
                 rCmAnalysisList = get_results_by_class_type(_input, CohortMethodAnalysis)
                 rTargetComparatorOutcomesList = get_results_by_class_type(_input, TargetComparatorOutcomes)
                 rCohortMethodSpec = rCreateCohortMethodModuleSpecifications(
