@@ -218,7 +218,7 @@
   "CREATE_RELEASE_DIALOG__RELEASE_NAME": "Release-Name",
   "CREATE_SEMANTIC_SEARCH_DIALOG__CANCEL": "Abbrechen",
   "CREATE_SEMANTIC_SEARCH_DIALOG__RUN": "Semantische Suche einrichten",
-  "CREATE_SEMANTIC_SEARCH_DIALOG__RUN_SUCCESS": "Erfolgreiche Erstellung der semantischen Suche für Datensatz: {0}",
+  "CREATE_SEMANTIC_SEARCH_DIALOG__RUN_SUCCESS": "Die semantische Suche für den Datensatz wurde erfolgreich erstellt: {0}",
   "CREATE_SEMANTIC_SEARCH_DIALOG__TITLE": "Semantische Suche für Datensatz: {0} einrichten",
   "CSV_READER__CLICK_MESSAGE": "Klicken Sie hier, um eine Datei auszuwählen oder eine Datei abzulegen",
   "CSV_READER__SUPPORTED_FILE_TYPES": "Unterstützte Dateitypen: CSV",

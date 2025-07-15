@@ -257,7 +257,7 @@ export const i18nDefault = {
     CREATE_RELEASE_DIALOG__RELEASE_NAME: "Release name",
     CREATE_SEMANTIC_SEARCH_DIALOG__CANCEL: "Cancel",
     CREATE_SEMANTIC_SEARCH_DIALOG__RUN: "Setup semantic search",
-    CREATE_SEMANTIC_SEARCH_DIALOG__RUN_SUCCESS: "Successfully trigger the semantic search creation for dataset: {0}",
+    CREATE_SEMANTIC_SEARCH_DIALOG__RUN_SUCCESS: "Successfully generated the semantic search creation for dataset: {0}",
     CREATE_SEMANTIC_SEARCH_DIALOG__TITLE: "Setup semantic search for dataset: {0}",
     CSV_READER__CLICK_MESSAGE: "Click here to choose a file, or drop a file",
     CSV_READER__SUPPORTED_FILE_TYPES: "Supported file types: CSV",
