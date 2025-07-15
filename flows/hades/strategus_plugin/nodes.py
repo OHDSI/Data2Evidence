@@ -731,10 +731,10 @@ class SCCSModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/SelfControlledCaseSeriesModule/v0.4.1/SettingsFunctions.R')
+                rStrategus = ro.packages.importr('Strategus')
+                rSccsModule = rStrategus.SelfControlledCaseSeriesModule['new']()
+                rCreatSelfControlledCaseSeriesModuleSpecifications = rSccsModule['createModuleSpecifications']
                 rSccsAnalysisList = get_results_by_class_type(input, SCCSAnalysis)
-                rCreatSelfControlledCaseSeriesModuleSpecifications = ro.globalenv['creatSelfControlledCaseSeriesModuleSpecifications']
                 rSccsModuleSpec = rCreatSelfControlledCaseSeriesModuleSpecifications(
                     sccsAnalysisList = rSccsAnalysisList,
                     exposuresOutcomeList = get_results_by_class_type(input, ExposuresOutcome), 
@@ -771,8 +771,6 @@ class PLPModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/PatientLevelPredictionModule/v0.3.0/SettingsFunctions.R')
                 studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
                 # filter patientLevelPredictionArgs from StudyPopulationResults (as it contains other args)
                 rPlpPopulationSettings = [r["patientLevelPredictionArgs"] for r in studyPopulationResults if r["patientLevelPredictionArgs"] != None]
@@ -791,7 +789,9 @@ class PLPModuleSpec(Node):
                             )
                             rModelDesignList.append([rModelDesignSettings])
 
-                rCreatePatientLevelPredictionModuleSpecifications = ro.globalenv['createPatientLevelPredictionModuleSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rPlpModule = rStrategus.PatientLevelPredictionModule['new']()
+                rCreatePatientLevelPredictionModuleSpecifications = rPlpModule['createModuleSpecifications']
                 rPlpModuleSpecifications = rCreatePatientLevelPredictionModuleSpecifications(modelDesignList = rModelDesignList)
                 return Result(False,  rPlpModuleSpecifications, self, task_run_context)
             except Exception as e:
