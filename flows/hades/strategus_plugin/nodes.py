@@ -289,9 +289,9 @@ class CohortDefinitionSharedResource(Node):
                     sqlFolder = 'testdata/sql',
                     packageName = 'Strategus'
                 )
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R")
-                rCreateCohortSharedResourceSpecifications = ro.globalenv['createCohortSharedResourceSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcgm = rStrategus.CohortGeneratorModule['new']()
+                rCreateCohortSharedResourceSpecifications = rcgm['createCohortSharedResourceSpecifications']
                 rCohortDefinitionSharedResource = rCreateCohortSharedResourceSpecifications(cohortDefinitionSet = rCohortDefinitionSet)
                 return Result(False,  rCohortDefinitionSharedResource, self, task_run_context)
             except Exception as e:
@@ -310,10 +310,10 @@ class NegativeControlOutcomeCohortSharedResource(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R")
                 rNcoCohortSet = get_results_by_class_type(_input, NegativeControlCohortSet)
-                rCreateNegativeControlOutcomeCohortSharedResourceSpecifications = ro.globalenv['createNegativeControlOutcomeCohortSharedResourceSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcgm = rStrategus.CohortGeneratorModule['new']()
+                rCreateNegativeControlOutcomeCohortSharedResourceSpecifications = rcgm['createNegativeControlOutcomeCohortSharedResourceSpecifications']
                 rNegativeCoSharedResource = rCreateNegativeControlOutcomeCohortSharedResourceSpecifications(
                     negativeControlOutcomeCohortSet = rNcoCohortSet[0],
                     occurrenceType = convert_py_to_R(self.occurenceType),
@@ -333,10 +333,10 @@ class CohortGeneratorSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try: 
-                rSource = ro.r['source']
-                rSource(Variable.get("cohort_generator_module_settings_url"))
-                rCreateCohortGeneratorModuleSpecifications = ro.globalenv['createCohortGeneratorModuleSpecifications']
-                rCohortGeneratorModuleSpecifications = rCreateCohortGeneratorModuleSpecifications(convert_py_to_R(self.incremental), convert_py_to_R(self.generate_stats))
+                rStrategus = importr('Strategus')
+                rcgModule = rStrategus.CohortGeneratorModule['new']()
+                rCreateModuleSpecifications = rcgModule['createModuleSpecifications']
+                rCohortGeneratorModuleSpecifications = rCreateModuleSpecifications(convert_py_to_R(self.incremental), convert_py_to_R(self.generate_stats))
                 return Result(False,  rCohortGeneratorModuleSpecifications, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
