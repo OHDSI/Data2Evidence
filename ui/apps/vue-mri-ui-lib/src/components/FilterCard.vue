@@ -37,7 +37,7 @@
             <button
               class="btn btn-link btn-sm btn-collapse"
               @click="showCollapse = !showCollapse"
-              :class="showCollapse ? 'collapsed' : 'null'"
+              :class="showCollapse ? 'collapsed' : null"
               :aria-controls="id"
               :aria-expanded="showCollapse ? 'true' : 'false'"
             >
@@ -70,19 +70,24 @@
 
                 <div class="dropdown-divider"></div>
                 <!-- attributes -->
-                <b-form-checkbox-group stacked v-model="checkedAttributes" :text-field="text">
+                <bs-checkbox-group stacked v-model="checkedAttributes" :text-field="text">
                   <template v-for="item in moreButtonMenuAttributes" :key="item">
                     <div class="dropdown-item bg-white text-body" :style="dropdownItemStyle">
-                      <b-form-checkbox :value="item.value">{{ item.text }}</b-form-checkbox>
+                      <bs-checkbox :value="item.value">{{ item.text }}</bs-checkbox>
                     </div>
                   </template>
-                </b-form-checkbox-group>
+                </bs-checkbox-group>
 
                 <div v-if="moreButtonMenuTimeOperations.length > 0" class="dropdown-divider"></div>
                 <!-- time -->
                 <template v-for="item in moreButtonMenuTimeOperations" :key="item">
-                  <b-dropdown-item class="dropdown-item bg-white text-body" @click="onMoreMenuItemSelected(item)">
-                    <b-form-checkbox :checked="isChecked(item)">{{ item.text }}</b-form-checkbox>
+                  <b-dropdown-item class="dropdown-item bg-white text-body">
+                    <bs-checkbox
+                      :checked="isChecked(item)"
+                      :menu-item="item"
+                      @menu-item-click="onMoreMenuItemSelected"
+                      >{{ item.text }}</bs-checkbox
+                    >
                   </b-dropdown-item>
                 </template>
 
@@ -90,7 +95,12 @@
                 <!-- exclude -->
                 <template v-for="item in moreButtonMenuExcludeOperation" :key="item">
                   <b-dropdown-item @click="onMoreMenuItemSelected(item)">
-                    <b-form-checkbox :checked="isChecked(item)">{{ item.text }}</b-form-checkbox>
+                    <bs-checkbox
+                      :checked="isChecked(item)"
+                      :menu-item="item"
+                      @menu-item-click="onMoreMenuItemSelected"
+                      >{{ item.text }}</bs-checkbox
+                    >
                   </b-dropdown-item>
                 </template>
               </div>
@@ -150,6 +160,8 @@ import appIcon from '../lib/ui/app-icon.vue'
 import appBadge from '../lib/ui/app-badge.vue'
 import appCard from '../lib/ui/app-card.vue'
 import appCollapse from '../lib/ui/app-collapse.vue'
+import bsCheckbox from '../lib/ui/bs-checkbox.vue'
+import bsCheckboxGroup from '../lib/ui/bs-checkbox-group.vue'
 import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
@@ -497,6 +509,8 @@ export default {
     appBadge,
     appCard,
     appCollapse,
+    bsCheckbox,
+    bsCheckboxGroup,
     constraint,
     advancedtime,
     dialogBox,
