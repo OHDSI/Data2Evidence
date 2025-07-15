@@ -13,6 +13,11 @@
     margin-bottom: 32px;
   }
 
+  &__tabs {
+    display: flex;
+    justify-content: center;
+  }
+
   &__dataset-selector {
     display: flex;
     align-items: center;

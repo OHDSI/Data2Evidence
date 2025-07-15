@@ -1,9 +1,8 @@
-import { Loader, MenuItem, Select, SelectChangeEvent } from "@portal/components";
+import { Loader, MenuItem, Select, SelectChangeEvent, Box } from "@portal/components";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import React, { FC, useCallback, useEffect, useState } from "react";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import { Typography } from "@mui/material";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { useDatasets } from "../../../hooks";
@@ -17,12 +16,17 @@ interface StrategusStudiesData {
   [studyId: string]: StrategusStudy;
 }
 
+enum StudyLocationTab {
+  Local = "local",
+  Network = "network",
+}
+
 export const StudyPage: FC<StudyPageProps> = () => {
   const { getText, i18nKeys } = useTranslation();
   const { setFeedback } = useFeedback();
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
-  const [isNetworkStudies, setIsNetworkStudies] = useState<boolean>(false);
+  const [tabValue, setTabValue] = useState(StudyLocationTab.Local);
   const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
@@ -31,9 +35,8 @@ export const StudyPage: FC<StudyPageProps> = () => {
     setSelectedDatasetId(event.target.value);
   }, []);
 
-  const handleNetworkStudiesToggle = useCallback(() => {
-    setIsNetworkStudies((prev) => !prev);
-    setSelectedDatasetId("");
+  const handleTabSelectionChange = useCallback(async (event: React.SyntheticEvent, newValue: StudyLocationTab) => {
+    setTabValue(newValue);
   }, []);
 
   useEffect(() => {
@@ -99,12 +102,12 @@ export const StudyPage: FC<StudyPageProps> = () => {
       }
     };
 
-    if (isNetworkStudies) {
+    if (tabValue === StudyLocationTab.Network) {
       fetchStudies();
     } else {
       fetchLocalStudies();
     }
-  }, [setFeedback, isNetworkStudies]);
+  }, [setFeedback, tabValue]);
 
   if (loadingDatasets) return <Loader />;
 
@@ -146,12 +149,14 @@ export const StudyPage: FC<StudyPageProps> = () => {
             ))}
           </Select>
         </div>
-        <FormControlLabel
-          control={<Switch onClick={handleNetworkStudiesToggle} />}
-          label={<Typography fontWeight={500}>{getText(i18nKeys.STUDY_PAGE__TOGGLE_NETWORK_STUDIES)}</Typography>}
-          sx={{ fontWeight: 500 }}
-        />
       </div>
+
+      <Box className="study-page__tabs">
+        <Tabs value={tabValue} onChange={handleTabSelectionChange}>
+          <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_LOCAL_STUDIES)} value={StudyLocationTab.Local} />
+          <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_NETWORK_STUDIES)} value={StudyLocationTab.Network} />
+        </Tabs>
+      </Box>
 
       <div className="study-page__content">
         <h2 className="study-page__section-title">{getText(i18nKeys.STUDY_PAGE__STUDY_LIST)}</h2>
