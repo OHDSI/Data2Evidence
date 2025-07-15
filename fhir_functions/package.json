@@ -10,7 +10,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@data2evidence/trex": "~0.8.0",
+    "@data2evidence/trex": "latest",
     "deno": "latest"
   },
   "trex": {
