@@ -1,8 +1,8 @@
-import React, { FC, useCallback } from "react";
-import { Box, Dialog, DialogProps } from "@portal/components";
+import React, { ChangeEvent, FC, useCallback, useState } from "react";
+import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
 import { NODE_COLORS, NodeChoiceMap } from "../index";
-import { NodeTypeChoice } from "../type";
+import { NodeTag, NodeTypeChoice } from "../type";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
@@ -16,6 +16,8 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   connectorType,
   ...props
 }) => {
+  const [hideExperimental, setHideExperimental] = useState(true);
+
   const handleClose = useCallback(
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
@@ -42,6 +44,11 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       <Box className="select-node-type-dialog__content">
         {Object.keys(NodeChoiceMap)
           .filter((nodeType: NodeTypeChoice) =>
+            hideExperimental
+              ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
+              : true
+          )
+          .filter((nodeType: NodeTypeChoice) =>
             connectorType ? NODE_COLORS[nodeType] === connectorType : true
           )
           .map((nodeType: NodeTypeChoice) => (
@@ -52,7 +59,15 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
             />
           ))}
       </Box>
-      <Box className="select-node-type-dialog__footer"></Box>
+      <Box className="select-node-type-dialog__footer">
+        <Checkbox
+          label="Hide experimental"
+          checked={hideExperimental}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setHideExperimental(e.target.checked)
+          }
+        />
+      </Box>
     </Dialog>
   );
 };
