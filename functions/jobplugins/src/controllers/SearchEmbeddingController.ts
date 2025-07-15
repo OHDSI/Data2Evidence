@@ -21,7 +21,7 @@ export class SearchEmbeddingController {
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          res.status(400).json({ errors: errors.array() });
+          return res.status(400).json({ errors: errors.array() });
         }
         await this.createSearchEmbeddingFlowRun(req, res);
       }
