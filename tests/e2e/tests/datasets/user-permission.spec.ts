@@ -27,8 +27,8 @@ test('dataset-user-permission', async ({ page }) => {
   await expect(addButton).toBeVisible();
   await addButton.click();
   await expect(page.getByRole('menu')).toBeVisible({ timeout: 10000 });
-  // Wait for 5 seconds to ensure the menu items are visible
-  await page.waitForTimeout(5000);
+  // Wait for 10 seconds to ensure the menu items are visible
+  await page.waitForTimeout(10000);
   await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible({ timeout: 10000 });
   await page.getByRole('menuitem', { name: 'admin' }).click();
   await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible({ timeout: 10000 });
