@@ -5,15 +5,15 @@ import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { CloseDialogType, CreateCacheFlowRun, Feedback, Study } from "../../../../types";
-import "./CreateCacheDialog.scss";
+import "./SetupSemanticSearchDialog.scss";
 
-interface CreateCacheDialogProps {
+interface SetupSemanticSearchDialogProps {
   dataset?: Study;
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
 }
 
-const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose }) => {
+const SetupSemanticSearchDialog: FC<SetupSemanticSearchDialogProps> = ({ dataset, open, onClose }) => {
   const { getText } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
   const [updating, setUpdating] = useState(false);
@@ -33,11 +33,11 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
       setUpdating(true);
 
       const data: CreateCacheFlowRun = { datasetId: dataset?.id };
-      await api.dataflow.createCacheFlowRun(data);
+      await api.dataflow.createSearchEmbeddingFlowRun(data);
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.CREATE_CACHE_DIALOG__RUN_SUCCESS, [String(dataset?.studyDetail?.name)]),
+        message: getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__RUN_SUCCESS, [String(dataset?.studyDetail?.name)]),
       });
       setTimeout(() => handleClose("success"), 6000);
     } catch (err: any) {
@@ -53,8 +53,8 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
 
   return (
     <Dialog
-      className="create-cache-dialog"
-      title={getText(i18nKeys.CREATE_CACHE_DIALOG__TITLE, [String(dataset?.studyDetail?.name)])}
+      className="setup-semantic-search-dialog"
+      title={getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__TITLE, [String(dataset?.studyDetail?.name)])}
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
@@ -66,16 +66,21 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
 
       <div className="button-group-actions">
         <Button
-          text={getText(i18nKeys.CREATE_CACHE_DIALOG__CANCEL)}
+          text={getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__CANCEL)}
           onClick={() => handleClose("cancelled")}
           variant="outlined"
           block
           disabled={updating}
         />
-        <Button text={getText(i18nKeys.CREATE_CACHE_DIALOG__RUN)} block loading={updating} onClick={handleSubmit} />
+        <Button
+          text={getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__RUN)}
+          block
+          loading={updating}
+          onClick={handleSubmit}
+        />
       </div>
     </Dialog>
   );
 };
 
-export default CreateCacheDialog;
+export default SetupSemanticSearchDialog;
