@@ -185,9 +185,9 @@ class CohortIncidenceModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/CohortIncidenceModule/v0.4.0/SettingsFunctions.R')
-                rCohortIncidence = ro.packages.importr('CohortIncidence')
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortIncidence = rStrategus.CohortIncidenceModule['new']()
+                rCreateCohortIncidenceModuleSpecifications = rCohortIncidence['createModuleSpecifications']
                 rTargets = []
                 for o in self.cohortRefs:
                     rTargets.append(rCohortIncidence.createCohortRef(id = convert_py_to_R(int(o['id'])), name = o['name']))
