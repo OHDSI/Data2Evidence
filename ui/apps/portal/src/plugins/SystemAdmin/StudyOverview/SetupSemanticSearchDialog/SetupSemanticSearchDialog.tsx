@@ -4,7 +4,7 @@ import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
-import { CloseDialogType, CreateCacheFlowRun, Feedback, Study } from "../../../../types";
+import { CloseDialogType, CreateSemanticSearchFlowRun, Feedback, Study } from "../../../../types";
 import "./SetupSemanticSearchDialog.scss";
 
 interface SetupSemanticSearchDialogProps {
@@ -32,7 +32,7 @@ const SetupSemanticSearchDialog: FC<SetupSemanticSearchDialogProps> = ({ dataset
     try {
       setUpdating(true);
 
-      const data: CreateCacheFlowRun = { datasetId: dataset?.id };
+      const data: CreateSemanticSearchFlowRun = { datasetId: dataset?.id };
       await api.dataflow.createSearchEmbeddingFlowRun(data);
 
       setFeedback({
