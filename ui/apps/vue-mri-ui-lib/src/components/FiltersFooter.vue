@@ -11,7 +11,7 @@
         />
       </div>
       <div class="d-flex justify-content-center align-items-center">
-        <b-dropdown variant="link" size="sm" no-caret style="margin-left: 8px">
+        <bs-dropdown variant="link" size="sm" no-caret style="margin-left: 8px">
           <template v-slot:button-content>
             <d4l-button
               v-if="!splitAddButton"
@@ -34,13 +34,13 @@
           </template>
           <div class="dropdown-scroll">
             <template v-for="item in getFilterCardMenu" :key="item">
-              <b-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key)">{{
+              <bs-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key)">{{
                 item.text
-              }}</b-dropdown-item-button>
+              }}</bs-dropdown-item-button>
             </template>
           </div>
-        </b-dropdown>
-        <b-dropdown v-if="splitAddButton" variant="link" size="sm" no-caret dropup>
+        </bs-dropdown>
+        <bs-dropdown v-if="splitAddButton" variant="link" size="sm" no-caret dropup>
           <template v-slot:button-content>
             <d4l-button
               :text="getText('MRI_PA_VB_CREATE_FILTERS_EXCLUDED')"
@@ -50,12 +50,12 @@
           </template>
           <div class="dropdown-scroll">
             <template v-for="item in getFilterCardMenu" :key="item">
-              <b-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key, true)">{{
+              <bs-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key, true)">{{
                 item.text
-              }}</b-dropdown-item-button>
+              }}</bs-dropdown-item-button>
             </template>
           </div>
-        </b-dropdown>
+        </bs-dropdown>
       </div>
       <div>
         <d4l-button
@@ -164,6 +164,8 @@
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
@@ -335,6 +337,8 @@ export default {
   components: {
     appButton,
     appCheckbox,
+    bsDropdown,
+    bsDropdownItemButton,
     DialogBox,
     messageBox,
   },

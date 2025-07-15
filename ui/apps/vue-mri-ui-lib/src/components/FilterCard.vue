@@ -54,7 +54,7 @@
           </div>
           <div>
             <!-- filter card context menu -->
-            <b-dropdown variant="link" size="sm" class="btn-filtercard-menu" no-caret>
+            <bs-dropdown variant="link" size="sm" class="btn-filtercard-menu" no-caret align="right">
               <template v-slot:button-content>
                 <appIcon
                   icon="menu"
@@ -65,46 +65,46 @@
               <!-- operations -->
               <div class="dropdown-scroll" :style="dropdownScrollStyle">
                 <template v-for="item in moreButtonMenuOperations" :key="item">
-                  <b-dropdown-item @click="onMoreMenuItemSelected(item)">{{ item.text }}</b-dropdown-item>
+                  <bs-dropdown-item @click="onMoreMenuItemSelected(item)">{{ item.text }}</bs-dropdown-item>
                 </template>
 
-                <div class="dropdown-divider"></div>
+                <bs-dropdown-divider></bs-dropdown-divider>
                 <!-- attributes -->
                 <bs-checkbox-group stacked v-model="checkedAttributes" :text-field="text">
                   <template v-for="item in moreButtonMenuAttributes" :key="item">
-                    <div class="dropdown-item bg-white text-body" :style="dropdownItemStyle">
+                    <div class="bs-dropdown-item bg-white text-body" :style="dropdownItemStyle">
                       <bs-checkbox :value="item.value">{{ item.text }}</bs-checkbox>
                     </div>
                   </template>
                 </bs-checkbox-group>
 
-                <div v-if="moreButtonMenuTimeOperations.length > 0" class="dropdown-divider"></div>
+                <bs-dropdown-divider v-if="moreButtonMenuTimeOperations.length > 0"></bs-dropdown-divider>
                 <!-- time -->
                 <template v-for="item in moreButtonMenuTimeOperations" :key="item">
-                  <b-dropdown-item class="dropdown-item bg-white text-body">
+                  <bs-dropdown-item class="bs-dropdown-item bg-white text-body">
                     <bs-checkbox
                       :checked="isChecked(item)"
                       :menu-item="item"
                       @menu-item-click="onMoreMenuItemSelected"
                       >{{ item.text }}</bs-checkbox
                     >
-                  </b-dropdown-item>
+                  </bs-dropdown-item>
                 </template>
 
-                <div v-if="moreButtonMenuExcludeOperation.length > 0" class="dropdown-divider"></div>
+                <bs-dropdown-divider v-if="moreButtonMenuExcludeOperation.length > 0"></bs-dropdown-divider>
                 <!-- exclude -->
                 <template v-for="item in moreButtonMenuExcludeOperation" :key="item">
-                  <b-dropdown-item @click="onMoreMenuItemSelected(item)">
+                  <bs-dropdown-item @click="onMoreMenuItemSelected(item)">
                     <bs-checkbox
                       :checked="isChecked(item)"
                       :menu-item="item"
                       @menu-item-click="onMoreMenuItemSelected"
                       >{{ item.text }}</bs-checkbox
                     >
-                  </b-dropdown-item>
+                  </bs-dropdown-item>
                 </template>
               </div>
-            </b-dropdown>
+            </bs-dropdown>
           </div>
         </div>
       </template>
@@ -162,6 +162,9 @@ import appCard from '../lib/ui/app-card.vue'
 import appCollapse from '../lib/ui/app-collapse.vue'
 import bsCheckbox from '../lib/ui/bs-checkbox.vue'
 import bsCheckboxGroup from '../lib/ui/bs-checkbox-group.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
+import bsDropdownDivider from '../lib/ui/bs-dropdown-divider.vue'
 import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
@@ -511,6 +514,9 @@ export default {
     appCollapse,
     bsCheckbox,
     bsCheckboxGroup,
+    bsDropdown,
+    bsDropdownItem,
+    bsDropdownDivider,
     constraint,
     advancedtime,
     dialogBox,
