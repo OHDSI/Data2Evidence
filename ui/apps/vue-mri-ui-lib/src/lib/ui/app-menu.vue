@@ -14,7 +14,6 @@
 import bsDropdown from './bs-dropdown.vue'
 import bsDropdownItem from './bs-dropdown-item.vue'
 
-// TODO: IMPLEMENT MENU IN BOOTSTRAP
 export default {
   compatConfig: {
     MODE: 3,

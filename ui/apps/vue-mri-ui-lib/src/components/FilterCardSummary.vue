@@ -95,9 +95,6 @@ import messageBox from './MessageBox.vue'
 import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
 
 export default {
-  // compatConfig: {
-  //   MODE: 3,
-  // },
   name: 'filterCardSummary',
   props: ['unloadBookmarkEv', 'chartBusy'],
   data() {
