@@ -29,6 +29,7 @@ import {
   CensorType,
 } from "./TreatmentPatternsNode/TreatmentPatternsType";
 import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
 import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
 
 export const NODE_TYPES: {
@@ -59,6 +60,9 @@ export const NODE_TYPES: {
   exposure_node: ExposureNode,
   strategus_node: PlainNode,
   treatment_patterns_node: TreatmentPatternsNode,
+  cohort_event_node: CohortSelectionNode,
+  cohort_target_node: CohortSelectionNode,
+  cohort_exit_node: CohortSelectionNode,
 };
 
 export const NODE_COLORS: {
@@ -88,6 +92,9 @@ export const NODE_COLORS: {
   exposure_node: "lightgrey",
   strategus_node: "black",
   treatment_patterns_node: "salmon",
+  cohort_event_node: "lightblue",
+  cohort_target_node: "teal",
+  cohort_exit_node: "lavenderblush",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -388,7 +395,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   treatment_patterns_node: {
     title: "Treatment Patterns",
     description: "Run treatment patterns code.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       cohorts: [],
       includeTreatments: IncludeTreatments.StartDate,
@@ -404,6 +411,33 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       ageWindow: 10,
       minCellCount: 5,
       censorType: CensorType.MinCellCount,
+    },
+  },
+  cohort_event_node: {
+    title: "Event Cohort Selection",
+    description: "Select event cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "event",
+      cohorts: [],
+    },
+  },
+  cohort_target_node: {
+    title: "Target Cohort Selection",
+    description: "Select target cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "target",
+      cohorts: [],
+    },
+  },
+  cohort_exit_node: {
+    title: "Exit Cohort Selection",
+    description: "Select exit cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "exit",
+      cohorts: [],
     },
   },
 };

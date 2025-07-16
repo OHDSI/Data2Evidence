@@ -22,7 +22,10 @@ export type NodeType =
   | "cohort_definition_set_node"
   | "exposure_node"
   | "strategus_node"
-  | "treatment_patterns_node";
+  | "treatment_patterns_node"
+  | "cohort_event_node"
+  | "cohort_target_node"
+  | "cohort_exit_node";
 
 export type NodeTypeChoice = Exclude<NodeType, "start">;
 
@@ -77,7 +80,10 @@ export const TWO_INCIDENCE_NODE = [
   "self_controlled_case_series_node",
   "strategus_node",
 ];
-export const THREE_INCIDENCE_NODE = ["patient_level_prediction_node"];
+export const THREE_INCIDENCE_NODE = [
+  "patient_level_prediction_node",
+  "treatment_patterns_node",
+];
 export const FOUR_INCIDENCE_NODE = [];
 export const FIVE_INCIDENCE_NODE = [];
 
@@ -230,6 +236,34 @@ export const NODE_CONNECTOR_MAPPING = {
   },
   treatment_patterns_node: {
     type: "salmon",
+    connector_list: [
+      {
+        name: "Target Cohorts",
+        type: "teal",
+        classifier: "cohort_target_node",
+      },
+      {
+        name: "Event Cohorts",
+        type: "lightblue",
+        classifier: "cohort_event_node",
+      },
+      {
+        name: "Exit Cohorts",
+        type: "lavenderblush",
+        classifier: "cohort_exit_node",
+      },
+    ],
+  },
+  cohort_event_node: {
+    type: "lightblue",
+    connector_list: [],
+  },
+  cohort_target_node: {
+    type: "teal",
+    connector_list: [],
+  },
+  cohort_exit_node: {
+    type: "lavenderblush",
     connector_list: [],
   },
 };
