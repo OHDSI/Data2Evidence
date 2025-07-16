@@ -397,7 +397,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     description: "Run treatment patterns code.",
     tag: NodeTag.Stable,
     defaultData: {
-      cohorts: [],
       includeTreatments: IncludeTreatments.StartDate,
       indexDateOffset: 0,
       minEraDuration: 0,
