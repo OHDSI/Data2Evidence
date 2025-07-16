@@ -18,6 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: check node version
+        run: |
+          node -v 
+
       - name: npm install
         if: success() || failure()
         run: |
