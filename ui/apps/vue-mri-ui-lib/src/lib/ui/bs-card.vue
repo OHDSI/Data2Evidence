@@ -1,14 +1,14 @@
 <template>
-  <div class="app-card">
-    <div v-if="hasHeader" class="app-card__header">
+  <div class="bs-card">
+    <div v-if="hasHeader" class="bs-card__header">
       <slot name="header">
-        <h5 v-if="title" class="app-card__title">{{ title }}</h5>
+        <h5 v-if="title" class="bs-card__title">{{ title }}</h5>
       </slot>
     </div>
-    <div class="app-card__body">
+    <div class="bs-card__body">
       <slot></slot>
     </div>
-    <div v-if="hasFooter" class="app-card__footer">
+    <div v-if="hasFooter" class="bs-card__footer">
       <slot name="footer"></slot>
     </div>
   </div>
@@ -41,7 +41,7 @@ export default {
 
 <style lang="scss">
 // Base Bootstrap card styles (self-contained since Bootstrap is removed)
-.app-card {
+.bs-card {
   position: relative;
   display: flex;
   flex-direction: column;

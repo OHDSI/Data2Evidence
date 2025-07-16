@@ -1,12 +1,12 @@
 <template>
-  <span :class="badgeClasses" class="app-badge">
+  <span :class="badgeClasses" class="bs-badge">
     <slot>{{ text }}</slot>
   </span>
 </template>
 
 <script lang="ts">
 export default {
-  name: 'AppBadge',
+  name: 'BsBadge',
   compatConfig: {
     MODE: 3,
   },
@@ -29,15 +29,15 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const badgeClasses = computed(() => [
-  `app-badge--${props.variant}`,
+  `bs-badge--${props.variant}`,
   {
-    'app-badge--pill': props.pill,
+    'bs-badge--pill': props.pill,
   },
 ])
 </script>
 
 <style lang="scss" scoped>
-.app-badge {
+.bs-badge {
   display: inline-block;
   padding: 0.25em 0.4em;
   font-size: 0.75em;
@@ -102,7 +102,7 @@ const badgeClasses = computed(() => [
 }
 
 // Links inside badges should inherit color
-.app-badge a {
+.bs-badge a {
   color: inherit;
   text-decoration: none;
 

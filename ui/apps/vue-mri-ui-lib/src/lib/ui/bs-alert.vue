@@ -2,15 +2,15 @@
   <div
     v-if="isVisible"
     :class="alertClasses"
-    class="app-alert"
+    class="bs-alert"
     role="alert"
     :aria-live="ariaLive"
     :aria-atomic="ariaAtomic"
   >
-    <div class="app-alert__content">
+    <div class="bs-alert__content">
       <slot>{{ text }}</slot>
     </div>
-    <button v-if="dismissible" @click="dismiss" class="app-alert__close" type="button" :aria-label="closeLabel">
+    <button v-if="dismissible" @click="dismiss" class="bs-alert__close" type="button" :aria-label="closeLabel">
       ×
     </button>
   </div>
@@ -18,7 +18,7 @@
 
 <script lang="ts">
 export default {
-  name: 'AppAlert',
+  name: 'BsAlert',
   compatConfig: {
     MODE: 3,
   },
@@ -63,9 +63,9 @@ const alertClasses = computed(() => {
   // Map 'error' to 'danger' for Bootstrap compatibility
   const variant = props.variant === 'error' ? 'danger' : props.variant
   return [
-    `app-alert--${variant}`,
+    `bs-alert--${variant}`,
     {
-      'app-alert--dismissible': props.dismissible,
+      'bs-alert--dismissible': props.dismissible,
     },
   ]
 })
@@ -114,7 +114,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.app-alert {
+.bs-alert {
   position: relative;
   padding: 0.75rem 1.25rem;
   margin-bottom: 1rem;

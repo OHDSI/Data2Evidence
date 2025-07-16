@@ -26,9 +26,9 @@
                         getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
                       }}</span>
                       <span class="bookmark-headelement" v-else>{{ filterCard.name }}</span>
-                      <app-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ml-2 filter-card-badge">{{
+                      <bs-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ml-2 filter-card-badge">{{
                         getBadgeText(filterCard)
-                      }}</app-badge>
+                      }}</bs-badge>
                       <span class="bookmark-headelement" v-if="filterCard.isExcluded"
                         >({{ getText('MRI_PA_LABEL_EXCLUDED') }})</span
                       >
@@ -90,7 +90,7 @@ import { mapActions, mapGetters } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import icon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
-import appBadge from '../lib/ui/app-badge.vue'
+import bsBadge from '../lib/ui/bs-badge.vue'
 import messageBox from './MessageBox.vue'
 import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
 
@@ -335,7 +335,7 @@ export default {
     messageBox,
     appButton,
     appLabel,
-    appBadge,
+    bsBadge,
     CreateCohortDefinitionDialog,
   },
 }

@@ -22,7 +22,7 @@
         <appButton :click="onRenameSubmit" :text="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_BUTTON')"></appButton>
       </template>
     </messageBox>
-    <app-card v-bind:class="getClasses()">
+    <bs-card v-bind:class="getClasses()">
       <template v-slot:header>
         <div class="d-flex" role="tab">
           <button
@@ -45,9 +45,9 @@
               <appIcon icon="slimArrowRight" v-if="!showCollapse"></appIcon>
             </button>
             <label>{{ name }}</label>
-            <app-badge v-if="displayShowCohortEntryExit" variant="light" class="ml-2 filter-card-badge">{{
+            <bs-badge v-if="displayShowCohortEntryExit" variant="light" class="ml-2 filter-card-badge">{{
               entryExitLabel
-            }}</app-badge>
+            }}</bs-badge>
             <span v-show="isDisabled" class="card-help-button" @click="openHelp">
               <appIcon icon="information"></appIcon>
             </span>
@@ -108,7 +108,7 @@
           </div>
         </div>
       </template>
-      <app-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
+      <bs-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
         <div class="row">
           <div class="col">
             <!-- attributes -->
@@ -147,8 +147,8 @@
             </div>
           </template>
         </dialogBox>
-      </app-collapse>
-    </app-card>
+      </bs-collapse>
+    </bs-card>
   </div>
 </template>
 <script lang="ts">
@@ -157,9 +157,9 @@ import { FILTERCARD_REMOVE_NEW_STATE } from '../store/mutation-types'
 import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
-import appBadge from '../lib/ui/app-badge.vue'
-import appCard from '../lib/ui/app-card.vue'
-import appCollapse from '../lib/ui/app-collapse.vue'
+import bsBadge from '../lib/ui/bs-badge.vue'
+import bsCard from '../lib/ui/bs-card.vue'
+import bsCollapse from '../lib/ui/bs-collapse.vue'
 import bsCheckbox from '../lib/ui/bs-checkbox.vue'
 import bsCheckboxGroup from '../lib/ui/bs-checkbox-group.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
@@ -509,9 +509,9 @@ export default {
     appButton,
     appLabel,
     appIcon,
-    appBadge,
-    appCard,
-    appCollapse,
+    bsBadge,
+    bsCard,
+    bsCollapse,
     bsCheckbox,
     bsCheckboxGroup,
     bsDropdown,

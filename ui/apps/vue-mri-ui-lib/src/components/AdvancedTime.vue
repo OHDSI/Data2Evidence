@@ -1,6 +1,6 @@
 <template>
   <div class="form-group advancedtime-filter">
-    <app-card>
+    <bs-card>
       <template v-slot:header>
         <div class="d-flex">
           <div class="mr-auto">
@@ -22,7 +22,7 @@
           <br />
         </div>
       </template>
-      <app-collapse :id="id" role="tabpanel" v-model="showCollapse">
+      <bs-collapse :id="id" role="tabpanel" v-model="showCollapse">
         <template v-for="(item, index) in model.props.timeFilterModel.timeFilters" :key="index">
           <div class="row">
             <div class="col">
@@ -116,15 +116,15 @@
             </div>
           </div>
         </template>
-      </app-collapse>
-    </app-card>
+      </bs-collapse>
+    </bs-card>
   </div>
 </template>
 <script lang="ts">
 import appIcon from '../lib/ui/app-icon.vue'
 import bsButton from '../lib/ui/bs-button.vue'
-import appCard from '../lib/ui/app-card.vue'
-import appCollapse from '../lib/ui/app-collapse.vue'
+import bsCard from '../lib/ui/bs-card.vue'
+import bsCollapse from '../lib/ui/bs-collapse.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
@@ -352,8 +352,8 @@ export default {
     helpPopover,
     appIcon,
     bsButton,
-    appCard,
-    appCollapse,
+    bsCard,
+    bsCollapse,
     appLabel,
   },
 }

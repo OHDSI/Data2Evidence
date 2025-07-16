@@ -1,14 +1,14 @@
 <template>
-  <app-alert show dismissible :variant="messageType" @dismissed="ok"> {{ header }}: {{ message }} </app-alert>
+  <bs-alert show dismissible :variant="messageType" @dismissed="ok"> {{ header }}: {{ message }} </bs-alert>
 </template>
 <script lang="ts">
 import { mapGetters } from 'vuex'
-import AppAlert from '@/lib/ui/app-alert.vue'
+import BsAlert from '@/lib/ui/bs-alert.vue'
 
 export default {
   name: 'notification',
   components: {
-    AppAlert,
+    BsAlert,
   },
   props: {
     messageType: {
