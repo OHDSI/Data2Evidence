@@ -128,10 +128,6 @@ const open = async () => {
 
   // Check if we need to flip the dropdown
   checkFlipNeeded()
-
-  // Focus first menu item for accessibility
-  const firstItem = dropdownRef.value?.querySelector('.bs-dropdown-item') as HTMLElement
-  firstItem?.focus()
 }
 
 const close = () => {
