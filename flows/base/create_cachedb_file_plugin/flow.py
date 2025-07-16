@@ -57,7 +57,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     #Connect to Trex Sql Interface
     trex_conn = psycopg2.connect(
             host= Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_ports"),
+            port=Variable.get("trex_sql_port"),
             user=Variable.get("trex_sql_user"),
             password=Secret.load("trex-sql-password").get(),
             dbname=Variable.get("trex_sql_dbname")
@@ -101,7 +101,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     #Connect to Trex Sql Interface
     trex_conn = psycopg2.connect(
         host=Variable.get("trex_sql_host"),
-        port=Variable.get("trex_sql_ports"),
+        port=Variable.get("trex_sql_port"),
         user=Variable.get("trex_sql_user"),
         password=Secret.load("trex-sql-password").get(),
         dbname=Variable.get("trex_sql_dbname")
