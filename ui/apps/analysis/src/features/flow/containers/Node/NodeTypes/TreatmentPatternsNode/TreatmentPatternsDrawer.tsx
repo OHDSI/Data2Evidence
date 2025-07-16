@@ -25,8 +25,6 @@ import { TreatmentPatternsNodeData } from "./TreatmentPatternsNode";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import {
-  TreatmentPatternsCohort,
-  TreatmentPatternsCohortType,
   IncludeTreatments,
   FilterTreatments,
   CensorType,
@@ -42,7 +40,6 @@ interface FormData extends TreatmentPatternsNodeData {}
 
 const EMPTY_FORM_DATA: FormData = {
   name: "",
-  cohorts: [],
   includeTreatments: IncludeTreatments.StartDate,
   indexDateOffset: 0,
   minEraDuration: 0,
@@ -56,12 +53,6 @@ const EMPTY_FORM_DATA: FormData = {
   ageWindow: 10,
   minCellCount: 5,
   censorType: CensorType.MinCellCount,
-};
-
-const EMPTY_TREATMENT_PATTERNS_COHORT: TreatmentPatternsCohort = {
-  cohortId: "",
-  cohortName: "",
-  type: TreatmentPatternsCohortType.Target,
 };
 
 export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
@@ -78,7 +69,6 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
     if (node.data) {
       setFormData({
         name: node.data.name,
-        cohorts: node.data.cohorts,
         includeTreatments: node.data.includeTreatments,
         indexDateOffset: node.data.indexDateOffset,
         minEraDuration: node.data.minEraDuration,
@@ -101,12 +91,6 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
     }
   }, [node.data]);
 
-  const handleAddCohort = useCallback(() => {
-    onFormDataChange({
-      cohorts: [EMPTY_TREATMENT_PATTERNS_COHORT, ...formData.cohorts],
-    });
-  }, [onFormDataChange, formData.cohorts]);
-
   const handleOk = useCallback(() => {
     const updated: NodeState<TreatmentPatternsNodeData> = {
       ...nodeState,
@@ -128,77 +112,6 @@ export const TreatmentPatternsDrawer: FC<TreatmentPatternsDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
-      </Box>
-      <Box mb={4}>
-        <InputLabel shrink>Cohorts</InputLabel>
-        <Button variant="text" text="Add Cohort" onClick={handleAddCohort} />
-        {formData.cohorts.map((cohort, index) => (
-          <Box
-            key={index}
-            display="flex"
-            flexDirection="column"
-            gap={1}
-            marginTop="-1px"
-          >
-            <Box display="flex" gap={1} mb="-1px" alignItems="end">
-              <TextInput
-                label="Cohort Id"
-                value={cohort.cohortId}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.map((cohort, i) =>
-                      i === index
-                        ? { ...cohort, cohortId: e.target.value }
-                        : cohort
-                    ),
-                  })
-                }
-              />
-              <TextInput
-                label="Cohort Name"
-                value={cohort.cohortName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.map((cohort, i) =>
-                      i === index
-                        ? { ...cohort, cohortName: e.target.value }
-                        : cohort
-                    ),
-                  })
-                }
-              />
-              <FormControl variant="standard" sx={{ width: "200px" }} fullWidth>
-                <InputLabel shrink>Type</InputLabel>
-                <Select
-                  value={cohort.type}
-                  onChange={(e: SelectChangeEvent) =>
-                    onFormDataChange({
-                      cohorts: formData.cohorts.map((cohort, i) =>
-                        i === index
-                          ? { ...cohort, type: e.target.value }
-                          : cohort
-                      ),
-                    })
-                  }
-                >
-                  {Object.values(TreatmentPatternsCohortType).map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <IconButton
-                startIcon={<ClearIcon />}
-                onClick={() =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.filter((_, i) => i !== index),
-                  })
-                }
-              />
-            </Box>
-          </Box>
-        ))}
       </Box>
       <Box mb={4}>
         <FormControl variant="standard" fullWidth>

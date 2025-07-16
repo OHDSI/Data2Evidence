@@ -6,14 +6,12 @@ import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { TreatmentPatternsDrawer } from "./TreatmentPatternsDrawer";
 import {
-  TreatmentPatternsCohort,
   IncludeTreatments,
   FilterTreatments,
   CensorType,
 } from "./TreatmentPatternsType";
 
 export interface TreatmentPatternsNodeData extends NodeDataState {
-  cohorts: TreatmentPatternsCohort[];
   includeTreatments: IncludeTreatments;
   indexDateOffset: number;
   minEraDuration: number;
