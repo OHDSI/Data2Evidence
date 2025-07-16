@@ -26,7 +26,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 
-// Transition duration in milliseconds - change this to adjust animation speed
+const TRANSITION_DURATION = 300 // milliseconds - matches CSS transition duration
 
 interface Props {
   modelValue?: boolean
@@ -112,7 +112,7 @@ const handleTransition = async (show: boolean) => {
       isTransitioning.value = false
       contentHeight.value = null
       emit('shown')
-    }, 300) // Match the CSS transition duration
+    }, TRANSITION_DURATION)
   } else {
     emit('hide')
 
@@ -132,7 +132,7 @@ const handleTransition = async (show: boolean) => {
       isTransitioning.value = false
       contentHeight.value = null
       emit('hidden')
-    }, 300) // Match the CSS transition duration
+    }, TRANSITION_DURATION)
   }
 }
 

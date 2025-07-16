@@ -10,7 +10,7 @@
     <div class="app-alert__content">
       <slot>{{ text }}</slot>
     </div>
-    <button v-if="dismissible" @click="dismiss" class="app-alert__close jeroome" type="button" :aria-label="closeLabel">
+    <button v-if="dismissible" @click="dismiss" class="app-alert__close" type="button" :aria-label="closeLabel">
       ×
     </button>
   </div>

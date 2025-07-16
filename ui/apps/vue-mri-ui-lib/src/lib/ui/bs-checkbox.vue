@@ -34,6 +34,10 @@ import { computed, useSlots, inject } from 'vue'
 /**
  * Checkbox component with group support and dropdown compatibility
  *
+ * Uses Vue 3 provide/inject pattern for group coordination:
+ * - Group provides reactive context with modelValue array and updateValue function
+ * - Individual checkboxes inject this context to sync their state with the group
+ *
  * Usage patterns:
  * 1. Inside bs-checkbox-group: Uses inject to get group's v-model array
  * 2. Standalone with :checked: Visual indicator only, emits menu-item-click for parent handling

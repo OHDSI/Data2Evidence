@@ -1,6 +1,5 @@
 <template>
   <div :class="['bs-checkbox-group', { 'bs-checkbox-group--stacked': stacked, 'bs-checkbox-group--inline': !stacked }]">
-    <!-- Child bs-checkbox components go here -->
     <slot></slot>
   </div>
 </template>
