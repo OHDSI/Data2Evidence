@@ -1,14 +1,14 @@
 <template>
-  <div class="bs-collapse">
+  <div class="app-collapse">
     <div
       ref="contentRef"
-      class="bs-collapse__content"
-      :class="{ 'bs-collapse__content--open': modelValue }"
+      class="app-collapse__content"
+      :class="{ 'app-collapse__content--open': modelValue }"
       :style="contentStyle"
       :role="role"
       :aria-hidden="!modelValue"
     >
-      <div class="bs-collapse__inner">
+      <div class="app-collapse__inner">
         <slot></slot>
       </div>
     </div>
@@ -153,7 +153,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.bs-collapse {
+.app-collapse {
   &__content {
     transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     overflow: hidden;
@@ -162,7 +162,7 @@ onMounted(() => {
 
 // Respect user's motion preferences
 @media (prefers-reduced-motion: reduce) {
-  .bs-collapse__content {
+  .app-collapse__content {
     transition: none;
   }
 }

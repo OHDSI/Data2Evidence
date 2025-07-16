@@ -1,14 +1,14 @@
 <template>
-  <div class="bs-card">
-    <div v-if="hasHeader" class="bs-card__header">
+  <div class="card">
+    <div v-if="hasHeader" class="card-header">
       <slot name="header">
-        <h5 v-if="title" class="bs-card__title">{{ title }}</h5>
+        <h5 v-if="title" class="card-title">{{ title }}</h5>
       </slot>
     </div>
-    <div class="bs-card__body">
+    <div class="card-body">
       <slot></slot>
     </div>
-    <div v-if="hasFooter" class="bs-card__footer">
+    <div v-if="hasFooter" class="card-footer">
       <slot name="footer"></slot>
     </div>
   </div>
@@ -41,7 +41,7 @@ export default {
 
 <style lang="scss">
 // Base Bootstrap card styles (self-contained since Bootstrap is removed)
-.bs-card {
+.card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -51,41 +51,41 @@ export default {
   background-clip: border-box;
   border: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
+}
 
-  &__header {
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 0;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+.card-header {
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
 
-    &:first-child {
-      border-radius: calc(0.25rem - 1px) calc(0.25rem - 1px) 0 0;
-    }
+  &:first-child {
+    border-radius: calc(0.25rem - 1px) calc(0.25rem - 1px) 0 0;
   }
+}
 
-  &__title {
-    margin-bottom: 0;
-    font-size: 1.25rem;
-    font-weight: 500;
-    line-height: 1.2;
-    color: inherit;
-  }
+.card-title {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: inherit;
+}
 
-  &__body {
-    flex: 1 1 auto;
-    min-height: 1px;
-    padding: 1.25rem;
-    color: inherit;
-  }
+.card-body {
+  flex: 1 1 auto;
+  min-height: 1px;
+  padding: 1.25rem;
+  color: inherit;
+}
 
-  &__footer {
-    padding: 0.75rem 1.25rem;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-top: 1px solid rgba(0, 0, 0, 0.125);
+.card-footer {
+  padding: 0.75rem 1.25rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.125);
 
-    &:last-child {
-      border-radius: 0 0 calc(0.25rem - 1px) calc(0.25rem - 1px);
-    }
+  &:last-child {
+    border-radius: 0 0 calc(0.25rem - 1px) calc(0.25rem - 1px);
   }
 }
 </style>

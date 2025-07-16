@@ -1,7 +1,7 @@
 @import './mri-variables';
 @import './mixins';
 .advancedtime-filter {
-  .app-card__header {
+  .card-header {
     color: $MriHeaderTextDark;
     min-height: 33px;
     background-color: $MRICardHeaderBG;
@@ -17,7 +17,7 @@
       color: $MriHeaderTextDark;
     }
   }
-  .app-card__body {
+  .card-body {
     padding: 12px 20px 12px 20px !important;
     .app-single-select + label {
       margin: 5px 15px;
