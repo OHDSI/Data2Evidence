@@ -1,3 +1,4 @@
+import re
 import traceback
 from functools import partial
 import json
@@ -152,6 +153,9 @@ def runStrategus(json_graph, options):
 
     if(not study_id):
        raise Exception('StudyId is missing')
+    pattern = r'^[a-zA-Z0-9_]+$'
+    if bool(re.match(pattern, study_id)) == False:
+        raise Exception(f'StudyId {study_id} is not valid. It should only contain alphanumeric characters and underscores.')
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -173,6 +177,7 @@ def runStrategus(json_graph, options):
     if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
     
+    analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = json.dumps({
         "workDatabaseSchema": schema_name,
         "cdmDatabaseSchema": schema_name,
