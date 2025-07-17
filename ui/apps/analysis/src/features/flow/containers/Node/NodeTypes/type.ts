@@ -26,28 +26,8 @@ export type NodeType =
 export type NodeTypeChoice = Exclude<NodeType, "start">;
 
 export enum NodeTag {
-  Aquamarine = "aquamarine",
-  Blue = "blue",
-  Chocolate = "chocolate",
-  Cyan = "cyan",
-  Darkgreen = "darkgreen",
-  Darkred = "darkred",
-  Green = "green",
-  Grey = "grey",
-  Indigo = "indigo",
-  Lavender = "lavender",
-  Lightgrey = "lightgrey",
-  Lightpink = "lightpink",
-  Lime = "lime",
-  Magenta = "magenta",
-  Mediumpurple = "mediumpurple",
-  Orange = "orange",
-  Red = "red",
-  Wheat = "wheat",
-  Olive = "olive",
-  Skyblue = "skyblue",
-  Steelblude = "steelblue",
-  Black = "black",
+  Experimental = "Experimental",
+  Stable = "Stable",
 }
 
 export interface NodeChoiceAttr {
