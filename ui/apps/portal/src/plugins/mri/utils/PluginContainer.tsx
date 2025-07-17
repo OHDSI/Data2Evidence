@@ -30,7 +30,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
   }, [studyId, releaseId]);
 
   return (
-    <span
+    <div
       className="plugin-container"
       ref={(node: any) => {
         if (node) {
@@ -47,7 +47,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
       }}
     >
       {children}
-    </span>
+    </div>
   );
 };
 
