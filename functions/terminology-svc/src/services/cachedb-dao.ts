@@ -479,14 +479,11 @@ export class CachedbDAO {
     const vocabularyIdFilter = filters.vocabularyId.map((filterValue) => {
       return `c.vocabulary_id = '${filterValue}'`;
     });
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todaySeconds = Math.floor(Number(today) / 1000);
     const validityFilter = filters.validity.map((filterValue) => {
       if (filterValue === "Valid") {
-        return `c.valid_end_date >= ${todaySeconds}`;
+        return `c.valid_end_date >= current_date`;
       } else {
-        return `c.valid_end_date < ${todaySeconds}`;
+        return `c.valid_end_date < current_date`;
       }
     });
 
