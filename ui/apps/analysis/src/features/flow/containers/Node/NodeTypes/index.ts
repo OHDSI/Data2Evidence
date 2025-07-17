@@ -92,9 +92,9 @@ export const NODE_COLORS: {
   exposure_node: "lightgrey",
   strategus_node: "black",
   treatment_patterns_node: "salmon",
-  cohort_event_node: "lightblue",
+  cohort_event_node: "teal",
   cohort_target_node: "teal",
-  cohort_exit_node: "lavenderblush",
+  cohort_exit_node: "teal",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {

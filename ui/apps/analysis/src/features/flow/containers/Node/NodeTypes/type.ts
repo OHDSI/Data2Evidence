@@ -244,18 +244,18 @@ export const NODE_CONNECTOR_MAPPING = {
       },
       {
         name: "Event Cohorts",
-        type: "lightblue",
+        type: "teal",
         classifier: "cohort_event_node",
       },
       {
         name: "Exit Cohorts",
-        type: "lavenderblush",
+        type: "teal",
         classifier: "cohort_exit_node",
       },
     ],
   },
   cohort_event_node: {
-    type: "lightblue",
+    type: "teal",
     connector_list: [],
   },
   cohort_target_node: {
@@ -263,7 +263,7 @@ export const NODE_CONNECTOR_MAPPING = {
     connector_list: [],
   },
   cohort_exit_node: {
-    type: "lavenderblush",
+    type: "teal",
     connector_list: [],
   },
 };
