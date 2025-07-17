@@ -1,4 +1,4 @@
-@import '../../../../../../theme/variables.scss';
+@use '../../../../../../theme/variables.scss' as *;
 
 .time-at-risk-node {
   background-color: white;
