@@ -14,6 +14,11 @@ export const seed = async () => {
   const FHIR_CLIENT_SECRET = env.FHIR__CLIENT_SECRET;
   const fhirCustomSchema = env.FHIR_CUSTOM_SCHEMA;
 
+  // Sanitize schema name to prevent SQL injection
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fhirCustomSchema)) {
+    throw new Error("Invalid schema name");
+  }
+
   if (!FHIR_CLIENT_ID || !FHIR_CLIENT_SECRET) {
     throw new Error("No client credentials are set for Fhir");
   }
