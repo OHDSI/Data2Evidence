@@ -211,7 +211,7 @@
                 "requiredRoles": [
                   "RESEARCHER"
                 ],
-                "enabled": false
+                "enabled": true
               }
             ]
           }
