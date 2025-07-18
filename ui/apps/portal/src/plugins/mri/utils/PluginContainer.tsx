@@ -1,6 +1,7 @@
 import React, { FC, ReactNode, useEffect } from "react";
 import { useToken, useTranslation } from "../../../contexts";
 import env from "../../../env";
+import "./PluginContainer.scss";
 
 interface PluginContainerProps {
   getToken?: () => Promise<string>;
