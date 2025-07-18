@@ -23,6 +23,13 @@ import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/Def
 import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
 import { CohortDefinitionSetNode } from "./CohortDefinitionSetNode/CohortDefinitionSetNode";
 import { ExposureNode } from "./ExposureNode/ExposureNode";
+import {
+  IncludeTreatments,
+  FilterTreatments,
+  CensorType,
+} from "./TreatmentPatternsNode/TreatmentPatternsType";
+import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
 import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
 
 export const NODE_TYPES: {
@@ -52,6 +59,10 @@ export const NODE_TYPES: {
   cohort_definition_set_node: CohortDefinitionSetNode,
   exposure_node: ExposureNode,
   strategus_node: PlainNode,
+  treatment_patterns_node: TreatmentPatternsNode,
+  cohort_event_node: CohortSelectionNode,
+  cohort_target_node: CohortSelectionNode,
+  cohort_exit_node: CohortSelectionNode,
 };
 
 export const NODE_COLORS: {
@@ -80,6 +91,10 @@ export const NODE_COLORS: {
   cohort_definition_set_node: "grey",
   exposure_node: "lightgrey",
   strategus_node: "black",
+  treatment_patterns_node: "salmon",
+  cohort_event_node: "teal",
+  cohort_target_node: "teal",
+  cohort_exit_node: "teal",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -376,6 +391,53 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     tag: NodeTag.Experimental,
     defaultData: {},
+  },
+  treatment_patterns_node: {
+    title: "Treatment Patterns",
+    description: "Run treatment patterns code.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      includeTreatments: IncludeTreatments.StartDate,
+      indexDateOffset: 0,
+      minEraDuration: 0,
+      splitEventCohorts: "",
+      splitTime: 30,
+      eraCollapseSize: 30,
+      combinationWindow: 30,
+      minPostCombinationDuration: 30,
+      filterTreatments: FilterTreatments.First,
+      maxPathLength: 5,
+      ageWindow: 10,
+      minCellCount: 5,
+      censorType: CensorType.MinCellCount,
+    },
+  },
+  cohort_event_node: {
+    title: "Event Cohort Selection",
+    description: "Select event cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "event",
+      cohorts: [],
+    },
+  },
+  cohort_target_node: {
+    title: "Target Cohort Selection",
+    description: "Select target cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "target",
+      cohorts: [],
+    },
+  },
+  cohort_exit_node: {
+    title: "Exit Cohort Selection",
+    description: "Select exit cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "exit",
+      cohorts: [],
+    },
   },
 };
 
