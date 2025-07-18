@@ -154,7 +154,7 @@ def runStrategus(json_graph, options):
     if(not study_id):
        raise Exception('StudyId is missing')
     pattern = r'^[a-zA-Z0-9_]+$'
-    if bool(re.match(pattern, study_id)) == False:
+    if not re.fullmatch(pattern, study_id):
         raise Exception(f'StudyId {study_id} is not valid. It should only contain alphanumeric characters and underscores.')
     if(not datasetId):
        raise Exception('DatasetId is missing')
