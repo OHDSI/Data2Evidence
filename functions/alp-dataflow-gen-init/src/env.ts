@@ -75,15 +75,15 @@ export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
 
 
-export function getConfigDbCredentials(): TransformedDBCredentials {
+export function getStrategusResultsDbCredentials(): TransformedDBCredentials {
   return {
-    readUser: _env.PG_ADMIN_USER || null, // TODO: Update this to use a read-only user if available
-    readPassword: _env.PG_ADMIN_PASSWORD || null,
-    adminUser: _env.PG_ADMIN_USER || null,
-    adminPassword: _env.PG_ADMIN_PASSWORD || null,
+    readUser: _env.PG__STRATEGUS_RESULTS_READ_USER || null, // TODO: Update this to use a read-only user if available
+    readPassword: _env.PG__STRATEGUS_RESULTS_READ_PASSWORD || null,
+    adminUser: _env.PG__STRATEGUS_RESULTS_ADMIN_USER || null,
+    adminPassword: _env.PG__STRATEGUS_RESULTS_ADMIN_PASSWORD || null,
     dialect: DatabaseDialect.PG,
-    databaseCode: "config",
-    databaseName: "config",
+    databaseCode: "strategus_results",
+    databaseName: _env.PG__STRATEGUS_RESULTS_DB_NAME || "strategus_results",
     host: _env.PG__HOST || "",
     port: parseInt(_env.PG__PORT || "5432", 10),
     encrypt: false,

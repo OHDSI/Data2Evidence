@@ -52,14 +52,14 @@ class DaoBase(ABC):
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
-    is_config_db: bool = False
+    is_strategus_results_db: bool = False
 
     def __init__(self,
                  use_cache_db: bool,
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
                  connect_to_duckdb: bool = False,
-                 is_config_db: bool = False):
+                 is_strategus_results_db: bool = False):
 
         secret_block = Secret.load("database-credentials").get()
         if secret_block is None:
@@ -70,7 +70,7 @@ class DaoBase(ABC):
         self.database_code = database_code
         self.user_type = user_type
         self.connect_to_duckdb = connect_to_duckdb
-        self.is_config_db = is_config_db
+        self.is_strategus_results_db = is_strategus_results_db
     # --- Property methods ---
 
     @property
@@ -363,8 +363,8 @@ class DaoBase(ABC):
 
     def __extract_database_credentials(self) -> DBCredentialsType:
         
-        if self.config_db:
-            return self.__extract_config_database_credentials()
+        if self.is_strategus_results_db:
+            return self.__extract_strategus_results_db_credentials()
         
         database_credentials_list = Secret.load("database-credentials").get()
         if not database_credentials_list:
@@ -382,16 +382,16 @@ class DaoBase(ABC):
                 raise ValueError(dialect_err)
         return database_credentials
     
-    def __extract_config_database_credentials(self) -> DBCredentialsType:
+    def __extract_strategus_results_db_credentials(self) -> DBCredentialsType:
         """
-        Extracts config database credentials from the secret block.
+        Extracts strategus results database credentials from the secret block.
         """
-        config_database_credentials = Secret.load("config-database-credentials").get()
+        strategus_results_db_credentials = Secret.load("strategus-results-database-credentials").get()
 
-        if not config_database_credentials:
-            raise ValueError(f"Database code '{self.database_code}' not found in 'CONFIG_DATABASE_CREDENTIALS'")
+        if not strategus_results_db_credentials:
+            raise ValueError(f"Database code '{self.database_code}' not found in 'strategus_results_db_credentials'")
 
-        return DBCredentialsType(**config_database_credentials)
+        return DBCredentialsType(**strategus_results_db_credentials)
 
     def __create_cachedb_db_name(self, database_credentials: DBCredentialsType, 
                                  schema_name: str, vocab_schema_name: str) -> str:

@@ -450,6 +450,11 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG__STRATEGUS_RESULTS_DB_NAME": "${PG__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
+            "PG__STRATEGUS_RESULTS_ADMIN_USER": "${PG_STRATEGUS_RESULTS_ADMIN_USER:-strategus_results_pg_admin_user}",
+            "PG__STRATEGUS_RESULTS_ADMIN_PASSWORD": "${PG_STRATEGUS_RESULTS_ADMIN_USER_PASSWORD}",
+            "PG__STRATEGUS_RESULTS_READ_USER": "${PG_STRATEGUS_RESULTS_READ_USER:-strategus_results_pg_read_user}",
+            "PG__STRATEGUS_RESULTS_READ_PASSWORD": "${PG_STRATEGUS_RESULTS_READ_PASSWORD}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -590,6 +595,11 @@ services:
            "schemas": {
             "+public": {}
            }
+          },
+          "+${PG__STRATEGUS_RESULTS_DB_NAME:-strategus_results}": {
+           "schemas": {
+            "+public": {}
+           }
           }
          }
         }
@@ -623,6 +633,12 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}"
+         },
+         "${PG__STRATEGUS_RESULTS_DB_NAME:-strategus_results}": {
+          "manager": "${PG_STRATEGUS_RESULTS_ADMIN_USER:-strategus_results_pg_admin_user}",
+          "managerPassword": "${PG_STRATEGUS_RESULTS_ADMIN_PASSWORD}",
+          "reader": "${PG_STRATEGUS_RESULTS_READ_USER:-strategus_results_pg_admin_user}",
+          "readerPassword": "${PG_STRATEGUS_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
