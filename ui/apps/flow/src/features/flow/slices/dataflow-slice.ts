@@ -19,11 +19,12 @@ import {
   TemplateDto,
   TestDataflowDto,
 } from "../types";
-import { baseQueryFn } from "./base-query";
+import { createBaseQueryFn } from "./base-query";
+import { ScanDataDBConnectionForm } from "~/features/flow/types/white-rabbit";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
-  baseQuery: baseQueryFn,
+  baseQuery: createBaseQueryFn("jobplugins/"),
   tagTypes: [
     "Dataflow",
     "DataflowRevision",
@@ -232,6 +233,30 @@ export const dataflowApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
     }),
+    createDBScanReport: builder.mutation<
+      any,
+      { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
+    >({
+      query: ({ postgresqlForm, tablesToScan }) => {
+        const iniSettings = {
+          ...postgresqlForm,
+          server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
+          tables_to_scan: tablesToScan.join(","),
+          database: postgresqlForm.schema,
+        };
+        const data = {
+          options: {
+            data: iniSettings,
+            run_type: "SCAN_REPORT_DB",
+          },
+        };
+        return {
+          url: "white-rabbit/flow-run",
+          method: "POST",
+          body: data,
+        };
+      },
+    }),
   }),
 });
 
@@ -254,4 +279,5 @@ export const {
   useOverwriteCanvasFromRemoteMutation,
   useGetTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
+  useCreateDBScanReportMutation,
 } = dataflowApiSlice;

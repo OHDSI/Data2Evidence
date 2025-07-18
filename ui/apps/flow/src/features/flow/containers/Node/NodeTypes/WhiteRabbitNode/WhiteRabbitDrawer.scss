@@ -1,0 +1,25 @@
+@import "../../../../../../theme/variables.scss";
+
+.white-rabbit-drawer {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  .action-container {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .button-group {
+      width: 70%;
+      .MuiButtonBase-root {
+        margin-top: 1em;
+        background-color: $primary-color;
+      }
+    }
+  }
+}

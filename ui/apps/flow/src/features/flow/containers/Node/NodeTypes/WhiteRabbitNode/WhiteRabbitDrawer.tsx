@@ -2,6 +2,7 @@ import React, { FC, useCallback, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import { Box, TextInput } from "@portal/components";
+import { Button } from "@mui/material";
 import { Editor } from "~/components/Editor/Editor";
 import { useFormData } from "~/features/flow/hooks";
 import {
@@ -13,8 +14,10 @@ import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
-
 import { WhiteRabbitNodeData } from "./WhiteRabbitNode";
+import { MappingHandle } from "./MappingHandle";
+import { ScanDataDialog } from "~/components/Dialog/ScanDataDialog/ScanDataDialog";
+import "./WhiteRabbitDrawer.scss";
 
 export type CloseDialogType = "success" | "cancelled";
 
@@ -50,6 +53,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
 }) => {
   const [isScanDataDialogOpen, setIsScanDataDialogOpen] = useState(false);
   const [isScanProgressDialogOpen, setScanProgressDialogOpen] = useState(false);
+  const [scanId, setScanId] = useState<string>("");
 
   const openScanDataDialog = () => {
     setIsScanDataDialogOpen(true);
@@ -78,20 +82,73 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
 
+  useEffect(() => {
+    if (node.data) {
+      setFormData({
+        name: node.data.name,
+        description: node.data.description,
+        scannedSchema: node.data.scannedSchema,
+        sourceHandles: node.data.sourceHandles,
+      });
+    } else {
+      setFormData({
+        ...EMPTY_FORM_DATA,
+        ...NodeChoiceMap["white_rabbit_node"].defaultData,
+      });
+    }
+  }, [node.data]);
+
   const handleOk = useCallback(() => {
     const updated: NodeState<WhiteRabbitNodeData> = {
       ...nodeState,
       data: formData,
     };
-    dispatch(setNode(updated));
+    dispatch(setNode(updated)); // here sets the node data
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
   }, [formData]);
-
   return (
-    <NodeDrawer onOk={handleOk} onClose={onClose} {...props}>
-      hello
-    </NodeDrawer>
+    <>
+      <NodeDrawer onOk={handleOk} onClose={onClose} {...props}>
+        <div className="white-rabbit-drawer">
+          {node.data?.sourceHandles.length ? (
+            <div className="handle-container scroll-shadow">
+              {node.data.sourceHandles.map((node) => (
+                <MappingHandle {...node} key={node.id} />
+              ))}
+            </div>
+          ) : (
+            <div className="action-container">
+              <div className="description">
+                Please scan data or open mapping to see Source tables
+              </div>
+              <div className="button-group">
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={openScanDataDialog}
+                >
+                  Scan Data
+                </Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => console.log("Open load mapping dialog")} // Placeholder for open mapping action
+                >
+                  Open Mapping
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </NodeDrawer>
+      <ScanDataDialog
+        open={isScanDataDialogOpen}
+        onClose={handleScanDataDialogClose}
+        nodeId={node.id}
+        setScanId={setScanId}
+      />
+    </>
   );
 };

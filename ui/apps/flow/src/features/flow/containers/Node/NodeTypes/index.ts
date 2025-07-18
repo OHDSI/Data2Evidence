@@ -102,7 +102,20 @@ test_exec <- function(myinput) {
     title: "White Rabbit",
     description: "Scan source database schema.",
     tag: NodeTag.Experimental,
-    defaultData: {},
+    defaultData: {
+      scannedSchema: {
+        etl_mapping: {
+          id: 0,
+          scan_report_id: 0,
+          scan_report_name: "",
+          source_schema_name: "",
+          cdm_version: "",
+          username: "",
+        },
+        source_tables: [],
+      },
+      sourceHandles: [],
+    },
   },
   concept_mapping_node: {
     title: "Concept mapping",
