@@ -6,31 +6,7 @@ import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { KaplanMeierDrawer } from "./KaplanMeierDrawer";
 import "./KaplanMeierNode.scss";
-
-interface KaplanMeierArgs {
-  // Study Population Configuration (from createStudyPopulation)
-  outcomeId: number;
-  firstExposureOnly: boolean;
-  restrictToCommonPeriod: boolean;
-  washoutPeriod: number;
-  removeDuplicateSubjects: "keep all" | "keep first" | "remove all";
-  removeSubjectsWithPriorOutcome: boolean;
-  minDaysAtRisk: number;
-
-  // Risk Window Definition
-  riskWindowStart: number;
-  startAnchor: "cohort start" | "cohort end";
-  riskWindowEnd: number;
-  endAnchor: "cohort start" | "cohort end";
-
-  // Kaplan-Meier Plot Settings
-  includeZero: boolean;
-  stratified: boolean;
-
-  // Optional Advanced Settings
-  censorAtNewRiskWindow?: boolean;
-  minDaysToOutcome?: number;
-}
+import { KaplanMeierArgs } from "./types";
 
 export interface KaplanMeierNodeData extends NodeDataState {
   kaplanMeierArgs: KaplanMeierArgs;

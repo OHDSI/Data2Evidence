@@ -207,7 +207,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   target_comparator_outcomes_node: {
     title: "Target Compartor Outcomes",
     description: "Run target comparator outcomes code",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       targetId: 1,
       comparatorId: 1,
@@ -242,7 +242,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_method_node: {
     title: "Cohort Method",
     description: "Run cohort method code.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
@@ -349,8 +349,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   study_population_settings_node: {
     title: "Study Population Settings",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Configure risk windows, time at risk, and analysis-specific population parameters.",
+    tag: NodeTag.Stable,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
@@ -380,8 +381,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   outcomes_node: {
     title: "Outcomes",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Define clinical outcomes and endpoints for the study analysis.",
+    tag: NodeTag.Stable,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
