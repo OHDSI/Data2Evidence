@@ -13,6 +13,7 @@ import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
+import { WhiteRabbitNode } from "./WhiteRabbitNode/WhiteRabbitNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -28,6 +29,7 @@ export const NODE_TYPES: {
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
+  white_rabbit_node: WhiteRabbitNode,
 };
 
 export const NODE_COLORS: {
@@ -44,6 +46,7 @@ export const NODE_COLORS: {
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
+  white_rabbit_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -92,6 +95,12 @@ test_exec <- function(myinput) {
   data_mapping_node: {
     title: "Data mapping",
     description: "Map source data to OMOP data model.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
+  },
+  white_rabbit_node: {
+    title: "White Rabbit",
+    description: "Scan source database schema.",
     tag: NodeTag.Experimental,
     defaultData: {},
   },

@@ -9,7 +9,8 @@ export type NodeType =
   | "csv_node"
   | "db_reader_node"
   | "db_writer_node"
-  | "subflow";
+  | "subflow"
+  | "white_rabbit_node";
 
 export type NodeTypeChoice = Exclude<Exclude<NodeType, "start">, "subflow">;
 
