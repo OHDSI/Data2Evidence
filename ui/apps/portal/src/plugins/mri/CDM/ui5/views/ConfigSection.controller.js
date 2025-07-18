@@ -39,7 +39,7 @@ sap.ui.define([
             }.bind(this)));
         },
         onBeforeRendering: function () {
-
+            this._populateDatasetDropdown()
         },
         onAfterRendering: function () {
             this._autoSave();
@@ -72,6 +72,9 @@ sap.ui.define([
             });
         },
         onQueryCheckPressed: function () {
+            // TODO: Use dataset id to connect to correponding schema for validation
+            var selectedDatasetId = this.getView().byId("ValidateDatasetSelector").getSelectedItem().getKey();
+            console.log("findme, selectedDatasetId", selectedDatasetId)
             var feConfig = this.getView().getModel(
                 ConfigUtils.models.CONFIG_EDITOR).getData();
 
@@ -84,7 +87,6 @@ sap.ui.define([
                 });
         },
         onPreviewConfigPressed: function () {
-
             var that = this;
             var feConfig = this.getView().getModel(
                 ConfigUtils.models.CONFIG_EDITOR).getData();
@@ -225,6 +227,29 @@ sap.ui.define([
                         }, 500);
                     }
                 });
+        },
+        _populateDatasetDropdown: function () {
+            var that = this;
+            BackendLinker.getDatasets(function (result, oData) {
+                var allDatasets = [{
+                    key: "DEFAULT", text: "DEFAULT"
+                }]
+                if (result === "error") {
+                    // TODO: Set error to fail to read dataset
+                    ConfigUtils.logError("error", oData);
+                    ConfigUtils.createAlertDialog("HPH_CDM_CFG_ERROR", "HPH_CDM_CFG_ERROR", oData ? oData : "");
+                } else {
+                    oData.forEach(e => allDatasets.push({
+                        key: e.id,
+                        text: `${e.studyDetail.name} [${e.dialect}]`
+                    }))
+                }
+                var model = new sap.ui.model.json.JSONModel({
+                    list: allDatasets
+                });
+                model.setSizeLimit(1000);
+                that.getView().setModel(model, "allDatasets");
+            });
         }
     });
 

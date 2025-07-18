@@ -14,6 +14,7 @@ sap.ui.define([
 		others: {},
 		settings: {},
 		shared: {},
+		datasetId: "DEFAULT",
 		tableMapping: {},
 		tableTypePlaceholderMap: {
 			factTable: {},
@@ -30,6 +31,37 @@ sap.ui.define([
 			BackendLinker._globalSettings = oData;
 		}
 	});
+
+	/**
+	 * Make a GET-request to get all dataset ids and execute the callback on response. 
+	 *
+	 * @param {Object}
+	 *            oSettings jQuery.ajax settings object
+	 * @param {Function}
+	 *            fCallback Callback function to be called on success or error.
+	 */
+
+	BackendLinker.getDatasets = function (fCallback) {
+
+		return ConfigUtils.ajax({
+			url: "/system-portal/dataset/list?role=researcher",
+			type: "GET",
+			dataType: "json",
+			contentType: "application/json; charset=utf-8"
+		}).done(function (oData) {
+				if (fCallback){
+					fCallback("success", oData);
+				} else {
+					return oData;
+				}
+			}).fail(function ($jqXHR) {
+				if (fCallback){
+					fCallback("error", $jqXHR.responseText);
+				} else {
+					return $jqXHR.responseText;
+				}
+			});
+	};
 
 	/**
 	 * Make a POST-request and execute the callback on response. Some default
@@ -315,7 +347,8 @@ sap.ui.define([
 				fuzziness: 0,
 				maxResultSize: 0,
 				dateFormat: "",
-				timeFormat: ""
+				timeFormat: "",
+				datasetId: "DEFAULT"
 			},
 			factTableSkeleton: {
 				placeholder: "",
