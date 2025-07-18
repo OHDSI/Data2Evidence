@@ -2,7 +2,7 @@
   "name": "d2e-e2e-tests",
   "version": "1.0.0",
   "scripts": {
-    "test": "playwright test --update-snapshots",
+    "test": "playwright test",
     "init": "playwright install chromium --with-deps",
     "local-codegen": "playwright codegen --ignore-https-errors https://localhost:41100"
   },
