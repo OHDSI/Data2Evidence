@@ -22,8 +22,6 @@ const Env = z
 
     TLS__INTERNAL__KEY: z.string().optional(),
     TLS__INTERNAL__CRT: z.string().optional(),
-    DUCKDB_PATH: z.string(),
-    BUILT_IN_DUCKDB_PATH: z.string(),
 
     LOCAL_DEBUG: z.string(),
     isHttpTestRun: z.string().optional(),
@@ -55,6 +53,16 @@ const Env = z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
+    SERVICE_ROUTES: z
+      .string()
+      .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
+        try {
+          return JSON.parse(str);
+        } catch (e) {
+          ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+          return z.never();
+        }
+      }),
   })
   .superRefine(
     (
@@ -87,13 +95,14 @@ function initEnv(__env) {
   _env.PG_SCHEMA = _env.PG_SCHEMA || "cdw_config";
 
   const result = Env.safeParse(_env);
-
-  if (!result.success) {
+  env = _env as unknown as z.infer<typeof Env>;
+  if (result.success) {
+    env = result.data;
+  } else {
     console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
     throw new Error("ZOD parse failed");
   }
 
-  env = _env as unknown as z.infer<typeof Env>;
   return env;
 }
 

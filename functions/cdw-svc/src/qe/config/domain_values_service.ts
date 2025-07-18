@@ -199,6 +199,7 @@ function getDistinctValuesFromData({
         }
       }
       if(env.USE_DUCKDB === "true"){
+        // TODO: Remove DUCKDB_FILE_NAME
         placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
       }
       sQuery = queryObjectLib.QueryObject.format(
@@ -296,7 +297,8 @@ function getDistinctValuesFromReference(
     const refTextSelect = useRefText
       ? ` , R.${placeholderTableMap["@REF.TEXT"]} as "text" `
       : "";
-    if(env.USE_DUCKDB === "true"){
+      if(env.USE_DUCKDB === "true"){
+      // TODO: Remove DUCKDB_FILE_NAME
       placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
     }
     sQuery = queryObjectLib.QueryObject.format(

@@ -72,9 +72,6 @@ sap.ui.define([
             });
         },
         onQueryCheckPressed: function () {
-            // TODO: Use dataset id to connect to correponding schema for validation
-            var selectedDatasetId = this.getView().byId("ValidateDatasetSelector").getSelectedItem().getKey();
-            console.log("findme, selectedDatasetId", selectedDatasetId)
             var feConfig = this.getView().getModel(
                 ConfigUtils.models.CONFIG_EDITOR).getData();
 

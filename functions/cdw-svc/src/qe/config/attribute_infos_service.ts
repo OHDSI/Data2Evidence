@@ -317,6 +317,7 @@ function attributeValidationReference(
         )
       : "";
     if(env.USE_DUCKDB === "true"){
+      // TODO: Remove DUCKDB_FILE_NAME
       placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
     }
     sQuery = queryObjectLib.QueryObject.format(
@@ -453,6 +454,7 @@ function getInfosFromReference({
         )
       : "";
     if(env.USE_DUCKDB === "true"){
+      // TODO: Remove DUCKDB_FILE_NAME
       placeholderSettings.placeholderTableMap["@REF"] = placeholderSettings.placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
     }
     sQuery = queryObjectLib.QueryObject.format(
