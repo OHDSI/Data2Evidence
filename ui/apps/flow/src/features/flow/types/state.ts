@@ -7,6 +7,7 @@ import {
 } from "./node.state";
 import { FlowStatus, SaveFlowDialogState } from "./dataflow.state";
 import { FlowRunState } from "./flow-run.state";
+import { KeyValue } from "./common";
 
 export interface FlowRootState {
   dataflowId: string;
@@ -21,4 +22,5 @@ export interface FlowRootState {
   flowRunState: EntityState<FlowRunState>;
   nodes: EntityState<NodeState>;
   edges: EntityState<EdgeState>;
+  variables: KeyValue[];
 }

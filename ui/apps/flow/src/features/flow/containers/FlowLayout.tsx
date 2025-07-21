@@ -8,7 +8,12 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import { dispatch, RootState } from "../../../store";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
+import {
+  replaceEdges,
+  replaceNodes,
+  replaceVariables,
+  setAddNodeTypeDialog,
+} from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
 import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
 import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
@@ -22,6 +27,7 @@ import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
 import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
 import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
+import { FlowVariablesButton } from "./Flow/FlowVariables/FlowVariablesButton";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
 import { selectFlowNodes } from "../selectors";
 import "./FlowLayout.scss";
@@ -54,14 +60,17 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
     if (!revisionId) {
       let savedNodes = [];
       let savedEdges = [];
+      let savedVariables = [];
 
       if (dataflow?.flow) {
         savedNodes = dataflow.flow.nodes;
         savedEdges = dataflow.flow.edges;
+        savedVariables = dataflow.flow.variables;
       }
 
       dispatch(replaceNodes(savedNodes));
       dispatch(replaceEdges(savedEdges));
+      dispatch(replaceVariables(savedVariables));
     }
   }, [dataflow, revisionId]);
 
@@ -100,6 +109,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
           <CreateGroupButton />
           <SyncFromRemoteButton />
           <Box display="flex" alignItems="center">
+            <FlowVariablesButton />
             <FlowSettingsButton />
             <ResultsPolling />
           </Box>

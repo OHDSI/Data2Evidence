@@ -13,6 +13,7 @@ import {
   NodeDataState,
   NodeState,
   SaveFlowDialogState,
+  KeyValue,
 } from "./types";
 
 const flowRunStatesAdapter = createEntityAdapter<FlowRunState>();
@@ -36,6 +37,7 @@ const initialState: FlowRootState = {
   flowRunState: flowRunStatesInitialState,
   nodes: nodesInitialState,
   edges: edgesInitialState,
+  variables: [],
 };
 
 const flowSlice = createSlice({
@@ -118,6 +120,11 @@ const flowSlice = createSlice({
     setEdge: (state, action: PayloadAction<EdgeState>) => {
       edgesAdapter.upsertOne(state.edges, action.payload);
     },
+
+    // Variables
+    replaceVariables: (state, action: PayloadAction<KeyValue[]>) => {
+      state.variables = action.payload;
+    },
   },
 });
 
@@ -149,6 +156,9 @@ export const {
   // Edges
   replaceEdges,
   setEdge,
+
+  // Variables
+  replaceVariables,
 } = flowSlice.actions;
 
 export const { selectAll: selectNodes, selectById: selectNodeById } =

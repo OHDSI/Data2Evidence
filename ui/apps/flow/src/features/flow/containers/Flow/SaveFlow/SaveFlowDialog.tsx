@@ -75,6 +75,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     useCreateCanvasFromTemplateMutation();
   const nodes = useSelector(selectFlowNodes);
   const edges = useSelector(selectEdges);
+  const variables = useSelector((state: RootState) => state.flow.variables);
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
@@ -136,8 +137,8 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         id: saveFlowDialog.dataflowId,
         name: formData.name,
         dataflow: isNew
-          ? { nodes: [], edges: [], comment: formData.comment }
-          : { nodes, edges, comment: formData.comment },
+          ? { nodes: [], edges: [], variables: [], comment: formData.comment }
+          : { nodes, edges, variables, comment: formData.comment },
       };
       const response = await saveDataflow(dataflow);
 
@@ -157,7 +158,15 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       dispatch(markStatusAsSaved());
       typeof onClose === "function" && onClose();
     }
-  }, [saveFlowDialog, isNew, formData, nodes, edges, createFromTemplate]);
+  }, [
+    saveFlowDialog,
+    isNew,
+    formData,
+    nodes,
+    edges,
+    variables,
+    createFromTemplate,
+  ]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();

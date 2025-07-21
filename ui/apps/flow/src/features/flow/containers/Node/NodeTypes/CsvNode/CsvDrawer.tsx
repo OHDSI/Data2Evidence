@@ -150,6 +150,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
           dataflow: {
             nodes: updatedNodes,
             edges,
+            variables: dataflow?.flow?.variables || [],
             comment: "Auto-saved after CSV upload",
           },
         };

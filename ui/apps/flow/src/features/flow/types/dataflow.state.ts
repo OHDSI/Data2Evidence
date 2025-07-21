@@ -1,3 +1,4 @@
+import { KeyValue } from "./common";
 import { EdgeState } from "./edge.state";
 import { NodeState } from "./node.state";
 
@@ -118,6 +119,7 @@ export interface OverwriteAllFromRemoteResponseDto {
 interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];
+  variables: KeyValue[];
 }
 
 export interface SaveFlowDialogState {

@@ -35,6 +35,7 @@ export const RunFlowButton: FC = () => {
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
   });
+  const variables = useSelector((state: RootState) => state.flow.variables);
 
   const flowRunId = dataflow?.canvas?.lastFlowRunId || "";
   const { flowRunState, isStoppedState } = useFlowRunState(flowRunId);
@@ -75,12 +76,12 @@ export const RunFlowButton: FC = () => {
     dispatch(clearNodesResult());
 
     if (isTestMode) {
-      const body = { dataflow: { nodes, edges } };
+      const body = { dataflow: { nodes, edges, variables } };
       await runTestDataflow(body);
     } else {
       await runDataflow(dataflowId);
     }
-  }, [dataflowId, isTestMode, nodes, edges]);
+  }, [dataflowId, isTestMode, nodes, edges, variables]);
 
   const handleRun = useCallback(async () => {
     if (status === "draft") {
