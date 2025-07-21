@@ -25,6 +25,7 @@ import { ConnectionErrorDialog } from "../ErrorConnectionDialog";
 import {
   useTestDBConnectionMutation,
   useUploadNodeCsvFileMutation,
+  useCreateScanReportMutation,
   useCreateDBScanReportMutation,
 } from "~/features/flow/slices";
 import "./ScanDataDialog.scss";
@@ -101,6 +102,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   const [testDBConnection] = useTestDBConnectionMutation();
   const [uploadNodeCsvFile] = useUploadNodeCsvFileMutation();
   const [createDBScanReport] = useCreateDBScanReportMutation();
+  const [createScanReport] = useCreateScanReportMutation();
 
   useEffect(() => {
     if (dataType) {
@@ -271,12 +273,10 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     try {
       setLoading(true);
       if (uploadedFiles) {
-        // TODO: Implement the actual scan data logic
-        // const response = await api.whiteRabbit.createScanReport(
-        //   uploadedFiles,
-        //   delimiter
-        // );
-        const response: any = {};
+        const response = await createScanReport({
+          files: uploadedFiles,
+          delimiter,
+        }).unwrap();
         const flowRunId = response.flowRunId;
         setScanId(flowRunId);
       } else {

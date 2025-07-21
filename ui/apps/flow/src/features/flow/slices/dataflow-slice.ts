@@ -1,4 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
+import pako from "pako";
+import { Buffer } from "buffer";
 import {
   CreateFromTemplateDto,
   DataflowDto,
@@ -20,7 +22,11 @@ import {
   TestDataflowDto,
 } from "../types";
 import { createBaseQueryFn } from "./base-query";
-import { ScanDataDBConnectionForm } from "~/features/flow/types/white-rabbit";
+import {
+  ScanDataDBConnectionForm,
+  ScannedSchemaState,
+} from "~/features/flow/types/white-rabbit";
+import { csvToJSON } from "~/utils";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
@@ -233,6 +239,7 @@ export const dataflowApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
     }),
+    // TODO: move white rabbit endpoint to new slice
     createDBScanReport: builder.mutation<
       any,
       { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
@@ -255,6 +262,52 @@ export const dataflowApiSlice = createApi({
           method: "POST",
           body: data,
         };
+      },
+    }),
+    createScanReport: builder.mutation<
+      any,
+      { files: File[]; delimiter: string }
+    >({
+      async queryFn(
+        { files, delimiter = "," },
+        _queryApi,
+        _extraOptions,
+        fetchWithBQ
+      ) {
+        const fileContents = await Promise.all(
+          files.map(async (file) => ({
+            fileName: file.name,
+            fileContent: await csvToJSON(file),
+          }))
+        );
+
+        const jsonString = JSON.stringify({
+          files: fileContents,
+          settings: {
+            delimiter,
+          },
+        });
+
+        const compressed = pako.gzip(jsonString);
+        const base64Compressed = Buffer.from(compressed).toString("base64");
+
+        const data = {
+          options: {
+            data: base64Compressed,
+            run_type: "SCAN_REPORT_FILES",
+          },
+        };
+
+        const response = await fetchWithBQ({
+          url: "white-rabbit/flow-run",
+          method: "POST",
+          body: data,
+        });
+
+        if (response.error) {
+          return { error: response.error };
+        }
+        return { data: response.data };
       },
     }),
     getFlowRunStatus: builder.query<
@@ -296,6 +349,7 @@ export const {
   useGetTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
   useCreateDBScanReportMutation,
+  useCreateScanReportMutation,
   useLazyGetFlowRunStatusQuery,
   useLazyGetSourceSchemaByFlowRunIdQuery,
 } = dataflowApiSlice;
