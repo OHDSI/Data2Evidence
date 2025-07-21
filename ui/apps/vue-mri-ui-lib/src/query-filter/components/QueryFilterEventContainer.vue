@@ -8,10 +8,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup } from '../models/QueryFilterModel'
+import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
@@ -74,27 +74,6 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   eventsData.value = [...eventsData.value, newEvent]
 }
 
-// Handle manual add event
-const addNewEvent = () => {
-  const newEvent: QueryFilterEvent = {
-    id: `event_${Date.now()}`,
-    conceptSet: 'New Event',
-    criteriaType: 'conditionOccurrence',
-    isExpanded: true,
-    selectedAttributes: [],
-    isDemographic: false,
-    conceptSetDetails: [],
-    conceptSetLoading: false,
-    cardinality: {
-      type: 'AT_LEAST',
-      count: 1,
-      using: 'ALL',
-    },
-  }
-
-  eventsData.value = [...eventsData.value, newEvent]
-}
-
 // Handle event updates
 const updateEvent = (eventIndex: number, updatedEvent: QueryFilterEvent) => {
   const newEvents = [...eventsData.value]
@@ -135,14 +114,47 @@ const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   console.log('Attribute removed:', eventId, attributeId)
 }
 
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | null) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
-    const updatedEvent = {
-      ...eventsData.value[eventIndex],
-      selectedConceptSet: conceptSet,
-      conceptSetId: conceptSet.value,
+    const currentEvent = eventsData.value[eventIndex]
+    if (!currentEvent) return
+
+    if (!conceptSet) {
+      // Handle concept set removal
+      const updatedEvent: QueryFilterEvent = {
+        ...currentEvent,
+        selectedConceptSet: undefined,
+        conceptSetId: undefined,
+        conceptSet: '',
+      }
+      updateEvent(eventIndex, updatedEvent)
+      return
+    }
+
+    const selectedConceptSet: SelectedConceptSet = {
+      value: parseInt(conceptSet.value),
+      text: conceptSet.text || '',
+      display_value: conceptSet.display_value || '',
+      conceptIds: conceptSet.conceptIds || [],
+      concepts:
+        conceptSet.concepts?.map(c => ({
+          id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+          useMapped: c.useMapped || false,
+          isExcluded: c.isExcluded || false,
+          useDescendants: c.useDescendants || false,
+        })) || [],
+      shared: false,
+      userName: '',
+      createdDate: '',
+      modifiedDate: '',
+    }
+
+    const updatedEvent: QueryFilterEvent = {
+      ...currentEvent,
       conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value,
+      selectedConceptSet,
+      conceptSetId: conceptSet.value,
     }
     updateEvent(eventIndex, updatedEvent)
   }
@@ -170,9 +182,11 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem) =
         :event-index="index"
         :all-events="eventsData"
         :concept-sets="conceptSets"
-        :concept-set-domain-values="conceptSetDomainValues"
-        :concept-set-texts="conceptSetTexts"
-        :dataset-id="datasetId"
+        :concept-set-domain-values="
+          conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+        "
+        :concept-set-texts="conceptSetTexts || {}"
+        :dataset-id="datasetId || null"
         :readonly="readonly"
         @update:event="
           updateEvent(

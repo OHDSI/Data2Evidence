@@ -4,6 +4,7 @@
  * with support for Atlas cohort definition conversion.
  */
 import type { NumericRange, DemographicCriteria } from './AtlasCohortDefinition'
+import type { ConceptSetItem } from '../types/ConceptSetTypes'
 export interface QueryFilterCardinality {
   type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
   count: number
@@ -112,6 +113,8 @@ export type QueryFilterAttribute =
       id: string
       attributeId: string
       attributeType: 'conceptSet'
+      conceptSet?: ConceptSetItem
+      conceptSetId?: string
     }
   | {
       id: string
