@@ -180,7 +180,11 @@ export class ConfigFacade {
         callback(null, this.settings.getDefaultAdvancedSettings());
         break;
       case "getColumns":
-        analyticsConn = await getAnalyticsConnection(this.userObj, this.token);
+        analyticsConn = await getAnalyticsConnection(
+          this.userObj,
+          this.token,
+          request.datasetId
+        );
         let dbMeta = new DbMeta(analyticsConn);
         dbMeta.getColumnsForPlaceHolders(
           request.dbObjectList,

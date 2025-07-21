@@ -1,4 +1,4 @@
- // TODO: import configLib = require("./config.ts");
+// TODO: import configLib = require("./config.ts");
 import {
   QueryObject as queryObjectLib,
   QueryObject,
@@ -8,8 +8,6 @@ import * as utilsLib from "../../utils/utils";
 import { Connection as connLib, Logger } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
-import { env } from "../../configs";
-import { DUCKDB_FILE_NAME } from "../settings/Defaults";
 
 const isNumeric = (n) => !isNaN(parseFloat(n)) && isFinite(n);
 const log = Logger.CreateLogger();
@@ -316,10 +314,6 @@ function attributeValidationReference(
           referenceFilter
         )
       : "";
-    if(env.USE_DUCKDB === "true"){
-      // TODO: Remove DUCKDB_FILE_NAME
-      placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
-    }
     sQuery = queryObjectLib.QueryObject.format(
       'SELECT  top 1 ( %UNSAFE ) AS "min" ' +
         " FROM " +
@@ -453,10 +447,6 @@ function getInfosFromReference({
           referenceFilter
         )
       : "";
-    if(env.USE_DUCKDB === "true"){
-      // TODO: Remove DUCKDB_FILE_NAME
-      placeholderSettings.placeholderTableMap["@REF"] = placeholderSettings.placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
-    }
     sQuery = queryObjectLib.QueryObject.format(
       'SELECT COUNT( DISTINCT ( %UNSAFE ) )  AS "count" ,' +
         ' MIN ( %UNSAFE ) AS "min" , MAX( %UNSAFE ) AS "max" ' +

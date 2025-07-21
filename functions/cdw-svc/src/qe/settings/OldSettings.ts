@@ -58,9 +58,12 @@ export async function validateDBTable(
         return reject(err);
       }
 
+      // Hana returns column name as TABLECOUNT but trex return as tableCount
+      const tableCountColumn =
+        connection.dialect === "hana" ? "TABLECOUNT" : "tableCount";
       let tableCount = 0;
       result.forEach((obj) => {
-        tableCount = tableCount + obj.tableCount;
+        tableCount = tableCount + obj[tableCountColumn];
       });
 
       if (tableCount > 0) {

@@ -453,7 +453,7 @@ const filterVcapByTag = (
     mridb: {
       name: string;
       tags: string[];
-      credentials: { dialect: string };
+      credentials: { dialect: string; code: string };
     }[];
   },
   tag: string
@@ -498,9 +498,12 @@ export async function getAnalyticsConnection(
     let cdwService = filterVcapByTag(env.VCAP_SERVICES, "cdw").map(
       (db) => db.credentials
     );
-    cdwService = cdwService.filter((db) => db.dialect == "hana");
-    // TODO: Get correct analytics credentials based on resolved details
-    analyticsCredentials = cdwService[0];
+    analyticsCredentials = cdwService.find((db) => db.code == databaseCode);
+    if (analyticsCredentials === undefined) {
+      throw new Error(
+        `No hana database credentials setup for databaseCode: ${databaseCode}`
+      );
+    }
     // node hdb library checks for these to use TLS
     // TLS does not work with deno for self signed certs
     if (!analyticsCredentials.useTLS) {
@@ -522,11 +525,16 @@ export async function getAnalyticsConnection(
       }
     }
 
+    analyticsCredentials.probeSchema = schemaName;
+    analyticsCredentials.cdwSchema = schemaName;
+    analyticsCredentials.schema = schemaName;
+    analyticsCredentials.vocabSchema = vocabSchemaName;
+
     analyticsConnection =
       await dbConnectionUtil.DBConnectionUtil.getDBConnection({
         credentials: analyticsCredentials,
-        schemaName: analyticsCredentials.schema,
-        vocabSchemaName: analyticsCredentials.vocabSchema,
+        schemaName,
+        vocabSchemaName,
         userObj,
       });
   } else {

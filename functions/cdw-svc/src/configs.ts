@@ -53,6 +53,7 @@ const Env = z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
+    VCAP_SERVICES: z.unknown(),
     SERVICE_ROUTES: z
       .string()
       .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
