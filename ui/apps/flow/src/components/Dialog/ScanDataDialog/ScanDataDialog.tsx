@@ -30,6 +30,7 @@ import {
 import "./ScanDataDialog.scss";
 
 export type CloseDialogType = "success" | "cancelled";
+
 interface ScanDataDialogProps {
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
@@ -197,7 +198,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
         setAvailableTables(uploadedFiles.map((file) => file.name));
       } else {
         try {
-          console.log("Testing DB connection with form:", dbConnectionForm);
           const res = await testDBConnection({
             connectionDetail: dbConnectionForm,
           }).unwrap();
@@ -211,6 +211,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
             setAvailableTables([]);
           }
         } catch (error: any) {
+          console.log("error", error);
           setCanConnect(false);
           setConnectionErrorMesssage(`[${error.status}] ${error.data}`);
           setConnectionErrorDialogVisible(true);

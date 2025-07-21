@@ -257,6 +257,22 @@ export const dataflowApiSlice = createApi({
         };
       },
     }),
+    getFlowRunStatus: builder.query<
+      {
+        state_name: string;
+        id: string;
+      },
+      string
+    >({
+      query: (flowRunId) => {
+        return `white-rabbit/results/${flowRunId}`;
+      },
+    }),
+    getSourceSchemaByFlowRunId: builder.query<any, string>({
+      query: (flowRunId) => {
+        return `perseus/artifacts/${flowRunId}`;
+      },
+    }),
   }),
 });
 
@@ -280,4 +296,6 @@ export const {
   useGetTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
   useCreateDBScanReportMutation,
+  useLazyGetFlowRunStatusQuery,
+  useLazyGetSourceSchemaByFlowRunIdQuery,
 } = dataflowApiSlice;

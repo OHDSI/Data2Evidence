@@ -7,37 +7,10 @@ import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { TargetHandle, SourceHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
 import { WhiteRabbitDrawer } from "./WhiteRabbitDrawer";
-
-export interface TableSchemaState {
-  table_name: string;
-  column_list: ColumnSchemaState[];
-}
-
-export interface ColumnSchemaState {
-  column_name: string;
-  column_type: string;
-  is_column_nullable?: string;
-}
-
-export interface TableSourceHandleData {
-  label: string;
-  type: "input";
-}
-
-export type TableSourceState = NodeProps<TableSourceHandleData>;
+import { ScannedSchemaState, TableSourceState } from "../../../../types";
 
 export interface WhiteRabbitNodeData extends NodeDataState {
-  scannedSchema: {
-    etl_mapping: {
-      id: number;
-      scan_report_id: number;
-      scan_report_name: string;
-      source_schema_name: string;
-      cdm_version: string;
-      username: string;
-    };
-    source_tables: TableSchemaState[];
-  };
+  scannedSchema: ScannedSchemaState;
   sourceHandles: TableSourceState[];
 }
 

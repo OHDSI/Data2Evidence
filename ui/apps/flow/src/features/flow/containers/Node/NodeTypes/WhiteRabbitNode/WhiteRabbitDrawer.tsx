@@ -17,6 +17,7 @@ import { NodeChoiceMap } from "../../NodeTypes";
 import { WhiteRabbitNodeData } from "./WhiteRabbitNode";
 import { MappingHandle } from "./MappingHandle";
 import { ScanDataDialog } from "~/components/Dialog/ScanDataDialog/ScanDataDialog";
+import { ScanProgressDialog } from "~/components/Dialog/ScanProgressDialog/ScanProgressDialog";
 import "./WhiteRabbitDrawer.scss";
 
 export type CloseDialogType = "success" | "cancelled";
@@ -112,9 +113,9 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
     <>
       <NodeDrawer onOk={handleOk} onClose={onClose} {...props}>
         <div className="white-rabbit-drawer">
-          {node.data?.sourceHandles.length ? (
+          {formData?.sourceHandles.length ? (
             <div className="handle-container scroll-shadow">
-              {node.data.sourceHandles.map((node) => (
+              {formData.sourceHandles.map((node) => (
                 <MappingHandle {...node} key={node.id} />
               ))}
             </div>
@@ -148,6 +149,14 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
         onClose={handleScanDataDialogClose}
         nodeId={node.id}
         setScanId={setScanId}
+      />
+      <ScanProgressDialog
+        open={isScanProgressDialogOpen}
+        onBack={handleBack}
+        onClose={handleScanProgressDialogClose}
+        nodeId={node.id}
+        scanId={scanId}
+        onFormDataChange={onFormDataChange}
       />
     </>
   );
