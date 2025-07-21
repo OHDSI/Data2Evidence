@@ -94,7 +94,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
       );
       onFormDataChange({ sourceHandles: sourceHandles });
       setLoading(false);
-      onFormDataChange({ scannedSchema: sourceHandles });
+      onFormDataChange({ scannedSchema: scannedResult });
       updateNodeInternals(nodeId);
       handleClose("success");
     } catch (error) {
