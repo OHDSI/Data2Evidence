@@ -10,8 +10,8 @@ export default class StrategusAnalysis {
   @PrimaryColumn({ type: "uuid" })
   id: string;
 
-  @Column({ name: "analysis_spec", type: "jsonb" })
-  analysisSpec: Object;
+  @Column({ name: "analysis_spec", type: "text" })
+  analysisSpec: string;
 
   @Column({ name: "study_id" })
   studyId: string;

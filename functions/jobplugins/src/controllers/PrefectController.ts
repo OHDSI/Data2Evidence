@@ -80,6 +80,14 @@ export class PrefectController {
     try {
       const { json_graph, options } = req.body;
       const token = req.headers["Authorization"] || req.headers["authorization"];
+
+      if (!json_graph || !options) {
+        return res.status(400).send({ message: "Missing required fields: json_graph or options" });
+      }
+      if(options['study_id'] === undefined) {
+        return res.status(400).send({ message: "Missing required field: study_id in options" });
+      }
+
       const flowrunId = await this.prefectService.createAnalaysisRunByJupyterKernel(
         token,
         { json_graph, options }

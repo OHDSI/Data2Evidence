@@ -11,7 +11,7 @@ export default class StrategusAnalysisService {
         this.strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     }
 
-    async createAnalysisSpec(token, analysisSpec: Object, studyId: string) {
+    async createAnalysisSpec(token, analysisSpec: string, studyId: string) {
         this.token = token;
         const analysisId = uuidv4();
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
