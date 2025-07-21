@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/strategus-results/src/init",
+          "imports": "/strategus-results/import.json",
+          "env": "strategus-results"
+        },
+        {
           "function": "/jobplugins-init",
           "imports": "/jobplugins-init/import.json",
           "env": "jobplugins-init"
@@ -265,6 +270,12 @@
         },
         {
           "source": "/strategus-results",
+          "function": "/strategus-results",
+          "env": "strategus-results",
+          "imports": "/strategus-results/import.json"
+        },
+        {
+          "source": "/strategus",
           "function": "/strategus-results",
           "env": "strategus-results",
           "imports": "/strategus-results/import.json"
@@ -543,6 +554,9 @@
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
+          "strategus.analysis.read",
+          "strategus.analysis.write",
+          "strategus.analysis.delete",
           "jobplugins.flowRun.strategus.removeResults.add",
           "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
@@ -2372,6 +2386,16 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
           ]
         }
       ]

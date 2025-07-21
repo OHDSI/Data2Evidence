@@ -462,7 +462,16 @@ services:
           },
           "jupyter-gateway": {},
           "mlflow": {},
-          "strategus-results": {}
+          "strategus-results": {
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+            "PG_PORT": "${PG_PORT:-5432}",
+            "PG_DATABASE": "${PG_DB_NAME:-alp}",
+            "PG_SCHEMA": "strategus",
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          }
         }
       SERVICE_ROUTES: |-
         {
@@ -583,7 +592,8 @@ services:
             "+perseus": {},
             "+white_rabbit": {},
             "+trex": {},
-            "+storage": {}
+            "+storage": {},
+            "+strategus": {}
            }
           },
           "+${PG__FHIR_DB_NAME:-alp_fhir}": {

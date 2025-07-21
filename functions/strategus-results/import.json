@@ -1,10 +1,16 @@
 {
   "imports": {
+    "@jupyterlab/services": "npm:@jupyterlab/services@^7.4.3",
     "axios": "npm:axios@^0.21.2",
     "dotenv": "npm:dotenv@^16.3.1",
     "express": "npm:express@^4.18",
     "stream": "node:stream",
     "https": "node:https",
-    "@jupyterlab/services": "npm:@jupyterlab/services@^7.4.3"
+    "jsonwebtoken": "npm:jsonwebtoken@^9.0.2",
+    "knex": "npm:knex@3.1.0",
+    "pg": "npm:pg@^8.4.2",
+    "path": "https://deno.land/std@0.188.0/path/mod.ts",
+    "uuid": "npm:uuid@^10.0.0",
+    "typeorm": "npm:typeorm@^0.3.20"
   }
 }
