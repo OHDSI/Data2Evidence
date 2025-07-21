@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  click: [event: MouseEvent]
+  'button-click': [event: MouseEvent]
 }>()
 const slots = useSlots()
 
@@ -56,7 +56,7 @@ const handleMouseLeave = (): void => {
 
 const handleClick = (event: MouseEvent): void => {
   if (!props.disabled) {
-    emit('click', event)
+    emit('button-click', event)
   }
 }
 
@@ -79,7 +79,7 @@ const buttonClasses = computed<string[]>(() => {
   <button
     :class="buttonClasses"
     :disabled="disabled"
-    @click="handleClick"
+    @click.prevent="handleClick"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"

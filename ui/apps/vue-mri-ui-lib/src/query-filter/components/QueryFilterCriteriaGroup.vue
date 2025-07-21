@@ -187,6 +187,7 @@ const toggleGroupType = () => {
           <!-- Events Container -->
           <QueryFilterEventContainer
             :events="groupEvents"
+            event-type="CRITERIA"
             :parent-group="localGroup"
             :concept-sets="conceptSets"
             :concept-set-domain-values="

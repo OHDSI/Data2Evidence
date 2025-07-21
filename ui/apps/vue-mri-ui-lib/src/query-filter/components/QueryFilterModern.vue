@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager, QueryFilterEvent } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
@@ -24,11 +24,9 @@ import type {
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
-  loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
   createConceptSet,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
-import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
@@ -40,7 +38,7 @@ import appCheckbox from '../../lib/ui/app-checkbox.vue'
 // Use the hierarchical criteria manager
 const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties.$store
+const store = instance?.appContext.config.globalProperties['$store']
 
 const showDebug = ref(false)
 
@@ -64,9 +62,13 @@ const tagInputModel = computed<TagInputModel>(() => {
         standardConceptCodeFilter: 'Standard',
       },
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in tagInputModel computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return {
       id: 'concept-set-test',
       props: {
@@ -96,7 +98,15 @@ const conceptSetsFromCriteria = computed(() => {
           seenIds.add(event.conceptSetId)
         } else if (event.selectedConceptSet) {
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
-          conceptSets.push(event.selectedConceptSet)
+          // Convert SelectedConceptSet to ConceptSetItem
+          const convertedConceptSet: ConceptSetItem = {
+            value: event.selectedConceptSet.value?.toString() || event.conceptSetId,
+            text: event.selectedConceptSet.text,
+            display_value: event.selectedConceptSet.display_value,
+            conceptIds: event.selectedConceptSet.conceptIds,
+            concepts: event.selectedConceptSet.concepts,
+          }
+          conceptSets.push(convertedConceptSet)
           seenIds.add(event.conceptSetId)
         }
       }
@@ -196,9 +206,13 @@ const filterConceptSetsLocal = (searchQuery: string) => {
 const tagInputDomainValues = computed(() => {
   try {
     return conceptSetDomainValues.value
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in tagInputDomainValues computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
   }
 })
@@ -206,9 +220,13 @@ const tagInputDomainValues = computed(() => {
 const selectedConceptSetValues = computed(() => {
   try {
     return selectedConceptSets.value
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in selectedConceptSetValues computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return []
   }
 })
@@ -270,15 +288,23 @@ const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
 }
 
 // Handle primary criteria limit updates
-const handleUpdatePrimaryCriteriaLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  criteriaManager.updatePrimaryCriteriaLimit(limit)
-  console.log('Primary criteria limit updated:', limit)
+const handleUpdatePrimaryCriteriaLimit = (
+  limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
+) => {
+  // Only handle the limits that are valid for primary criteria
+  if (limit === 'ALL' || limit === 'EARLIEST' || limit === 'LATEST') {
+    criteriaManager.updatePrimaryCriteriaLimit(limit)
+    console.log('Primary criteria limit updated:', limit)
+  }
 }
 
 // Handle exit strategy updates
-const handleUpdateExitStrategy = (limit: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
-  criteriaManager.updateEndStrategy(limit)
-  console.log('Exit strategy updated:', limit)
+const handleUpdateExitStrategy = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
+  // Only handle the limits that are valid for exit strategy
+  if (limit === 'CONT_OBS' || limit === 'FIXED' || limit === 'CONT_DRUG') {
+    criteriaManager.updateEndStrategy(limit)
+    console.log('Exit strategy updated:', limit)
+  }
 }
 
 // Handle entry days updates
@@ -311,9 +337,13 @@ const applyFilters = () => {
   try {
     console.log('Applying filters:', getAllFilters())
     alert('Filters applied! Check console for configuration.')
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in applyFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     alert('Error applying filters! Check console for details.')
   }
 }
@@ -324,9 +354,13 @@ const clearFilters = () => {
       criteriaManager.clearAllCriteria()
       selectedConceptSets.value = []
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in clearFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -334,18 +368,26 @@ const exportFilters = () => {
   try {
     const config = JSON.stringify(getAllFilters(), null, 2)
     console.log('Exported configuration:', config)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in exportFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
 const getAllFilters = () => {
   try {
     return criteriaManager.toJSON()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in getAllFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { inclusionCriteria: { criteria: [] }, entryEvents: {} }
   }
 }
@@ -353,9 +395,13 @@ const getAllFilters = () => {
 const convertToAtlasFormat = () => {
   try {
     return criteriaManager.convertToAtlasFormat()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in convertToAtlasFormat:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { ConceptSets: [], PrimaryCriteria: { CriteriaList: [] }, InclusionRules: [] }
   }
 }
@@ -381,7 +427,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Available concept sets:', allConceptSets.value.length)
 
     isLoading.value = true
-    const atlasExpression = atlasJson.expression
+    const atlasExpression =
+      typeof atlasJson.expression === 'string' ? JSON.parse(atlasJson.expression) : atlasJson.expression
 
     // Extract concept set IDs from criteria even if ConceptSets array is empty
     const extractConceptSetIds = (expression: any): Set<number> => {
@@ -528,21 +575,6 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
   }
 }
 
-const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const datasetId = getDatasetId()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept details API call')
-    return []
-  }
-
-  try {
-    return await apiLoadSingleConceptSetDetails(conceptSet, datasetId)
-  } catch (error) {
-    console.error('Error loading single concept set details:', error)
-    return []
-  }
-}
-
 const loadConceptSetDetailsForAllEvents = async () => {
   console.log('Loading concept set details for all events...')
   const criteria = criteriaManager.getCriteria()
@@ -564,7 +596,23 @@ const loadConceptSetDetailsForAllEvents = async () => {
 
         // Set selectedConceptSet if not already set
         if (!event.selectedConceptSet) {
-          event.selectedConceptSet = conceptSet
+          // Convert ConceptSetItem to SelectedConceptSet
+          event.selectedConceptSet = {
+            value: parseInt(conceptSet.value) || 0,
+            text: conceptSet.text || '',
+            display_value: conceptSet.display_value || conceptSet.text || '',
+            conceptIds: conceptSet.conceptIds || [],
+            concepts: (conceptSet.concepts || []).map(concept => ({
+              id: concept.id || concept.concept_id || concept.CONCEPT_ID || 0,
+              useMapped: concept.useMapped || false,
+              isExcluded: concept.isExcluded || false,
+              useDescendants: concept.useDescendants || false,
+            })),
+            shared: false,
+            userName: 'system',
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+          }
           console.log(`Linked concept set ${conceptSet.text} to event ${event.id}`)
         }
 
@@ -614,20 +662,36 @@ const loadConceptSetDetailsForAllEvents = async () => {
       )
 
       // Load details for this batch
-      const batchResults = await loadConceptSetDetails(batch, datasetId)
+      try {
+        const batchResults = await apiLoadConceptSetDetails(batch, datasetId)
 
-      // Apply results to all events that need each concept set
-      for (const [conceptSetId, conceptSetDetails] of Object.entries(batchResults)) {
-        const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+        // Apply results to all events that need each concept set
+        for (const [conceptSetId, conceptSetDetailsArray] of Object.entries(batchResults || {})) {
+          const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
 
-        for (const event of eventsForThisConceptSet) {
-          event.conceptSetDetails = conceptSetDetails
-          event.conceptSetLoading = false
-          console.log(`Loaded ${conceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`)
+          // Ensure conceptSetDetailsArray is properly typed
+          const typedConceptSetDetails = Array.isArray(conceptSetDetailsArray) ? conceptSetDetailsArray : []
 
-          // Debug: Log first concept detail to verify format
-          if (conceptSetDetails.length > 0) {
-            console.log('Sample concept detail:', conceptSetDetails[0])
+          for (const event of eventsForThisConceptSet) {
+            event.conceptSetDetails = typedConceptSetDetails
+            event.conceptSetLoading = false
+            console.log(
+              `Loaded ${typedConceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`
+            )
+
+            // Debug: Log first concept detail to verify format
+            if (typedConceptSetDetails.length > 0) {
+              console.log('Sample concept detail:', typedConceptSetDetails[0])
+            }
+          }
+        }
+      } catch (batchError) {
+        console.error(`Error loading batch ${Math.floor(i / batchSize) + 1}:`, batchError)
+        // Mark all events in this batch as failed
+        for (const conceptSetId of batch.map(cs => cs.value)) {
+          const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+          for (const event of eventsForThisConceptSet) {
+            event.conceptSetLoading = false
           }
         }
       }
@@ -792,7 +856,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
         value: newConceptSetId.toString(),
         text: sanitizedName,
         display_value: sanitizedName,
-        conceptIds: concepts.map(c => c.id),
+        conceptIds: concepts.map((c: any) => c.id),
         concepts: concepts,
       }
 
@@ -822,9 +886,13 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
     } else {
       console.warn('Invalid value passed to handleConceptSetUpdate:', value)
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleConceptSetUpdate:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     if (selectedConceptSets && Array.isArray(value)) {
       selectedConceptSets.value = value
     }
@@ -835,9 +903,13 @@ const handleSearchChange = (searchQuery: string) => {
   try {
     console.log('handleSearchChange called with:', searchQuery)
     filterConceptSetsLocal(searchQuery)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleSearchChange:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -903,10 +975,13 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
           const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
           if (index !== -1) {
             const updatedSets = [...currentSets]
-            updatedSets[index] = {
-              ...updatedSets[index],
-              text: onCloseValues.currentConceptSet.name,
-              display_value: onCloseValues.currentConceptSet.name,
+            const currentItem = updatedSets[index]
+            if (currentItem) {
+              updatedSets[index] = {
+                ...currentItem,
+                text: onCloseValues.currentConceptSet.name,
+                display_value: onCloseValues.currentConceptSet.name,
+              }
             }
             selectedConceptSets.value = updatedSets
           }
@@ -936,9 +1011,13 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
     })
 
     window.dispatchEvent(event)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleConceptSetAction:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -1034,7 +1113,7 @@ defineExpose({
         <div class="header-container-right"></div>
         <div class="header-container-left">
           <div class="left-button-group">
-            <ButtonMaterial @click="openSaveDialog">Save</ButtonMaterial>
+            <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1198,10 +1277,10 @@ defineExpose({
                       required
                       :maxlength="maxLength"
                     />
-                    <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
+                    <div class="invalid-feedback" :style="isInvalidName ? 'display: block' : ''">
                       Please enter a valid name
                     </div>
-                    <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
+                    <div class="invalid-feedback" :style="hasExceededLength ? 'display: block' : ''">
                       Cohort name must not exceed {{ maxLength }} characters
                     </div>
                   </div>

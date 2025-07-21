@@ -17,7 +17,7 @@ import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
-  eventType?: 'ENTRY' | 'EXIT'
+  eventType?: 'ENTRY' | 'EXIT' | 'CRITERIA'
   parentGroup?: QueryFilterGroup
   conceptSets?: ConceptSetItem[]
   conceptSetDomainValues?: ConceptSetDomainValues
@@ -50,8 +50,14 @@ const mainEvents = computed(() => eventsData.value)
 
 // Determine the correct section ID based on event type
 const sectionId = computed(() => {
-  // initialEvents is used for inclusion criteria as well
-  return props.eventType === 'EXIT' ? 'censoringEvents' : 'initialEvents'
+  if (props.eventType === 'EXIT') {
+    return 'censoringEvents'
+  } else if (props.eventType === 'CRITERIA') {
+    return 'criteriaGroup'
+  } else {
+    // Default to initialEvents for ENTRY or undefined
+    return 'initialEvents'
+  }
 })
 // Handle adding new event from criteria selector
 const handleCriteriaSelected = (option: CriteriaOption) => {

@@ -123,7 +123,7 @@ const getCardinalityCount = () => {
                   class="button-container"
                   :class="{ 'button-container__selected': isActiveOccurrenceType('EXACTLY') }"
                 >
-                  <ButtonMaterial @click="updateActiveOccurrenceType('EXACTLY')">Exactly</ButtonMaterial>
+                  <ButtonMaterial @button-click="updateActiveOccurrenceType('EXACTLY')">Exactly</ButtonMaterial>
                   <div class="box" ref="exactlyRef">{{ exactlyCount }}</div>
                 </div>
 
@@ -131,7 +131,7 @@ const getCardinalityCount = () => {
                   class="button-container"
                   :class="{ 'button-container__selected': isActiveOccurrenceType('AT_LEAST') }"
                 >
-                  <ButtonMaterial color="success" @click="updateActiveOccurrenceType('AT_LEAST')"
+                  <ButtonMaterial color="success" @button-click="updateActiveOccurrenceType('AT_LEAST')"
                     >At least</ButtonMaterial
                   >
                   <div class="box" ref="atLeastRef">{{ atLeastCount }}</div>
@@ -141,7 +141,7 @@ const getCardinalityCount = () => {
                   class="button-container"
                   :class="{ 'button-container__selected': isActiveOccurrenceType('AT_MOST') }"
                 >
-                  <ButtonMaterial color="secondary" @click="updateActiveOccurrenceType('AT_MOST')"
+                  <ButtonMaterial color="secondary" @button-click="updateActiveOccurrenceType('AT_MOST')"
                     >At most</ButtonMaterial
                   >
                   <div class="box" ref="atMostRef">{{ atMostCount }}</div>
@@ -161,7 +161,7 @@ const getCardinalityCount = () => {
           </div>
           <div class="footer">
             <ButtonMaterial
-              @click="
+              @button-click="
                 () => {
                   updateCardinalityField()
                   hide()
