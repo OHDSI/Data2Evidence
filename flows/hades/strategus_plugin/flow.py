@@ -191,7 +191,7 @@ def runStrategus(json_graph, options):
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     if(upload_results):
         result_db_settings = {
-            'database_code': get_strategus_results_db_code(),
+            'database_code': get_study_results_db_code(),
             "dataset_id": datasetId,
             "study_id": study_id
         }
@@ -210,13 +210,13 @@ def drop_strategus_results(options):
        raise Exception('Database code is missing')
 
     drop_strategus_results_schema(dbSettings={
-        'database_code': get_strategus_results_db_code(),
+        'database_code': get_study_results_db_code(),
         'dataset_id': datasetId,
         'study_id': study_id
     })
 
-def get_strategus_results_db_code():
+def get_study_results_db_code():
     """
     Returns the database code for the Strategus results database.
     """
-    return "strategus_results"
+    return "study_results"

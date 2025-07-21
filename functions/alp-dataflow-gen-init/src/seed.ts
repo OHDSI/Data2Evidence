@@ -1,4 +1,4 @@
-import { env, getStrategusResultsDbCredentials } from "./env";
+import { env, getStudyResultsDbCredentials } from "./env";
 import { BlockType, DBCredentials, PrefectVariable, PrefectSecret, transformDBCredentials } from "./types";
 import { PrefectAPI } from "./PrefectAPI";
 import { customDockerWorkpool } from "./customWorkpool";
@@ -49,8 +49,8 @@ export async function seed(): Promise<void> {
     BlockType.SECRET
   );
 
-  const strategusDbCredBlockName = "strategus-results-database-credentials";
-  const strategusDbCredentials = getStrategusResultsDbCredentials();
+  const strategusDbCredBlockName = "study-results-database-credentials";
+  const strategusDbCredentials = getStudyResultsDbCredentials();
   const strategusDbCredentialsOptions: PrefectSecret = {
     value: strategusDbCredentials
   };
