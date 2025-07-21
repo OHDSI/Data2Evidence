@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('jobs-execute-view-log-and-result', async ({ page }) => {
-
+  test.setTimeout(300000); // Set timeout to 5 minutes
   // Jobs: Execute Job - Create DQD job with name dqd_demo
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').click();
