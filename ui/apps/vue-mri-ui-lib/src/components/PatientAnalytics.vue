@@ -17,16 +17,12 @@
               </div>
               <div class="flex-grow-1 nav-container">
                 <ul class="nav nav-justified">
-                  <li
-                    class="nav-item"
-                    @click="toggleCohorts(true)"
-                    v-show="!displaySharedBookmarks"
-                  >
+                  <li class="nav-item" @click="toggleCohorts(true)" v-show="!displaySharedBookmarks">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
                   </li>
-                  <li class="nav-item" @click="toggleCohorts(false, showQueryFilter ? false : true)" v-show="hasActiveBookmark">
+                  <li class="nav-item" @click="toggleCohorts(false, this.isAtlasBookmark)" v-show="hasActiveBookmark">
                     <a class="nav-link" :class="{ active: !displayCohorts }" href="javascript:void(0)">{{
                       this.getActiveBookmarkName()
                     }}</a>
@@ -304,6 +300,9 @@ export default {
     hasActiveBookmark() {
       return !!this.getActiveBookmark
     },
+    isAtlasBookmark() {
+      return this.getActiveBookmark && this.getActiveBookmark.isAtlas
+    },
   },
   methods: {
     ...mapActions([
@@ -348,7 +347,7 @@ export default {
       this.displayCohorts = !show
       this.displaySharedBookmarks = false
     },
-    toggleCohorts(isDisplayCohort, isPaAtlas = false) {      
+    toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
         this.initializeBookmarks()
         this.toggleQueryFilter(false)
@@ -465,7 +464,7 @@ export default {
       try {
         await this.$nextTick()
         if (this.$refs.queryFilterRef) {
-          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)          
+          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
         } else {
           console.error('QueryFilter ref not found in Filters component')
         }
