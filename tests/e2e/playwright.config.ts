@@ -13,7 +13,7 @@ export default defineConfig({
     headless: true,
     ignoreHTTPSErrors: true
   },
-  retries: 3, // retry failed tests once
+  retries: process.env.CI ? 3 : 0, // retry failed tests once
   reporter: 'list',
   workers: 1
-});
+})
