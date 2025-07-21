@@ -1,4 +1,4 @@
-@import '../../../../../theme/variables.scss';
+@use '../../../../../theme/variables.scss' as *;
 
 .save-flow-dialog {
   &__content {
