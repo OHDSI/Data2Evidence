@@ -5,4 +5,4 @@ import { MigrationSource } from "../db/MigrationSource.ts"
 
 const k = knex(config);
 await k.migrate.latest({migrationSource: new MigrationSource()});
-console.log("strategus-results migrations: done")
+console.log("strategus-analysis migrations: done")

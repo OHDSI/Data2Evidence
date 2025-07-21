@@ -24,7 +24,6 @@ export default class StrategusAnalysisRouter {
         });
       }
 
-      // use the service to create or update the analysis specification
       const result = await this.strategusAnalysisService.createAnalysisSpec(
         token,
         analysisSpec,

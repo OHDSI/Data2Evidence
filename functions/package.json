@@ -21,9 +21,9 @@
     "functions": {
       "init": [
         {
-          "function": "/strategus-results/src/init",
-          "imports": "/strategus-results/import.json",
-          "env": "strategus-results"
+          "function": "/strategus-analysis/src/init",
+          "imports": "/strategus-analysis/import.json",
+          "env": "strategus-analysis"
         },
         {
           "function": "/jobplugins-init",
@@ -270,15 +270,15 @@
         },
         {
           "source": "/strategus-results",
-          "function": "/strategus-results",
-          "env": "strategus-results",
-          "imports": "/strategus-results/import.json"
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/import.json"
         },
         {
           "source": "/strategus",
-          "function": "/strategus-results",
-          "env": "strategus-results",
-          "imports": "/strategus-results/import.json"
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/import.json"
         },
         {
           "source": "/mlflow",

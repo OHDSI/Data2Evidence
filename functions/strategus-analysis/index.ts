@@ -21,7 +21,7 @@ export class App {
 
   async initialiseDataSource() {
     try {
-      console.log("Initialising strategus-results datasource...");
+      console.log("Initialising strategus-analysis datasource...");
       await dataSource.initialize();
     } catch (err) {
       console.log("strategus datasource initialisation failed with: ", err);

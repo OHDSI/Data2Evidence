@@ -464,7 +464,7 @@ services:
           },
           "jupyter-gateway": {},
           "mlflow": {},
-          "strategus-results": {
+          "strategus-analysis": {
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
             "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
