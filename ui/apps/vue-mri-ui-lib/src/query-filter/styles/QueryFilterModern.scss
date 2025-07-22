@@ -1,8 +1,7 @@
 // Modern Query Filter Styles
 // Comprehensive styling for the new hierarchical component architecture
 
-// Import Bootstrap variables for consistency
-@import '~bootstrap-vue/src/index.scss';
+@import '../../styles/mri-bootstrap-variables';
 
 // Custom variables for Query Filter
 $qf-primary-color: #1976d2;
