@@ -20,6 +20,7 @@ interface ActionSelectorProps {
   handleDataQuality: (dataset: Study) => void;
   handleDataCharacterization: (dataset: Study) => void;
   handleCreateCache: (dataset: Study) => void;
+  handleSetupSemanticSearch: (dataset: Study) => void;
 }
 
 interface Action {
@@ -62,6 +63,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   handleDataQuality,
   handleDataCharacterization,
   handleCreateCache,
+  handleSetupSemanticSearch,
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const { user } = useUser();
@@ -78,6 +80,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
     { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_QUALITY), value: "data-quality" },
     { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
     { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
+    { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
   ];
 
   const handleActionChange = useCallback(
@@ -113,6 +116,9 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         case "create-cache":
           handleCreateCache(dataset);
           break;
+        case "setup-semantic-search":
+          handleSetupSemanticSearch(dataset);
+          break;
         default:
           break;
       }
@@ -128,6 +134,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       handleDataQuality,
       handleDataCharacterization,
       handleCreateCache,
+      handleSetupSemanticSearch,
       dataset,
     ]
   );

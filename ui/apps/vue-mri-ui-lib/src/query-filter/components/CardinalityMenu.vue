@@ -18,7 +18,7 @@ import { QueryFilterCardinality } from '../models/QueryFilterModel'
 interface Props {
   type: 'GROUP' | 'EVENT'
   target: HTMLElement
-  namePrefix?: string
+  namePrefix: string
   cardinality?: QueryFilterCardinality
 }
 
@@ -33,7 +33,7 @@ const emit = defineEmits<{
 
 // Static options
 const occurrenceCountOptions = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '20', '50', '100']
-const occurenceCountColumnOptions = [
+const occurrenceCountColumnOptions = [
   { value: 'ALL', label: 'All' },
   { value: 'DISTINCT_CONCEPT', label: 'Distinct concept' },
   { value: 'DISTINCT_START_DATE', label: 'Distinct start date' },
@@ -41,28 +41,28 @@ const occurenceCountColumnOptions = [
 ]
 
 // Component refs for Popper
-const exactlyRef = ref(null)
-const atLeastRef = ref(null)
-const atMostRef = ref(null)
+const exactlyRef = ref<HTMLElement | null>(null)
+const atLeastRef = ref<HTMLElement | null>(null)
+const atMostRef = ref<HTMLElement | null>(null)
 
 // State variables
-const activeOccurenceType = ref<OccurrenceType>(props.cardinality?.type || 'AT_LEAST')
+const activeOccurrenceType = ref<OccurrenceType>(props.cardinality?.type || 'AT_LEAST')
 const exactlyCount = ref(props.cardinality?.type === 'EXACTLY' ? props.cardinality.count.toString() : '1')
 const atLeastCount = ref(props.cardinality?.type === 'AT_LEAST' ? props.cardinality.count.toString() : '1')
 const atMostCount = ref(props.cardinality?.type === 'AT_MOST' ? props.cardinality.count.toString() : '1')
-const occurenceCountColumn = ref<OccurrenceCountColumn>(props.cardinality?.using || 'ALL')
+const occurrenceCountColumn = ref<OccurrenceCountColumn>(props.cardinality?.using || 'ALL')
 
 const isGroup = props.type === 'GROUP'
-const isActiveOccurenceType = (type: OccurrenceType) => {
-  return activeOccurenceType.value === type
+const isActiveOccurrenceType = (type: OccurrenceType) => {
+  return activeOccurrenceType.value === type
 }
 
 // Updates
 const updateCardinalityField = () => {
   const newCardinality = {
-    type: activeOccurenceType.value,
+    type: activeOccurrenceType.value,
     count: parseInt(getCardinalityCount()),
-    using: occurenceCountColumn.value,
+    using: occurrenceCountColumn.value,
   }
   emit('updateCardinalityField', newCardinality)
 }
@@ -81,16 +81,20 @@ const updateCountState = (type: 'EXACTLY' | 'AT_LEAST' | 'AT_MOST' | 'COUNT_COL'
   }
 }
 
-const updateOccurenceCountColumn = (value: OccurrenceCountColumn) => {
-  occurenceCountColumn.value = value || 'ALL'
+const isValidOccurrenceCountColumn = (value: string): value is OccurrenceCountColumn => {
+  return ['ALL', 'DISTINCT_CONCEPT', 'DISTINCT_START_DATE', 'DISTINCT_VISIT'].includes(value)
 }
 
-const updateActiveOccurenceType = (type: OccurrenceType) => {
-  activeOccurenceType.value = type
+const updateOccurrenceCountColumn = (value: string) => {
+  occurrenceCountColumn.value = isValidOccurrenceCountColumn(value) ? value : 'ALL'
+}
+
+const updateActiveOccurrenceType = (type: OccurrenceType) => {
+  activeOccurrenceType.value = type
 }
 
 const getCardinalityCount = () => {
-  switch (activeOccurenceType.value) {
+  switch (activeOccurrenceType.value) {
     case 'EXACTLY':
       return exactlyCount.value
     case 'AT_LEAST':
@@ -117,17 +121,17 @@ const getCardinalityCount = () => {
               <div class="event-button-container">
                 <div
                   class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurenceType('EXACTLY') }"
+                  :class="{ 'button-container__selected': isActiveOccurrenceType('EXACTLY') }"
                 >
-                  <ButtonMaterial @click="updateActiveOccurenceType('EXACTLY')">Exactly</ButtonMaterial>
+                  <ButtonMaterial @button-click="updateActiveOccurrenceType('EXACTLY')">Exactly</ButtonMaterial>
                   <div class="box" ref="exactlyRef">{{ exactlyCount }}</div>
                 </div>
 
                 <div
                   class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurenceType('AT_LEAST') }"
+                  :class="{ 'button-container__selected': isActiveOccurrenceType('AT_LEAST') }"
                 >
-                  <ButtonMaterial color="success" @click="updateActiveOccurenceType('AT_LEAST')"
+                  <ButtonMaterial color="success" @button-click="updateActiveOccurrenceType('AT_LEAST')"
                     >At least</ButtonMaterial
                   >
                   <div class="box" ref="atLeastRef">{{ atLeastCount }}</div>
@@ -135,9 +139,9 @@ const getCardinalityCount = () => {
 
                 <div
                   class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurenceType('AT_MOST') }"
+                  :class="{ 'button-container__selected': isActiveOccurrenceType('AT_MOST') }"
                 >
-                  <ButtonMaterial color="secondary" @click="updateActiveOccurenceType('AT_MOST')"
+                  <ButtonMaterial color="secondary" @button-click="updateActiveOccurrenceType('AT_MOST')"
                     >At most</ButtonMaterial
                   >
                   <div class="box" ref="atMostRef">{{ atMostCount }}</div>
@@ -145,11 +149,11 @@ const getCardinalityCount = () => {
 
                 <div class="button-container">
                   <GroupButtons
-                    :options="occurenceCountColumnOptions"
-                    :limitValue="occurenceCountColumn"
+                    :options="occurrenceCountColumnOptions"
+                    :limitValue="occurrenceCountColumn"
                     :small="true"
                     :namePrefix="props.namePrefix"
-                    @update-limit-value="value => updateOccurenceCountColumn(value)"
+                    @update-limit-value="value => updateOccurrenceCountColumn(value)"
                   />
                 </div>
               </div>
@@ -157,7 +161,7 @@ const getCardinalityCount = () => {
           </div>
           <div class="footer">
             <ButtonMaterial
-              @click="
+              @button-click="
                 () => {
                   updateCardinalityField()
                   hide()
@@ -172,18 +176,21 @@ const getCardinalityCount = () => {
   </Popper>
 
   <DropdownMenu
+    v-if="exactlyRef"
     :options="occurrenceCountOptions"
-    @select="value => updateCountState('EXACTLY', value)"
+    @select="(value: string) => updateCountState('EXACTLY', value)"
     :target="exactlyRef"
   />
   <DropdownMenu
+    v-if="atLeastRef"
     :options="occurrenceCountOptions"
-    @select="value => updateCountState('AT_LEAST', value)"
+    @select="(value: string) => updateCountState('AT_LEAST', value)"
     :target="atLeastRef"
   />
   <DropdownMenu
+    v-if="atMostRef"
     :options="occurrenceCountOptions"
-    @select="value => updateCountState('AT_MOST', value)"
+    @select="(value: string) => updateCountState('AT_MOST', value)"
     :target="atMostRef"
   />
 </template>
@@ -268,4 +275,3 @@ const getCardinalityCount = () => {
   }
 }
 </style>
-
