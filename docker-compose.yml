@@ -1168,8 +1168,6 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway:
-        priority: 10
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
