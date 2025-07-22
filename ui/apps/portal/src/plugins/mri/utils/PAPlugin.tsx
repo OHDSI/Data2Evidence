@@ -55,9 +55,7 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
       qeSvcUrl={VUE_APP_HOST}
       toggleAtlas={toggleAtlas}
     >
-      <div className="vue-main" style={{ height: "100%" }}>
-        {isLoading && <Loader />}
-      </div>
+      <div className="vue-main">{isLoading && <Loader />}</div>
     </PluginContainer>
   );
 };

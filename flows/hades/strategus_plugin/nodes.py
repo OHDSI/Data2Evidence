@@ -881,7 +881,7 @@ class StrategusNode(Node):
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
+def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
@@ -902,7 +902,7 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
             )
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
-            rAnalysisSpec = rParallelLogger.convertJsonToSettings(json.dumps(analysisSpec))
+            rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
             print('Strategus execution started...')
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
@@ -912,7 +912,7 @@ def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
 
 @flow(name="upload-strategus-results",
       log_prints=True)
-def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
+def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
@@ -933,22 +933,22 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
                 pathToDriver = databaseConnectorJarFolder
             )
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
-
-            # if schema exists, drop and recreate the schema
-            if(not dbdao.check_schema_exists(results_schema)):
-                dbdao.create_schema(results_schema)
-
             # create results datamodel settings
             resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
             )
-            # create results datamodel 
-            rStrategus.createResultDataModel(
-                analysisSpecifications = rAnalysisSpec,
-                resultsDataModelSettings = resultsDataModelSettings,
-                resultsConnectionDetails = rConnectionDetails
-            )
+
+            # if schema does not exist, create one (including the data model)
+            if(not dbdao.check_schema_exists(results_schema)):
+                dbdao.create_schema(results_schema)
+                # create results datamodel 
+                rStrategus.createResultDataModel(
+                    analysisSpecifications = rAnalysisSpec,
+                    resultsDataModelSettings = resultsDataModelSettings,
+                    resultsConnectionDetails = rConnectionDetails
+                )
+
             # upload results to the database
             rStrategus.uploadResults(
                 resultsConnectionDetails = rConnectionDetails,
