@@ -162,5 +162,7 @@ services:
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
   mlflow:
     build:
+      args:
+        GITHUB_PAT: ${GH_TOKEN}
       context: ./flows
       dockerfile: ./base/Dockerfile
