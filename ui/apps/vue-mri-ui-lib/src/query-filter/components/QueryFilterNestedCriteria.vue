@@ -8,12 +8,12 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
 
-interface NestedCriteria {
+export interface NestedCriteria {
   id: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
   events: any[]
@@ -77,9 +77,11 @@ const handleGroupRemove = () => {
       :group="groupData"
       :group-index="0"
       :concept-sets="conceptSets"
-      :concept-set-domain-values="conceptSetDomainValues"
-      :concept-set-texts="conceptSetTexts"
-      :dataset-id="datasetId"
+      :concept-set-domain-values="
+        conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+      "
+      :concept-set-texts="conceptSetTexts || {}"
+      :dataset-id="datasetId || null"
       :readonly="readonly"
       :hide-header="true"
       @update-group="handleGroupUpdate"
