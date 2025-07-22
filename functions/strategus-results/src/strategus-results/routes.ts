@@ -49,7 +49,7 @@ export class StrategusResultsRouter {
     this.router.get("/:studyId/status", async (req: Request, res: Response) => {
       const { studyId } = req.params;
 
-      const strategusViewerHost = `http://${studyId}:3838`;
+      const strategusViewerHost = `http://${encodeURIComponent(studyId)}:3838`;
       try {
         const response = await fetch(strategusViewerHost, { method: "GET" });
 
@@ -75,7 +75,7 @@ export class StrategusResultsRouter {
     this.router.all("/:studyId/*", async (req: Request, res: Response) => {
       const { studyId } = req.params;
       const restOfPath = req.path.replace(`/${studyId}`, "");
-      const strategusViewerHost = `http://${studyId}:3838`;
+      const strategusViewerHost = `http://${encodeURIComponent(studyId)}:3838`;
 
       try {
         const targetUrl = `${strategusViewerHost}${restOfPath}`;
