@@ -6,15 +6,20 @@
  */
 import { env } from "../configs";
 import * as _textLib from "./text";
-import { getCachedbDbConnections } from "./cachedb";
 import { getTrexConnection } from "./trexConnection";
 import * as xsenv from "@sap/xsenv";
-import { DBConnectionUtil as dbConnectionUtil } from "@alp/alp-base-utils";
+import {
+  DBConnectionUtil as dbConnectionUtil,
+  Logger,
+} from "@alp/alp-base-utils";
 import PortalServerAPI from "../api/PortalServerAPI";
 import {
   DUCKDB_FILE_DATABASE_CODE,
   DUCKDB_FILE_SCHEMA_NAME,
 } from "../qe/settings/Defaults";
+
+const logger = Logger.CreateLogger("cdw-svc: trexConnection");
+
 /**
  * Escapes a string to be used in a regex
  *
@@ -486,12 +491,19 @@ export async function getAnalyticsConnection(
     schemaName = DUCKDB_FILE_SCHEMA_NAME;
     vocabSchemaName = DUCKDB_FILE_SCHEMA_NAME;
   } else {
-    // Resolve datasetId into database code, schema name and vocab schema name
-    const dataset = await new PortalServerAPI().getDataset(token, datasetId);
-    databaseCode = dataset.databaseCode;
-    schemaName = dataset.schemaName;
-    vocabSchemaName = dataset.vocabSchemaName;
-    dialect = dataset.dialect;
+    try {
+      // Resolve datasetId into database code, schema name and vocab schema name
+      const dataset = await new PortalServerAPI().getDataset(token, datasetId);
+      databaseCode = dataset.databaseCode;
+      schemaName = dataset.schemaName;
+      vocabSchemaName = dataset.vocabSchemaName;
+      dialect = dataset.dialect;
+    } catch (err) {
+      logger.error(err);
+      throw new Error(
+        `Error while getting dataset information for datasetId:${datasetId}`
+      );
+    }
   }
 
   if (dialect === "hana") {
@@ -538,23 +550,11 @@ export async function getAnalyticsConnection(
         userObj,
       });
   } else {
-    // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
-    if (env.USE_TREX_DB_CONN === "true") {
-      analyticsConnection = await getTrexConnection(
-        databaseCode,
-        schemaName,
-        vocabSchemaName
-      );
-    } else if (env.USE_CACHEDB === "true") {
-      // Get duckdb db connection via alp-cachedb
-      analyticsConnection = await getCachedbDbConnections({
-        userObj,
-        token,
-        databaseCode,
-        schemaName,
-        vocabSchemaName,
-      });
-    }
+    analyticsConnection = await getTrexConnection(
+      databaseCode,
+      schemaName,
+      vocabSchemaName
+    );
   }
 
   return analyticsConnection;

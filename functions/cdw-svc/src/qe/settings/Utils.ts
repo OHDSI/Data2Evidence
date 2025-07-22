@@ -62,7 +62,13 @@ export function isSchemaAllowed(schema: string): boolean {
     }
 }
 
-export function getDatasetIdFromConfig(config: CDMConfigType): string {
+export function getDatasetIdFromConfig(
+  config: CDMConfigType | undefined
+): string {
+  if (config === undefined) {
+    return "DEFAULT";
+  }
+
   const datasetId = config.advancedSettings.settings.datasetId;
   return datasetId ? datasetId : "DEFAULT";
 }

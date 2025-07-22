@@ -10,15 +10,6 @@ const Env = z
     PORT: z.string(),
     MRI_USER: z.string().optional(),
 
-    USE_CACHEDB: z.string(),
-    CACHEDB__HOST: z.string(),
-    CACHEDB__PORT: z
-      .string()
-      .refine((val) => !isNaN(parseInt(val)))
-      .transform(Number),
-
-    USE_TREX_DB_CONN: z.string(),
-
     TLS__INTERNAL__KEY: z.string().optional(),
     TLS__INTERNAL__CRT: z.string().optional(),
 
@@ -27,7 +18,6 @@ const Env = z
     isTestEnv: z.string().optional(),
     TESTSCHEMA: z.string().optional(),
 
-    PG__HOST: z.string(),
     PG__SSL: z.string(),
     PG__CA_ROOT_CERT: z.string().optional(),
     PG__HOST: z.string(),
