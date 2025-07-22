@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import { QueryFilterCriteriaManager, QueryFilterEvent } from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager, QueryFilterEvent, QueryFilterGroup } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
@@ -21,7 +21,12 @@ import type {
   ConceptSetDetails,
   CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
-import type { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
+import type {
+  AtlasCohortDefinition,
+  ConceptSet,
+  CriteriaGroup,
+  CriteriaListItem,
+} from '../models/AtlasCohortDefinition'
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
@@ -315,15 +320,13 @@ const handleUpdateEntryDays = (type: 'PRIOR' | 'POST', days: number) => {
 }
 
 // Handle adding new criteria group
-const handleAddCriteriaGroup = (groupData: any) => {
+const handleAddCriteriaGroup = (groupData: Partial<QueryFilterGroup>) => {
   criteriaManager.addCriteriaGroup(groupData)
-  console.log('Criteria group added:', groupData)
 }
 
 // Handle updating criteria group
-const handleUpdateCriteriaGroup = (index: number, groupData: any) => {
+const handleUpdateCriteriaGroup = (index: number, groupData: QueryFilterGroup) => {
   criteriaManager.updateCriteriaGroup(index, groupData)
-  console.log('Criteria group updated:', { index, groupData })
 }
 
 // Handle removing criteria group
@@ -417,7 +420,7 @@ type AtlasBookmark = {
   createdDate: number
   modifiedBy: string
   modifiedDate: number
-  tags: any[]
+  tags: string[]
   hasWriteAccess: boolean
   hasReadAccess: boolean
 }
@@ -428,7 +431,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Available concept sets:', allConceptSets.value.length)
 
     isLoading.value = true
-    const atlasExpression =
+    const atlasExpression: AtlasCohortDefinition =
       typeof atlasJson.expression === 'string' ? JSON.parse(atlasJson.expression) : atlasJson.expression
 
     // Extract concept set IDs from criteria even if ConceptSets array is empty
@@ -436,17 +439,23 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       const conceptSetIds = new Set<number>()
 
       // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
-      const extractFromCriteria = (criteriaItem: any) => {
-        const criteria = criteriaItem.Criteria || criteriaItem
+      const extractFromCriteria = (criteriaItem: CriteriaGroup | CriteriaListItem | Record<string, unknown>) => {
+        const criteria = 'Criteria' in criteriaItem ? criteriaItem.Criteria : criteriaItem
         if (criteria && typeof criteria === 'object') {
-          Object.values(criteria).forEach((criteriaObj: any) => {
-            if (criteriaObj && typeof criteriaObj === 'object' && typeof criteriaObj.CodesetId === 'number') {
+          Object.values(criteria).forEach((criteriaObj: unknown) => {
+            if (
+              criteriaObj &&
+              typeof criteriaObj === 'object' &&
+              'CodesetId' in criteriaObj &&
+              typeof criteriaObj.CodesetId === 'number'
+            ) {
               conceptSetIds.add(criteriaObj.CodesetId)
             }
 
             // Handle nested CorrelatedCriteria recursively
-            if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
-              criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
+            if (criteriaObj && typeof criteriaObj === 'object' && 'CorrelatedCriteria' in criteriaObj) {
+              const correlated = criteriaObj.CorrelatedCriteria as { CriteriaList?: CriteriaGroup[] }
+              correlated.CriteriaList?.forEach((nestedItem: CriteriaGroup) => {
                 extractFromCriteria(nestedItem)
               })
             }
@@ -500,6 +509,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
 
       for (let index = 0; index < atlasExpression.ConceptSets.length; index++) {
         const atlasConceptSet = atlasExpression.ConceptSets[index]
+        if (!atlasConceptSet) continue
+
         try {
           const originalId = atlasConceptSet.id
           const handledConceptSet = await handleConceptSetFromAtlas(atlasConceptSet)
@@ -555,7 +566,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     )
     console.log(
       'Atlas ConceptSets for conversion:',
-      atlasExpression.ConceptSets?.map((cs: any) => `${cs.name} (ID: ${cs.id})`)
+      atlasExpression.ConceptSets?.map(cs => `${cs.name} (ID: ${cs.id})`)
     )
     const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value)
     console.log('Converted Atlas JSON to tempManager:', tempManager)
@@ -804,7 +815,9 @@ const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMap
   }
 }
 
-const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
+const handleConceptSetFromAtlas = async (
+  atlasConceptSet: ConceptSet & { conceptSetId?: number }
+): Promise<ConceptSetItem | null> => {
   const datasetId = getDatasetId()
   if (!datasetId) {
     console.error('Missing datasetId for concept set handling')
@@ -813,7 +826,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 
   // Check if concept set already exists by conceptSetId (system ID)
   if (atlasConceptSet.conceptSetId) {
-    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId)
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId!.toString())
     if (existingConceptSet) {
       console.log(`Found existing concept set by conceptSetId: ${existingConceptSet.text}`)
       return existingConceptSet
@@ -828,13 +841,13 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 
       // Extract concepts from Atlas format
       const concepts = atlasConceptSet.expression.items
-        .map((item: any) => ({
-          id: item.concept?.CONCEPT_ID || item.concept?.concept_id,
+        .map(item => ({
+          id: item.concept?.CONCEPT_ID,
           useDescendants: item.includeDescendants !== false, // Default to true
           useMapped: item.includeMapped !== false, // Default to true
           isExcluded: item.isExcluded === true, // Default to false
         }))
-        .filter((concept: any) => concept.id) // Only include items with valid concept IDs
+        .filter(concept => concept.id) // Only include items with valid concept IDs
 
       if (concepts.length === 0) {
         console.error(`No valid concepts found in Atlas concept set: ${sanitizedName}`)
@@ -858,7 +871,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
         value: newConceptSetId.toString(),
         text: sanitizedName,
         display_value: sanitizedName,
-        conceptIds: concepts.map((c: any) => c.id),
+        conceptIds: concepts.map(c => c.id),
         concepts: concepts,
       }
 
@@ -934,7 +947,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
       { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
     ]
 
-    const handleCloseCallback = async (onCloseValues: any) => {
+    const handleCloseCallback = async (onCloseValues: { currentConceptSet?: { id: string; name: string } }) => {
       if (!onCloseValues?.currentConceptSet) {
         return
       }
