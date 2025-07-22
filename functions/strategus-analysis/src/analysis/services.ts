@@ -11,6 +11,16 @@ export default class StrategusAnalysisService {
         this.strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     }
 
+    async getStudyAnalysis(studyId: string) {
+        const analysis = await this.strategusAnalysisRepository.findOne({
+            where: { studyId: studyId }
+        });
+        if (!analysis) {
+            throw new Error(`No analysis found for studyId: ${studyId}`);
+        }
+        return analysis;
+    }
+
     async createAnalysisSpec(token, analysisSpec: string, studyId: string) {
         this.token = token;
         const analysisId = uuidv4();
@@ -53,5 +63,5 @@ export default class StrategusAnalysisService {
             modifiedAt: currentDate,
         };
     }
-    
+
 }

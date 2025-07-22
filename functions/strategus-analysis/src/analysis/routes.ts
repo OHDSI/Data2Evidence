@@ -12,6 +12,29 @@ export default class StrategusAnalysisRouter {
   private registerRoutes() {
     this.router.post("/", this.createStrategusAnalysis.bind(this));
     this.router.put("/", this.createStrategusAnalysis.bind(this));
+    this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
+  }
+
+  private async getStrategusAnalysis(req: Request, res: Response) {
+    try {
+      const studyId = req.params.studyId;
+      if (!studyId) {
+        return res.status(400).json({
+          message: "Missing required field: studyId",
+        });
+      }
+
+      const result = await this.strategusAnalysisService.getStudyAnalysis(
+        studyId as string
+      );
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching strategus analysis specification:", error);
+      res.status(500).json({
+        message: "An error occurred while fetching the analysis specification",
+      });
+    }
   }
 
   private async createStrategusAnalysis(req: Request, res: Response) {

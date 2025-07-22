@@ -556,7 +556,6 @@
           "rD2E.jupyter.kernel.flowRun.add",
           "strategus.analysis.read",
           "strategus.analysis.write",
-          "strategus.analysis.delete",
           "jobplugins.flowRun.strategus.removeResults.add",
           "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
@@ -2386,6 +2385,15 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]+$",
+          "scopes": [
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {
