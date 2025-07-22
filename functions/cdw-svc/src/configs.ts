@@ -9,7 +9,6 @@ const Env = z
     ENV_MOUNT_PATH: z.string().optional(),
     PORT: z.string(),
     MRI_USER: z.string().optional(),
-    USE_DUCKDB: z.string(),
 
     USE_CACHEDB: z.string(),
     CACHEDB__HOST: z.string(),
