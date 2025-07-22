@@ -780,9 +780,13 @@ export class QueryFilterCriteriaManager {
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType) // Only non-demographic main events with eventType
                 .map(event => {
+                  const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
                   const criteria: any = {
                     Criteria: {
-                      [this.mapEventTypeToAtlas(event.eventType!)]: {}, // Maps filter events → Atlas Criteria. !assertion for eventType because filter guarantees it
+                      [atlasEventType]: {
+                        // Add CodesetId if available
+                        ...(event.conceptSetId && { CodesetId: systemIdToAtlasId.get(event.conceptSetId) }),
+                      },
                     },
                     StartWindow: {
                       Start: {

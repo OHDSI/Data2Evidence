@@ -64,7 +64,7 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
   const newEvent: QueryFilterEvent = {
     id: `event_${Date.now()}`,
     conceptSet: `${option.title.replace('Add ', '')} concept set`,
-    criteriaType: option.id,
+    eventType: option.id,
     isExpanded: true,
     selectedAttributes: [],
     isDemographic: false,

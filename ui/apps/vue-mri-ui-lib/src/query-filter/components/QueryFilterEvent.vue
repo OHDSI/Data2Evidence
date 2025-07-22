@@ -64,7 +64,7 @@ const handleAttributeRemoved = (attributeId: string) => {
         </button>
         <attributes-dropdown
           v-if="isParent"
-          :criteria-type="condition.criteriaType || 'conditionOccurrence'"
+          :criteria-type="condition.eventType || 'conditionOccurrence'"
           :event-id="condition.id"
           :all-events="allConditions"
           @attribute-selected="handleAttributeSelected"

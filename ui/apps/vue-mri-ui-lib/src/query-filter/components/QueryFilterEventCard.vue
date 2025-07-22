@@ -381,7 +381,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
         <div class="event-header__left">
           <div class="event-type-indicator">
             <span class="event-type-label">
-              {{ getEventTypeDisplay(eventData.criteriaType) }}
+              {{ getEventTypeDisplay(eventData.eventType) }}
             </span>
             <span v-if="nestedLevel > 0" class="nested-indicator"> (Level {{ nestedLevel }}) </span>
           </div>
@@ -390,7 +390,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
         <div class="event-header__right">
           <AttributesDropdown
             v-if="!readonly"
-            :criteria-type="eventData.criteriaType || 'conditionOccurrence'"
+            :criteria-type="eventData.eventType || 'conditionOccurrence'"
             :event-id="eventData.id"
             :all-events="[eventData]"
             @attribute-selected="handleAttributeSelected"

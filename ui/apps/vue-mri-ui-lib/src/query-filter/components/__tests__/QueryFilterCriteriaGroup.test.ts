@@ -14,7 +14,7 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
         {
           id: 'event_1',
           conceptSet: 'Test Event',
-          criteriaType: 'conditionOccurrence',
+          eventType: 'conditionOccurrence',
         },
       ],
     }
@@ -44,21 +44,21 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     expect(mockGroup.events[0]).toBeDefined()
     expect(mockGroup.events[0].id).toBe('event_1')
     expect(mockGroup.events[0].conceptSet).toBe('Test Event')
-    expect(mockGroup.events[0].criteriaType).toBe('conditionOccurrence')
+    expect(mockGroup.events[0].eventType).toBe('conditionOccurrence')
   })
 
   it('handles multiple events in a group', () => {
     const secondEvent: QueryFilterEvent = {
       id: 'event_2',
       conceptSet: 'Second Event',
-      criteriaType: 'drugExposure',
+      eventType: 'drugExposure',
     }
 
     mockGroup.events.push(secondEvent)
 
     expect(mockGroup.events).toHaveLength(2)
-    expect(mockGroup.events[0].criteriaType).toBe('conditionOccurrence')
-    expect(mockGroup.events[1].criteriaType).toBe('drugExposure')
+    expect(mockGroup.events[0].eventType).toBe('conditionOccurrence')
+    expect(mockGroup.events[1].eventType).toBe('drugExposure')
     expect(mockGroup.events[1].conceptSet).toBe('Second Event')
   })
 
