@@ -4,6 +4,7 @@ import {
   CreateDqdFlowRun,
   CreateFlowRunByMetadata,
   CreateGetVersionInfoFlowRun,
+  CreateSemanticSearchFlowRun,
   ExecuteFlowRunByDeployment,
   Flow,
   FlowRunFilters,
@@ -248,6 +249,15 @@ export class Dataflow {
     return request({
       baseURL: JOBPLUGIN_URL,
       url: "cachedb/create-file",
+      method: "POST",
+      data,
+    });
+  }
+
+  public createSearchEmbeddingFlowRun(data: CreateSemanticSearchFlowRun) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: "search-embedding/create",
       method: "POST",
       data,
     });
