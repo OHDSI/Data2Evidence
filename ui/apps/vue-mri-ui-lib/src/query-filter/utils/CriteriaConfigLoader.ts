@@ -4,6 +4,8 @@
 
 // Import JSON configuration
 import criteriaConfigData from '../config/cohort-criteria-config.json'
+// Import types from AtlasCohortDefinition to avoid duplication
+import type { ConceptSet, ConceptSetExpression, OccurrenceSettings } from '../models/AtlasCohortDefinition'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -40,6 +42,38 @@ export interface AttributeCategory {
   attributes: AttributeConfig[]
 }
 
+export interface CriteriaItem {
+  CodesetId?: number
+  type?: string
+  conceptSets?: ConceptSet[]
+  [key: string]: boolean | number | string | ConceptSet[] | undefined // For specific exclude flags like ConditionTypeExclude, DrugTypeExclude, etc.
+}
+
+export interface PrimaryCriteriaListItem {
+  [criteriaType: string]: CriteriaItem // e.g., { "ConditionOccurrence": { CodesetId: 2, ConditionTypeExclude: false } }
+}
+
+export interface TemporalWindowBound {
+  Days?: number
+  Coeff?: number
+}
+
+export interface AtlasTemporalWindow {
+  Start?: TemporalWindowBound
+  End?: TemporalWindowBound
+  UseIndexEnd?: boolean
+  UseEventEnd?: boolean
+}
+
+export interface InclusionRuleCriteriaListItem {
+  Criteria: PrimaryCriteriaListItem
+  StartWindow?: AtlasTemporalWindow
+  EndWindow?: AtlasTemporalWindow
+  RestrictVisit?: boolean
+  IgnoreObservationPeriod?: boolean
+  Occurrence?: OccurrenceSettings
+}
+
 export interface CriteriaOption {
   id: string
   title: string
@@ -51,20 +85,20 @@ export interface CriteriaOption {
   atlasKey: string
   special: boolean
   selected?: boolean
-  action?: () => any
+  action?: () => CriteriaItem | void
 }
 
 export interface DropdownOption extends CriteriaOption {
   selected: boolean
-  action: () => any
+  action: () => CriteriaItem | void
 }
 
 export interface CohortExpression {
-  ConceptSets: any[]
+  ConceptSets: ConceptSet[]
   PrimaryCriteria: () => {
-    CriteriaList: any[]
+    CriteriaList: PrimaryCriteriaListItem[]
   }
-  CensoringCriteria: () => any[]
+  CensoringCriteria: () => PrimaryCriteriaListItem[]
 }
 
 export interface TemporalWindow {
@@ -86,6 +120,18 @@ export interface CriteriaAttributeConfig {
   type: string
   atlasKey: string
   special?: boolean
+}
+
+export interface AttributeOption {
+  id: string
+  title: string
+  defaultTitle: string
+  description: string
+  defaultDescription: string
+  type: string
+  atlasKey: string
+  special: boolean
+  action: (criteriaInstance: CriteriaItem) => CriteriaItem | void
 }
 
 export interface CriteriaConfig {
@@ -169,7 +215,7 @@ export class CriteriaConfigLoader {
     criteriaTypeId: string,
     expression: CohortExpression,
     targetList: string = 'PrimaryCriteria'
-  ): () => any {
+  ): () => CriteriaItem | void {
     const criteriaType = this.criteriaTypes[criteriaTypeId]
     if (!criteriaType) {
       throw new Error(`Criteria type ${criteriaTypeId} not found`)
@@ -205,11 +251,11 @@ export class CriteriaConfigLoader {
 
       // Add to appropriate list
       if (targetList === 'PrimaryCriteria') {
-        const criteriaItem: Record<string, any> = {}
+        const criteriaItem: PrimaryCriteriaListItem = {}
         criteriaItem[criteriaType.class] = criteria
         expression.PrimaryCriteria().CriteriaList.push(criteriaItem)
       } else if (targetList === 'CensoringCriteria') {
-        const criteriaItem: Record<string, any> = {}
+        const criteriaItem: PrimaryCriteriaListItem = {}
         criteriaItem[criteriaType.class] = criteria
         expression.CensoringCriteria().push(criteriaItem)
       }
@@ -296,7 +342,7 @@ export class CriteriaConfigLoader {
   /**
    * Get criteria-specific attribute options (like Add Nested Criteria, Add Stop Reason)
    */
-  getCriteriaAttributeOptions(criteriaTypeId: string): Array<any> {
+  getCriteriaAttributeOptions(criteriaTypeId: string): AttributeOption[] {
     // First check for criteria-specific attributes (like nested, stop reason, etc.)
     if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
       return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
@@ -317,10 +363,10 @@ export class CriteriaConfigLoader {
     }
 
     // Fall back to domain-based attributes (like age, gender, etc.)
-    const attributeCategory = Object.values(this.config.attributes).find(category => 
+    const attributeCategory = Object.values(this.config.attributes).find(category =>
       category.domains.includes(criteriaTypeId)
     )
-    
+
     if (!attributeCategory || !attributeCategory.attributes) {
       return []
     }
@@ -345,8 +391,11 @@ export class CriteriaConfigLoader {
   /**
    * Create action function for attribute-level options
    */
-  createAttributeActionFunction(attribute: CriteriaAttributeConfig, _criteriaTypeId: string) {
-    return function (_criteriaInstance: any) {
+  createAttributeActionFunction(
+    attribute: CriteriaAttributeConfig,
+    _criteriaTypeId: string
+  ): (criteriaInstance: CriteriaItem) => CriteriaItem | void {
+    return function (_criteriaInstance: CriteriaItem) {
       if (attribute.special && attribute.id === 'nested') {
         // Add nested criteria group
         console.log('Adding nested criteria group...')
@@ -430,4 +479,3 @@ export class CriteriaConfigLoader {
 const criteriaConfigLoader = new CriteriaConfigLoader()
 export { criteriaConfigLoader }
 export default criteriaConfigLoader
-
