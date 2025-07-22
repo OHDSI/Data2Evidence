@@ -1,15 +1,15 @@
 <template>
   <div v-if="list.length > 0" class="download-menu-container" style="display: inline">
-    <b-dropdown variant="link" size="sm" no-caret>
+    <bs-dropdown variant="link" size="sm" no-caret>
       <template v-slot:button-content>
         <button class="toolbarButton" :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')">
           <span class="icon" style="font-family: app-icons"></span>
         </button>
       </template>
       <template v-for="item in list" :key="item.key">
-        <b-dropdown-item @click="handleMenuClick(item.key)">{{ item.value }}</b-dropdown-item>
+        <bs-dropdown-item @click="handleMenuClick(item.key)">{{ item.value }}</bs-dropdown-item>
       </template>
-    </b-dropdown>
+    </bs-dropdown>
     <downloadCSVDialog v-if="csvShow" @closeEv="csvShow = false"></downloadCSVDialog>
     <downloadZIPDialog v-if="zipShow" @closeEv="zipShow = false"></downloadZIPDialog>
     <imageExport v-if="imageShow" @closeEv="imageShow = false"></imageExport>
@@ -20,8 +20,13 @@ import { mapActions, mapGetters } from 'vuex'
 import ImageExport from './ImageExport.vue'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import DownloadZIPDialog from './DownloadZipDialog.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 
 export default {
+  compatConfig: {
+    MODE: 3,
+  },
   name: 'downloadMenu',
   data() {
     return {
@@ -90,6 +95,8 @@ export default {
     ImageExport,
     DownloadCSVDialog,
     DownloadZIPDialog,
+    bsDropdown,
+    bsDropdownItem,
   },
 }
 </script>

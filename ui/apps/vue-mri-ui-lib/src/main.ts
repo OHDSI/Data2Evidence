@@ -1,6 +1,4 @@
-import BootstrapVue from 'bootstrap-vue'
 import { createApp, Component } from 'vue'
-import datetimePicker from 'vue-bootstrap-datetimepicker'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 
@@ -23,17 +21,15 @@ import store from './store'
 const app = createApp(App as unknown as Component)
 
 app.use(store)
-app.use(BootstrapVue)
 app.component('app-label', appLabelVue)
 app.component('app-tag-input', appTagInputVue)
 app.component('app-range', appRangeVue)
 app.component('app-variant-range', appVariantRangeVue)
 app.component('app-button', appButtonVue)
-app.component('app-date-range', appDateRangeVue)
-app.component('app-datetime-range', appDatetimeRangeVue)
+app.component('app-date-range', appDateRangeVue as any)
+app.component('app-datetime-range', appDatetimeRangeVue as any)
 app.component('app-single-select', appSingleSelect)
 app.component('multiselect', Multiselect)
-app.component('datetime-picker', datetimePicker)
 app.directive('focus', focus)
 app.directive('click-focus', clickFocus)
 app.directive('position-center', positionCenter)
