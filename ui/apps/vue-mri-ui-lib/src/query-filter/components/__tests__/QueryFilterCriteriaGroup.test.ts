@@ -1,4 +1,4 @@
-import { QueryFilterCardModel, QueryFilterEvent } from '../../models/QueryFilterModel'
+import { QueryFilterEvent } from '../../models/QueryFilterModel'
 import type { QueryFilterGroup } from '../../models/QueryFilterModel'
 
 describe('QueryFilterCriteriaGroup Model Tests', () => {
@@ -112,7 +112,7 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     const newEvent: QueryFilterEvent = {
       id: 'new_event',
       conceptSet: 'New Event',
-      criteriaType: 'procedureOccurrence',
+      eventType: 'procedureOccurrence',
     }
     mockGroup.events.push(newEvent)
 
@@ -145,7 +145,7 @@ describe('QueryFilterCriteriaGroup Model Tests', () => {
     const nestedEvent: QueryFilterEvent = {
       id: 'nested_event',
       conceptSet: 'Nested Event',
-      criteriaType: 'observation',
+      eventType: 'observation',
       parentEventId: mockGroup.events[0].id,
     }
 

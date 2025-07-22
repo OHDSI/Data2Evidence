@@ -21,6 +21,7 @@ import type {
   ConceptSetDetails,
   CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
+import type { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
@@ -431,40 +432,42 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       typeof atlasJson.expression === 'string' ? JSON.parse(atlasJson.expression) : atlasJson.expression
 
     // Extract concept set IDs from criteria even if ConceptSets array is empty
-    const extractConceptSetIds = (expression: any): Set<number> => {
+    const extractConceptSetIds = (expression: AtlasCohortDefinition): Set<number> => {
       const conceptSetIds = new Set<number>()
 
       // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
       const extractFromCriteria = (criteriaItem: any) => {
         const criteria = criteriaItem.Criteria || criteriaItem
-        Object.values(criteria).forEach((criteriaObj: any) => {
-          if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
-            conceptSetIds.add(criteriaObj.CodesetId)
-          }
+        if (criteria && typeof criteria === 'object') {
+          Object.values(criteria).forEach((criteriaObj: any) => {
+            if (criteriaObj && typeof criteriaObj === 'object' && typeof criteriaObj.CodesetId === 'number') {
+              conceptSetIds.add(criteriaObj.CodesetId)
+            }
 
-          // Handle nested CorrelatedCriteria recursively
-          if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
-            criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
-              extractFromCriteria(nestedItem)
-            })
-          }
-        })
+            // Handle nested CorrelatedCriteria recursively
+            if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
+              criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
+                extractFromCriteria(nestedItem)
+              })
+            }
+          })
+        }
       }
 
       // Extract from InclusionRules
-      expression.InclusionRules?.forEach((rule: any) => {
-        rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+      expression.InclusionRules?.forEach(rule => {
+        rule.expression?.CriteriaList?.forEach(criteriaItem => {
           extractFromCriteria(criteriaItem)
         })
       })
 
       // Extract from PrimaryCriteria
-      expression.PrimaryCriteria?.CriteriaList?.forEach((criteriaItem: any) => {
+      expression.PrimaryCriteria?.CriteriaList?.forEach(criteriaItem => {
         extractFromCriteria(criteriaItem)
       })
 
       // Extract from CensoringCriteria
-      expression.CensoringCriteria?.forEach((criteriaItem: any) => {
+      expression.CensoringCriteria?.forEach(criteriaItem => {
         extractFromCriteria(criteriaItem)
       })
 
@@ -728,15 +731,14 @@ const sanitizeConceptSetName = (name: string): string => {
   return name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
 }
 
-const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMapping: Record<number, number>) => {
   // Update the ConceptSets array IDs first - this is crucial for converter lookup
   if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
-    atlasExpression.ConceptSets.forEach((conceptSet: any) => {
+    atlasExpression.ConceptSets.forEach(conceptSet => {
       const originalId = conceptSet.id
       const newId = idMapping[originalId]
 
       if (newId !== undefined && newId !== originalId) {
-        console.log(`Updating ConceptSet.id: ${originalId} → ${newId} for concept set "${conceptSet.name}"`)
         conceptSet.id = newId
       }
     })
@@ -744,38 +746,36 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
 
   // Update CodesetId references in PrimaryCriteria
   if (atlasExpression.PrimaryCriteria?.CriteriaList) {
-    atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
-      Object.keys(criteriaItem).forEach(key => {
-        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
-          const originalCodesetId = criteriaItem[key].CodesetId
-          const newId = idMapping[originalCodesetId]
+    atlasExpression.PrimaryCriteria.CriteriaList.forEach(criteriaItem => {
+      if (criteriaItem && typeof criteriaItem === 'object') {
+        Object.keys(criteriaItem).forEach(key => {
+          const criteriaValue = (criteriaItem as any)[key]
+          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+            const originalCodesetId = criteriaValue.CodesetId
+            const newId = idMapping[originalCodesetId]
 
-          if (newId !== undefined && newId !== originalCodesetId) {
-            console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
-            criteriaItem[key].CodesetId = newId
+            if (newId !== undefined && newId !== originalCodesetId) {
+              criteriaValue.CodesetId = newId
+            }
           }
-        }
-      })
+        })
+      }
     })
   }
 
   // Update CodesetId references in InclusionRules
   if (atlasExpression.InclusionRules) {
-    atlasExpression.InclusionRules.forEach((rule: any) => {
-      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+    atlasExpression.InclusionRules.forEach(rule => {
+      rule.expression?.CriteriaList?.forEach(criteriaItem => {
         if (criteriaItem.Criteria) {
           Object.keys(criteriaItem.Criteria).forEach(key => {
-            if (
-              criteriaItem.Criteria[key] &&
-              typeof criteriaItem.Criteria[key] === 'object' &&
-              criteriaItem.Criteria[key].CodesetId !== undefined
-            ) {
-              const originalCodesetId = criteriaItem.Criteria[key].CodesetId
+            const criteriaValue = (criteriaItem.Criteria as any)[key]
+            if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+              const originalCodesetId = criteriaValue.CodesetId
               const newId = idMapping[originalCodesetId]
 
               if (newId !== undefined && newId !== originalCodesetId) {
-                console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
-                criteriaItem.Criteria[key].CodesetId = newId
+                criteriaValue.CodesetId = newId
               }
             }
           })
@@ -786,18 +786,20 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
 
   // Update CodesetId references in CensoringCriteria
   if (atlasExpression.CensoringCriteria) {
-    atlasExpression.CensoringCriteria.forEach((criteriaItem: any) => {
-      Object.keys(criteriaItem).forEach(key => {
-        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
-          const originalCodesetId = criteriaItem[key].CodesetId
-          const newId = idMapping[originalCodesetId]
+    atlasExpression.CensoringCriteria.forEach(criteriaItem => {
+      if (criteriaItem && typeof criteriaItem === 'object') {
+        Object.keys(criteriaItem).forEach(key => {
+          const criteriaValue = (criteriaItem as any)[key]
+          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+            const originalCodesetId = criteriaValue.CodesetId
+            const newId = idMapping[originalCodesetId]
 
-          if (newId !== undefined && newId !== originalCodesetId) {
-            console.log(`Updating CensoringCriteria CodesetId: ${originalCodesetId} → ${newId}`)
-            criteriaItem[key].CodesetId = newId
+            if (newId !== undefined && newId !== originalCodesetId) {
+              criteriaValue.CodesetId = newId
+            }
           }
-        }
-      })
+        })
+      }
     })
   }
 }
