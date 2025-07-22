@@ -9,7 +9,7 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EntryEvent, ExitEvent, QueryFilterCriteriaManager, QueryFilterEvent } from '../models/QueryFilterModel'
+import { EntryEvent, ExitEvent, QueryFilterEvent } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
@@ -37,8 +37,18 @@ const emit = defineEmits<{
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
 
-const updateLimitValue = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
-  emit('update-limit', limit)
+const updateLimitValue = (value: string) => {
+  // Type guard to ensure the value is valid
+  const validLimits = ['ALL', 'EARLIEST', 'LATEST', 'CONT_OBS', 'FIXED', 'CONT_DRUG'] as const
+  type ValidLimit = typeof validLimits[number]
+
+  const isValidLimit = (val: string): val is ValidLimit => {
+    return validLimits.includes(val as ValidLimit)
+  }
+
+  if (isValidLimit(value)) {
+    emit('update-limit', value)
+  }
 }
 const updateEntryDaysValue = (type: 'PRIOR' | 'POST', days: number) => {
   emit('update-entry-days', type, days)
@@ -83,9 +93,9 @@ const eventsData = computed(() => {
 })
 
 const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
-  if (isEntry.value) {
+  if (isEntry.value && props.primaryEventsData) {
     props.primaryEventsData.events = [...updatedEvents]
-  } else {
+  } else if (!isEntry.value && props.exitCriteriaData) {
     props.exitCriteriaData.censoringCriteria = [...updatedEvents]
   }
 }
@@ -124,8 +134,10 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
         :events="eventsData"
         :event-type="type"
         :concept-sets="props.conceptSets"
-        :concept-set-domain-values="props.conceptSetDomainValues"
-        :concept-set-texts="props.conceptSetTexts"
+        :concept-set-domain-values="
+          props.conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+        "
+        :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
       />
