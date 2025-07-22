@@ -88,3 +88,7 @@ export interface FlowRunFilters {
 export interface CreateCacheFlowRun {
   datasetId: string | undefined;
 }
+
+export interface CreateSemanticSearchFlowRun {
+  datasetId: string | undefined;
+}
