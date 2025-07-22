@@ -202,6 +202,11 @@ export interface DataCharacterizationFlowRunDto {
   excludeAnalysisIds?: string;
 }
 
+export interface SearchEmbeddingFlowRunDto {
+  database_code: string;
+  schema_name: string;
+}
+
 export interface IReactFlow {
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
