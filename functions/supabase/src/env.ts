@@ -9,6 +9,7 @@ const Env = z.object({
   PG_ADMIN_USER: z.string(),
   PG_ADMIN_PASSWORD: z.string(),
   PG_SCHEMA: z.string(),
+  PG__SSL: z.string(),
   PG__PORT: z
     .string()
     .refine((val) => !isNaN(parseInt(val)))

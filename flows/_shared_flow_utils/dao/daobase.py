@@ -255,7 +255,10 @@ class DaoBase(ABC):
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={DaoBase.big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
-                connect_args = {"user": user, "password": password.get_secret_value()}
+                if auth_mode == AuthMode.PASSWORD:
+                    connect_args = {"user": user, "password": password.get_secret_value()}
+                elif auth_mode == AuthMode.JWT:
+                    connect_args = {"user": user}
 
         if dialect == SupportedDatabaseDialects.HANA:
             hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
