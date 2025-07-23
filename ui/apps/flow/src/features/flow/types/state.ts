@@ -23,4 +23,5 @@ export interface FlowRootState {
   nodes: EntityState<NodeState>;
   edges: EntityState<EdgeState>;
   variables: KeyValue[];
+  importLibs: string[];
 }

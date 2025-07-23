@@ -120,6 +120,7 @@ interface ReactFlowDto {
   nodes: NodeState[];
   edges: EdgeState[];
   variables: KeyValue[];
+  importLibs: string[];
 }
 
 export interface SaveFlowDialogState {

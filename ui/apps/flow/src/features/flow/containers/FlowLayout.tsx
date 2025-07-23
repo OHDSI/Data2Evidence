@@ -12,6 +12,7 @@ import {
   replaceEdges,
   replaceNodes,
   replaceVariables,
+  replaceImportLibs,
   setAddNodeTypeDialog,
 } from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
@@ -58,19 +59,10 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
 
   useEffect(() => {
     if (!revisionId) {
-      let savedNodes = [];
-      let savedEdges = [];
-      let savedVariables = [];
-
-      if (dataflow?.flow) {
-        savedNodes = dataflow.flow.nodes;
-        savedEdges = dataflow.flow.edges;
-        savedVariables = dataflow.flow.variables;
-      }
-
-      dispatch(replaceNodes(savedNodes));
-      dispatch(replaceEdges(savedEdges));
-      dispatch(replaceVariables(savedVariables));
+      dispatch(replaceNodes(dataflow?.flow?.nodes || []));
+      dispatch(replaceEdges(dataflow?.flow?.edges || []));
+      dispatch(replaceVariables(dataflow?.flow?.variables || []));
+      dispatch(replaceImportLibs(dataflow?.flow?.importLibs || []));
     }
   }, [dataflow, revisionId]);
 

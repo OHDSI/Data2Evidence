@@ -216,6 +216,7 @@ export interface IReactFlow {
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
   variables: KeyValue[];
+  importLibs: string[];
 }
 
 export interface IReactFlowNode {
@@ -289,6 +290,7 @@ export interface IPrefectEdge {
 
 export interface IPrefectParameters {
   variables?: KeyValue[];
+  import_libs?: string[];
   json_graph: {
     edges: IPrefectEdge;
     nodes: object;

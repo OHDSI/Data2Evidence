@@ -117,6 +117,7 @@ export class PrefectParamsTransformer {
 
     return {
       variables: flow.variables,
+      import_libs: flow.importLibs,
       json_graph: {
         nodes: prefectNodes,
         edges: prefectEdges,

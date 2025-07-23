@@ -38,6 +38,7 @@ const initialState: FlowRootState = {
   nodes: nodesInitialState,
   edges: edgesInitialState,
   variables: [],
+  importLibs: [],
 };
 
 const flowSlice = createSlice({
@@ -121,9 +122,12 @@ const flowSlice = createSlice({
       edgesAdapter.upsertOne(state.edges, action.payload);
     },
 
-    // Variables
+    // Variables & import libraries
     replaceVariables: (state, action: PayloadAction<KeyValue[]>) => {
       state.variables = action.payload;
+    },
+    replaceImportLibs: (state, action: PayloadAction<string[]>) => {
+      state.importLibs = action.payload;
     },
   },
 });
@@ -157,8 +161,9 @@ export const {
   replaceEdges,
   setEdge,
 
-  // Variables
+  // Variables & import libraries
   replaceVariables,
+  replaceImportLibs,
 } = flowSlice.actions;
 
 export const { selectAll: selectNodes, selectById: selectNodeById } =
