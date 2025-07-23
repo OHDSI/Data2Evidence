@@ -122,7 +122,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
           ) : (
             <div className="action-container">
               <div className="description">
-                Please scan data or open mapping to see Source tables
+                Please scan data to see Source tables
               </div>
               <div className="button-group">
                 <Button
@@ -131,13 +131,6 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
                   onClick={openScanDataDialog}
                 >
                   Scan Data
-                </Button>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => console.log("Open load mapping dialog")} // Placeholder for open mapping action
-                >
-                  Open Mapping
                 </Button>
               </div>
             </div>
