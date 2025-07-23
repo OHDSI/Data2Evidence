@@ -87,9 +87,10 @@ export class PrefectController {
       if(options['study_id'] === undefined) {
         return res.status(400).send({ message: "Missing required field: study_id in options" });
       }
-      if(options['notebookName'] === undefined) {
-        return res.status(400).send({ message: "Missing required field: notebookName in options" });
-      }
+      // uncomment this line when notebookName is available in jupyter kernel
+      // if(options['notebookName'] === undefined) {
+      //   return res.status(400).send({ message: "Missing required field: notebookName in options" });
+      // }
 
       const flowrunId = await this.prefectService.createAnalaysisRunByJupyterKernel(
         token,

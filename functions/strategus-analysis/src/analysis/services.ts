@@ -33,8 +33,10 @@ export default class StrategusAnalysisService {
             existingAnalysis.analysisSpec = analysisSpec;;
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
         } else { 
-            if( !notebookName || !mode) {
-                throw new Error("Missing required fields: notebookName or mode");
+            // if( !notebookName || !mode) { // TODO: uncomment this line when notebookName is available in jupyter kernel
+            if(!mode) {
+                // throw new Error("Missing required fields: notebookName or mode");
+                throw new Error("Missing required fields: mode");
             }
             // Create new analysisSpec
             const newAnalysis = {
