@@ -104,7 +104,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
       ...nodeState,
       data: formData,
     };
-    dispatch(setNode(updated)); // here sets the node data
+    dispatch(setNode(updated));
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();

@@ -239,7 +239,6 @@ export const dataflowApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
     }),
-    // TODO: move white rabbit endpoint to new slice
     createDBScanReport: builder.mutation<
       any,
       { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
