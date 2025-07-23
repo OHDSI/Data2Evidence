@@ -194,7 +194,7 @@ def execute_node_task(nodename, node_type, node, input, shared_variables, import
             case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING:
                 result = _node.task(task_run_context)
             case NodeType.PYTHON:
-                result = _node.test(input, shared_variables, importlibs, task_run_context)
+                result = _node.task(input, shared_variables, importlibs, task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
     return result
