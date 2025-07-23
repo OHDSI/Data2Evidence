@@ -108,7 +108,7 @@ export const DataMappingDrawer: FC<DataMappingDrawerProps> = ({
   ]);
 
   return (
-    <NodeDrawer {...props} width="1400px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} width="1400px" onOk={handleOk} onClose={handleOk}>
       <PluginRenderer
         path="/mapping/module.js"
         userId={pluginMetadata.userId}
