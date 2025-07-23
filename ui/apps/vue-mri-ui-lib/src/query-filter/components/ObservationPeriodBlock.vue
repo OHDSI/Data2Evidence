@@ -1,6 +1,6 @@
 <script lang="ts">
 export default {
-  name: 'ObervationPeriodBlock',
+  name: 'ObservationPeriodBlock',
   compatConfig: {
     MODE: 3,
   },
@@ -11,22 +11,31 @@ export default {
 import { ref, watch } from 'vue'
 import DropdownMenu from './DropdownMenu.vue'
 
+type DayType = 'before' | 'after'
+type PeriodType = 'PRIOR' | 'POST'
+
 interface Props {
   priorDays?: number
   postDays?: number
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits(['update-entry-days'])
+const props = withDefaults(defineProps<Props>(), {
+  priorDays: 0,
+  postDays: 0,
+})
 
-const daysBefore = ref(props.priorDays || 0)
-const daysAfter = ref(props.priorDays || 0)
-const boxBefore = ref(null)
-const boxAfter = ref(null)
+const emit = defineEmits<{
+  'update-entry-days': [type: PeriodType, value: number]
+}>()
 
-const dayOptions = ['0', '1', '7', '14', '21', '30', '60', '90', '120', '180', '365', '548', '730', '1095']
+const daysBefore = ref<number>(props.priorDays)
+const daysAfter = ref<number>(props.postDays)
+const boxBefore = ref<HTMLElement | null>(null)
+const boxAfter = ref<HTMLElement | null>(null)
 
-const selectDay = (type, value) => {
+const dayOptions: string[] = ['0', '1', '7', '14', '21', '30', '60', '90', '120', '180', '365', '548', '730', '1095']
+
+const selectDay = (type: DayType, value: string): void => {
   if (type === 'before') {
     daysBefore.value = parseInt(value, 10)
   } else if (type === 'after') {
@@ -36,25 +45,25 @@ const selectDay = (type, value) => {
 
 watch(
   () => props.priorDays,
-  newValue => {
-    daysBefore.value = newValue
+  (newValue?: number) => {
+    daysBefore.value = newValue || 0
   }
 )
+
 watch(
   () => props.postDays,
-  newValue => {
-    daysAfter.value = newValue
+  (newValue?: number) => {
+    daysAfter.value = newValue || 0
   }
 )
 
-watch(daysBefore, newValue => {
-  emit('update-entry-days', 'PRIOR',newValue)
+watch(daysBefore, (newValue: number) => {
+  emit('update-entry-days', 'PRIOR', newValue)
 })
-watch(daysAfter, newValue => {
+
+watch(daysAfter, (newValue: number) => {
   emit('update-entry-days', 'POST', newValue)
 })
-
-
 </script>
 
 <template>
@@ -79,8 +88,18 @@ watch(daysAfter, newValue => {
       </div>
     </div>
 
-    <DropdownMenu :options="dayOptions" @select="value => selectDay('before', value)" :target="boxBefore" />
-    <DropdownMenu :options="dayOptions" @select="value => selectDay('after', value)" :target="boxAfter" />
+    <DropdownMenu
+      v-if="boxBefore"
+      :options="dayOptions"
+      @select="(value: string) => selectDay('before', value)"
+      :target="boxBefore"
+    />
+    <DropdownMenu
+      v-if="boxAfter"
+      :options="dayOptions"
+      @select="(value: string) => selectDay('after', value)"
+      :target="boxAfter"
+    />
   </div>
 </template>
 
@@ -125,4 +144,3 @@ watch(daysAfter, newValue => {
   }
 }
 </style>
-
