@@ -4,7 +4,7 @@ export type NodeType =
   | "py2table_node"
   | "r_node"
   | "sql_node"
-  | "data_mapping_node"
+  | "rabbit_in_a_hat"
   | "concept_mapping_node"
   | "csv_node"
   | "db_reader_node"

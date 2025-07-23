@@ -23,7 +23,7 @@ export const NODE_TYPES: {
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
-  data_mapping_node: DataMappingNode,
+  rabbit_in_a_hat: DataMappingNode,
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
@@ -40,7 +40,7 @@ export const NODE_COLORS: {
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
-  data_mapping_node: "#999fcb",
+  rabbit_in_a_hat: "#999fcb",
   concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
@@ -92,8 +92,8 @@ test_exec <- function(myinput) {
     tag: NodeTag.Stable,
     defaultData: {},
   },
-  data_mapping_node: {
-    title: "Data mapping",
+  rabbit_in_a_hat: {
+    title: "Rabbit in a Hat",
     description: "Map source data to OMOP data model.",
     tag: NodeTag.Experimental,
     defaultData: {},
