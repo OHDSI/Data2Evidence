@@ -179,8 +179,16 @@
                 "position": 0,
                 "title": "json_graph"
               },
-              "options": {
+              "importlibs": {
                 "position": 1,
+                "title": "importlibs"
+              },
+              "variables": {
+                "position": 2,
+                "title": "variables"
+              },
+              "options": {
+                "position": 3,
                 "title": "options"
               }
             },
