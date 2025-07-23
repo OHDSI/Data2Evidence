@@ -7,7 +7,7 @@
       <boolcontainer :id="query.model.result" @toggle="toggleExclusion" />
     </div>
     <div class="panel-footer">
-      <b-dropdown variant="link" class="createFilterDropdown" dropup>
+      <bs-dropdown variant="link" class="createFilterDropdown" dropup>
         <template v-slot:button-content>
           <div class="createFilterButton">
             <d4l-button :text="getText('MRI_SEARCH_FILTER_CREATE_BTN')" classes="button--block" />
@@ -15,12 +15,12 @@
         </template>
         <div class="dropdown-scroll">
           <template v-for="item in getFilterCardMenu" :key="item">
-            <b-dropdown-item-button :data-key="item.key" @click="addNewFilterCard(item.key, showExclusion)">{{
+            <bs-dropdown-item-button :data-key="item.key" @click="addNewFilterCard(item.key, showExclusion)">{{
               item.text
-            }}</b-dropdown-item-button>
+            }}</bs-dropdown-item-button>
           </template>
         </div>
-      </b-dropdown>
+      </bs-dropdown>
     </div>
   </div>
 </template>
@@ -29,8 +29,13 @@
 import { mapActions, mapGetters, mapState } from 'vuex'
 import boolcontainer from '../BoolContainer.vue'
 import filterCard from '../FilterCard.vue'
+import bsDropdown from '../../lib/ui/bs-dropdown.vue'
+import bsDropdownItemButton from '../../lib/ui/bs-dropdown-item-button.vue'
 
 export default {
+  compatConfig: {
+    MODE: 3,
+  },
   name: 'searchFilters',
   data() {
     return {
@@ -61,6 +66,8 @@ export default {
   components: {
     boolcontainer,
     filterCard,
+    bsDropdown,
+    bsDropdownItemButton,
   },
 }
 </script>

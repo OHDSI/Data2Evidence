@@ -6,14 +6,15 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import criteriaConfigLoader, { type AttributeConfig } from '../utils/CriteriaConfigLoader'
+import criteriaConfigLoader, { type AttributeOption } from '../utils/CriteriaConfigLoader'
+import type { QueryFilterEvent } from '../models/QueryFilterModel'
 import MenuIcon from './icons/MenuIcon.vue'
 
 interface Props {
   criteriaType: string // The type of criteria (e.g., 'conditionOccurrence', 'drugExposure')
   disabled?: boolean
   eventId: string // The event ID for which this dropdown is shown
-  allEvents: any[] // All events in the filter to check which attributes are already selected
+  allEvents: QueryFilterEvent[] // All events in the filter to check which attributes are already selected
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,7 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'attribute-selected': [attribute: AttributeConfig & { category: string }]
+  'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
 }>()
 
@@ -34,35 +35,20 @@ const flipVertical = ref(false)
 const constrainHeight = ref(false)
 
 // Get available attributes for this criteria type
-const availableAttributes = computed(() => {
+const availableAttributes = computed<AttributeOption[]>(() => {
   try {
     // Get criteria-specific attributes (like nested, stop reason, etc.)
-    const criteriaAttributes = criteriaConfigLoader.getCriteriaAttributeOptions(props.criteriaType)
-    return criteriaAttributes
+    return criteriaConfigLoader.getCriteriaAttributeOptions(props.criteriaType)
   } catch (error) {
     console.warn(`Failed to load attributes for criteria ${props.criteriaType}:`, error)
     return []
   }
 })
 
-// Group attributes by type for better organization
-const attributesByCategory = computed(() => {
-  const grouped: Record<string, Array<any>> = {
-    'Criteria-specific': [],
-  }
-
-  availableAttributes.value.forEach(attr => {
-    // All criteria-specific attributes go into one category for now
-    grouped['Criteria-specific'].push(attr)
-  })
-
-  return grouped
-})
-
 // Check if an attribute is currently selected by looking at the current event's attributes
 const isAttributeSelected = (attributeId: string) => {
   // Find the current event by eventId
-  const currentEvent = props.allEvents.find(event => event.id === props.eventId)
+  const currentEvent = props.allEvents.find((event: QueryFilterEvent) => event.id === props.eventId)
   if (!currentEvent) return false
 
   // Check if the attribute is in the attributes array
@@ -72,7 +58,7 @@ const isAttributeSelected = (attributeId: string) => {
 // Get currently selected attributes for the button label
 const selectedAttributeIds = computed(() => {
   // Find the current event by eventId
-  const currentEvent = props.allEvents.find(event => event.id === props.eventId)
+  const currentEvent = props.allEvents.find((event: QueryFilterEvent) => event.id === props.eventId)
   if (!currentEvent || !currentEvent.attributes) return []
 
   // Return the IDs of selected attributes
@@ -159,13 +145,11 @@ const calculateDropdownPosition = () => {
   }
 }
 
-const selectAttribute = (attribute: any) => {
+const selectAttribute = (attribute: AttributeOption) => {
   if (isAttributeSelected(attribute.id)) {
     emit('attribute-removed', attribute.id)
   } else {
-    // Add category property for compatibility
-    const attributeWithCategory = { ...attribute, category: 'criteria-specific' }
-    emit('attribute-selected', attributeWithCategory)
+    emit('attribute-selected', attribute)
   }
   // Keep dropdown open for multiple selections
 }
@@ -196,14 +180,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleResize)
-})
-
-// Button label based on selection state
-const buttonLabel = computed(() => {
-  if (selectedAttributeIds.value.length === 0) {
-    return '='
-  }
-  return `= (${selectedAttributeIds.value.length})`
 })
 
 const hasAttributes = computed(() => availableAttributes.value.length > 0)
@@ -244,18 +220,10 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
       </div>
 
       <div class="attributes-dropdown__content">
-        <div
-          v-for="(attributes, category) in attributesByCategory"
-          :key="category"
-          class="attributes-dropdown__category"
-        >
-          <h4 class="attributes-dropdown__category-title">
-            {{ category.charAt(0).toUpperCase() + category.slice(1) }}
-          </h4>
-
+        <div class="attributes-dropdown__category">
           <div class="attributes-dropdown__attributes">
             <label
-              v-for="attribute in attributes"
+              v-for="attribute in availableAttributes"
               :key="attribute.id"
               class="attributes-dropdown__attribute"
               :class="{ 'is-selected': isAttributeSelected(attribute.id) }"
@@ -267,7 +235,7 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
                 class="attributes-dropdown__checkbox"
               />
               <div class="attributes-dropdown__attribute-content">
-                <span class="attributes-dropdown__attribute-name">{{ attribute.title || attribute.name }}</span>
+                <span class="attributes-dropdown__attribute-name">{{ attribute.title }}</span>
                 <span
                   v-if="attribute.description || attribute.defaultDescription"
                   class="attributes-dropdown__attribute-description"

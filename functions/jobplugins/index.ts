@@ -3,6 +3,7 @@ import pg from "npm:pg";
 import { CohortController } from "./src/controllers/CohortController.ts";
 import { CohortSurvivalController } from "./src/controllers/CohortSurvivalController.ts";
 import { DataCharacterizationController } from "./src/controllers/DataCharacterizationController.ts";
+import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
 import { DataModelFlowController } from "./src/controllers/DataModelFlowController.ts";
 import { DbSvcController } from "./src/controllers/DbSvcController.ts";
 import { DqdController } from "./src/controllers/DqdController.ts";
@@ -30,6 +31,7 @@ app.use(
   "/jobplugins/dqd/data-characterization",
   new DataCharacterizationController().router
 );
+app.use("/jobplugins/search-embedding", new SearchEmbeddingController().router);
 app.use("/jobplugins/datamodel", new DataModelFlowController().router);
 app.use("/jobplugins/dataflow", new DataTransformationController().router);
 app.use("/jobplugins/prefect", new PrefectController().router);

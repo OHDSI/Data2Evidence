@@ -221,7 +221,7 @@ export class App {
       this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
 
       // Grant roles to users
-      const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
+      const pgUsers = this.getPGUsers(this.getDatabaseName(config.getProperties()["config_db_name"]));
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
