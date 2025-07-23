@@ -240,10 +240,7 @@ class PythonNode(Node):
              shared_variables: dict[str, str], 
              importlibs: list[str], 
              task_run_context):
-        params = {"myinput": _input, "output": {}}
-        testcode = compile(self.test_source_code, '<string>', 'exec')
-        e = exec(testcode, params)
-        return params["output"]
+        return self.task(_input, shared_variables, importlibs, task_run_context)
 
     def task(self, _input: dict[str, Result], 
              shared_variables: dict[str, str], 
