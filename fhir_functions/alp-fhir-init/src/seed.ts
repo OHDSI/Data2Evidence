@@ -79,7 +79,7 @@ export const seed = async () => {
   await queryPostgres(
     client,
     `INSERT INTO ${fhirCustomSchema}."Project_History" ("versionId", id, "content", "lastUpdated")
-    values('2c8b0331-863a-432e-a5d1-ef0619acc3d2', $1, $2, $3) ON CONFLICT("versionId") \
+    values('2c8b0331-863a-432e-a5d1-ef0619acc3d2', $1, $2, $3) ON CONFLICT("versionId")
     DO NOTHING;`,
     [projectId, jsonParsedProjectContent, "2024-06-13 14:40:48.738 +0800"]
   );
