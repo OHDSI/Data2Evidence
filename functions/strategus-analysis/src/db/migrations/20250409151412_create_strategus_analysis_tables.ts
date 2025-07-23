@@ -5,6 +5,8 @@ const rawUp = `CREATE TABLE ${env.PG_SCHEMA}."strategus_analysis" (
     id uuid NOT NULL,
     study_id varchar NOT NULL,
     analysis_spec text NOT NULL,
+    notebook_name varchar NOT NULL,
+    mode varchar NOT NULL,
     created_at timestamp NOT NULL DEFAULT now(),
     updated_at timestamp NOT NULL DEFAULT now(),
     created_by varchar NOT NULL DEFAULT 'system',

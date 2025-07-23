@@ -16,6 +16,12 @@ export default class StrategusAnalysis {
   @Column({ name: "study_id" })
   studyId: string;
 
+  @Column({ name: "notebook_name" })
+  notebookName: string;
+
+  @Column({name: "mode", type: "varchar" })
+  mode: string;
+
   @Column({ name: "created_at", type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 

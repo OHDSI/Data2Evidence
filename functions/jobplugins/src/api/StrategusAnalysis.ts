@@ -13,7 +13,7 @@ export class StrategusAnalysisApi {
     }
   }
 
-  public async saveAnalysis(studyId: string, analysisSpec: any): Promise<{ message: string; analysisId: string }> {
+  public async saveAnalysis(studyId: string, notebookName: string, analysisSpec: any): Promise<{ message: string; analysisId: string }> {
     const response = await fetch(`${this.baseUrl}/strategus/analysis`, {
       method: 'POST',
       headers: {
@@ -22,7 +22,9 @@ export class StrategusAnalysisApi {
       },
       body: JSON.stringify({
         studyId,
-        analysisSpec
+        analysisSpec,
+        notebookName,
+        mode: "kernel"
       })
     });
 

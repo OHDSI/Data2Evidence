@@ -21,7 +21,7 @@ export default class StrategusAnalysisService {
         return analysis;
     }
 
-    async createAnalysisSpec(token, analysisSpec: string, studyId: string) {
+    async createAnalysisSpec(token, studyId: string, notebookName: string, analysisSpec: string, mode: string) {
         this.token = token;
         const analysisId = uuidv4();
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
@@ -33,11 +33,16 @@ export default class StrategusAnalysisService {
             existingAnalysis.analysisSpec = analysisSpec;;
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
         } else { 
+            if( !notebookName || !mode) {
+                throw new Error("Missing required fields: notebookName or mode");
+            }
             // Create new analysisSpec
             const newAnalysis = {
                 id: analysisId,
-                analysisSpec: analysisSpec,
-                studyId: studyId
+                analysisSpec,
+                studyId,
+                mode,
+                notebookName
             };
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(newAnalysis, true));
         }

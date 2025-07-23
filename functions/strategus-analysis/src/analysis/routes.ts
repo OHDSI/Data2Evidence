@@ -39,7 +39,7 @@ export default class StrategusAnalysisRouter {
 
   private async createStrategusAnalysis(req: Request, res: Response) {
     try {
-      const { studyId, analysisSpec } = req.body;
+      const { studyId, analysisSpec, mode, notebookName } = req.body;
       const token = req.headers["authorization"]
       if (!studyId || !analysisSpec) {
         return res.status(400).json({
@@ -49,8 +49,10 @@ export default class StrategusAnalysisRouter {
 
       const result = await this.strategusAnalysisService.createAnalysisSpec(
         token,
+        studyId,
+        notebookName,
         analysisSpec,
-        studyId
+        mode
       );
 
       res.status(200).json({
@@ -61,7 +63,7 @@ export default class StrategusAnalysisRouter {
     } catch (error) {
       console.error("Error saving strategus analysis specification:", error);
       res.status(500).json({
-        message: "An error occurred while saving the analysis specification",
+        message: `An error occurred while saving the analysis specification: ${error.message}`,
       });
     }
   }
