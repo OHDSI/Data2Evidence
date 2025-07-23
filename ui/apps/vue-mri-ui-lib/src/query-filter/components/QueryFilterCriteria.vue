@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -44,8 +44,11 @@ const emit = defineEmits<{
 const currentCriteriaData = computed(() => props.criteriaData)
 
 // Handle qualifying events limit selection
-const updateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  emit('update-qualifying-limit', limit)
+const updateQualifyingLimit = (value: string) => {
+  // Type guard to ensure the value is valid
+  if (value === 'ALL' || value === 'EARLIEST' || value === 'LATEST') {
+    emit('update-qualifying-limit', value)
+  }
 }
 
 const qualifyingEventsOptions = [
@@ -58,12 +61,16 @@ const currentQualifyingLimit = computed(() => {
   return currentCriteriaData.value.criteriaType || 'ALL'
 })
 
+// Event name changed from 'click' to 'button-click' to avoid native event conflicts
+
 // Handle adding new criteria group
 const addNewGroup = () => {
+  // Create new criteria group
+  const staticCount = currentCriteriaData.value.criteria.length + 1
   const newGroup = {
     id: `criteria_${Date.now()}`,
-    title: `Criteria ${currentCriteriaData.value.criteria.length + 1}`,
-    description: `Description for Criteria ${currentCriteriaData.value.criteria.length + 1}`,
+    title: `Criteria ${staticCount}`,
+    description: `Description for Criteria ${staticCount}`,
     criteriaType: 'ALL' as 'ALL',
     events: [],
   }
@@ -118,7 +125,7 @@ const handleGroupRemove = (groupIndex: number) => {
             <span class="btn-add-group__text">Add Criteria Group</span>
           </button> -->
 
-          <ButtonMaterial variant="text" color="primary" @click="addNewGroup">
+          <ButtonMaterial variant="text" color="primary" @button-click="addNewGroup">
             <template #startIcon>
               <AddIcon />
             </template>
@@ -131,9 +138,11 @@ const handleGroupRemove = (groupIndex: number) => {
           :group="group"
           :group-index="index"
           :concept-sets="conceptSets"
-          :concept-set-domain-values="conceptSetDomainValues"
-          :concept-set-texts="conceptSetTexts"
-          :dataset-id="datasetId"
+          :concept-set-domain-values="
+            conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+          "
+          :concept-set-texts="conceptSetTexts || {}"
+          :dataset-id="datasetId || null"
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"

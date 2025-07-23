@@ -8,7 +8,7 @@ export default {
 import { defineProps, defineEmits } from 'vue'
 import { QueryFilterEvent } from '../models/QueryFilterModel'
 import AttributesDropdown from './AttributesDropdown.vue'
-import { type AttributeConfig } from '../utils/CriteriaConfigLoader'
+import { type AttributeOption } from '../utils/CriteriaConfigLoader'
 
 const props = defineProps<{
   condition: QueryFilterEvent
@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit', 'duplicate', 'remove', 'attribute-selected', 'attribute-removed'])
 
-const handleAttributeSelected = (attribute: AttributeConfig & { category: string }) => {
+const handleAttributeSelected = (attribute: AttributeOption) => {
   emit('attribute-selected', props.condition.id, attribute)
 }
 
@@ -64,9 +64,9 @@ const handleAttributeRemoved = (attributeId: string) => {
         </button>
         <attributes-dropdown
           v-if="isParent"
-          :criteria-type="condition.criteriaType || 'conditionOccurrence'"
-          :condition-id="condition.id"
-          :all-conditions="allConditions"
+          :criteria-type="condition.eventType || 'conditionOccurrence'"
+          :event-id="condition.id"
+          :all-events="allConditions"
           @attribute-selected="handleAttributeSelected"
           @attribute-removed="handleAttributeRemoved"
         />
@@ -89,4 +89,3 @@ const handleAttributeRemoved = (attributeId: string) => {
 <style lang="scss" scoped>
 @import '../styles/QueryFilterEvent';
 </style>
-
