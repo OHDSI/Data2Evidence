@@ -320,6 +320,10 @@ export class App {
         await this.dbDao.createSchema(client, databaseName, schemaName);
       }
 
+      if (databaseName === "alp" && schemaName === "fhir") {
+        await this.dbDao.alterExtensionSchema(client, "fhir", "pg_trgm");
+      }
+
       //Grant Manage & Usage Privileges
       await this.userDao.grantManagePrivilegesForSchema(
         client,
