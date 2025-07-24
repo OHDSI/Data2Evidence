@@ -37,7 +37,7 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.CREATE_CACHE_DIALOG__RUN_SUCCESS, [String(dataset?.id)]),
+        message: getText(i18nKeys.CREATE_CACHE_DIALOG__RUN_SUCCESS, [String(dataset?.studyDetail?.name)]),
       });
       setTimeout(() => handleClose("success"), 6000);
     } catch (err: any) {
@@ -54,13 +54,13 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
   return (
     <Dialog
       className="create-cache-dialog"
-      title={getText(i18nKeys.CREATE_CACHE_DIALOG__TITLE, [String(dataset?.id)])}
+      title={getText(i18nKeys.CREATE_CACHE_DIALOG__TITLE, [String(dataset?.studyDetail?.name)])}
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
       closable
       fullWidth
-      maxWidth="md"
+      maxWidth="sm"
     >
       <Divider />
 
