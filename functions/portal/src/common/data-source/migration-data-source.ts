@@ -47,6 +47,7 @@ import { UpdateDatasetSplitDatamodelColumn17211757718562 } from "./migrations/17
 import { CreateUserArtifactTable1729863090719 } from "./migrations/1729863090719-create-user-artifact-table.ts";
 import { CreateUserArtifactGroupTable1730946830529 } from "./migrations/1730946830529-create-user-artifact-group-table.ts";
 import { CreateUserArtifactSequence1739779063184 } from "./migrations/1739779063184-create-user-artifact-sequence.ts";
+import { SplitUserArtifact1749110029676 } from "./migrations/1749110029676-split-user-artifact.ts";
 
 const _env = Deno.env.toObject();
 
@@ -67,7 +68,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
       };
     }
     return ssl;
-    })(),
+  })(),
   poolSize: parseInt(_env.PG__MAX_POOL) || 10,
   entities: [
     Config,
@@ -120,6 +121,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     UpdateDatasetAddPlugin17211757718561,
     UpdateDatasetSplitDatamodelColumn17211757718562,
     CreateUserArtifactSequence1739779063184,
+    SplitUserArtifact1749110029676,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
