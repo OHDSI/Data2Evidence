@@ -78,6 +78,7 @@ export const NotebookArtifact = z.object({
 export type INotebookArtifact = z.infer<typeof NotebookArtifact>;
 
 export const AnalysisFlowArtifact = z.object({
+  id: z.string(),
   options: z.object({
     mode: z.string(),
     datasetId: z.string(),
