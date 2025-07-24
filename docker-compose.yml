@@ -452,9 +452,9 @@ services:
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
             "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
             "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-            "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
             "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -636,11 +636,11 @@ services:
          },
          "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
           "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "managerPassword": "${PG_ADMIN_PASSWORD}",
-          "writer": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}",
+          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
           "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "readerPassword": "${PG_WRITE_PASSWORD}"
+          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
