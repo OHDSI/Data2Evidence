@@ -88,14 +88,6 @@ const handleTitleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-// Handle description changes
-const updateDescription = (newDescription: string) => {
-  groupData.value = {
-    ...groupData.value,
-    description: newDescription,
-  }
-}
-
 // Handle group type (operator) changes
 const updateGroupType = (newType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST') => {
   groupData.value = {
@@ -128,9 +120,11 @@ const removeGroup = () => {
 // Toggle between group types by cycling through them
 const toggleGroupType = () => {
   const types: ('ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST')[] = ['ALL', 'ANY', 'AT_LEAST', 'AT_MOST']
-  const currentIndex = types.indexOf(localGroup.value.criteriaType || 'ALL')
+  const currentType = localGroup.value.criteriaType || 'ALL'
+  const currentIndex = types.indexOf(currentType)
   const nextIndex = (currentIndex + 1) % types.length
-  updateGroupType(types[nextIndex])
+  const nextType = types[nextIndex] || 'ALL'
+  updateGroupType(nextType)
 }
 
 // Removed duplicate criteria selection handler
@@ -193,11 +187,14 @@ const toggleGroupType = () => {
           <!-- Events Container -->
           <QueryFilterEventContainer
             :events="groupEvents"
+            event-type="CRITERIA"
             :parent-group="localGroup"
             :concept-sets="conceptSets"
-            :concept-set-domain-values="conceptSetDomainValues"
-            :concept-set-texts="conceptSetTexts"
-            :dataset-id="datasetId"
+            :concept-set-domain-values="
+              conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+            "
+            :concept-set-texts="conceptSetTexts || {}"
+            :dataset-id="datasetId || null"
             :readonly="readonly"
             @update-events="handleEventsUpdate"
           />
