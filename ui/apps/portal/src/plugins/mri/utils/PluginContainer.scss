@@ -1,0 +1,7 @@
+.plugin-container {
+  display: flex;
+  flex-direction: column;
+  .vue-main {
+    height: calc(100vh - 3.5rem);
+  }
+}

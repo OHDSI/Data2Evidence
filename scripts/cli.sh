@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.7.1-beta
+version=0.8.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.8.1-beta
 
 
 cmd=""
