@@ -26,18 +26,23 @@ export class UserArtifactRepository {
     return this.dataSource;
   }
 
-  async findOne(userId: string): Promise<UserArtifact | null> {
+  async findOne(userId: string, serviceName: ServiceName): Promise<UserArtifact | null> {
     const repository = await this.getRepository()
     return await repository.findOne({
       where: {
-        userId: userId
+        userId,
+        serviceName
       }
     });
   }
 
-  async find(): Promise<UserArtifact[]> {
+  async find(serviceName: ServiceName): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
-    return await repository.find()
+    return await repository.find({
+      where: {
+        serviceName
+      }
+    })
   }
 
   async create(entity: Partial<UserArtifact>): Promise<UserArtifact> {
@@ -49,15 +54,21 @@ export class UserArtifactRepository {
     const repository = await this.getRepository();
 
     await repository.update(
-      { userId: entity.userId },
       {
-        artifacts: entity.artifacts,
+        userId: entity.userId,
+        serviceName: entity.serviceName
+      },
+      {
         modifiedBy: entity.modifiedBy,
+        artifacts: entity.artifacts,
         modifiedDate: new Date()
       }
     );
 
-    return await repository.findOneBy({ userId: entity.userId });
+    return await repository.findOneBy({ 
+      userId: entity.userId,
+      serviceName: entity.serviceName
+    });
   }
 
   async save(entity: Partial<UserArtifact>): Promise<UserArtifact> {
@@ -69,37 +80,39 @@ export class UserArtifactRepository {
     const repository = await this.getRepository()
     const result = await repository
       .createQueryBuilder('user_artifact')
-      .select(`jsonb_array_elements(user_artifact.artifacts->:serviceName)`, 'artifact')
-      .where(`user_artifact.artifacts ? :serviceName`, { serviceName })
+      .select(`jsonb_array_elements(user_artifact.artifacts)`, 'artifact')
+      .where(`user_artifact.service_name = :serviceName`, { serviceName })
       .getRawMany()
     return result.map(row => row.artifact)
   }
 
   async findSharedArtifacts(userId: string, serviceName: ServiceName): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
+    // TODO: Fix to return only shared artifacts instead of all artifacts from in each serviceName
     return repository
       .createQueryBuilder('userArtifact')
       .where('userArtifact.userId != :userId', { userId })
-      .andWhere(`userArtifact.artifacts ? :serviceName`, { serviceName })
+      .andWhere(`userArtifact.service_name = :serviceName`, { serviceName })
       .getMany()
   }
 
-  async findByServiceArtifactId(serviceName: string, id: string | number): Promise<UserArtifact[]> {
+  async findByServiceArtifactId(serviceName: ServiceName, id: string | number): Promise<UserArtifact> {
     const repository = await this.getRepository()
+    // TODO: Fix to return only a single value in artifacts array as it is find by id
     return repository
       .createQueryBuilder('user_artifact')
-      .where(`user_artifact.artifacts->:serviceName @> :jsonValue`, {
-        serviceName,
+      .where(`user_artifact.service_name = :serviceName`, { serviceName })
+      .andWhere(`user_artifact.artifacts @> :jsonValue`, {
         jsonValue: JSON.stringify([{ id }])
       })
-      .getMany()  
+      .getOne()  
   }
 
-  async getUserArtifactSequenceNextval(sequenceName: ServiceName): Promise<number> {
+  async getUserArtifactSequenceNextval(serviceName: ServiceName): Promise<number> {
     const dataSource = await this.getDatasource();
     const queryRunner = await dataSource.createQueryRunner();
     const result = await queryRunner.manager.query<{ id: number }[]>(
-      `SELECT nextval('portal.${ArtifactSequenceMapping[sequenceName as keyof typeof ArtifactSequenceMapping]}') as id;`,
+      `SELECT nextval('portal.${ArtifactSequenceMapping[serviceName as keyof typeof ArtifactSequenceMapping]}') as id;`,
     );
 
     if (result.length !== 1) {
