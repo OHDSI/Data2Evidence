@@ -30,7 +30,7 @@ export class UtilsService {
 export class PrefectParamsTransformer {
   transform(flow: IReactFlow, isTestMode = false): IPrefectParameters {
     const nodes = flow.nodes;
-    const subflowNodes = []; // nodes have been added into the subflow
+    const subflowNodes: string[] = []; // nodes have been added into the subflow
     const options = {
       trace_config: { trace_mode: true, trace_db: "alp" },
       test_mode: isTestMode,
@@ -116,6 +116,8 @@ export class PrefectParamsTransformer {
     const prefectEdges = this.buildPrefectEdges(nodeIdNameMap, edges, edgeNum);
 
     return {
+      variables: flow.variables,
+      import_libs: flow.importLibs,
       json_graph: {
         nodes: prefectNodes,
         edges: prefectEdges,
