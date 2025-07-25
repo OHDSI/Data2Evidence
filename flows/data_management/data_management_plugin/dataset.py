@@ -132,7 +132,7 @@ def update_datamodel(flow_action_type: str,
 
     logger = get_run_logger()
     
-    schema_dao = DBDao(use_cache_db=False, database_code=database_code, schema_name=schema_name)
+    schema_dao = DBDao(use_cache_db=False, database_code=database_code)
     tenant_configs = schema_dao.tenant_configs
 
     
@@ -301,8 +301,7 @@ def create_cdm_schema_tasks(database_code: str,
     
     # Begin by checking if the vocab schema exists or not
     vocab_schema_dao = DBDao(use_cache_db=False, 
-                             database_code=database_code, 
-                             schema_name=vocab_schema)
+                             database_code=database_code)
     
     vocab_schema_exists = vocab_schema_dao.check_schema_exists(schema_name)
     
