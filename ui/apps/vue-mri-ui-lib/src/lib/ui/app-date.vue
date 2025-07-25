@@ -421,10 +421,10 @@ defineExpose({
   --dp-text-color: #000080;
   --dp-hover-color: #d2d2d2;
   .dp__today {
-    border: 2px solid #ab218e;
-    border-radius: 0px;
-    color: #027bff;
-    background: #d2d2d2;
+    border: 2.5px solid #ff5e59;
+    border-radius: 5px;
+    color: #ffffff;
+    background: #000080;
   }
   .dp__tp_inline_btn_top,
   .dp__tp_inline_btn_bottom {
