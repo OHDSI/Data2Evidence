@@ -11,17 +11,16 @@ test('Notebook', async ({ page }) => {
   await page.getByRole('link', { name: 'Notebooks' }).click();
   await page.getByRole('button', { name: 'New Notebook' }).click();
 
-  //Look for new notebook with title "Untitled"
-  // await expect(page.getByText('Untitled')).toBeVisible();
-
-  await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('Changes saved')).toBeVisible();
+  await page.getByRole('textbox', { name: 'Name' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Test 1');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByText('Created notebook "Test 1"')).toBeVisible();
+  await page.getByTestId('snackbar-close').locator('svg').click();
 
   //Rename notebook
-  await page.getByTestId('snackbar-close').locator('svg').click();
   await page.getByRole('button').filter({ hasText: /^$/ }).nth(1).click();
   await page.getByRole('textbox', { name: 'Notebook Title' }).click();
-  await page.getByRole('textbox', { name: 'Notebook Title' }).fill('Untitled-Test');
+  await page.getByRole('textbox', { name: 'Notebook Title' }).fill('Test 2');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Changes saved')).toBeVisible();
   await page.getByTestId('snackbar-close').locator('svg').click();

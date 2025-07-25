@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.7.1-beta
+version=0.8.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.8.1-beta
 
 
 cmd=""
@@ -116,6 +116,18 @@ generate_jwt() {
   local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -hmac "$secret" -binary | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
 
   echo "$header.$payload.$signature"
+}
+
+# Setup zx command with fallbacks
+setup_zx_cmd() {
+  if [ -f "$node_modules_path/node_modules/.bin/zx" ]; then
+    ZX_CMD="$node_modules_path/node_modules/.bin/zx"
+  elif [ -f "$node_modules_path/node_modules/zx/build/cli.js" ]; then
+    ZX_CMD="node $node_modules_path/node_modules/zx/build/cli.js"
+  else
+    echo "Error: zx not found in node_modules"
+    exit 1
+  fi
 }
 
 case $cmd in
@@ -269,11 +281,13 @@ case $cmd in
         source "$ENVFILE"
         $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
-        npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
         ;;
     *)
         if [ -z ${cmd:-} ]; then
