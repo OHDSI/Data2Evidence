@@ -1,18 +1,19 @@
 <template>
-  <b-alert show dismissible :class=messageTypeClass @dismissed=ok >
-    {{ header }}: {{ message }}
-  </b-alert>
-
+  <bs-alert show dismissible :variant="messageType" @dismissed="ok"> {{ header }}: {{ message }} </bs-alert>
 </template>
 <script lang="ts">
 import { mapGetters } from 'vuex'
+import BsAlert from '@/lib/ui/bs-alert.vue'
 
 export default {
   name: 'notification',
+  components: {
+    BsAlert,
+  },
   props: {
     messageType: {
       type: String,
-      default: 'error',
+      default: 'error', // Maps to 'danger' variant internally
     },
     message: {
       type: String,
@@ -25,9 +26,6 @@ export default {
   },
   computed: {
     ...mapGetters(['getText']),
-    messageTypeClass() {
-      return `alert-${this.messageType}`
-    },
   },
   methods: {
     ok() {

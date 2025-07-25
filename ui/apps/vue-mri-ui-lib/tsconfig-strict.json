@@ -1,0 +1,50 @@
+{
+  // ========================================================================
+  // STRICT COMPILER OPTIONS - FOR COPY/PASTE TO MAIN tsconfig.json
+  // ========================================================================
+  // To use: Copy the "compilerOptions" section below and temporarily
+  // paste it into your main tsconfig.json, replacing the existing one.
+  // Remember to revert before committing/building!
+  // ========================================================================
+
+  "compilerOptions": {
+    // Base settings (keep from your main tsconfig.json)
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "preserve",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "types": ["node", "jest"],
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
+    "skipLibCheck": true,
+    "noErrorTruncation": true,
+
+    // ====================================================================
+    // STRICT TYPE CHECKING (most recommended strict settings)
+    // ====================================================================
+    "strict": true, // Enables all strict type checks
+    "strictNullChecks": true, // Strict null/undefined checking
+    "strictFunctionTypes": true, // Strict function type checking
+    "strictBindCallApply": true, // Strict bind/call/apply checking
+    "strictPropertyInitialization": true, // Strict class property initialization
+    "noImplicitAny": true, // Error on implicit 'any' types
+    "noImplicitReturns": true, // Error when function doesn't return
+    "noImplicitThis": true, // Error on implicit 'any' for 'this'
+    "noFallthroughCasesInSwitch": true, // Error on switch fallthrough
+    "noUncheckedIndexedAccess": true, // Add undefined to index signature results
+    "noImplicitOverride": true, // Require explicit override keyword
+    "noPropertyAccessFromIndexSignature": true, // Require bracket notation for index access
+    "exactOptionalPropertyTypes": true, // Exact optional property types
+    "noUnusedLocals": true, // Error on unused local variables
+    "noUnusedParameters": true, // Error on unused parameters
+    "allowUnreachableCode": false, // Error on unreachable code
+    "allowUnusedLabels": false // Error on unused labels,
+  }
+}

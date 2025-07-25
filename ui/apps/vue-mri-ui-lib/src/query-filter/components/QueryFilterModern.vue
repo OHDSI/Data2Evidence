@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager, QueryFilterEvent, QueryFilterGroup } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
@@ -21,14 +21,18 @@ import type {
   ConceptSetDetails,
   CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
+import type {
+  AtlasCohortDefinition,
+  ConceptSet,
+  CriteriaGroup,
+  CriteriaListItem,
+} from '../models/AtlasCohortDefinition'
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
-  loadSingleConceptSetDetails as apiLoadSingleConceptSetDetails,
   createConceptSet,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
-import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
@@ -40,7 +44,7 @@ import appCheckbox from '../../lib/ui/app-checkbox.vue'
 // Use the hierarchical criteria manager
 const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties.$store
+const store = instance?.appContext.config.globalProperties['$store']
 
 const showDebug = ref(false)
 
@@ -64,9 +68,13 @@ const tagInputModel = computed<TagInputModel>(() => {
         standardConceptCodeFilter: 'Standard',
       },
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in tagInputModel computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return {
       id: 'concept-set-test',
       props: {
@@ -96,7 +104,15 @@ const conceptSetsFromCriteria = computed(() => {
           seenIds.add(event.conceptSetId)
         } else if (event.selectedConceptSet) {
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
-          conceptSets.push(event.selectedConceptSet)
+          // Convert SelectedConceptSet to ConceptSetItem
+          const convertedConceptSet: ConceptSetItem = {
+            value: event.selectedConceptSet.value?.toString() || event.conceptSetId,
+            text: event.selectedConceptSet.text,
+            display_value: event.selectedConceptSet.display_value,
+            conceptIds: event.selectedConceptSet.conceptIds,
+            concepts: event.selectedConceptSet.concepts,
+          }
+          conceptSets.push(convertedConceptSet)
           seenIds.add(event.conceptSetId)
         }
       }
@@ -196,9 +212,13 @@ const filterConceptSetsLocal = (searchQuery: string) => {
 const tagInputDomainValues = computed(() => {
   try {
     return conceptSetDomainValues.value
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in tagInputDomainValues computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
   }
 })
@@ -206,9 +226,13 @@ const tagInputDomainValues = computed(() => {
 const selectedConceptSetValues = computed(() => {
   try {
     return selectedConceptSets.value
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in selectedConceptSetValues computed:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return []
   }
 })
@@ -270,15 +294,23 @@ const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
 }
 
 // Handle primary criteria limit updates
-const handleUpdatePrimaryCriteriaLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  criteriaManager.updatePrimaryCriteriaLimit(limit)
-  console.log('Primary criteria limit updated:', limit)
+const handleUpdatePrimaryCriteriaLimit = (
+  limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
+) => {
+  // Only handle the limits that are valid for primary criteria
+  if (limit === 'ALL' || limit === 'EARLIEST' || limit === 'LATEST') {
+    criteriaManager.updatePrimaryCriteriaLimit(limit)
+    console.log('Primary criteria limit updated:', limit)
+  }
 }
 
 // Handle exit strategy updates
-const handleUpdateExitStrategy = (limit: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
-  criteriaManager.updateEndStrategy(limit)
-  console.log('Exit strategy updated:', limit)
+const handleUpdateExitStrategy = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
+  // Only handle the limits that are valid for exit strategy
+  if (limit === 'CONT_OBS' || limit === 'FIXED' || limit === 'CONT_DRUG') {
+    criteriaManager.updateEndStrategy(limit)
+    console.log('Exit strategy updated:', limit)
+  }
 }
 
 // Handle entry days updates
@@ -288,15 +320,13 @@ const handleUpdateEntryDays = (type: 'PRIOR' | 'POST', days: number) => {
 }
 
 // Handle adding new criteria group
-const handleAddCriteriaGroup = (groupData: any) => {
+const handleAddCriteriaGroup = (groupData: Partial<QueryFilterGroup>) => {
   criteriaManager.addCriteriaGroup(groupData)
-  console.log('Criteria group added:', groupData)
 }
 
 // Handle updating criteria group
-const handleUpdateCriteriaGroup = (index: number, groupData: any) => {
+const handleUpdateCriteriaGroup = (index: number, groupData: QueryFilterGroup) => {
   criteriaManager.updateCriteriaGroup(index, groupData)
-  console.log('Criteria group updated:', { index, groupData })
 }
 
 // Handle removing criteria group
@@ -311,9 +341,13 @@ const applyFilters = () => {
   try {
     console.log('Applying filters:', getAllFilters())
     alert('Filters applied! Check console for configuration.')
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in applyFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     alert('Error applying filters! Check console for details.')
   }
 }
@@ -324,9 +358,13 @@ const clearFilters = () => {
       criteriaManager.clearAllCriteria()
       selectedConceptSets.value = []
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in clearFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -334,18 +372,26 @@ const exportFilters = () => {
   try {
     const config = JSON.stringify(getAllFilters(), null, 2)
     console.log('Exported configuration:', config)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in exportFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
 const getAllFilters = () => {
   try {
     return criteriaManager.toJSON()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in getAllFilters:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { inclusionCriteria: { criteria: [] }, entryEvents: {} }
   }
 }
@@ -353,9 +399,13 @@ const getAllFilters = () => {
 const convertToAtlasFormat = () => {
   try {
     return criteriaManager.convertToAtlasFormat()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in convertToAtlasFormat:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     return { ConceptSets: [], PrimaryCriteria: { CriteriaList: [] }, InclusionRules: [] }
   }
 }
@@ -370,7 +420,7 @@ type AtlasBookmark = {
   createdDate: number
   modifiedBy: string
   modifiedDate: number
-  tags: any[]
+  tags: string[]
   hasWriteAccess: boolean
   hasReadAccess: boolean
 }
@@ -381,43 +431,52 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Available concept sets:', allConceptSets.value.length)
 
     isLoading.value = true
-    const atlasExpression = atlasJson.expression
+    const atlasExpression: AtlasCohortDefinition =
+      typeof atlasJson.expression === 'string' ? JSON.parse(atlasJson.expression) : atlasJson.expression
 
     // Extract concept set IDs from criteria even if ConceptSets array is empty
-    const extractConceptSetIds = (expression: any): Set<number> => {
+    const extractConceptSetIds = (expression: AtlasCohortDefinition): Set<number> => {
       const conceptSetIds = new Set<number>()
 
       // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
-      const extractFromCriteria = (criteriaItem: any) => {
-        const criteria = criteriaItem.Criteria || criteriaItem
-        Object.values(criteria).forEach((criteriaObj: any) => {
-          if (criteriaObj && typeof criteriaObj === 'object' && criteriaObj.CodesetId !== undefined) {
-            conceptSetIds.add(criteriaObj.CodesetId)
-          }
+      const extractFromCriteria = (criteriaItem: CriteriaGroup | CriteriaListItem | Record<string, unknown>) => {
+        const criteria = 'Criteria' in criteriaItem ? criteriaItem.Criteria : criteriaItem
+        if (criteria && typeof criteria === 'object') {
+          Object.values(criteria).forEach((criteriaObj: unknown) => {
+            if (
+              criteriaObj &&
+              typeof criteriaObj === 'object' &&
+              'CodesetId' in criteriaObj &&
+              typeof criteriaObj.CodesetId === 'number'
+            ) {
+              conceptSetIds.add(criteriaObj.CodesetId)
+            }
 
-          // Handle nested CorrelatedCriteria recursively
-          if (criteriaObj && criteriaObj.CorrelatedCriteria?.CriteriaList) {
-            criteriaObj.CorrelatedCriteria.CriteriaList.forEach((nestedItem: any) => {
-              extractFromCriteria(nestedItem)
-            })
-          }
-        })
+            // Handle nested CorrelatedCriteria recursively
+            if (criteriaObj && typeof criteriaObj === 'object' && 'CorrelatedCriteria' in criteriaObj) {
+              const correlated = criteriaObj.CorrelatedCriteria as { CriteriaList?: CriteriaGroup[] }
+              correlated.CriteriaList?.forEach((nestedItem: CriteriaGroup) => {
+                extractFromCriteria(nestedItem)
+              })
+            }
+          })
+        }
       }
 
       // Extract from InclusionRules
-      expression.InclusionRules?.forEach((rule: any) => {
-        rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+      expression.InclusionRules?.forEach(rule => {
+        rule.expression?.CriteriaList?.forEach(criteriaItem => {
           extractFromCriteria(criteriaItem)
         })
       })
 
       // Extract from PrimaryCriteria
-      expression.PrimaryCriteria?.CriteriaList?.forEach((criteriaItem: any) => {
+      expression.PrimaryCriteria?.CriteriaList?.forEach(criteriaItem => {
         extractFromCriteria(criteriaItem)
       })
 
       // Extract from CensoringCriteria
-      expression.CensoringCriteria?.forEach((criteriaItem: any) => {
+      expression.CensoringCriteria?.forEach(criteriaItem => {
         extractFromCriteria(criteriaItem)
       })
 
@@ -450,6 +509,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
 
       for (let index = 0; index < atlasExpression.ConceptSets.length; index++) {
         const atlasConceptSet = atlasExpression.ConceptSets[index]
+        if (!atlasConceptSet) continue
+
         try {
           const originalId = atlasConceptSet.id
           const handledConceptSet = await handleConceptSetFromAtlas(atlasConceptSet)
@@ -505,7 +566,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     )
     console.log(
       'Atlas ConceptSets for conversion:',
-      atlasExpression.ConceptSets?.map((cs: any) => `${cs.name} (ID: ${cs.id})`)
+      atlasExpression.ConceptSets?.map(cs => `${cs.name} (ID: ${cs.id})`)
     )
     const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value)
     console.log('Converted Atlas JSON to tempManager:', tempManager)
@@ -525,21 +586,6 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.error('Error loading Atlas cohort definition:', error)
     isLoading.value = false
     throw error
-  }
-}
-
-const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem) => {
-  const datasetId = getDatasetId()
-  if (!datasetId) {
-    console.warn('Missing datasetId for concept details API call')
-    return []
-  }
-
-  try {
-    return await apiLoadSingleConceptSetDetails(conceptSet, datasetId)
-  } catch (error) {
-    console.error('Error loading single concept set details:', error)
-    return []
   }
 }
 
@@ -564,7 +610,23 @@ const loadConceptSetDetailsForAllEvents = async () => {
 
         // Set selectedConceptSet if not already set
         if (!event.selectedConceptSet) {
-          event.selectedConceptSet = conceptSet
+          // Convert ConceptSetItem to SelectedConceptSet
+          event.selectedConceptSet = {
+            value: parseInt(conceptSet.value) || 0,
+            text: conceptSet.text || '',
+            display_value: conceptSet.display_value || conceptSet.text || '',
+            conceptIds: conceptSet.conceptIds || [],
+            concepts: (conceptSet.concepts || []).map(concept => ({
+              id: concept.id || concept.concept_id || concept.CONCEPT_ID || 0,
+              useMapped: concept.useMapped || false,
+              isExcluded: concept.isExcluded || false,
+              useDescendants: concept.useDescendants || false,
+            })),
+            shared: false,
+            userName: 'system',
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+          }
           console.log(`Linked concept set ${conceptSet.text} to event ${event.id}`)
         }
 
@@ -614,20 +676,36 @@ const loadConceptSetDetailsForAllEvents = async () => {
       )
 
       // Load details for this batch
-      const batchResults = await loadConceptSetDetails(batch, datasetId)
+      try {
+        const batchResults = await apiLoadConceptSetDetails(batch, datasetId)
 
-      // Apply results to all events that need each concept set
-      for (const [conceptSetId, conceptSetDetails] of Object.entries(batchResults)) {
-        const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+        // Apply results to all events that need each concept set
+        for (const [conceptSetId, conceptSetDetailsArray] of Object.entries(batchResults || {})) {
+          const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
 
-        for (const event of eventsForThisConceptSet) {
-          event.conceptSetDetails = conceptSetDetails
-          event.conceptSetLoading = false
-          console.log(`Loaded ${conceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`)
+          // Ensure conceptSetDetailsArray is properly typed
+          const typedConceptSetDetails = Array.isArray(conceptSetDetailsArray) ? conceptSetDetailsArray : []
 
-          // Debug: Log first concept detail to verify format
-          if (conceptSetDetails.length > 0) {
-            console.log('Sample concept detail:', conceptSetDetails[0])
+          for (const event of eventsForThisConceptSet) {
+            event.conceptSetDetails = typedConceptSetDetails
+            event.conceptSetLoading = false
+            console.log(
+              `Loaded ${typedConceptSetDetails.length} concept details for ${event.conceptSet} (event ${event.id})`
+            )
+
+            // Debug: Log first concept detail to verify format
+            if (typedConceptSetDetails.length > 0) {
+              console.log('Sample concept detail:', typedConceptSetDetails[0])
+            }
+          }
+        }
+      } catch (batchError) {
+        console.error(`Error loading batch ${Math.floor(i / batchSize) + 1}:`, batchError)
+        // Mark all events in this batch as failed
+        for (const conceptSetId of batch.map(cs => cs.value)) {
+          const eventsForThisConceptSet = eventsByConceptSetId.get(conceptSetId) || []
+          for (const event of eventsForThisConceptSet) {
+            event.conceptSetLoading = false
           }
         }
       }
@@ -664,15 +742,14 @@ const sanitizeConceptSetName = (name: string): string => {
   return name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
 }
 
-const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<number, number>) => {
+const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMapping: Record<number, number>) => {
   // Update the ConceptSets array IDs first - this is crucial for converter lookup
   if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
-    atlasExpression.ConceptSets.forEach((conceptSet: any) => {
+    atlasExpression.ConceptSets.forEach(conceptSet => {
       const originalId = conceptSet.id
       const newId = idMapping[originalId]
 
       if (newId !== undefined && newId !== originalId) {
-        console.log(`Updating ConceptSet.id: ${originalId} → ${newId} for concept set "${conceptSet.name}"`)
         conceptSet.id = newId
       }
     })
@@ -680,38 +757,36 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
 
   // Update CodesetId references in PrimaryCriteria
   if (atlasExpression.PrimaryCriteria?.CriteriaList) {
-    atlasExpression.PrimaryCriteria.CriteriaList.forEach((criteriaItem: any) => {
-      Object.keys(criteriaItem).forEach(key => {
-        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
-          const originalCodesetId = criteriaItem[key].CodesetId
-          const newId = idMapping[originalCodesetId]
+    atlasExpression.PrimaryCriteria.CriteriaList.forEach(criteriaItem => {
+      if (criteriaItem && typeof criteriaItem === 'object') {
+        Object.keys(criteriaItem).forEach(key => {
+          const criteriaValue = (criteriaItem as any)[key]
+          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+            const originalCodesetId = criteriaValue.CodesetId
+            const newId = idMapping[originalCodesetId]
 
-          if (newId !== undefined && newId !== originalCodesetId) {
-            console.log(`Updating PrimaryCriteria CodesetId: ${originalCodesetId} → ${newId}`)
-            criteriaItem[key].CodesetId = newId
+            if (newId !== undefined && newId !== originalCodesetId) {
+              criteriaValue.CodesetId = newId
+            }
           }
-        }
-      })
+        })
+      }
     })
   }
 
   // Update CodesetId references in InclusionRules
   if (atlasExpression.InclusionRules) {
-    atlasExpression.InclusionRules.forEach((rule: any) => {
-      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
+    atlasExpression.InclusionRules.forEach(rule => {
+      rule.expression?.CriteriaList?.forEach(criteriaItem => {
         if (criteriaItem.Criteria) {
           Object.keys(criteriaItem.Criteria).forEach(key => {
-            if (
-              criteriaItem.Criteria[key] &&
-              typeof criteriaItem.Criteria[key] === 'object' &&
-              criteriaItem.Criteria[key].CodesetId !== undefined
-            ) {
-              const originalCodesetId = criteriaItem.Criteria[key].CodesetId
+            const criteriaValue = (criteriaItem.Criteria as any)[key]
+            if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+              const originalCodesetId = criteriaValue.CodesetId
               const newId = idMapping[originalCodesetId]
 
               if (newId !== undefined && newId !== originalCodesetId) {
-                console.log(`Updating InclusionRules CodesetId: ${originalCodesetId} → ${newId}`)
-                criteriaItem.Criteria[key].CodesetId = newId
+                criteriaValue.CodesetId = newId
               }
             }
           })
@@ -722,23 +797,27 @@ const updateCodesetIdReferences = (atlasExpression: any, idMapping: Record<numbe
 
   // Update CodesetId references in CensoringCriteria
   if (atlasExpression.CensoringCriteria) {
-    atlasExpression.CensoringCriteria.forEach((criteriaItem: any) => {
-      Object.keys(criteriaItem).forEach(key => {
-        if (criteriaItem[key] && typeof criteriaItem[key] === 'object' && criteriaItem[key].CodesetId !== undefined) {
-          const originalCodesetId = criteriaItem[key].CodesetId
-          const newId = idMapping[originalCodesetId]
+    atlasExpression.CensoringCriteria.forEach(criteriaItem => {
+      if (criteriaItem && typeof criteriaItem === 'object') {
+        Object.keys(criteriaItem).forEach(key => {
+          const criteriaValue = (criteriaItem as any)[key]
+          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+            const originalCodesetId = criteriaValue.CodesetId
+            const newId = idMapping[originalCodesetId]
 
-          if (newId !== undefined && newId !== originalCodesetId) {
-            console.log(`Updating CensoringCriteria CodesetId: ${originalCodesetId} → ${newId}`)
-            criteriaItem[key].CodesetId = newId
+            if (newId !== undefined && newId !== originalCodesetId) {
+              criteriaValue.CodesetId = newId
+            }
           }
-        }
-      })
+        })
+      }
     })
   }
 }
 
-const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptSetItem | null> => {
+const handleConceptSetFromAtlas = async (
+  atlasConceptSet: ConceptSet & { conceptSetId?: number }
+): Promise<ConceptSetItem | null> => {
   const datasetId = getDatasetId()
   if (!datasetId) {
     console.error('Missing datasetId for concept set handling')
@@ -747,7 +826,7 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 
   // Check if concept set already exists by conceptSetId (system ID)
   if (atlasConceptSet.conceptSetId) {
-    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId)
+    const existingConceptSet = allConceptSets.value.find(cs => cs.value === atlasConceptSet.conceptSetId!.toString())
     if (existingConceptSet) {
       console.log(`Found existing concept set by conceptSetId: ${existingConceptSet.text}`)
       return existingConceptSet
@@ -762,13 +841,13 @@ const handleConceptSetFromAtlas = async (atlasConceptSet: any): Promise<ConceptS
 
       // Extract concepts from Atlas format
       const concepts = atlasConceptSet.expression.items
-        .map((item: any) => ({
-          id: item.concept?.CONCEPT_ID || item.concept?.concept_id,
+        .map(item => ({
+          id: item.concept?.CONCEPT_ID,
           useDescendants: item.includeDescendants !== false, // Default to true
           useMapped: item.includeMapped !== false, // Default to true
           isExcluded: item.isExcluded === true, // Default to false
         }))
-        .filter((concept: any) => concept.id) // Only include items with valid concept IDs
+        .filter(concept => concept.id) // Only include items with valid concept IDs
 
       if (concepts.length === 0) {
         console.error(`No valid concepts found in Atlas concept set: ${sanitizedName}`)
@@ -822,9 +901,13 @@ const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
     } else {
       console.warn('Invalid value passed to handleConceptSetUpdate:', value)
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleConceptSetUpdate:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
     if (selectedConceptSets && Array.isArray(value)) {
       selectedConceptSets.value = value
     }
@@ -835,9 +918,13 @@ const handleSearchChange = (searchQuery: string) => {
   try {
     console.log('handleSearchChange called with:', searchQuery)
     filterConceptSetsLocal(searchQuery)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleSearchChange:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -860,7 +947,7 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
       { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
     ]
 
-    const handleCloseCallback = async (onCloseValues: any) => {
+    const handleCloseCallback = async (onCloseValues: { currentConceptSet?: { id: string; name: string } }) => {
       if (!onCloseValues?.currentConceptSet) {
         return
       }
@@ -903,10 +990,13 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
           const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
           if (index !== -1) {
             const updatedSets = [...currentSets]
-            updatedSets[index] = {
-              ...updatedSets[index],
-              text: onCloseValues.currentConceptSet.name,
-              display_value: onCloseValues.currentConceptSet.name,
+            const currentItem = updatedSets[index]
+            if (currentItem) {
+              updatedSets[index] = {
+                ...currentItem,
+                text: onCloseValues.currentConceptSet.name,
+                display_value: onCloseValues.currentConceptSet.name,
+              }
             }
             selectedConceptSets.value = updatedSets
           }
@@ -936,9 +1026,13 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
     })
 
     window.dispatchEvent(event)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in handleConceptSetAction:', error)
-    console.error('Error details:', error.message, error.stack)
+    console.error(
+      'Error details:',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined
+    )
   }
 }
 
@@ -1034,7 +1128,7 @@ defineExpose({
         <div class="header-container-right"></div>
         <div class="header-container-left">
           <div class="left-button-group">
-            <ButtonMaterial @click="openSaveDialog">Save</ButtonMaterial>
+            <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1198,10 +1292,10 @@ defineExpose({
                       required
                       :maxlength="maxLength"
                     />
-                    <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
+                    <div class="invalid-feedback" :style="isInvalidName ? 'display: block' : ''">
                       Please enter a valid name
                     </div>
-                    <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
+                    <div class="invalid-feedback" :style="hasExceededLength ? 'display: block' : ''">
                       Cohort name must not exceed {{ maxLength }} characters
                     </div>
                   </div>

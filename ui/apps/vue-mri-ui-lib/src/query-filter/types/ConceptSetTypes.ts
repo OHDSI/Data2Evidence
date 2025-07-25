@@ -58,11 +58,11 @@ export interface TagInputModel {
 
 export interface ConceptSetAction {
   values?: ConceptSetItem
-  config?: any
+  config?: ApiConfig
 }
 
 export interface ConceptSetDetails {
-  [conceptSetId: string]: any[]
+  [conceptSetId: string]: ConceptDetail[]
 }
 
 export interface CreateConceptSetRequest {

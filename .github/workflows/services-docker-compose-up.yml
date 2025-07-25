@@ -16,6 +16,7 @@ env:
   ENV_TYPE: local
   GIT_COMMIT_ARG: ${{ github.sha }}
   D2E_RESOURCE_LIMIT: 1 # Use all the resources for GHA
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # Run only one job per branch
 concurrency:

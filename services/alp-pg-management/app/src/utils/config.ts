@@ -37,6 +37,7 @@ export const getProperties = (): any => {
         "POSTGRES_PUBLICATION_CONFIG",
         true
       ),
+      config_db_name: fetchSecretsAsPerEnvironment("POSTGRES_CONFIG_DB_NAME"),
     };
   }
   return properties;
