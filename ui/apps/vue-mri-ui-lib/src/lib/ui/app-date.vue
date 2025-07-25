@@ -421,7 +421,7 @@ defineExpose({
   --dp-text-color: #000080;
   --dp-hover-color: #d2d2d2;
   .dp__today {
-    border: 3px solid #ab218e;
+    border: 2px solid #ab218e;
     border-radius: 0px;
     color: #027bff;
     background: #d2d2d2;
