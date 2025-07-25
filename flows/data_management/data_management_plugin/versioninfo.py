@@ -112,7 +112,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api.update_dataset_attributes_table(dataset_id, "updated_date", updated_date)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'updated_date' for dataset id '{dataset_id}' with value '{updated_date}' : {e}")
+                    f"Failed to update attribute 'updated_date' for dataset id '{dataset_id}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'updated_date' for dataset id '{dataset_id}' with value '{updated_date}'")
@@ -130,7 +130,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", current_schema_version)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'current_schema_version' for dataset id '{dataset_id}' with value '{current_schema_version}' : {e}")
+                    f"Failed to update attribute 'current_schema_version' for dataset id '{dataset_id}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'current_schema_version' for dataset id '{dataset_id}' with value '{current_schema_version}'")
@@ -159,7 +159,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                     portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count_distribution", json.dumps(entity_count_distribution))
                 except Exception as e:
                     logger.error(
-                        f"Failed to update attribute 'entity_count_distribution' for dataset id '{dataset_id}' with value '{entity_count_distribution}' : {e}")
+                        f"Failed to update attribute 'entity_count_distribution' for dataset id '{dataset_id}' : {e}")
                 else:
                     logger.info(
                         f"Updated attribute 'entity_count_distribution' for dataset id '{dataset_id}'  with value '{entity_count_distribution}'")
@@ -198,7 +198,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_available_schema_version)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'latest_schema_version' for dataset id '{dataset_id}' with value '{latest_available_schema_version}' : {e}")
+                    f"Failed to update attribute 'latest_schema_version' for dataset id '{dataset_id}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'latest_schema_version' for dataset id '{dataset_id}'  with value '{latest_available_schema_version}'")
