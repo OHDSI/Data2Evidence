@@ -273,6 +273,9 @@ case $cmd in
         cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
+        cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
+        echo . $cmd
+        $cmd
         cmd="$dockerbasecmd pull"
         echo . $cmd
         $cmd
