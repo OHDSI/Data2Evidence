@@ -97,7 +97,7 @@ jobs:
       - name: npm build
         working-directory: ${{ matrix.DESTPATH }}
         run: |
-          export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*sha256:([a-f0-9]+).*/\1/')
+          export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
           echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
           npm run build
       - name: Use Node.js - OSS Develop
