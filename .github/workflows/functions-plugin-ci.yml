@@ -96,7 +96,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: npm build
         working-directory: ${{ matrix.DESTPATH }}
-        run: npm run build
+        run: |
+          export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' ../../services/trex/Dockerfile | sed -E 's/.*sha256:([a-f0-9]+).*/sha256:\1/')
+          echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
+          npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
