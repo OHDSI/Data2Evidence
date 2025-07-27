@@ -25,7 +25,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
-		decoratorType: "typescript_with_metadata" 
+		decoratorType: "typescript_with_metadata" ,
+		allowHostFsAccess: true,
 	}
 	if(eszip) {
 		logger.log(`ESZIP ${dir}${eszip} %%% ${options["importMapPath"]}`)
@@ -55,7 +56,8 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 1000000, cpuTimeHardLimitMs: 2000000,
-		decoratorType: "typescript_with_metadata" 
+		decoratorType: "typescript_with_metadata",
+		allowHostFsAccess: true,
 	}
 	if(fncfg.eszip) {
 		logger.log(`ESZIP ${dir}${fncfg.eszip} %%% ${options["importMapPath"]}`)

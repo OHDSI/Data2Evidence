@@ -1,4 +1,13 @@
 {
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noImplicitAny": true
+  },
   "tasks": {
     "dev": "CACHEDB__HOST=alp-cachedb CACHEDB__PORT=41191 SERVICE_ROUTES='{}' deno run --watch --allow-env --allow-read --allow-write --allow-net --allow-sys index.ts",
     "check": "deno check ./index.ts && deno lint"
@@ -13,7 +22,4 @@
     "pg": "npm:pg@^8.13.1",
     "zod": "npm:zod@^3.24.1"
   },
-  "compilerOptions": {
-    "noImplicitAny": true
-  }
 }
