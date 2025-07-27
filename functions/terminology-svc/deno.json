@@ -22,7 +22,6 @@
     "zod": "npm:zod@3.23.8",
     "hdb": "npm:hdb@0.19.12",
     "lodash": "npm:lodash",
-    "transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0",
     "winston": "npm:winston",
     "async": "npm:async",
     "bcryptjs": "npm:bcryptjs",

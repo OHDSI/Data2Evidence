@@ -794,9 +794,6 @@
       "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
     }
   },
-  "remote": {
-    "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0": "63c2071750f38fa8d433cee24ed8bbaa8a507f9ad85408b3452e2f9100c7c698"
-  },
   "workspace": {
     "dependencies": [
       "npm:@asteasolutions/zod-to-openapi@7.3.0",
