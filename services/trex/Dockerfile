@@ -47,6 +47,7 @@ COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
 COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
 
 COPY ./services/trex/package.json /usr/src
+COPY ./services/trex/deno.json /usr/src
 
 RUN npm install
 RUN npm install -g deno@2.1
