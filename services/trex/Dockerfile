@@ -50,7 +50,12 @@ COPY ./services/trex/package.json /usr/src
 COPY ./services/trex/deno.json /usr/src
 
 RUN npm install
+RUN npm install -g deno@2.1
 
+WORKDIR /usr/src/core
+RUN deno install --allow-scripts
+
+WORKDIR /usr/src
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
 
