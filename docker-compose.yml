@@ -154,7 +154,6 @@ services:
       SERVICE_ENV: |-
         {
           "_shared": {
-            "TREX_FUNCTION_PATH": "/usr/src/plugins/d2ef/",
             "DB_SVC__IDP_SUBJECT_PROP": "sub",
             "DB_SVC__LOG_LEVEL": "info",
             "DB_SVC__PATH": "/alpdb",
