@@ -11,9 +11,36 @@ const { execSync } = require('child_process');
  * - Scans the functions directory for folders with deno.json files
  * - Runs `deno install --allow-scripts` in each folder
  * - Provides detailed error reporting and summary
+ * 
+ * Usage:
+ * - Normal run: ./install-deno-deps.js [functions-dir]
+ * - If no functions-dir provided, defaults to './functions'
  */
 
-const FUNCTIONS_DIR = './functions';
+// Function to print help information
+function printHelp() {
+  console.log('🔧 Install Deno Dependencies Script\n');
+  console.log('USAGE:');
+  console.log('  ./install-deno-deps.js <functions-dir>\n');
+  console.log('ARGUMENTS:');
+  console.log('  functions-dir    Path to the functions directory (required)\n');
+  console.log('EXAMPLES:');
+  console.log('  ./install-deno-deps.js ./functions     # Install deps in ./functions');
+  console.log('  ./install-deno-deps.js ./my-functions  # Install deps in custom directory\n');
+  console.log('DESCRIPTION:');
+  console.log('  This script scans for folders with deno.json files and runs');
+  console.log('  "deno install --allow-scripts" in each folder to install dependencies.');
+  console.log('  Make sure to run ./transform-imports.js first to generate deno.json files.\n');
+}
+
+// Check for help flag or no arguments
+if (process.argv.includes('--help') || process.argv.includes('-h') || process.argv.length === 2) {
+  printHelp();
+  process.exit(0);
+}
+
+// Require functions directory as first argument
+const FUNCTIONS_DIR = process.argv[2];
 
 function installDependencies(folderPath, errorSummary) {
   const folderName = path.basename(folderPath);
@@ -84,7 +111,15 @@ function installDependencies(folderPath, errorSummary) {
 }
 
 function main() {
-  console.log('🔧 Installing Deno dependencies for all folders with deno.json...\n');
+  // Validate that functions directory argument is provided
+  if (!FUNCTIONS_DIR) {
+    console.error('❌ Functions directory argument is required.');
+    console.error('💡 Usage: ./install-deno-deps.js <functions-dir>');
+    console.error('💡 Use --help for more information.');
+    process.exit(1);
+  }
+
+  console.log(`🔧 Installing Deno dependencies for all folders with deno.json in: ${FUNCTIONS_DIR}\n`);
 
   // Initialize error summary
   const errorSummary = {
@@ -96,6 +131,8 @@ function main() {
   // Check if functions directory exists
   if (!fs.existsSync(FUNCTIONS_DIR)) {
     console.error(`❌ Functions directory not found: ${FUNCTIONS_DIR}`);
+    console.error('💡 Usage: ./install-deno-deps.js <functions-dir>');
+    console.error('💡 Make sure the directory path is correct.');
     process.exit(1);
   }
 
@@ -117,7 +154,8 @@ function main() {
   console.log(`${foldersWithDenoJson.join(', ')}\n`);
 
   if (foldersWithDenoJson.length === 0) {
-    console.log('🤷 No folders with deno.json files found. Run ./generate-deno-config.js first.');
+    console.log(`🤷 No folders with deno.json files found in ${FUNCTIONS_DIR}.`);
+    console.log(`💡 Run ./transform-imports.js ${FUNCTIONS_DIR} first to generate deno.json files.`);
     process.exit(0);
   }
 
@@ -140,7 +178,7 @@ function main() {
   if (errorSummary.noDenoJson.length > 0) {
     console.log(`\n⚠️  No deno.json found: ${errorSummary.noDenoJson.length} folders`);
     console.log(`   ${errorSummary.noDenoJson.join(', ')}`);
-    console.log(`   💡 Run ./generate-deno-config.js to create deno.json files`);
+    console.log(`   💡 Run ./transform-imports.js ${FUNCTIONS_DIR} to create deno.json files`);
   }
 
   if (errorSummary.installFailed.length > 0) {
