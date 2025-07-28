@@ -15,7 +15,9 @@ test('duplicate-dataflow-version', async ({ page }) => {
   const duplicateName = `${version2Name}_duplicate`
 
   // Navigate to ETL and create new dataflow with Python node
+  await page.waitForTimeout(5000)
   await page.getByRole('link', { name: 'ETL' }).click()
+  await page.waitForTimeout(5000)
   await page.getByLabel('Create new dataflow').getByRole('button').click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test dataflow')

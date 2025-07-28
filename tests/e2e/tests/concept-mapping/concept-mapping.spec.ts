@@ -14,7 +14,9 @@ test('concept-mapping', async ({ page }) => {
   const dataflowName = `ConceptMappingFlow_${timestamp}`
 
   // Go to ETL and create new flow
+  await page.waitForTimeout(5000)
   await page.getByRole('link', { name: 'ETL' }).click()
+  await page.waitForTimeout(5000)
   await page.getByLabel('Create new dataflow').getByRole('button').click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
