@@ -14,6 +14,9 @@ test('duplicate-dataflow-version', async ({ page }) => {
   const version2Name = `${dataflowName}_v2`
   const duplicateName = `${version2Name}_duplicate`
 
+  // Take screenshot before trying to click Create new dataflow button
+  await page.screenshot({ path: `test-results/debug-etl-page-${timestamp}.png`, fullPage: true })
+
   // Navigate to ETL and create new dataflow with Python node
   await page.getByRole('link', { name: 'ETL' }).click()
   await page.getByLabel('Create new dataflow').getByRole('button').click()

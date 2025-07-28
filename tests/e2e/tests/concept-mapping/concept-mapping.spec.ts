@@ -13,6 +13,9 @@ test('concept-mapping', async ({ page }) => {
   const timestamp = Date.now()
   const dataflowName = `ConceptMappingFlow_${timestamp}`
 
+  // Take screenshot before trying to click Create new dataflow button
+  await page.screenshot({ path: `test-results/debug-etl-page-${timestamp}.png`, fullPage: true })
+
   // Go to ETL and create new flow
   await page.getByRole('link', { name: 'ETL' }).click()
   await page.getByLabel('Create new dataflow').getByRole('button').click()
@@ -112,7 +115,6 @@ test('concept-mapping', async ({ page }) => {
   const downloadPath = await download.path()
   const fs = require('fs')
   const downloadedContent = fs.readFileSync(downloadPath, 'utf8')
-  console.log('Downloaded CSV content preview:', downloadedContent.substring(0, 200))
 
   // Verify it contains our expected data
   expect(downloadedContent).toContain('Source')
