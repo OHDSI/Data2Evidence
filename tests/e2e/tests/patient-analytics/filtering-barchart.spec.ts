@@ -4,7 +4,7 @@ const CONCEPT_SET_DELAY = 5000 // Delay to wait for concept set creation
 const CHART_UPDATE_DELAY = 5000 // Delay to wait for chart updates
 
 test('filtering-barchart', async ({ page }) => {
-  console.log('Sign in')
+  // Sign in
   await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -12,20 +12,20 @@ test('filtering-barchart', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  console.log('Select demo dataset, open cohorts')
+  // Select demo dataset, open cohorts
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.getByText('2694 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Add filter card')
+  // Add filter card
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await expect(page.getByText('A filter card has been added: Condition Occurrence A')).toBeVisible()
   await expect(page.locator('#pane-left')).toContainText('Condition Occurrence A')
 
-  console.log('Create concept set')
+  // Create concept set
   await page.getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Search' }).click()
@@ -36,7 +36,7 @@ test('filtering-barchart', async ({ page }) => {
   await expect(page.locator('tbody')).toContainText('257012')
   await expect(page.locator('tbody')).toContainText('4294548')
 
-  console.log('Save concept set')
+  // Save concept set
   await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Create' }).click()
   await page.waitForTimeout(CONCEPT_SET_DELAY)
@@ -44,55 +44,55 @@ test('filtering-barchart', async ({ page }) => {
   await expect(page.getByText('1132 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Set X1-axis to condition concept name')
+  // Set X1-axis to condition concept name
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Filter condition concept name to chronic sinusitis')
+  // Filter condition concept name to chronic sinusitis
   await page.getByText('All').nth(2).click()
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic').click()
   await expect(page.getByText('812 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Set X1-axis to gender')
+  // Set X1-axis to gender
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Set Y-axis to month of birth')
+  // Set Y-axis to month of birth
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').nth(1).click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Set Y-axis to patient count')
+  // Set Y-axis to patient count
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
-  console.log('Set X1-axis to condition concept name')
+  // Set X1-axis to condition concept name
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
 
-  console.log('Remove condition concept name value in filter card')
+  // Remove condition concept name value in filter card
   await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('i').click()
 
-  console.log('Set X2-axis to race concept id')
+  // Set X2-axis to race concept id
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
   await page.locator('#pane-right').getByText('Race concept id').click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
 
-  console.log('Set X2-axis to year of birth with bin size of 50')
+  // Set X2-axis to year of birth with bin size of 50
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
   await page.locator('#pane-right').getByText('Year of Birth').first().click()
@@ -103,50 +103,50 @@ test('filtering-barchart', async ({ page }) => {
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
 
-  console.log('Reset X2-axis')
+  // Reset X2-axis
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
   await page.locator('div.dropdownmenu-container').getByText('Reset Selection').nth(1).click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
 
-  console.log('Set attribute for stacked chart')
+  // Set attribute for stacked chart
   await page.locator('div.axis-menu-button-wrapper').nth(4).getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(2).click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Set month of birth to 11 in filter card')
+  // Set month of birth to 11 in filter card
   await page.getByTitle('Basic Data - Month of Birth').first().click()
   await page.getByRole('textbox').fill('11')
   await page.getByRole('textbox').press('Enter')
   await expect(page.getByText('115 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Remove condition occurrence filter card')
+  // Remove condition occurrence filter card
   await page.locator('span[title="Select Filter Attributes"]').nth(1).click()
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
   await expect(page.getByText('247 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Switch to list view')
+  // Switch to list view
   await page.locator('button.chartButton').nth(1).click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Export to ZIP file')
+  // Export to ZIP file
   await page.locator('button.toolbarButton').nth(1).click()
   await page.getByRole('menuitem').getByText('Export to ZIP File').click()
   await page.locator('span.buttonContent').nth(1).click()
   await page.waitForTimeout(5000) // Wait for download to complete
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 }) // Not sure what to expect
 
-  console.log('Switch to chart view')
+  // Switch to chart view
   await page.locator('button.chartButton').first().click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
-  console.log('Reset filter card')
+  // Reset filter card
   await page.getByRole('button', { name: '↺' }).click()
   await page.locator('button[title="Reset"]').click()
   await page.waitForTimeout(CHART_UPDATE_DELAY)
