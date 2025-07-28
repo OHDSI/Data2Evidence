@@ -23,6 +23,13 @@ import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/Def
 import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
 import { CohortDefinitionSetNode } from "./CohortDefinitionSetNode/CohortDefinitionSetNode";
 import { ExposureNode } from "./ExposureNode/ExposureNode";
+import {
+  IncludeTreatments,
+  FilterTreatments,
+  CensorType,
+} from "./TreatmentPatternsNode/TreatmentPatternsType";
+import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
 import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
 
 export const NODE_TYPES: {
@@ -52,6 +59,10 @@ export const NODE_TYPES: {
   cohort_definition_set_node: CohortDefinitionSetNode,
   exposure_node: ExposureNode,
   strategus_node: PlainNode,
+  treatment_patterns_node: TreatmentPatternsNode,
+  cohort_event_node: CohortSelectionNode,
+  cohort_target_node: CohortSelectionNode,
+  cohort_exit_node: CohortSelectionNode,
 };
 
 export const NODE_COLORS: {
@@ -80,13 +91,17 @@ export const NODE_COLORS: {
   cohort_definition_set_node: "grey",
   exposure_node: "lightgrey",
   strategus_node: "black",
+  treatment_patterns_node: "salmon",
+  cohort_event_node: "teal",
+  cohort_target_node: "teal",
+  cohort_exit_node: "teal",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_generator_node: {
     title: "Cohort Generator Module Specifications",
     description: "Run cohort generator code.",
-    tag: NodeTag.Grey,
+    tag: NodeTag.Experimental,
     defaultData: {
       incremental: true,
       generateStats: true,
@@ -95,7 +110,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_diagnostic_node: {
     title: "Cohort Diagnostic Module Specifications",
     description: "Run cohort diagnostic starboard.",
-    tag: NodeTag.Grey,
+    tag: NodeTag.Experimental,
     defaultData: {
       runInclusionStatistics: true,
       runIncludedSourceConcepts: true,
@@ -112,7 +127,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   negative_control_outcome_cohort_node: {
     title: "Negative Control Outcome Cohort Shared Resource Specifications",
     description: "Run negative control outcome cohort.",
-    tag: NodeTag.Lime,
+    tag: NodeTag.Experimental,
     defaultData: {
       occurenceType: "all",
       detectOnDescendants: true,
@@ -121,7 +136,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_incidence_node: {
     title: "Cohort Incidence",
     description: "Run cohort incidence code.",
-    tag: NodeTag.Cyan,
+    tag: NodeTag.Experimental,
     defaultData: {
       strataSettings: {
         byYear: true,
@@ -138,7 +153,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_incidence_target_cohorts_node: {
     title: "Cohort Incidence Target Cohorts",
     description: "Run cohort incidence target cohorts code.",
-    tag: NodeTag.Aquamarine,
+    tag: NodeTag.Experimental,
     defaultData: {
       cohortId: 3,
       cleanWindow: 9999,
@@ -147,7 +162,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   time_at_risk_node: {
     title: "Time At Risk",
     description: "Run time at risk code.",
-    tag: NodeTag.Wheat,
+    tag: NodeTag.Experimental,
     defaultData: {
       timeAtRiskId: undefined,
       startWith: "start",
@@ -157,7 +172,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   default_covariate_settings_node: {
     title: "Covariate Settings",
     description: "Run covariate settings code.",
-    tag: NodeTag.Darkgreen,
+    tag: NodeTag.Experimental,
     defaultData: {
       excludedCovariateConceptIds: [],
       includedCovariateConceptIds: [],
@@ -169,7 +184,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   characterization_node: {
     title: "Characterization",
     description: "JSON analysis specification for executing HADES modules",
-    tag: NodeTag.Orange,
+    tag: NodeTag.Experimental,
     defaultData: {
       dechallengeStopInterval: 0,
       dechallengeEvaluationWindow: 0,
@@ -189,7 +204,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   target_comparator_outcomes_node: {
     title: "Target Compartor Outcomes",
     description: "Run target comparator outcomes code",
-    tag: NodeTag.Indigo,
+    tag: NodeTag.Experimental,
     defaultData: {
       targetId: 1,
       comparatorId: 1,
@@ -202,7 +217,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_method_analysis_node: {
     title: "Cohort Method Analysis",
     description: "Run cohort method analysis code",
-    tag: NodeTag.Lavender,
+    tag: NodeTag.Experimental,
     defaultData: {
       analysisId: undefined,
       dbCohortMethodDataArgs: {
@@ -224,7 +239,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_method_node: {
     title: "Cohort Method",
     description: "Run cohort method code.",
-    tag: NodeTag.Mediumpurple,
+    tag: NodeTag.Experimental,
     defaultData: {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
@@ -234,7 +249,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   era_covariate_settings_node: {
     title: "Era Covariate Settings",
     description: "Run era covariate settings code.",
-    tag: NodeTag.Chocolate,
+    tag: NodeTag.Experimental,
     defaultData: {
       label: "Main",
       includedEraIds: [],
@@ -253,7 +268,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   calendar_time_covariate_settings_node: {
     title: "Calendar Time Covariate Settings",
     description: "Run calendar time covariate settings code.",
-    tag: NodeTag.Chocolate,
+    tag: NodeTag.Experimental,
     defaultData: {
       caldendarTimeKnots: 5,
       allowRegularization: true,
@@ -263,7 +278,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   seasonality_covariate_settings_node: {
     title: "Seasonality Covariate Settings",
     description: "Run seasonality covariate settings code.",
-    tag: NodeTag.Chocolate,
+    tag: NodeTag.Experimental,
     defaultData: {
       seasonalityKnots: 5,
       allowRegularization: true,
@@ -273,7 +288,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   self_controlled_case_series_analysis_node: {
     title: "Self Controlled Case Series Analysis",
     description: "Run self-controlled case series analysis code.",
-    tag: NodeTag.Red,
+    tag: NodeTag.Experimental,
     defaultData: {
       description: "SCCS age 18-",
       analysisId: undefined,
@@ -302,7 +317,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   self_controlled_case_series_node: {
     title: "Self Controlled Case Series",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Darkred,
+    tag: NodeTag.Experimental,
     defaultData: {
       combineDataFetchAcrossOutcomes: false,
     },
@@ -311,13 +326,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     title: "Patient Level Prediction",
     description:
       "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium.",
-    tag: NodeTag.Magenta,
+    tag: NodeTag.Experimental,
     defaultData: {},
   },
   study_population_settings_node: {
     title: "Study Population Settings",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Lightpink,
+    tag: NodeTag.Experimental,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
@@ -342,13 +357,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   nco_cohort_set_node: {
     title: "NCO Cohort Set",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Blue,
+    tag: NodeTag.Experimental,
     defaultData: {},
   },
   outcomes_node: {
     title: "Outcomes",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Green,
+    tag: NodeTag.Experimental,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
@@ -359,13 +374,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_definition_set_node: {
     title: "Cohort Definition Set",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Olive,
+    tag: NodeTag.Experimental,
     defaultData: {},
   },
   exposure_node: {
     title: "Exposures",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Lightgrey,
+    tag: NodeTag.Experimental,
     defaultData: {
       outcomeOfInterestIds: [],
       exposureOfInterestIds: [],
@@ -374,8 +389,55 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   strategus_node: {
     title: "Strategus",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Black,
+    tag: NodeTag.Experimental,
     defaultData: {},
+  },
+  treatment_patterns_node: {
+    title: "Treatment Patterns",
+    description: "Run treatment patterns code.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      includeTreatments: IncludeTreatments.StartDate,
+      indexDateOffset: 0,
+      minEraDuration: 0,
+      splitEventCohorts: "",
+      splitTime: 30,
+      eraCollapseSize: 30,
+      combinationWindow: 30,
+      minPostCombinationDuration: 30,
+      filterTreatments: FilterTreatments.First,
+      maxPathLength: 5,
+      ageWindow: 10,
+      minCellCount: 5,
+      censorType: CensorType.MinCellCount,
+    },
+  },
+  cohort_event_node: {
+    title: "Event Cohort Selection",
+    description: "Select event cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "event",
+      cohorts: [],
+    },
+  },
+  cohort_target_node: {
+    title: "Target Cohort Selection",
+    description: "Select target cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "target",
+      cohorts: [],
+    },
+  },
+  cohort_exit_node: {
+    title: "Exit Cohort Selection",
+    description: "Select exit cohorts for analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      type: "exit",
+      cohorts: [],
+    },
   },
 };
 

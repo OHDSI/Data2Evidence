@@ -14,13 +14,16 @@ interface Props {
   options?: string[]
   target: HTMLElement
 }
-const props = defineProps<Props>()
+
+const props = withDefaults(defineProps<Props>(), {
+  options: () => [],
+})
 
 const emit = defineEmits<{
   select: [option: string]
 }>()
 
-const emitOption = (option: string) => {
+const emitOption = (option: string): void => {
   emit('select', option)
 }
 </script>
@@ -81,4 +84,3 @@ const emitOption = (option: string) => {
   background-color: #cccfe5;
 }
 </style>
-

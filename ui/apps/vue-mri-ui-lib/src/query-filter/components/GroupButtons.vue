@@ -10,31 +10,44 @@ export default {
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+interface Option {
+  value: string
+  label: string
+}
+
 interface Props {
-  options?: { value: string; label: string }[]
+  options?: Option[]
   limitValue?: string
   small?: boolean
   namePrefix?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  options: () => [],
+  limitValue: '',
+  small: false,
+  namePrefix: '',
+})
 
-const emit = defineEmits(['update-limit-value'])
+const emit = defineEmits<{
+  'update-limit-value': [value: string]
+}>()
 
-const selectedOption = ref(props.limitValue || props.options[0]?.value || '')
+const selectedOption = ref<string>(props.limitValue || props.options?.[0]?.value || '')
 
 const prefix = props.namePrefix ? `${props.namePrefix}-` : ''
 const radioGroupName = `button-radio-${prefix}group`
-// Watch for external changes to modelValue
+
+// Watch for external changes to limitValue
 watch(
   () => props.limitValue,
-  newValue => {
-    selectedOption.value = newValue
+  (newValue?: string) => {
+    selectedOption.value = newValue || ''
   }
 )
 
 // Emit changes when selection changes
-watch(selectedOption, newValue => {
+watch(selectedOption, (newValue: string) => {
   emit('update-limit-value', newValue)
 })
 </script>
