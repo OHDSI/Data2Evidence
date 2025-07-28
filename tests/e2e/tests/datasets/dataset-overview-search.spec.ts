@@ -34,6 +34,17 @@ test('test', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
+
+  // Wait for researcher portal to fully load
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(3000) // Additional wait for any async content loading
+
+  // Take screenshot after researcher portal should be loaded
+  const timestamp = Date.now()
+  await page.screenshot({ path: `test-results/debug-researcher-loaded-${timestamp}.png`, fullPage: true })
+
+  // Wait for search textbox to be visible
+  await expect(page.getByRole('textbox', { name: 'search terms' }).nth(1)).toBeVisible({ timeout: 30000 })
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('demo')
   await page.getByRole('button', { name: 'Search' }).nth(1).click()

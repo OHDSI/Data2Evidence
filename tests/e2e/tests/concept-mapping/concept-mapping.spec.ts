@@ -18,6 +18,16 @@ test('concept-mapping', async ({ page }) => {
 
   // Go to ETL and create new flow
   await page.getByRole('link', { name: 'ETL' }).click()
+
+  // Wait for ETL page to fully load - this is critical in CI environment
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(3000) // Additional wait for any async content loading
+
+  // Take screenshot after ETL page should be loaded
+  await page.screenshot({ path: `test-results/debug-etl-loaded-${timestamp}.png`, fullPage: true })
+
+  // Wait for the Create new dataflow button to be visible
+  await expect(page.getByLabel('Create new dataflow').getByRole('button')).toBeVisible({ timeout: 30000 })
   await page.getByLabel('Create new dataflow').getByRole('button').click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
