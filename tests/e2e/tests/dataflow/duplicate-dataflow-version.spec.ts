@@ -1,40 +1,62 @@
 import { test, expect } from '@playwright/test'
 
 test('duplicate-dataflow-version', async ({ page }) => {
-  // Authentication
-  await page.goto('https://localhost:443/portal')
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-
   const timestamp = Date.now()
   const dataflowName = `TestDataflow_${timestamp}`
   const version2Name = `${dataflowName}_v2`
   const duplicateName = `${version2Name}_duplicate`
 
-  // Take screenshot before trying to click Create new dataflow button
-  await page.screenshot({ path: `test-results/debug-etl-page-${timestamp}.png`, fullPage: true })
+  // Step 1: Navigate to portal
+  await page.goto('https://localhost:443/portal')
+  await page.screenshot({ path: `test-results/step01-portal-loaded-${timestamp}.png`, fullPage: true })
 
-  // Navigate to ETL and create new dataflow with Python node
+  // Step 2: Fill credentials
+  await page.locator('input[name="identifier"]').fill('admin')
+  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.screenshot({ path: `test-results/step02-credentials-filled-${timestamp}.png`, fullPage: true })
+
+  // Step 3: Sign in
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.screenshot({ path: `test-results/step03-signed-in-${timestamp}.png`, fullPage: true })
+
+  // Step 4: Click dataset button
+  await page.getByTestId('button').nth(1).click()
+  await page.screenshot({ path: `test-results/step04-dataset-clicked-${timestamp}.png`, fullPage: true })
+
+  // Step 5: Switch to Admin portal
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await page.screenshot({ path: `test-results/step05-admin-portal-${timestamp}.png`, fullPage: true })
+
+  // Step 6: Click ETL link
   await page.getByRole('link', { name: 'ETL' }).click()
+  await page.screenshot({ path: `test-results/step06-etl-clicked-${timestamp}.png`, fullPage: true })
 
-  // Wait for ETL page to fully load - this is critical in CI environment
+  // Step 7: Wait for ETL page to fully load
   await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(3000) // Additional wait for any async content loading
+  await page.waitForTimeout(3000)
+  await page.screenshot({ path: `test-results/step07-etl-loaded-${timestamp}.png`, fullPage: true })
 
-  // Take screenshot after ETL page should be loaded
-  await page.screenshot({ path: `test-results/debug-etl-loaded-${timestamp}.png`, fullPage: true })
-
-  // Wait for the Create new dataflow button to be visible
+  // Step 8: Wait for and click Create new dataflow button
   await expect(page.getByLabel('Create new dataflow').getByRole('button')).toBeVisible({ timeout: 30000 })
+  await page.screenshot({ path: `test-results/step08-create-button-visible-${timestamp}.png`, fullPage: true })
   await page.getByLabel('Create new dataflow').getByRole('button').click()
+  await page.screenshot({ path: `test-results/step09-create-button-clicked-${timestamp}.png`, fullPage: true })
+  // Step 10: Fill in dataflow details
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test dataflow')
+  await page.screenshot({ path: `test-results/step10-dataflow-details-filled-${timestamp}.png`, fullPage: true })
+
+  // Step 11: Create the dataflow
   await page.getByRole('button', { name: 'Create' }).click()
+  await page.screenshot({ path: `test-results/step11-dataflow-created-${timestamp}.png`, fullPage: true })
+
+  // Step 12: Add Python node
   await page.getByText('Python').first().click()
+  await page.screenshot({ path: `test-results/step12-python-node-added-${timestamp}.png`, fullPage: true })
+
+  // Step 13: Wait for Save button to be visible
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+  await page.screenshot({ path: `test-results/step13-save-button-visible-${timestamp}.png`, fullPage: true })
 
   // Save as version #2
   await page.getByRole('button', { name: 'Save' }).click()
