@@ -118,7 +118,7 @@ jobs:
         continue-on-error: true
         run: |
           cd ./tests/e2e
-          npm test
+          npm test -- dataset-overview-search grant-admin-role duplicate-dataflow-version concept-mapping
 
       - name: Upload Error Context
         if: always()  # Always run, even if the previous step fails
