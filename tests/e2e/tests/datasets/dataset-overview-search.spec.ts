@@ -84,6 +84,6 @@ test('test', async ({ page }) => {
   })
   await page.waitForTimeout(1000)
 
-  await page.keyboard.press('End') // scroll to bottom
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) // scroll to bottom
   await expect(page.locator('.home-header')).toHaveClass(/home-header--scrolled/)
 })
