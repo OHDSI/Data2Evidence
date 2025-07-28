@@ -237,7 +237,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const displayDatabases = useMemo(
     () =>
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(
         formData.schemaOption
       ),
     [formData.schemaOption]
@@ -274,8 +274,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const displaySchemaNameInput = useMemo(
     () =>
       formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM ||
-      formData.schemaOption === SchemaTypes.FHIR,
+      formData.schemaOption === SchemaTypes.ExistingCDM,
     [formData.schemaOption]
   );
 
