@@ -52,7 +52,7 @@ export default {
     },
     filterCountOptions() {
       return {
-        matchType: 'matchall', // TODO: can remove this attribute
+        matchType: 'matchall',
         excludedOnly: this.showExclusion,
         excludeBasicCard: true,
       }
@@ -61,7 +61,6 @@ export default {
       const filterCount = this.getFilterCardCount({
         excludeBasicCard: true,
         excludedOnly: false,
-        // matchType: "matchall" // TODO: remove this
       })
       return this.getText('MRI_PA_FILTERCARD_TITLE_INCLUSION') + ' (' + filterCount + ')'
     },
@@ -69,7 +68,6 @@ export default {
       const filterCount = this.getFilterCardCount({
         excludeBasicCard: true,
         excludedOnly: true,
-        // matchType: "matchall" // TODO: remove this
       })
       return this.getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION') + ' (' + filterCount + ')'
     },
