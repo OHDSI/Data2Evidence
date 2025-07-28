@@ -43,32 +43,34 @@ def data_characterization_plugin(options: DCOptionsType):
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
-
+    set_admin_connection_string = ""
+    set_read_connection_string = ""
     match dbdao.dialect:
         case SupportedDatabaseDialects.POSTGRES:
             results_schema = results_schema.lower()
             vocab_schema = vocab_schema.lower()
             schema_name = schema_name.lower()
+            set_admin_connection_string = dbdao.get_trex_connection_string()
+            set_read_connection_string = set_admin_connection_string
         case SupportedDatabaseDialects.HANA:
             results_schema = results_schema.upper()
             vocab_schema = vocab_schema.upper()
             schema_name = schema_name.upper()
+            set_admin_connection_string = dbdao.get_database_connector_connection_string(
+                user_type=admin_user,
+                release_date=release_date)
+            set_read_connection_string = dbdao.get_database_connector_connection_string(
+                user_type=read_user,
+                release_date=release_date
+            )
 
     dc_schema = create_data_characterization_schema(results_schema,
                                                     vocab_schema,
                                                     dbdao,
                                                     logger)
+    
 
     if dc_schema:
-        set_admin_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=admin_user,
-            release_date=release_date)
-
-        set_read_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=read_user,
-            release_date=release_date
-        )
-
         dc_status = execute_data_characterization(schema_name=schema_name,
                                                   results_schema=results_schema,
                                                   vocab_schema=vocab_schema,

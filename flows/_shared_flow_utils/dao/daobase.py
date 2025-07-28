@@ -284,6 +284,22 @@ class DaoBase(ABC):
         base_url = f"postgresql://{user.get_secret_value()}@{host}:{port}/{database_name}"
         return base_url
 
+    def get_trex_connection_string(self): 
+        """
+        Used for Database Connector package
+        """
+        database_credentials = self.tenant_configs
+        database_connector_dialect = getattr(
+            DialectDrivers.database_connector, database_credentials.dialect)
+        trex_host=Variable.get("trex_sql_host")
+        trex_port=Variable.get("trex_sql_port")
+        trex_dbname=Variable.get("trex_sql_dbname")
+        conn_url = f"{getattr(DialectDrivers.jdbc, database_connector_dialect)}://{trex_host}:{trex_port}/{trex_dbname}"
+        user=Variable.get("trex_sql_user")
+        password=Secret.load("trex-sql-password").get()
+
+        return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{DaoBase.path_to_driver}')"""
+
     def get_database_connector_connection_string(
         self,
         user_type: UserType,
@@ -297,17 +313,17 @@ class DaoBase(ABC):
         database_connector_dialect = getattr(
             DialectDrivers.database_connector, database_credentials.dialect)
         dialect = database_credentials.dialect
+        host = database_credentials.host
+        port = database_credentials.port
+        database_name = database_credentials.databaseName
+
         match dialect:
             case SupportedDatabaseDialects.POSTGRES:
-                #Trex Sql Interface connection details
-                trex_host=Variable.get("trex_sql_host")
-                trex_port=Variable.get("trex_sql_port")
-                trex_dbname=Variable.get("trex_sql_dbname")
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{trex_host}:{trex_port}/{trex_dbname}"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
                 encrypt = database_credentials.encrypt or "TRUE"
                 validateCertificate = database_credentials.validateCertificate or "FALSE"
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{database_credentials.host}:{database_credentials.port}?databaseName={database_credentials.databaseName}&encrypt={encrypt}&validateCertificate={validateCertificate}"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
                 extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
                 conn_url += extra_config
 
@@ -324,17 +340,15 @@ class DaoBase(ABC):
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         else:
-            user=Variable.get("trex_sql_user")
-            password=Secret.load("trex-sql-password").get()
-            # match user_type:
-            #     case UserType.ADMIN_USER:
-            #         user = database_credentials.adminUser
-            #         password = database_credentials.adminPassword
-            #     case UserType.READ_USER:
-            #         user = database_credentials.readUser
-            #         password = database_credentials.readPassword
+            match user_type:
+                case UserType.ADMIN_USER:
+                    user = database_credentials.adminUser
+                    password = database_credentials.adminPassword
+                case UserType.READ_USER:
+                    user = database_credentials.readUser
+                    password = database_credentials.readPassword
 
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
     @staticmethod
     def set_db_driver_env() -> str:

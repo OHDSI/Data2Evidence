@@ -107,8 +107,11 @@ def execute_dqd(
                   database_code=database_code)
 
     set_db_driver_env = dbdao.set_db_driver_env()
-    set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
+    if dbdao.dialect == SupportedDatabaseDialects.HANA:
+        set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
                                                                               release_date=release_date)
+    elif dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        set_read_user_connection = dbdao.get_trex_connection_string()
 
     logger.info(f'''Running DQD with input parameters:
                     schemaName: {schema_name},
