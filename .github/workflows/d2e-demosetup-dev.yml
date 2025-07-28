@@ -127,6 +127,10 @@ jobs:
           name: error-context
           path: tests/e2e/test-results/**/*
 
+      - name: Logs 
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Stop d2e services
         if: success() || failure()
