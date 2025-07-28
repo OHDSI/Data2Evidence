@@ -83,3 +83,51 @@ getCohortDefinition <- function(cohortId) {
 .toJSON <- function(x, pretty = FALSE) {
   return(RJSONIO::toJSON(x = x, digits = 23, pretty = pretty))
 }
+
+createCohortDefinition <- function(name, description, cohortDefinitionJson) {
+  host <- Sys.getenv("TREX__ENDPOINT_URL")
+  auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
+  dataset_id <- Sys.getenv("TREX__DATASET_ID")
+  url <- paste0(host, "/d2e-webapi/cohortdefinition/", cohortId)
+
+
+  if ("expression" %in% names(cohortDefinitionJson)) {
+    expression <- cohortDefinitionJson$expression
+  } else {
+    expression <- cohortDefinitionJson
+  }
+
+  parameters <- list(
+    name = name,
+    description = description,
+    expression = cohortDefinitionJson
+  )
+  response <- tryCatch(
+    expr = httr::POST(
+      url,
+      body = parameters,
+      encode = "json",
+      httr::add_headers(
+        `Content-Type` = "application/json",
+        Authorization = paste0("Bearer ", auth_token),
+        datasetid = dataset_id
+      )
+    ),
+    error = function(e) {
+      stop(paste0(
+        "Error occurred while saving the cohort definition: ", e$message
+      ))
+    }
+  )
+
+  if (!response$status_code == 200) {
+    message(paste0("Status code: ", response$status_code))
+    message(httr::content(response))
+    stop(paste0(
+      "Error occurred while getting cohort definition for cohort: ",
+      name
+    ))
+  }
+  response <- httr::content(response)
+  return(response)
+}
