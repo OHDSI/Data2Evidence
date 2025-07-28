@@ -984,3 +984,24 @@ def drop_strategus_results_schema(dbSettings):
         dbdao.drop_schema(results_schema, True)
     else:
         raise Exception(f"Schema {results_schema} not found")
+
+def getRCdmExecutionSettings(settings) -> str:
+    with ro.default_converter.context():
+        try:
+            rStrategus = importr('Strategus')
+            rParallelLogger = importr('ParallelLogger')
+            rCohortGenerator = importr('CohortGenerator')
+
+            rExecutionSettings = rStrategus.createCdmExecutionSettings(
+                workDatabaseSchema = settings.schema_name,
+                cdmDatabaseSchema = settings.schema_name,
+                cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
+                workFolder = settings.work_folder,
+                resultsFolder = settings.results_folder,
+                minCellCount = 5,
+                maxCores = 8,
+            )
+            return rParallelLogger.convertSettingsToJson(rExecutionSettings)
+        except Exception as e:
+            print('Error: ', e)
+            raise RuntimeError('Execution of strategus has failed')

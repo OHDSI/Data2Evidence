@@ -10,7 +10,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
+from .nodes import drop_strategus_results_schema, execute_r_strategus, generate_nodes_flow, getRCdmExecutionSettings, upload_strategus_results
 
 
 @flow(log_prints=True)
@@ -178,19 +178,11 @@ def runStrategus(json_graph, options):
         analysisSpec = json.loads(analysisSpec)
     
     analysisSpec = json.dumps(analysisSpec)
-    defaultExecutionSettings = json.dumps({
-        "workDatabaseSchema": schema_name,
-        "cdmDatabaseSchema": schema_name,
+    defaultExecutionSettings = json.dumps(getRCdmExecutionSettings({
+        "schema_name": schema_name,
         "workFolder": work_folder,
         "resultsFolder": path_to_results,
-        "logFileName": log_file_name,
-        "minCellCount": 5,
-        "maxCores": 8,
-        "attr_class": [
-            "CdmExecutionSettings",
-            "ExecutionSettings"
-        ]
-    })
+    }))
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
