@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('attribute-display', async ({ page }) => {
-  console.log('Sign in')
+  // Sign in
   await page.goto(`https://localhost:443/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -9,14 +9,14 @@ test('attribute-display', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  console.log('Switch to admin portal')
+  // Switch to admin portal
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
-  console.log('Open jobs')
+  // Open jobs
   await page.getByRole('link', { name: 'Jobs' }).click()
 
-  console.log('Verify all tabs are present')
+  // Verify all tabs are present
   await expect(page.getByRole('heading')).toContainText('Job Runs')
   await page.getByRole('button', { name: 'Jobs' }).click()
   await expect(page.getByRole('heading')).toContainText('Jobs')
