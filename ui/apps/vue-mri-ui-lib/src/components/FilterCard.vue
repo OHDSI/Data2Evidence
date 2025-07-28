@@ -22,7 +22,7 @@
         <appButton :click="onRenameSubmit" :text="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_BUTTON')"></appButton>
       </template>
     </messageBox>
-    <b-card v-bind:class="getClasses()">
+    <bs-card v-bind:class="getClasses()">
       <template v-slot:header>
         <div class="d-flex" role="tab">
           <button
@@ -37,7 +37,7 @@
             <button
               class="btn btn-link btn-sm btn-collapse"
               @click="showCollapse = !showCollapse"
-              :class="showCollapse ? 'collapsed' : 'null'"
+              :class="showCollapse ? 'collapsed' : null"
               :aria-controls="id"
               :aria-expanded="showCollapse ? 'true' : 'false'"
             >
@@ -45,14 +45,16 @@
               <appIcon icon="slimArrowRight" v-if="!showCollapse"></appIcon>
             </button>
             <label>{{ name }}</label>
-            <b-badge v-if="displayShowCohortEntryExit" variant="light" class="ml-2 filter-card-badge">{{ entryExitLabel }}</b-badge>
+            <bs-badge v-if="displayShowCohortEntryExit" variant="light" class="ml-2 filter-card-badge">{{
+              entryExitLabel
+            }}</bs-badge>
             <span v-show="isDisabled" class="card-help-button" @click="openHelp">
               <appIcon icon="information"></appIcon>
             </span>
           </div>
           <div>
             <!-- filter card context menu -->
-            <b-dropdown variant="link" size="sm" class="btn-filtercard-menu" no-caret>
+            <bs-dropdown variant="link" size="sm" class="btn-filtercard-menu" no-caret align="right">
               <template v-slot:button-content>
                 <appIcon
                   icon="menu"
@@ -63,40 +65,50 @@
               <!-- operations -->
               <div class="dropdown-scroll" :style="dropdownScrollStyle">
                 <template v-for="item in moreButtonMenuOperations" :key="item">
-                  <b-dropdown-item @click="onMoreMenuItemSelected(item)">{{ item.text }}</b-dropdown-item>
+                  <bs-dropdown-item @click="onMoreMenuItemSelected(item)">{{ item.text }}</bs-dropdown-item>
                 </template>
 
-                <div class="dropdown-divider"></div>
+                <bs-dropdown-divider></bs-dropdown-divider>
                 <!-- attributes -->
-                <b-form-checkbox-group stacked v-model="checkedAttributes" :text-field="text">
+                <bs-checkbox-group stacked v-model="checkedAttributes" :text-field="text">
                   <template v-for="item in moreButtonMenuAttributes" :key="item">
-                    <div class="dropdown-item bg-white text-body" :style="dropdownItemStyle">
-                      <b-form-checkbox :value="item.value">{{ item.text }}</b-form-checkbox>
+                    <div class="bs-dropdown-item bg-white text-body" :style="dropdownItemStyle">
+                      <bs-checkbox :value="item.value">{{ item.text }}</bs-checkbox>
                     </div>
                   </template>
-                </b-form-checkbox-group>
+                </bs-checkbox-group>
 
-                <div v-if="moreButtonMenuTimeOperations.length > 0" class="dropdown-divider"></div>
+                <bs-dropdown-divider v-if="moreButtonMenuTimeOperations.length > 0"></bs-dropdown-divider>
                 <!-- time -->
                 <template v-for="item in moreButtonMenuTimeOperations" :key="item">
-                  <b-dropdown-item class="dropdown-item bg-white text-body" @click="onMoreMenuItemSelected(item)">
-                    <b-form-checkbox :checked="isChecked(item)">{{ item.text }}</b-form-checkbox>
-                  </b-dropdown-item>
+                  <bs-dropdown-item class="bs-dropdown-item bg-white text-body">
+                    <bs-checkbox
+                      :checked="isChecked(item)"
+                      :menu-item="item"
+                      @menu-item-click="onMoreMenuItemSelected"
+                      >{{ item.text }}</bs-checkbox
+                    >
+                  </bs-dropdown-item>
                 </template>
 
-                <div v-if="moreButtonMenuExcludeOperation.length > 0" class="dropdown-divider"></div>
+                <bs-dropdown-divider v-if="moreButtonMenuExcludeOperation.length > 0"></bs-dropdown-divider>
                 <!-- exclude -->
                 <template v-for="item in moreButtonMenuExcludeOperation" :key="item">
-                  <b-dropdown-item @click="onMoreMenuItemSelected(item)">
-                    <b-form-checkbox :checked="isChecked(item)">{{ item.text }}</b-form-checkbox>
-                  </b-dropdown-item>
+                  <bs-dropdown-item @click="onMoreMenuItemSelected(item)">
+                    <bs-checkbox
+                      :checked="isChecked(item)"
+                      :menu-item="item"
+                      @menu-item-click="onMoreMenuItemSelected"
+                      >{{ item.text }}</bs-checkbox
+                    >
+                  </bs-dropdown-item>
                 </template>
               </div>
-            </b-dropdown>
+            </bs-dropdown>
           </div>
         </div>
       </template>
-      <b-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
+      <bs-collapse :id="id" role="tabpanel" v-model="showCollapse" class="body-collapse">
         <div class="row">
           <div class="col">
             <!-- attributes -->
@@ -135,8 +147,8 @@
             </div>
           </template>
         </dialogBox>
-      </b-collapse>
-    </b-card>
+      </bs-collapse>
+    </bs-card>
   </div>
 </template>
 <script lang="ts">
@@ -145,6 +157,14 @@ import { FILTERCARD_REMOVE_NEW_STATE } from '../store/mutation-types'
 import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
+import bsBadge from '../lib/ui/bs-badge.vue'
+import bsCard from '../lib/ui/bs-card.vue'
+import bsCollapse from '../lib/ui/bs-collapse.vue'
+import bsCheckbox from '../lib/ui/bs-checkbox.vue'
+import bsCheckboxGroup from '../lib/ui/bs-checkbox-group.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
+import bsDropdownDivider from '../lib/ui/bs-dropdown-divider.vue'
 import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
@@ -373,14 +393,18 @@ export default {
         : this.filterCardModel.props.name
     },
     entryExitLabel() {
-      return this.filterCardModel.props.isEntry ? this.getText('MRI_PA_CHART_ENTRY') : this.filterCardModel.props.isExit ? this.getText('MRI_PA_CHART_EXIT') : ""
+      return this.filterCardModel.props.isEntry
+        ? this.getText('MRI_PA_CHART_ENTRY')
+        : this.filterCardModel.props.isExit
+        ? this.getText('MRI_PA_CHART_EXIT')
+        : ''
     },
     constraints() {
       return this.filterCardModel.props.constraints
     },
-    displayShowCohortEntryExit() {      
+    displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
-    }
+    },
   },
   methods: {
     ...mapMutations([FILTERCARD_REMOVE_NEW_STATE]),
@@ -485,6 +509,14 @@ export default {
     appButton,
     appLabel,
     appIcon,
+    bsBadge,
+    bsCard,
+    bsCollapse,
+    bsCheckbox,
+    bsCheckboxGroup,
+    bsDropdown,
+    bsDropdownItem,
+    bsDropdownDivider,
     constraint,
     advancedtime,
     dialogBox,
