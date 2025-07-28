@@ -11,6 +11,7 @@ on:
 env:
   VERSION: develop
 
+
 jobs:
   demosetup:
     runs-on: ubuntu-24.04
@@ -20,7 +21,7 @@ jobs:
       - name: npm install
         if: success() || failure()
         run: |
-          npm install
+          npm install 
 
       - name: Initialise d2e
         if: success() || failure()
@@ -50,7 +51,7 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
+      
       - name: Log status
         if: success() || failure()
         run: |
@@ -60,8 +61,8 @@ jobs:
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
           DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-
-      - name: Logs
+      
+      - name: Logs 
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -81,8 +82,8 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
-      - name: Logs
+  
+      - name: Logs 
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -117,14 +118,15 @@ jobs:
         continue-on-error: true
         run: |
           cd ./tests/e2e
-          npm test -- dataset-overview-search grant-admin-role
+          npm test
 
       - name: Upload Error Context
-        if: always() # Always run, even if the previous step fails
+        if: always()  # Always run, even if the previous step fails
         uses: actions/upload-artifact@v4
         with:
           name: error-context
           path: tests/e2e/test-results/**/*
+
 
       - name: Stop d2e services
         if: success() || failure()
