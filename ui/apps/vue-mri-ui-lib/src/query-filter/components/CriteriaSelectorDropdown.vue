@@ -37,12 +37,17 @@ const criteriaOptions = computed(() => {
     const options = criteriaConfigLoader.getCriteriaOptions(props.sectionId, descriptionType)
     return options
   } catch (error) {
-    console.warn(`Failed to load criteria for section ${props.sectionId}:`, error)
+    console.error(`Failed to load criteria for section ${props.sectionId}:`, error)
     return []
   }
 })
 
-const toggleDropdown = () => {
+const toggleDropdown = (event?: Event) => {
+  if (event) {
+    event.stopPropagation()
+    event.preventDefault()
+  }
+
   if (!props.disabled) {
     isOpen.value = !isOpen.value
   }
@@ -59,12 +64,16 @@ const closeDropdown = () => {
 
 // Close dropdown when clicking outside
 const handleClickOutside = (event: Event) => {
+  if (!isOpen.value) {
+    return
+  }
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     closeDropdown()
   }
 }
 
 onMounted(() => {
+  // Add click outside handler with a small delay to prevent immediate triggering
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -75,11 +84,11 @@ onUnmounted(() => {
 
 <template>
   <div class="criteria-selector-dropdown" ref="dropdownRef">
-    <ButtonMaterial variant="text" color="primary" :disabled="disabled" @click="toggleDropdown">
+    <ButtonMaterial variant="text" color="primary" :disabled="disabled" @button-click.stop="toggleDropdown">
       <template #startIcon>
-        <AddIcon /> 
+        <AddIcon />
       </template>
-        Add event
+      Add event
     </ButtonMaterial>
 
     <div v-if="isOpen" class="criteria-selector-dropdown__menu" role="menu">

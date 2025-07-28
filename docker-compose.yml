@@ -522,7 +522,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -596,7 +596,7 @@ services:
       POSTGRES_PUBLICATION_CONFIG: |-
         {
          "databases": {
-          "+${PG_DB_NAME:-alp_fhir}": {
+          "+${PG__FHIR_DB_NAME:-alp_fhir}": {
            "+fhir_publication": {
              "schema": "public",
              "publication": "fhir_publication"
@@ -628,6 +628,7 @@ services:
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
       POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
+      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
       PORT: 41110
       sqlOnly: false
 
@@ -1408,7 +1409,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/mlflow/mlflow:v3.0.0
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:
