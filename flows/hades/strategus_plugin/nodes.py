@@ -896,8 +896,8 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
                 connectionString=construct_jdbc_url(db_credentials),
-                user=db_credentials.readUser,
-                password=db_credentials.readPassword.get_secret_value(),
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
             )
 
