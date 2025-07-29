@@ -1,0 +1,43 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "axios": "npm:axios@^1.7.7",
+    "./src/env": "./src/env.ts",
+    "./src/types": "./src/types.ts",
+    "./src/api/AWSTokenAPI": "./src/api/AWSTokenAPI.ts",
+    "./src/data-mapping/services": "./src/data-mapping/services.ts",
+    "./src/data-mapping/routes": "./src/data-mapping/routes.ts",
+    "./src/utils/getModels": "./src/utils/getModels.ts",
+    "@langchain/core": "npm:@langchain/core@^0.3.40",
+    "@langchain/openai": "npm:@langchain/openai@^0.4.4",
+    "@langchain/core/messages": "npm:@langchain/core/messages",
+    "winston": "npm:winston",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "https": "node:https",
+    "fs": "node:fs",
+    "path": "node:path",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "buffer": "node:buffer",
+    "process": "node:process",
+    "assert": "node:assert"
+  }
+}

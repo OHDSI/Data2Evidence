@@ -1,0 +1,49 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "@medplum/core": "npm:@medplum/core@3.2.2",
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "typedi": "npm:typedi@^0.10.0",
+    "uuid": "npm:uuid@^10.0.0",
+    "winston": "npm:winston@^3.13.1",
+    "axios": "npm:axios@^1.7.3",
+    "base64": "jsr:@std/encoding/base64",
+    "pg": "npm:pg@^8.4.2",
+    "typescript": "npm:typescript@4.4.4",
+    "pg-query-stream": "npm:pg-query-stream@^4.2.4",
+    "./src/utils/types": "./src/utils/types.ts",
+    "./src/logger": "./src/logger.ts",
+    "./src/api/FhirAPI": "./src/api/FhirAPI.ts",
+    "./src/api/PortalAPI": "./src/api/PortalAPI.ts",
+    "./src/fhir-svc/services": "./src/fhir-svc/services.ts",
+    "./src/fhir-svc/routes": "./src/fhir-svc/routes.ts",
+    "./src/fhir-svc/middleware": "./src/fhir-svc/middleware.ts",
+    "./src/env": "./src/env.ts",
+    "https": "node:https",
+    "buffer": "node:buffer",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "fs": "node:fs",
+    "path": "node:path",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "process": "node:process",
+    "assert": "node:assert"
+  }
+}
