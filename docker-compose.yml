@@ -445,6 +445,11 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
+            "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+            "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+            "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
+            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -517,7 +522,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -585,13 +590,18 @@ services:
            "schemas": {
             "+public": {}
            }
+          },
+          "+${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
+           "schemas": {
+            "+public": {}
+           }
           }
          }
         }
       POSTGRES_PUBLICATION_CONFIG: |-
         {
          "databases": {
-          "+${PG_DB_NAME:-alp_fhir}": {
+          "+${PG__FHIR_DB_NAME:-alp_fhir}": {
            "+fhir_publication": {
              "schema": "public",
              "publication": "fhir_publication"
@@ -618,11 +628,20 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}"
+         },
+         "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
+          "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+          "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
+          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
       POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
+      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
       PORT: 41110
       sqlOnly: false
 
@@ -1145,8 +1164,6 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway:
-        priority: 10
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
@@ -1403,7 +1420,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/mlflow/mlflow:v3.0.0
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:
