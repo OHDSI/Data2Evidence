@@ -1,0 +1,57 @@
+.flow-variables-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .flow-variables-drawer__header {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+  }
+
+  .flow-variables-drawer__count {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: 8px;
+    font-weight: normal;
+  }
+
+  .flow-variables-drawer__content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flow-variables-drawer__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+    margin-top: auto;
+  }
+
+  .flow-variables-drawer__submit {
+    min-width: 80px;
+  }
+
+  .flow-variables-drawer__warning {
+    padding: 12px 16px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin-bottom: 24px;
+  }
+
+  .flow-variables-drawer__variables {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 16px;
+  }
+}

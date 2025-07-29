@@ -1,6 +1,7 @@
 import React, { FC, ReactNode, useEffect } from "react";
 import { useToken, useTranslation } from "../../../contexts";
 import env from "../../../env";
+import "./PluginContainer.scss";
 
 interface PluginContainerProps {
   getToken?: () => Promise<string>;
@@ -30,7 +31,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
   }, [studyId, releaseId]);
 
   return (
-    <span
+    <div
       className="plugin-container"
       ref={(node: any) => {
         if (node) {
@@ -47,7 +48,7 @@ const PluginContainer: FC<PluginContainerProps> = ({
       }}
     >
       {children}
-    </span>
+    </div>
   );
 };
 

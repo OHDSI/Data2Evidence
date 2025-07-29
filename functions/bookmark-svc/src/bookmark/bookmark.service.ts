@@ -325,7 +325,7 @@ export async function _renameBookmark(
     const result = await portalAPI.updateBookmark(updateBookmarkDto, datasetId)
 
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
-    const updatedBookmark = result.artifacts.bookmarks.find(bookmark => bookmark.id === bookmarkId)
+    const updatedBookmark = result.artifacts.find(bookmark => bookmark.id === bookmarkId)
 
     const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
       updatedBookmark,

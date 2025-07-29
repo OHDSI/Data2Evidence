@@ -1,24 +1,29 @@
-import { Sync } from "@mui/icons-material";
-import { Button } from "@portal/components";
 import React, { FC, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { Button } from "@portal/components";
+import SyncIcon from "@mui/icons-material/Sync";
 import { RootState } from "../../../../../store";
-import { useCheckRemoteDiffQuery, useOverwriteCanvasFromRemoteMutation } from "../../../slices";
+import {
+  useCheckRemoteDiffQuery,
+  useOverwriteCanvasFromRemoteMutation,
+} from "../../../slices";
 
 interface SyncFromRemoteButtonProps {}
 
 export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
-  const [overwriteFromRemote, { isLoading: isSyncing }] = useOverwriteCanvasFromRemoteMutation();
-  
+  const [overwriteFromRemote, { isLoading: isSyncing }] =
+    useOverwriteCanvasFromRemoteMutation();
+
   // Check for differences every 30 seconds, or when dataflowId changes
-  const { data: diffCheck, isLoading: isCheckingDiff, refetch } = useCheckRemoteDiffQuery(
-    dataflowId!,
-    {
-      skip: !dataflowId,
-      pollingInterval: 30000, // Check every 30 seconds
-    }
-  );
+  const {
+    data: diffCheck,
+    isLoading: isCheckingDiff,
+    refetch,
+  } = useCheckRemoteDiffQuery(dataflowId!, {
+    skip: !dataflowId,
+    pollingInterval: 30000, // Check every 30 seconds
+  });
 
   const handleSyncClick = useCallback(async () => {
     if (!dataflowId) {
@@ -27,9 +32,11 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = () => {
 
     try {
       const result = await overwriteFromRemote({ id: dataflowId }).unwrap();
-      
+
       if (result.overwritten) {
-        console.log(`Successfully synced from remote. Updated to version ${result.newVersion}`);
+        console.log(
+          `Successfully synced from remote. Updated to version ${result.newVersion}`
+        );
         // Refetch diff check after successful sync
         refetch();
       } else {
@@ -48,15 +55,15 @@ export const SyncFromRemoteButton: FC<SyncFromRemoteButtonProps> = () => {
   const buttonText = isSyncing
     ? "Syncing..."
     : isCheckingDiff
-      ? "Checking..."
-      : diffCheck?.hasDifferences
-        ? "Sync from Remote"
-        : "Up to Date";
+    ? "Checking..."
+    : diffCheck?.hasDifferences
+    ? "Sync from remote"
+    : "Up to date";
 
   return (
     <Button
       variant="outlined"
-      startIcon={<Sync />}
+      startIcon={<SyncIcon />}
       onClick={handleSyncClick}
       disabled={isDisabled}
       text={buttonText}
