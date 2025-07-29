@@ -392,9 +392,7 @@
           "dataflowmgmt.jobHistory.filter.read",
           "dataflowmgmt.dqd.job.dataset.flowRun.latest.read",
           "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read",
-          "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read",
-          "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
           "dataflowmgmt.dbSvc.flowRun.add",
           "dbSvc.schema.create",
           "dbSvc.snapshot.create",
@@ -534,8 +532,7 @@
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "dataflowmgmt.dqd.dataQuality.flowRun.add",
-          "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
+          "dataflowmgmt.prefect.flowRun.add",
           "jupyter"
         ]
       },
