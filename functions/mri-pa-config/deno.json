@@ -2,9 +2,7 @@
   "workspace": [],
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "lib": [
-      "deno.window"
-    ],
+    "lib": ["deno.window"],
     "strict": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
