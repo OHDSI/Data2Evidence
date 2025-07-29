@@ -1,2 +1,2 @@
-export import *  as settings from "./settings/Settings";
-export import * as config from "./config/qeConfigInterface";
+export * as settings from "./settings/Settings";
+export * as config from "./config/qeConfigInterface";
