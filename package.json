@@ -1,6 +1,6 @@
 {
   "name": "@ohdsi/d2e",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Data2Evidence Installer",
   "license": "Apache-2.0",
   "homepage": "https://d2e.sg",
@@ -37,7 +37,8 @@
     "internal": "npm run-script --prefix internal"
   },
   "optionalDependencies": {
-    "@alp/alp-dbcli": "file:cache/drivers/alp-dbcli-v1.0.0.tgz"
+    "hdb": "0.19.12",
+    "fast-csv": "5.0.2"
   },
   "devDependencies": {
     "@types/node": "^18",

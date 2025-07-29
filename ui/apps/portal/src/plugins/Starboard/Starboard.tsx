@@ -1,35 +1,48 @@
-import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
-import AssistantIcon from "@mui/icons-material/Assistant";
-import Fab from "@mui/material/Fab";
-import { ChatItem } from "@nlux/react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { Card, Loader } from "@portal/components";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import React, { FC, useCallback, useEffect, useState } from "react";
-import { api } from "../../axios/api";
-import Chat from "../../components/Chat/Chat";
+import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
+
 import { useConversationHistory, useFeedback, useTranslation } from "../../contexts";
 import { i18nKeys } from "../../contexts/app-context/states";
-import env from "../../env";
 import { useDialogHelper } from "../../hooks";
+import { api } from "../../axios/api";
+
 import { EmptyNotebook } from "./components/EmptyNotebook";
 import { Header } from "./components/NotebookHeader/NotebookHeader";
 import { NotebookTemplateDialog } from "./components/NotebookTemplateDialog/NotebookTemplateDialog";
-import "./Starboard.scss";
 import { convertJupyterToStarboard, notebookContentToText } from "./utils/jupystar";
 import { StarboardNotebook } from "./utils/notebook";
+
+import Chat from "../../components/Chat/Chat";
+import ChatIcon from "@mui/icons-material/Chat";
+import Fab from "@mui/material/Fab";
+import { ChatItem } from "@nlux/react";
+import env from "../../env";
+import "./Starboard.scss";
 
 const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const Starboard: FC<StarboardProps> = ({ metadata }) => {
-  const [open, setOpen] = useState(false);
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const activeDatasetId = metadata?.studyId!;
-  // JWT Token and Jupyter Kernel Extraction
   const [jwtToken, setJWTToken] = useState("");
+  const [unsaved, setUnsaved] = useState(false);
+
+  const [runtime, setRuntime] = useState<StarboardEmbed>();
+  const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
+  const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
+  const [isShared, setIsShared] = useState<boolean | undefined>();
+
+  const [open, setOpen] = useState(false);
+  const { setConversationHistory } = useConversationHistory();
+
+  const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
+
+  const activeDatasetId = metadata?.studyId!;
 
   const setupPYQE = `\n#%% [python]
 import os
@@ -40,14 +53,6 @@ await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-p
 os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
 os.environ['TOKEN'] = '${jwtToken}'
 os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
-
-  const [runtime, setRuntime] = useState<StarboardEmbed>();
-  const [unsaved, setUnsaved] = useState(false);
-
-  const [notebooks, setNotebooks] = useState<StarboardNotebook[]>();
-  const [activeNotebook, setActiveNotebook] = useState<StarboardNotebook | undefined>();
-  const [isShared, setIsShared] = useState<boolean | undefined>();
-  const { setConversationHistory } = useConversationHistory();
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -74,10 +79,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [setFeedback, getText, updateActiveNotebook, activeDatasetId]
   );
-
-  useEffect(() => {
-    fetchNotebooks();
-  }, [fetchNotebooks]);
 
   const loadNotebookContent = useCallback(
     async (notebookContent: string) => {
@@ -108,13 +109,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [jwtToken, metadata, activeDatasetId, setupPYQE]
   );
-
-  useEffect(() => {
-    if (notebooks?.length !== 0 && activeNotebook && activeNotebook !== undefined) {
-      const notebookContent = activeNotebook?.notebookContent || "";
-      loadNotebookContent(notebookContent);
-    }
-  }, [activeNotebook, loadNotebookContent, notebooks]);
 
   const handleReadContent = useCallback(() => {
     return runtime?.notebookContent || "";
@@ -171,62 +165,66 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     [fetchNotebooks, updateActiveNotebook, setFeedback, activeDatasetId]
   );
 
-  const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
-
   const handleCreateNotebook = useCallback(() => {
     openTemplateDialog();
   }, [openTemplateDialog]);
 
   // Check Jupyter Notebook Name if it exist in the database
-  const checkNotebookName = async (name: string) => {
-    const allNotebooks: any[] = await api.studyNotebook.getNotebookList(activeDatasetId);
-    let isFound = true;
-    let nameCount = 0;
-    let notebookName = name;
+  const checkNotebookName = useCallback(
+    async (name: string) => {
+      const allNotebooks: any[] = await api.studyNotebook.getNotebookList(activeDatasetId);
+      let isFound = true;
+      let nameCount = 0;
+      let notebookName = name;
 
-    // Loop continues when the name + number is found
-    while (isFound) {
-      const exist = allNotebooks.some((note) => note.name === notebookName);
-      if (exist) {
-        // Found a notebook with matching name
-        nameCount++;
-        notebookName = name + ` ${nameCount}`;
-      } else {
-        isFound = false;
+      // Loop continues when the name + number is found
+      while (isFound) {
+        const exist = allNotebooks.some((note) => note.name === notebookName);
+        if (exist) {
+          // Found a notebook with matching name
+          nameCount++;
+          notebookName = name + ` ${nameCount}`;
+        } else {
+          isFound = false;
+        }
       }
-    }
 
-    return notebookName;
-  };
+      return notebookName;
+    },
+    [api, activeDatasetId]
+  );
 
   // Import Jupyter Notebook and create the notebook.
-  const importJupyterNb = async (event: any) => {
-    const myFile = event.target.files[0];
-    const text = await myFile.text();
-    try {
-      let notebookName = myFile.name.replace(".ipynb", "");
-      notebookName = await checkNotebookName(notebookName);
-      const notebook_json = await JSON.parse(text);
-      const jupyterFile = notebook_json;
-      // Starboard Notebook in NotebookContent typeof data
-      const starboardNotebook = convertJupyterToStarboard(jupyterFile, {});
-      // Converting NotebookContent to Starboard String
-      const notebookContent = notebookContentToText(starboardNotebook);
-      const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
-        activeDatasetId,
-        notebookName,
-        notebookContent
-      );
-      fetchNotebooks(true);
-      updateActiveNotebook(newNotebook);
-    } catch (err) {
-      console.error(err);
-      setFeedback({
-        type: "error",
-        message: getText(i18nKeys.STARBOARD__ERROR_IMPORT),
-      });
-    }
-  };
+  const importJupyterNb = useCallback(
+    async (event: any) => {
+      const myFile = event.target.files[0];
+      const text = await myFile.text();
+      try {
+        let notebookName = myFile.name.replace(".ipynb", "");
+        notebookName = await checkNotebookName(notebookName);
+        const notebook_json = await JSON.parse(text);
+        const jupyterFile = notebook_json;
+        // Starboard Notebook in NotebookContent typeof data
+        const starboardNotebook = convertJupyterToStarboard(jupyterFile, {});
+        // Converting NotebookContent to Starboard String
+        const notebookContent = notebookContentToText(starboardNotebook);
+        const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
+          activeDatasetId,
+          notebookName,
+          notebookContent
+        );
+        fetchNotebooks(true);
+        updateActiveNotebook(newNotebook);
+      } catch (err) {
+        console.error(err);
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.STARBOARD__ERROR_IMPORT),
+        });
+      }
+    },
+    [activeDatasetId, fetchNotebooks, updateActiveNotebook, setFeedback, getText]
+  );
 
   const handleChatClose = useCallback(
     (chatHistory: ChatItem[]) => {
@@ -235,6 +233,31 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
     },
     [setConversationHistory]
   );
+
+  const handleChatOpen = useCallback(() => {
+    setOpen((prev) => !prev);
+    setTimeout(() => {
+      const chatSegmentsContainer = document.querySelector(".nlux-chatSegments-container");
+      if (chatSegmentsContainer && chatSegmentsContainer.lastElementChild) {
+        (chatSegmentsContainer.lastElementChild as HTMLElement).scrollIntoView({ behavior: "auto", block: "end" });
+      }
+      const chatInputContainer = document.querySelector(".nlux-comp-composer textarea") as HTMLTextAreaElement;
+      if (chatInputContainer) {
+        chatInputContainer.focus();
+      }
+    }, 0);
+  }, [open]);
+
+  useEffect(() => {
+    fetchNotebooks();
+  }, [fetchNotebooks]);
+
+  useEffect(() => {
+    if (notebooks?.length !== 0 && activeNotebook && activeNotebook !== undefined) {
+      const notebookContent = activeNotebook?.notebookContent || "";
+      loadNotebookContent(notebookContent);
+    }
+  }, [activeNotebook, loadNotebookContent, notebooks]);
 
   if (loading) {
     return <Loader />;
@@ -260,7 +283,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
   return (
     <div className="starboard">
       <Header
-        metadata={metadata}
         notebooks={notebooks}
         activeNotebook={activeNotebook}
         updateActiveNotebook={updateActiveNotebook}
@@ -272,19 +294,16 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         activeDatasetId={activeDatasetId}
       />
       <Card>
-        <Fab
-          color="primary"
-          aria-label="assistant"
-          onClick={() => {
-            setOpen(true);
-          }}
-          className="chat-button"
-        >
-          <AssistantIcon />
-        </Fab>
-        <div id="starboard-root" />
+        <div className="starboard-content">
+          <div id="starboard-root" />
+          <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
+          <div className="starboard-button-container">
+            <Fab color="primary" aria-label="assistant" onClick={handleChatOpen}>
+              <ChatIcon />
+            </Fab>
+          </div>
+        </div>
       </Card>
-      <Chat open={open} onClose={handleChatClose} datasetId={activeDatasetId} currentContent={handleReadContent} />
       {showTemplateDialog && (
         <NotebookTemplateDialog
           open={showTemplateDialog}

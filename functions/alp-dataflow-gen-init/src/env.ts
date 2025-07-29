@@ -1,3 +1,4 @@
+import { AuthMode, DatabaseDialect, TransformedDBCredentials } from "./types";
 const _env = Deno.env.toObject();
 
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
@@ -26,6 +27,8 @@ export const env = {
     idp_scope: _env.IDP__SCOPE,
     alp_system_id: _env.ALP__SYSTEM_ID,
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
+    exclude_analysis_ids: _env.EXCLUDE_ANALYSIS_IDS || "",
+    dc_hana_read_role: _env.DC_HANA_READ_ROLE || "",
     cohort_generator_module_settings_url:
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,
     cohort_diagnostics_module_settings_url:
@@ -37,6 +40,10 @@ export const env = {
     pg_db_port: _env.PG__PORT,
     perseus_host: _env.PERSEUS__FILES_MANAGER_HOST,
     data_transformation_bucket: _env.DATA_TRANSFORMATION_BUCKET,
+    trex_sql_host: _env.TREX__SQL__HOST,
+    trex_sql_port: _env.TREX__SQL__PORT,
+    trex_sql_dbname: _env.TREX__SQL__DBNAME,
+    trex_sql_user: _env.TREX__SQL__USER,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
@@ -53,11 +60,12 @@ export const env = {
     "pg-admin-user": _env.PG_ADMIN_USER,
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
     "supabase-storage-jwt-token": _env.SUPABASE_STORAGE_JWT_TOKEN,
+    "trex-sql-password": _env.TREX__SQL__PASSWORD,
   },
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
   WORKPOOL_NAME: _env.WORKPOOL_NAME,
-  INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY
+  INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
 };
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
@@ -65,3 +73,25 @@ export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
 export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
+
+
+export function getStudyResultsDbCredentials(): TransformedDBCredentials {
+  return {
+    readUser: _env.PG__STUDY_RESULTS_READ_USER || null,
+    readPassword: _env.PG__STUDY_RESULTS_READ_PASSWORD || null,
+    adminUser: _env.PG__STUDY_RESULTS_ADMIN_USER || null,
+    adminPassword: _env.PG__STUDY_RESULTS_ADMIN_PASSWORD || null,
+    dialect: DatabaseDialect.PG,
+    databaseCode: "study_results",
+    databaseName: _env.PG__STUDY_RESULTS_DB_NAME || "study_results",
+    host: _env.PG__HOST || "",
+    port: parseInt(_env.PG__PORT || "5432", 10),
+    encrypt: false,
+    validateCertificate: false,
+    sslTrustStore: "",
+    hostnameInCertificate: "",
+    enableAuditPolicies: false,
+    readRole: "",
+    authMode: AuthMode.PASSWORD,
+  };
+}

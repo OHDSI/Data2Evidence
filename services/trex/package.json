@@ -4,9 +4,9 @@
   "description": "",
   "main": "lib/trex.js",
   "scripts": {
-    "start": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & ./trex start --tls 33000 -p 33001 --key ./cert/key.pem --cert ./cert/cert.pem --sql 5432 --main-service ./core/server/index.eszip --event-worker ./core/event/index.eszip",
+    "start": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & ./trex start --tls 33000 -p 33001 --key /usr/src/cert/key.pem --cert /usr/src/cert/cert.pem --sql 5432 --main-service /usr/src/core/server/index.eszip --event-worker /usr/src/core/event/index.eszip",
     "start2": "deno run --allow-net --allow-env --allow-read --allow-sys core/server/index.ts",
-    "startdev": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & ./trex start --tls 33000 -p 33001 --key ./cert/key.pem --cert ./cert/cert.pem --sql 5432 --main-service ./core/server/index.eszip --event-worker ./core/event/index.eszip --log-source --inspect=0.0.0.0:9229",
+    "startdev": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & ./trex start --tls 33000 -p 33001 --key /usr/src/cert/key.pem --cert /usr/src/cert/cert.pem --sql 5432 --main-service /usr/src/core/server/index.eszip --event-worker /usr/src/core/event/index.eszip --log-source --inspect=0.0.0.0:9229",
     "health": "curl -f http://localhost:33001/_internal/health",
     "watch": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & npx nodemon --watch core -e ts --exec ./trex start --tls 33000 -p 33001 --key ./cert/key.pem --cert ./cert/cert.pem --sql 5432 --main-service ./core/server --event-worker ./core/event --log-source --inspect=0.0.0.0:9229",
     "init:d2e": "PROJECT_NAME=trex PORT=41100 ENV_TYPE=local npx d2e -n .env.local init",
@@ -26,7 +26,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@data2evidence/cli": "https://github.com/data2evidence/d2e/releases/download/latest/data2evidence-cli.tgz",
+    "@data2evidence/cli": "https://github.com/OHDSI/d2e/releases/download/latest/data2evidence-cli.tgz",
     "nodemon": "^3.1.4"
   }
 }

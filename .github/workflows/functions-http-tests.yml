@@ -75,15 +75,6 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
 
-      - name: Get drivers
-        env:
-          ASSET_DBCLI_TGZ_URL: ${{ secrets.ASSET_DBCLI_TGZ_URL }}
-          ASSET_NGDBC_JAR_URL: ${{ secrets.ASSET_NGDBC_JAR_URL }}
-          DRIVERS_DIR: cache/drivers
-        run: |
-          curl "$ASSET_DBCLI_TGZ_URL" -o $DRIVERS_DIR/$(echo ${ASSET_DBCLI_TGZ_URL%\?*} | awk -F/ '{print $NF}')
-          curl "$ASSET_NGDBC_JAR_URL" -o $DRIVERS_DIR/$(echo ${ASSET_NGDBC_JAR_URL%\?*} | awk -F/ '{print $NF}')
-
       - uses: actions/setup-node@v4
         with:
           node-version: "18.20.4"
@@ -109,6 +100,11 @@ jobs:
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
+
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
 
       - name: Setup Test DB
         run: |

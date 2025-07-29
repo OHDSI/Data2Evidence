@@ -17,12 +17,12 @@
               </div>
               <div class="flex-grow-1 nav-container">
                 <ul class="nav nav-justified">
-                  <li class="nav-item" @click="toggleCohorts(true)">
+                  <li class="nav-item" @click="toggleCohorts(true)" v-show="!displaySharedBookmarks">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
                   </li>
-                  <li class="nav-item" @click="toggleCohorts(false)" v-show="hasActiveBookmark">
+                  <li class="nav-item" @click="toggleCohorts(false, this.isAtlasBookmark)" v-show="hasActiveBookmark">
                     <a class="nav-link" :class="{ active: !displayCohorts }" href="javascript:void(0)">{{
                       this.getActiveBookmarkName()
                     }}</a>
@@ -35,12 +35,19 @@
               v-if="displaySharedBookmarks"
             ></sharedBookmarks>
             <bookmarks
-              @unloadBookmarkEv="toggleCohorts(false)"
+              @unloadBookmarkEv="toggleCohorts"
+              @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
               :init-bookmark-id="this.querystring.bmkId"
               v-if="getMriFrontendConfig && displayCohorts"
             ></bookmarks>
 
-            <filters v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"></filters>
+            <filters
+              ref="filtersRef"
+              v-if="!showQueryFilter && !displayCohorts && !displaySharedBookmarks"
+              v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"
+            ></filters>
+
+            <QueryFilter v-else-if="showQueryFilter" ref="queryFilterRef" />
           </div>
         </pane>
 
@@ -172,6 +179,7 @@ import ResizeObserver from './ResizeObserver.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
+import { QueryFilter } from '@/query-filter'
 
 const PANE_SIZE = {
   FULL: 100,
@@ -206,6 +214,7 @@ export default {
       PANE_SIZE,
       PANEL,
       splitterMinWidth: 0,
+      showQueryFilter: false,
     }
   },
   created() {
@@ -291,6 +300,9 @@ export default {
     hasActiveBookmark() {
       return !!this.getActiveBookmark
     },
+    isAtlasBookmark() {
+      return this.getActiveBookmark && this.getActiveBookmark.isAtlas
+    },
   },
   methods: {
     ...mapActions([
@@ -330,11 +342,23 @@ export default {
     dismissBrowserMessage() {
       this.clearBrowserMessage = true
     },
-    toggleCohorts(isDisplayCohort) {
+    toggleQueryFilter(show) {
+      this.showQueryFilter = show
+      this.displayCohorts = !show
+      this.displaySharedBookmarks = false
+    },
+    toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
         this.initializeBookmarks()
+        this.toggleQueryFilter(false)
       } else {
-        if (this.paneSize === PANE_SIZE.FULL) this.togglePanel('right')
+        if (isPaAtlas) {
+          this.togglePanel('right', true)
+          this.toggleQueryFilter(true)
+        } else {
+          if (this.paneSize === PANE_SIZE.FULL) this.togglePanel('right')
+          this.toggleQueryFilter(false)
+        }
       }
       this.displayCohorts = isDisplayCohort
     },
@@ -351,13 +375,16 @@ export default {
         this.rerenderStackBarChart()
       })
     },
-    togglePanel(panel) {
+    togglePanel(panel, isPaAtlas = false) {
       if (panel === PANEL.LEFT) {
         this.paneSize = this.paneSize > 0 ? PANE_SIZE.HIDDEN : this.splitterMinWidth
+      } else if (panel === PANEL.RIGHT && isPaAtlas) {
+        this.paneSize = PANE_SIZE.FULL
       } else if (panel === PANEL.RIGHT) {
         this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
       }
     },
+
     toggleChartAndListModal(toggle) {
       this.showChartAndListModal = toggle
     },
@@ -433,6 +460,18 @@ export default {
     updateMinSplitterWidth() {
       this.splitterMinWidth = (400 / window.innerWidth) * 100
     },
+    async handleLoadAtlasCohortDefinition(atlasJson) {
+      try {
+        await this.$nextTick()
+        if (this.$refs.queryFilterRef) {
+          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
+        } else {
+          console.error('QueryFilter ref not found in Filters component')
+        }
+      } catch (error) {
+        console.error('Error loading Atlas cohort definition into QueryFilter:', error)
+      }
+    },
   },
   components: {
     icon,
@@ -452,6 +491,7 @@ export default {
     appIcon,
     Splitpanes,
     Pane,
+    QueryFilter,
   },
 }
 </script>

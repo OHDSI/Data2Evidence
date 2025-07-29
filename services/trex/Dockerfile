@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:db4e5a130b89c04777d7014af6a99eb10d75dee3196e98800ed07bfb042473c4 AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:a79c49ef7712b08a37425324ce21391aee1053143f999bd4a00fa21acc7db64d AS base
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -22,6 +22,10 @@ RUN for lib in \
     gzip -d ${lib}.duckdb_extension.gz; \
     done
 
+WORKDIR /usr/src/cdw_data
+# Copy cdw-svc built in duckdb file into trex
+COPY --chown=root:root ./functions/cdw-svc/src/duckdb/cdw_config_svc_validation_schema ./built_in/cdw_config_svc_validation_schema
+
 WORKDIR /usr/src
 
 # Allows usage of npx
@@ -34,18 +38,24 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
     fi
 
 # Build main function
-COPY core /usr/src/core
+COPY ./services/trex/core /usr/src/core
 RUN mkdir -p /usr/src/data/cache
 RUN chown -R docker:alp /usr/src/data/cache
 RUN mkdir -p /usr/src/data/plugins
-COPY _npmrc /usr/src/data/plugins/.npmrc
-COPY package.json.plugin /usr/src/data/plugins/package.json
-COPY bunfig.toml /usr/src/data/plugins/bunfig.toml
+COPY ./services/trex/_npmrc /usr/src/data/plugins/.npmrc
+COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
+COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
 
-COPY package.json /usr/src
+COPY ./services/trex/package.json /usr/src
+COPY ./services/trex/deno.json /usr/src
 
 RUN npm install
+RUN npm install -g deno@2.1
 
+WORKDIR /usr/src/core
+RUN deno install --allow-scripts
+
+WORKDIR /usr/src
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
 

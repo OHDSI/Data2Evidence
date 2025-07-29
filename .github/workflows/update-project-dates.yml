@@ -1,0 +1,25 @@
+name: Update Project Issue Dates
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-project-dates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install @octokit/rest
+
+      - name: Update project issue dates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PROJECT_PAT }}
+        run: node scripts/update-roadmap.js

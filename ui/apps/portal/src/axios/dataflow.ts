@@ -4,13 +4,13 @@ import {
   CreateDqdFlowRun,
   CreateFlowRunByMetadata,
   CreateGetVersionInfoFlowRun,
+  CreateSemanticSearchFlowRun,
   ExecuteFlowRunByDeployment,
   Flow,
   FlowRunFilters,
 } from "../types";
 import { request } from "./request";
 
-const DATAFLOW_MGMT_URL = "dataflow-mgmt/";
 const JOBPLUGIN_URL = "jobplugins/";
 
 export class Dataflow {
@@ -254,9 +254,18 @@ export class Dataflow {
     });
   }
 
+  public createSearchEmbeddingFlowRun(data: CreateSemanticSearchFlowRun) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: "search-embedding/create",
+      method: "POST",
+      data,
+    });
+  }
+
   public createStudyAnalysisRun(data: { json_graph: any; options: any }) {
     return request({
-      baseURL: DATAFLOW_MGMT_URL,
+      baseURL: JOBPLUGIN_URL,
       url: "prefect/jupyter-kernel/flow-run/strategus",
       method: "POST",
       data,

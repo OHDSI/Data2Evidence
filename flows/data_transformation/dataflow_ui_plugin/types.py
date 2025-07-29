@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import date
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Annotated, Union, Literal, Optional
 
 
@@ -14,6 +14,7 @@ class NodeType(str, Enum):
     DBWRITER = "db_writer_node"
     SQLQUERY = "sql_query_node"
     DATAMAPPING = "data_mapping_node"
+    CONCEPTMAPPING = "concept_mapping_node"
     SUBFLOW = "subflow"
 
 class DataflowUITraceConfigType(BaseModel):
@@ -47,6 +48,7 @@ class JoinType(str, Enum):
     
 
 class Edge(BaseModel):
+    id: str
     sourceHandle: str # source table or sourcetable-sourcefield
     targetHandle: str # target table or targettable-targetfield
 
@@ -93,19 +95,18 @@ class FieldHandle(BaseModel):
     data: FieldHandleData
 
 
-class FieldType(BaseModel):
-    edges: list[Edge] # Field to field mapping
-    sourceHandles: dict[str, list[FieldHandle]] # Contains column metadata of source tables
-    targetHandles: dict[str, list[FieldHandle]] # Contains column metadata of target tables
+class FieldMapType(BaseModel):
+    targetHandles: list[FieldHandle]
 
 
-class TableType(BaseModel):
+class TableFieldType(BaseModel):
     edges: list[Edge] # Table to table mapping
 
 
 class DataMappingType(BaseModel):
-    table: TableType
-    field : FieldType
+    table: TableFieldType # table to table mapping
+    field : TableFieldType # # contains field to field mapping
+    fieldMap: dict[str, FieldMapType] # functions for target table col
 
 
 class ColumnType(str, Enum):
@@ -156,3 +157,30 @@ class FunctionType(str, Enum):
     # LTRIM = "LTRIM"
     # RTRIM = "RTRIM"
     # SUBSTRING = "SUBSTRING"
+
+
+class ConceptMappingType(BaseModel):
+    status: Literal['checked', 'unchecked']
+    source_code: str
+    conceptId: Optional[int] = None
+    domainId: Optional[str] = None
+    conceptName:  Optional[str] = None
+    frequency: Optional[str] = None
+    system: Optional[str] = None
+    validity: Optional[Literal["D"]] = None
+    validEndDate: Optional[str] = None
+    validStartDate: Optional[str] = None
+    source_vocabulary_id: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_required_if_checked(self) -> 'ConceptMappingType':
+        if self.status == "checked":
+            missing_fields = [
+                field for field in ["conceptId", "domainId", "conceptName"]
+                if getattr(self, field) is None
+            ]
+            if missing_fields:
+                raise ValueError(
+                    f"When status is 'checked', the following fields must not be None: {', '.join(missing_fields)}"
+                )
+        return self

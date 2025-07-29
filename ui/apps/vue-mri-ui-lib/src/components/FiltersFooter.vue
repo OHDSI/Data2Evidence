@@ -11,7 +11,7 @@
         />
       </div>
       <div class="d-flex justify-content-center align-items-center">
-        <b-dropdown variant="link" size="sm" no-caret style="margin-left: 8px">
+        <bs-dropdown variant="link" size="sm" no-caret style="margin-left: 8px">
           <template v-slot:button-content>
             <d4l-button
               v-if="!splitAddButton"
@@ -34,13 +34,13 @@
           </template>
           <div class="dropdown-scroll">
             <template v-for="item in getFilterCardMenu" :key="item">
-              <b-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key)">{{
+              <bs-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key)">{{
                 item.text
-              }}</b-dropdown-item-button>
+              }}</bs-dropdown-item-button>
             </template>
           </div>
-        </b-dropdown>
-        <b-dropdown v-if="splitAddButton" variant="link" size="sm" no-caret dropup>
+        </bs-dropdown>
+        <bs-dropdown v-if="splitAddButton" variant="link" size="sm" no-caret dropup>
           <template v-slot:button-content>
             <d4l-button
               :text="getText('MRI_PA_VB_CREATE_FILTERS_EXCLUDED')"
@@ -50,12 +50,12 @@
           </template>
           <div class="dropdown-scroll">
             <template v-for="item in getFilterCardMenu" :key="item">
-              <b-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key, true)">{{
+              <bs-dropdown-item-button :data-key="item.key" @click="onAddFilterCardMenuItemSelected(item.key, true)">{{
                 item.text
-              }}</b-dropdown-item-button>
+              }}</bs-dropdown-item-button>
             </template>
           </div>
-        </b-dropdown>
+        </bs-dropdown>
       </div>
       <div>
         <d4l-button
@@ -164,12 +164,17 @@
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
 
 export default {
+  compatConfig: {
+    MODE: 3,
+  },
   name: 'filtersFooter',
   props: {
     splitAddButton: {
@@ -191,9 +196,13 @@ export default {
     }
   },
   mounted() {
-    // Get maxFiltercardCount from config if available.
-    this.maxFiltercardCount =
-      this.getMriFrontendConfig._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
+    try {
+      // Get maxFiltercardCount from config if available.
+      this.maxFiltercardCount =
+        this.getMriFrontendConfig?._internalConfig.panelOptions.maxFiltercardCount || this.maxFiltercardCount
+    } catch (error) {
+      console.error('FilterFooter mounted error:', error)
+    }
   },
   computed: {
     ...mapGetters([
@@ -210,10 +219,11 @@ export default {
       'getBookmarkByNameAndUsername',
     ]),
     hasChanges() {
-      return this.getActiveBookmark.isNew || this.getCurrentBookmarkHasChanges
+      // For regular D2E bookmarks, use existing logic with null checks
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isNewCohort() {
-      return this.getActiveBookmark.isNew
+      return this.getActiveBookmark?.isNew
     },
     hasExceededLength() {
       return this.cohortName.length == this.maxLength
@@ -265,7 +275,7 @@ export default {
       if (this.hasChanges) {
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
-        const isNewBookmark = activeBookmark.isNew || false
+        const isNewBookmark = activeBookmark?.isNew || false
         const username = getPortalAPI().username
 
         for (const bookmark of this.getBookmarks) {
@@ -327,6 +337,8 @@ export default {
   components: {
     appButton,
     appCheckbox,
+    bsDropdown,
+    bsDropdownItemButton,
     DialogBox,
     messageBox,
   },

@@ -1,3 +1,11 @@
+<script lang="ts">
+export default {
+  name: 'Filters',
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
 <template>
   <div class="filters">
     <div ref="filtercardScrollContainer" class="filters-content">
@@ -7,64 +15,41 @@
   </div>
 </template>
 
-<script lang="ts">
-import { mapActions, mapGetters, mapState } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, watch, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import boolcontainer from './BoolContainer.vue'
-import filterCard from './FilterCard.vue'
 import filtersFooter from './FiltersFooter.vue'
 
-export default {
-  name: 'filters',
-  data() {
-    return {
-      showExclusion: false,
-    }
-  },
-  computed: {
-    ...mapState({
-      query: (state: any) => state.query,
-    }),
-    ...mapGetters(['getFilterCardCount', 'getText', 'getChartableFilterCards']),
-    inclusionTitle() {
-      const filterCount = this.getFilterCardCount({
-        excludeBasicCard: true,
-        excludedOnly: false,
-        matchType: 'matchall',
-      })
-      return this.getText('MRI_PA_FILTERCARD_TITLE_INCLUSION') + ' (' + filterCount + ')'
-    },
-    exclusionTitle() {
-      const filterCount = this.getFilterCardCount({
-        excludeBasicCard: true,
-        excludedOnly: true,
-        matchType: 'matchall',
-      })
-      return this.getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION') + ' (' + filterCount + ')'
-    },
-  },
-  watch: {
-    getChartableFilterCards(newVal, oldVal) {
-      if (newVal && oldVal.length < newVal.length) {
-        this.$nextTick(() => {
-          this.$refs.filtercardScrollContainer.scrollTop = this.$refs.filtercardScrollContainer.scrollHeight
-        })
+interface AddFilterCardPayload {
+  configPath: string
+}
+
+const store = useStore()
+
+const showExclusion = ref<boolean>(false)
+const filtercardScrollContainer = ref<HTMLElement>()
+const queryFilterRef = ref<any>()
+
+const query = computed(() => store.state.query)
+const getChartableFilterCards = computed(() => store.getters.getChartableFilterCards)
+
+watch(getChartableFilterCards, (newVal: any[], oldVal: any[]) => {
+  if (newVal && oldVal.length < newVal.length) {
+    nextTick(() => {
+      if (filtercardScrollContainer.value) {
+        filtercardScrollContainer.value.scrollTop = filtercardScrollContainer.value.scrollHeight
       }
-    },
-  },
-  methods: {
-    ...mapActions(['addNewFilterCard']),
-    addFilterCardHandler({ configPath }) {
-      const payload = { configPath, isExclusion: this.showExclusion }
-      this.addNewFilterCard(payload)
-    },
-    toggleExclusion(isToggled) {
-      this.showExclusion = isToggled
-    },
-  },
-  components: {
-    boolcontainer,
-    filterCard,
-    filtersFooter,
-  },
+    })
+  }
+})
+
+const addFilterCardHandler = ({ configPath }: AddFilterCardPayload) => {
+  const payload = { configPath, isExclusion: showExclusion.value }
+  store.dispatch('addNewFilterCard', payload)
+}
+
+const toggleExclusion = (isToggled: boolean) => {
+  showExclusion.value = isToggled
 }
 </script>

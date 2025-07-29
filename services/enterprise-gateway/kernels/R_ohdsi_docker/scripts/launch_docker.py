@@ -11,9 +11,11 @@ urllib3.disable_warnings()
 
 # Set env to False if the container should be left around for debug purposes, etc.
 remove_container = bool(
-    os.getenv("REMOVE_CONTAINER", os.getenv("EG_REMOVE_CONTAINER", "True")).lower() == "true"
+    os.getenv("REMOVE_CONTAINER", os.getenv(
+        "EG_REMOVE_CONTAINER", "True")).lower() == "true"
 )
-swarm_mode = bool(os.getenv("DOCKER_MODE", os.getenv("EG_DOCKER_MODE", "swarm")).lower() == "swarm")
+swarm_mode = bool(os.getenv("DOCKER_MODE", os.getenv(
+    "EG_DOCKER_MODE", "swarm")).lower() == "swarm")
 
 
 def launch_docker_kernel(
@@ -24,13 +26,15 @@ def launch_docker_kernel(
     # Can't proceed if no image was specified.
     image_name = os.environ.get("KERNEL_IMAGE", None)
     if image_name is None:
-        sys.exit("ERROR - KERNEL_IMAGE not found in environment - kernel launch terminating!")
+        sys.exit(
+            "ERROR - KERNEL_IMAGE not found in environment - kernel launch terminating!")
 
-    # Container name is composed of KERNEL_USERNAME and KERNEL_ID
-    container_name = kernel_id
+    # KERNEL_USERNAME should be user_id or study_id, but if not set, use kernel_id
+    container_name = os.environ.get("KERNEL_USERNAME", kernel_id)
 
     # Determine network. If EG_DOCKER_NETWORK has not been propagated, fall back to 'bridge'...
-    docker_network = os.environ.get("DOCKER_NETWORK", os.environ.get("EG_DOCKER_NETWORK", "bridge"))
+    docker_network = os.environ.get(
+        "DOCKER_NETWORK", os.environ.get("EG_DOCKER_NETWORK", "bridge"))
 
     # Build labels - these will be modelled similar to kubernetes: kernel_id, component, app, ...
     labels = dict()

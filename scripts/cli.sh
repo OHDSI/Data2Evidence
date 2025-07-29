@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.7.1-beta
+version=0.8.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.8.1-beta
 
 
 cmd=""
@@ -42,7 +42,6 @@ fhir=""
 demo=""
 minio=""
 dicom=""
-cachedb=""
 jupyter=""
 mlflow=""
 compose=""
@@ -58,7 +57,6 @@ while [[ $# -gt 0 ]]; do
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
-        -h|--cachedb) cachedb=--profile="cachedb" ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
@@ -100,7 +98,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $cachedb $jupyter $mlflow $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -118,6 +116,18 @@ generate_jwt() {
   local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -hmac "$secret" -binary | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
 
   echo "$header.$payload.$signature"
+}
+
+# Setup zx command with fallbacks
+setup_zx_cmd() {
+  if [ -f "$node_modules_path/node_modules/.bin/zx" ]; then
+    ZX_CMD="$node_modules_path/node_modules/.bin/zx"
+  elif [ -f "$node_modules_path/node_modules/zx/build/cli.js" ]; then
+    ZX_CMD="node $node_modules_path/node_modules/zx/build/cli.js"
+  else
+    echo "Error: zx not found in node_modules"
+    exit 1
+  fi
 }
 
 case $cmd in
@@ -232,6 +242,8 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
@@ -239,6 +251,7 @@ case $cmd in
         echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
         echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
         echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
+        echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 
         source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
         #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
@@ -270,11 +283,13 @@ case $cmd in
         source "$ENVFILE"
         $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
-        npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
         ;;
     *)
         if [ -z ${cmd:-} ]; then
@@ -298,7 +313,6 @@ Options:
  -e, --demo                 Include demo database
  -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
- -h, --cachedb              Include cachedb
  -j, --jupyter              Include jupyter
  -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
