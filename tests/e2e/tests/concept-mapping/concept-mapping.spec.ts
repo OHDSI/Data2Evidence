@@ -117,7 +117,7 @@ test('concept-mapping', async ({ page }) => {
   // Verify the CSV is downloaded
   expect(download.suggestedFilename()).toContain('.csv')
 
-  // Optional: Read and verify the downloaded file contents
+  // Read and verify the downloaded file contents
   const downloadPath = await download.path()
   const fs = require('fs')
   const downloadedContent = fs.readFileSync(downloadPath, 'utf8')

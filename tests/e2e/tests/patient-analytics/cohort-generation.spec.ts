@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-// Configure test to ignore HTTPS certificate errors for localhost
-test.use({
-  ignoreHTTPSErrors: true
-})
-
 test('cohort-generation', async ({ page }) => {
   // Generate unique cohort name to avoid conflicts with other tests
   const timestamp = Date.now()
