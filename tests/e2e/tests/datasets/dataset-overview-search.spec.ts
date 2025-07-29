@@ -34,10 +34,6 @@ test('test', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-
-  await page.waitForTimeout(5000)
-  await page.screenshot({ path: `test-results/dataset-overview-after-first-timeout-${Date.now()}.png`, fullPage: true })
-
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('demo')
   await page.getByRole('button', { name: 'Search' }).nth(1).click()
@@ -60,14 +56,12 @@ test('test', async ({ page }) => {
   const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'dataset' }).nth(1)
   await expect(testSpan2).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
-  // Seems like there is some kind debounce or delay in the search functionality
-  await page.waitForTimeout(2000)
-
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('xxxxxxxxx')
-  await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
+
+  // Seems like there is some kind debounce or delay in the search functionality
   await page.waitForTimeout(2000)
-  await page.screenshot({ path: `test-results/dataset-overview-after-enter-xxxxx-${Date.now()}.png`, fullPage: true })
+  await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
   await expect(page.locator('.overview__datasets--empty')).toContainText('No dataset available')
 
   await page.waitForTimeout(3000)
