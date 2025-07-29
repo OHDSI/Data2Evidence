@@ -63,6 +63,11 @@ test('duplicate-dataflow-version', async ({ page }) => {
 
   // Close version history and verify Python node was copied
   await page.getByRole('button', { name: 'close' }).click()
+
+  await page.screenshot({
+    path: `test-results/duplicate-dataflow-after-closing-versions-${Date.now()}.png`,
+    fullPage: true
+  })
   await expect(page.getByText('python_node_0').first()).toBeVisible()
 
   // Cleanup
