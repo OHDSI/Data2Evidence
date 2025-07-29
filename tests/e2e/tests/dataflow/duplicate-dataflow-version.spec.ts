@@ -16,10 +16,10 @@ test('duplicate-dataflow-version', async ({ page }) => {
 
   // Navigate to ETL and create new dataflow with Python node
   await page.waitForTimeout(5000)
-  await page.screenshot({ path: `duplicate-dataflow-after-first-timeout-${Date.now()}.png`, fullPage: true })
+  await page.screenshot({ path: `test-results/duplicate-dataflow-after-first-timeout-${Date.now()}.png`, fullPage: true })
   await page.getByRole('link', { name: 'ETL' }).click()
   await page.waitForTimeout(5000)
-  await page.screenshot({ path: `duplicate-dataflow-after-etl-click-timeout-${Date.now()}.png`, fullPage: true })
+  await page.screenshot({ path: `test-results/duplicate-dataflow-after-etl-click-timeout-${Date.now()}.png`, fullPage: true })
   await page.getByLabel('Create new dataflow').getByRole('button').click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test dataflow')
