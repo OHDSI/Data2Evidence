@@ -179,9 +179,9 @@
                 "position": 0,
                 "title": "json_graph"
               },
-              "importlibs": {
+              "import_libs": {
                 "position": 1,
-                "title": "importlibs"
+                "title": "import_libs"
               },
               "variables": {
                 "position": 2,

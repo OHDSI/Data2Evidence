@@ -19,7 +19,7 @@ from .types import NodeType
 
 
 @flow(log_prints=True)
-def dataflow_ui_plugin(json_graph, importlibs, variables, options):
+def dataflow_ui_plugin(json_graph, import_libs, variables, options):
 
     os.environ['plugin_name'] = 'dataflow_ui_plugin'
 
@@ -58,7 +58,7 @@ def dataflow_ui_plugin(json_graph, importlibs, variables, options):
             partial(execute_nodes_flow_hook, **dict(generated_nodes=generated_nodes, sorted_nodes=sorted_nodes, testmode=testmode))]
     )
 
-    n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, variables, importlibs, testmode)  # flow
+    n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, variables, import_libs, testmode)  # flow
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
