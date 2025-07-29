@@ -19,6 +19,9 @@
 						press="onGenerateSuggestionsPressed"></Button>
 				</contentLeft>
 				<contentRight>
+					<Select id="ValidateDatasetSelector" selectedKey="{configEditorModel>/settings/datasetId/value}" items="{ path: 'allDatasets>/list' }">
+						<core:Item key="{allDatasets>key}" text="{allDatasets>text}" />
+					</Select>
 					<Button type="Transparent"
 						text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_VALIDATE_CONFIG}" 
 						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_VALIDATE_CONFIG_TOOLTIP}" 
