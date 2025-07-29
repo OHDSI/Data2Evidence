@@ -30,7 +30,7 @@ export default class StrategusAnalysisService {
 
         if (existingAnalysis) { 
             // Update existing analysisSpec
-            existingAnalysis.analysisSpec = analysisSpec;;
+            existingAnalysis.analysisSpec = analysisSpec;
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
         } else { 
             // if( !notebookName || !mode) { // TODO: uncomment this line when notebookName is available in jupyter kernel
