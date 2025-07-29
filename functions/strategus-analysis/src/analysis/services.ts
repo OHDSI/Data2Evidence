@@ -23,12 +23,13 @@ export default class StrategusAnalysisService {
 
     async createAnalysisSpec(token, studyId: string, notebookName: string, analysisSpec: string, mode: string) {
         this.token = token;
-        const analysisId = uuidv4();
+        let analysisId = uuidv4();
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
 
         if (existingAnalysis) { 
+            analysisId = existingAnalysis.id;
             // Update existing analysisSpec
             existingAnalysis.analysisSpec = analysisSpec;
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
@@ -49,7 +50,7 @@ export default class StrategusAnalysisService {
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(newAnalysis, true));
         }
 
-        return { analysisId: analysisId, message: "Analysis specification saved successfully." };
+        return { analysisId, message: "Analysis specification saved successfully." };
     }
 
     private addOwnerInfo(analysis: any, isNew: boolean = false) {
