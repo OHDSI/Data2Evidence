@@ -15,8 +15,10 @@ test('concept-mapping', async ({ page }) => {
 
   // Go to ETL and create new flow
   await page.waitForTimeout(5000)
+  await page.screenshot({ path: `concept-mapping-after-first-timeout-${Date.now()}.png`, fullPage: true })
   await page.getByRole('link', { name: 'ETL' }).click()
   await page.waitForTimeout(5000)
+  await page.screenshot({ path: `concept-mapping-after-etl-click-timeout-${Date.now()}.png`, fullPage: true })
   await page.getByLabel('Create new dataflow').getByRole('button').click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
