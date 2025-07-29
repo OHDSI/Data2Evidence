@@ -28,6 +28,9 @@ test('duplicate-dataflow-version', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test dataflow')
   await page.getByRole('button', { name: 'Create' }).click()
+
+  // This timeout is necessary as clicking the node button too quickly seems to have an issue which causes the node not to be added. Remove this wait to see if the issue persists.
+  await page.waitForTimeout(1500)
   await page.getByText('Python').first().click()
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
 

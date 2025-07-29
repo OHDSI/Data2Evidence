@@ -60,11 +60,11 @@ test('test', async ({ page }) => {
   const testSpan2 = page.locator('div').locator('span').filter({ hasText: 'dataset' }).nth(1)
   await expect(testSpan2).toHaveCSS('background-color', 'rgb(220, 222, 244)')
 
-  await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
-  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('xxxxxxxxx')
-
   // Seems like there is some kind debounce or delay in the search functionality
   await page.waitForTimeout(2000)
+
+  await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
+  await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('xxxxxxxxx')
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
   await page.waitForTimeout(2000)
   await page.screenshot({ path: `test-results/dataset-overview-after-enter-xxxxx-${Date.now()}.png`, fullPage: true })
