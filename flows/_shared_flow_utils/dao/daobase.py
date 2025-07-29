@@ -52,12 +52,14 @@ class DaoBase(ABC):
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
+    is_study_results_db: bool = False
 
     def __init__(self,
                  use_cache_db: bool,
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb: bool = False):
+                 connect_to_duckdb: bool = False,
+                 is_study_results_db: bool = False):
 
         secret_block = Secret.load("database-credentials").get()
         if secret_block is None:
@@ -68,6 +70,7 @@ class DaoBase(ABC):
         self.database_code = database_code
         self.user_type = user_type
         self.connect_to_duckdb = connect_to_duckdb
+        self.is_study_results_db = is_study_results_db
     # --- Property methods ---
 
     @property
@@ -85,7 +88,7 @@ class DaoBase(ABC):
     @property
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
         return self.__extract_database_credentials()
-    
+        
     def cachedb_tenant_configs(self,schema_name: str, vocab_schema_name: str) -> DBCredentialsType | CacheDBCredentialsType:
         database_credentials = self.__extract_database_credentials()
         if self.connect_to_duckdb == True:
@@ -362,6 +365,10 @@ class DaoBase(ABC):
     # --- Helper methods ---
 
     def __extract_database_credentials(self) -> DBCredentialsType:
+        
+        if self.is_study_results_db:
+            return self.__extract_study_results_db_credentials()
+        
         database_credentials_list = Secret.load("database-credentials").get()
         if not database_credentials_list:
             raise ValueError(f"'DATABASE_CREDENTIALS' secret is empty")
@@ -377,6 +384,16 @@ class DaoBase(ABC):
                 dialect_err = f"Dialect {self.values['dialect']} not supported. Unable to find corresponding dialect read role."
                 raise ValueError(dialect_err)
         return database_credentials
+
+    def __extract_study_results_db_credentials(self) -> DBCredentialsType:
+        """
+        Extracts study results database credentials from the secret block.
+        """
+        study_results_db_credentials = Secret.load("study-results-database-credentials").get()
+        if not study_results_db_credentials:
+            raise ValueError(f"Database code '{self.database_code}' not found in 'study_results_db_credentials'")
+
+        return DBCredentialsType(**study_results_db_credentials)
 
     def __create_cachedb_db_name(self, database_credentials: DBCredentialsType, 
                                  schema_name: str, vocab_schema_name: str) -> str:
