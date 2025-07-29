@@ -532,7 +532,6 @@
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "dataflowmgmt.prefect.flowRun.add",
           "jupyter"
         ]
       },
