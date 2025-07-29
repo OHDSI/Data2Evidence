@@ -1,8 +1,7 @@
 import { Injectable } from "@danet/core";
 import fs from "fs";
-//import http from "isomorphic-git/http";
-import http from "http";
 import git from "isomorphic-git";
+import http from "isomorphic-git/http";
 import path from "path";
 import { env } from "../env.ts";
 import { GitSubmodule, PartialGitSubmodule, StudiesData } from "../types.d.ts";
@@ -118,7 +117,9 @@ export class GitStudiesService {
           const hasOrigin = remotes.some((r) => r.remote === "origin");
 
           if (hasOrigin) {
-            console.log(`Fetching latest changes from origin/${defaultBranch}...`);
+            console.log(
+              `Fetching latest changes from origin/${defaultBranch}...`
+            );
             await git.fetch({
               fs,
               http,
@@ -126,7 +127,7 @@ export class GitStudiesService {
               remote: "origin",
               ref: defaultBranch,
             });
-  
+
             await git.checkout({
               fs,
               dir: this.repoDir,
