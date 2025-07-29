@@ -14,12 +14,11 @@ test('concept-mapping', async ({ page }) => {
   const dataflowName = `ConceptMappingFlow_${timestamp}`
 
   // Go to ETL and create new flow
-  await page.waitForTimeout(5000)
-  await page.screenshot({ path: `test-results/concept-mapping-after-first-timeout-${Date.now()}.png`, fullPage: true })
   await page.getByRole('link', { name: 'ETL' }).click()
-  await page.waitForTimeout(5000)
-  await page.screenshot({ path: `test-results/concept-mapping-after-etl-click-timeout-${Date.now()}.png`, fullPage: true })
-  await page.getByLabel('Create new dataflow').getByRole('button').click()
+
+  // If no flows yet, try and click this button
+  await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 15000 })
+  await page.getByRole('button', { name: 'Create your first dataflow' }).click()
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
   await page.getByRole('button', { name: 'Create' }).click()
