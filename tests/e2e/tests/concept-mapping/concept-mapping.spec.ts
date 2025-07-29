@@ -16,9 +16,15 @@ test('concept-mapping', async ({ page }) => {
   // Go to ETL and create new flow
   await page.getByRole('link', { name: 'ETL' }).click()
 
-  // If no flows yet, try and click this button
-  await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 15000 })
-  await page.getByRole('button', { name: 'Create your first dataflow' }).click()
+  // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
+  try {
+    // First try to find "Create your first dataflow" button (when no flows exist)
+    await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 5000 })
+    await page.getByRole('button', { name: 'Create your first dataflow' }).click()
+  } catch {
+    // If that fails, look for "Create new dataflow" button (when flows already exist)
+    await page.getByLabel('Create new dataflow').getByRole('button').click()
+  }
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
   await page.getByRole('button', { name: 'Create' }).click()
