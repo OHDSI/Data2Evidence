@@ -34,6 +34,10 @@ test('test', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
+
+  await page.waitForTimeout(5000)
+  await page.screenshot({ path: `test-results/dataset-overview-after-first-timeout-${Date.now()}.png`, fullPage: true })
+
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('demo')
   await page.getByRole('button', { name: 'Search' }).nth(1).click()
