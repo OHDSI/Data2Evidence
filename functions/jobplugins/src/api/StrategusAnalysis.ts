@@ -9,7 +9,7 @@ export class StrategusAnalysisApi {
     if (services["strategus-analysis"]) {
         this.baseUrl = services["strategus-analysis"];
     } else {
-        throw new Error("No url is set for Prefect API");
+        throw new Error("No url is set for Strategus Analysis API");
     }
   }
 
