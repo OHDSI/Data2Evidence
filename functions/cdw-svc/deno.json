@@ -2,9 +2,7 @@
   "workspace": [],
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "lib": [
-      "deno.window"
-    ],
+    "lib": ["deno.window"],
     "strict": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
@@ -55,9 +53,6 @@
     "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test": "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test.ts",
     "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil": "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil.ts",
     "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection": "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection.ts",
-    "./src/utils/cachedb": "./src/utils/cachedb.ts",
-    "./src/utils/CdwConfigCachedbPostgresConnection": "./src/utils/CdwConfigCachedbPostgresConnection.ts",
-    "./src/utils/CdwConfigCachedbDBConnectionUtil": "./src/utils/CdwConfigCachedbDBConnectionUtil.ts",
     "./src/utils/trexConnection": "./src/utils/trexConnection.ts",
     "../_shared/alp-config-utils/src/utils/FFHConfig": "../_shared/alp-config-utils/src/utils/FFHConfig.ts",
     "../_shared/alp-config-utils/src/utils/mriConfigConnection": "../_shared/alp-config-utils/src/utils/mriConfigConnection.ts",
@@ -80,7 +75,6 @@
     "./src/types": "./src/types.d.ts",
     "./src/authentication": "./src/authentication.ts",
     "./src/utils/DBError": "./src/utils/DBError.ts",
-    "./src/utils/DuckdbConnection": "./src/utils/DuckdbConnection.ts",
     "./src/utils/text": "./src/utils/text.ts",
     "./src/utils/utils": "./src/utils/utils.ts",
     "./src/utils/Logger": "./src/utils/Logger.ts",
@@ -111,6 +105,7 @@
     "./src/qe/utils/Const": "./src/qe/utils/Const.ts",
     "./src/qe/utils/queryutils": "./src/qe/utils/queryutils.ts",
     "./src/qe/query_engine": "./src/qe/query_engine.ts",
+    "./src/api/PortalServerAPI": "./src/api/PortalServerAPI.ts",
     "path": "node:path",
     "fs": "node:fs",
     "os": "node:os",

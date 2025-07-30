@@ -71,7 +71,9 @@ export class PrefectAPI {
     const errorMessage = "Error while getting prefect deployment";
     try {
       const options = this.createOptions("GET");
-      const url = `${this.baseURL}/deployments/name/${flowName}/${deploymentName}`;
+      const url = `${this.baseURL}/deployments/name/${encodeURIComponent(
+        flowName
+      )}/${encodeURIComponent(deploymentName)}`;
       const response = await fetch(url, options);
       if (!response.ok) {
         throw new Error(`${errorMessage}: ${response.statusText}`);
@@ -428,7 +430,9 @@ export class PrefectAPI {
   async cancelFlowRun(id: string) {
     const errorMessage = `Error while cancelling flow run with id: ${id}`;
     try {
-      const url = `${this.baseURL}/flow_runs/${id}/set_state`;
+      const url = `${this.baseURL}/flow_runs/${encodeURIComponent(
+        id
+      )}/set_state`;
       const data = { state: { type: "CANCELLED" } };
       const options = this.createOptions("POST", data);
       const r = await fetch(url, options);
@@ -446,7 +450,7 @@ export class PrefectAPI {
   async getFlowRunState(id: string) {
     const errorMessage = "Error while getting prefect flow run states by id";
     try {
-      const url = `${this.baseURL}/flow_runs/${id}`;
+      const url = `${this.baseURL}/flow_runs/${encodeURIComponent(id)}`;
       const options = this.createOptions("GET");
       const r = await fetch(url, options);
       if (!r.ok) {

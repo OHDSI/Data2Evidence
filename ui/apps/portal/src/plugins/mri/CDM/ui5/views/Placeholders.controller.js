@@ -10,6 +10,7 @@ sap.ui.define([
     "use strict";
     var factTableAttributePath = "/tableTypePlaceholderMap/factTable/attributeTables";
     var dimTablePath = "/tableTypePlaceholderMap/dimTables";
+    var datasetIdPath = "/settings/datasetId/value";
 
     var view = Controller.extend("hc.hph.cdw.config.ui.views.Placeholders", {
         onInit: function () {
@@ -77,7 +78,8 @@ sap.ui.define([
             var oPath = oEvent.oSource.getParent().getBindingContext(ConfigUtils.models.CONFIG_EDITOR).getPath();
             var dbObject = oEvent.getSource().getValue();
             var view = this.getView();
-            BackendLinker.getColumns([{ key: "table", value: dbObject }])
+            var datasetId = this.getView().getModel(ConfigUtils.models.CONFIG_EDITOR).getProperty(datasetIdPath);
+            BackendLinker.getColumns([{ key: "table", value: dbObject }], datasetId)
                 .done(function (data, status) {
                     if(status === "success"){
                         view.getModel(ConfigUtils.models.CONFIG_EDITOR).setProperty(oPath + "/columns", data.result["table"]);
