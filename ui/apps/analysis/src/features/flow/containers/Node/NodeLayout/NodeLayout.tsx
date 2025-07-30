@@ -11,9 +11,12 @@ import { InputHandle, OutputHandle } from "./NodeHandle/CustomHandle";
 import { NodeDataState } from "../../../types";
 import {
   getInputCount,
+  getGroupInputCount,
   getOutputCount,
   getNodeInputs,
   getNodeOutputs,
+  getNodeInputGroups,
+  hasGroupedInputs,
 } from "../../Node/NodeTypes/mapping";
 import { INBOUND_CONNECTOR_STYLES, NodeType } from "../NodeTypes";
 import { NODE_COLORS } from "../NodeTypes";
@@ -45,25 +48,45 @@ export const NodeLayout = <T extends NodeDataState>({
 
   const PLAIN_NODES = ["patient_level_prediction_node"];
 
-  const inputNodeIncidenceNumber = getInputCount(node.type as NodeType);
   const outputNodeIncidenceNumber = getOutputCount(node.type as NodeType);
-
   const inputHandles = useMemo(() => {
-    return getNodeInputs(node.type as NodeType).map((input, index) => (
-      <InputHandle
-        key={input.name}
-        name={input.name}
-        color={NODE_COLORS[input.node]}
-        classifier={input.node}
-        node={node}
-        style={{
-          top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
-          display: "flex",
-          alignItems: "center",
-        }}
-      />
-    ));
-  }, [node, inputNodeIncidenceNumber]);
+    if (hasGroupedInputs(node.type as NodeType)) {
+      const inputNodeIncidenceNumber = getGroupInputCount(
+        node.type as NodeType
+      );
+      return getNodeInputGroups(node.type as NodeType).map((group, index) => (
+        <InputHandle
+          key={group.name}
+          name={group.name}
+          color={NODE_COLORS["strategus_node"]}
+          handleNodeType={"strategus_node"}
+          node={node}
+          style={{
+            top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
+            display: "flex",
+            alignItems: "center",
+          }}
+        />
+      ));
+    } else {
+      const inputNodeIncidenceNumber = getInputCount(node.type as NodeType);
+
+      return getNodeInputs(node.type as NodeType).map((input, index) => (
+        <InputHandle
+          key={input.name}
+          name={input.name}
+          color={NODE_COLORS[input.node]}
+          handleNodeType={input.node}
+          node={node}
+          style={{
+            top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
+            display: "flex",
+            alignItems: "center",
+          }}
+        />
+      ));
+    }
+  }, [node]);
 
   const outputHandles = useMemo(() => {
     return getNodeOutputs(node.type as NodeType).map((output, index) => (
@@ -71,7 +94,7 @@ export const NodeLayout = <T extends NodeDataState>({
         key={output.name}
         name={output.name}
         color={NODE_COLORS[output.node]}
-        classifier={output.node}
+        handleNodeType={output.node}
         node={node}
         style={{
           top: INBOUND_CONNECTOR_STYLES[outputNodeIncidenceNumber][index],

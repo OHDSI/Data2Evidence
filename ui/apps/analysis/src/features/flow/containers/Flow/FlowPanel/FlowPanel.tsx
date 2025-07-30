@@ -56,6 +56,7 @@ import {
 } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
+import { node } from "webpack";
 
 interface FlowPanelProps {}
 
@@ -239,22 +240,28 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         addNodeTypeDialog.handleType
       ) {
         const sourceId =
-          addNodeTypeDialog.handleType === "input"
-            ? newNode.id
-            : addNodeTypeDialog.selectedNodeId;
-        const targetId =
-          addNodeTypeDialog.handleType === "input"
+          addNodeTypeDialog.handleType === "output"
             ? addNodeTypeDialog.selectedNodeId
             : newNode.id;
-
+        const targetId =
+          addNodeTypeDialog.handleType === "output"
+            ? newNode.id
+            : addNodeTypeDialog.selectedNodeId;
+        const sourceHandleType =
+          addNodeTypeDialog.handleType === "output"
+            ? type
+            : addNodeTypeDialog.nodeType;
+        const targetHandleType =
+          addNodeTypeDialog.handleType === "output"
+            ? addNodeTypeDialog.nodeType
+            : type;
         edge = {
           id: uuidv4(),
           source: sourceId,
           target: targetId,
-          sourceHandle: `${sourceId}_source_${type}`,
-          targetHandle: `${targetId}_target_${addNodeTypeDialog.nodeType}`, // this should be the source node
+          sourceHandle: `${sourceId}_source_${sourceHandleType}`,
+          targetHandle: `${targetId}_target_${targetHandleType}`,
         };
-        console.log("Adding edge", edge);
         dispatch(setEdge(edge));
       }
       const { zoom } = getViewport();

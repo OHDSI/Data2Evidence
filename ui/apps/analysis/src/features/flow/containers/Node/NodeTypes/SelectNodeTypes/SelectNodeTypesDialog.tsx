@@ -1,19 +1,30 @@
-import React, { ChangeEvent, FC, useCallback, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useState, useMemo } from "react";
 import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
-import { NODE_COLORS, NodeChoiceMap } from "../index";
+import { NODE_COLORS, NodeChoiceMap, NodeType } from "../index";
 import { NodeTag, NodeTypeChoice } from "../type";
+import {
+  getAllNodeTypes,
+  getNodeInputGroups,
+  getNodeInputs,
+  getNodeOutputs,
+  hasGroupedInputs,
+} from "../mapping";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
   extends Omit<DialogProps, "onClose"> {
   onClose: (nodeType?: NodeTypeChoice) => void;
-  connectorType?: string;
+  handleType: "input" | "output";
+  sourceNodeType?: NodeType;
+  handleNodeType?: string;
 }
 
 export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   onClose,
-  connectorType,
+  handleType,
+  sourceNodeType,
+  handleNodeType,
   ...props
 }) => {
   const [hideExperimental, setHideExperimental] = useState(true);
@@ -24,6 +35,26 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     },
     [onClose]
   );
+
+  const nodesToSelect = useMemo(() => {
+    const allNodeTypes = getAllNodeTypes();
+    if (!handleNodeType) {
+      return allNodeTypes;
+    }
+    if (handleType === "input") {
+      if (hasGroupedInputs(sourceNodeType)) {
+        return getNodeInputGroups(sourceNodeType)
+          .find((group) => group.name === handleType)
+          .connections.map((connection) => connection.node as NodeType);
+      } else {
+        return [handleNodeType as NodeType];
+      }
+    } else {
+      return getNodeOutputs(sourceNodeType).map(
+        (output) => output.node as NodeType
+      );
+    }
+  }, [handleNodeType, handleType, sourceNodeType]);
 
   return (
     <Dialog
@@ -42,14 +73,11 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       {...props}
     >
       <Box className="select-node-type-dialog__content">
-        {Object.keys(NodeChoiceMap)
+        {nodesToSelect
           .filter((nodeType: NodeTypeChoice) =>
             hideExperimental
               ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
               : true
-          )
-          .filter((nodeType: NodeTypeChoice) =>
-            connectorType ? NODE_COLORS[nodeType] === connectorType : true
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection
