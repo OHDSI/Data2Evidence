@@ -159,7 +159,7 @@ const getGroupCriteriaCount = () => {
   />
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .group-criteria-menu-popper.popper {
   z-index: 1000;
   background-color: transparent;
