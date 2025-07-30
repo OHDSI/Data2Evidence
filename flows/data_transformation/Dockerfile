@@ -1,3 +1,7 @@
+FROM ghcr.io/data2evidence/whiterabbit:master AS base
+
+COPY . .
+
 FROM rocker/r-ver:4.4 AS base-build
 
 RUN mkdir -p /app
@@ -13,7 +17,7 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
     && groupadd alp \
     && adduser docker alp
 
-COPY --chown=docker:docker --chmod=711 --from=ghcr.io/data2evidence/whiterabbit:master . /app/
+COPY --chown=docker:docker --chmod=711 --from=base . /app/
 ENV DISPLAY=:1
 
 RUN apt-get update && \
