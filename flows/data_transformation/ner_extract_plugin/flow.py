@@ -36,7 +36,6 @@ def ner_extract_plugin(options: NerExtractOptions):
         for note_id, note_text in record.values:
             # Two steps of add_pipeline and extract
             logger.info(f"Start to analyze note {note_id}")
-            logger.info(f"Note text {note_text}")
             medical_ner_nel = EntityExtractorLinker()
             medical_ner_nel.add_pipeline(model_name="en_ner_bc5cdr_md", linker_name="umls")
             df1 = medical_ner_nel.extract_entities(text=note_text, confidence_threshold=0.75)

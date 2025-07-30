@@ -3,6 +3,7 @@ import spacy
 import scispacy
 from scispacy.linking import EntityLinker
 from scispacy.abbreviation import AbbreviationDetector
+from prefect.logging import get_run_logger
 
 from .umls2omop import mapper
 class EntityExtractorLinker(object):
@@ -11,44 +12,46 @@ class EntityExtractorLinker(object):
         pass
 
     def add_pipeline(self, model_name:str, linker_name:str):
-        print(f"Adding pipeline for model '{model_name}' and linker '{linker_name}'")
-        print(f"Loading model ...")
+        logger = get_run_logger()
+        logger.info(f"Adding pipeline for model '{model_name}' and linker '{linker_name}'")
+        logger.info(f"Loading model ...")
         nlp = spacy.load(model_name) 
-        print(f"Adding pipe ...")
+        logger.info(f"Adding pipe ...")
         nlp.add_pipe("abbreviation_detector")
-        print("Loading linker ...")
+        logger.info("Loading linker ...")
         nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": linker_name})
-        print("Adding pipeline done")
+        logger.info("Adding pipeline done")
         self.pipelines.append((model_name, linker_name, nlp))
 
     def extract_entities(self, text:str, confidence_threshold:float=0.8):
+        logger = get_run_logger()
         if len(self.pipelines) == 0:
-            print("No NLP pipeline defined - use 'add_pipeline' before calling 'extract_entities'!")
+            logger.info("No NLP pipeline defined - use 'add_pipeline' before calling 'extract_entities'!")
             return None
         
         data = dict()    
         for model_name, linker_name, nlp in self.pipelines:
-            print(f"Processing text with model '{model_name}' and linker '{linker_name}'")
+            logger.info(f"Processing text with model '{model_name}' and linker '{linker_name}'")
             linker = nlp.get_pipe("scispacy_linker")
             doc = nlp(text)
-            print(f"Found {len(doc.ents)} entities.")
+            logger.info(f"Found {len(doc.ents)} entities.")
 
             for entity in doc.ents:
                 # list of matches in knowledge base (e.g. in case of UMLS, list of (cui_code, match_probability) tuples):
                 kb_matches = entity._.kb_ents
                 if len(kb_matches)==0:
-                    print(f"No knowledge base mapping found for entity '{entity}'. Skipping.")
+                    logger.info(f"No knowledge base mapping found for entity '{entity}'. Skipping.")
                     continue
 
                 code, confidence = kb_matches[0]
                 if confidence < confidence_threshold:
-                    print(f"Confidence below threshold ({confidence} < {confidence_threshold}) for entity '{entity}'. Skipping.")
+                    logger.info(f"Confidence below threshold ({confidence} < {confidence_threshold}) for entity '{entity}'. Skipping.")
                     continue
                 
                 #convert CUI codes to rxNorm or SNOMED
                 mappings = mapper.get_codes(code)
                 if not any(key in mappings for key in ["RxNorm","SNOMED"]):
-                    print(f"No mapping found for UMLS CUI {code} to either RxNorm or SNOMED. Skipping.")
+                    logger.info(f"No mapping found for UMLS CUI {code} to either RxNorm or SNOMED. Skipping.")
                     continue
 
                 omop_code, vocabulary = (mappings.get("RxNorm"), "RxNorm") if "RxNorm" in mappings else (mappings.get("SNOMED"), "SNOMED")               
