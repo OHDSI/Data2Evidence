@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('test', async ({ page }) => {
+test('Switch to admin portal', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').fill('Updatepassword12345');

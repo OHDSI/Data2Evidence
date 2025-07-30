@@ -2,7 +2,6 @@
   "name": "d2e-e2e-tests",
   "version": "1.0.0",
   "scripts": {
-    "test:atlas": "playwright test tests/datasets/atlas_cohort_definition.spec.ts",
     "test": "playwright test",
     "init": "playwright install chromium --with-deps",
     "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443"
