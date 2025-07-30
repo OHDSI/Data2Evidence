@@ -246,13 +246,15 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
           addNodeTypeDialog.handleType === "input"
             ? addNodeTypeDialog.selectedNodeId
             : newNode.id;
+
         edge = {
           id: uuidv4(),
           source: sourceId,
           target: targetId,
-          sourceHandle: `${sourceId}_source_${addNodeTypeDialog.selectedNodeClassifier}`,
-          targetHandle: `${targetId}_target_${addNodeTypeDialog.selectedNodeClassifier}`,
+          sourceHandle: `${sourceId}_source_${type}`,
+          targetHandle: `${targetId}_target_${addNodeTypeDialog.nodeType}`, // this should be the source node
         };
+        console.log("Adding edge", edge);
         dispatch(setEdge(edge));
       }
       const { zoom } = getViewport();
@@ -359,7 +361,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         open={addNodeTypeDialog.visible}
         handleType={addNodeTypeDialog.handleType}
         onClose={handleCloseDialog}
-        connectorType={addNodeTypeDialog.selectedNodeClassifier}
+        handleNodeType={addNodeTypeDialog.selectedNodeHandleType}
+        sourceNodeType={addNodeTypeDialog.nodeType}
       />
     </div>
   );
