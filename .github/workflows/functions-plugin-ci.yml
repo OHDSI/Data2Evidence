@@ -61,8 +61,6 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
-          - PKGPATH: ./plugins/chat_functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/chat
 
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +73,10 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
+      - name: deno install
+        run: |
+          npm install -g deno@2.1.13
+          node ./install-deno-deps.js ${{ matrix.PKGPATH }}
       - name: Prepare
         working-directory: ${{ matrix.PKGPATH }}
         run: |
