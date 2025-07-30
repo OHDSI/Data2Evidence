@@ -9,7 +9,7 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'ETL' }).click();
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(5000);
 
   await page.locator('div.alp-button__container').filter({ hasText: new RegExp('^Create your first dataflow$') }).click();
   await page.getByRole('textbox', { name: 'Name' }).fill('testflow');
@@ -32,4 +32,13 @@ test('test', async ({ page }) => {
 
   await expect(page.getByRole('list')).toContainText('Version #2');
   await expect(page.getByRole('list')).toContainText('Version #1');
+  await page.getByRole('button', { name: 'close' }).click();
+
+  await page.getByLabel('Delete flow').getByRole('button').click();
+  await page.getByRole('textbox').click();
+  await page.getByRole('textbox').fill('testflow');
+  await page.getByRole('button', { name: 'Delete' }).click();
+
+  await page.waitForTimeout(5000);
+  await expect(page.getByRole('main')).toContainText('There is no dataflow to show');
 });
