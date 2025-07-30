@@ -1,6 +1,5 @@
 import pandas as pd
 import spacy
-import scispacy
 from scispacy.linking import EntityLinker
 from scispacy.abbreviation import AbbreviationDetector
 from prefect.logging import get_run_logger
