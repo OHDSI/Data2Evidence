@@ -337,6 +337,30 @@
           "type": "data_load"
         },
         {
+          "name": "dataflow_ui_plugin",
+          "entrypoint": "flows.dataflow_ui_plugin.flow.dataflow_ui_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "json_graph": {
+                "position": 0,
+                "title": "json_graph"
+              },
+              "options": {
+                "position": 1,
+                "title": "options"
+              }
+            },
+            "required": [
+              "json_graph",
+              "options"
+            ],
+            "definitions": {}
+          },
+          "type": "dataflow_ui"
+        },
+        {
           "name": "datamart_plugin",
           "entrypoint": "flows.datamart_plugin.flow.datamart_plugin",
           "parameter_openapi_schema": {
