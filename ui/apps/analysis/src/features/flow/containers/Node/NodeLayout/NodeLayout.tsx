@@ -46,8 +46,6 @@ export const NodeLayout = <T extends NodeDataState>({
     "node--has-setting": typeof onSettingClick === "function",
     "node--has-error": resultType === "error",
   });
-  const [sourceConnected, setSourceConnected] = useState<string | null>(null);
-  const [targetConnected, setTargetConnected] = useState<string | null>(null);
 
   const NODE_COLOR = NODE_CONNECTOR_MAPPING[node.type].type;
   const PLAIN_NODES = ["patient_level_prediction_node"];
@@ -73,14 +71,6 @@ export const NodeLayout = <T extends NodeDataState>({
 
   const nodeIncidenceNumber = getIncidenceNumber(node.type);
 
-  const handleConnectSource = useCallback((connection: Connection) => {
-    setSourceConnected(connection.source);
-  }, []);
-
-  const handleConnectTarget = useCallback((connection: Connection) => {
-    setTargetConnected(connection.target);
-  }, []);
-
   return (
     <div className={classes}>
       {NODE_CONNECTOR_MAPPING[node.type].connector_list.map(
@@ -92,13 +82,11 @@ export const NodeLayout = <T extends NodeDataState>({
               type={"target"}
               classifier={connector.classifier}
               node={node}
-              position={Position.Left}
               style={{
                 top: INBOUND_CONNECTOR_STYLES[nodeIncidenceNumber][index],
                 display: "flex",
                 alignItems: "center",
               }}
-              onConnect={handleConnectTarget}
             />
           );
         }
@@ -111,7 +99,6 @@ export const NodeLayout = <T extends NodeDataState>({
           ...OUTBOUND_CONNECTOR_STYLE,
         }}
         position={Position.Right}
-        onConnect={handleConnectSource}
       />
       <div className="node__header">
         <Box display="inline-flex" mr={1}>

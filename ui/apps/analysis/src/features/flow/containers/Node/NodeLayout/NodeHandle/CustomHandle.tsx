@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FC } from "react";
 import { Connection, Handle, NodeProps, Position } from "reactflow";
 import { HandleType } from "reactflow";
 import { AddNodeButton } from "./AddNodeButton/AddNodeButton";
@@ -10,9 +10,7 @@ export interface CustomHandleProps {
   type: HandleType;
   classifier: string;
   node: NodeProps<any>;
-  position: Position;
   style: object;
-  onConnect: (connection: Connection) => void;
 }
 export const CustomHandle = ({
   name,
@@ -20,9 +18,7 @@ export const CustomHandle = ({
   type,
   classifier,
   node,
-  position,
   style,
-  onConnect,
 }: CustomHandleProps) => {
   return (
     <div
@@ -38,7 +34,7 @@ export const CustomHandle = ({
         className="custom-handle"
         type={type}
         id={`${node.id}_target_${classifier}_${color}`}
-        position={position}
+        position={type === "source" ? Position.Right : Position.Left}
         style={{
           position: "absolute",
           background: color,
@@ -47,7 +43,6 @@ export const CustomHandle = ({
           height: "100%",
           left: "-10px",
         }}
-        onConnect={onConnect}
       ></Handle>
       <span style={{ marginRight: "5px", marginLeft: "5px" }}>
         <AddNodeButton
@@ -60,3 +55,10 @@ export const CustomHandle = ({
     </div>
   );
 };
+
+export const OutputHandle: FC<Omit<CustomHandleProps, "type">> = (props) => (
+  <CustomHandle type="source" {...props} />
+);
+export const InputHandle: FC<Omit<CustomHandleProps, "type">> = (props) => (
+  <CustomHandle type="target" {...props} />
+);
