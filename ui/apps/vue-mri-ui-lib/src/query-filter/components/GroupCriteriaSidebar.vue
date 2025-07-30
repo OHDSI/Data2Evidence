@@ -146,6 +146,7 @@ const getSidebarClass = computed(() => {
 .sidebar-label {
   writing-mode: sideways-lr;
   text-orientation: sideways;
+  font-size: 14px;
   font-weight: 700;
   color: white;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);

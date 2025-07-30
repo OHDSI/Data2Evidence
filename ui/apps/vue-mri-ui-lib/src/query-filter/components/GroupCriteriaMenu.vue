@@ -59,7 +59,7 @@ const updateGroupCriteriaField = () => {
   
   // Only include count for AT_LEAST and AT_MOST
   if (activeGroupCriteriaType.value === 'AT_LEAST' || activeGroupCriteriaType.value === 'AT_MOST') {
-    newGroupCriteria.count = parseInt(getGroupCriteriaCount())
+    newGroupCriteria.count = parseInt(getGroupCriteriaCount(), 10)
   }
   
   emit('updateGroupCriteriaField', newGroupCriteria)
