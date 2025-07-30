@@ -458,7 +458,10 @@ services:
             "TREX__SQL__PORT": "${TREX__SQL__PORT:-5432}",
             "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
             "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
+            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
+            "REFRESH_TOKEN__ENDPOINT": ${REFRESH_TOKEN__ENDPOINT},
+            "REFRESH_TOKEN__CLIENT_ID": ${REFRESH_TOKEN__CLIENT_ID},
+            "REFRESH_TOKEN__CLIENT_SECRET": ${REFRESH_TOKEN__CLIENT_SECRET}
           },
           "jupyter-gateway": {},
           "mlflow": {},
