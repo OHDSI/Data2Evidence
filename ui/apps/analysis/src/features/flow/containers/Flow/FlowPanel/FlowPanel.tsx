@@ -233,18 +233,28 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       dispatch(setNode(newNode));
 
       let edge: EdgeState | undefined;
-
-      if (newNode.id && addNodeTypeDialog.selectedNodeId) {
+      if (
+        newNode.id &&
+        addNodeTypeDialog.selectedNodeId &&
+        addNodeTypeDialog.handleType
+      ) {
+        const sourceId =
+          addNodeTypeDialog.handleType === "input"
+            ? newNode.id
+            : addNodeTypeDialog.selectedNodeId;
+        const targetId =
+          addNodeTypeDialog.handleType === "input"
+            ? addNodeTypeDialog.selectedNodeId
+            : newNode.id;
         edge = {
           id: uuidv4(),
-          source: newNode.id,
-          target: addNodeTypeDialog.selectedNodeId,
-          sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.nodeType}`,
-          targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.selectedNodeClassifier}_${addNodeTypeDialog.nodeType}`,
+          source: sourceId,
+          target: targetId,
+          sourceHandle: `${sourceId}_source_${addNodeTypeDialog.selectedNodeClassifier}`,
+          targetHandle: `${targetId}_target_${addNodeTypeDialog.selectedNodeClassifier}`,
         };
         dispatch(setEdge(edge));
       }
-
       const { zoom } = getViewport();
       setCenter(
         newNode.position.x + newNode.width / 2,
@@ -288,6 +298,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const isSameNodeType = sourceHandleType === targetHandleType;
 
       // Allow sharedResources / moduleSpecifications connections to the strategus node
+      // this should be refactored to use a more generic approach. use the node connector mapping object
       const isSourceModuleSpecification =
         MODULE_SPECIFICATIONS_NODE_COLORS.includes(sourceHandleType);
       const isSourceSharedResources =
@@ -346,8 +357,9 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       </ReactFlow>
       <SelectNodeTypesDialog
         open={addNodeTypeDialog.visible}
+        handleType={addNodeTypeDialog.handleType}
         onClose={handleCloseDialog}
-        connectorType={addNodeTypeDialog.nodeType}
+        connectorType={addNodeTypeDialog.selectedNodeClassifier}
       />
     </div>
   );

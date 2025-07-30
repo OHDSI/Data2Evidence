@@ -8,18 +8,21 @@ export interface AddNodeButtonProps {
   nodeId: string;
   nodeClassifier: string;
   type: string;
+  handleType: "input" | "output";
 }
 
 export const AddNodeButton = ({
   nodeId,
   nodeClassifier,
   type,
+  handleType,
 }: AddNodeButtonProps) => {
   const handleAddNode = () => {
     dispatch(
       setAddNodeTypeDialog({
         visible: true,
         nodeType: type,
+        handleType,
         selectedNodeId: nodeId,
         selectedNodeClassifier: nodeClassifier,
       })

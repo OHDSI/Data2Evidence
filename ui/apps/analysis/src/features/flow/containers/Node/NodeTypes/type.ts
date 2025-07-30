@@ -52,41 +52,6 @@ export type NodeConnector = {
   classifier: string;
 };
 
-export const ZERO_INCIDENCE_NODE = [
-  "cohort_diagnostic_node",
-  "cohort_generator_node",
-  "time_at_risk_node",
-  "era_covariate_settings_node",
-  "calendar_time_covariate_settings_node",
-  "seasonality_covariate_settings_node",
-  "study_population_settings_node",
-  "nco_cohort_set_node",
-  "outcomes_node",
-  "cohort_definitions_set_node",
-  "exposure_node",
-  "cohort_incidence_target_cohorts_node",
-  "default_covariate_settings_node",
-];
-export const ONE_INCIDENCE_NODE = [
-  "negative_control_outcome_cohort_node",
-  "characterization_node",
-  "target_comparator_outcomes_node",
-];
-export const TWO_INCIDENCE_NODE = [
-  "cohort_method_node",
-  "self_controlled_case_series_analysis_node",
-  "cohort_incidence_node",
-  "cohort_method_analysis_node",
-  "self_controlled_case_series_node",
-  "strategus_node",
-];
-export const THREE_INCIDENCE_NODE = [
-  "patient_level_prediction_node",
-  "treatment_patterns_node",
-];
-export const FOUR_INCIDENCE_NODE = [];
-export const FIVE_INCIDENCE_NODE = [];
-
 export const NODE_CONNECTOR_MAPPING = {
   cohort_generator_node: { type: "grey", connector_list: [] },
   cohort_diagnostic_node: { type: "grey", connector_list: [] },
