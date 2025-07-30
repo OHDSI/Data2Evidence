@@ -1,6 +1,6 @@
 <template>
   <div class="form-group advancedtime-filter">
-    <b-card>
+    <bs-card>
       <template v-slot:header>
         <div class="d-flex">
           <div class="mr-auto">
@@ -22,7 +22,7 @@
           <br />
         </div>
       </template>
-      <b-collapse :id="id" role="tabpanel" v-model="showCollapse">
+      <bs-collapse :id="id" role="tabpanel" v-model="showCollapse">
         <template v-for="(item, index) in model.props.timeFilterModel.timeFilters" :key="index">
           <div class="row">
             <div class="col">
@@ -105,23 +105,27 @@
           </div>
           <div class="row">
             <div class="col">
-              <b-button
+              <bs-button
                 v-if="model.props.timeFilterModel.timeFilters.length > 1"
                 size="sm"
-                :variant="secondary"
+                variant="secondary"
                 @click="deleteTimeFilter(index)"
                 style="margin-bottom: 10px"
-                >{{ getText('MRI_PA_BUTTON_DELETE') }}</b-button
+                >{{ getText('MRI_PA_BUTTON_DELETE') }}</bs-button
               >
             </div>
           </div>
         </template>
-      </b-collapse>
-    </b-card>
+      </bs-collapse>
+    </bs-card>
   </div>
 </template>
 <script lang="ts">
 import appIcon from '../lib/ui/app-icon.vue'
+import bsButton from '../lib/ui/bs-button.vue'
+import bsCard from '../lib/ui/bs-card.vue'
+import bsCollapse from '../lib/ui/bs-collapse.vue'
+import appLabel from '../lib/ui/app-label.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { ADVANCEDTIME_SET_TIMEFILTER_TITLE } from '../store/mutation-types'
@@ -347,6 +351,10 @@ export default {
   components: {
     helpPopover,
     appIcon,
+    bsButton,
+    bsCard,
+    bsCollapse,
+    appLabel,
   },
 }
 </script>

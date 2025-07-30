@@ -929,7 +929,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = DaoBase.path_to_driver
 
             dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code)
+                  database_code=database_code, is_study_results_db = True)
             db_credentials = dbdao.tenant_configs
             if dbdao.dialect == SupportedDatabaseDialects.HANA:
                 user, password = db_credentials.adminUser, db_credentials.adminPassword.get_secret_value()
@@ -953,8 +953,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
             )
-
-            print(resultsDataModelSettings)
             # if schema does not exist, create one (including the data model)
             if(not dbdao.check_schema_exists(results_schema)):
                 dbdao.create_schema(results_schema)
@@ -991,8 +989,8 @@ def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
     results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code)
-    
+                  database_code=database_code, is_study_results_db=True)
+
     if(dbdao.check_schema_exists(results_schema)):
         dbdao.drop_schema(results_schema, True)
     else:
