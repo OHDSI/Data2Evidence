@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('test', async ({ page }) => {
+test('atlas-lite cohort creation', async ({ page }) => {
   await page.goto('https://localhost:443/portal');
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').fill('Updatepassword12345');
@@ -11,52 +11,71 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Setup' }).click();
-  
-  await page.locator('div').filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ }).getByTestId('button').click();
-  await page.waitForTimeout(3000)
-  await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click();
-  await page.getByRole('option', { name: 'OMOP_DM' }).click();
-  await page.waitForTimeout(3000)
-  await page.locator('[id="__filter1-icon"]').click();
-  await page.getByRole('checkbox', { name: 'Use PA-Atlas : On' }).click();
-  await page.getByRole('button', { name: 'Save' }).click();
-  await page.waitForTimeout(6000)
 
-  await page.getByRole('button').filter({ hasText: /^$/ }).first().click();
-  await page.locator('div').filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ }).getByTestId('button').click();
-  await page.getByRole('button', { name: 'Arrow Down' }).click();
-  await page.getByRole('option', { name: 'OMOP_DM' }).click();
-  await page.locator('[id="__box1-__xmlview0--anConfigList--mriConfigList-0"]').click();
-  await page.locator('[id="__filter1-icon"]').click();
-  await expect(page.locator('[id="__switch5-switch"]')).toContainText('Off');
+  await page
+  .locator('div')
+  .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+  .getByTestId('button')
+  .click()
+  await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
+  await page.getByRole('option', { name: 'OMOP_DM' }).click()
+  await page.locator('[id="__filter1-tab"]').click()
+  await page.waitForTimeout(1000) // Wait is required for pa config to populate the buttons with selected data model
+  let atlasOnCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : On' });
+  if ((await atlasOnCheckbox.isChecked())) {
+    await atlasOnCheckbox.click()
+    await page.waitForTimeout(500) // Wait is required for pa config UI to change slider value
+  }
+  let atlasOffCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' });
+  await expect(atlasOnCheckbox).not.toBeVisible();
+  await expect(atlasOffCheckbox).not.toBeChecked();
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText('Configuration saved.')).toBeVisible()
 
-  await page.getByRole('link', { name: 'Account' }).click();
-  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click();
-  await page.locator('div.dataset-card__title').filter({ hasText: new RegExp('^Demo dataset$') }).click();  
-
-  await page.getByRole('link', { name: 'Cohorts' }).click();
+  // Go to cohorts screen and test CEE
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
+  await page.getByText('Demo dataset').first().click()
+  await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'Atlas' }).click();
-
-  await page.waitForTimeout(10000)
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('button', { name: 'Accept' }).click();
+  await page.waitForTimeout(50000)
+  const agreement = await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByText('License Agreement', { exact: true })
+  if(await agreement.isVisible()) {
+    await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('button', { name: 'Accept' }).click();
+  }
   await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByText('New Cohort').click();
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('textbox', { name: 'New Cohort Definition' }).click();
+  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('textbox', { name: 'New Cohort Definition' }).clear();
   await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('textbox', { name: 'New Cohort Definition' }).fill('testcohort_atlas');
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByTitle(new RegExp('^Save$')).click();
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('a').filter({ hasText: 'Back to Cohorts' }).click();
-  await expect(page.locator('#pane-left')).toContainText('testcohort_atlas');
-  await expect(page.locator('#pane-left')).toContainText('Atlas Cohort Definition');
+  await page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="asset-heading"]').getByTitle(new RegExp('^Save$')).click();
+  await page.waitForTimeout(10000);
 
-//   await page.getByRole('link', { name: 'Account' }).click()
-//   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
-//   await page.getByRole('link', { name: 'Setup' }).click();
-//   await page.locator('div').filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ }).getByTestId('button').click();
-//   await page.getByRole('button', { name: 'Arrow Down' }).click();
-//   await page.getByRole('option', { name: 'OMOP_DM' }).click();
-//   await page.locator('[id="__box1-__xmlview0--anConfigList--mriConfigList-0"]').click();
-//   await page.locator('[id="__filter1-icon"]').click();
-//   await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' }).click();
-//   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="authorship__container"]')).toContainText(new RegExp('created by anonymous on'));
+  
+  await page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="asset-heading"]').getByTitle(new RegExp('^Delete$')).click();
+  await page.waitForTimeout(5000);
 
-//   await page.waitForTimeout(20000)
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
+  await page.getByRole('link', { name: 'Setup' }).click();
+
+  await page
+  .locator('div')
+  .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+  .getByTestId('button')
+  .click()
+  await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
+  await page.getByRole('option', { name: 'OMOP_DM' }).click()
+  await page.locator('[id="__filter1-tab"]').click()
+  await page.waitForTimeout(1000) // Wait is required for pa config to populate the buttons with selected data model
+  atlasOffCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' });
+  if ((await atlasOffCheckbox.isVisible())) {
+    await atlasOffCheckbox.click()
+    await page.waitForTimeout(500) // Wait is required for pa config UI to change slider value
+  }
+  atlasOnCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : On' });
+  await expect(atlasOnCheckbox).toBeChecked();
+  await expect(atlasOffCheckbox).not.toBeVisible();
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText('Configuration saved.')).toBeVisible()
+
 });
