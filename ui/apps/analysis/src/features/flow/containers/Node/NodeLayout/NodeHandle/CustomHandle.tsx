@@ -9,7 +9,7 @@ export interface CustomHandleProps {
   name: string;
   color: string;
   type: HandleType;
-  handleNodeType: NodeType;
+  handleNodeType: string;
   node: NodeProps<any>;
   style: object;
 }

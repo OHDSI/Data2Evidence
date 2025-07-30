@@ -59,7 +59,7 @@ export const NodeLayout = <T extends NodeDataState>({
           key={group.name}
           name={group.name}
           color={NODE_COLORS["strategus_node"]}
-          handleNodeType={"strategus_node"}
+          handleNodeType={group.name}
           node={node}
           style={{
             top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],

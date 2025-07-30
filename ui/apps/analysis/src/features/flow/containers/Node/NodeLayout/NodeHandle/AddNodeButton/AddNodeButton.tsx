@@ -7,7 +7,7 @@ import "./AddNodeButton.scss";
 
 export interface AddNodeButtonProps {
   nodeId: string;
-  nodeHandleType: NodeType;
+  nodeHandleType: string;
   type: NodeType;
   handleType: "input" | "output";
 }

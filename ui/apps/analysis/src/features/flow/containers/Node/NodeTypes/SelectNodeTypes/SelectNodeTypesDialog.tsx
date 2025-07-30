@@ -28,7 +28,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   ...props
 }) => {
   const [hideExperimental, setHideExperimental] = useState(true);
-
+  console.log("select handleNodeType:", handleNodeType);
   const handleClose = useCallback(
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
@@ -44,7 +44,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     if (handleType === "input") {
       if (hasGroupedInputs(sourceNodeType)) {
         return getNodeInputGroups(sourceNodeType)
-          .find((group) => group.name === handleType)
+          .find((group) => group.name === handleNodeType)
           .connections.map((connection) => connection.node as NodeType);
       } else {
         return [handleNodeType as NodeType];
