@@ -16,5 +16,6 @@ export default defineConfig({
   },
   retries: process.env.CI ? 3 : 0, // retry failed tests once
   reporter: 'list',
-  workers: 1
+  workers: 1,
+  maxFailures: process.env.CI ? 1 : 0
 })
