@@ -44,11 +44,12 @@ sap.ui.define([
         }, callback);
     };
 
-    BackendLinker.getColumns = function(dbObject, callback) {
+    BackendLinker.getColumns = function(dbObject, datasetId, callback) {
         this._postJson({
             data: JSON.stringify({
                 action: "getColumns",
-                dbObject: dbObject
+                dbObject: dbObject,
+                datasetId
             })
         }, callback);
     };

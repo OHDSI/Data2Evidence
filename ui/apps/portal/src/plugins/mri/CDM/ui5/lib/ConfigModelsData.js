@@ -128,7 +128,8 @@ sap.ui.define([
 			settings: {
 				fuzziness: 0,
 				languages: [],
-				maxResultSize: 0
+				maxResultSize: 0,
+				datasetId: "DEFAULT"
 			},
 			censor: {},
 			editFlag: false,
