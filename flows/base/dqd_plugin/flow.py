@@ -110,7 +110,7 @@ def execute_dqd(
     if dbdao.dialect == SupportedDatabaseDialects.HANA:
         set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
                                                                               release_date=release_date)
-    elif dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+    else:
         set_read_user_connection = dbdao.get_trex_connection_string()
 
     logger.info(f'''Running DQD with input parameters:

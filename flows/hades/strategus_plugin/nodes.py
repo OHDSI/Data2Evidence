@@ -15,8 +15,8 @@ from prefect.blocks.system import Secret
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 
-from _shared_flow_utils.types import UserType
-from _shared_flow_utils.dao.daobase import DialectDrivers
+from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
+from _shared_flow_utils.dao.daobase import DaoBase, DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 
 os.environ['plugin_name'] = 'strategus_plugin'
@@ -463,7 +463,6 @@ class CohortMethodAnalysis(Node):
                 rFitOutcomeModelArgs = rCohortMethod.createFitOutcomeModelArgs(modelType = convert_py_to_R(self.fitOutcomeModelArgs["modelType"]))
                 studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
                 rCreateStudyPopArgs = [r["cohortMethodArgs"] for r in studyPopulationResults if r["cohortMethodArgs"] != None]
-                assert len(rCreateStudyPopArgs) > 0, f"Expected at least one input of type: Cohort Method args in {StudyPopulationArgs.__class__}"
                 # matchOnPsArgs = matchOnPsArgs,
                 # computeSharedCovariateBalanceArgs = computeSharedCovBalArgs,
                 # computeCovariateBalanceArgs = computeCovBalArgs,
@@ -857,62 +856,69 @@ class StrategusNode(Node):
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                db_credentials = DBDao(use_cache_db=self.use_cache_db,
-                                       database_code=self.database).tenant_configs
-                rDatabaseConnector = ro.packages.importr('DatabaseConnector')
-                rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                    dbms='postgresql', 
-                    connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
-                    user=db_credentials.adminUser,
-                    password=db_credentials.adminPassword.get_secret_value(),
-                    pathToDriver = databaseConnectorJarFolder
-                )
+                dbdao = DBDao(use_cache_db=self.use_cache_db,
+                                       database_code=self.database)
+                if dbdao.dialect == SupportedDatabaseDialects.HANA:
+                    rConnectionDetails = dbdao.get_database_connector_connection_string(user_type=UserType.ADMIN_USER)
+                else:
+                    rConnectionDetails = dbdao.get_trex_connection_string()
+                
                 rExecutionSettings = rStrategus.createCdmExecutionSettings(
                     workDatabaseSchema = "cdmdefault",
                     cdmDatabaseSchema = "cdmdefault",
                     workFolder = '/tmp/work_folder',
                     resultsFolder = '/tmp/results_folder'
                 )
+                ro.r.assign("executionSettingsJson", rExecutionSettings)
+                ro.r.assign("analysisSpecJson", rSpec)
 
-                rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+                print('Strategus execution started...')
+                with ro.conversion.localconverter(ro.default_converter):
+                    ro.r(f'''
+                            library('Strategus')
+                            library('ParallelLogger')
+                            {rConnectionDetails}
+                            analysisSpecifications <- ParallelLogger::convertJsonToSettings(analysisSpecJson)
+                            executionSettings <- ParallelLogger::convertJsonToSettings(executionSettingsJson)
+                            Strategus::execute( connectionDetails = connectionDetails, analysisSpecifications = analysisSpecifications, executionSettings = executionSettings)''')
+                    
+                # rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
 @flow(name="execute-r-strategus",
       log_prints=True)
-def execute_r_strategus(analysisSpec, executionSettings, dbSettings):
+def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
-            rStrategus = importr('Strategus')
-            rParallelLogger = importr('ParallelLogger')
-            rDatabaseConnector = importr('DatabaseConnector')
-            databaseConnectorJarFolder = '/app/inst/drivers'
-
             dbdao = DBDao(use_cache_db=False,
                   database_code=database_code)
-            db_credentials = dbdao.tenant_configs
-            rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
-                user=db_credentials.readUser,
-                password=db_credentials.readPassword.get_secret_value(),
-                pathToDriver = databaseConnectorJarFolder
-            )
-
-            rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
-            rAnalysisSpec = rParallelLogger.convertJsonToSettings(json.dumps(analysisSpec))
+            if dbdao.dialect == SupportedDatabaseDialects.HANA:
+                rConnectionDetails = dbdao.get_database_connector_connection_string(user_type=UserType.ADMIN_USER)
+            else:
+                rConnectionDetails = dbdao.get_trex_connection_string()
+            # Assign the JSON string to an R variable
+            ro.r.assign("analysisSpecJson", analysisSpec)
+            ro.r.assign("executionSettingsJson", executionSettings)
 
             print('Strategus execution started...')
-            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
+            with ro.conversion.localconverter(ro.default_converter):
+                ro.r(f'''
+                        library('Strategus')
+                        library('ParallelLogger')
+                        {rConnectionDetails}
+                        analysisSpecifications <- ParallelLogger::convertJsonToSettings(analysisSpecJson)
+                        executionSettings <- ParallelLogger::convertJsonToSettings(executionSettingsJson)
+                        Strategus::execute( connectionDetails = connectionDetails, analysisSpecifications = analysisSpecifications, executionSettings = executionSettings)''')
         except Exception as e:
             print('Error: ', e)
             raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
       log_prints=True)
-def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
+def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
             database_code = dbSettings['database_code']
@@ -920,35 +926,45 @@ def upload_strategus_results(analysisSpec, path_to_results, dbSettings):
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
-            databaseConnectorJarFolder = '/app/inst/drivers'
+            databaseConnectorJarFolder = DaoBase.path_to_driver
 
             dbdao = DBDao(use_cache_db=False,
                   database_code=database_code)
             db_credentials = dbdao.tenant_configs
+            if dbdao.dialect == SupportedDatabaseDialects.HANA:
+                user, password = db_credentials.adminUser, db_credentials.adminPassword.get_secret_value()
+            else:
+                user = db_credentials.adminUser
+                password = db_credentials.adminPassword.get_secret_value()
+                
+            conn_url = dbdao.get_database_connector_connection_string(user_type=UserType.ADMIN_USER, isJDBCUrl=True)
+            print(conn_url)
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
-                user=db_credentials.adminUser,
-                password=db_credentials.adminPassword.get_secret_value(),
+                connectionString=conn_url,
+                user=user,
+                password=password,
                 pathToDriver = databaseConnectorJarFolder
             )
+            
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
-
-            # if schema exists, drop and recreate the schema
-            if(not dbdao.check_schema_exists(results_schema)):
-                dbdao.create_schema(results_schema)
-
             # create results datamodel settings
             resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
             )
-            # create results datamodel 
-            rStrategus.createResultDataModel(
-                analysisSpecifications = rAnalysisSpec,
-                resultsDataModelSettings = resultsDataModelSettings,
-                resultsConnectionDetails = rConnectionDetails
-            )
+
+            print(resultsDataModelSettings)
+            # if schema does not exist, create one (including the data model)
+            if(not dbdao.check_schema_exists(results_schema)):
+                dbdao.create_schema(results_schema)
+                # create results datamodel 
+                rStrategus.createResultDataModel(
+                    analysisSpecifications = rAnalysisSpec,
+                    resultsDataModelSettings = resultsDataModelSettings,
+                    resultsConnectionDetails = rConnectionDetails
+                )
+
             # upload results to the database
             rStrategus.uploadResults(
                 resultsConnectionDetails = rConnectionDetails,
@@ -969,9 +985,6 @@ def get_input_nodes_by_class_type_from_results(inputs: Dict[str, Result], nodeTy
 
 def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
-
-def construct_jdbc_url(db_credentials):
-    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
 
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):

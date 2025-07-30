@@ -284,26 +284,28 @@ class DaoBase(ABC):
         base_url = f"postgresql://{user.get_secret_value()}@{host}:{port}/{database_name}"
         return base_url
 
-    def get_trex_connection_string(self): 
+    def get_trex_connection_string(self, isJDBCUrl: bool = False) -> str: 
         """
         Used for Database Connector package
         """
-        database_credentials = self.tenant_configs
-        database_connector_dialect = getattr(
-            DialectDrivers.database_connector, database_credentials.dialect)
-        trex_host=Variable.get("trex_sql_host")
-        trex_port=Variable.get("trex_sql_port")
-        trex_dbname=Variable.get("trex_sql_dbname")
-        conn_url = f"{getattr(DialectDrivers.jdbc, database_connector_dialect)}://{trex_host}:{trex_port}/{trex_dbname}"
-        user=Variable.get("trex_sql_user")
-        password=Secret.load("trex-sql-password").get()
-
-        return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{DaoBase.path_to_driver}')"""
+        database_connector_dialect = getattr(DialectDrivers.database_connector, "postgres")
+        trex_host = Variable.get("trex_sql_host")
+        trex_port = Variable.get("trex_sql_port")
+        trex_dbname = Variable.get("trex_sql_dbname")
+        user = Variable.get("trex_sql_user")
+        password = Secret.load("trex-sql-password").get()
+        
+        conn_url = f"{getattr(DialectDrivers.jdbc, "postgres")}://{trex_host}:{trex_port}/{trex_dbname}?preferQueryMode=simple"
+        if isJDBCUrl:
+            return conn_url
+        else:
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
     def get_database_connector_connection_string(
         self,
-        user_type: UserType,
+        user_type: UserType = UserType.READ_USER,
         release_date: str = None,
+        isJDBCUrl: bool = False
     ):
         """
         Used for Database Connector package
@@ -348,6 +350,8 @@ class DaoBase(ABC):
                     user = database_credentials.readUser
                     password = database_credentials.readPassword
 
+            if isJDBCUrl:
+                return conn_url
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
     @staticmethod
