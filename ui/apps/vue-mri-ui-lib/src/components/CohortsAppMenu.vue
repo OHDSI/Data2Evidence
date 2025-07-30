@@ -8,16 +8,16 @@
       <span class="icon" style="font-family:app-icons"></span>
     </button> -->
 
-    <b-dropdown variant="link" size="sm" no-caret>
+    <bs-dropdown variant="link" size="sm" no-caret>
       <template v-slot:button-content>
         <button class="toolbarButton" :title="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')">
           <span class="icon" style="font-family: app-icons"> </span>
         </button>
       </template>
       <template v-for="item in menuList" :key="item.value">
-        <b-dropdown-item @click="handleMenuClick(item.value)">{{ item.text }}</b-dropdown-item>
+        <bs-dropdown-item @click="handleMenuClick(item.value)">{{ item.text }}</bs-dropdown-item>
       </template>
-    </b-dropdown>
+    </bs-dropdown>
     <addCohort></addCohort>
     <cohortsApp :load="loadViewCohorts"></cohortsApp>
   </div>
@@ -26,8 +26,13 @@
 import { mapActions, mapGetters } from 'vuex'
 import cohortsApp from './CohortsApp.vue'
 import addCohort from './AddCohort.vue'
+import bsDropdown from '../lib/ui/bs-dropdown.vue'
+import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 
 export default {
+  compatConfig: {
+    MODE: 3,
+  },
   name: 'cohortsAppMenu',
   data() {
     return {
@@ -77,6 +82,8 @@ export default {
   components: {
     addCohort,
     cohortsApp,
+    bsDropdown,
+    bsDropdownItem,
   },
 }
 </script>

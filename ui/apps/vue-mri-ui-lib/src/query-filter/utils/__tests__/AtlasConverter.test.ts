@@ -224,7 +224,7 @@ describe('AtlasConverter', () => {
         ],
       }
 
-      const result = getConceptSetMappings(atlasJson, mockConceptSets)
+      const result = getConceptSetMappings(atlasJson as any, mockConceptSets)
 
       // Should deduplicate concept set IDs
       expect(result).toHaveLength(2)

@@ -1,7 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import filtersFooter from '../FiltersFooter.vue'
-// import BootstrapVue from 'bootstrap-vue'
 
 // Skipped as BootstrapVue uses deprecated Vue.extend, and cannot be tested with vue 3 compat mode
 describe.skip('FiltersFooter.vue', () => {
