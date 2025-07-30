@@ -1,6 +1,7 @@
 import React, { FC } from "react";
 import { Handle, NodeProps, Position } from "reactflow";
 import { HandleType } from "reactflow";
+import { NodeType } from "../../NodeTypes";
 import { AddNodeButton } from "./AddNodeButton/AddNodeButton";
 import "./CustomHandle.scss";
 
@@ -8,7 +9,7 @@ export interface CustomHandleProps {
   name: string;
   color: string;
   type: HandleType;
-  classifier: string;
+  handleNodeType: NodeType;
   node: NodeProps<any>;
   style: object;
 }
@@ -16,7 +17,7 @@ export const CustomHandle = ({
   name,
   color,
   type,
-  classifier,
+  handleNodeType,
   node,
   style,
 }: CustomHandleProps) => {
@@ -34,7 +35,7 @@ export const CustomHandle = ({
       <Handle
         className="custom-handle"
         type={type}
-        id={`${node.id}_${type}_${classifier}`}
+        id={`${node.id}_${type}_${handleNodeType}`}
         position={type === "source" ? Position.Right : Position.Left}
         style={{
           position: "absolute",
@@ -47,9 +48,9 @@ export const CustomHandle = ({
       <span style={{ marginRight: "5px", marginLeft: "5px" }}>
         <AddNodeButton
           nodeId={node.id}
-          nodeClassifier={node.type}
+          nodeHandleType={handleNodeType}
           handleType={type == "source" ? "output" : "input"}
-          type={color}
+          type={node.type as NodeType}
         />
       </span>
       <span style={{ marginRight: "5px" }}>{name}</span>
