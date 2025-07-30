@@ -242,6 +242,10 @@ export const getInputCount = (nodeType: NodeType): number => {
   return getNodeInputs(nodeType).length;
 };
 
+export const getGroupInputCount = (nodeType: NodeType): number => {
+  return getNodeInputGroups(nodeType).length;
+};
+
 export const getOutputCount = (nodeType: NodeType): number => {
   return getNodeOutputs(nodeType).length;
 };
