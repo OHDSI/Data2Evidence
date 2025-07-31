@@ -142,6 +142,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // CONDITION OCCURRENCE FILTER
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
+  await page.waitForTimeout(5000)
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
