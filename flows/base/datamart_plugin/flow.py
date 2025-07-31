@@ -9,7 +9,6 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 
 from _shared_flow_utils.create_dataset_tasks import create_schema_task, create_and_assign_roles_task
 from _shared_flow_utils.update_dataset_metadata import update_entity_value, update_entity_distinct_count
@@ -141,9 +140,6 @@ def update_dataset_metadata(options: CreateDatamartOptions):
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
     else:
-        
-        # Store token in cache
-        get_auth_token_from_input()
 
         logger.info(f"Successfully fetched {len(dataset_list)} datasets from portal")
         for dataset in dataset_list:
