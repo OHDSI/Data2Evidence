@@ -1291,7 +1291,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 240s
+      start_period: 420s
       test:
         - CMD
         - wget
@@ -1323,6 +1323,7 @@ services:
       DUCKDB_PATH: /home/docker/app
       FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
       FHIR_SCHEMA_FILE_NAME: fhir.schema.json
+      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
     profiles: [fhir]
 
   dicom-server:
