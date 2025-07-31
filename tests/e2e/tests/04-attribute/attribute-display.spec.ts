@@ -35,6 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Attribute Id' }).fill('test_display')
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Test Display')
   await page.getByRole('button', { name: 'Save' }).click()
+  await page.waitForTimeout(3000) // Wait for the save
 
   // Verify attribute creation
   expect(page.locator('.metadata-attribute-table__table')).toContainText('test_display')
