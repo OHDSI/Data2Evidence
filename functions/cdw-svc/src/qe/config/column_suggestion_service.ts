@@ -6,8 +6,6 @@ import {
 import * as Utils from "../settings/Utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
-import { getDuckdbSchemaName } from "../../utils/DuckdbConnection";
-import { env } from "../../configs";
 const log = Logger.CreateLogger();
 
 export function processRequest(
@@ -35,8 +33,13 @@ function getColumnsForTable(
       ? parsedName.schema
       : connection.schemaName;
     let query = ""
-    if (env.USE_DUCKDB === "true") {
-      schema = getDuckdbSchemaName()
+    if (this.connection.dialect === "hana") {
+      query = `SELECT COLUMN_NAME as "value"
+      FROM  VIEW_COLUMNS WHERE SCHEMA_NAME = %s AND VIEW_NAME = %s
+      UNION
+      SELECT COLUMN_NAME as "value"
+      FROM  TABLE_COLUMNS WHERE SCHEMA_NAME = %s AND TABLE_NAME = %s`
+    } else{
       query = `SELECT column_name as "value" 
       from information_schema.columns 
       where table_catalog = %s AND TABLE_NAME = %s 
@@ -45,12 +48,6 @@ function getColumnsForTable(
       from duckdb_columns() 
       WHERE database_name = %s and table_name = %s
       ORDER BY \"column_name\"`
-    } else{
-      query = `SELECT COLUMN_NAME as "value"
-      FROM  VIEW_COLUMNS WHERE SCHEMA_NAME = %s AND VIEW_NAME = %s
-      UNION
-      SELECT COLUMN_NAME as "value"
-      FROM  TABLE_COLUMNS WHERE SCHEMA_NAME = %s AND TABLE_NAME = %s`
     }
     const sQuery = queryObjectLib.QueryObject.format(
       query,

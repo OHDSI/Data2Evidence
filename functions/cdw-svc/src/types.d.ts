@@ -211,6 +211,7 @@ declare global {
     otsTableMap: {
       ["@CODE"]: string;
     };
+    datasetId: string;
   }
 
   export interface SMap<T> {

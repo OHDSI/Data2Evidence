@@ -37,7 +37,9 @@ export class PrefectAPI {
     } catch (error) {
       if (error.response.status === 409) {
         // update variable which already exists
-        url = `${this.baseURL}/variables/name/${variableObj.name}`;
+        url = `${this.baseURL}/variables/name/${encodeURIComponent(
+          variableObj.name
+        )}`;
         const result = await axios.patch(url, variableOptions, options);
         console.log(successMsg);
         return variableObj.name;
@@ -78,12 +80,16 @@ export class PrefectAPI {
     } catch (error) {
       if (error.response.status === 409) {
         // update block which already exists
-        url = `${this.baseURL}/block_types/slug/${slugName}/block_documents/name/${blockName}`;
+        url = `${this.baseURL}/block_types/slug/${encodeURIComponent(
+          slugName
+        )}/block_documents/name/${encodeURIComponent(blockName)}`;
         const existingBlock = await axios.get(url, options);
         const existingBlockId = existingBlock.data.id;
 
         // Update block
-        url = `${this.baseURL}/block_documents/${existingBlockId}`;
+        url = `${this.baseURL}/block_documents/${encodeURIComponent(
+          existingBlockId
+        )}`;
         const newBlockDocOptions = {
           block_schema_id: blockSchemaId,
           data: blockOptions,
@@ -130,7 +136,9 @@ export class PrefectAPI {
 
   private async getBlockTypeID(blockType: string): Promise<string> {
     try {
-      const url = `${this.baseURL}/block_types/slug/${blockType}`;
+      const url = `${this.baseURL}/block_types/slug/${encodeURIComponent(
+        blockType
+      )}`;
       const options = await this.createOptions();
       const result = await axios.get(url, options);
       return result.data.id;
@@ -148,7 +156,9 @@ export class PrefectAPI {
     workPoolTemplate: any
   ): Promise<string> {
     try {
-      const url = `${this.baseURL}/work_pools/${workPoolName}`;
+      const url = `${this.baseURL}/work_pools/${encodeURIComponent(
+        workPoolName
+      )}`;
       const options = await this.createOptions();
       const workPoolOptions = {
         is_paused: false,
