@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 
 
-test('cohort-generation', async ({ page }) => {
+test('pa-compare-cohorts', async ({ page }) => {
   test.slow();
   // Generate unique cohort name to avoid conflicts with other tests
   const cohortA = `CohortA_${new Date().getTime()}`
