@@ -55,6 +55,7 @@ export interface QueryFilterGroup {
   title: string
   description: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaCount?: number
   events: QueryFilterEvent[]
 }
 
@@ -776,6 +777,7 @@ export class QueryFilterCriteriaManager {
           description: group.description, // Maps group.description → Atlas InclusionRule.description
           expression: {
             Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
+            Count: group.criteriaCount, // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
             CriteriaList: group.events.flatMap(event =>
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType) // Only non-demographic main events with eventType
