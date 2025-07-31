@@ -1,11 +1,9 @@
 import { BadRequestException, Body, Controller, Delete, Get, Middleware, Param, Post, Put, Req } from '@danet/core'
 import { ServiceName } from './enums/index.ts'
-import { PermissionsMiddleware } from './middlewares/permissions.middleware.ts'
 import { UserArtifactService } from './user-artifact.service.ts'
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 
 
-// @Middleware(PermissionsMiddleware)
 @Middleware(RequestContextMiddleware)
 @Controller("system-portal/user-artifact")
 export class UserArtifactController {
@@ -22,7 +20,7 @@ export class UserArtifactController {
   @Get(':userId/:serviceName/list')
   async getUserServiceArtifact(
     @Param('userId') userId: string,
-    @Param('serviceName') serviceName: string
+    @Param('serviceName') serviceName: ServiceName
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
@@ -54,7 +52,7 @@ export class UserArtifactController {
   @Get(':userId/:serviceName/:id')
   async getUserServiceArtifactById(
     @Param('userId') userId: string,
-    @Param('serviceName') serviceName: string,
+    @Param('serviceName') serviceName: ServiceName,
     @Param('id') id: string
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {
@@ -107,7 +105,7 @@ export class UserArtifactController {
   @Delete(':userId/:serviceName/:id')
   async deleteUserServiceArtifact(
     @Param('userId') userId: string,
-    @Param('serviceName') serviceName: ServiceName | string,
+    @Param('serviceName') serviceName: ServiceName,
     @Param('id') id: string
   ) {
     if (!(Object.values(ServiceName).includes(serviceName))) {

@@ -1,11 +1,133 @@
-import { QueryFilterEvent, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { AtlasCohortDefinition } from '../models/AtlasCohortDefinition'
+import {
+  QueryFilterEvent,
+  QueryFilterCriteriaManager,
+  InclusionCriteria,
+  SelectedConceptSet,
+} from '../models/QueryFilterModel'
+import {
+  AtlasCohortDefinition,
+  CriteriaListItem,
+  ConditionOccurrence,
+  DrugExposure,
+  ProcedureOccurrence,
+  Observation,
+  Measurement,
+  VisitOccurrence,
+  DeviceExposure,
+  Death,
+  ObservationPeriod,
+  InclusionRule,
+  CriteriaGroup,
+  ConceptSet,
+  NumericRange,
+  DemographicCriteria,
+  CorrelatedCriteria,
+} from '../models/AtlasCohortDefinition'
 import type { ConceptSetItem } from '../types/ConceptSetTypes'
 
 export interface ConceptSetMapping {
   name: string
   id: string
   conceptSetItem: ConceptSetItem | null
+}
+
+type CriteriaObject =
+  | ConditionOccurrence
+  | DrugExposure
+  | ProcedureOccurrence
+  | Observation
+  | Measurement
+  | VisitOccurrence
+  | DeviceExposure
+  | Death
+  | ObservationPeriod
+  | Record<string, never>
+
+// Type guards for proper type narrowing
+const isCriteriaGroup = (item: CriteriaListItem | CriteriaGroup): item is CriteriaGroup => {
+  return 'Criteria' in item
+}
+
+const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is CriteriaListItem => {
+  return (
+    'ConditionOccurrence' in item ||
+    'DrugExposure' in item ||
+    'ProcedureOccurrence' in item ||
+    'Observation' in item ||
+    'Measurement' in item ||
+    'VisitOccurrence' in item ||
+    'DeviceExposure' in item ||
+    'Death' in item ||
+    'ObservationPeriod' in item
+  )
+}
+
+// Type guard for criteria objects that have CodesetId
+const hasCodesetId = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { CodesetId?: number } => {
+  return 'CodesetId' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object'
+}
+
+// Type guards for specific Atlas attributes
+const hasAge = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Age: NumericRange } => {
+  return (
+    'Age' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object' && criteriaObj.Age !== undefined
+  )
+}
+
+const hasGender = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Gender: ConceptSet[] } => {
+  return (
+    'Gender' in criteriaObj &&
+    criteriaObj !== null &&
+    typeof criteriaObj === 'object' &&
+    criteriaObj.Gender !== undefined
+  )
+}
+
+const hasCorrelatedCriteria = (
+  criteriaObj: CriteriaObject
+): criteriaObj is CriteriaObject & { CorrelatedCriteria: CorrelatedCriteria } => {
+  return (
+    'CorrelatedCriteria' in criteriaObj &&
+    criteriaObj !== null &&
+    typeof criteriaObj === 'object' &&
+    criteriaObj.CorrelatedCriteria !== undefined
+  )
+}
+
+// Type guard for demographic criteria with Age
+const hasDemographicAge = (
+  demoCriteria: DemographicCriteria
+): demoCriteria is DemographicCriteria & { Age: NumericRange } => {
+  return demoCriteria.Age !== undefined
+}
+
+// Type guard for demographic criteria with Gender
+const hasDemographicGender = (
+  demoCriteria: DemographicCriteria
+): demoCriteria is DemographicCriteria & { Gender: ConceptSet[] } => {
+  return demoCriteria.Gender !== undefined
+}
+
+// Helper function to convert ConceptSetItem to SelectedConceptSet
+const convertConceptSetItemToSelected = (item: ConceptSetItem): SelectedConceptSet | null => {
+  if (!item.value || !item.text) return null
+
+  return {
+    value: parseInt(item.value), // Convert string to number
+    text: item.text,
+    display_value: item.display_value || item.text,
+    conceptIds: item.conceptIds || [],
+    concepts: (item.concepts || []).map(c => ({
+      id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+      useMapped: c.useMapped || false,
+      isExcluded: c.isExcluded || false,
+      useDescendants: c.useDescendants || false,
+    })),
+    shared: false, // Default value
+    userName: '', // Default value
+    createdDate: new Date().toISOString(),
+    modifiedDate: new Date().toISOString(),
+  }
 }
 
 export const convertAtlasToFilters = (
@@ -17,7 +139,6 @@ export const convertAtlasToFilters = (
   }
 
   const cohortDefinition = atlasJson
-  const cohortName = atlasJson.name
 
   const findConceptSetByCodesetId = (codesetId: number): ConceptSetMapping | null => {
     const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
@@ -70,7 +191,8 @@ export const convertAtlasToFilters = (
     }
   }
 
-  const getCriteriaType = (criteria: any): string => {
+  // TODO: these mappings could just be Pascal to camel case instead of being hardcoded
+  const getCriteriaType = (criteria: CriteriaListItem): string => {
     if (criteria.ConditionOccurrence) return 'conditionOccurrence'
     if (criteria.DrugExposure) return 'drugExposure'
     if (criteria.ProcedureOccurrence) return 'procedureOccurrence'
@@ -83,7 +205,8 @@ export const convertAtlasToFilters = (
     return 'conditionOccurrence'
   }
 
-  const getCriteriaObject = (criteria: any): any => {
+  // TODO: these mappings could come from the config instead of being hardcoded
+  const getCriteriaObject = (criteria: CriteriaListItem): CriteriaObject => {
     if (criteria.ConditionOccurrence) return criteria.ConditionOccurrence
     if (criteria.DrugExposure) return criteria.DrugExposure
     if (criteria.ProcedureOccurrence) return criteria.ProcedureOccurrence
@@ -96,43 +219,62 @@ export const convertAtlasToFilters = (
     return {}
   }
 
-  const convertCriteriaListToEvents = (criteriaList: any[]): QueryFilterEvent[] => {
+  // This function is used both entry (PrimaryCriteria) and inclusion criteria.
+  // For PrimaryCriteria, it uses CriteriaListItem.
+  // For InclusionCriteria, it uses CriteriaGroup which has a Criteria property.
+  const convertCriteriaListToEvents = (criteriaList: (CriteriaListItem | CriteriaGroup)[]): QueryFilterEvent[] => {
     if (!criteriaList || criteriaList.length === 0) {
       return []
     }
 
     const events: QueryFilterEvent[] = []
 
-    criteriaList.forEach(criteriaItem => {
-      const criteria = criteriaItem.Criteria || criteriaItem
-      const criteriaType = getCriteriaType(criteria)
-      const criteriaObj = getCriteriaObject(criteria)
-      const conceptSetId = criteriaObj.CodesetId
+    criteriaList.forEach(_criteriaItem => {
+      const criteriaItem = isCriteriaGroup(_criteriaItem)
+        ? _criteriaItem.Criteria
+        : isCriteriaListItem(_criteriaItem)
+        ? _criteriaItem
+        : undefined
 
-      const conceptSetInfo = conceptSetId !== undefined ? findConceptSetByCodesetId(conceptSetId) : null
+      const occurrence = isCriteriaGroup(_criteriaItem) ? _criteriaItem.Occurrence : undefined
 
-      const event: any = {
+      if (!criteriaItem) return // Skip if no valid criteria
+
+      const criteriaType = getCriteriaType(criteriaItem)
+      const criteriaObj = getCriteriaObject(criteriaItem)
+      const codesetId = hasCodesetId(criteriaObj) ? criteriaObj.CodesetId : undefined
+
+      const conceptSetInfo = codesetId !== undefined ? findConceptSetByCodesetId(codesetId) : null
+
+      const event: QueryFilterEvent = {
         id: `event_${Math.random().toString(36).substring(2)}`,
+        conceptSet: conceptSetInfo?.name || `Concept Set ${codesetId}` || 'Unknown Concept Set',
         eventType: criteriaType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
         criteriaType: criteriaType, // For nested events, this should be the medical event type initially
         isExpanded: true,
         cardinality: {
           type: 'AT_LEAST',
-          count: criteriaItem.Occurrence?.Count || 1,
+          count: occurrence?.Count || 1,
           using: 'ALL',
         },
         attributes: [],
       }
 
-      // Only add conceptSet and related properties if we have a concept set
-      if (conceptSetInfo || conceptSetId !== undefined) {
-        event.conceptSet = conceptSetInfo?.name || `Concept Set ${conceptSetId}`
-        event.conceptSetId = conceptSetInfo?.id
-        event.selectedConceptSet = conceptSetInfo?.conceptSetItem || undefined
+      // Only add conceptSetId and selectedConceptSet if we have a concept set
+      if (conceptSetInfo || codesetId !== undefined) {
+        if (conceptSetInfo?.id) {
+          event.conceptSetId = conceptSetInfo.id
+        }
+        if (conceptSetInfo?.conceptSetItem) {
+          const converted = convertConceptSetItemToSelected(conceptSetInfo.conceptSetItem)
+          if (converted) {
+            event.selectedConceptSet = converted
+          }
+        }
       }
 
-      if (conceptSetId !== undefined) {
-        const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === conceptSetId)
+      if (codesetId !== undefined) {
+        const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === codesetId)
         if (atlasConceptSet?.expression?.items) {
           event.conceptSetDetails = atlasConceptSet.expression.items
           event.conceptSetLoading = false
@@ -140,8 +282,11 @@ export const convertAtlasToFilters = (
       }
 
       // Handle direct Age attributes on the event
-      if (criteriaObj.Age) {
-        ;(event.attributes! as any).push({
+      if (hasAge(criteriaObj)) {
+        if (!event.attributes) {
+          event.attributes = []
+        }
+        event.attributes.push({
           id: `attribute_${Math.random().toString(36).substring(2)}`,
           attributeId: 'age',
           attributeType: 'numericRange',
@@ -151,21 +296,24 @@ export const convertAtlasToFilters = (
       }
 
       // Handle direct Gender attributes on the event
-      if (criteriaObj.Gender) {
-        ;(event.attributes! as any).push({
+      if (hasGender(criteriaObj)) {
+        if (!event.attributes) {
+          event.attributes = []
+        }
+        event.attributes.push({
           id: `attribute_${Math.random().toString(36).substring(2)}`,
           attributeId: 'gender',
-          type: 'conceptSet',
+          attributeType: 'conceptSet',
         })
       }
 
       // Handle CorrelatedCriteria (nested structure) - Convert to attributes format
-      if (criteriaObj.CorrelatedCriteria) {
+      if (hasCorrelatedCriteria(criteriaObj)) {
         const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
 
         const nestedAttribute = {
           id: `attribute_${Math.random().toString(36).substring(2)}`,
-          attributeType: 'nested',
+          attributeType: 'nested' as const,
           nestedCriteria: {
             id: `criteria_${Math.random().toString(36).substring(2)}`,
             criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
@@ -208,13 +356,13 @@ export const convertAtlasToFilters = (
   }
 
   // Create the main inclusionCriteria structure
-  const inclusionCriteria = {
+  const inclusionCriteria: InclusionCriteria = {
     qualifyingEventsLimit: 'ALL' as const,
-    criteria: [] as any[],
+    criteria: [],
   }
 
   if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
-    cohortDefinition.InclusionRules.forEach((rule: any) => {
+    cohortDefinition.InclusionRules.forEach(rule => {
       const criteriaItem = {
         id: `criteria_${Math.random().toString(36).substring(2)}`,
         title: rule.name || 'Inclusion Rule',
@@ -227,19 +375,22 @@ export const convertAtlasToFilters = (
       if (rule.expression?.CriteriaList?.length > 0) {
         criteriaItem.events = convertCriteriaListToEvents(rule.expression.CriteriaList)
       }
-
       // Handle DemographicCriteriaList - create demographic events
-      if (rule.expression?.DemographicCriteriaList?.length > 0) {
-        rule.expression.DemographicCriteriaList.forEach((demoCriteria: any) => {
-          const demographicEvent: any = {
+      if (rule.expression?.DemographicCriteriaList && rule.expression.DemographicCriteriaList.length > 0) {
+        rule.expression.DemographicCriteriaList.forEach(demoCriteria => {
+          const demographicEvent: QueryFilterEvent = {
             id: `event_${Math.random().toString(36).substring(2)}`,
+            conceptSet: 'Demographic Criteria',
             eventType: 'demographic',
             isExpanded: true,
             attributes: [],
           }
 
-          if (demoCriteria.Age) {
-            ;(demographicEvent.attributes! as any).push({
+          if (hasDemographicAge(demoCriteria)) {
+            if (!demographicEvent.attributes) {
+              demographicEvent.attributes = []
+            }
+            demographicEvent.attributes.push({
               id: `attribute_${Math.random().toString(36).substring(2)}`,
               attributeId: 'age',
               attributeType: 'numericRange',
@@ -248,11 +399,14 @@ export const convertAtlasToFilters = (
             })
           }
 
-          if (demoCriteria.Gender) {
-            ;(demographicEvent.attributes! as any).push({
+          if (hasDemographicGender(demoCriteria)) {
+            if (!demographicEvent.attributes) {
+              demographicEvent.attributes = []
+            }
+            demographicEvent.attributes.push({
               id: `attribute_${Math.random().toString(36).substring(2)}`,
               attributeId: 'gender',
-              type: 'conceptSet',
+              attributeType: 'conceptSet',
             })
           }
 
@@ -299,32 +453,38 @@ export const convertAtlasToFilters = (
 }
 
 export const getConceptSetMappings = (
-  atlasJson: any,
+  atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItem[] = []
 ): ConceptSetMapping[] => {
   const mappings: ConceptSetMapping[] = []
 
   if (!atlasJson) return mappings
 
-  const cohortDefinition = atlasJson.expression || atlasJson
+  const cohortDefinition = atlasJson
   const conceptSetIds = new Set<number>()
-  const extractConceptSetIds = (rules: any[]) => {
-    rules?.forEach((rule: any) => {
-      rule.expression?.CriteriaList?.forEach((criteriaItem: any) => {
-        const criteria = criteriaItem.Criteria || criteriaItem
-        const criteriaObj =
-          criteria.ConditionOccurrence ||
-          criteria.DrugExposure ||
-          criteria.ProcedureOccurrence ||
-          criteria.Observation ||
-          criteria.Measurement ||
-          criteria.VisitOccurrence ||
-          criteria.DeviceExposure ||
-          criteria.Death ||
-          criteria.ObservationPeriod ||
-          {}
-        if (criteriaObj.CodesetId !== undefined) {
-          conceptSetIds.add(criteriaObj.CodesetId)
+  const extractConceptSetIds = (rules: InclusionRule[]) => {
+    rules?.forEach(rule => {
+      rule.expression?.CriteriaList?.forEach(criteriaItem => {
+        const criteria = isCriteriaGroup(criteriaItem)
+          ? criteriaItem.Criteria
+          : isCriteriaListItem(criteriaItem)
+          ? criteriaItem
+          : undefined
+        if (criteria) {
+          const criteriaObj =
+            criteria.ConditionOccurrence ||
+            criteria.DrugExposure ||
+            criteria.ProcedureOccurrence ||
+            criteria.Observation ||
+            criteria.Measurement ||
+            criteria.VisitOccurrence ||
+            criteria.DeviceExposure ||
+            criteria.Death ||
+            criteria.ObservationPeriod ||
+            {}
+          if (hasCodesetId(criteriaObj) && criteriaObj.CodesetId !== undefined) {
+            conceptSetIds.add(criteriaObj.CodesetId)
+          }
         }
       })
     })
@@ -333,7 +493,7 @@ export const getConceptSetMappings = (
   extractConceptSetIds(cohortDefinition.InclusionRules)
 
   conceptSetIds.forEach(codesetId => {
-    const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: any) => cs.id === codesetId)
+    const atlasConceptSet = cohortDefinition.ConceptSets?.find((cs: ConceptSet) => cs.id === codesetId)
     if (atlasConceptSet) {
       const actualConceptSetId = atlasConceptSet.conceptSetId || atlasConceptSet.id
       const localConceptSet = availableConceptSets.find(cs => cs.value == actualConceptSetId.toString())

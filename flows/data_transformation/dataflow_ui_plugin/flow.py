@@ -19,7 +19,7 @@ from .types import NodeType
 
 
 @flow(log_prints=True)
-def dataflow_ui_plugin(json_graph, options):
+def dataflow_ui_plugin(json_graph, import_libs, variables, options):
 
     os.environ['plugin_name'] = 'dataflow_ui_plugin'
 
@@ -58,7 +58,7 @@ def dataflow_ui_plugin(json_graph, options):
             partial(execute_nodes_flow_hook, **dict(generated_nodes=generated_nodes, sorted_nodes=sorted_nodes, testmode=testmode))]
     )
 
-    n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
+    n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, variables, import_libs, testmode)  # flow
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
@@ -72,23 +72,23 @@ def dataflow_ui_plugin(json_graph, options):
         description="Nodes output stored as JSON"
     )
 
-def execute_subflow_cluster(node_graph, input, test):
+def execute_subflow_cluster(node_graph, input, shared_variables, importlibs, test):
     scheduler_address = get_scheduler_address(node_graph)
     executor_type = node_graph["nodeobj"].executor_type
 
     @flow(task_runner=DaskTaskRunner(cluster_kwargs={"processes": False}), log_prints=True)
-    def execute_local_cluster(node_graph, input, test):
-        return submit_tasks_to_runner(node_graph, input, test)
+    def execute_local_cluster(node_graph, input, shared_variables, importlibs, test):
+        return submit_tasks_to_runner(node_graph, input, shared_variables, importlibs, test)
 
     @flow(task_runner=DaskTaskRunner(address=scheduler_address), log_prints=True)
-    def execute_kube_cluster(node_graph, input, test):
-        return submit_tasks_to_runner(node_graph, input, test)
+    def execute_kube_cluster(node_graph, input, shared_variables, importlibs, test):
+        return submit_tasks_to_runner(node_graph, input, shared_variables, importlibs, test)
 
     @flow(task_runner=DaskTaskRunner(address=scheduler_address), log_prints=True)
-    def execute_mpi_cluster(node_graph, input, test):
-        return submit_tasks_to_runner(node_graph, input, test)
+    def execute_mpi_cluster(node_graph, input, shared_variables, importlibs, test):
+        return submit_tasks_to_runner(node_graph, input, shared_variables, importlibs, test)
 
-    def submit_tasks_to_runner(node_graph, input, test):
+    def submit_tasks_to_runner(node_graph, input, shared_variables, importlibs, test):  
         subflow_results = OrderedDict()
         count = 0
         for nodename in node_graph["nodeobj"].sorted_nodes:
@@ -109,7 +109,7 @@ def execute_subflow_cluster(node_graph, input, test):
             )
 
             subflow_results[nodename] = node_task_execution_wo.submit(
-                nodename, node["type"], node["nodeobj"], _input, test).result()  # Result Obj
+                nodename, node["type"], node["nodeobj"], _input, shared_variables, importlibs, test).result()  # Result Obj
             count += 1
         return subflow_results
 
@@ -136,13 +136,13 @@ def execute_subflow_cluster(node_graph, input, test):
                     subflow_execution_hook, **dict(node_graph=node_graph, input=input, istest=test))]
             )
 
-    return subflow_execution_wo(node_graph, input, test)
+    return subflow_execution_wo(node_graph, input, shared_variables, importlibs, test)
 
 
 @flow(name="execute-nodes",
       flow_run_name="execute-nodes-flowrun",
       log_prints=True)
-def execute_nodes_flow(graph, sorted_nodes, test):
+def execute_nodes_flow(graph, sorted_nodes, shared_variables, importlibs, test):
     nodes = {}
     try:
         for nodename in sorted_nodes:
@@ -154,7 +154,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                 if node["type"] == NodeType.SUBFLOW:
                     # execute as a subflow with runner
                     result_of_subflow = execute_subflow_cluster(
-                        node, _input, test)
+                        node, _input, shared_variables, importlibs, test)
 
                     # output of subflow
                     nodes[nodename] = result_of_subflow.popitem(
@@ -172,7 +172,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                     )
 
                     nodes[nodename] = node_task_execution_wo(
-                        nodename, node["type"], node["nodeobj"], _input, test)
+                        nodename, node["type"], node["nodeobj"], _input, shared_variables, importlibs, test)
     except Exception as e:
         get_run_logger().error(traceback.format_exc())
     return nodes
@@ -180,7 +180,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
 
 @task(task_run_name="execute-nodes-taskrun-{nodename}",
       log_prints=True)
-def execute_node_task(nodename, node_type, node, input, test):
+def execute_node_task(nodename, node_type, node, input, shared_variables, importlibs, test):
     # Get task run context
     task_run_context = TaskRunContext.get().task_run.model_dump()
 
@@ -193,6 +193,8 @@ def execute_node_task(nodename, node_type, node, input, test):
             # Nodes that do not accept input
             case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING:
                 result = _node.task(task_run_context)
+            case NodeType.PYTHON:
+                result = _node.task(input, shared_variables, importlibs, task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
     return result
