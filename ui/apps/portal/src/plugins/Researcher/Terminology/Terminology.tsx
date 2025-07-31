@@ -27,7 +27,6 @@ export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {
     id: string;
     value: string[];
   }[];
-  initialDomainFilter?: string;
 }
 
 const WithDrawer = ({
@@ -261,7 +260,6 @@ export const Terminology: FC<TerminologyProps> = ({
   mode = "CONCEPT_SEARCH",
   selectedDatasetId,
   defaultFilters,
-  initialDomainFilter,
 }: TerminologyProps) => {
   const { getText, i18nKeys } = useTranslation();
   const userId = baseUserId || metadata?.userId;
@@ -288,26 +286,17 @@ export const Terminology: FC<TerminologyProps> = ({
   const showConceptSetFeatures = isConceptSet;
   const showTabNavigation = isConceptSet || isConceptMultiSelect;
 
-  // Prepare domain-specific default filters
-  const domainSpecificFilters = useMemo(() => {
-    if (initialDomainFilter && isConceptMultiSelect) {
-      const domainFilter = {
-        id: "domainId",
-        value: [initialDomainFilter],
-      };
-
-      // Combine with any existing default filters
-      return defaultFilters ? [...defaultFilters, domainFilter] : [domainFilter];
-    }
-    return defaultFilters;
-  }, [initialDomainFilter, isConceptMultiSelect, defaultFilters]);
-
+  // Get domain context from default filters for messaging
   const getDomainContextMessage = useCallback(() => {
-    if (isConceptMultiSelect && initialDomainFilter) {
-      return `Showing concepts from ${initialDomainFilter} domain. You can modify filters to explore other domains.`;
+    if (isConceptMultiSelect && defaultFilters) {
+      const domainFilter = defaultFilters.find((filter) => filter.id === "domainId");
+      if (domainFilter && domainFilter.value.length > 0) {
+        const domainName = domainFilter.value[0];
+        return `Showing concepts from ${domainName} domain. You can modify filters to explore other domains.`;
+      }
     }
     return null;
-  }, [isConceptMultiSelect, initialDomainFilter]);
+  }, [isConceptMultiSelect, defaultFilters]);
 
   const resetState = useCallback(() => {
     setConceptId(null);
@@ -612,7 +601,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   setConceptsResult={setConceptsResult}
                   datasetId={activeDatasetId}
                   isDrawer={isDrawer}
-                  defaultFilters={domainSpecificFilters}
+                  defaultFilters={defaultFilters}
                   mode={mode}
                 />
               )}
