@@ -68,6 +68,41 @@ const flowStyles: CSSProperties = { backgroundColor: "#faf8f8" };
 const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 
 export const FlowPanel: FC<FlowPanelProps> = () => {
+  const getTargetHandleName = useCallback(
+    (
+      sourceNodeType: NodeType,
+      sourceNodeHandleType: string,
+      newNodeType: NodeType
+    ) => {
+      return hasGroupedInputs(sourceNodeType)
+        ? `${sourceNodeType}_${sourceNodeHandleType
+            .toLowerCase()
+            .replace(" ", "")}`
+        : newNodeType;
+    },
+    []
+  );
+
+  const createEdge = (
+    newNode: NodeState,
+    dialog: typeof addNodeTypeDialog, // contains the selected node type and handle type
+    newNodeType: NodeType,
+    targetHandleName: string
+  ): EdgeState | undefined => {
+    if (!newNode.id || !dialog.selectedNodeId || !dialog.handleType) return;
+    const isOutput = dialog.handleType === "output";
+    const sourceId = isOutput ? dialog.selectedNodeId : newNode.id;
+    const targetId = isOutput ? newNode.id : dialog.selectedNodeId;
+    const sourceHandleType = isOutput ? newNodeType : dialog.nodeType;
+    const targetHandleType = isOutput ? dialog.nodeType : targetHandleName;
+    return {
+      id: uuidv4(),
+      source: sourceId,
+      target: targetId,
+      sourceHandle: `${sourceId}_source_${sourceHandleType}`,
+      targetHandle: `${targetId}_target_${targetHandleType}`,
+    };
+  };
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
@@ -233,44 +268,18 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
 
-      const targetHandleName = hasGroupedInputs(addNodeTypeDialog.nodeType)
-        ? `${
-            addNodeTypeDialog.nodeType
-          }_${addNodeTypeDialog.selectedNodeHandleType
-            .toLowerCase()
-            .replace(" ", "")}`
-        : type;
-
-      let edge: EdgeState | undefined;
-      if (
-        newNode.id &&
-        addNodeTypeDialog.selectedNodeId &&
-        addNodeTypeDialog.handleType
-      ) {
-        const sourceId =
-          addNodeTypeDialog.handleType === "output"
-            ? addNodeTypeDialog.selectedNodeId
-            : newNode.id;
-        const targetId =
-          addNodeTypeDialog.handleType === "output"
-            ? newNode.id
-            : addNodeTypeDialog.selectedNodeId;
-        const sourceHandleType =
-          addNodeTypeDialog.handleType === "output"
-            ? type
-            : addNodeTypeDialog.nodeType;
-        const targetHandleType =
-          addNodeTypeDialog.handleType === "output"
-            ? addNodeTypeDialog.nodeType
-            : targetHandleName;
-
-        edge = {
-          id: uuidv4(),
-          source: sourceId,
-          target: targetId,
-          sourceHandle: `${sourceId}_source_${sourceHandleType}`,
-          targetHandle: `${targetId}_target_${targetHandleType}`,
-        };
+      const targetHandleName = getTargetHandleName(
+        addNodeTypeDialog.nodeType,
+        addNodeTypeDialog.selectedNodeHandleType,
+        type
+      );
+      const edge = createEdge(
+        newNode,
+        addNodeTypeDialog,
+        type,
+        targetHandleName
+      );
+      if (edge) {
         dispatch(setEdge(edge));
       }
       const { zoom } = getViewport();
