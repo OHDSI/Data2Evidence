@@ -65,13 +65,16 @@ const snapGrid: [number, number] = [10, 10];
 const flowStyles: CSSProperties = { backgroundColor: "#faf8f8" };
 const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 
-const normalizeHandleName = (name: string): string => {
+const normalizeHandleName = (name: string | null | undefined): string => {
+  if (!name) {
+    return "";
+  }
   return name.toLowerCase().replace(/\s+/g, "");
 };
 
 const getTargetHandleName = (
   sourceNodeType: NodeType,
-  sourceNodeHandleType: string,
+  sourceNodeHandleType: string | null | undefined,
   targetNodeType: NodeType
 ): string => {
   // If target node has grouped inputs, get the appropriate group name
