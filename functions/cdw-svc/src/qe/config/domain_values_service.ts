@@ -8,8 +8,6 @@ import * as utilsLib from "../../utils/utils";
 import { Connection as connLib } from "@alp/alp-base-utils";
 type ConnectionInterface = connLib.ConnectionInterface;
 type CallBackInterface = connLib.CallBackInterface;
-import { env } from "../../configs";
-import { DUCKDB_FILE_NAME } from "../settings/Defaults";
 
 const log = Logger.CreateLogger("cdw-log");
 export function processRequest({
@@ -198,9 +196,6 @@ function getDistinctValuesFromData({
           whereConditions = aliasedRefFilter;
         }
       }
-      if(env.USE_DUCKDB === "true"){
-        placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
-      }
       sQuery = queryObjectLib.QueryObject.format(
         `WITH BASEQUERY AS (
                     SELECT DISTINCT  ( %UNSAFE )  AS "value" , R.%UNSAFE AS "text",
@@ -296,9 +291,6 @@ function getDistinctValuesFromReference(
     const refTextSelect = useRefText
       ? ` , R.${placeholderTableMap["@REF.TEXT"]} as "text" `
       : "";
-    if(env.USE_DUCKDB === "true"){
-      placeholderTableMap["@REF"] = placeholderTableMap["@REF"].replace(/[A-Za-z0-9_]+\./g, `${DUCKDB_FILE_NAME}.`)
-    }
     sQuery = queryObjectLib.QueryObject.format(
       `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC LIMIT %f `,
       aliasedRefExpression,
