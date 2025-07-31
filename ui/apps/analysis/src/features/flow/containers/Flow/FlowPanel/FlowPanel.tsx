@@ -56,7 +56,11 @@ import {
 } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
-import { hasGroupedInputs } from "../../Node/NodeTypes/mapping";
+import {
+  getNodeInputs,
+  getNodeOutputs,
+  hasGroupedInputs,
+} from "../../Node/NodeTypes/mapping";
 
 interface FlowPanelProps {}
 
@@ -313,35 +317,21 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         }
         return acc;
       }, {});
-
-      // HandleId is defined as NODEID_TYPE_CLASSIFIER_COLOR, compare the last portion
-      const getHandleColor = (handleId: string) => {
-        const arr = handleId.split("_");
-        return arr[arr.length - 1];
-      };
-      const sourceHandleType = getHandleColor(connection.sourceHandle);
-      const targetHandleType = getHandleColor(connection.targetHandle);
-      const isSameNodeType = sourceHandleType === targetHandleType;
-
-      // Allow sharedResources / moduleSpecifications connections to the strategus node
-      // this should be refactored to use a more generic approach. use the node connector mapping object
-      const isSourceModuleSpecification =
-        MODULE_SPECIFICATIONS_NODE_COLORS.includes(sourceHandleType);
-      const isSourceSharedResources =
-        SHARED_RESOURCES_NODE_COLORS.includes(sourceHandleType);
-      const isTargetModuleSpecification =
-        MODULE_SPECIFICATIONS_HANDLE_COLOR === targetHandleType;
-      const isTargetSharedResources =
-        SHARED_RESOURCES_HANDLE_COLOR === targetHandleType;
-
-      const isValidStrategusConnection =
-        (isSourceModuleSpecification && isTargetModuleSpecification) ||
-        (isSourceSharedResources && isTargetSharedResources);
-
+      const sourceNode = nodes.find((node) => node.id === source);
+      const targetNode = nodes.find((node) => node.id === target);
+      const sourceNodeType = sourceNode?.type as NodeType;
+      const targetNodeType = targetNode?.type as NodeType;
+      const sourceOutputs = getNodeOutputs(sourceNodeType).map(
+        (output) => output.node
+      );
+      const targetInputs = getNodeInputs(targetNodeType).map(
+        (input) => input.node
+      );
+      const isValidMapping =
+        sourceOutputs.includes(targetNodeType) &&
+        targetInputs.includes(sourceNodeType);
       return (
-        isDifferentNode &&
-        !isCircular(routes, source, target) &&
-        (isSameNodeType || isValidStrategusConnection)
+        isDifferentNode && !isCircular(routes, source, target) && isValidMapping
       );
     },
     [edges, nodes]
@@ -365,7 +355,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         onConnect={handleConnect}
         onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
-        // isValidConnection={isValidConnection}
+        isValidConnection={isValidConnection}
         style={flowStyles}
       >
         <Controls />
