@@ -14,6 +14,7 @@ import type { QueryFilterGroup } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import EditIcon from './icons/EditIcon.vue'
 import CloseIcon from './icons/CloseIcon.vue'
+import GroupCriteriaSidebar from './GroupCriteriaSidebar.vue'
 
 interface Props {
   group: QueryFilterGroup
@@ -88,6 +89,15 @@ const handleTitleKeydown = (event: KeyboardEvent) => {
   }
 }
 
+// Handle group criteria changes from sidebar
+const updateGroupCriteria = (groupCriteria: { type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'; count?: number }) => {
+  groupData.value = {
+    ...groupData.value,
+    criteriaType: groupCriteria.type,
+    criteriaCount: groupCriteria.count,
+  }
+}
+
 // Handle group type (operator) changes
 const updateGroupType = (newType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST') => {
   groupData.value = {
@@ -115,16 +125,6 @@ const removeGroup = () => {
   if (confirm('Are you sure you want to remove this criteria group?')) {
     emit('remove-group')
   }
-}
-
-// Toggle between group types by cycling through them
-const toggleGroupType = () => {
-  const types: ('ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST')[] = ['ALL', 'ANY', 'AT_LEAST', 'AT_MOST']
-  const currentType = localGroup.value.criteriaType || 'ALL'
-  const currentIndex = types.indexOf(currentType)
-  const nextIndex = (currentIndex + 1) % types.length
-  const nextType = types[nextIndex] || 'ALL'
-  updateGroupType(nextType)
 }
 
 // Removed duplicate criteria selection handler
@@ -173,15 +173,12 @@ const toggleGroupType = () => {
       </div>
       <!-- Group Content Area -->
       <div class="group-main">
-        <!-- Full-Height Sidebar -->
-        <div
-          class="group-sidebar"
-          :class="`group-sidebar--${localGroup.criteriaType?.toLowerCase() || 'all'}`"
-          @click="!readonly && toggleGroupType()"
-          :title="readonly ? '' : 'Click to change match type'"
-        >
-          <span class="sidebar-label">{{ localGroup.criteriaType || 'ALL' }}</span>
-        </div>
+        <!-- Group Criteria Sidebar -->
+        <GroupCriteriaSidebar
+          :group="localGroup"
+          :readonly="readonly"
+          @update-group-criteria="updateGroupCriteria"
+        />
         <!-- Group Content -->
         <div class="group-content">
           <!-- Events Container -->
@@ -202,6 +199,7 @@ const toggleGroupType = () => {
       </div>
     </div>
   </div>
+
 </template>
 
 <style lang="scss" scoped>
@@ -370,72 +368,6 @@ const toggleGroupType = () => {
     }
   }
 
-  .group-sidebar {
-    width: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    align-self: stretch; // Makes sidebar match the height of its flex container
-    border-radius: 0 0 0 8px; // Round left corners
-
-    // Default styling (ALL)
-    background: #000080;
-
-    // Different colors for different group types
-    &--all {
-      background: #000080;
-    }
-
-    &--any {
-      background: #dc2626; // Red like in the reference
-    }
-
-    &--at_least {
-      background: #059669; // Green
-    }
-
-    &--at_most {
-      background: #d97706; // Orange
-    }
-
-    &:hover:not(.readonly) {
-      opacity: 0.9;
-      transform: translateX(2px);
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-    }
-
-    &:active:not(.readonly) {
-      transform: translateX(0);
-      box-shadow: 1px 0 4px rgba(0, 0, 0, 0.1);
-    }
-
-    // Add subtle border to indicate different states
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  .sidebar-label {
-    writing-mode: sideways-lr;
-    text-orientation: sideways;
-    font-size: 13px;
-    font-weight: 700;
-    color: white;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    user-select: none;
-  }
 
   .group-content {
     flex: 1;

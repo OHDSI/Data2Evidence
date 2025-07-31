@@ -207,12 +207,19 @@ export interface SearchEmbeddingFlowRunDto {
   schema_name: string;
 }
 
+export interface KeyValue {
+  key: string;
+  value: string;
+}
+
 export interface IReactFlow {
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
+  variables: KeyValue[];
+  importLibs: string[];
 }
 
-interface IReactFlowNode {
+export interface IReactFlowNode {
   id: string;
   type: string;
   data: IFlowBasicNodeData | IFlowCsvNodeData;
@@ -276,12 +283,14 @@ export interface IFlowCsvNodeData extends IFlowBasicNodeData {
   encoding?: string;
 }
 
-interface IPrefectEdge {
+export interface IPrefectEdge {
   source?: string;
   target: string;
 }
 
 export interface IPrefectParameters {
+  variables?: KeyValue[];
+  import_libs?: string[];
   json_graph: {
     edges: IPrefectEdge;
     nodes: object;
@@ -297,22 +306,6 @@ interface IPrefectOptions {
 interface IPrefectTraceConfig {
   trace_mode: boolean;
   trace_db: string;
-}
-
-interface IReactFlowNode {
-  id: string;
-  type: string;
-  data: IFlowBasicNodeData | IFlowCsvNodeData;
-  position: {
-    x: number;
-    y: number;
-  };
-  sourcePosition: string;
-  targetPosition: string;
-  dragHandle: string;
-  width: number;
-  height: number;
-  parentNode?: string;
 }
 
 interface ICreateDatamodelFlowRunOptions {

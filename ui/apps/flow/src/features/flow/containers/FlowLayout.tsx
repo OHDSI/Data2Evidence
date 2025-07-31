@@ -8,7 +8,13 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import { dispatch, RootState } from "../../../store";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
+import {
+  replaceEdges,
+  replaceNodes,
+  replaceVariables,
+  replaceImportLibs,
+  setAddNodeTypeDialog,
+} from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
 import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
 import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
@@ -22,6 +28,7 @@ import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
 import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
 import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
+import { FlowVariablesButton } from "./Flow/FlowVariables/FlowVariablesButton";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
 import { selectFlowNodes } from "../selectors";
 import "./FlowLayout.scss";
@@ -52,16 +59,10 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
 
   useEffect(() => {
     if (!revisionId) {
-      let savedNodes = [];
-      let savedEdges = [];
-
-      if (dataflow?.flow) {
-        savedNodes = dataflow.flow.nodes;
-        savedEdges = dataflow.flow.edges;
-      }
-
-      dispatch(replaceNodes(savedNodes));
-      dispatch(replaceEdges(savedEdges));
+      dispatch(replaceNodes(dataflow?.flow?.nodes || []));
+      dispatch(replaceEdges(dataflow?.flow?.edges || []));
+      dispatch(replaceVariables(dataflow?.flow?.variables || []));
+      dispatch(replaceImportLibs(dataflow?.flow?.importLibs || []));
     }
   }, [dataflow, revisionId]);
 
@@ -100,6 +101,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
           <CreateGroupButton />
           <SyncFromRemoteButton />
           <Box display="flex" alignItems="center">
+            <FlowVariablesButton />
             <FlowSettingsButton />
             <ResultsPolling />
           </Box>
