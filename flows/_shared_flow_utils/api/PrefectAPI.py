@@ -57,7 +57,10 @@ def get_third_party_token() -> SecretStr:
     )
 
     response.raise_for_status()
-    get_third_party_token.third_party_token = SecretStr(response.json().get("id_token"))
+    id_token = response.json().get("id_token")
+    if not id_token:
+        raise ValueError("The response does not contain a valid 'id_token'.")
+    get_third_party_token.third_party_token = SecretStr(id_token)
     return get_third_party_token.third_party_token
 
 
