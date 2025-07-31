@@ -215,6 +215,9 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 logger=logger
             )
 
+            release_version = None
+            tag = None
+
             try:
                 # update release version or error msg
                 release_version = data_model[1:]
