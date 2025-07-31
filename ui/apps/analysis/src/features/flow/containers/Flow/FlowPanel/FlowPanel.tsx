@@ -46,14 +46,7 @@ import {
   NODE_TYPES,
   SelectNodeTypesDialog,
 } from "../../Node/NodeTypes";
-import {
-  NodeChoiceMap,
-  NodeTypeChoice,
-  SHARED_RESOURCES_NODE_COLORS,
-  MODULE_SPECIFICATIONS_NODE_COLORS,
-  SHARED_RESOURCES_HANDLE_COLOR,
-  MODULE_SPECIFICATIONS_HANDLE_COLOR,
-} from "../../Node/NodeTypes";
+import { NodeChoiceMap, NodeTypeChoice } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
 import {

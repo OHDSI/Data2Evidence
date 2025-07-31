@@ -247,36 +247,3 @@ export const INBOUND_CONNECTOR_STYLES = [
   ["30%", "45%", "60%", "75%"],
   ["25%", "40%", "55%", "70%", "85%"],
 ];
-
-const SHARED_RESOURCES_NODE_TYPES = [
-  "cohort_definition_set_node",
-  "negative_control_outcome_cohort_node",
-];
-const MODULE_SPECIFICATIONS_NODES_TYPES = [
-  "cohort_generator_node",
-  "cohort_diagnostic_node",
-  "cohort_incidence_node",
-  "characterization_node",
-  "cohort_method_node",
-  "self_controlled_case_series_node",
-  "patient_level_prediction_node",
-];
-
-const getNodeTypeColors = (nodeTypes: string[]) => {
-  let result = [];
-  for (let i = 0; i < nodeTypes.length; i++) {
-    if (NODE_CONNECTOR_MAPPING[nodeTypes[i]]) {
-      result.push(NODE_CONNECTOR_MAPPING[nodeTypes[i]].type);
-    }
-  }
-  return result;
-};
-
-export const SHARED_RESOURCES_NODE_COLORS = getNodeTypeColors(
-  SHARED_RESOURCES_NODE_TYPES
-);
-export const MODULE_SPECIFICATIONS_NODE_COLORS = getNodeTypeColors(
-  MODULE_SPECIFICATIONS_NODES_TYPES
-);
-export const SHARED_RESOURCES_HANDLE_COLOR = "steelblue";
-export const MODULE_SPECIFICATIONS_HANDLE_COLOR = "skyblue";
