@@ -1291,7 +1291,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 240s
+      start_period: 420s
       test:
         - CMD
         - wget
