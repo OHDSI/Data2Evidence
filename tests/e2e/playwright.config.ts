@@ -15,6 +15,10 @@ export default defineConfig({
     ignoreHTTPSErrors: true
   },
   retries: process.env.CI ? 3 : 0, // retry failed tests once
-  reporter: 'list',
-  workers: 1
+  reporter: [
+    ['list'], // You can combine multiple reporters
+    ['playwright-ctrf-json-reporter', {}]
+  ],
+  workers: 1,
+  maxFailures: process.env.CI ? 1 : 0
 })

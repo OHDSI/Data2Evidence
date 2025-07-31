@@ -13,6 +13,7 @@ export PG_SUPER_USER="${PG_SUPER_USER:-postgres}"
 export PG_SUPER_PASSWORD="${PG_SUPER_PASSWORD:-postgres}"
 export FHIR_CUSTOM_SCHEMA="${FHIR_CUSTOM_SCHEMA:-fhir}"
 
+
 # Redis configuration
 export REDIS_HOST="${REDIS_HOST:-localhost}"
 export REDIS_PORT="${REDIS_PORT:-6379}"

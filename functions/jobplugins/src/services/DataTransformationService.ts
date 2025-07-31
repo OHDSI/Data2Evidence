@@ -1,5 +1,5 @@
 import fs from "fs";
-import http from "http";
+import http from "isomorphic-git/http";
 import git from "isomorphic-git";
 import { JwtPayload, decode } from "jsonwebtoken";
 import * as path from "path";
