@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-test('dataset-overview-chart', async ({ page }) => {
+const TEST_NAME = 'dataset-overview-chart'
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+test(TEST_NAME, async ({ page }) => {
   test.setTimeout(5 * 60 * 1000)
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()

@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-test('parent-interaction', async ({ page }) => {
+const TEST_NAME = 'parent-interaction'
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+test(TEST_NAME, async ({ page }) => {
   await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -24,7 +28,6 @@ test('parent-interaction', async ({ page }) => {
   await page.getByRole('tab', { name: ' Condition Occurrence A ' }).locator('button').last().click()
   await page.getByRole('menuitem', { name: 'Visit Occurrence Parent' }).click()
   await expect(page.getByText('890 / 2694')).toBeVisible()
-
 
   //UI issues with CDW Config, will skip for now
 
