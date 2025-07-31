@@ -446,7 +446,7 @@ export const Terminology: FC<TerminologyProps> = ({
   }
   return (
     <WithDrawer onClose={onClickClose} isDrawer={isDrawer} open={open}>
-      <div className="terminology__container">
+      <div className="terminology__container" data-testid="terminology-container">
         {isDrawer && (
           <div
             style={{
