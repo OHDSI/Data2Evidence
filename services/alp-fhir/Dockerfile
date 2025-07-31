@@ -2,7 +2,7 @@ FROM ghcr.io/data2evidence/d2e-medplum:main AS builder
 
 COPY config.json .
 
-FROM denoland/deno:2.1.0
+FROM denoland/deno:2.1.13
 
 WORKDIR /home/docker/app
 
