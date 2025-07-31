@@ -43,9 +43,34 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
   // Nodes with no connections
   cohort_incidence_target_cohorts_node: createConnectorMap(),
   time_at_risk_node: createConnectorMap(),
-  default_covariate_settings_node: createConnectorMap(),
-  study_population_settings_node: createConnectorMap(),
-  exposure_node: createConnectorMap(),
+
+  default_covariate_settings_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "Patient Level Prediction",
+        "patient_level_prediction_node"
+      ),
+    ]
+  ),
+  study_population_settings_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "Patient Level Prediction",
+        "patient_level_prediction_node"
+      ),
+    ]
+  ),
+  exposure_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "Patient Level Prediction",
+        "patient_level_prediction_node"
+      ),
+    ]
+  ),
   era_covariate_settings_node: createConnectorMap(),
   calendar_time_covariate_settings_node: createConnectorMap(),
   seasonality_covariate_settings_node: createConnectorMap(),
@@ -73,13 +98,16 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
     ],
     [createConnection("Strategus", "strategus_node")]
   ),
-  cohort_method_analysis_node: createConnectorMap([
-    createConnection("Study Population", "study_population_settings_node"),
-    createConnection(
-      "Default Covariate Settings",
-      "default_covariate_settings_node"
-    ),
-  ]),
+  cohort_method_analysis_node: createConnectorMap(
+    [
+      createConnection("Study Population", "study_population_settings_node"),
+      createConnection(
+        "Default Covariate Settings",
+        "default_covariate_settings_node"
+      ),
+    ],
+    [createConnection("Cohort Method Node", "cohort_method_node")]
+  ),
   cohort_method_node: createConnectorMap(
     [
       createConnection(
@@ -123,7 +151,7 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
         "default_covariate_settings_node"
       ),
     ],
-    [createConnection("Strategus", "strategus_node")]
+    [createConnection("Module Specifications", "strategus_node")]
   ),
   treatment_patterns_node: createConnectorMap([
     createConnection("Target Cohorts", "cohort_target_node"),
@@ -155,7 +183,12 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
   ),
   nco_cohort_set_node: createConnectorMap(
     [],
-    [createConnection("NCO Cohort Set", "nco_cohort_set_node")]
+    [
+      createConnection(
+        "Negative Control Outcome",
+        "negative_control_outcome_cohort_node"
+      ),
+    ]
   ),
   cohort_generator_node: createConnectorMap(
     [],
@@ -252,4 +285,25 @@ export const getOutputCount = (nodeType: NodeType): number => {
 
 export const getAllNodeTypes = (): NodeType[] => {
   return Object.keys(NODE_CONNECTOR_MAPPING) as NodeType[];
+};
+
+// get the group name in the nested inputs for a node type
+// returns null if the node type does not have grouped inputs
+export const getGroupNameForNode = (
+  nestedNodeType: NodeType,
+  node: NodeType
+): string | null => {
+  if (!hasGroupedInputs(nestedNodeType)) {
+    return null;
+  }
+  const mapping = NODE_CONNECTOR_MAPPING[nestedNodeType];
+  if (!mapping) return null;
+
+  // Find the group that contains the node
+  const group = mapping.inputs.find(
+    (input): input is NodeConnectionGroup =>
+      "connections" in input &&
+      input.connections.some((conn) => conn.node === node)
+  );
+  return group ? group.name : null;
 };

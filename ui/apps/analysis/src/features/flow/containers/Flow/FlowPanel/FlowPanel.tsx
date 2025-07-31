@@ -53,6 +53,7 @@ import {
   getNodeInputs,
   getNodeOutputs,
   hasGroupedInputs,
+  getGroupNameForNode,
 } from "../../Node/NodeTypes/mapping";
 
 interface FlowPanelProps {}
@@ -71,6 +72,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       sourceNodeHandleType: string,
       newNodeType: NodeType
     ) => {
+      if (hasGroupedInputs(newNodeType)) {
+        const handle = getGroupNameForNode(newNodeType, sourceNodeType);
+        return `${newNodeType}_${handle.toLowerCase().replace(" ", "")}`;
+      }
       return hasGroupedInputs(sourceNodeType)
         ? `${sourceNodeType}_${sourceNodeHandleType
             .toLowerCase()
@@ -87,11 +92,15 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     targetHandleName: string
   ): EdgeState | undefined => {
     if (!newNode.id || !dialog.selectedNodeId || !dialog.handleType) return;
+
     const isOutput = dialog.handleType === "output";
     const sourceId = isOutput ? dialog.selectedNodeId : newNode.id;
     const targetId = isOutput ? newNode.id : dialog.selectedNodeId;
     const sourceHandleType = isOutput ? newNodeType : dialog.nodeType;
-    const targetHandleType = isOutput ? dialog.nodeType : targetHandleName;
+    const targetHandleType =
+      isOutput && !hasGroupedInputs(newNodeType)
+        ? dialog.nodeType
+        : targetHandleName;
     return {
       id: uuidv4(),
       source: sourceId,
@@ -270,12 +279,14 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         addNodeTypeDialog.selectedNodeHandleType,
         type
       );
+      console.log("targetHandleName", targetHandleName);
       const edge = createEdge(
         newNode,
         addNodeTypeDialog,
         type,
         targetHandleName
       );
+      console.log("Creating edge", edge);
       if (edge) {
         dispatch(setEdge(edge));
       }
