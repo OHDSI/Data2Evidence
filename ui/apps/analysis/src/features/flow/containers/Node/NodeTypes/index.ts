@@ -91,7 +91,7 @@ export const NODE_COLORS: {
   cohort_definition_set_node: "grey",
   exposure_node: "lightgrey",
   strategus_node: "black",
-  treatment_patterns_node: "salmon",
+  treatment_patterns_node: "teal",
   cohort_event_node: "teal",
   cohort_target_node: "teal",
   cohort_exit_node: "teal",
