@@ -38,12 +38,11 @@ const createConnectorMap = (
   outputs,
 });
 
-// Define the mapping with better structure and readability
 export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
-  // Nodes with no connections
   cohort_incidence_target_cohorts_node: createConnectorMap(),
   time_at_risk_node: createConnectorMap(),
 
+  // Covariate settings nodes
   default_covariate_settings_node: createConnectorMap(
     [],
     [
@@ -53,6 +52,34 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
       ),
     ]
   ),
+  era_covariate_settings_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "SCSS Analysis",
+        "self_controlled_case_series_analysis_node"
+      ),
+    ]
+  ),
+  calendar_time_covariate_settings_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "SCSS Analysis",
+        "self_controlled_case_series_analysis_node"
+      ),
+    ]
+  ),
+  seasonality_covariate_settings_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "SCSS Analysis",
+        "self_controlled_case_series_analysis_node"
+      ),
+    ]
+  ),
+
   study_population_settings_node: createConnectorMap(
     [],
     [
@@ -71,31 +98,22 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
       ),
     ]
   ),
-  era_covariate_settings_node: createConnectorMap(),
-  calendar_time_covariate_settings_node: createConnectorMap(),
-  seasonality_covariate_settings_node: createConnectorMap(),
+  outcomes_node: createConnectorMap(
+    [],
+    [
+      createConnection(
+        "Target Comparator Outcomes",
+        "target_comparator_outcomes_node"
+      ),
+    ]
+  ),
 
-  // Nodes with multiple input connections
   negative_control_outcome_cohort_node: createConnectorMap(
     [createConnection("ncoCohortSet", "nco_cohort_set_node")],
     [createConnection("Strategus", "strategus_node")]
   ),
-  characterization_node: createConnectorMap(
-    [createConnection("Covariate Settings", "default_covariate_settings_node")],
-    [createConnection("Strategus", "strategus_node")]
-  ),
   target_comparator_outcomes_node: createConnectorMap(
     [createConnection("Outcomes", "outcomes_node")],
-    [createConnection("Strategus", "strategus_node")]
-  ),
-  cohort_incidence_node: createConnectorMap(
-    [
-      createConnection(
-        "Cohort Incident Target Cohorts",
-        "cohort_incidence_target_cohorts_node"
-      ),
-      createConnection("Time At Risk", "time_at_risk_node"),
-    ],
     [createConnection("Strategus", "strategus_node")]
   ),
   cohort_method_analysis_node: createConnectorMap(
@@ -107,16 +125,6 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
       ),
     ],
     [createConnection("Cohort Method Node", "cohort_method_node")]
-  ),
-  cohort_method_node: createConnectorMap(
-    [
-      createConnection(
-        "Target Comparator Outcomes",
-        "target_comparator_outcomes_node"
-      ),
-      createConnection("CM Analysis", "cohort_method_analysis_node"),
-    ],
-    [createConnection("Strategus", "strategus_node")]
   ),
   self_controlled_case_series_analysis_node: createConnectorMap([
     createConnectionGroup("Covariate Settings", [
@@ -132,34 +140,12 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
     ]),
     createConnection("Study Population", "study_population_settings_node"),
   ]),
-  self_controlled_case_series_node: createConnectorMap(
-    [
-      createConnection("Exposures", "exposure_node"),
-      createConnection(
-        "SCCS Analysis",
-        "self_controlled_case_series_analysis_node"
-      ),
-    ],
-    [createConnection("Strategus", "strategus_node")]
-  ),
-  patient_level_prediction_node: createConnectorMap(
-    [
-      createConnection("Exposures", "exposure_node"),
-      createConnection("Study Population", "study_population_settings_node"),
-      createConnection(
-        "Default Covariate Settings",
-        "default_covariate_settings_node"
-      ),
-    ],
-    [createConnection("Module Specifications", "strategus_node")]
-  ),
   treatment_patterns_node: createConnectorMap([
     createConnection("Target Cohorts", "cohort_target_node"),
     createConnection("Event Cohorts", "cohort_event_node"),
     createConnection("Exit Cohorts", "cohort_exit_node"),
   ]),
 
-  // Complex nodes with grouped connections
   strategus_node: createConnectorMap([
     createConnectionGroup("Shared Resources", [
       createConnection("Cohort Definition Set", "cohort_definition_set_node"),
@@ -176,7 +162,7 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
     ]),
   ]),
 
-  // Nodes with output connections only
+  // Resource nodes
   cohort_definition_set_node: createConnectorMap(
     [],
     [createConnection("Strategus", "strategus_node")]
@@ -190,6 +176,8 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
       ),
     ]
   ),
+
+  // Module specification nodes
   cohort_generator_node: createConnectorMap(
     [],
     [createConnection("Strategus", "strategus_node")]
@@ -198,15 +186,53 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
     [],
     [createConnection("Strategus", "strategus_node")]
   ),
-  outcomes_node: createConnectorMap(
-    [],
+  cohort_incidence_node: createConnectorMap(
+    [
+      createConnection(
+        "Cohort Incident Target Cohorts",
+        "cohort_incidence_target_cohorts_node"
+      ),
+      createConnection("Time At Risk", "time_at_risk_node"),
+    ],
+    [createConnection("Strategus", "strategus_node")]
+  ),
+  cohort_method_node: createConnectorMap(
     [
       createConnection(
         "Target Comparator Outcomes",
         "target_comparator_outcomes_node"
       ),
-    ]
+      createConnection("CM Analysis", "cohort_method_analysis_node"),
+    ],
+    [createConnection("Strategus", "strategus_node")]
   ),
+  self_controlled_case_series_node: createConnectorMap(
+    [
+      createConnection("Exposures", "exposure_node"),
+      createConnection(
+        "SCCS Analysis",
+        "self_controlled_case_series_analysis_node"
+      ),
+    ],
+    [createConnection("Strategus", "strategus_node")]
+  ),
+  characterization_node: createConnectorMap(
+    [createConnection("Covariate Settings", "default_covariate_settings_node")],
+    [createConnection("Strategus", "strategus_node")]
+  ),
+  patient_level_prediction_node: createConnectorMap(
+    [
+      createConnection("Exposures", "exposure_node"),
+      createConnection("Study Population", "study_population_settings_node"),
+      createConnection(
+        "Default Covariate Settings",
+        "default_covariate_settings_node"
+      ),
+    ],
+    [createConnection("Module Specifications", "strategus_node")]
+  ),
+
+  // Treatment Patterns nodes
   cohort_event_node: createConnectorMap(
     [],
     [createConnection("Treatment Patterns", "treatment_patterns_node")]
@@ -259,7 +285,7 @@ export const hasInputs = (nodeType: NodeType): boolean => {
   return getNodeInputs(nodeType).length > 0;
 };
 
-// Helper to check if a node has grouped inputs
+// check if a node has grouped inputs
 export const hasGroupedInputs = (nodeType: NodeType): boolean => {
   const mapping = NODE_CONNECTOR_MAPPING[nodeType];
   if (!mapping) return false;
@@ -288,7 +314,6 @@ export const getAllNodeTypes = (): NodeType[] => {
 };
 
 // get the group name in the nested inputs for a node type
-// returns null if the node type does not have grouped inputs
 export const getGroupNameForNode = (
   nestedNodeType: NodeType,
   node: NodeType
