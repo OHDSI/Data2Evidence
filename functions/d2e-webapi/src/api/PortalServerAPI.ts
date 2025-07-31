@@ -117,7 +117,9 @@ export class PortalServerAPI {
       const params = new URLSearchParams();
       params.append("datasetId", datasetId);
 
-      const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}/${atlasCohortDefinitionId}`;
+      const url = `${this.baseURL}/user-artifact/${
+        UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS
+      }/${encodeURIComponent(atlasCohortDefinitionId)}`;
       const result = await axios.delete(url, { params, ...options });
       return result.data;
     } catch (error) {
@@ -163,7 +165,9 @@ export class PortalServerAPI {
       const params = new URLSearchParams();
       params.append("datasetId", datasetId);
 
-      const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}/${atlasCohortDefinitionId}`;
+      const url = `${this.baseURL}/user-artifact/${
+        UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS
+      }/${encodeURIComponent(atlasCohortDefinitionId)}`;
       const result = await axios.get(url, { params, ...options });
 
       if (result.data.length === 0) {
