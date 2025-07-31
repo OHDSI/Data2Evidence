@@ -115,7 +115,7 @@ jobs:
           npm run init
 
       - name: e2e tests
-        continue-on-error: true
+        # continue-on-error: true
         run: |
           cd ./tests/e2e
           npm test
@@ -127,7 +127,13 @@ jobs:
           name: error-context
           path: tests/e2e/test-results/**/*
 
-
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: './tests/e2e/ctrf/*.json'
+          file-report: true
+        
       - name: Stop d2e services
         if: success() || failure()
         id: stop
