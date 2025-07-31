@@ -45,6 +45,7 @@ jest.mock("@mui/material", () => {
 
 // Mock portal components
 jest.mock("@portal/components", () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { forwardRef } = require("react");
 
   return {
@@ -280,7 +281,9 @@ describe("ConceptHierarchy Component", () => {
     });
 
     it("handles API errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {
+        return;
+      });
       mockGetConceptHierarchy.mockRejectedValue(new Error("API Error"));
 
       renderWithRouter(<ConceptHierarchy {...defaultProps} />);
@@ -295,7 +298,7 @@ describe("ConceptHierarchy Component", () => {
       consoleSpy.mockRestore();
     });
 
-    it("refetches data when conceptId changes", async () => {
+    it("re-fetches data when conceptId changes", async () => {
       const { rerender } = renderWithRouter(<ConceptHierarchy {...defaultProps} />);
 
       await waitFor(() => {
@@ -313,7 +316,7 @@ describe("ConceptHierarchy Component", () => {
       });
     });
 
-    it("refetches data when datasetId changes", async () => {
+    it("re-fetches data when datasetId changes", async () => {
       const { rerender } = renderWithRouter(<ConceptHierarchy {...defaultProps} />);
 
       await waitFor(() => {
@@ -461,7 +464,6 @@ describe("ConceptHierarchy Component", () => {
         expect(mockGetConceptHierarchy).toHaveBeenCalled();
       });
 
-      const initialCallCount = mockGetConceptHierarchy.mock.calls.length;
       mockGetConceptHierarchy.mockClear();
 
       // Rapidly change levels
