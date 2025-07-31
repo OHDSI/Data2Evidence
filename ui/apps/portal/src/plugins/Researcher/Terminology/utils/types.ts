@@ -50,6 +50,7 @@ export type ConceptSetWithConceptDetails = ConceptSet & {
 // Vue requires id as a string instead of number because addThis.value in ui/apps/vue-mri-ui-lib/src/lib/ui/app-tag-input.vue
 export type OnCloseReturnValues = {
   currentConceptSet: (Omit<ConceptSet, "id"> & { id: string }) | null;
+  selectedConcepts?: FhirValueSetExpansionContainsWithExt[];
 };
 
 export type FilterOptions = {

@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState, useMemo } from "react";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { Button, Checkbox } from "@portal/components";
 import TerminologyList from "./components/TerminologyList/TerminologyList";
@@ -21,12 +21,13 @@ export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
   selectedConceptSetId?: number;
-  mode?: "CONCEPT_MAPPING" | "CONCEPT_SET" | "CONCEPT_SEARCH";
+  mode?: "CONCEPT_MAPPING" | "CONCEPT_SET" | "CONCEPT_SEARCH" | "CONCEPT_MULTI_SELECT";
   selectedDatasetId?: string;
   defaultFilters?: {
     id: string;
     value: string[];
   }[];
+  initialDomainFilter?: string;
 }
 
 const WithDrawer = ({
@@ -147,18 +148,60 @@ const TabSection = ({
   currentTabNo,
   changeTab,
   selectedConceptsCount,
+  mode,
 }: {
   currentTabNo: TabName;
   changeTab(tabName: TabName): void;
   selectedConceptsCount: number;
+  mode?: string;
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const tabWidthPx = 220;
+
+  const getAvailableTabs = () => {
+    if (mode === "CONCEPT_MULTI_SELECT") {
+      return [
+        { name: tabNames.SEARCH, label: getText(i18nKeys.TERMINOLOGY__SEARCH) },
+        {
+          name: tabNames.SELECTED,
+          label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
+        },
+      ];
+    }
+    if (mode === "CONCEPT_SET") {
+      return [
+        { name: tabNames.SEARCH, label: getText(i18nKeys.TERMINOLOGY__SEARCH) },
+        {
+          name: tabNames.SELECTED,
+          label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
+        },
+        {
+          name: tabNames.RELATED,
+          label: getText(i18nKeys.TERMINOLOGY__RELATED_CONCEPTS),
+        },
+      ];
+    }
+    // Default tabs for other modes
+    return [
+      { name: tabNames.SEARCH, label: getText(i18nKeys.TERMINOLOGY__SEARCH) },
+      {
+        name: tabNames.SELECTED,
+        label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
+      },
+      {
+        name: tabNames.RELATED,
+        label: getText(i18nKeys.TERMINOLOGY__RELATED_CONCEPTS),
+      },
+    ];
+  };
+
+  const availableTabs = getAvailableTabs();
+
   return (
     <div style={{ height: "60px" }}>
       <Tabs
         value={currentTabNo}
-        onChange={(e, value) => {
+        onChange={(_, value) => {
           changeTab(value);
         }}
         centered
@@ -170,39 +213,38 @@ const TabSection = ({
           },
         }}
       >
-        <Tab sx={{ width: `${tabWidthPx}px` }} label={getText(i18nKeys.TERMINOLOGY__SEARCH)} value={tabNames.SEARCH} />
-        <Tab
-          sx={{ width: `${tabWidthPx}px` }}
-          label={
-            <>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                {selectedConceptsCount ? (
-                  <div
-                    style={{
-                      backgroundColor: "#000080",
-                      color: "white",
-                      minWidth: "20px",
-                      height: "20px",
-                      borderRadius: "10px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ paddingLeft: "5px", paddingRight: "5px" }}>{selectedConceptsCount}</div>
-                  </div>
-                ) : null}
-                <div style={{ marginLeft: "10px" }}>{getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS)}</div>
-              </div>
-            </>
-          }
-          value={tabNames.SELECTED}
-        />
-        <Tab
-          sx={{ width: `${tabWidthPx}px` }}
-          label={getText(i18nKeys.TERMINOLOGY__RELATED_CONCEPTS)}
-          value={tabNames.RELATED}
-        />
+        {availableTabs.map((tab) => (
+          <Tab
+            key={tab.name}
+            sx={{ width: `${tabWidthPx}px` }}
+            label={
+              tab.name === tabNames.SELECTED ? (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  {selectedConceptsCount ? (
+                    <div
+                      style={{
+                        backgroundColor: "#000080",
+                        color: "white",
+                        minWidth: "20px",
+                        height: "20px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ paddingLeft: "5px", paddingRight: "5px" }}>{selectedConceptsCount}</div>
+                    </div>
+                  ) : null}
+                  <div style={{ marginLeft: "10px" }}>{tab.label}</div>
+                </div>
+              ) : (
+                tab.label
+              )
+            }
+            value={tab.name}
+          />
+        ))}
       </Tabs>
     </div>
   );
@@ -219,6 +261,7 @@ export const Terminology: FC<TerminologyProps> = ({
   mode = "CONCEPT_SEARCH",
   selectedDatasetId,
   defaultFilters,
+  initialDomainFilter,
 }: TerminologyProps) => {
   const { getText, i18nKeys } = useTranslation();
   const userId = baseUserId || metadata?.userId;
@@ -239,6 +282,32 @@ export const Terminology: FC<TerminologyProps> = ({
   const { idTokenClaims } = useToken();
   const activeDatasetId = selectedDatasetId || activeDataset.id;
   const isConceptSet = mode === "CONCEPT_SET";
+  const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
+
+  // Show simplified interface for multi-select mode
+  const showConceptSetFeatures = isConceptSet;
+  const showTabNavigation = isConceptSet || isConceptMultiSelect;
+
+  // Prepare domain-specific default filters
+  const domainSpecificFilters = useMemo(() => {
+    if (initialDomainFilter && isConceptMultiSelect) {
+      const domainFilter = {
+        id: "domainId",
+        value: [initialDomainFilter],
+      };
+
+      // Combine with any existing default filters
+      return defaultFilters ? [...defaultFilters, domainFilter] : [domainFilter];
+    }
+    return defaultFilters;
+  }, [initialDomainFilter, isConceptMultiSelect, defaultFilters]);
+
+  const getDomainContextMessage = useCallback(() => {
+    if (isConceptMultiSelect && initialDomainFilter) {
+      return `Showing concepts from ${initialDomainFilter} domain. You can modify filters to explore other domains.`;
+    }
+    return null;
+  }, [isConceptMultiSelect, initialDomainFilter]);
 
   const resetState = useCallback(() => {
     setConceptId(null);
@@ -342,7 +411,7 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const onSelectConceptId = useCallback(
     (concept: FhirValueSetExpansionContainsWithExt) => {
-      if (isConceptSet) {
+      if (isConceptSet || isConceptMultiSelect) {
         const selectedConceptsCopy = JSON.parse(
           JSON.stringify(selectedConcepts)
         ) as FhirValueSetExpansionContainsWithExt[];
@@ -352,12 +421,14 @@ export const Terminology: FC<TerminologyProps> = ({
         if (conceptIndex > -1) {
           selectedConceptsCopy.splice(conceptIndex, 1);
         } else {
-          // Initialize values used for selected concepts
           const conceptToSelect: FhirValueSetExpansionContainsWithExt = {
             ...concept,
-            useDescendants: false,
-            useMapped: false,
-            isExcluded: false,
+            // Only add advanced options for concept set mode
+            ...(isConceptSet && {
+              useDescendants: false,
+              useMapped: false,
+              isExcluded: false,
+            }),
           };
           selectedConceptsCopy.push(conceptToSelect);
         }
@@ -370,7 +441,7 @@ export const Terminology: FC<TerminologyProps> = ({
         return;
       }
     },
-    [isConceptSet, onConceptIdSelect, resetState, selectedConcepts, sortAndSetSelectedConcepts]
+    [isConceptSet, isConceptMultiSelect, onConceptIdSelect, resetState, selectedConcepts, sortAndSetSelectedConcepts]
   );
 
   const toggleDescendantsAndMapped = useCallback(
@@ -394,7 +465,7 @@ export const Terminology: FC<TerminologyProps> = ({
     [selectedConcepts, sortAndSetSelectedConcepts]
   );
 
-  const showAddIcon = !!(onConceptIdSelect || isConceptSet);
+  const showAddIcon = !!(onConceptIdSelect || isConceptSet || isConceptMultiSelect);
 
   useEffect(() => {
     // If new concept set
@@ -426,20 +497,30 @@ export const Terminology: FC<TerminologyProps> = ({
       return;
     }
 
-    const onCloseReturnValues: OnCloseReturnValues = {
-      currentConceptSet: currentConceptSet
-        ? {
-            ...currentConceptSet,
-            id: currentConceptSet.id.toString(),
-          }
-        : currentConceptSet,
-    };
-    // Run some callback to make data available to caller app
-    // When using drawer, component is no unmounted
-    // To return values for non drawer mode, return from useEffect.
-    onClose(onCloseReturnValues);
+    if (isConceptMultiSelect) {
+      // Return selected concepts for multi-select mode
+      onClose({
+        currentConceptSet: null,
+        selectedConcepts: selectedConcepts,
+      });
+    } else if (isConceptSet) {
+      // Return concept set for concept set mode
+      const onCloseReturnValues: OnCloseReturnValues = {
+        currentConceptSet: currentConceptSet
+          ? {
+              ...currentConceptSet,
+              id: currentConceptSet.id.toString(),
+            }
+          : currentConceptSet,
+      };
+      onClose(onCloseReturnValues);
+    } else {
+      // Other modes - just close without sending anything special
+      onClose({ currentConceptSet: null });
+    }
+
     resetState();
-  }, [currentConceptSet, onClose, resetState]);
+  }, [currentConceptSet, onClose, resetState, selectedConcepts, isConceptMultiSelect, isConceptSet]);
 
   if (!activeDatasetId) {
     return null;
@@ -459,7 +540,11 @@ export const Terminology: FC<TerminologyProps> = ({
             }}
           >
             <div style={{ color: "#000080", marginLeft: 10, fontWeight: 500 }}>
-              {isConceptSet ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS) : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
+              {isConceptSet
+                ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
+                : isConceptMultiSelect
+                ? getText(i18nKeys.TERMINOLOGY__SELECT_CONCEPTS)
+                : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
             </div>
 
             <div style={{ color: "#000080", marginRight: 10, cursor: "pointer" }} onClick={onClickClose}>
@@ -468,7 +553,7 @@ export const Terminology: FC<TerminologyProps> = ({
           </div>
         )}
 
-        {isConceptSet ? (
+        {showConceptSetFeatures ? (
           <NameSection
             conceptSetName={conceptSetName}
             setConceptSetName={setConceptSetName}
@@ -491,9 +576,21 @@ export const Terminology: FC<TerminologyProps> = ({
             flexDirection: "column",
           }}
         >
-          {isConceptSet ? (
-            <TabSection currentTabNo={tab} changeTab={changeTab} selectedConceptsCount={selectedConcepts.length} />
+          {showTabNavigation ? (
+            <TabSection
+              currentTabNo={tab}
+              changeTab={changeTab}
+              selectedConceptsCount={selectedConcepts.length}
+              mode={mode}
+            />
           ) : null}
+          {getDomainContextMessage() && (
+            <div className="domain-context-message" style={{ padding: "10px 0" }}>
+              <Typography variant="caption" color="textSecondary">
+                {getDomainContextMessage()}
+              </Typography>
+            </div>
+          )}
           <div style={{ display: "flex", overflow: "auto", height: "100%" }}>
             <div
               className="terminology__search"
@@ -507,7 +604,6 @@ export const Terminology: FC<TerminologyProps> = ({
                   selectedConceptId={conceptId}
                   onSelectConceptId={onSelectConceptId}
                   initialInput={initialInput}
-                  isConceptSet={isConceptSet}
                   selectedConcepts={selectedConcepts}
                   tab={tab}
                   toggleDescendantsAndMapped={toggleDescendantsAndMapped}
@@ -516,7 +612,8 @@ export const Terminology: FC<TerminologyProps> = ({
                   setConceptsResult={setConceptsResult}
                   datasetId={activeDatasetId}
                   isDrawer={isDrawer}
-                  defaultFilters={defaultFilters}
+                  defaultFilters={domainSpecificFilters}
+                  mode={mode}
                 />
               )}
             </div>
