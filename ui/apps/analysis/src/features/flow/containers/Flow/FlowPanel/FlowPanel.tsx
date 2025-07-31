@@ -38,7 +38,7 @@ import {
 import { dispatch, RootState } from "../../../../../store";
 import { selectFlowNodes, selectLastNode } from "../../../selectors";
 import { useGetLatestDataflowByIdQuery } from "../../../slices";
-import { EdgeState, NodeState } from "../../../types";
+import { EdgeState, NodeState, AddNodeTypeDialogState } from "../../../types";
 import {
   getNodeClassName,
   getNodeColors,
@@ -65,50 +65,95 @@ const snapGrid: [number, number] = [10, 10];
 const flowStyles: CSSProperties = { backgroundColor: "#faf8f8" };
 const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 
-export const FlowPanel: FC<FlowPanelProps> = () => {
-  const getTargetHandleName = useCallback(
-    (
-      sourceNodeType: NodeType,
-      sourceNodeHandleType: string,
-      newNodeType: NodeType
-    ) => {
-      if (hasGroupedInputs(newNodeType)) {
-        const handle = getGroupNameForNode(newNodeType, sourceNodeType);
-        return `${newNodeType}_${handle.toLowerCase().replace(" ", "")}`;
-      }
-      return hasGroupedInputs(sourceNodeType)
-        ? `${sourceNodeType}_${sourceNodeHandleType
-            .toLowerCase()
-            .replace(" ", "")}`
-        : newNodeType;
-    },
-    []
+const normalizeHandleName = (name: string): string => {
+  return name.toLowerCase().replace(/\s+/g, "");
+};
+
+const getTargetHandleName = (
+  sourceNodeType: NodeType,
+  sourceNodeHandleType: string,
+  targetNodeType: NodeType
+): string => {
+  // If target node has grouped inputs, get the appropriate group name
+  if (hasGroupedInputs(targetNodeType)) {
+    const groupName = getGroupNameForNode(targetNodeType, sourceNodeType);
+    return `${targetNodeType}_${normalizeHandleName(groupName)}`;
+  }
+
+  // If source node has grouped inputs, use the source handle type
+  if (hasGroupedInputs(sourceNodeType)) {
+    return `${sourceNodeType}_${normalizeHandleName(sourceNodeHandleType)}`;
+  }
+
+  // Default case: use target node type
+  return targetNodeType;
+};
+
+/**
+ * Configuration for edge creation based on connection direction
+ */
+interface EdgeConnectionConfig {
+  sourceId: string;
+  targetId: string;
+  sourceHandleType: NodeType;
+  targetHandleType: string;
+}
+
+// get edge connection config based on handle direction
+const getEdgeConnectionConfig = (
+  newNode: NodeState,
+  dialog: AddNodeTypeDialogState,
+  newNodeType: NodeType,
+  targetHandleName: string
+): EdgeConnectionConfig => {
+  const isOutputConnection = dialog.handleType === "output";
+
+  if (isOutputConnection) {
+    return {
+      sourceId: dialog.selectedNodeId!,
+      targetId: newNode.id!,
+      sourceHandleType: newNodeType,
+      targetHandleType: hasGroupedInputs(newNodeType)
+        ? targetHandleName
+        : dialog.nodeType!,
+    };
+  }
+
+  return {
+    sourceId: newNode.id!,
+    targetId: dialog.selectedNodeId!,
+    sourceHandleType: dialog.nodeType!,
+    targetHandleType: targetHandleName,
+  };
+};
+
+const createEdge = (
+  newNode: NodeState,
+  dialog: AddNodeTypeDialogState,
+  newNodeType: NodeType,
+  targetHandleName: string
+): EdgeState | undefined => {
+  if (!newNode.id || !dialog.selectedNodeId || !dialog.handleType) {
+    return undefined;
+  }
+
+  const config = getEdgeConnectionConfig(
+    newNode,
+    dialog,
+    newNodeType,
+    targetHandleName
   );
 
-  const createEdge = (
-    newNode: NodeState,
-    dialog: typeof addNodeTypeDialog, // contains the selected node type and handle type
-    newNodeType: NodeType,
-    targetHandleName: string
-  ): EdgeState | undefined => {
-    if (!newNode.id || !dialog.selectedNodeId || !dialog.handleType) return;
-
-    const isOutput = dialog.handleType === "output";
-    const sourceId = isOutput ? dialog.selectedNodeId : newNode.id;
-    const targetId = isOutput ? newNode.id : dialog.selectedNodeId;
-    const sourceHandleType = isOutput ? newNodeType : dialog.nodeType;
-    const targetHandleType =
-      isOutput && !hasGroupedInputs(newNodeType)
-        ? dialog.nodeType
-        : targetHandleName;
-    return {
-      id: uuidv4(),
-      source: sourceId,
-      target: targetId,
-      sourceHandle: `${sourceId}_source_${sourceHandleType}`,
-      targetHandle: `${targetId}_target_${targetHandleType}`,
-    };
+  return {
+    id: uuidv4(),
+    source: config.sourceId,
+    target: config.targetId,
+    sourceHandle: `${config.sourceId}_source_${config.sourceHandleType}`,
+    targetHandle: `${config.targetId}_target_${config.targetHandleType}`,
   };
+};
+
+export const FlowPanel: FC<FlowPanelProps> = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
@@ -279,14 +324,14 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         addNodeTypeDialog.selectedNodeHandleType,
         type
       );
-      console.log("targetHandleName", targetHandleName);
+
       const edge = createEdge(
         newNode,
         addNodeTypeDialog,
         type,
         targetHandleName
       );
-      console.log("Creating edge", edge);
+
       if (edge) {
         dispatch(setEdge(edge));
       }
