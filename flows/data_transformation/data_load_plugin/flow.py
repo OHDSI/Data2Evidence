@@ -33,7 +33,7 @@ def data_load_plugin(options: DataloadOptions):
     chunksize = options.chunksize if options.chunksize else None
     
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code) # Todo:,schema_name=schema)
+                  database_code=database_code)
 
     truncate_tables(table_list=tables_to_truncate,
                     schema=schema,
