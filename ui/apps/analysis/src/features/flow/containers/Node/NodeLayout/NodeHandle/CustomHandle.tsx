@@ -4,11 +4,13 @@ import { HandleType } from "reactflow";
 import { NodeType } from "../../NodeTypes";
 import { AddNodeButton } from "./AddNodeButton/AddNodeButton";
 import "./CustomHandle.scss";
+import { hasGroupedInputs } from "../../NodeTypes/mapping";
 
 export interface CustomHandleProps {
   name: string;
   color: string;
   type: HandleType;
+  sourceNodeType?: NodeType;
   handleNodeType: string;
   node: NodeProps<any>;
   style: object;
@@ -17,10 +19,15 @@ export const CustomHandle = ({
   name,
   color,
   type,
+  sourceNodeType,
   handleNodeType,
   node,
   style,
 }: CustomHandleProps) => {
+  const handleName =
+    hasGroupedInputs(sourceNodeType) && sourceNodeType
+      ? `${sourceNodeType}_${handleNodeType.toLowerCase().replace(" ", "")}`
+      : handleNodeType;
   return (
     <div
       style={{
@@ -35,7 +42,7 @@ export const CustomHandle = ({
       <Handle
         className="custom-handle"
         type={type}
-        id={`${node.id}_${type}_${handleNodeType}`}
+        id={`${node.id}_${type}_${handleName}`}
         position={type === "source" ? Position.Right : Position.Left}
         style={{
           position: "absolute",

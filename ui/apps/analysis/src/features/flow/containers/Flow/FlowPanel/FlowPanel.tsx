@@ -56,7 +56,7 @@ import {
 } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
-import { node } from "webpack";
+import { hasGroupedInputs } from "../../Node/NodeTypes/mapping";
 
 interface FlowPanelProps {}
 
@@ -233,6 +233,14 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
 
+      const targetHandleName = hasGroupedInputs(addNodeTypeDialog.nodeType)
+        ? `${
+            addNodeTypeDialog.nodeType
+          }_${addNodeTypeDialog.selectedNodeHandleType
+            .toLowerCase()
+            .replace(" ", "")}`
+        : type;
+
       let edge: EdgeState | undefined;
       if (
         newNode.id &&
@@ -254,7 +262,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         const targetHandleType =
           addNodeTypeDialog.handleType === "output"
             ? addNodeTypeDialog.nodeType
-            : type;
+            : targetHandleName;
+
         edge = {
           id: uuidv4(),
           source: sourceId,
@@ -303,7 +312,6 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       };
       const sourceHandleType = getHandleColor(connection.sourceHandle);
       const targetHandleType = getHandleColor(connection.targetHandle);
-
       const isSameNodeType = sourceHandleType === targetHandleType;
 
       // Allow sharedResources / moduleSpecifications connections to the strategus node
@@ -348,7 +356,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         onConnect={handleConnect}
         onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
-        isValidConnection={isValidConnection}
+        // isValidConnection={isValidConnection}
         style={flowStyles}
       >
         <Controls />

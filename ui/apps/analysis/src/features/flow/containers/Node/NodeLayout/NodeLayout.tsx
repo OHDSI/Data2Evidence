@@ -59,6 +59,7 @@ export const NodeLayout = <T extends NodeDataState>({
           key={group.name}
           name={group.name}
           color={NODE_COLORS["strategus_node"]}
+          sourceNodeType={node.type as NodeType}
           handleNodeType={group.name}
           node={node}
           style={{

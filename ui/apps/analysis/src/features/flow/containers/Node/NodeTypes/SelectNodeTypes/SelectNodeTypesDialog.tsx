@@ -28,7 +28,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   ...props
 }) => {
   const [hideExperimental, setHideExperimental] = useState(true);
-  console.log("select handleNodeType:", handleNodeType);
+
   const handleClose = useCallback(
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
