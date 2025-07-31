@@ -32,6 +32,23 @@ export class PortalServerAPI {
     }
   }
 
+  async getGitStudies() {
+    try {
+      const url = `${this.baseURL}/git-studies/studies`;
+      const options = this.createOptions("GET");
+      const result = await fetch(url, options);
+      if (!result.ok) {
+        throw new Error(
+          `Error while getting git studies: ${result.status} ${result.statusText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while getting git studies: ${error}`);
+      throw error;
+    }
+  }
+
   private createOptions(method: string, token = this.token): RequestInit {
     return {
       method,
