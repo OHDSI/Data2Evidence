@@ -79,6 +79,28 @@ def copy_schema_to_cache(con, dbdao: any):
             else:
                 print(f"No rows found for table {table}, skipping insert.")
 
+            # TEST QUERY: Fetch and print a few rows from the person table after insert
+            # if table == "person":
+            #     test_query = f"SELECT * FROM {schema_name}.person LIMIT 5;"
+            #     logger.info(f"Running test query: {test_query}")
+            #     try:
+            #         # Use the connection if it has cursor(), else use as-is (for DB-API compatibility)
+            #         if hasattr(con, 'cursor') and not hasattr(con, 'execute'):  # e.g., SQLAlchemy connection
+            #             cursor = con.cursor()
+            #             cursor.execute(test_query)
+            #         elif hasattr(con, 'cursor') and hasattr(con, 'execute') and not isinstance(con, type(con.cursor())):
+            #             cursor = con.cursor()
+            #             cursor.execute(test_query)
+            #         else:
+            #             cursor = con
+            #             cursor.execute(test_query)
+            #         test_rows = cursor.fetchall()
+            #         print(f"Sample rows from {schema_name}.person:")
+            #         for row in test_rows:
+            #             print(row)
+            #     except Exception as test_err:
+            #         print(f"Test query failed: {test_err}")
+
                 # Create index based on index in db table
                 indexes = dbdao.get_indexes_for_table(schema_name, table)
 
@@ -108,8 +130,8 @@ def copy_schema_to_cache(con, dbdao: any):
     
     except Exception as err:
         logger.error(
-            f"Table and index copy failed with error: {err}f")
+            f"Table and index copy failed with error: {err}")
         raise (err)
     else:
         logger.info(
-            f"Schema '{schema_name}' succesfully copied into duckdb database file!")
+            f"Schema '{schema_name}' successfully copied into duckdb database file!")

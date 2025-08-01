@@ -29,8 +29,8 @@ def create_cache_big_query_plugin(options: CreateDuckdbDatabaseFileType):
             dbname=Variable.get("trex_sql_dbname")
         )
     #set the google service account credentials to connect to BigQuery
-    google_service_account_json = Secret.load("google-service-account-json").get()
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json
+    google_service_account_json_path = Secret.load("google-service-account-json").get()
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
     # Create cache schema
     cur = trex_conn.cursor()
     copy_schema_to_cache(cur, dbdao)
