@@ -48,7 +48,7 @@ class DialectDrivers(BaseModel):
 
 class DaoBase(ABC):
     path_to_driver = "/app/inst/drivers"
-    big_query_key_path = "/app/key.json"
+    big_query_key_path = ""
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
@@ -65,7 +65,10 @@ class DaoBase(ABC):
         if secret_block is None:
             raise ValueError(
                 "'DATABASE_CREDENTIALS' secret block is undefined!")
-
+        #set the google service account credentials to connect to BigQuery
+        google_service_account_credentials = Secret.load("google-service-account-json").get()
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_credentials
+        self.big_query_key_path = google_service_account_credentials
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
