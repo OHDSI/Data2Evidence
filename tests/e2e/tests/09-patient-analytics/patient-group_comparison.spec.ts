@@ -87,7 +87,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Verify the comparison modal is visible
   await expect(page.locator('.modal-body')).toBeVisible();
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click();
-  await page.locator('.dropdownmenuitem-container.hasNoSubMenu.menu-item.hover-select').getByText('Export to PNG File').click();
+  await page.locator('dropdownmenuitem-container hasNoSubMenu menu-item hover-select').getByText('Export to PNG File').click();
   const downloadPromise = page.waitForEvent('download');
   const download = await downloadPromise;
 
