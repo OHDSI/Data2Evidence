@@ -36,12 +36,12 @@ jobs:
         with:
           json: ${{ steps.traffic_stats_weekly.outputs.traffic_views }}
      
-      # - name: Discord notification traffic stats (weekly)
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### d2e Repo Weekly Traffic Stats```\n${{ steps.traffic_stats_weekly_table.outputs.table }}```"
+      - name: Discord notification traffic stats (weekly)
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### d2e Repo Weekly Traffic Stats```\n${{ steps.traffic_stats_weekly_table.outputs.table }}```"
 
       - name: Get repo traffic stats (daily)
         id: traffic_stats_daily
@@ -62,12 +62,12 @@ jobs:
         with:
           json: ${{ steps.traffic_stats_daily.outputs.traffic_views }}
      
-      # - name: Discord notification traffic stats (daily)
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### d2e Repo Daily Traffic Stats```\n${{ steps.traffic_stats_daily_table.outputs.table }}```"
+      - name: Discord notification traffic stats (daily)
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### d2e Repo Daily Traffic Stats```\n${{ steps.traffic_stats_daily_table.outputs.table }}```"
 
       - name: Put DynamoDB Item for repo traffic stats (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
@@ -99,12 +99,12 @@ jobs:
         with:
           json: ${{ steps.clone_stats_weekly.outputs.clone_stats }}
      
-      # - name: Discord notification clone stats (weekly)
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### d2e Repo Weekly Clone Stats```\n${{ steps.clone_stats_weekly_table.outputs.table }}```"
+      - name: Discord notification clone stats (weekly)
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### d2e Repo Weekly Clone Stats```\n${{ steps.clone_stats_weekly_table.outputs.table }}```"
       
       - name: Get repo clone stats (daily)
         id: clone_stats_daily
@@ -126,12 +126,12 @@ jobs:
         with:
           json: ${{ steps.clone_stats_daily.outputs.clone_stats }}
      
-      # - name: Discord notification clone stats (daily)
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### d2e Repo Daily Clone Stats```\n${{ steps.clone_stats_daily_table.outputs.table }}```"
+      - name: Discord notification clone stats (daily)
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### d2e Repo Daily Clone Stats```\n${{ steps.clone_stats_daily_table.outputs.table }}```"
 
       - name: Put DynamoDB Item for repo clone stats (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
@@ -164,12 +164,12 @@ jobs:
         with:
           json: "${{ steps.npm_metrics_daily.outputs.npm_downloads }}"
      
-      # - name: Discord notification traffic metrics
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-      #     username: ${{ github.actor }}
-      #     content: "### NPM Package Daily Download Stats\n${{ steps.npm_metrics_daily.outputs.npm_stats_daily }}\n```${{ steps.npm_stats_table_daily.outputs.table }}```"
+      - name: Discord notification traffic metrics
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### NPM Package Daily Download Stats\n${{ steps.npm_metrics_daily.outputs.npm_stats_daily }}\n```${{ steps.npm_stats_table_daily.outputs.table }}```"
 
       - name: Put DynamoDB Item for npm registry downloads (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
