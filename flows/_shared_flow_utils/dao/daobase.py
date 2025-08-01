@@ -52,10 +52,6 @@ class DaoBase(ABC):
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
     is_study_results_db: bool = False
-    #set the google service account credentials to connect to BigQuery
-    google_service_account_credentials = Secret.load("google-service-account-json").get()
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_credentials
-    big_query_key_path = google_service_account_credentials
     
     def __init__(self,
                  use_cache_db: bool,
@@ -256,8 +252,6 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
                 connect_args = {"user": user, "password": password.get_secret_value()}
-            case SupportedDatabaseDialects.BIGQUERY:
-                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={DaoBase.big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:

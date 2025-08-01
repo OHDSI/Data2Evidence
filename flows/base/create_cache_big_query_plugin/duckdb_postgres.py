@@ -56,10 +56,8 @@ def copy_schema_to_cache(con, dbdao: any):
             # Fetch data from BigQuery
             bq_data_query = f"SELECT * FROM `{db_credentials.host}.{db_credentials.databaseName}.{table}`"
             bq_data = client.query(bq_data_query).result()
-            # Ensure row order matches columns and replace None with duckdb NULL
-            def none_to_null(val):
-                return None if val is None else val
-            rows = [tuple(none_to_null(row[col['column_name']]) for col in columns) for row in bq_data]
+            # Remove none_to_null and use direct value
+            rows = [tuple(row[col['column_name']] for col in columns) for row in bq_data]
             print(f"Rows extracted for table {table}: {len(rows)}")
             if rows:
                 valid_rows = rows
