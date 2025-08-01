@@ -261,10 +261,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             res.setHeader("Content-Type", "text/csv");
 
             let csvStreamTransform;
-            if (
-                result.data.constructor.prototype.toString() ===
-                "[object ReadableStream]"
-            ) {
+            if (result.data instanceof ReadableStream) {
                 // Trex connection returns stream results as a ReadableStream
                 const trexCsvStreamWriter = new TrexCsvStreamWriter();
                 csvStreamTransform = trexCsvStreamWriter;
@@ -286,8 +283,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             if (
                 result.data.constructor.prototype.toString() !==
                     "[object AsyncGenerator]" &&
-                result.data.constructor.prototype.toString() !==
-                    "[object ReadableStream]"
+                !(result.data instanceof ReadableStream)
             ) {
                 result.data.on("error", (err) => {
                     log.error(

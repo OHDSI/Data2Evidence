@@ -542,8 +542,7 @@ export class PluginEndpoint {
                         if (
                             dataStream.data.constructor.prototype.toString() !==
                                 "[object AsyncGenerator]" &&
-                            dataStream.data.constructor.prototype.toString() !==
-                                "[object ReadableStream]"
+                            !(dataStream.data instanceof ReadableStream)
                         ) {
                             dataStream.data.on("end", () => {
                                 log.debug(
