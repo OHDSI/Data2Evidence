@@ -36,12 +36,12 @@ jobs:
         with:
           json: ${{ steps.traffic_stats_weekly.outputs.traffic_views }}
      
-      - name: Discord notification traffic stats (weekly)
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-          username: ${{ github.actor }}
-          content: "### d2e Repo Weekly Traffic Stats\n```${{ steps.traffic_stats_weekly_table.outputs.table }}```"
+      # - name: Discord notification traffic stats (weekly)
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+      #     username: ${{ github.actor }}
+      #     content: "### d2e Repo Weekly Traffic Stats\n```${{ steps.traffic_stats_weekly_table.outputs.table }}```"
 
       - name: Get repo traffic stats (daily)
         id: traffic_stats_daily
@@ -54,7 +54,7 @@ jobs:
 
           filtered_data=$(echo $response | jq --arg start_date "$start_date" --arg end_date "$end_date" '.views | map(select((.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) >= $start_date and (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) <= $end_date))')              
           echo "traffic_views=$(echo $filtered_data)" >> $GITHUB_OUTPUT
-          traffic_views_db=$(echo $filtered_data | jq -rc 'map({type: "traffic", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), count: .count, uniques: .uniques })')          
+          traffic_views_db=$(echo $filtered_data | jq -rc 'map({type: "traffic", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), total_count: .count, uniques: .uniques })')          
           echo "traffic_views_db=${traffic_views_db}" >> $GITHUB_OUTPUT
       - name: json to markdown
         uses: buildingcash/json-to-markdown-table-action@v1
@@ -62,12 +62,12 @@ jobs:
         with:
           json: ${{ steps.traffic_stats_daily.outputs.traffic_views }}
      
-      - name: Discord notification traffic stats (daily)
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-          username: ${{ github.actor }}
-          content: "### d2e Repo Daily Traffic Stats\n```${{ steps.traffic_stats_daily_table.outputs.table }}```"
+      # - name: Discord notification traffic stats (daily)
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+      #     username: ${{ github.actor }}
+      #     content: "### d2e Repo Daily Traffic Stats\n```${{ steps.traffic_stats_daily_table.outputs.table }}```"
 
       - name: Put DynamoDB Item for repo traffic stats (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
@@ -99,12 +99,12 @@ jobs:
         with:
           json: ${{ steps.clone_stats_weekly.outputs.clone_stats }}
      
-      - name: Discord notification clone stats (weekly)
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-          username: ${{ github.actor }}
-          content: "### d2e Repo Weekly Clone Stats\n```${{ steps.clone_stats_weekly_table.outputs.table }}```"
+      # - name: Discord notification clone stats (weekly)
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+      #     username: ${{ github.actor }}
+      #     content: "### d2e Repo Weekly Clone Stats\n```${{ steps.clone_stats_weekly_table.outputs.table }}```"
       
       - name: Get repo clone stats (daily)
         id: clone_stats_daily
@@ -117,7 +117,7 @@ jobs:
           
           filtered_data=$(echo $response | jq --arg start_date "$start_date" --arg end_date "$end_date" '.clones | map(select((.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) >= $start_date and (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) <= $end_date))')              
           echo "clone_stats=$(echo $filtered_data) " >> $GITHUB_OUTPUT
-          clone_stats_db=$(echo $filtered_data | jq -rc 'map({type: "clone", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), count: .count, uniques: .uniques })')          
+          clone_stats_db=$(echo $filtered_data | jq -rc 'map({type: "clone", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), total_count: .count, uniques: .uniques })')          
           echo "clone_stats_db=${clone_stats_db}" >> $GITHUB_OUTPUT
 
       - name: json to markdown
@@ -126,12 +126,12 @@ jobs:
         with:
           json: ${{ steps.clone_stats_daily.outputs.clone_stats }}
      
-      - name: Discord notification clone stats (daily)
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-          username: ${{ github.actor }}
-          content: "### d2e Repo Daily Clone Stats\n```${{ steps.clone_stats_daily_table.outputs.table }}```"
+      # - name: Discord notification clone stats (daily)
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+      #     username: ${{ github.actor }}
+      #     content: "### d2e Repo Daily Clone Stats\n```${{ steps.clone_stats_daily_table.outputs.table }}```"
 
       - name: Put DynamoDB Item for repo clone stats (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
@@ -155,7 +155,7 @@ jobs:
           echo "npm_downloads=$(echo $response | jq -rc '.downloads')" >> $GITHUB_OUTPUT
           echo "npm_stats_daily=start:$start, end:$end, package:$package" >> $GITHUB_OUTPUT
 
-          transformed_data=$(echo $response | jq -rc '.downloads | map({date: .day, count: .downloads, type: "npm"})')
+          transformed_data=$(echo $response | jq -rc '.downloads | map({date: .day, total_count: .downloads, type: "npm"})')
           echo "npm_downloads_db=${transformed_data}" >> $GITHUB_OUTPUT
 
       - name: json to markdown
@@ -164,12 +164,12 @@ jobs:
         with:
           json: "${{ steps.npm_metrics_daily.outputs.npm_downloads }}"
      
-      - name: Discord notification traffic metrics
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
-          username: ${{ github.actor }}
-          content: "### NPM Package Daily Download Stats\n${{ steps.npm_metrics_daily.outputs.npm_stats_daily }}\n```${{ steps.npm_stats_table_daily.outputs.table }}```"
+      # - name: Discord notification traffic metrics
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+      #     username: ${{ github.actor }}
+      #     content: "### NPM Package Daily Download Stats\n${{ steps.npm_metrics_daily.outputs.npm_stats_daily }}\n```${{ steps.npm_stats_table_daily.outputs.table }}```"
 
       - name: Put DynamoDB Item for npm registry downloads (daily)
         uses: mooyoul/dynamodb-actions@v1.2.1
