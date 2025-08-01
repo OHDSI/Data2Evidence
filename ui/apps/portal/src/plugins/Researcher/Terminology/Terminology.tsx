@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState, useMemo } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { Button, Checkbox } from "@portal/components";
 import TerminologyList from "./components/TerminologyList/TerminologyList";
@@ -15,7 +15,7 @@ import env from "../../../env";
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
 export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {
-  onConceptIdSelect?: (conceptData: any) => void;
+  onConceptIdSelect?: (conceptData: FhirValueSetExpansionContainsWithExt) => void;
   initialInput?: string;
   baseUserId?: string;
   open?: boolean;
@@ -27,6 +27,7 @@ export interface TerminologyProps extends PageProps<ResearcherStudyMetadata> {
     id: string;
     value: string[];
   }[];
+  initialSelectedConcepts?: FhirValueSetExpansionContainsWithExt[];
 }
 
 const WithDrawer = ({
@@ -35,7 +36,7 @@ const WithDrawer = ({
   open,
   isDrawer,
 }: {
-  onClose?: (values: any) => void;
+  onClose?: (values: OnCloseReturnValues) => void;
   children: JSX.Element;
   open?: boolean;
   isDrawer: boolean;
@@ -260,13 +261,16 @@ export const Terminology: FC<TerminologyProps> = ({
   mode = "CONCEPT_SEARCH",
   selectedDatasetId,
   defaultFilters,
+  initialSelectedConcepts,
 }: TerminologyProps) => {
   const { getText, i18nKeys } = useTranslation();
   const userId = baseUserId || metadata?.userId;
   const { user } = useUser();
   const [conceptId, setConceptId] = useState<null | number>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedConcepts, setSelectedConcepts] = useState<FhirValueSetExpansionContainsWithExt[]>([]);
+  const [selectedConcepts, setSelectedConcepts] = useState<FhirValueSetExpansionContainsWithExt[]>(
+    initialSelectedConcepts || []
+  );
   const [tab, setTab] = useState<TabName>(tabNames.SEARCH);
   const [conceptSetName, setConceptSetName] = useState("");
   const [conceptSetId, setConceptSetId] = useState<number | null>(null);

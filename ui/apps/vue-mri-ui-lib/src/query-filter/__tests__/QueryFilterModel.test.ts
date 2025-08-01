@@ -431,31 +431,17 @@ describe('QueryFilterCriteriaManager', () => {
       manager = new QueryFilterCriteriaManager()
     })
 
-    it('should add event to criteria', () => {
+    // Tests for addFilterToGroup removed - this method was architecturally incorrect.
+    // QueryFilterCardModel objects should not be mixed with QueryFilterEvent objects in group.events arrays.
+    // The correct architecture has groups containing only QueryFilterEvent objects.
+    // QueryFilterCardModel is a separate container class that manages its own events array.
+
+    it('should manage criteria groups correctly', () => {
       const criteria = manager.addCriteria({ title: 'Test Group' })
-      const filterData = { title: 'Test Filter', type: 'inclusion' as const }
 
-      const filter = manager.addFilterToGroup(criteria.id, filterData)
-
-      expect(filter).not.toBeNull()
-      expect(filter?.title).toBe('Test Filter')
-      expect(criteria.events).toHaveLength(1) // Added filter
-    })
-
-    it('should return null when adding filter to non-existent group', () => {
-      const filter = manager.addFilterToGroup('non-existent', {})
-
-      expect(filter).toBeNull()
-    })
-
-    it('should remove filter from group', () => {
-      const criteria = manager.addCriteria({ title: 'Test Group' })
-      const filter = manager.addFilterToGroup(criteria.id, {})!
-
-      const removed = manager.removeFilterFromGroup(criteria.id, filter.id)
-
-      expect(removed).toBe(true)
-      expect(criteria.events).toHaveLength(0) // No filters remain
+      expect(criteria.title).toBe('Test Group')
+      expect(criteria.events).toHaveLength(0) // Groups start empty
+      expect(criteria.events).toEqual([]) // Should be QueryFilterEvent[] only
     })
   })
 

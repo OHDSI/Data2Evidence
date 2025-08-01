@@ -5,6 +5,29 @@
  */
 import type { NumericRange, DemographicCriteria } from './AtlasCohortDefinition'
 import type { ConceptSetItem } from '../types/ConceptSetTypes'
+
+// Interface for stored concept items in attributes
+export interface StoredConceptItem {
+  value: string
+  text: string
+  display_value: string
+  conceptId: number
+  domainId?: string | undefined
+  system?: string | undefined
+  conceptClassId?: string | undefined
+  standardConcept?: string | undefined
+  concept?: string | undefined
+  code?: string | undefined
+  validStartDate?: string | undefined
+  validEndDate?: string | undefined
+  validity?: string | undefined
+  useDescendants?: boolean | undefined
+  useMapped?: boolean | undefined
+  isExcluded?: boolean | undefined
+  score?: number | undefined
+  conceptName?: string | undefined
+}
+
 export interface QueryFilterCardinality {
   type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
   count: number
@@ -115,6 +138,7 @@ export type QueryFilterAttribute =
       attributeType: 'conceptSet'
       conceptSet?: ConceptSetItem
       conceptSetId?: string
+      conceptItems?: StoredConceptItem[]
     }
   | {
       id: string
@@ -124,6 +148,7 @@ export type QueryFilterAttribute =
       domainFilter?: string // Domain filter from config
       operator?: string
       value?: string
+      conceptItems?: StoredConceptItem[]
     }
 
 // Type guards for QueryFilterAttribute discriminated union
@@ -463,26 +488,27 @@ export class QueryFilterCriteriaManager {
   }
 
   // Filter management within groups
-  addFilterToGroup(groupId: string, filter?: Partial<QueryFilterCardModel>): QueryFilterCardModel | null {
-    const group = this.getGroup(groupId)
-    if (group) {
-      const newFilter = new QueryFilterCardModel(filter)
-      group.events.push(newFilter as any)
-      return newFilter
-    }
-    return null
-  }
+  // NOTE: This method was architecturally incorrect - QueryFilterCardModel objects
+  // should not be added to group.events arrays. Groups should only contain QueryFilterEvent objects.
+  // If you need to add a QueryFilterCardModel, consider using it as a separate container.
 
-  removeFilterFromGroup(groupId: string, filterId: string): boolean {
+  // addFilterToGroup method removed - was mixing incompatible types
+
+  removeEventFromGroup(groupId: string, eventId: string): boolean {
     const group = this.getGroup(groupId)
     if (group) {
-      const index = group.events.findIndex(f => f.id === filterId)
+      const index = group.events.findIndex(event => event.id === eventId)
       if (index > -1) {
         group.events.splice(index, 1)
         return true
       }
     }
     return false
+  }
+
+  // Legacy alias for backward compatibility - will be deprecated
+  removeFilterFromGroup(groupId: string, filterId: string): boolean {
+    return this.removeEventFromGroup(groupId, filterId)
   }
 
   // Helper method to map qualifyingEventsLimit to criteriaType

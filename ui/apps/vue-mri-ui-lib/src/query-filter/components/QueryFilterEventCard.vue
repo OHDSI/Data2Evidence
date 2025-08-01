@@ -24,6 +24,7 @@ import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 
+
 interface Props {
   event: QueryFilterEvent
   eventIndex: number
@@ -505,14 +506,20 @@ const sideBarRef = ref<HTMLElement | null>(null)
                       standardConceptCodeFilter: 'Standard',
                     },
                   }"
-                  :external-value="'conceptSet' in attribute && attribute.conceptSet ? [attribute.conceptSet] : []"
+                  :external-value="
+                    'conceptItems' in attribute && attribute.conceptItems
+                      ? attribute.conceptItems
+                      : 'conceptSet' in attribute && attribute.conceptSet
+                      ? [attribute.conceptSet]
+                      : []
+                  "
                   :external-domain-values="
                     conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
                   "
                   :external-texts="conceptSetTexts || {}"
                   :is-catalog-attribute="false"
                   @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
-                  @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
+                  @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, attributeId: attribute.id, eventId: eventData.id })"
                 />
                 <div v-else class="attribute-concept-set-readonly">
                   {{

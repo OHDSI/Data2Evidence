@@ -10,7 +10,12 @@ export default {
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import { QueryFilterCriteriaManager, QueryFilterEvent, QueryFilterGroup } from '../models/QueryFilterModel'
+import {
+  QueryFilterCriteriaManager,
+  QueryFilterEvent,
+  QueryFilterGroup,
+  type StoredConceptItem,
+} from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
@@ -41,13 +46,31 @@ import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 
-// Interface for concept selection from terminology modal
+// Interface for concept selection from terminology modal (matches portal's FhirValueSetExpansionContainsWithExt)
 interface SelectedConcept {
   conceptId: number
-  conceptName?: string
-  display?: string
-  domainId?: string
-  vocabularyId?: string
+  display: string
+  domainId: string
+  system?: string | undefined
+  conceptClassId?: string | undefined
+  standardConcept?: string | undefined
+  concept?: string | undefined
+  code?: string | undefined
+  validStartDate?: string | undefined
+  validEndDate?: string | undefined
+  validity?: string | undefined
+  useDescendants?: boolean | undefined
+  useMapped?: boolean | undefined
+  isExcluded?: boolean | undefined
+  score?: number | undefined
+  // Backward compatibility field (our custom addition)
+  conceptName?: string | undefined
+}
+
+// Interface for close callback values from terminology modal
+interface TerminologyCloseValues {
+  currentConceptSet?: { id: string; name: string }
+  selectedConcepts?: SelectedConcept[]
 }
 
 // Interface for terminology modal event properties
@@ -56,7 +79,8 @@ interface TerminologyEventProps {
   selectedConceptSetId?: string | number | undefined
   mode: 'CONCEPT_SET' | 'CONCEPT_MULTI_SELECT'
   defaultFilters: Array<{ id: string; value: string[] }>
-  onClose?: (onCloseValues?: { currentConceptSet?: { id: string; name: string } } | undefined) => void | Promise<void>
+  initialSelectedConcepts?: SelectedConcept[] // For pre-populating CONCEPT_MULTI_SELECT mode
+  onClose?: (onCloseValues?: TerminologyCloseValues | undefined) => void | Promise<void>
   onMultiConceptSelect?: (concepts: SelectedConcept[]) => void
 }
 
@@ -779,8 +803,16 @@ const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMap
     atlasExpression.PrimaryCriteria.CriteriaList.forEach(criteriaItem => {
       if (criteriaItem && typeof criteriaItem === 'object') {
         Object.keys(criteriaItem).forEach(key => {
-          const criteriaValue = (criteriaItem as any)[key]
-          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+          // Type guard using keyof to get valid keys from the type
+          if (!((key as keyof CriteriaListItem) in criteriaItem)) return
+
+          const criteriaValue = criteriaItem[key as keyof CriteriaListItem]
+          if (
+            criteriaValue &&
+            typeof criteriaValue === 'object' &&
+            'CodesetId' in criteriaValue &&
+            typeof criteriaValue.CodesetId === 'number'
+          ) {
             const originalCodesetId = criteriaValue.CodesetId
             const newId = idMapping[originalCodesetId]
 
@@ -819,8 +851,16 @@ const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMap
     atlasExpression.CensoringCriteria.forEach(criteriaItem => {
       if (criteriaItem && typeof criteriaItem === 'object') {
         Object.keys(criteriaItem).forEach(key => {
-          const criteriaValue = (criteriaItem as any)[key]
-          if (criteriaValue && typeof criteriaValue === 'object' && typeof criteriaValue.CodesetId === 'number') {
+          // Type guard using keyof to get valid keys from the type
+          if (!((key as keyof CriteriaListItem) in criteriaItem)) return
+
+          const criteriaValue = criteriaItem[key]
+          if (
+            criteriaValue &&
+            typeof criteriaValue === 'object' &&
+            'CodesetId' in criteriaValue &&
+            typeof criteriaValue.CodesetId === 'number'
+          ) {
             const originalCodesetId = criteriaValue.CodesetId
             const newId = idMapping[originalCodesetId]
 
@@ -947,7 +987,149 @@ const handleSearchChange = (searchQuery: string) => {
   }
 }
 
-const handleConceptSetAction = ({ values, config, componentType }: ConceptSetAction) => {
+// Function to find an event by ID across all sections of criteria manager
+const findEventById = (eventId: string): QueryFilterEvent | undefined => {
+  // Search in entry events
+  const entryEvents = criteriaManager.getPrimaryEvents()
+  let foundEvent = entryEvents.events.find(e => e.id === eventId)
+  if (foundEvent) return foundEvent
+
+  // Search in exit events (censoring criteria)
+  const exitEvents = criteriaManager.getCensoringCriteria()
+  foundEvent = exitEvents.censoringCriteria.find(e => e.id === eventId)
+  if (foundEvent) return foundEvent
+
+  // Search in inclusion criteria groups
+  const criteria = criteriaManager.getCriteria()
+  for (const group of criteria.criteria) {
+    for (const event of group.events) {
+      // Now that we've fixed the types, group.events only contains QueryFilterEvent objects
+      if (event.id === eventId) {
+        return event
+      }
+    }
+  }
+
+  return undefined
+}
+
+// Function to get existing concepts from an attribute for pre-populating the modal
+const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeId: string): SelectedConcept[] => {
+  const targetEvent = findEventById(targetEventId)
+  if (!targetEvent) {
+    return []
+  }
+
+  const targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
+  if (!targetAttribute) {
+    return []
+  }
+
+  // Check if attribute has conceptItems (from previous CONCEPT_MULTI_SELECT)
+  if ('conceptItems' in targetAttribute && (targetAttribute as any).conceptItems) {
+    const storedItems = targetAttribute.conceptItems as StoredConceptItem[]
+    return storedItems.map((item: StoredConceptItem) => ({
+      conceptId: Number(item.conceptId || item.value),
+      display: item.display_value || item.text || 'Unknown',
+      domainId: item.domainId || 'Unknown',
+      system: item.system,
+      conceptClassId: item.conceptClassId,
+      standardConcept: item.standardConcept,
+      concept: item.concept || item.text,
+      code: item.code,
+      validStartDate: item.validStartDate,
+      validEndDate: item.validEndDate,
+      validity: item.validity,
+      useDescendants: item.useDescendants || false,
+      useMapped: item.useMapped || false,
+      isExcluded: item.isExcluded || false,
+      score: item.score,
+    }))
+  }
+
+  // Fallback: check if attribute has a conceptSet with individual concepts
+  if (
+    'conceptSet' in targetAttribute &&
+    targetAttribute.conceptSet &&
+    typeof targetAttribute.conceptSet === 'object' &&
+    'concepts' in targetAttribute.conceptSet &&
+    Array.isArray(targetAttribute.conceptSet.concepts) &&
+    targetAttribute.conceptSet.concepts.length > 0
+  ) {
+    const conceptSet = targetAttribute.conceptSet
+    const concepts = targetAttribute.conceptSet.concepts
+    return concepts
+      .filter(concept => concept.id || concept.concept_id || concept.CONCEPT_ID) // Only include concepts with valid IDs
+      .map(concept => ({
+        conceptId: concept.id || concept.concept_id || concept.CONCEPT_ID || 0,
+        display: conceptSet.display_value || conceptSet.text || 'Unknown',
+        domainId: 'Unknown',
+        system: undefined,
+        conceptClassId: undefined,
+        standardConcept: undefined,
+        concept: conceptSet.text || 'Unknown',
+        code: undefined,
+        validStartDate: undefined,
+        validEndDate: undefined,
+        validity: undefined,
+        useDescendants: concept.useDescendants || false,
+        useMapped: concept.useMapped || false,
+        isExcluded: concept.isExcluded || false,
+        score: undefined,
+      }))
+  }
+
+  return []
+}
+
+// Function to update a specific attribute with selected concepts
+const updateAttributeWithConcepts = (
+  targetEventId: string,
+  targetAttributeId: string,
+  conceptItems: StoredConceptItem[]
+) => {
+  // Find the event in criteriaManager
+  const targetEvent = findEventById(targetEventId)
+  if (!targetEvent) {
+    console.warn(`Event with ID ${targetEventId} not found`)
+    return
+  }
+
+  // Find the attribute within the event
+  const targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
+  if (!targetAttribute) {
+    console.warn(`Attribute with ID ${targetAttributeId} not found in event ${targetEventId}`)
+    return
+  }
+
+  // Update the attribute with the selected concepts as individual tag input items
+  if (targetAttribute.attributeType === 'standard') {
+    // Store the concept items in a way that the tag input can use them
+    // We'll add a conceptItems property to store the selected concepts
+    targetAttribute.conceptItems = conceptItems
+
+    // Also update any existing conceptSet property for backward compatibility
+    if (conceptItems.length > 0) {
+      const firstConcept = conceptItems[0]
+      if (firstConcept) {
+        ;(targetAttribute as any).conceptSet = {
+          value: firstConcept.value,
+          text: conceptItems.map(c => c.text).join(', '),
+          display_value: conceptItems.map(c => c.display_value).join(', '),
+          conceptIds: conceptItems.map(c => Number(c.conceptId)),
+          concepts: conceptItems.map(c => ({
+            id: Number(c.conceptId),
+            useMapped: false,
+            isExcluded: false,
+            useDescendants: false,
+          })),
+        }
+      }
+    }
+  }
+}
+
+const handleConceptSetAction = ({ values, config, componentType, attributeId, eventId }: ConceptSetAction) => {
   try {
     const currentDatasetId = getDatasetId()
     if (!currentDatasetId) {
@@ -1044,29 +1226,45 @@ const handleConceptSetAction = ({ values, config, componentType }: ConceptSetAct
     }
 
     if (mode === 'CONCEPT_MULTI_SELECT') {
-      // For multi-select mode, use onMultiConceptSelect callback
-      eventProps.onMultiConceptSelect = (concepts: SelectedConcept[]) => {
-        // TODO: Handle multi-concept selection - transform concepts into concept set format
-        // For now, we'll create a simple concept set from the selected concepts
-        if (concepts && concepts.length > 0) {
-          const conceptNames = concepts.map(c => c.conceptName || c.display).join(', ')
-          const newConceptSet = {
-            text: `Multi-Select: ${conceptNames}`,
-            display_value: `Multi-Select: ${conceptNames}`,
-            value: `multi_${Date.now()}`,
-            conceptIds: concepts.map(c => c.conceptId),
-            concepts: concepts.map(c => ({
-              id: c.conceptId,
-              useMapped: false,
-              isExcluded: false,
-              useDescendants: false,
-            })),
-          }
-          selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
+      // For multi-select mode, get existing concepts to pre-populate the modal
+      // NOTE: This requires the portal's Terminology.tsx component to support the initialSelectedConcepts prop
+      if (attributeId && eventId) {
+        const existingConcepts = getExistingConceptsForAttribute(eventId, attributeId)
+        if (existingConcepts.length > 0) {
+          eventProps.initialSelectedConcepts = existingConcepts
         }
       }
-      eventProps.onClose = () => {
-        // Simple close handler for multi-select mode
+
+      // For multi-select mode, handle selected concepts via the onClose callback
+      eventProps.onClose = (onCloseValues?: TerminologyCloseValues | undefined) => {
+        if (onCloseValues?.selectedConcepts && onCloseValues.selectedConcepts.length > 0 && attributeId && eventId) {
+          // Transform selected concepts into tag input format while preserving all concept details
+          const conceptItems: StoredConceptItem[] = onCloseValues.selectedConcepts.map((concept: SelectedConcept) => ({
+            value: String(concept.conceptId),
+            text: concept.display || concept.conceptName || concept.concept || 'Unknown',
+            display_value: concept.display || concept.conceptName || concept.concept || 'Unknown',
+            conceptId: concept.conceptId,
+            // Preserve all original concept details for future pre-selection
+            domainId: concept.domainId,
+            system: concept.system,
+            conceptClassId: concept.conceptClassId,
+            standardConcept: concept.standardConcept,
+            concept: concept.concept,
+            code: concept.code,
+            validStartDate: concept.validStartDate,
+            validEndDate: concept.validEndDate,
+            validity: concept.validity,
+            useDescendants: concept.useDescendants,
+            useMapped: concept.useMapped,
+            isExcluded: concept.isExcluded,
+            score: concept.score,
+            // Store conceptName for backward compatibility
+            conceptName: concept.display || concept.concept,
+          }))
+
+          // Update the specific attribute with the selected concepts
+          updateAttributeWithConcepts(eventId, attributeId, conceptItems)
+        }
       }
     } else {
       // For concept set mode, use existing callback
