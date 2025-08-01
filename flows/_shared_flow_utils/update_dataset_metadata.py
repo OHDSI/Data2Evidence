@@ -24,6 +24,7 @@ OMOP_NON_PERSON_ENTITIES = {
 
 
 def update_metadata_last_fetched_date(portal_server_api, dataset_id: str, logger):
+    metadata_last_fetch_date = None
     try:
         # update last fetched metadata date
         metadata_last_fetch_date = datetime.now().strftime('%Y-%m-%d')
@@ -56,6 +57,7 @@ def update_entity_value(portal_server_api,
                         column_name: str, 
                         entity_name: str, 
                         logger) -> str:
+    entity_value = None
     try:
         entity_value = get_entity_value_str(dbdao, schema_name, table_name, column_name, entity_name, logger)
 
@@ -91,6 +93,7 @@ def update_entity_distinct_count(portal_server_api,
                                  column_name: str, 
                                  entity_name: str, 
                                  logger) -> str:
+    entity_distinct_count = None
     try:
         entity_distinct_count: str = get_entity_count_str(dbdao, schema_name, table_name, column_name, entity_name, logger)
         portal_server_api.update_dataset_attributes_table(dataset_id, entity_name, entity_distinct_count)
@@ -103,8 +106,9 @@ def update_entity_distinct_count(portal_server_api,
 
 def update_total_entity_count(portal_server_api,
                               dataset_id: str, 
-                              entity_count_distribution: dict,
+                              entity_count_distribution: dict | None,
                               logger) -> str:
+    total_entity_count = None
     try:
         total_entity_count = get_total_entity_count(entity_count_distribution, logger)
         portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count", total_entity_count)
@@ -112,10 +116,9 @@ def update_total_entity_count(portal_server_api,
         logger.error(f"Failed to update attribute 'entity_count' for dataset '{dataset_id}' with value '{total_entity_count}': {e}")
     else:
         logger.info(f"Updated attribute 'entity_count' for dataset '{dataset_id}' with value '{total_entity_count}'")
-    return total_entity_count
 
 
-def get_total_entity_count(entity_count_distribution: dict, logger) -> str:
+def get_total_entity_count(entity_count_distribution: dict | None, logger) -> str | None:
     try:
         total_entity_count = 0
         for entity, entity_count in entity_count_distribution.items():
@@ -141,9 +144,10 @@ def update_entity_count_distribution(portal_server_api,
         portal_server_api.update_dataset_attributes_table(dataset_id, 'entity_count_distribution', json.dumps(entity_count_distribution))
     except Exception as e:
         logger.error(f"Failed to update attribute 'entity_count_distribution' for dataset '{dataset_id}' with value '{json.dumps(entity_count_distribution)}': {e}")
+        return None
     else:
         logger.info(f"Updated attribute 'entity_count_distribution' for dataset '{dataset_id}' with value '{json.dumps(entity_count_distribution)}'")
-    return entity_count_distribution
+        return entity_count_distribution
 
 
 def get_entity_count_distribution(dbdao, schema: str, logger) -> EntityCountDistributionType:

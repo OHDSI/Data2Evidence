@@ -58,7 +58,9 @@ export class PortalAPI {
       const timestamp = (new Date()).valueOf();
       console.time(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
+      const url = `${this.baseURL}/user-artifact/bookmarks/${encodeURIComponent(
+        bookmarkId
+      )}?datasetId=${encodeURIComponent(datasetId)}`
       const result = await axios.get(url, options)
       console.timeEnd(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       return result.data
@@ -108,7 +110,9 @@ export class PortalAPI {
   async deleteBookmark(bookmarkId: string, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`
+      const url = `${this.baseURL}/user-artifact/bookmarks/${encodeURIComponent(
+        bookmarkId
+      )}?datasetId=${encodeURIComponent(datasetId)}`
       const result = await axios.delete(url, options)
       return result.data
     } catch (error) {

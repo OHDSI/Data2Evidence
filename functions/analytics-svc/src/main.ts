@@ -545,7 +545,7 @@ const initRoutes = async (app: express.Application) => {
 const initSwaggerRoutes = async (app: express.Application) => {
     const swaggerFile = yaml.parse(
         await Deno.readTextFile(
-            path.dirname(pathx.fromFileUrl(import.meta.url)).slice(0, -3) +
+            path.dirname(pathx.fromFileUrl(import.meta.url)).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH").replace(/\/[^\/]*\/?$/, '')).slice(0, -3) +
                 "api/swagger/swagger.yaml"
         )
     );

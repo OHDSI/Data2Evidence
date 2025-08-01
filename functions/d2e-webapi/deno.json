@@ -1,4 +1,13 @@
 {
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noImplicitAny": true
+  },
   "tasks": {
     "dev": "CACHEDB__HOST=alp-cachedb CACHEDB__PORT=41191 SERVICE_ROUTES='{}' deno run --watch --allow-env --allow-read --allow-write --allow-net --allow-sys index.ts",
     "check": "deno check ./index.ts && deno lint"
@@ -12,8 +21,5 @@
     "fastify-type-provider-zod": "npm:fastify-type-provider-zod@^4.0.2",
     "pg": "npm:pg@^8.13.1",
     "zod": "npm:zod@^3.25.76"
-  },
-  "compilerOptions": {
-    "noImplicitAny": true
   }
 }
