@@ -117,7 +117,7 @@ jobs:
           
           filtered_data=$(echo $response | jq --arg start_date "$start_date" --arg end_date "$end_date" '.clones | map(select((.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) >= $start_date and (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")) <= $end_date))')              
           echo "clone_stats=$(echo $filtered_data) " >> $GITHUB_OUTPUT
-          clone_stats_db=$(echo $filtered_data | jq -rc 'map({type: "traffic", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), count: .count, uniques: .uniques })')          
+          clone_stats_db=$(echo $filtered_data | jq -rc 'map({type: "clone", date: (.timestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime("%Y-%m-%d")), count: .count, uniques: .uniques })')          
           echo "clone_stats_db=${clone_stats_db}" >> $GITHUB_OUTPUT
 
       - name: json to markdown
