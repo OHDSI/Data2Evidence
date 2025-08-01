@@ -120,6 +120,8 @@ export type QueryFilterAttribute =
       id: string
       attributeId: string
       attributeType: 'standard'
+      configType?: string // Original type from config (concept, conceptSet, etc.)
+      domainFilter?: string // Domain filter from config
       operator?: string
       value?: string
     }

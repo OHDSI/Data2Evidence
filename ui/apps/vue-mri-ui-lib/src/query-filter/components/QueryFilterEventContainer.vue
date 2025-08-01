@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
@@ -36,6 +36,7 @@ const emit = defineEmits<{
   'update-events': [events: QueryFilterEvent[]]
   'event-updated': [eventIndex: number, event: QueryFilterEvent]
   'event-removed': [eventIndex: number]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 // Work directly with props.events for reactivity
@@ -205,6 +206,7 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | 
         @concept-set-selected="handleConceptSetSelected(event.id, $event)"
         @attribute-selected="handleAttributeSelected(event.id, $event)"
         @attribute-removed="handleAttributeRemoved(event.id, $event)"
+        @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
   </div>

@@ -75,11 +75,11 @@
         </span>
       </template>
     </multiselect>
-    <div v-if="componentType === 'conceptSet'">
+    <div v-if="componentType === 'conceptSet' || componentType === 'concept'">
       <d4l-button
         class="unicode-icon"
         text="+"
-        :title="texts.createConceptSet"
+        :title="componentType === 'concept' ? 'Select concepts' : texts.createConceptSet"
         style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 0px"
         @mousedown.stop.prevent="handleConceptSetAction(null)"
       />
@@ -362,7 +362,11 @@ export default {
       this.currentPlaceholder = this.texts.placeholder
     },
     handleConceptSetAction(values) {
-      this.$emit('concept-set-action', { values, config: this.conceptSetConfig })
+      this.$emit('concept-set-action', {
+        values,
+        config: this.conceptSetConfig,
+        componentType: this.componentType, // Pass component type for mode determination
+      })
     },
     tagClickHandler(props) {
       if (this.$refs.multiselect?.$refs?.search) {

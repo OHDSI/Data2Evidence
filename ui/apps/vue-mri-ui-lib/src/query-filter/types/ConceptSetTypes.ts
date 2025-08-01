@@ -39,6 +39,12 @@ export interface ApiConfig {
   datasetId: string
 }
 
+export interface ConceptSetConfig {
+  domainFilter?: string
+  standardConceptCodeFilter?: string
+  selectedDatasetId?: string | null
+}
+
 export interface ConceptSetDomainValues {
   values: ConceptSetItem[]
   isLoading: boolean
@@ -58,7 +64,8 @@ export interface TagInputModel {
 
 export interface ConceptSetAction {
   values?: ConceptSetItem
-  config?: ApiConfig
+  config?: ConceptSetConfig
+  componentType?: string // Type to determine modal mode (concept vs conceptSet)
 }
 
 export interface ConceptSetDetails {

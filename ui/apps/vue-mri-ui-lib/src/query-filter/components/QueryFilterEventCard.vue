@@ -18,7 +18,7 @@ import type {
   QueryFilterAttribute,
   SelectedConceptSet,
 } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
@@ -48,6 +48,7 @@ const emit = defineEmits<{
   'concept-set-selected': [conceptSet: ConceptSetItem | null]
   'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 // Get store access for dataset ID
@@ -209,7 +210,9 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
     newAttribute = {
       id: attribute.id,
       attributeId: attribute.id,
-      attributeType: 'standard',
+      attributeType: 'standard' as const,
+      configType: attribute.type,
+      ...(attribute.domainFilter && { domainFilter: attribute.domainFilter }),
     }
   }
 
@@ -287,7 +290,17 @@ const tagInputModel = computed(() => ({
   id: `event-concept-set-${eventData.value.id}`,
   props: {
     type: 'conceptSet',
-    value: eventData.value.selectedConceptSet ? [eventData.value.selectedConceptSet] : [],
+    value: eventData.value.selectedConceptSet
+      ? [
+          {
+            value: String(eventData.value.selectedConceptSet.value),
+            text: eventData.value.selectedConceptSet.text,
+            display_value: eventData.value.selectedConceptSet.display_value,
+            conceptIds: eventData.value.selectedConceptSet.conceptIds,
+            concepts: eventData.value.selectedConceptSet.concepts,
+          },
+        ]
+      : [],
     attributePath: 'condition_occurrence.concept_id',
     domainFilter: 'Condition',
     standardConceptCodeFilter: 'Standard',
@@ -297,7 +310,15 @@ const tagInputModel = computed(() => ({
 // Get the external value for the tag input (ensuring it's always an array)
 const getTagInputValue = () => {
   if (eventData.value.selectedConceptSet) {
-    return [eventData.value.selectedConceptSet]
+    return [
+      {
+        value: String(eventData.value.selectedConceptSet.value),
+        text: eventData.value.selectedConceptSet.text,
+        display_value: eventData.value.selectedConceptSet.display_value,
+        conceptIds: eventData.value.selectedConceptSet.conceptIds,
+        concepts: eventData.value.selectedConceptSet.concepts,
+      },
+    ]
   }
   return []
 }
@@ -476,10 +497,11 @@ const sideBarRef = ref<HTMLElement | null>(null)
                   :model="{
                     id: `attribute-${attribute.id}-${eventData.id}`,
                     props: {
-                      type: 'conceptSet',
+                      type: 'configType' in attribute && attribute.configType === 'concept' ? 'concept' : 'conceptSet',
                       value: 'conceptSet' in attribute && attribute.conceptSet ? [attribute.conceptSet] : [],
                       attributePath: 'condition_occurrence.concept_id',
-                      domainFilter: 'Condition',
+                      domainFilter:
+                        'domainFilter' in attribute && attribute.domainFilter ? attribute.domainFilter : 'Condition',
                       standardConceptCodeFilter: 'Standard',
                     },
                   }"
@@ -490,6 +512,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
                   :external-texts="conceptSetTexts || {}"
                   :is-catalog-attribute="false"
                   @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
+                  @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
                 />
                 <div v-else class="attribute-concept-set-readonly">
                   {{

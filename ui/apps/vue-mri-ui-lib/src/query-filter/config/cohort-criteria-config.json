@@ -323,6 +323,7 @@
         "name": "Gender",
         "description": "Filter by patient gender",
         "type": "concept",
+        "domainFilter": "Gender",
         "atlasKey": "addGender"
       },
       {
@@ -337,6 +338,7 @@
         "name": "Condition Status",
         "description": "Filter by condition status",
         "type": "concept",
+        "domainFilter": "Condition Status",
         "atlasKey": "addConditionStatus"
       },
       {
@@ -368,10 +370,11 @@
         "atlasKey": "addDateAdjustment"
       },
       {
-        "id": "type",
-        "name": "Type",
+        "id": "conditionType",
+        "name": "Condition Type",
         "description": "Filter by condition type",
         "type": "concept",
+        "domainFilter": "Type Concept",
         "atlasKey": "addType"
       },
       {
@@ -386,6 +389,7 @@
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
+        "domainFilter": "Visit",
         "atlasKey": "addVisit"
       },
       {
@@ -406,7 +410,7 @@
         "id": "sourceConcept",
         "name": "Source Concept",
         "description": "Filter by source concept",
-        "type": "concept",
+        "type": "conceptSet",
         "atlasKey": "addSourceConcept"
       },
       {
@@ -414,6 +418,7 @@
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
         "type": "concept",
+        "domainFilter": "Provider",
         "atlasKey": "addProviderSpecialty"
       },
       {
@@ -459,6 +464,7 @@
         "name": "Gender",
         "description": "Filter by patient gender",
         "type": "concept",
+        "domainFilter": "Gender",
         "atlasKey": "addGender"
       },
       {
@@ -483,10 +489,11 @@
         "atlasKey": "addEndDate"
       },
       {
-        "id": "type",
-        "name": "Type",
+        "id": "drugType",
+        "name": "Drug Type",
         "description": "Filter by drug type",
         "type": "concept",
+        "domainFilter": "Type Concept",
         "atlasKey": "addType"
       },
       {
@@ -501,6 +508,7 @@
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
+        "domainFilter": "Visit",
         "atlasKey": "addVisit"
       },
       {
@@ -543,6 +551,7 @@
         "name": "Route",
         "description": "Filter by route of administration",
         "type": "concept",
+        "domainFilter": "Route",
         "atlasKey": "addRoute"
       },
       {
@@ -564,6 +573,7 @@
         "name": "Unit",
         "description": "Filter by drug unit",
         "type": "concept",
+        "domainFilter": "Unit",
         "atlasKey": "addUnit"
       },
       {
@@ -592,6 +602,7 @@
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
         "type": "concept",
+        "domainFilter": "Provider",
         "atlasKey": "addProviderSpecialty"
       },
       {

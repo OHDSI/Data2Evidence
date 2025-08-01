@@ -5,7 +5,7 @@
 // Import JSON configuration
 import criteriaConfigData from '../config/cohort-criteria-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
-import type { ConceptSet, ConceptSetExpression, OccurrenceSettings } from '../models/AtlasCohortDefinition'
+import type { ConceptSet, OccurrenceSettings } from '../models/AtlasCohortDefinition'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -118,6 +118,7 @@ export interface CriteriaAttributeConfig {
   name: string
   description: string
   type: string
+  domainFilter?: string
   atlasKey: string
   special?: boolean
 }
@@ -129,6 +130,7 @@ export interface AttributeOption {
   description: string
   defaultDescription: string
   type: string
+  domainFilter?: string
   atlasKey: string
   special: boolean
   action: (criteriaInstance: CriteriaItem) => CriteriaItem | void
@@ -348,7 +350,7 @@ export class CriteriaConfigLoader {
       return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
         const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
-        return {
+        const result: AttributeOption = {
           id: attr.id,
           title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
           defaultTitle: displayTitle,
@@ -359,6 +361,13 @@ export class CriteriaConfigLoader {
           special: attr.special || false,
           action: this.createAttributeActionFunction(attr, criteriaTypeId),
         }
+
+        // Only add domainFilter if it exists
+        if (attr.domainFilter) {
+          result.domainFilter = attr.domainFilter
+        }
+
+        return result
       })
     }
 
@@ -433,6 +442,8 @@ export class CriteriaConfigLoader {
         default:
           console.log(`Unknown attribute type: ${attribute.type}`)
       }
+      // Return undefined for cases that don't create new criteria items
+      return undefined
     }
   }
 

@@ -41,6 +41,25 @@ import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 
+// Interface for concept selection from terminology modal
+interface SelectedConcept {
+  conceptId: number
+  conceptName?: string
+  display?: string
+  domainId?: string
+  vocabularyId?: string
+}
+
+// Interface for terminology modal event properties
+interface TerminologyEventProps {
+  selectedDatasetId: string
+  selectedConceptSetId?: string | number | undefined
+  mode: 'CONCEPT_SET' | 'CONCEPT_MULTI_SELECT'
+  defaultFilters: Array<{ id: string; value: string[] }>
+  onClose?: (onCloseValues?: { currentConceptSet?: { id: string; name: string } } | undefined) => void | Promise<void>
+  onMultiConceptSelect?: (concepts: SelectedConcept[]) => void
+}
+
 // Use the hierarchical criteria manager
 const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
@@ -237,7 +256,7 @@ const selectedConceptSetValues = computed(() => {
   }
 })
 
-const getText = (key: string, ...args: any[]) => {
+const getText = (key: string, ...args: (string | number)[]) => {
   return store?.getters?.getText?.(key, ...args) || key
 }
 
@@ -928,10 +947,8 @@ const handleSearchChange = (searchQuery: string) => {
   }
 }
 
-const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
+const handleConceptSetAction = ({ values, config, componentType }: ConceptSetAction) => {
   try {
-    console.log('handleConceptSetAction called with:', { values, config })
-
     const currentDatasetId = getDatasetId()
     if (!currentDatasetId) {
       console.error('Cannot open terminology - dataset ID not available')
@@ -939,15 +956,17 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
     }
     const conceptSetId = values?.value
 
-    const domainFilter = tagInputModel.value.props.domainFilter
-    const standardConceptCodeFilter = tagInputModel.value.props.standardConceptCodeFilter
+    const domainFilter = config?.domainFilter
+    const standardConceptCodeFilter = config?.standardConceptCodeFilter
 
     const defaultFilters = [
       { id: 'domainId', value: domainFilter ? [domainFilter] : [] },
       { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
     ]
 
-    const handleCloseCallback = async (onCloseValues: { currentConceptSet?: { id: string; name: string } }) => {
+    const handleCloseCallback = async (
+      onCloseValues?: { currentConceptSet?: { id: string; name: string } } | undefined
+    ) => {
       if (!onCloseValues?.currentConceptSet) {
         return
       }
@@ -1013,15 +1032,50 @@ const handleConceptSetAction = ({ values, config }: ConceptSetAction) => {
       }
     }
 
+    // Determine mode based on component type
+    const mode = componentType === 'concept' ? 'CONCEPT_MULTI_SELECT' : 'CONCEPT_SET'
+
+    // Create appropriate callback based on mode
+    const eventProps: TerminologyEventProps = {
+      selectedDatasetId: currentDatasetId,
+      selectedConceptSetId: conceptSetId,
+      mode: mode,
+      defaultFilters,
+    }
+
+    if (mode === 'CONCEPT_MULTI_SELECT') {
+      // For multi-select mode, use onMultiConceptSelect callback
+      eventProps.onMultiConceptSelect = (concepts: SelectedConcept[]) => {
+        // TODO: Handle multi-concept selection - transform concepts into concept set format
+        // For now, we'll create a simple concept set from the selected concepts
+        if (concepts && concepts.length > 0) {
+          const conceptNames = concepts.map(c => c.conceptName || c.display).join(', ')
+          const newConceptSet = {
+            text: `Multi-Select: ${conceptNames}`,
+            display_value: `Multi-Select: ${conceptNames}`,
+            value: `multi_${Date.now()}`,
+            conceptIds: concepts.map(c => c.conceptId),
+            concepts: concepts.map(c => ({
+              id: c.conceptId,
+              useMapped: false,
+              isExcluded: false,
+              useDescendants: false,
+            })),
+          }
+          selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
+        }
+      }
+      eventProps.onClose = () => {
+        // Simple close handler for multi-select mode
+      }
+    } else {
+      // For concept set mode, use existing callback
+      eventProps.onClose = handleCloseCallback
+    }
+
     const event = new CustomEvent('alp-terminology-open', {
       detail: {
-        props: {
-          selectedDatasetId: currentDatasetId,
-          selectedConceptSetId: conceptSetId,
-          mode: 'CONCEPT_SET',
-          onClose: handleCloseCallback,
-          defaultFilters,
-        },
+        props: eventProps,
       },
     })
 
@@ -1142,6 +1196,7 @@ defineExpose({
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdatePrimaryCriteriaLimit"
             @update-entry-days="handleUpdateEntryDays"
+            @concept-set-action="handleConceptSetAction"
           />
         </div>
       </div>
@@ -1173,6 +1228,7 @@ defineExpose({
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdateExitStrategy"
+            @concept-set-action="handleConceptSetAction"
           />
         </div>
       </div>

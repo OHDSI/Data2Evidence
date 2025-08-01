@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue'
 import { EntryEvent, ExitEvent, QueryFilterEvent } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
 import ObservationPeriodBlock from './ObservationPeriodBlock.vue'
@@ -33,6 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update-limit': [limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG']
   'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -140,6 +141,7 @@ const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
         :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
+        @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
   </div>
