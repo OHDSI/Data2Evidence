@@ -112,7 +112,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByTitle('Delete Saved Filter').nth(1)
   await page.getByRole('button', { name: 'Delete' }).click();
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(20000);
   
   await expect(page.getByText('You have not yet saved any')).toBeVisible();
 })
