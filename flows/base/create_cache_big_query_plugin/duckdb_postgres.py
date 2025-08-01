@@ -77,54 +77,28 @@ def copy_schema_to_cache(con, dbdao: any):
             else:
                 print(f"No rows found for table {table}, skipping insert.")
 
-            # TEST QUERY: Fetch and print a few rows from the person table after insert
-            # if table == "person":
-            #     test_query = f"SELECT * FROM {schema_name}.person LIMIT 5;"
-            #     logger.info(f"Running test query: {test_query}")
-            #     try:
-            #         # Use the connection if it has cursor(), else use as-is (for DB-API compatibility)
-            #         if hasattr(con, 'cursor') and not hasattr(con, 'execute'):  # e.g., SQLAlchemy connection
-            #             cursor = con.cursor()
-            #             cursor.execute(test_query)
-            #         elif hasattr(con, 'cursor') and hasattr(con, 'execute') and not isinstance(con, type(con.cursor())):
-            #             cursor = con.cursor()
-            #             cursor.execute(test_query)
-            #         else:
-            #             cursor = con
-            #             cursor.execute(test_query)
-            #         test_rows = cursor.fetchall()
-            #         print(f"Sample rows from {schema_name}.person:")
-            #         for row in test_rows:
-            #             print(row)
-            #     except Exception as test_err:
-            #         print(f"Test query failed: {test_err}")
+            # Always create indexes, regardless of data presence
+            indexes = dbdao.get_indexes_for_table(schema_name, table)
+            for index in indexes:
+                index_name = index.get("name")
+                column_names = index.get("column_names")
+                columns_str = ', '.join(column_names)
+                unique = index.get("unique")
+                print(f"Creating index: {index_name} on columns: {columns_str} for table {schema_name}.{table}")
+                if unique:
+                    index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                else:
+                    index_query = f"CREATE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                logger.info(f"Running query: {index_query}")
+                con.execute(index_query)
 
-                # Create index based on index in db table
-                indexes = dbdao.get_indexes_for_table(schema_name, table)
-
-                for index in indexes:
-                    index_name = index.get("name")
-                    column_names = index.get("column_names")
-                    columns_str = ', '.join(column_names)
-                    unique = index.get("unique")
-                    print(f"Creating index: {index_name} on columns: {columns_str} for table {schema_name}.{table}")
-                    # by default indexes created on columns in asc order
-                    if unique:
-                        index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
-                    else:
-                        index_query = f"CREATE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
-
-                    logger.info(f"Running query: {index_query}")
-                    con.execute(index_query)
-
-                pk_index = dbdao.get_indexes_for_pk(schema_name, table)
-                pk_index_name = pk_index.get("name")
-                pk_index_columns = pk_index.get("constrained_columns")
-
-                if pk_index_name is not None and pk_index_columns != []:
-                    pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {schema_name}.{table} ({', '.join(pk_index_columns)})"
-                    logger.info(f"Running query: {pk_index_query}")
-                    con.execute(pk_index_query)
+            pk_index = dbdao.get_indexes_for_pk(schema_name, table)
+            pk_index_name = pk_index.get("name")
+            pk_index_columns = pk_index.get("constrained_columns")
+            if pk_index_name is not None and pk_index_columns != []:
+                pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {schema_name}.{table} ({', '.join(pk_index_columns)})"
+                logger.info(f"Running query: {pk_index_query}")
+                con.execute(pk_index_query)
     
     except Exception as err:
         logger.error(
