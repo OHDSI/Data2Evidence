@@ -611,6 +611,15 @@ services:
           }
          }
         }
+      POSTGRES_ALTER_EXTENSION_CONFIG: |-
+        {
+         "databases": {
+          "${PG__FHIR_DB_NAME:-alp}": {
+             "schema": "fhir",
+             "extension": "pg_trgm"
+          }
+         }
+        }
       POSTGRES_MANAGE_USERS: |-
         {
          "${PG_DB_NAME:-alp}": {

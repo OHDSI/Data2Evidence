@@ -320,10 +320,22 @@ export class App {
         await this.dbDao.createSchema(client, databaseName, schemaName);
       }
 
-      if (databaseName === "alp" && schemaName === "fhir") {
-        await this.dbDao.alterExtensionSchema(client, "fhir", "pg_trgm");
+      // set extension if schema and database in postgres_alter_extension_config
+      const alterExtensionConfig =
+        config.getProperties()["postgres_alter_extension_config"]["databases"];
+      
+      for (let database of Object.keys(alterExtensionConfig)) {
+        if (database === databaseName && schemaName === alterExtensionConfig[database].schema) {
+          await this.dbDao.alterExtensionSchema(
+            client,
+            alterExtensionConfig[databaseName].schema,
+            alterExtensionConfig[databaseName].extension
+          );
+          this.logger.info(
+            `Extension ${alterExtensionConfig[databaseName].extension} set to ${alterExtensionConfig[databaseName].schema} schema of ${databaseName} database`
+          );
+        }
       }
-
       //Grant Manage & Usage Privileges
       await this.userDao.grantManagePrivilegesForSchema(
         client,
