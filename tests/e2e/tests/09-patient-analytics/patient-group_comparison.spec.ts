@@ -82,8 +82,11 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled();
 
   await page.getByRole('button', { name: 'Compare' }).click();
-  await page.waitForTimeout(10000);
-  await page.getByTitle('Export to File').click();
+  await page.waitForTimeout(15000);
+
+  // Verify the comparison modal is visible
+  await expect(page.locator('.modal-body')).toBeVisible();
+  await page.locator('.mainChartToolbar').getByTitle('Export to File').click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#pane-left').getByText('Export to PNG File').click();
   const download = await downloadPromise;
