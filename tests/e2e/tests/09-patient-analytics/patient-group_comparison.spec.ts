@@ -112,6 +112,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByTitle('Delete Saved Filter').nth(1)
   await page.getByRole('button', { name: 'Delete' }).click();
+  await page.waitForTimeout(10000);
   
   await expect(page.getByText('You have not yet saved any')).toBeVisible();
 })
@@ -146,7 +147,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // CONDITION OCCURRENCE FILTER
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
-  await page.waitForTimeout(5000)
+  await page.waitForTimeout(10000)
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
