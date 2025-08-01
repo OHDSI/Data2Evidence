@@ -17,3 +17,4 @@ ibis-framework[duckdb, postgres]==10.0.0
 jsonpath-ng==1.7.0
 sqlalchemy-bigquery==1.14.1
 openai==0.28
+google-cloud-bigquery>=3.6.0

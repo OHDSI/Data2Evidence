@@ -458,7 +458,8 @@ services:
             "TREX__SQL__PORT": "${TREX__SQL__PORT:-5432}",
             "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
             "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}"
+            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
+            "GOOGLE_APPLICATION_CREDENTIALS":"/app/key.json"
           },
           "jupyter-gateway": {},
           "mlflow": {},
@@ -534,6 +535,7 @@ services:
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/key.json
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
