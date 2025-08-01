@@ -14,7 +14,7 @@ def get_auth_token_from_input() -> AuthToken:
 
 
 def get_auth_token_value() -> SecretStr:
-    if not hasattr(get_auth_token_value, "token"):
+    if not hasattr(get_auth_token_value, "auth_token"):
         # Cache the auth token in a func attribute to avoid fetching it multiple times
         get_auth_token_value.auth_token = get_auth_token_from_input().token
         return get_auth_token_value.auth_token
