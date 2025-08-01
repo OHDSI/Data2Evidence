@@ -1,10 +1,16 @@
-import { Injectable, InternalServerErrorException, NotFoundException, SCOPE } from '@danet/core'
-import { DEFAULT_ERROR_MESSAGE } from '../../common/const.ts'
-import { RequestContextService } from '../../common/request-context.service.ts'
-import { createLogger } from '../../logger.ts'
-import { MetadataConfigTagDto, MetdataConfigAttributeDto } from '../dto/index.ts'
-import { DatasetAttributeConfig, DatasetTagConfig } from '../entity/index.ts'
-import { DatasetAttributeConfigRepository, DatasetTagConfigRepository } from '../repository/index.ts'
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  SCOPE,
+} from "@danet/core";
+import { DEFAULT_ERROR_MESSAGE } from '../../common/const.ts';
+import { RequestContextService } from '../../common/request-context.service.ts';
+import { createLogger } from '../../logger.ts';
+import { MetadataConfigTagDto, MetdataConfigAttributeDto } from '../dto/index.ts';
+import { DatasetAttributeConfig, DatasetTagConfig } from '../entity/index.ts';
+import { DatasetAttributeConfigRepository, DatasetTagConfigRepository } from '../repository/index.ts';
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class MetadataConfigService {
@@ -25,6 +31,15 @@ export class MetadataConfigService {
   }
 
   async insertTagConfig(tagConfigDto: MetadataConfigTagDto): Promise<string> {
+    const existingConfig = await this.tagConfigRepo.findOne({ where: { name: tagConfigDto.name } })
+    if (existingConfig) {
+      throw new BadRequestException(
+        {
+          statusCode: 400,
+          message: `Tag config with name ${tagConfigDto.name} already exists`
+        }
+      );
+    }
     try {
       const tagConfigEntity = this.tagConfigRepo.create({ ...tagConfigDto })
       await this.tagConfigRepo.insertTagConfig(this.addOwner(tagConfigEntity, true))
@@ -63,13 +78,22 @@ export class MetadataConfigService {
   }
 
   async insertAttributeConfig(attributeConfigDto: MetdataConfigAttributeDto): Promise<string> {
+    const existingConfig = await this.attributeConfigRepo.findOne({ where: { id: attributeConfigDto.id } })
+    if (existingConfig) {
+      throw new BadRequestException(
+        {
+          statusCode: 400,
+          message: `Attribute config with id ${attributeConfigDto.id} already exists`
+        }
+      );
+    }
     try {
       const attributeConfigEntity = this.attributeConfigRepo.create({ ...attributeConfigDto })
       await this.attributeConfigRepo.insertAttributeConfig(this.addOwner(attributeConfigEntity, true))
-      this.logger.info(`Created new attribute config ${attributeConfigEntity.name}`)
+      console.log(`Created new attribute config ${attributeConfigEntity.name}`)
       return attributeConfigEntity.id
     } catch (error) {
-      this.logger.error(`Error while creating new attribute config: ${error}`)
+      console.log(`Error while creating new attribute config: ${error}`)
       throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
     }
   }
