@@ -51,8 +51,15 @@ test('atlas-lite cohort creation', async ({ page }) => {
 
   await expect(page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="authorship__container"]')).toContainText(new RegExp('created by anonymous on'));
   
+  // Set up dialog handler for deletion confirmation
+  page.on('dialog', async dialog => {
+    expect(dialog.message()).toContain('Delete cohort definition? Warning: deletion can not be undone!');
+    await dialog.accept();
+  });
   await page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="asset-heading"]').getByTitle(new RegExp('^Delete$')).click();
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(10000);
+  await expect(page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')).toBeVisible()
+  await expect(page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')).toContainText('No data available in table');
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
