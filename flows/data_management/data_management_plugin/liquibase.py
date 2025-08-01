@@ -56,7 +56,7 @@ class Liquibase:
 
         if self.dialect == SupportedDatabaseDialects.HANA and self.tenant_configs.authMode == AuthMode.JWT:
             # jwt authentication
-            admin_password = get_third_party_token()
+            admin_password = get_third_party_token().get_secret_value()
         else:
             # password authentication
             admin_user = self.tenant_configs.adminUser
