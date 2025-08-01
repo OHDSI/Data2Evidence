@@ -58,13 +58,13 @@ def copy_schema_to_cache(con, dbdao: any):
             bq_data = client.query(bq_data_query).result()
             # Remove none_to_null and use direct value
             rows = [tuple(row[col['column_name']] for col in columns) for row in bq_data]
-            print(f"Rows extracted for table {table}: {len(rows)}")
+            logger.info(f"Rows extracted for table {table}: {len(rows)}")
             if rows:
                 valid_rows = rows
                 mismatch_count = sum(1 for r in valid_rows if len(r) != len(columns))
                 if mismatch_count > 0:
                     msg = f"Error: {mismatch_count} rows have a column count mismatch in table {table} (expected {len(columns)} columns)"
-                    print(msg)
+                    logger.info(msg)
                     raise ValueError(msg)
                 if valid_rows:
                     column_names = ', '.join([f'"{col["column_name"]}"' for col in columns])
@@ -73,9 +73,9 @@ def copy_schema_to_cache(con, dbdao: any):
                     logger.info(f"Inserting {len(valid_rows)} rows into {schema_name}.{table}")
                     con.executemany(insert_sql, valid_rows)
                 else:
-                    print(f"No valid rows to insert for table {table} (all rows had column mismatch)")
+                    logger.info(f"No valid rows to insert for table {table} (all rows had column mismatch)")
             else:
-                print(f"No rows found for table {table}, skipping insert.")
+                logger.info(f"No rows found for table {table}, skipping insert.")
 
             # Always create indexes, regardless of data presence
             indexes = dbdao.get_indexes_for_table(schema_name, table)
@@ -84,7 +84,7 @@ def copy_schema_to_cache(con, dbdao: any):
                 column_names = index.get("column_names")
                 columns_str = ', '.join(column_names)
                 unique = index.get("unique")
-                print(f"Creating index: {index_name} on columns: {columns_str} for table {schema_name}.{table}")
+                logger.info(f"Creating index: {index_name} on columns: {columns_str} for table {schema_name}.{table}")
                 if unique:
                     index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
                 else:
