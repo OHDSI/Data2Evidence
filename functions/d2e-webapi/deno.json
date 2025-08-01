@@ -20,6 +20,6 @@
     "fastify": "npm:fastify@^5.2.1",
     "fastify-type-provider-zod": "npm:fastify-type-provider-zod@^4.0.2",
     "pg": "npm:pg@^8.13.1",
-    "zod": "npm:zod@^3.25.76"
+    "zod": "npm:zod@3.25.76"
   }
 }

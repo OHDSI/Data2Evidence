@@ -30,7 +30,7 @@
     "mime-types": "npm:mime-types@2.1.35",
     "isomorphic-git": "npm:isomorphic-git@1.27.1",
     "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
-    "zod": "npm:zod@^3.25.76",
+    "zod": "npm:zod@3.25.76",
     "http": "node:http",
     "fs": "node:fs",
     "path": "node:path",
