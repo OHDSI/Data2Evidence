@@ -59,7 +59,7 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
 
     const values = response.status === 204 ? [] : response?.data || []
     const formattedValues = values.map((item: any) => ({
-      value: item.id,
+      value: String(item.id),
       text: item.name,
       display_value: item.name,
       conceptIds: item.concepts?.map((c: any) => c.id) || [],

@@ -141,7 +141,7 @@ const conceptSetsFromCriteria = computed(() => {
   criteria.criteria.forEach(group => {
     group.events.forEach(event => {
       if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
-        const foundConceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+        const foundConceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId.toString())
         if (foundConceptSet) {
           conceptSets.push(foundConceptSet)
           seenIds.add(event.conceptSetId)
@@ -320,8 +320,6 @@ watch(
 onMounted(() => {
   console.log('QueryFilterModern component mounted')
   initializeComponent()
-  console.log('Loading initial concept sets...')
-  loadConceptSets()
 })
 
 // Handle criteria updates from the new component hierarchy
@@ -474,6 +472,11 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     console.log('Available concept sets:', allConceptSets.value.length)
 
     isLoading.value = true
+
+    // Ensure concept sets are loaded before processing Atlas JSON
+    if (allConceptSets.value.length === 0) {
+      await loadConceptSets()
+    }
     const atlasExpression: AtlasCohortDefinition =
       typeof atlasJson.expression === 'string' ? JSON.parse(atlasJson.expression) : atlasJson.expression
 
@@ -527,8 +530,18 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     }
 
     // Get concept set IDs referenced in the Atlas JSON
-    const referencedConceptSetIds = extractConceptSetIds(atlasExpression)
-    console.log('Referenced concept set IDs:', Array.from(referencedConceptSetIds))
+    // If we have ConceptSets with conceptSetId, use those instead of CodesetIds from criteria
+    let referencedConceptSetIds: Set<number>
+    if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
+      referencedConceptSetIds = new Set<number>()
+      atlasExpression.ConceptSets.forEach(cs => {
+        if (cs.conceptSetId) {
+          referencedConceptSetIds.add(cs.conceptSetId)
+        }
+      })
+    } else {
+      referencedConceptSetIds = extractConceptSetIds(atlasExpression)
+    }
 
     // Check if referenced concept sets exist locally
     for (const conceptSetId of referencedConceptSetIds) {
@@ -575,7 +588,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
             console.log(`Atlas ID mapping: ${originalId} → ${sequentialId} (System ID: ${systemConceptSetId})`)
 
             // Add new concept sets to allConceptSets immediately for the converter
-            if (!allConceptSets.value.find(cs => cs.value === handledConceptSet.value)) {
+            if (!allConceptSets.value.find(cs => cs.value.toString() === handledConceptSet.value.toString())) {
               allConceptSets.value.push(handledConceptSet)
               conceptSetsUpdated = true
             }
@@ -644,7 +657,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
     for (const event of group.events) {
       if (event.conceptSetId) {
         // Find the concept set in allConceptSets
-        let conceptSet = allConceptSets.value.find(cs => cs.value === event.conceptSetId)
+        let conceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId.toString())
 
         if (!conceptSet) {
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets for event ${event.id}`)
@@ -1164,7 +1177,9 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
         await loadConceptSets()
 
         // Find the concept set with complete data from the fresh API response
-        const completeConceptSet = allConceptSets.value.find((cs: ConceptSetItem) => cs.value == conceptSetIdToFind)
+        const completeConceptSet = allConceptSets.value.find(
+          (cs: ConceptSetItem) => cs.value.toString() === conceptSetIdToFind.toString()
+        )
 
         if (completeConceptSet) {
           // Use complete concept set data if found
@@ -1172,7 +1187,7 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
             // Updating existing concept set
             console.log('Updating concept set:', completeConceptSet.text)
             const currentSets = selectedConceptSets.value
-            const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
+            const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value.toString() === conceptSetId.toString())
             if (index !== -1) {
               const updatedSets = [...currentSets]
               updatedSets[index] = completeConceptSet
@@ -1192,7 +1207,7 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
         // Fallback to basic data if reload fails
         if (conceptSetId) {
           const currentSets = selectedConceptSets.value
-          const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value === conceptSetId)
+          const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value.toString() === conceptSetId.toString())
           if (index !== -1) {
             const updatedSets = [...currentSets]
             const currentItem = updatedSets[index]
