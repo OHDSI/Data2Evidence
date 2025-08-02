@@ -74,8 +74,16 @@ const TerminologyList: FC<TerminologyListProps> = ({
     concept: {},
     validity: {},
   });
-  const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([]);
-  const [useDefaultFilters, setUseDefaultFilters] = useState(true);
+  // Initialize columnFilters with defaultFilters for CONCEPT_MULTI_SELECT mode to avoid loading all concepts first
+  const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>(() => {
+    if (mode === "CONCEPT_MULTI_SELECT" && defaultFilters && defaultFilters.length > 0) {
+      return defaultFilters.map((filter) => ({
+        id: filter.id,
+        value: filter.value,
+      }));
+    }
+    return [];
+  });
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
 
@@ -208,31 +216,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     [onSelectConceptId]
   );
-
-  useEffect(() => {
-    if (columnFilters.length || !defaultFilters) {
-      setUseDefaultFilters(false);
-    }
-  }, [columnFilters.length, defaultFilters]);
-
-  useEffect(() => {
-    if (useDefaultFilters && defaultFilters && filterOptions && listData.length) {
-      // Only include valid filters
-      const filters = JSON.parse(JSON.stringify(defaultFilters)) as typeof defaultFilters;
-      const validFilters = filters
-        .map((f) => {
-          const valueKeys = filterOptions[f.id as keyof typeof filterOptions];
-          const valueKeysArr = Object.keys(valueKeys);
-          const value = f.value.filter((v) => valueKeysArr.includes(v));
-          return { ...f, value };
-        })
-        .filter((f) => {
-          // Empty value arrays should be removed as it is not compatible with the react table
-          return Object.keys(filterOptions).includes(f.id) && f.value.length;
-        });
-      setColumnFilters(validFilters);
-    }
-  }, [defaultFilters, filterOptions, listData, useDefaultFilters]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
