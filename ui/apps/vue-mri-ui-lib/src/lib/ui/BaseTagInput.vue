@@ -294,6 +294,12 @@ export default {
       })
     },
     open() {
+      // For concept type, open terminology modal directly instead of showing dropdown
+      if (this.componentType === 'concept') {
+        this.handleConceptSetAction(null)
+        return
+      }
+
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
     },
