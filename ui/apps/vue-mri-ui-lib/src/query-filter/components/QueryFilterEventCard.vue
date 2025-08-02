@@ -24,7 +24,6 @@ import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 
-
 interface Props {
   event: QueryFilterEvent
   eventIndex: number
@@ -514,7 +513,12 @@ const sideBarRef = ref<HTMLElement | null>(null)
                       : []
                   "
                   :external-domain-values="
-                    conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+                    // Using empty values so dropdown doesn't show for concepts type
+                    ('configType' in attribute && attribute.configType === 'conceptSet' && conceptSetDomainValues) || {
+                      values: [],
+                      isLoading: false,
+                      loadedStatus: 'NO_RESULTS',
+                    }
                   "
                   :external-texts="conceptSetTexts || {}"
                   :is-catalog-attribute="false"
