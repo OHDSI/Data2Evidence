@@ -76,7 +76,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   });
   // Initialize columnFilters with defaultFilters for CONCEPT_MULTI_SELECT mode to avoid loading all concepts first
   const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>(() => {
-    if (mode === "CONCEPT_MULTI_SELECT" && defaultFilters && defaultFilters.length > 0) {
+    if (defaultFilters && defaultFilters.length > 0) {
       return defaultFilters.map((filter) => ({
         id: filter.id,
         value: filter.value,
