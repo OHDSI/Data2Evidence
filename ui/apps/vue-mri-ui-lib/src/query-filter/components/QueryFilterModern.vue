@@ -141,7 +141,7 @@ const conceptSetsFromCriteria = computed(() => {
   criteria.criteria.forEach(group => {
     group.events.forEach(event => {
       if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
-        const foundConceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId.toString())
+        const foundConceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId!.toString())
         if (foundConceptSet) {
           conceptSets.push(foundConceptSet)
           seenIds.add(event.conceptSetId)
@@ -657,7 +657,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
     for (const event of group.events) {
       if (event.conceptSetId) {
         // Find the concept set in allConceptSets
-        let conceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId.toString())
+        let conceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId!.toString())
 
         if (!conceptSet) {
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets for event ${event.id}`)

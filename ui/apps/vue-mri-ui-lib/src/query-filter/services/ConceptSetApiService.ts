@@ -16,11 +16,11 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
 
   const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
   if (bearerToken != null) {
-    headers.Authorization = `Bearer ${bearerToken}`
+    headers['Authorization'] = `Bearer ${bearerToken}`
   }
 
   if (datasetId) {
-    headers.datasetid = datasetId
+    headers['datasetid'] = datasetId
   }
 
   return headers
@@ -32,7 +32,7 @@ const buildApiUrl = (path: string): string => {
   if (portalAPI.qeSvcUrl) {
     return `${portalAPI.qeSvcUrl}${path}`
   } else {
-    return `${process.env.VUE_APP_HOST}${path}`
+    return `${process.env['VUE_APP_HOST']}${path}`
   }
 }
 
@@ -241,15 +241,16 @@ export const loadConceptSetDetails = async (
       const conceptSetId = conceptSet.value
       const conceptIds = conceptSetToConceptIds[conceptSetId]
       const conceptDetails = []
+      if (conceptIds) {
+        for (const conceptId of conceptIds) {
+          const conceptDetail = conceptDetailsMap.get(conceptId)
+          if (conceptDetail) {
+            console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
 
-      for (const conceptId of conceptIds) {
-        const conceptDetail = conceptDetailsMap.get(conceptId)
-        if (conceptDetail) {
-          console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
-
-          const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
-          const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
-          conceptDetails.push(formattedConcept)
+            const conceptFlags = conceptSet.concepts?.find((c: any) => c.id === conceptId)
+            const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
+            conceptDetails.push(formattedConcept)
+          }
         }
       }
 
