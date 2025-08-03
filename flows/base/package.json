@@ -975,6 +975,45 @@
             }
           },
           "type": "fhir_to_omop"
+        },
+        {
+          "name": "create_cachedb_fhir_plugin",
+          "entrypoint": "flows.create_cachedb_fhir_plugin.flow.create_cachedb_fhir_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "CreateDuckdbDatabaseFileType": {
+                "properties": {
+                  "databaseCode": {
+                    "title": "Databasecode",
+                    "type": "string"
+                  },
+                  "schemaName": {
+                    "title": "Schemaname",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "databaseCode",
+                  "schemaName"
+                ],
+                "title": "CreateDuckdbDatabaseFileType",
+                "type": "object"
+              }
+            }
+          },
+          "type": "create_cachedb_fhir"
         }
       ]
     }
