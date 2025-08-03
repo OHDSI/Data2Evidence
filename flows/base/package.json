@@ -975,40 +975,6 @@
             }
           },
           "type": "fhir_to_omop"
-        },
-        {
-          "name": "create_cache_big_query_plugin",
-          "entrypoint": "flows.create_cache_big_query_plugin.flow.create_cache_big_query_plugin",
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateDuckdbDatabaseFileType": {
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "databaseCode"
-                ],
-                "title": "CreateDuckdbDatabaseFileType",
-                "type": "object"
-              }
-            }
-          },
-          "type": "create_cache_big_query"
         }
       ]
     }

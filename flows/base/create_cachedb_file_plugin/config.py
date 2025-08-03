@@ -51,12 +51,15 @@ DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM = Enum(
 
 class CreateDuckdbDatabaseFileType(BaseModel):
     databaseCode: str
+    schemaName: str
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
     tablesToCreateDuckdbFtsIndex: List[DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM] = [
         "concept"]
-
+    @property
+    def create_duckdb_file(self) -> bool:
+        return False
     @property
     def use_cache_db(self) -> str:
         return False
@@ -65,7 +68,10 @@ class CreateDuckdbDatabaseFileType(BaseModel):
 class CreateCDWValidationConfig(BaseModel):
     databaseCode: str
     schemaName: str
-
+    @property
+    def create_duckdb_file(self) -> bool:
+        return False
+    
     @property
     def use_cache_db(self) -> str:
         return False
