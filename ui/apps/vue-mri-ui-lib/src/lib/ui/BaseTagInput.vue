@@ -1,7 +1,7 @@
 <template>
   <div
-    @focus="openControl"
-    @click="openControl"
+    @focus="handleContainerInteraction"
+    @click="handleContainerInteraction"
     tabindex="0"
     class="app-tag-input"
     ref="container"
@@ -227,6 +227,16 @@ export default {
     remove(removedOption, id) {
       this.removeFromNewTags(removedOption.value)
     },
+    handleContainerInteraction() {
+      // For concept and conceptSet types, directly open terminology modal
+      if (this.componentType === 'concept') {
+        this.handleConceptSetAction(null)
+        return
+      }
+
+      // For other types, use normal behavior
+      this.openControl()
+    },
     async openControl() {
       await this.$nextTick()
       if (this.$refs.multiselect?.activate) {
@@ -294,7 +304,8 @@ export default {
       })
     },
     open() {
-      // For concept type, open terminology modal directly instead of showing dropdown
+      // For concept types, open terminology modal directly instead of showing dropdown
+      // dropdown is still used to select existing concept sets
       if (this.componentType === 'concept') {
         this.handleConceptSetAction(null)
         return

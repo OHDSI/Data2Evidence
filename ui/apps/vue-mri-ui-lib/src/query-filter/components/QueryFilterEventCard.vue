@@ -442,6 +442,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
               :is-catalog-attribute="false"
               :max-selections="1"
               @update:value="handleConceptSetChange"
+              @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })"
             />
             <div v-else class="concept-set-readonly">
               {{ getConceptSetDisplayName() || 'No concept set selected' }}
