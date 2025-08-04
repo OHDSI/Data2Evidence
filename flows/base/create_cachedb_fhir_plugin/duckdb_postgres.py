@@ -4,25 +4,22 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 @task(log_prints=True)
-def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_config_validation: bool, is_trex_cache: bool = False):
+def copy_schema_to_cache(con, dbdao: any, schema_name: str):
     logger = get_run_logger()
-
+    print(con)
     logger.info(
         f"Copying tables from schema '{schema_name}' into cache..."
     )
-
-    # Get credentials for database code
     db_credentials = dbdao.tenant_configs
-    
+    created_tables = []
     try:
         con.execute(f"DROP SCHEMA IF EXISTS {schema_name};")            
         con.execute(f"""CREATE SCHEMA {schema_name};""")
         table_names = dbdao.get_table_names(schema_name)
-
         CHUNK_SIZE = 10000
-        # copy tables from postgres to cache with data
         for table in table_names:
             try:
+                print("Copying table: ", table)
                 columns = dbdao.get_columns(schema_name, table)
                 casted_columns = []
                 for col in columns:
@@ -31,9 +28,6 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
                     else:
                         casted_columns.append(col)
                 select_columns = ', '.join(casted_columns)
-                print(table)
-                print(select_columns)
-                # Get total row count from source table
                 count_sql = f"SELECT COUNT(*) FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}')"
                 con.execute(count_sql)
                 total_rows = con.fetchone()[0]
@@ -48,41 +42,50 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
                     con.execute(create_sql)
                     offset += CHUNK_SIZE
                     first_chunk = False
-                # Create index based on index in db table
-                indexes = dbdao.get_indexes_for_table(schema_name, table)
-
-                # for index in indexes:
-                #     index_name = index.get("name")
-                #     column_names = index.get("column_names")
-                #     columns_str = ', '.join(column_names)
-                #     unique = index.get("unique")
-
-                #     # by default indexes created on columns in asc order
-                #     if unique:
-                #         index_query = f"CREATE UNIQUE INDEX {index_name} ON fhir_trexpg.{schema_name}.{table} ({columns_str})"
-                #     else:
-                #         index_query = f"CREATE INDEX {index_name} ON fhir_trexpg.{schema_name}.{table} ({columns_str})"
-
-                #     logger.info(f"Running query: {index_query}")
-                #     con.execute(index_query)
-
-                # pk_index = dbdao.get_indexes_for_pk(schema_name, table)
-                # pk_index_name = pk_index.get("name")
-                # pk_index_columns = pk_index.get("constrained_columns")
-
-                # if pk_index_name is not None and pk_index_columns != []:
-                #     pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON fhir_trexpg.{schema_name}.{table} ({', '.join(pk_index_columns)})"
-                #     logger.info(f"Running query: {pk_index_query}")
-                #     con.execute(pk_index_query)
+                created_tables.append(table)
             except Exception as e:
                 logger.error(
-                        f"Table and index copy for table '{schema_name}.{table}' failed with error: {e}f")
+                        f"Table copy for table '{schema_name}.{table}' failed with error: {e}")
                 raise e
-
+        return created_tables
     except Exception as err:
         logger.error(
-            f"Table and index copy failed with error: {err}f")
+            f"Table copy failed with error: {err}")
         raise (err)
-    else:
-        logger.info(
-            f"Schema '{schema_name}' succesfully copied into duckdb database file!")
+
+@task(log_prints=True)
+def create_indexes_for_tables(con, dbdao, schema_name, created_tables):
+    logger = get_run_logger()
+    try:
+        for table in created_tables:
+            try:
+                indexes = dbdao.get_indexes_for_table(schema_name, table)
+                for index in indexes:
+                    index_name = index.get("name")
+                    column_names = index.get("column_names")
+                    columns_str = ', '.join(column_names)
+                    unique = index.get("unique")
+                    if unique:
+                        index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                    else:
+                        index_query = f"CREATE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                    logger.info(f"Running query: {index_query}")
+                    try:
+                        con.execute(index_query)
+                    except Exception as idx_err:
+                        logger.warning(f"Index creation failed for {schema_name}.{table}: {idx_err}")
+                pk_index = dbdao.get_indexes_for_pk(schema_name, table)
+                pk_index_name = pk_index.get("name")
+                pk_index_columns = pk_index.get("constrained_columns")
+                if pk_index_name is not None and pk_index_columns != []:
+                    pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {schema_name}.{table} ({', '.join(pk_index_columns)})"
+                    logger.info(f"Running query: {pk_index_query}")
+                    try:
+                        con.execute(pk_index_query)
+                    except Exception as pk_idx_err:
+                        logger.warning(f"PK index creation failed for {schema_name}.{table}: {pk_idx_err}")
+            except Exception as e:
+                logger.error(f"Index creation for table '{schema_name}.{table}' failed with error: {e}")
+    except Exception as err:
+        logger.error(f"Index creation failed with error: {err}")
+        raise (err)
