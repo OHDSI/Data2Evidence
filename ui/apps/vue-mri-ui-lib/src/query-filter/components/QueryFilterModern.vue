@@ -1146,6 +1146,128 @@ const updateAttributeWithConcepts = (
   }
 }
 
+// Helper function to load concept set details for Atlas conversion
+const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetItem) => {
+  try {
+    const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
+    const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetId())
+
+    // Update the event with concept set details
+    event.conceptSetDetails = conceptSetDetails
+    event.conceptSetLoading = false
+
+    // Also update the event directly in criteriaManager to ensure consistency
+    const primaryEvents = criteriaManager.getPrimaryEvents()
+    const managerEvent = primaryEvents?.events?.find((e: any) => e.id === event.id)
+    if (managerEvent) {
+      managerEvent.conceptSetDetails = conceptSetDetails
+      managerEvent.conceptSetLoading = false
+      // CRITICAL: Also update the concept set name that Atlas conversion uses
+      managerEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+    }
+
+    // Trigger another UI update after details are loaded
+    primaryEventsUpdateKey.value++
+  } catch (error) {
+    console.error('Failed to load concept set details:', error)
+    event.conceptSetLoading = false
+  }
+}
+
+// Helper function to update event concept set
+// Reactive references for forcing UI updates
+const primaryEventsUpdateKey = ref(0)
+const primaryEventsData = computed(() => {
+  // This computed property will trigger when primaryEventsUpdateKey changes
+  primaryEventsUpdateKey.value // Access this to create dependency
+  return criteriaManager.getPrimaryEvents()
+})
+
+const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
+  const criteria = criteriaManager.getCriteria()
+
+  // Check primary entry events first
+  const primaryEvents = criteriaManager.getPrimaryEvents()
+  if (primaryEvents?.events) {
+    const event = primaryEvents.events.find((event: any) => event.id === eventId)
+    if (event) {
+      // For events, use Vue's reactive assignment to ensure updates are detected
+      Object.assign(event, {
+        ...event,
+        conceptSetId: conceptSet.value.toString(),
+        selectedConceptSet: {
+          value: Number(conceptSet.value),
+          text: conceptSet.text || '',
+          display_value: conceptSet.display_value || '',
+          conceptIds: conceptSet.conceptIds || [],
+          concepts: [], // Start with empty concepts array
+          shared: false,
+          userName: '',
+          createdDate: new Date().toISOString(),
+          modifiedDate: new Date().toISOString(),
+        },
+      })
+
+      // Load concept set details for Atlas conversion
+      loadConceptSetDetailsForEvent(event, conceptSet)
+
+      // Update reactive reference to trigger UI updates
+      primaryEventsUpdateKey.value++
+
+      return
+    }
+  }
+
+  // Check criteria groups
+  for (const group of criteria.criteria) {
+    const event = group.events.find((event: any) => event.id === eventId)
+    if (event) {
+      // For events, store the concept set ID as a string
+      event.conceptSetId = conceptSet.value.toString()
+      // Store a minimal concept set reference
+      event.selectedConceptSet = {
+        value: Number(conceptSet.value),
+        text: conceptSet.text || '',
+        display_value: conceptSet.display_value || '',
+        conceptIds: conceptSet.conceptIds || [],
+        concepts: [], // Start with empty concepts array
+        shared: false,
+        userName: '',
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+      }
+      // Load concept set details for Atlas conversion
+      loadConceptSetDetailsForEvent(event, conceptSet)
+
+      // Trigger UI update for criteria groups too
+      primaryEventsUpdateKey.value++
+      return
+    }
+  }
+  // Event not found in any group
+}
+
+// Helper function to update attribute concept set
+const updateAttributeConceptSet = (eventId: string, attributeId: string, conceptSet: ConceptSetItem) => {
+  const criteria = criteriaManager.getCriteria()
+
+  // Check criteria groups
+  for (const group of criteria.criteria) {
+    const event = group.events.find((event: any) => event.id === eventId)
+    if (event) {
+      const attribute = event.attributes?.find((attr: any) => attr.id === attributeId)
+      if (attribute && 'conceptSet' in attribute) {
+        // For attributes, store the full concept set object
+        ;(attribute as any).conceptSet = conceptSet
+        // Trigger UI update for attribute changes too
+        primaryEventsUpdateKey.value++
+        return
+      }
+    }
+  }
+  // Attribute not found
+}
+
 const handleConceptSetAction = ({ values, config, componentType, attributeId, eventId }: ConceptSetAction) => {
   try {
     const currentDatasetId = getDatasetId()
@@ -1198,6 +1320,15 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
             console.log('Creating new concept set:', completeConceptSet.text)
             selectedConceptSets.value = [...selectedConceptSets.value, completeConceptSet]
           }
+
+          // Update the specific field that triggered the modal
+          if (eventId && attributeId) {
+            // This was triggered from an attribute concept set field
+            updateAttributeConceptSet(eventId, attributeId, completeConceptSet)
+          } else if (eventId) {
+            // This was triggered from an event concept set field
+            updateEventConceptSet(eventId, completeConceptSet)
+          }
         } else {
           // Fallback to basic data if concept set not found in reloaded data
           console.warn(`Could not find concept set with ID ${conceptSetIdToFind} after reloading, using basic data`)
@@ -1219,6 +1350,13 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
               }
             }
             selectedConceptSets.value = updatedSets
+
+            // Update the specific field that triggered the modal
+            if (eventId && attributeId) {
+              updateAttributeConceptSet(eventId, attributeId, updatedSets[index])
+            } else if (eventId) {
+              updateEventConceptSet(eventId, updatedSets[index])
+            }
           }
         } else {
           const newConceptSet = {
@@ -1229,6 +1367,13 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
             concepts: [],
           }
           selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
+
+          // Update the specific field that triggered the modal
+          if (eventId && attributeId) {
+            updateAttributeConceptSet(eventId, attributeId, newConceptSet)
+          } else if (eventId) {
+            updateEventConceptSet(eventId, newConceptSet)
+          }
         }
       }
     }
@@ -1407,7 +1552,8 @@ defineExpose({
         <div class="query-filter-container__section">
           <QueryFilterEntryExit
             type="ENTRY"
-            :primary-events-data="criteriaManager.getPrimaryEvents()"
+            :primary-events-data="primaryEventsData"
+            :key="`entry-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
