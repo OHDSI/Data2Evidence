@@ -273,13 +273,13 @@
           "source": "/strategus-results",
           "function": "/strategus-analysis",
           "env": "strategus-analysis",
-          "imports": "/strategus-results/deno.json"
+          "imports": "/strategus-analysis/deno.json"
         },
         {
           "source": "/strategus",
           "function": "/strategus-analysis",
           "env": "strategus-analysis",
-          "imports": "/strategus-results/deno.json"
+          "imports": "/strategus-analysis/deno.json"
         },
         {
           "source": "/mlflow",
