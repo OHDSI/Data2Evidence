@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -38,6 +38,7 @@ const emit = defineEmits<{
   'add-criteria-group': [groupData: any]
   'update-criteria-group': [index: number, groupData: any]
   'remove-criteria-group': [index: number]
+  'concept-set-action': [action: any]
 }>()
 
 // Get current criteria data (now from props instead of criteriaManager)
@@ -146,6 +147,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"
+          @concept-set-action="(action) => $emit('concept-set-action', action)"
         />
       </div>
     </div>

@@ -38,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:nestedCriteria': [criteria: NestedCriteria]
   'remove-nested': []
+  'concept-set-action': [action: any]
 }>()
 
 // Convert NestedCriteria to QueryFilterGroup format
@@ -86,6 +87,7 @@ const handleGroupRemove = () => {
       :hide-header="true"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
+      @concept-set-action="(action) => $emit('concept-set-action', action)"
     />
   </div>
 </template>

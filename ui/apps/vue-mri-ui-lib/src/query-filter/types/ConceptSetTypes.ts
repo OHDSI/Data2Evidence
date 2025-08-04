@@ -68,6 +68,7 @@ export interface ConceptSetAction {
   componentType?: string // Type to determine modal mode (concept vs conceptSet)
   attributeId?: string // ID of the attribute that triggered this action
   eventId?: string // ID of the event that contains the attribute
+  parentAttributeId?: string // ID of the parent nested attribute (for nested events)
 }
 
 export interface ConceptSetDetails {

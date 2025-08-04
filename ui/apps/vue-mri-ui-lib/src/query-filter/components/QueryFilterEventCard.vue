@@ -481,6 +481,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
                   :readonly="readonly"
                   :hide-header="true"
                   @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+                  @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })"
                 />
               </div>
 

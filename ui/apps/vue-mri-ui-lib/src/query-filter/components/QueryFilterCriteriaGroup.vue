@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
@@ -35,10 +35,20 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update-group': [group: QueryFilterGroup]
   'remove-group': []
+  'concept-set-action': [action: any]
 }>()
 
 // Local reactive copy of the group
 const localGroup = ref<QueryFilterGroup>({ ...props.group })
+
+// Watch for changes in props.group and update local copy
+watch(
+  () => props.group,
+  newGroup => {
+    localGroup.value = { ...newGroup }
+  },
+  { deep: true }
+)
 
 // Update local group when props change
 const groupData = computed({
@@ -197,6 +207,7 @@ const toggleGroupType = () => {
             :dataset-id="datasetId || null"
             :readonly="readonly"
             @update-events="handleEventsUpdate"
+            @concept-set-action="action => $emit('concept-set-action', action)"
           />
         </div>
       </div>

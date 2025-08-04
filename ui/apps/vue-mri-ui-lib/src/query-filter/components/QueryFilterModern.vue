@@ -1156,14 +1156,49 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
     event.conceptSetDetails = conceptSetDetails
     event.conceptSetLoading = false
 
-    // Also update the event directly in criteriaManager to ensure consistency
+    // Try to update the event in primary events (for regular events)
     const primaryEvents = criteriaManager.getPrimaryEvents()
-    const managerEvent = primaryEvents?.events?.find((e: any) => e.id === event.id)
-    if (managerEvent) {
-      managerEvent.conceptSetDetails = conceptSetDetails
-      managerEvent.conceptSetLoading = false
-      // CRITICAL: Also update the concept set name that Atlas conversion uses
-      managerEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+    const primaryEvent = primaryEvents?.events?.find((e: any) => e.id === event.id)
+    if (primaryEvent) {
+      primaryEvent.conceptSetDetails = conceptSetDetails
+      primaryEvent.conceptSetLoading = false
+      primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+    } else {
+      // Try to find the event in inclusion criteria groups (including nested)
+      const criteria = criteriaManager.getCriteria()
+      let found = false
+
+      for (const group of criteria.criteria) {
+        // Check regular events in this group
+        const regularEvent = group.events.find((e: any) => e.id === event.id)
+        if (regularEvent) {
+          regularEvent.conceptSetDetails = conceptSetDetails
+          regularEvent.conceptSetLoading = false
+          regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+          found = true
+          break
+        }
+
+        // Check nested events in this group
+        for (const groupEvent of group.events) {
+          if (groupEvent.attributes) {
+            for (const attribute of groupEvent.attributes) {
+              if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+                const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === event.id)
+                if (nestedEvent) {
+                  nestedEvent.conceptSetDetails = conceptSetDetails
+                  nestedEvent.conceptSetLoading = false
+                  nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                  found = true
+                  break
+                }
+              }
+            }
+            if (found) break
+          }
+        }
+        if (found) break
+      }
     }
 
     // Trigger another UI update after details are loaded
@@ -1181,6 +1216,20 @@ const primaryEventsData = computed(() => {
   // This computed property will trigger when primaryEventsUpdateKey changes
   primaryEventsUpdateKey.value // Access this to create dependency
   return criteriaManager.getPrimaryEvents()
+})
+
+// Reactive criteria data for nested attribute reactivity
+const criteriaData = computed(() => {
+  // This computed property will trigger when primaryEventsUpdateKey changes
+  primaryEventsUpdateKey.value // Access this to create dependency
+  return criteriaManager.getCriteria()
+})
+
+// Reactive exit criteria data for exit event reactivity
+const exitCriteriaData = computed(() => {
+  // This computed property will trigger when primaryEventsUpdateKey changes
+  primaryEventsUpdateKey.value // Access this to create dependency
+  return criteriaManager.getCensoringCriteria()
 })
 
 const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
@@ -1218,7 +1267,7 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
     }
   }
 
-  // Check criteria groups
+  // Check inclusion criteria groups
   for (const group of criteria.criteria) {
     const event = group.events.find((event: any) => event.id === eventId)
     if (event) {
@@ -1243,8 +1292,40 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
       primaryEventsUpdateKey.value++
       return
     }
+
+    // Check nested criteria within attributes
+    for (const event of group.events) {
+      if (event.attributes) {
+        for (const attribute of event.attributes) {
+          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            if (nestedEvent) {
+              // For nested events, store the concept set ID as a string
+              nestedEvent.conceptSetId = conceptSet.value.toString()
+              // Store a minimal concept set reference
+              nestedEvent.selectedConceptSet = {
+                value: Number(conceptSet.value),
+                text: conceptSet.text || '',
+                display_value: conceptSet.display_value || '',
+                conceptIds: conceptSet.conceptIds || [],
+                concepts: [], // Start with empty concepts array
+                shared: false,
+                userName: '',
+                createdDate: new Date().toISOString(),
+                modifiedDate: new Date().toISOString(),
+              }
+              // Load concept set details for Atlas conversion
+              loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
+
+              // Trigger UI update for nested criteria too
+              primaryEventsUpdateKey.value++
+              return
+            }
+          }
+        }
+      }
+    }
   }
-  // Event not found in any group
 }
 
 // Helper function to update attribute concept set
@@ -1262,13 +1343,42 @@ const updateAttributeConceptSet = (eventId: string, attributeId: string, concept
         // Trigger UI update for attribute changes too
         primaryEventsUpdateKey.value++
         return
+      } else {
+      }
+    }
+
+    // Also check nested criteria within attributes
+    for (const event of group.events) {
+      if (event.attributes) {
+        for (const attribute of event.attributes) {
+          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+            // Look for the event in nested criteria
+            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            if (nestedEvent) {
+              const nestedAttribute = nestedEvent.attributes?.find((attr: any) => attr.id === attributeId)
+              if (nestedAttribute && 'conceptSet' in nestedAttribute) {
+                // For nested attributes, store the full concept set object
+                ;(nestedAttribute as any).conceptSet = conceptSet
+                // Trigger UI update for nested attribute changes too
+                primaryEventsUpdateKey.value++
+                return
+              }
+            }
+          }
+        }
       }
     }
   }
-  // Attribute not found
 }
 
-const handleConceptSetAction = ({ values, config, componentType, attributeId, eventId }: ConceptSetAction) => {
+const handleConceptSetAction = ({
+  values,
+  config,
+  componentType,
+  attributeId,
+  eventId,
+  parentAttributeId,
+}: ConceptSetAction) => {
   try {
     const currentDatasetId = getDatasetId()
     if (!currentDatasetId) {
@@ -1322,12 +1432,16 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
           }
 
           // Update the specific field that triggered the modal
-          if (eventId && attributeId) {
-            // This was triggered from an attribute concept set field
+          if (eventId && attributeId && !parentAttributeId) {
+            // This was triggered from a regular attribute concept set field
             updateAttributeConceptSet(eventId, attributeId, completeConceptSet)
-          } else if (eventId) {
-            // This was triggered from an event concept set field
+          } else if (eventId && parentAttributeId) {
+            // This was triggered from a nested event concept set field
             updateEventConceptSet(eventId, completeConceptSet)
+          } else if (eventId) {
+            // This was triggered from a regular event concept set field
+            updateEventConceptSet(eventId, completeConceptSet)
+          } else {
           }
         } else {
           // Fallback to basic data if concept set not found in reloaded data
@@ -1352,8 +1466,10 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
             selectedConceptSets.value = updatedSets
 
             // Update the specific field that triggered the modal
-            if (eventId && attributeId) {
+            if (eventId && attributeId && !parentAttributeId) {
               updateAttributeConceptSet(eventId, attributeId, updatedSets[index])
+            } else if (eventId && parentAttributeId) {
+              updateEventConceptSet(eventId, updatedSets[index])
             } else if (eventId) {
               updateEventConceptSet(eventId, updatedSets[index])
             }
@@ -1369,8 +1485,10 @@ const handleConceptSetAction = ({ values, config, componentType, attributeId, ev
           selectedConceptSets.value = [...selectedConceptSets.value, newConceptSet]
 
           // Update the specific field that triggered the modal
-          if (eventId && attributeId) {
+          if (eventId && attributeId && !parentAttributeId) {
             updateAttributeConceptSet(eventId, attributeId, newConceptSet)
+          } else if (eventId && parentAttributeId) {
+            updateEventConceptSet(eventId, newConceptSet)
           } else if (eventId) {
             updateEventConceptSet(eventId, newConceptSet)
           }
@@ -1567,7 +1685,8 @@ defineExpose({
         <!-- New Hierarchical Component Structure -->
         <div class="query-filter-container__section">
           <QueryFilterCriteria
-            :criteria-data="criteriaManager.getCriteria()"
+            :criteria-data="criteriaData"
+            :key="`criteria-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
@@ -1578,6 +1697,7 @@ defineExpose({
             @add-criteria-group="handleAddCriteriaGroup"
             @update-criteria-group="handleUpdateCriteriaGroup"
             @remove-criteria-group="handleRemoveCriteriaGroup"
+            @concept-set-action="handleConceptSetAction"
           />
         </div>
       </div>
@@ -1586,7 +1706,8 @@ defineExpose({
         <div class="query-filter-container__section">
           <QueryFilterEntryExit
             type="EXIT"
-            :exit-criteria-data="criteriaManager.getCensoringCriteria()"
+            :exit-criteria-data="exitCriteriaData"
+            :key="`exit-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
