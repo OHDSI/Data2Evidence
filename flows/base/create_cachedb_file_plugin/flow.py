@@ -80,7 +80,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
         trex_conn.commit()
         trex_conn.close()
     logger.info(
-            f"""Duckdb database file: {duckdb_database_name} successfully created.""")
+            f"""Cache database successfully created.""")
 
 
 @flow(log_prints=True)
@@ -121,7 +121,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         cur.close()
         trex_conn.close()
     logger.info(
-        f"""Duckdb database file: {duckdb_database_name} successfully created.""")
+        f"""Duckdb database successfully created.""")
 
 if __name__ == '__main__':
     database_code = "alpdev_pg"
