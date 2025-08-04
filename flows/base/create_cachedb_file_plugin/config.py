@@ -60,10 +60,6 @@ class CreateDuckdbDatabaseFileType(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
-    
-    @property
-    def create_file(self) -> str:
-        return True
 
 
 class CreateCDWValidationConfig(BaseModel):
@@ -73,7 +69,3 @@ class CreateCDWValidationConfig(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
-    
-    @property
-    def create_file(self) -> str:
-        return True
