@@ -127,6 +127,12 @@ const removeGroup = () => {
   }
 }
 
+// Expand/collapse state 
+const isExpanded = ref(true)
+const toggleExpanded = () => {
+  isExpanded.value = !isExpanded.value
+}
+
 // Removed duplicate criteria selection handler
 </script>
 
@@ -166,43 +172,64 @@ const removeGroup = () => {
         </div>
 
         <div class="group-header__right">
+          <button
+            class="btn-toggle-expand"
+            @click="toggleExpanded"
+            :title="isExpanded ? 'Collapse group details' : 'Expand group details'"
+          >
+            <svg
+              :class="['chevron-icon', { expanded: isExpanded }]"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
           <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
             <CloseIcon />
           </button>
         </div>
       </div>
       <!-- Group Content Area -->
-      <div class="group-main">
-        <!-- Group Criteria Sidebar -->
-        <GroupCriteriaSidebar
-          :group="localGroup"
-          :readonly="readonly"
-          @update-group-criteria="updateGroupCriteria"
-        />
-        <!-- Group Content -->
-        <div class="group-content">
-          <!-- Events Container -->
-          <QueryFilterEventContainer
-            :events="groupEvents"
-            event-type="CRITERIA"
-            :parent-group="localGroup"
-            :concept-sets="conceptSets"
-            :concept-set-domain-values="
-              conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
-            "
-            :concept-set-texts="conceptSetTexts || {}"
-            :dataset-id="datasetId || null"
+      <transition name="expand">
+        <div v-show="isExpanded" class="group-main">
+          <!-- Group Criteria Sidebar -->
+          <GroupCriteriaSidebar
+            :group="localGroup"
             :readonly="readonly"
-            @update-events="handleEventsUpdate"
+            @update-group-criteria="updateGroupCriteria"
           />
+          <!-- Group Content -->
+          <div class="group-content">
+            <!-- Events Container -->
+            <QueryFilterEventContainer
+              :events="groupEvents"
+              event-type="CRITERIA"
+              :parent-group="localGroup"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="
+                conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+              "
+              :concept-set-texts="conceptSetTexts || {}"
+              :dataset-id="datasetId || null"
+              :readonly="readonly"
+              @update-events="handleEventsUpdate"
+            />
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
   </div>
 
 </template>
 
 <style lang="scss" scoped>
+@import '@/query-filter/styles/ExpandTransition.scss';
+
 .query-filter-criteria-group {
   margin-top: 16px;
   border: 1px solid #e0e0e0;
@@ -343,8 +370,6 @@ const removeGroup = () => {
     font-size: 14px;
     color: #666;
   }
-
-  // Removed old operator dropdown styles
 
   .btn-remove-group {
     width: 32px;
