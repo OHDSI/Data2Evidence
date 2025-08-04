@@ -923,7 +923,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code)
+                  database_code=database_code, is_study_results_db = True)
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
@@ -978,8 +978,8 @@ def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
     results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(use_cache_db=False,
-                  database_code=database_code)
-    
+                  database_code=database_code, is_study_results_db=True)
+
     if(dbdao.check_schema_exists(results_schema)):
         dbdao.drop_schema(results_schema, True)
     else:

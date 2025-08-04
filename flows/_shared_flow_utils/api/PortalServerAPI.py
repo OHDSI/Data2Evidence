@@ -24,7 +24,7 @@ class PortalServerAPI(BaseAPI):
             datasets_list = result.json()
             return datasets_list
 
-    def update_dataset_attributes_table(self, study_id: str, attribute_id: str, attribute_value: str):
+    def update_dataset_attributes_table(self, study_id: str, attribute_id: str, attribute_value: str | None):
         result = requests.put(
             self.dataset_attributes_url,
             headers=self.headers,

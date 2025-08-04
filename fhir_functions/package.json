@@ -18,7 +18,7 @@
       "init": [
         {
           "function": "/alp-fhir-init",
-          "imports": "/alp-fhir-init/import.json",
+          "imports": "/alp-fhir-init/deno.json",
           "env": "alp-fhir-init",
           "waitfor": "http://fhir-server-1:8103/healthcheck"
         }
@@ -28,7 +28,7 @@
           "source": "/gateway/api/fhir",
           "function": "/alp-fhir-svc",
           "env": "alp-fhir-svc",
-          "imports": "/alp-fhir-svc/import.json"
+          "imports": "/alp-fhir-svc/deno.json"
         }
       ],
       "roles": {

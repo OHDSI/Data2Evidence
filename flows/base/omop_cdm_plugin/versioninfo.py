@@ -116,6 +116,9 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 logger=logger
                 )
 
+            schema_version = None
+            latest_schema_version = None
+
             try:
                 # update schema version or error msg
                 if cdm_version[0] in ["v", "V"]: # for cdm version with a prefix 'V'
