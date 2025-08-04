@@ -34,7 +34,6 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
         )
     try:
         logger.info(f"Handling schema {schema_name}...")
-        print(trex_conn)
         cur1 = trex_conn.cursor()
         created_tables = copy_schema_to_cache(cur1, dbdao, schema_name)
         trex_conn.commit()  # Commit any changes if needed

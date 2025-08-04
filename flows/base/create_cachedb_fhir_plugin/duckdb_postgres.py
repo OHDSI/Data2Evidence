@@ -6,7 +6,6 @@ from prefect.logging import get_run_logger
 @task(log_prints=True)
 def copy_schema_to_cache(con, dbdao: any, schema_name: str):
     logger = get_run_logger()
-    print(con)
     logger.info(
         f"Copying tables from schema '{schema_name}' into cache..."
     )
@@ -19,7 +18,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str):
         CHUNK_SIZE = 10000
         for table in table_names:
             try:
-                print("Copying table: ", table)
+                logger.info(f"Copying table: {table}")
                 columns = dbdao.get_columns(schema_name, table)
                 casted_columns = []
                 for col in columns:
