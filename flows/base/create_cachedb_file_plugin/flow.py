@@ -64,7 +64,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 dbname=Variable.get("trex_sql_dbname")
             )
         cur = trex_conn.cursor()
-        if dbCredentials.dialect == "bigquery":
+        if db_credentials.dialect == "bigquery":
             # set google service account credentials to connect to BigQuery
             google_service_account_json_path = Secret.load("google-service-account-json").get()
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
