@@ -160,7 +160,6 @@ case $cmd in
         hanapw=$(random-password 16)
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
-        echo . $cmd
         $cmd
         ;;
     stop)
