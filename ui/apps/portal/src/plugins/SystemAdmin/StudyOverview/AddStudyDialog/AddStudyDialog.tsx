@@ -274,7 +274,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const displaySchemaNameInput = useMemo(
     () =>
       formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM,
+      formData.schemaOption === SchemaTypes.ExistingCDM || 
+      formData.schemaOption === SchemaTypes.FHIR,
     [formData.schemaOption]
   );
 
@@ -397,7 +398,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, tokenStudyCode: { valid: true } };
     }
 
-    if (![SchemaTypes.NoCDM].includes(formData.schemaOption) && !databaseCode) {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && !databaseCode) {
       formError = { ...formError, databaseCode: { required: true } };
     }
 
@@ -500,6 +501,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     let fhirProjectId;
 
+    // TODO: add hardcoded value for FHIR database code
+    // TODO: find out schema name for FHIR is required or not?
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
       detail: {
