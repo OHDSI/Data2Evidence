@@ -1006,10 +1006,19 @@ const handleSearchChange = (searchQuery: string) => {
 
 // Function to find an event by ID across all sections of criteria manager
 const findEventById = (eventId: string): QueryFilterEvent | undefined => {
+  console.log('jer DEBUG: findEventById searching for:', eventId)
+
   // Search in entry events
   const entryEvents = criteriaManager.getPrimaryEvents()
+  console.log(
+    'jer DEBUG: Searching in entry events:',
+    entryEvents.events.map(e => e.id)
+  )
   let foundEvent = entryEvents.events.find(e => e.id === eventId)
-  if (foundEvent) return foundEvent
+  if (foundEvent) {
+    console.log('jer DEBUG: Found event in entry events:', foundEvent.id)
+    return foundEvent
+  }
 
   // Also search nested events within primary events attributes
   for (const event of entryEvents.events) {
@@ -1018,6 +1027,7 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
         if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
           const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
           if (nestedEvent) {
+            console.log('jer DEBUG: Found event in primary events nested attributes:', nestedEvent.id)
             return nestedEvent
           }
         }
@@ -1027,15 +1037,30 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
 
   // Search in exit events (censoring criteria)
   const exitEvents = criteriaManager.getCensoringCriteria()
+  console.log(
+    'jer DEBUG: Searching in exit events:',
+    exitEvents.censoringCriteria.map(e => e.id)
+  )
   foundEvent = exitEvents.censoringCriteria.find(e => e.id === eventId)
-  if (foundEvent) return foundEvent
+  if (foundEvent) {
+    console.log('jer DEBUG: Found event in exit events:', foundEvent.id)
+    return foundEvent
+  }
 
   // Search in inclusion criteria groups
   const criteria = criteriaManager.getCriteria()
+  console.log('jer DEBUG: Searching in inclusion criteria:', criteria.criteria.length, 'groups')
   for (const group of criteria.criteria) {
+    console.log(
+      'jer DEBUG: Checking group:',
+      group.id,
+      'with events:',
+      group.events.map(e => e.id)
+    )
     for (const event of group.events) {
       // Now that we've fixed the types, group.events only contains QueryFilterEvent objects
       if (event.id === eventId) {
+        console.log('jer DEBUG: Found event in inclusion criteria:', event.id)
         return event
       }
 
@@ -1045,6 +1070,7 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
           if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
             const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
             if (nestedEvent) {
+              console.log('jer DEBUG: Found event in inclusion criteria nested attributes:', nestedEvent.id)
               return nestedEvent
             }
           }
@@ -1138,10 +1164,27 @@ const updateAttributeWithConcepts = (
     return
   }
 
+  console.log('jer DEBUG: Found target event for concept update:', {
+    eventId: targetEvent.id,
+    hasAttributes: !!targetEvent.attributes,
+    attributesCount: targetEvent.attributes?.length || 0,
+    attributes:
+      targetEvent.attributes?.map(attr => ({
+        id: attr.id,
+        attributeType: attr.attributeType,
+        hasAttributeId: 'attributeId' in attr,
+        attributeId: 'attributeId' in attr ? attr.attributeId : 'N/A',
+      })) || [],
+  })
+
   // Find the attribute within the event
   const targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
   if (!targetAttribute) {
     console.warn(`Attribute with ID ${targetAttributeId} not found in event ${targetEventId}`)
+    console.log(
+      `Available attributes:`,
+      targetEvent.attributes?.map(attr => ({ id: attr.id, attributeType: attr.attributeType }))
+    )
     return
   }
 
@@ -1151,24 +1194,30 @@ const updateAttributeWithConcepts = (
     // We'll add a conceptItems property to store the selected concepts
     targetAttribute.conceptItems = conceptItems
 
-    // Also update any existing conceptSet property for backward compatibility
-    if (conceptItems.length > 0) {
-      const firstConcept = conceptItems[0]
-      if (firstConcept) {
-        ;(targetAttribute as any).conceptSet = {
-          value: firstConcept.value,
-          text: conceptItems.map(c => c.text).join(', '),
-          display_value: conceptItems.map(c => c.display_value).join(', '),
-          conceptIds: conceptItems.map(c => Number(c.conceptId)),
-          concepts: conceptItems.map(c => ({
-            id: Number(c.conceptId),
-            useMapped: false,
-            isExcluded: false,
-            useDescendants: false,
-          })),
-        }
-      }
+    // Clear any existing conceptSet property since these are individual concepts, not concept sets
+    if ('conceptSet' in targetAttribute) {
+      delete (targetAttribute as any).conceptSet
     }
+
+    console.log('jer DEBUG: Updated attribute with individual concepts:', {
+      attributeId: 'attributeId' in targetAttribute ? targetAttribute.attributeId : 'N/A',
+      conceptItemsCount: conceptItems.length,
+      conceptItems: conceptItems.map(item => ({
+        conceptId: item.conceptId,
+        text: item.text,
+        display_value: item.display_value,
+      })),
+    })
+
+    // Force reactivity update
+    primaryEventsUpdateKey.value++
+
+    // Verify the attribute is correctly updated in the event
+    console.log('jer DEBUG: After update, target event attributes:', {
+      eventId: targetEvent.id,
+      attributesCount: targetEvent.attributes?.length || 0,
+      targetAttributeConceptItems: targetAttribute.conceptItems?.length || 0,
+    })
   }
 }
 

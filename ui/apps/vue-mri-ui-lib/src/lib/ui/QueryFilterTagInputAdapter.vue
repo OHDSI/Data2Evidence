@@ -81,7 +81,7 @@ export default {
     },
     handleConceptSetAction({ values, config, componentType }: ConceptSetAction) {
       // For query filter, we'll emit the event to let the parent handle it
-      this.$emit('concept-set-action', { values, config, componentType })
+      this.$emit('concept-set-action', { values, config: config || this.conceptSetConfig, componentType })
     },
   },
 }

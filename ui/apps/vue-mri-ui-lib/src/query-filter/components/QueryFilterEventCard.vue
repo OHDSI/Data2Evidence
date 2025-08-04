@@ -212,7 +212,7 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
       attributeId: attribute.id,
       attributeType: 'standard' as const,
       configType: attribute.type,
-      ...(attribute.domainFilter && { domainFilter: attribute.domainFilter }),
+      ...(attribute.domainFilter ? { domainFilter: attribute.domainFilter } : {}),
     }
   }
 
@@ -380,6 +380,31 @@ const getConceptSetDisplayName = (): string => {
 }
 
 const sideBarRef = ref<HTMLElement | null>(null)
+
+// Create attribute model for TagInputAdapter
+const createAttributeModel = (attribute: QueryFilterAttribute) => {
+  const attrType = 'configType' in attribute && attribute.configType === 'concept' ? 'concept' : 'conceptSet'
+  const hasDomainFilter = 'domainFilter' in attribute && attribute.domainFilter
+  const domainFilter = hasDomainFilter ? attribute.domainFilter : 'Condition'
+
+  return {
+    id: `attribute-${attribute.id}-${eventData.value.id}`,
+    props: {
+      type: attrType,
+      value:
+        'configType' in attribute && attribute.configType === 'concept'
+          ? 'conceptItems' in attribute && attribute.conceptItems
+            ? attribute.conceptItems
+            : []
+          : 'conceptSet' in attribute && attribute.conceptSet
+          ? [attribute.conceptSet]
+          : [],
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: domainFilter,
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+}
 </script>
 
 <template>
@@ -496,17 +521,7 @@ const sideBarRef = ref<HTMLElement | null>(null)
                 </label>
                 <QueryFilterTagInputAdapter
                   v-if="!readonly"
-                  :model="{
-                    id: `attribute-${attribute.id}-${eventData.id}`,
-                    props: {
-                      type: 'configType' in attribute && attribute.configType === 'concept' ? 'concept' : 'conceptSet',
-                      value: 'conceptSet' in attribute && attribute.conceptSet ? [attribute.conceptSet] : [],
-                      attributePath: 'condition_occurrence.concept_id',
-                      domainFilter:
-                        'domainFilter' in attribute && attribute.domainFilter ? attribute.domainFilter : 'Condition',
-                      standardConceptCodeFilter: 'Standard',
-                    },
-                  }"
+                  :model="createAttributeModel(attribute)"
                   :external-value="
                     'conceptItems' in attribute && attribute.conceptItems
                       ? attribute.conceptItems
@@ -524,8 +539,25 @@ const sideBarRef = ref<HTMLElement | null>(null)
                   "
                   :external-texts="conceptSetTexts || {}"
                   :is-catalog-attribute="false"
-                  @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
-                  @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, attributeId: attribute.id, eventId: eventData.id })"
+                  @update:value="values => {
+                    if ('configType' in attribute && attribute.configType === 'concept') {
+                      // For individual concepts, emit concept-set-action to trigger the concept update logic
+                      if (values && values.length > 0) {
+                        $emit('concept-set-action', { 
+                          values: values, 
+                          attributeId: (attribute as any).attributeId || (attribute as any).id, 
+                          eventId: eventData.id,
+                          componentType: 'CONCEPT_MULTI_SELECT'
+                        })
+                      }
+                    } else {
+                      // For concept sets, use the existing handler
+                      values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
+                    }
+                  }"
+                  @concept-set-action="(action: ConceptSetAction) => {
+                    $emit('concept-set-action', { ...action, attributeId: (attribute as any).attributeId || (attribute as any).id, eventId: eventData.id })
+                  }"
                 />
                 <div v-else class="attribute-concept-set-readonly">
                   {{

@@ -840,7 +840,7 @@ export class QueryFilterCriteriaManager {
                       e.attributeConfig?.id === 'age'
                   )
                   if (ageAttributes.length > 0) {
-                    criteria.Criteria.ConditionOccurrence.Age = {
+                    criteria.Criteria[atlasEventType].Age = {
                       Op: 'gt',
                     }
                   }
@@ -869,13 +869,40 @@ export class QueryFilterCriteriaManager {
                     })
 
                     if (criteriaList.length > 0 || demographicCriteriaList.length > 0) {
-                      criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+                      criteria.Criteria[atlasEventType].CorrelatedCriteria = {
                         Type: 'ALL',
                         CriteriaList: criteriaList,
                         DemographicCriteriaList: demographicCriteriaList,
                         Groups: [],
                       }
                     }
+                  }
+
+                  // Handle concept-type attributes on the main event
+                  if (event.attributes) {
+                    const conceptAttributes = event.attributes.filter(
+                      attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
+                    )
+
+                    conceptAttributes.forEach(attr => {
+                      if (
+                        hasAttributeId(attr) &&
+                        'conceptItems' in attr &&
+                        attr.conceptItems &&
+                        attr.conceptItems.length > 0
+                      ) {
+                        const conceptData = attr.conceptItems.map(item => ({
+                          CONCEPT_CODE: item.code,
+                          CONCEPT_ID: item.conceptId,
+                          CONCEPT_NAME: item.conceptName,
+                          DOMAIN_ID: item.domainId,
+                          VOCABULARY_ID: item.system,
+                        }))
+
+                        const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                        criteria.Criteria[atlasEventType][fieldName] = conceptData
+                      }
+                    })
                   }
 
                   return criteria
@@ -987,6 +1014,28 @@ export class QueryFilterCriteriaManager {
             }
           }
 
+          // Handle concept-type attributes on the main exit event
+          if (event.attributes) {
+            const conceptAttributes = event.attributes.filter(
+              attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
+            )
+
+            conceptAttributes.forEach(attr => {
+              if (hasAttributeId(attr) && 'conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                const conceptData = attr.conceptItems.map(item => ({
+                  CONCEPT_CODE: item.code,
+                  CONCEPT_ID: item.conceptId,
+                  CONCEPT_NAME: item.conceptName,
+                  DOMAIN_ID: item.domainId,
+                  VOCABULARY_ID: item.system,
+                }))
+
+                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                criteria[criteriaType][fieldName] = conceptData
+              }
+            })
+          }
+
           return criteria
         }),
       CollapseSettings: {
@@ -998,6 +1047,7 @@ export class QueryFilterCriteriaManager {
 
     // Convert entryEvents to PrimaryCriteria.CriteriaList
     if (this.entryEvents?.events && this.entryEvents.events.length > 0) {
+
       atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
@@ -1038,6 +1088,36 @@ export class QueryFilterCriteriaManager {
                 Groups: [],
               }
             }
+          }
+
+          // Handle concept-type attributes on the main entry event
+          if (event.attributes) {
+            const conceptAttributes = event.attributes.filter(attr => {
+              const hasAttrId = hasAttributeId(attr)
+              const hasConfigType = 'configType' in attr
+              const isConceptType = hasConfigType && attr.configType === 'concept'
+
+              return hasAttrId && hasConfigType && isConceptType
+            })
+
+            conceptAttributes.forEach(attr => {
+              if (hasAttributeId(attr) && 'conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                const conceptData = attr.conceptItems.map(item => {
+                  const conceptName = item.conceptName || item.text || item.display_value || item.concept || ''
+
+                  return {
+                    CONCEPT_CODE: item.code || '',
+                    CONCEPT_ID: item.conceptId,
+                    CONCEPT_NAME: conceptName,
+                    DOMAIN_ID: item.domainId || 'Unknown',
+                    VOCABULARY_ID: item.system || 'Unknown',
+                  }
+                })
+
+                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                criteria[criteriaType][fieldName] = conceptData
+              }
+            })
           }
 
           return criteria
@@ -1228,9 +1308,13 @@ export class QueryFilterCriteriaManager {
     const demographicCriteriaList: DemographicCriteria[] = []
 
     nestedCriteriaEvents.forEach(nestedEvent => {
+      // Determine the event type for this nested event
+      const eventType = nestedEvent.eventType || 'conditionOccurrence'
+      const atlasEventType = this.mapEventTypeToAtlas(eventType)
+
       const criteria: any = {
         Criteria: {
-          ConditionOccurrence: {},
+          [atlasEventType]: {},
         },
         StartWindow: {
           Start: {
@@ -1251,7 +1335,7 @@ export class QueryFilterCriteriaManager {
       if (nestedEvent.conceptSetId) {
         const atlasConceptSetId = systemIdToAtlasId.get(nestedEvent.conceptSetId)
         if (atlasConceptSetId !== undefined) {
-          criteria.Criteria.ConditionOccurrence.CodesetId = atlasConceptSetId
+          criteria.Criteria[atlasEventType].CodesetId = atlasConceptSetId
         }
       }
 
@@ -1262,16 +1346,33 @@ export class QueryFilterCriteriaManager {
           return attributeType === 'nested' && attr.nestedCriteria?.events
         })
 
-        // Handle demographic attributes like Gender
-        const demographicAttributes = nestedEvent.attributes.filter(
-          attr => hasAttributeId(attr) && (attr.attributeId === 'gender' || attr.attributeId === 'age')
+        // Handle attributes - both demographic and concept-type attributes
+        const allAttributes = nestedEvent.attributes.filter(
+          attr => 'configType' in attr && attr.configType === 'concept'
         )
 
-        // Add demographic attributes to the criteria
-        demographicAttributes.forEach(attr => {
+        // Add attributes to the criteria
+        allAttributes.forEach(attr => {
           if (hasAttributeId(attr)) {
-            if (attr.attributeId === 'gender') {
-              criteria.Criteria.ConditionOccurrence.Gender = []
+            if ('configType' in attr && attr.configType === 'concept') {
+              // Convert conceptItems to Atlas concept format for any concept-type attribute
+              if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                const conceptData = attr.conceptItems.map(item => ({
+                  CONCEPT_CODE: item.code,
+                  CONCEPT_ID: item.conceptId,
+                  CONCEPT_NAME: item.conceptName,
+                  DOMAIN_ID: item.domainId,
+                  VOCABULARY_ID: item.system,
+                }))
+
+                // Set the appropriate field based on attribute type - use dynamic event type
+                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                criteria.Criteria[atlasEventType][fieldName] = conceptData
+              } else {
+                // Initialize empty array for concept-type attributes
+                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                criteria.Criteria[atlasEventType][fieldName] = []
+              }
             } else if (attr.attributeId === 'age' && isNumericRangeAttribute(attr)) {
               const ageConfig: any = {
                 Op: 'gt', // Default operator
@@ -1282,7 +1383,7 @@ export class QueryFilterCriteriaManager {
               if (attr.value !== undefined) {
                 ageConfig.Value = parseInt(attr.value)
               }
-              criteria.Criteria.ConditionOccurrence.Age = ageConfig
+              criteria.Criteria[atlasEventType].Age = ageConfig
             }
           }
         })
@@ -1300,7 +1401,7 @@ export class QueryFilterCriteriaManager {
           })
 
           if (nestedCriteriaList.length > 0 || nestedDemographicCriteriaList.length > 0) {
-            criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+            criteria.Criteria[atlasEventType].CorrelatedCriteria = {
               Type: 'ALL',
               CriteriaList: nestedCriteriaList,
               DemographicCriteriaList: nestedDemographicCriteriaList,
