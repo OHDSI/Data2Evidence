@@ -51,7 +51,7 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: 1000
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-    PG__FHIR_DB_NAME: alp_fhir
+    PG__FHIR_DB_NAME: alp
   fhir: &x-fhir
     FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
@@ -177,7 +177,7 @@ services:
             "NODE_ENV": "${NODE_ENV:-development}",
             "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
             "PG__DB_NAME": "alp",
-            "PG__FHIR_DB_NAME": "alp_fhir",
+            "PG__FHIR_DB_NAME": "alp",
             "PG__DEBUG": "${PG_DEBUG:-1}",
             "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
             "PG__SSL": "${PG__SSL:-false}",
@@ -264,7 +264,8 @@ services:
             "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token"
+            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
+            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
           },
           "query-gen-svc": {
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
@@ -583,7 +584,8 @@ services:
             "+perseus": {},
             "+white_rabbit": {},
             "+trex": {},
-            "+storage": {}
+            "+storage": {},
+            "+fhir": {}
            }
           },
           "+${PG__FHIR_DB_NAME:-alp_fhir}": {
@@ -601,11 +603,20 @@ services:
       POSTGRES_PUBLICATION_CONFIG: |-
         {
          "databases": {
-          "+${PG__FHIR_DB_NAME:-alp_fhir}": {
+          "+${PG__FHIR_DB_NAME:-alp}": {
            "+fhir_publication": {
-             "schema": "public",
+             "schema": "fhir",
              "publication": "fhir_publication"
            }
+          }
+         }
+        }
+      POSTGRES_ALTER_EXTENSION_CONFIG: |-
+        {
+         "databases": {
+          "${PG__FHIR_DB_NAME:-alp}": {
+             "schema": "fhir",
+             "extension": "pg_trgm"
           }
          }
         }
@@ -1316,11 +1327,12 @@ services:
         - *x-pg
         - *x-redis
         - *x-fhir
-      PG__DB_NAME: alp_fhir
+      PG__DB_NAME: alp
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DUCKDB_PATH: /home/docker/app
+      FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
       FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
       FHIR_SCHEMA_FILE_NAME: fhir.schema.json
       BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
