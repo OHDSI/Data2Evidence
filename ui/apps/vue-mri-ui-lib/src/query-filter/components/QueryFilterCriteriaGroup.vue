@@ -127,7 +127,7 @@ const removeGroup = () => {
   }
 }
 
-// Expand/collapse state 
+// Expand/collapse state
 const isExpanded = ref(true)
 const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value
@@ -177,16 +177,8 @@ const toggleExpanded = () => {
             @click="toggleExpanded"
             :title="isExpanded ? 'Collapse group details' : 'Expand group details'"
           >
-            <svg
-              :class="['chevron-icon', { expanded: isExpanded }]"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"
-                fill="currentColor"
-              />
+            <svg :class="['chevron-icon', { expanded: isExpanded }]" width="24" height="24" viewBox="0 0 24 24">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" fill="currentColor" />
             </svg>
           </button>
           <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
@@ -198,11 +190,7 @@ const toggleExpanded = () => {
       <transition name="expand">
         <div v-show="isExpanded" class="group-main">
           <!-- Group Criteria Sidebar -->
-          <GroupCriteriaSidebar
-            :group="localGroup"
-            :readonly="readonly"
-            @update-group-criteria="updateGroupCriteria"
-          />
+          <GroupCriteriaSidebar :group="localGroup" :readonly="readonly" @update-group-criteria="updateGroupCriteria" />
           <!-- Group Content -->
           <div class="group-content">
             <!-- Events Container -->
@@ -224,7 +212,6 @@ const toggleExpanded = () => {
       </transition>
     </div>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
@@ -392,7 +379,6 @@ const toggleExpanded = () => {
       background: #f2f0f1;
     }
   }
-
 
   .group-content {
     flex: 1;
