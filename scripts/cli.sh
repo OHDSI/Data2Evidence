@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.7.1-beta
+version=0.8.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.8.1-beta
 
 
 cmd=""
@@ -118,6 +118,18 @@ generate_jwt() {
   echo "$header.$payload.$signature"
 }
 
+# Setup zx command with fallbacks
+setup_zx_cmd() {
+  if [ -f "$node_modules_path/node_modules/.bin/zx" ]; then
+    ZX_CMD="$node_modules_path/node_modules/.bin/zx"
+  elif [ -f "$node_modules_path/node_modules/zx/build/cli.js" ]; then
+    ZX_CMD="node $node_modules_path/node_modules/zx/build/cli.js"
+  else
+    echo "Error: zx not found in node_modules"
+    exit 1
+  fi
+}
+
 case $cmd in
     start)
         source "$ENVFILE"
@@ -230,6 +242,8 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
@@ -261,6 +275,11 @@ case $cmd in
         cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
+        if [[ -n "$jupyter" ]]; then
+            cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
+            echo . $cmd
+            $cmd
+        fi
         cmd="$dockerbasecmd pull"
         echo . $cmd
         $cmd
@@ -269,11 +288,13 @@ case $cmd in
         source "$ENVFILE"
         $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
-        npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
         ;;
     *)
         if [ -z ${cmd:-} ]; then

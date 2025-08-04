@@ -1,6 +1,6 @@
 import { Injectable } from "@danet/core";
 import fs from "fs";
-import http from "http";
+import http from "isomorphic-git/http";
 import git from "isomorphic-git";
 import path from "path";
 import { env } from "../env.ts";

@@ -11,7 +11,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@data2evidence/trex": "0.8.0",
+    "@data2evidence/trex": "latest",
     "deno": "latest"
   },
   "trex": {
@@ -27,53 +27,53 @@
         },
         {
           "function": "/jobplugins-init",
-          "imports": "/jobplugins-init/import.json",
+          "imports": "/jobplugins-init/deno.json",
           "env": "jobplugins-init"
         },
         {
           "function": "/mri-pg-config",
-          "imports": "/mri-pg-config/import.json",
+          "imports": "/mri-pg-config/deno.json",
           "env": "mri-pg-config"
         },
         {
           "function": "/alp-dataflow-gen-init",
-          "imports": "/alp-dataflow-gen-init/import.json",
+          "imports": "/alp-dataflow-gen-init/deno.json",
           "env": "alp-dataflow-gen-init",
           "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
           "function": "/files-manager/src/init",
-          "imports": "/files-manager/import.json",
+          "imports": "/files-manager/deno.json",
           "env": "files-manager"
         },
         {
           "function": "/perseus/src/init",
-          "imports": "/perseus/import.json",
+          "imports": "/perseus/deno.json",
           "env": "perseus"
         },
         {
           "function": "/jobplugins/src/init",
-          "imports": "/jobplugins/import.json",
+          "imports": "/jobplugins/deno.json",
           "env": "jobplugins"
         },
         {
           "function": "/alp-usermgmt/src/init",
-          "imports": "/alp-usermgmt/import.json",
+          "imports": "/alp-usermgmt/deno.json",
           "env": "alp-usermgmt"
         },
         {
           "function": "/portal/src/init",
-          "imports": "/portal/import.json",
+          "imports": "/portal/deno.json",
           "env": "portal"
         },
         {
           "function": "/white-rabbit/src/init",
-          "imports": "/white-rabbit/import.json",
+          "imports": "/white-rabbit/deno.json",
           "env": "white-rabbit"
         },
         {
           "function": "/supabase/src/init",
-          "imports": "/supabase/import.json",
+          "imports": "/supabase/deno.json",
           "env": "supabase-storage"
         }
       ],
@@ -85,114 +85,115 @@
         {
           "source": "/jobplugins",
           "function": "/jobplugins",
-          "imports": "/jobplugins/import.json",
+          "imports": "/jobplugins/deno.json",
           "env": "jobplugins"
         },
         {
           "source": "/prefect",
           "function": "/prefect",
+          "imports": "/prefect/deno.json",
           "env": "jobplugins"
         },
         {
           "source": "/gateway/api/db",
           "function": "/alpdb",
-          "imports": "/alpdb/import.json",
+          "imports": "/alpdb/deno.json",
           "env": "alpdb"
         },
         {
           "source": "/gateway/api/dataset",
           "function": "/dataset",
-          "imports": "/dataset/import.json",
+          "imports": "/dataset/deno.json",
           "env": "dataset"
         },
         {
           "source": "/analytics-svc/api/services/query",
           "function": "/query-gen-svc",
-          "imports": "/query-gen-svc/import.json",
+          "imports": "/query-gen-svc/deno.json",
           "env": "query-gen-svc"
         },
         {
           "source": "/system-portal",
           "function": "/portal",
-          "imports": "/portal/import.json",
+          "imports": "/portal/deno.json",
           "env": "portal"
         },
         {
           "source": "/usermgmt",
           "function": "/alp-usermgmt",
-          "imports": "/alp-usermgmt/import.json",
+          "imports": "/alp-usermgmt/deno.json",
           "env": "alp-usermgmt"
         },
         {
           "source": "/code-suggestion",
           "function": "/code-suggestion",
-          "imports": "/code-suggestion/import.json",
+          "imports": "/code-suggestion/deno.json",
           "env": "code-suggestion"
         },
         {
           "source": "/data-mapping",
           "function": "/data-mapping",
-          "imports": "/data-mapping/import.json",
+          "imports": "/data-mapping/deno.json",
           "env": "data-mapping"
         },
         {
           "source": "/analytics-svc/api/services/bookmark",
           "function": "/bookmark-svc",
-          "imports": "/bookmark-svc/import.json",
+          "imports": "/bookmark-svc/deno.json",
           "env": "bookmark-svc"
         },
         {
           "source": "/analytics-svc/api/services/public",
           "function": "/analytics-svc",
-          "imports": "/analytics-svc/import.json",
+          "imports": "/analytics-svc/deno.json",
           "env": "analytics-svc"
         },
         {
           "source": "/analytics-svc/api/services",
           "function": "/analytics-svc",
-          "imports": "/analytics-svc/import.json",
+          "imports": "/analytics-svc/deno.json",
           "env": "analytics-svc"
         },
         {
           "source": "/analytics-svc/pa/services",
           "function": "/analytics-svc",
-          "imports": "/analytics-svc/import.json",
+          "imports": "/analytics-svc/deno.json",
           "env": "analytics-svc"
         },
         {
           "source": "/analytics-svc/pa/config",
           "function": "/mri-pa-config",
-          "imports": "/mri-pa-config/import.json",
+          "imports": "/mri-pa-config/deno.json",
           "env": "mri-pa-config"
         },
         {
           "source": "/terminology",
           "function": "/terminology-svc",
-          "imports": "/terminology-svc/import.json",
+          "imports": "/terminology-svc/deno.json",
           "env": "terminology-svc"
         },
         {
           "source": "/pa-config-svc",
           "function": "/mri-pa-config",
-          "imports": "/mri-pa-config/import.json",
+          "imports": "/mri-pa-config/deno.json",
           "env": "mri-pa-config"
         },
         {
           "source": "/hc/hph/cdw/services",
           "function": "/cdw-svc",
-          "imports": "/cdw-svc/import.json",
+          "imports": "/cdw-svc/deno.json",
           "env": "cdw-svc"
         },
         {
           "source": "/hc/hph/cdw/config/services",
           "function": "/cdw-svc",
-          "imports": "/cdw-svc/import.json",
+          "imports": "/cdw-svc/deno.json",
           "env": "cdw-svc"
         },
         {
           "source": "/hc/hph/config/services",
           "function": "/cdw-svc",
-          "imports": "/cdw-svc/import.json",
+          "imports": "/cdw-svc/deno.json",
           "env": "cdw-svc"
         },
         {
@@ -236,31 +237,31 @@
           "source": "/concept-mapping",
           "function": "/concept-mapping",
           "env": "concept-mapping",
-          "imports": "/concept-mapping/import.json"
+          "imports": "/concept-mapping/deno.json"
         },
         {
           "source": "/files-manager/api",
           "function": "/files-manager",
           "env": "files-manager",
-          "imports": "/files-manager/import.json"
+          "imports": "/files-manager/deno.json"
         },
         {
           "source": "/backend",
           "function": "/perseus",
           "env": "perseus",
-          "imports": "/perseus/import.json"
+          "imports": "/perseus/deno.json"
         },
         {
           "source": "/white-rabbit",
           "function": "/white-rabbit",
           "env": "white-rabbit",
-          "imports": "/white-rabbit/import.json"
+          "imports": "/white-rabbit/deno.json"
         },
         {
           "source": "/demo",
           "function": "/demo",
           "env": "demo",
-          "imports": "/demo/import.json"
+          "imports": "/demo/deno.json"
         },
         {
           "source": "/d2e-webapi",
@@ -272,13 +273,13 @@
           "source": "/strategus-results",
           "function": "/strategus-analysis",
           "env": "strategus-analysis",
-          "imports": "/strategus-analysis/import.json"
+          "imports": "/strategus-results/deno.json"
         },
         {
           "source": "/strategus",
           "function": "/strategus-analysis",
           "env": "strategus-analysis",
-          "imports": "/strategus-analysis/import.json"
+          "imports": "/strategus-results/deno.json"
         },
         {
           "source": "/mlflow",
