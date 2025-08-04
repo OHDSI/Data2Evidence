@@ -67,7 +67,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
                     con.execute(pk_index_query)
             except Exception as e:
                 logger.error(
-                        f"Table and index copy for table '{schema_name}.{table}' failed with error: {err}f")
+                        f"Table and index copy for table '{schema_name}.{table}' failed with error: {e}f")
                 raise e
 
     except Exception as err:
