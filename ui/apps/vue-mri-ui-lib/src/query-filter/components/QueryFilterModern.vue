@@ -1011,6 +1011,20 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
   let foundEvent = entryEvents.events.find(e => e.id === eventId)
   if (foundEvent) return foundEvent
 
+  // Also search nested events within primary events attributes
+  for (const event of entryEvents.events) {
+    if (event.attributes) {
+      for (const attribute of event.attributes) {
+        if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+          const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
+          if (nestedEvent) {
+            return nestedEvent
+          }
+        }
+      }
+    }
+  }
+
   // Search in exit events (censoring criteria)
   const exitEvents = criteriaManager.getCensoringCriteria()
   foundEvent = exitEvents.censoringCriteria.find(e => e.id === eventId)
@@ -1023,6 +1037,18 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
       // Now that we've fixed the types, group.events only contains QueryFilterEvent objects
       if (event.id === eventId) {
         return event
+      }
+
+      // Also search nested events within attributes
+      if (event.attributes) {
+        for (const attribute of event.attributes) {
+          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
+            if (nestedEvent) {
+              return nestedEvent
+            }
+          }
+        }
       }
     }
   }
@@ -1164,40 +1190,64 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
       primaryEvent.conceptSetLoading = false
       primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
     } else {
-      // Try to find the event in inclusion criteria groups (including nested)
-      const criteria = criteriaManager.getCriteria()
-      let found = false
-
-      for (const group of criteria.criteria) {
-        // Check regular events in this group
-        const regularEvent = group.events.find((e: any) => e.id === event.id)
-        if (regularEvent) {
-          regularEvent.conceptSetDetails = conceptSetDetails
-          regularEvent.conceptSetLoading = false
-          regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-          found = true
-          break
-        }
-
-        // Check nested events in this group
-        for (const groupEvent of group.events) {
-          if (groupEvent.attributes) {
-            for (const attribute of groupEvent.attributes) {
+      // Also check nested events within primary events
+      let foundInPrimary = false
+      if (primaryEvents?.events) {
+        for (const primaryEvent of primaryEvents.events) {
+          if (primaryEvent.attributes) {
+            for (const attribute of primaryEvent.attributes) {
               if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
                 const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === event.id)
                 if (nestedEvent) {
                   nestedEvent.conceptSetDetails = conceptSetDetails
                   nestedEvent.conceptSetLoading = false
                   nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-                  found = true
+                  foundInPrimary = true
                   break
                 }
               }
             }
-            if (found) break
+            if (foundInPrimary) break
           }
         }
-        if (found) break
+      }
+
+      if (!foundInPrimary) {
+        // Try to find the event in inclusion criteria groups (including nested)
+        const criteria = criteriaManager.getCriteria()
+        let found = false
+
+        for (const group of criteria.criteria) {
+          // Check regular events in this group
+          const regularEvent = group.events.find((e: any) => e.id === event.id)
+          if (regularEvent) {
+            regularEvent.conceptSetDetails = conceptSetDetails
+            regularEvent.conceptSetLoading = false
+            regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+            found = true
+            break
+          }
+
+          // Check nested events in this group
+          for (const groupEvent of group.events) {
+            if (groupEvent.attributes) {
+              for (const attribute of groupEvent.attributes) {
+                if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+                  const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === event.id)
+                  if (nestedEvent) {
+                    nestedEvent.conceptSetDetails = conceptSetDetails
+                    nestedEvent.conceptSetLoading = false
+                    nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                    found = true
+                    break
+                  }
+                }
+              }
+              if (found) break
+            }
+          }
+          if (found) break
+        }
       }
     }
 
@@ -1264,6 +1314,39 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
       primaryEventsUpdateKey.value++
 
       return
+    }
+
+    // Also check nested events within primary events attributes
+    for (const event of primaryEvents.events) {
+      if (event.attributes) {
+        for (const attribute of event.attributes) {
+          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
+            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            if (nestedEvent) {
+              // For nested events in primary events, store the concept set ID as a string
+              nestedEvent.conceptSetId = conceptSet.value.toString()
+              // Store a minimal concept set reference
+              nestedEvent.selectedConceptSet = {
+                value: Number(conceptSet.value),
+                text: conceptSet.text || '',
+                display_value: conceptSet.display_value || '',
+                conceptIds: conceptSet.conceptIds || [],
+                concepts: [], // Start with empty concepts array
+                shared: false,
+                userName: '',
+                createdDate: new Date().toISOString(),
+                modifiedDate: new Date().toISOString(),
+              }
+              // Load concept set details for Atlas conversion
+              loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
+
+              // Trigger UI update for nested events in primary events too
+              primaryEventsUpdateKey.value++
+              return
+            }
+          }
+        }
+      }
     }
   }
 
@@ -1511,6 +1594,7 @@ const handleConceptSetAction = ({
       // For multi-select mode, get existing concepts to pre-populate the modal
       // NOTE: This requires the portal's Terminology.tsx component to support the initialSelectedConcepts prop
       if (attributeId && eventId) {
+        // For both regular and nested attributes, we should have attributeId
         const existingConcepts = getExistingConceptsForAttribute(eventId, attributeId)
         if (existingConcepts.length > 0) {
           eventProps.initialSelectedConcepts = existingConcepts
@@ -1519,7 +1603,7 @@ const handleConceptSetAction = ({
 
       // For multi-select mode, handle selected concepts via the onClose callback
       eventProps.onClose = (onCloseValues?: TerminologyCloseValues | undefined) => {
-        if (onCloseValues?.selectedConcepts && onCloseValues.selectedConcepts.length > 0 && attributeId && eventId) {
+        if (onCloseValues?.selectedConcepts && onCloseValues.selectedConcepts.length > 0 && eventId) {
           // Transform selected concepts into tag input format while preserving all concept details
           const conceptItems: StoredConceptItem[] = onCloseValues.selectedConcepts.map((concept: SelectedConcept) => ({
             value: String(concept.conceptId),
@@ -1545,7 +1629,10 @@ const handleConceptSetAction = ({
           }))
 
           // Update the specific attribute with the selected concepts
-          updateAttributeWithConcepts(eventId, attributeId, conceptItems)
+          if (attributeId) {
+            // Both regular and nested attributes should have attributeId
+            updateAttributeWithConcepts(eventId, attributeId, conceptItems)
+          }
         }
       }
     } else {
