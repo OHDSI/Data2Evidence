@@ -5,12 +5,21 @@
  *
  */
 import { env } from "../configs";
-import { getDuckdbDBConnection } from "./DuckdbConnection";
 import * as _textLib from "./text";
-import { getCachedbDbConnections } from "./cachedb";
 import { getTrexConnection } from "./trexConnection";
 import * as xsenv from "@sap/xsenv";
-import { DBConnectionUtil as dbConnectionUtil } from "@alp/alp-base-utils";
+import {
+  DBConnectionUtil as dbConnectionUtil,
+  Logger,
+} from "@alp/alp-base-utils";
+import PortalServerAPI from "../api/PortalServerAPI";
+import {
+  DUCKDB_FILE_DATABASE_CODE,
+  DUCKDB_FILE_SCHEMA_NAME,
+} from "../qe/settings/Defaults";
+
+const logger = Logger.CreateLogger("cdw-svc: trexConnection");
+
 /**
  * Escapes a string to be used in a regex
  *
@@ -449,7 +458,7 @@ const filterVcapByTag = (
     mridb: {
       name: string;
       tags: string[];
-      credentials: { dialect: string };
+      credentials: { dialect: string; code: string };
     }[];
   },
   tag: string
@@ -463,30 +472,50 @@ const filterVcapByTag = (
   return dbs;
 };
 
-export async function getAnalyticsConnection(userObj, token?: string) {
+export async function getAnalyticsConnection(
+  userObj,
+  token?: string,
+  datasetId: string = "DEFAULT"
+) {
   let analyticsCredentials;
   let analyticsConnection;
 
-  if (env.USE_DUCKDB === "true") {
-    // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
-    if (env.USE_TREX_DB_CONN === "true") {
-      analyticsConnection = getTrexConnection();
-    } else if (env.USE_CACHEDB === "true") {
-      // Get duckdb db connection via alp-cachedb
-      analyticsConnection = await getCachedbDbConnections({
-        userObj,
-        token,
-      });
-    } else {
-      // Get duckdb db connection via direct file connection
-      analyticsConnection = await getDuckdbDBConnection();
-    }
+  let databaseCode;
+  let schemaName;
+  let vocabSchemaName;
+  let dialect;
+
+  // Use built in duckdb file
+  if (datasetId === "DEFAULT") {
+    databaseCode = DUCKDB_FILE_DATABASE_CODE;
+    schemaName = DUCKDB_FILE_SCHEMA_NAME;
+    vocabSchemaName = DUCKDB_FILE_SCHEMA_NAME;
   } else {
+    try {
+      // Resolve datasetId into database code, schema name and vocab schema name
+      const dataset = await new PortalServerAPI().getDataset(token, datasetId);
+      databaseCode = dataset.databaseCode;
+      schemaName = dataset.schemaName;
+      vocabSchemaName = dataset.vocabSchemaName;
+      dialect = dataset.dialect;
+    } catch (err) {
+      logger.error(err);
+      throw new Error(
+        `Error while getting dataset information for datasetId:${datasetId}`
+      );
+    }
+  }
+
+  if (dialect === "hana") {
     let cdwService = filterVcapByTag(env.VCAP_SERVICES, "cdw").map(
       (db) => db.credentials
     );
-    cdwService = cdwService.filter((db) => db.dialect == "hana");
-    analyticsCredentials = cdwService[0];
+    analyticsCredentials = cdwService.find((db) => db.code == databaseCode);
+    if (analyticsCredentials === undefined) {
+      throw new Error(
+        `No hana database credentials setup for databaseCode: ${databaseCode}`
+      );
+    }
     // node hdb library checks for these to use TLS
     // TLS does not work with deno for self signed certs
     if (!analyticsCredentials.useTLS) {
@@ -508,13 +537,25 @@ export async function getAnalyticsConnection(userObj, token?: string) {
       }
     }
 
+    analyticsCredentials.probeSchema = schemaName;
+    analyticsCredentials.cdwSchema = schemaName;
+    analyticsCredentials.schema = schemaName;
+    analyticsCredentials.vocabSchema = vocabSchemaName;
+
     analyticsConnection =
       await dbConnectionUtil.DBConnectionUtil.getDBConnection({
         credentials: analyticsCredentials,
-        schemaName: analyticsCredentials.schema,
-        vocabSchemaName: analyticsCredentials.vocabSchema,
+        schemaName,
+        vocabSchemaName,
         userObj,
       });
+  } else {
+    analyticsConnection = await getTrexConnection(
+      databaseCode,
+      schemaName,
+      vocabSchemaName
+    );
   }
+
   return analyticsConnection;
 }
