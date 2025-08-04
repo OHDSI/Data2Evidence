@@ -144,6 +144,25 @@ jobs:
           region: ${{ vars.AWS_REGION }}
           table: ${{ vars.AWS_D2E_STATS_DYNAMODB }}
           items: ${{ steps.clone_stats_daily.outputs.clone_stats_db }}
+      
+      # NPM stats
+      - name: Get npm registry downloads stats (weekly)
+        id: npm_stats_weekly
+        run: |
+          response=$(curl -s https://api.npmjs.org/downloads/point/last-week/d2e) 
+          echo "npm_downloads=$(echo $response | jq -rc . ) " >> $GITHUB_OUTPUT
+          
+      - name: json to markdown
+        uses: buildingcash/json-to-markdown-table-action@v1
+        id: npm_stats_table_weekly
+        with:
+          json: "[${{ steps.npm_stats_weekly.outputs.npm_downloads }}]"
+      - name: Discord notification traffic stats
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_STATISTICS }}
+          username: ${{ github.actor }}
+          content: "### NPM Package Weekly Download Stats\n```${{ steps.npm_stats_table_weekly.outputs.table }}```"
           
       - name: Get npm registry downloads (daily)
         id: npm_metrics_daily
