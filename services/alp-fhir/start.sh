@@ -11,6 +11,8 @@ export PG__PORT="${PG__PORT:-5432}"
 export PG__DB_NAME="${PG__DB_NAME:-medplum}"
 export PG_SUPER_USER="${PG_SUPER_USER:-postgres}"
 export PG_SUPER_PASSWORD="${PG_SUPER_PASSWORD:-postgres}"
+export FHIR_CUSTOM_SCHEMA="${FHIR_CUSTOM_SCHEMA:-fhir}"
+
 
 # Redis configuration
 export REDIS_HOST="${REDIS_HOST:-localhost}"
@@ -42,6 +44,7 @@ export REDIS_HOST
 export REDIS_PORT
 export REDIS_PASSWORD
 export NODE_ENV
+export FHIR_CUSTOM_SCHEMA
 
 # Start the Medplum server using Deno 2 task
 cd /home/docker/app

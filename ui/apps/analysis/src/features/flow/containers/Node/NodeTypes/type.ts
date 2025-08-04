@@ -10,6 +10,7 @@ export type NodeType =
   | "target_comparator_outcomes_node"
   | "cohort_method_analysis_node"
   | "cohort_method_node"
+  | "kaplan_meier_node"
   | "era_covariate_settings_node"
   | "calendar_time_covariate_settings_node"
   | "seasonality_covariate_settings_node"
@@ -71,6 +72,7 @@ export const ONE_INCIDENCE_NODE = [
   "negative_control_outcome_cohort_node",
   "characterization_node",
   "target_comparator_outcomes_node",
+  "kaplan_meier_node",
 ];
 export const TWO_INCIDENCE_NODE = [
   "cohort_method_node",
@@ -165,6 +167,16 @@ export const NODE_CONNECTOR_MAPPING = {
         classifier: "target_comparator_outcomes",
       },
       { name: "CM Analysis", type: "lavender", classifier: "cm_analysis" },
+    ],
+  },
+  kaplan_meier_node: {
+    type: "lavender",
+    connector_list: [
+      {
+        name: "Study Population",
+        type: "lightpink",
+        classifier: "study_population",
+      },
     ],
   },
   era_covariate_settings_node: { type: "chocolate", connector_list: [] },
