@@ -77,6 +77,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 create_duckdb_fts_index(
                     cur, dbdao, schema, tables_to_create_duckdb_fts_index)
         cur.close()
+        trex_conn.commit()
         trex_conn.close()
     logger.info(
             f"""Duckdb database file: {duckdb_database_name} successfully created.""")

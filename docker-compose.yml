@@ -131,6 +131,7 @@ services:
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/run/secrets/google-credentials.json:ro
     healthcheck:
       interval: 60s
       retries: 30
@@ -460,7 +461,7 @@ services:
             "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
             "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
-            "GOOGLE_APPLICATION_CREDENTIALS":"/app/key.json"
+            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json"
           },
           "jupyter-gateway": {},
           "mlflow": {},
@@ -536,7 +537,7 @@ services:
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/key.json
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:

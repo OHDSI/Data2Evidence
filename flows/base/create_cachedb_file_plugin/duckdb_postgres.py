@@ -90,11 +90,9 @@ def copy_bigquery_schema_to_cache(con, dbdao: any):
     try:
         con.execute(f"DROP SCHEMA IF EXISTS {schema_name};")            
         con.execute(f"""CREATE SCHEMA {schema_name};""")
-        
         client = bigquery.Client(project=db_credentials.host)
         query = f"SELECT table_schema, table_name, column_name, data_type, is_nullable, column_default, ordinal_position FROM `{db_credentials.host}.{db_credentials.databaseName}.INFORMATION_SCHEMA.COLUMNS` WHERE is_system_defined = 'NO' AND ordinal_position IS NOT NULL ORDER BY table_name, ordinal_position"
         bq_rows = client.query(query).result()
-
         # Get table schemas from BigQuery
         table_schemas = {}
         for row in bq_rows:
@@ -128,29 +126,27 @@ def copy_bigquery_schema_to_cache(con, dbdao: any):
             logger.info(f"Creating table: {table}")
             con.execute(create_table_sql)
 
-            # Fetch data from BigQuery
+            # Fetch data from BigQuery in batches
             bq_data_query = f"SELECT * FROM `{db_credentials.host}.{db_credentials.databaseName}.{table}`"
-            bq_data = client.query(bq_data_query).result()
-            # Remove none_to_null and use direct value
-            rows = [tuple(row[col['column_name']] for col in columns) for row in bq_data]
-            logger.info(f"Rows extracted for table {table}: {len(rows)}")
-            if rows:
-                valid_rows = rows
-                mismatch_count = sum(1 for r in valid_rows if len(r) != len(columns))
-                if mismatch_count > 0:
-                    msg = f"Error: {mismatch_count} rows have a column count mismatch in table {table} (expected {len(columns)} columns)"
-                    logger.info(msg)
-                    raise ValueError(msg)
-                if valid_rows:
-                    column_names = ', '.join([f'"{col["column_name"]}"' for col in columns])
-                    placeholders = ', '.join(['%s'] * len(columns))
-                    insert_sql = f"INSERT INTO {schema_name}.{table} ({column_names}) VALUES ({placeholders})"
-                    logger.info(f"Inserting {len(valid_rows)} rows into {schema_name}.{table}")
-                    con.executemany(insert_sql, valid_rows)
-                else:
-                    logger.info(f"No valid rows to insert for table {table} (all rows had column mismatch)")
-            else:
-                logger.info(f"No rows found for table {table}, skipping insert.")
+            bq_data_iter = client.query(bq_data_query).result(page_size=10000)
+            column_names = [col['column_name'] for col in columns]
+            insert_sql = f"INSERT INTO {schema_name}.{table} ({', '.join([f'\"{c}\"' for c in column_names])}) VALUES ({', '.join(['%s'] * len(column_names))})"
+            batch = []
+            batch_size = 10000
+            row_count = 0
+            for row in bq_data_iter:
+                batch.append(tuple(row[c] for c in column_names))
+                if len(batch) >= batch_size:
+                    logger.info(f"Inserting batch of {len(batch)} rows into {schema_name}.{table} (total so far: {row_count + len(batch)})")
+                    con.executemany(insert_sql, batch)
+                    row_count += len(batch)
+                    batch = []
+            # Insert any remaining rows
+            if batch:
+                logger.info(f"Inserting final batch of {len(batch)} rows into {schema_name}.{table} (total: {row_count + len(batch)})")
+                con.executemany(insert_sql, batch)
+                row_count += len(batch)
+            logger.info(f"Total rows inserted for table {table}: {row_count}")
 
             # Always create indexes, regardless of data presence
             indexes = dbdao.get_indexes_for_table(schema_name, table)

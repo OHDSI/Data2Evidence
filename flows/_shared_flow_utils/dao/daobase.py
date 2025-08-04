@@ -252,6 +252,9 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.DUCKDB:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
                 connect_args = {"user": user, "password": password.get_secret_value()}
+            case SupportedDatabaseDialects.BIGQUERY:
+                big_query_key_path = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:
