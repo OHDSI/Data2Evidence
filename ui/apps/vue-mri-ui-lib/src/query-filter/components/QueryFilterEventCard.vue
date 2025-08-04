@@ -419,9 +419,9 @@ const toggleExpanded = () => {
         </div>
       </div>
       <transition name="expand">
-        <div class="event-body">
+        <div v-show="isExpanded" class="event-body">
           <!-- Event Content -->
-          <div v-show="isExpanded" class="event-content">
+          <div class="event-content">
             <!-- Concept Set Selection -->
             <div class="concept-set-section">
               <label class="concept-set-label">Event Concept Set:</label>
