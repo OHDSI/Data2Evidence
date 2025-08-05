@@ -3,7 +3,7 @@ const hdb = require("hdb");
 const csv = require("fast-csv");
 const path = require("path");
 
-const { functionsAndProcedures } = require("./db-functions-procedures.js");
+const { functionsAndProcedures } = require("./hana/db-functions-procedures.js");
 const user = process.env.HDIUSER;
 const dbCredentials = {
   host: process.env.HANASERVER,
@@ -30,7 +30,7 @@ async function initNWConnection() {
 
 async function loadDDLScript() {
   // console.log(`loadDDLScript...`);
-  const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
+  const sqlScript = fs.readFileSync(`${__dirname}/hana/httptest-ddl.sql`).toString();
 
   const tmp = sqlScript.split(";");
   const tmp2 = tmp.slice(0, tmp.length - 1);
