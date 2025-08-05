@@ -11,9 +11,11 @@ import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode
 import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
 import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
+import { CompetingOutcomeCohortStratificationNode } from "./CompetingOutcomeCohortStratificationNode/CompetingOutcomeCohortStratificationNode";
 import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
 import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
 import { ExposureNode } from "./ExposureNode/ExposureNode";
+import { KaplanMeierCharacterizationNode } from "./KaplanMeierCharacterizationNode/KaplanMeierCharacterizationNode";
 import { KaplanMeierNode } from "./KaplanMeierNode/KaplanMeierNode";
 import { NCOCohortSetNode } from "./NCOCohortSetNode/NCOCohortSetNode";
 import { NegatveControlOutcomeNode } from "./NegativeControlOutcomeNode/NegativeControlOutcomeNode";
@@ -48,6 +50,9 @@ export const NODE_TYPES: {
   cohort_method_analysis_node: CohortMethodAnalysisNode,
   cohort_method_node: CohortMethodNode,
   kaplan_meier_node: KaplanMeierNode,
+  kaplan_meier_characterization_node: KaplanMeierCharacterizationNode,
+  competing_outcome_cohort_stratification_node:
+    CompetingOutcomeCohortStratificationNode,
   era_covariate_settings_node: EraCovariateSettingsNode,
   calendar_time_covariate_settings_node: CalendarTimeCovariateSettingsNode,
   seasonality_covariate_settings_node: SeasonalityCovariateSettingsNode,
@@ -82,6 +87,8 @@ export const NODE_COLORS: {
   cohort_method_analysis_node: "lavender",
   cohort_method_node: "mediumpurple",
   kaplan_meier_node: "lavender",
+  kaplan_meier_characterization_node: "mediumseagreen",
+  competing_outcome_cohort_stratification_node: "steelblue",
   era_covariate_settings_node: "chocolate",
   calendar_time_covariate_settings_node: "chocolate",
   seasonality_covariate_settings_node: "chocolate",
@@ -457,6 +464,29 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     defaultData: {
       type: "exit",
       cohorts: [],
+    },
+  },
+  kaplan_meier_characterization_node: {
+    title: "Kaplan-Meier Characterization Analysis",
+    description:
+      "Enhanced Kaplan-Meier survival analysis with competing risks and stratification support.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      kaplanMeierCharacterizationArgs: {
+        analysisType: "single_event",
+        useStratification: false,
+      },
+    },
+  },
+  competing_outcome_cohort_stratification_node: {
+    title: "Competing Outcome Cohort / Stratification",
+    description:
+      "Define competing outcome cohorts or stratification variables for Kaplan-Meier analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      competingOutcomeCohortStratificationArgs: {
+        cohortType: "competing_outcome",
+      },
     },
   },
 };

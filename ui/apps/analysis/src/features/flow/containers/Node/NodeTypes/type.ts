@@ -11,6 +11,8 @@ export type NodeType =
   | "cohort_method_analysis_node"
   | "cohort_method_node"
   | "kaplan_meier_node"
+  | "kaplan_meier_characterization_node"
+  | "competing_outcome_cohort_stratification_node"
   | "era_covariate_settings_node"
   | "calendar_time_covariate_settings_node"
   | "seasonality_covariate_settings_node"
@@ -67,6 +69,7 @@ export const ZERO_INCIDENCE_NODE = [
   "exposure_node",
   "cohort_incidence_target_cohorts_node",
   "default_covariate_settings_node",
+  "competing_outcome_cohort_stratification_node",
 ];
 export const ONE_INCIDENCE_NODE = [
   "negative_control_outcome_cohort_node",
@@ -85,6 +88,7 @@ export const TWO_INCIDENCE_NODE = [
 export const THREE_INCIDENCE_NODE = [
   "patient_level_prediction_node",
   "treatment_patterns_node",
+  "kaplan_meier_characterization_node",
 ];
 export const FOUR_INCIDENCE_NODE = [];
 export const FIVE_INCIDENCE_NODE = [];
@@ -176,6 +180,26 @@ export const NODE_CONNECTOR_MAPPING = {
         name: "Study Population",
         type: "lightpink",
         classifier: "study_population",
+      },
+    ],
+  },
+  kaplan_meier_characterization_node: {
+    type: "mediumseagreen",
+    connector_list: [
+      {
+        name: "Target Cohort",
+        type: "teal",
+        classifier: "target_cohort",
+      },
+      {
+        name: "Exit Cohort",
+        type: "teal",
+        classifier: "cohort_exit_node",
+      },
+      {
+        name: "Competing Outcome / Strata",
+        type: "steelblue",
+        classifier: "competing_outcome_cohort_stratification",
       },
     ],
   },
@@ -276,6 +300,10 @@ export const NODE_CONNECTOR_MAPPING = {
   },
   cohort_exit_node: {
     type: "teal",
+    connector_list: [],
+  },
+  competing_outcome_cohort_stratification_node: {
+    type: "steelblue",
     connector_list: [],
   },
 };
