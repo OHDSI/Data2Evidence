@@ -816,6 +816,7 @@ const main = async () => {
 };
 
 try {
+    // trigger tests
     main();
 } catch (err) {
     log.error(`
