@@ -70,8 +70,7 @@ class GetAuthToken:
 
     @classmethod
     def refresh_third_party_token(cls) -> None:
-        if cls.refresh_token is None:
-            raise RuntimeError("Refresh token is not available")
+        cls.get_refresh_token()
 
         refresh_token_endpoint = Secret.load("refresh-token-endpoint")
         refresh_token_client_id = Secret.load("refresh-token-client-id")
