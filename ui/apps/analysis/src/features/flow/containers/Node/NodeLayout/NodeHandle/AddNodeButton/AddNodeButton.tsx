@@ -7,6 +7,7 @@ import "./AddNodeButton.scss";
 
 export interface AddNodeButtonProps {
   nodeId: string;
+  nodeHandleLabel: string;
   nodeHandleType: string;
   type: NodeType;
   handleType: "input" | "output";
@@ -14,6 +15,7 @@ export interface AddNodeButtonProps {
 
 export const AddNodeButton = ({
   nodeId,
+  nodeHandleLabel,
   nodeHandleType,
   type,
   handleType,
@@ -22,6 +24,7 @@ export const AddNodeButton = ({
     dispatch(
       setAddNodeTypeDialog({
         visible: true,
+        nodeHandleLabel,
         nodeType: type,
         handleType,
         selectedNodeId: nodeId,

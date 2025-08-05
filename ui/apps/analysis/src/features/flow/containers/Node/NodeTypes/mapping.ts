@@ -15,13 +15,11 @@ export interface NodeConnectorMap {
   outputs: NodeConnection[];
 }
 
-// Helper function to create connections more cleanly
 const createConnection = (name: string, node: NodeType): NodeConnection => ({
   name,
   node,
 });
 
-// Helper function to create connection groups
 const createConnectionGroup = (
   name: string,
   connections: NodeConnection[]
@@ -116,6 +114,7 @@ export const NODE_CONNECTOR_MAPPING: Record<NodeType, NodeConnectorMap> = {
     [createConnection("Outcomes", "outcomes_node")],
     [createConnection("Strategus", "strategus_node")]
   ),
+
   cohort_method_analysis_node: createConnectorMap(
     [
       createConnection("Study Population", "study_population_settings_node"),

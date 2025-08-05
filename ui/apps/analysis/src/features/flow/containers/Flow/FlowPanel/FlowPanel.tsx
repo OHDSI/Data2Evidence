@@ -65,95 +65,9 @@ const snapGrid: [number, number] = [10, 10];
 const flowStyles: CSSProperties = { backgroundColor: "#faf8f8" };
 const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 
-const normalizeHandleName = (name: string | null | undefined): string => {
-  if (!name) {
-    return "";
-  }
-  return name.toLowerCase().replace(/\s+/g, "");
-};
-
-const getTargetHandleName = (
-  sourceNodeType: NodeType,
-  sourceNodeHandleType: string | null | undefined,
-  targetNodeType: NodeType
-): string => {
-  // If target node has grouped inputs, get the appropriate group name
-  if (hasGroupedInputs(targetNodeType)) {
-    const groupName = getGroupNameForNode(targetNodeType, sourceNodeType);
-    return `${targetNodeType}_${normalizeHandleName(groupName)}`;
-  }
-
-  // If source node has grouped inputs, use the source handle type
-  if (hasGroupedInputs(sourceNodeType)) {
-    return `${sourceNodeType}_${normalizeHandleName(sourceNodeHandleType)}`;
-  }
-
-  // Default case: use target node type
-  return targetNodeType;
-};
-
-/**
- * Configuration for edge creation based on connection direction
- */
-interface EdgeConnectionConfig {
-  sourceId: string;
-  targetId: string;
-  sourceHandleType: NodeType;
-  targetHandleType: string;
-}
-
-// get edge connection config based on handle direction
-const getEdgeConnectionConfig = (
-  newNode: NodeState,
-  dialog: AddNodeTypeDialogState,
-  newNodeType: NodeType,
-  targetHandleName: string
-): EdgeConnectionConfig => {
-  const isOutputConnection = dialog.handleType === "output";
-
-  if (isOutputConnection) {
-    return {
-      sourceId: dialog.selectedNodeId!,
-      targetId: newNode.id!,
-      sourceHandleType: newNodeType,
-      targetHandleType: hasGroupedInputs(newNodeType)
-        ? targetHandleName
-        : dialog.nodeType!,
-    };
-  }
-
-  return {
-    sourceId: newNode.id!,
-    targetId: dialog.selectedNodeId!,
-    sourceHandleType: dialog.nodeType!,
-    targetHandleType: targetHandleName,
-  };
-};
-
-const createEdge = (
-  newNode: NodeState,
-  dialog: AddNodeTypeDialogState,
-  newNodeType: NodeType,
-  targetHandleName: string
-): EdgeState | undefined => {
-  if (!newNode.id || !dialog.selectedNodeId || !dialog.handleType) {
-    return undefined;
-  }
-
-  const config = getEdgeConnectionConfig(
-    newNode,
-    dialog,
-    newNodeType,
-    targetHandleName
-  );
-
-  return {
-    id: uuidv4(),
-    source: config.sourceId,
-    target: config.targetId,
-    sourceHandle: `${config.sourceId}_source_${config.sourceHandleType}`,
-    targetHandle: `${config.targetId}_target_${config.targetHandleType}`,
-  };
+const getHandleType = (handleId: string) => {
+  const arr = handleId.split("_");
+  return arr[2];
 };
 
 export const FlowPanel: FC<FlowPanelProps> = () => {
@@ -322,18 +236,14 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
 
-      const targetHandleName = getTargetHandleName(
-        addNodeTypeDialog.nodeType,
-        addNodeTypeDialog.selectedNodeHandleType,
-        type
-      );
-
-      const edge = createEdge(
-        newNode,
-        addNodeTypeDialog,
-        type,
-        targetHandleName
-      );
+      let edge: EdgeState | undefined;
+      edge = {
+        id: uuidv4(),
+        source: newNode.id,
+        target: addNodeTypeDialog.selectedNodeId,
+        sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
+        targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
+      };
 
       if (edge) {
         dispatch(setEdge(edge));
@@ -369,21 +279,13 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         }
         return acc;
       }, {});
-      const sourceNode = nodes.find((node) => node.id === source);
-      const targetNode = nodes.find((node) => node.id === target);
-      const sourceNodeType = sourceNode?.type as NodeType;
-      const targetNodeType = targetNode?.type as NodeType;
-      const sourceOutputs = getNodeOutputs(sourceNodeType).map(
-        (output) => output.node
-      );
-      const targetInputs = getNodeInputs(targetNodeType).map(
-        (input) => input.node
-      );
-      const isValidMapping =
-        sourceOutputs.includes(targetNodeType) &&
-        targetInputs.includes(sourceNodeType);
+
+      const sourceType = getHandleType(connection.sourceHandle);
+      const targetType = getHandleType(connection.targetHandle);
+      const isValidType = sourceType === targetType;
+
       return (
-        isDifferentNode && !isCircular(routes, source, target) && isValidMapping
+        isDifferentNode && !isCircular(routes, source, target) && isValidType
       );
     },
     [edges, nodes]

@@ -1,15 +1,14 @@
 import React, { ChangeEvent, FC, useCallback, useState, useMemo } from "react";
 import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
-import { NODE_COLORS, NodeChoiceMap, NodeType } from "../index";
-import { NodeTag, NodeTypeChoice } from "../type";
 import {
-  getAllNodeTypes,
-  getNodeInputGroups,
-  getNodeInputs,
-  getNodeOutputs,
-  hasGroupedInputs,
-} from "../mapping";
+  NodeChoiceMap,
+  NodeType,
+  inputHandleTypeMap,
+  outputHandleTypeMap,
+} from "../index";
+import { NodeTag, NodeTypeChoice } from "../type";
+import { getAllNodeTypes } from "../mapping";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
@@ -22,7 +21,7 @@ export interface SelectNodeTypesDialogProps
 
 export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   onClose,
-  handleType,
+  handleType, // this should be renamed to handle direction type since its only "input" or "output"
   sourceNodeType,
   handleNodeType,
   ...props
@@ -37,23 +36,10 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   );
 
   const nodesToSelect = useMemo(() => {
-    const allNodeTypes = getAllNodeTypes();
-    if (!handleNodeType) {
-      return allNodeTypes;
-    }
-    if (handleType === "input") {
-      if (hasGroupedInputs(sourceNodeType)) {
-        return getNodeInputGroups(sourceNodeType)
-          .find((group) => group.name === handleNodeType)
-          .connections.map((connection) => connection.node as NodeType);
-      } else {
-        return [handleNodeType as NodeType];
-      }
-    } else {
-      return getNodeOutputs(sourceNodeType).map(
-        (output) => output.node as NodeType
-      );
-    }
+    if (!handleNodeType) return getAllNodeTypes();
+    return handleType === "input"
+      ? Array.from(inputHandleTypeMap[handleNodeType])
+      : Array.from(outputHandleTypeMap[handleNodeType]);
   }, [handleNodeType, handleType, sourceNodeType]);
 
   return (

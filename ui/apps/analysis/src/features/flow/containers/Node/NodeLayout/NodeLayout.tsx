@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { NodeProps } from "reactflow";
+import { Handle, NodeProps, Position } from "reactflow";
 import classNames from "classnames";
 import {
   Box,
@@ -7,19 +7,16 @@ import {
   DragIndicatorIcon,
   Button,
 } from "@portal/components";
-import { InputHandle, OutputHandle } from "./NodeHandle/CustomHandle";
+import { InputHandle } from "./NodeHandle/CustomHandle";
 import { NodeDataState } from "../../../types";
 import {
-  getInputCount,
-  getGroupInputCount,
-  getOutputCount,
-  getNodeInputs,
-  getNodeOutputs,
-  getNodeInputGroups,
-  hasGroupedInputs,
-} from "../../Node/NodeTypes/mapping";
-import { INBOUND_CONNECTOR_STYLES, NodeType } from "../NodeTypes";
-import { NODE_COLORS } from "../NodeTypes";
+  INBOUND_CONNECTOR_STYLES,
+  OUTBOUND_CONNECTOR_STYLE,
+  NodeType,
+  HandleIODict,
+  NodeChoiceMap,
+  NodeConnection,
+} from "../NodeTypes";
 import "./NodeLayout.scss";
 
 export interface NodeLayoutProps<T> {
@@ -48,63 +45,44 @@ export const NodeLayout = <T extends NodeDataState>({
 
   const PLAIN_NODES = ["patient_level_prediction_node"];
 
-  const outputNodeIncidenceNumber = getOutputCount(node.type as NodeType);
   const inputHandles = useMemo(() => {
-    if (hasGroupedInputs(node.type as NodeType)) {
-      const inputNodeIncidenceNumber = getGroupInputCount(
-        node.type as NodeType
-      );
-      return getNodeInputGroups(node.type as NodeType).map((group, index) => (
-        <InputHandle
-          key={group.name}
-          name={group.name}
-          color={NODE_COLORS["strategus_node"]}
-          sourceNodeType={node.type as NodeType}
-          handleNodeType={group.name}
-          node={node}
-          style={{
-            top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
-            display: "flex",
-            alignItems: "center",
-          }}
-        />
-      ));
-    } else {
-      const inputNodeIncidenceNumber = getInputCount(node.type as NodeType);
+    const handles: NodeConnection[] = NodeChoiceMap[node.type]?.inputs ?? [];
+    const inputNodeIncidenceNumber = handles.length;
 
-      return getNodeInputs(node.type as NodeType).map((input, index) => (
-        <InputHandle
-          key={input.name}
-          name={input.name}
-          color={NODE_COLORS[input.node]}
-          handleNodeType={input.node}
-          node={node}
-          style={{
-            top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
-            display: "flex",
-            alignItems: "center",
-          }}
-        />
-      ));
-    }
-  }, [node]);
-
-  const outputHandles = useMemo(() => {
-    return getNodeOutputs(node.type as NodeType).map((output, index) => (
-      <OutputHandle
-        key={output.name}
-        name={output.name}
-        color={NODE_COLORS[output.node]}
-        handleNodeType={output.node}
+    return handles.map((input, index) => (
+      <InputHandle
+        key={input.label}
+        name={input.label}
+        color={HandleIODict[input.handleType].color}
+        sourceNodeType={node.type as NodeType}
+        handleNodeType={input.handleType}
         node={node}
         style={{
-          top: INBOUND_CONNECTOR_STYLES[outputNodeIncidenceNumber][index],
+          top: INBOUND_CONNECTOR_STYLES[inputNodeIncidenceNumber][index],
           display: "flex",
           alignItems: "center",
         }}
       />
     ));
-  }, [node, outputNodeIncidenceNumber]);
+  }, []);
+
+  // Right now, we only support one output handle per node.
+  const outputHandles = useMemo(() => {
+    const handles: NodeConnection[] = NodeChoiceMap[node.type]?.outputs ?? [];
+
+    return handles.map((output) => (
+      <Handle
+        type="source"
+        key={`${node.id}_source_${output.label}_${output.handleType}`}
+        id={`${node.id}_source_${output.label}_${output.handleType}`}
+        position={Position.Right}
+        style={{
+          background: HandleIODict[output.handleType].color,
+          ...OUTBOUND_CONNECTOR_STYLE,
+        }}
+      />
+    ));
+  }, [node]);
 
   return (
     <div className={classes}>

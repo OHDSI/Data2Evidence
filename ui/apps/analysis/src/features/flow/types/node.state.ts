@@ -14,6 +14,7 @@ export interface NodeState<TData extends NodeDataState = NodeDataState>
 
 export interface AddNodeTypeDialogState {
   visible: boolean;
+  nodeHandleLabel?: string;
   handleType?: "input" | "output";
   nodeType?: NodeType;
   selectedNodeId?: string;

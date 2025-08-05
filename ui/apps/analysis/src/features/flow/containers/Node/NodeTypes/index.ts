@@ -30,7 +30,14 @@ import {
 } from "./TreatmentPatternsNode/TreatmentPatternsType";
 import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
-import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
+import {
+  NodeChoiceAttr,
+  NodeType,
+  NodeTypeChoice,
+  NodeTag,
+  NodeConnection,
+  HandleIOType,
+} from "./type";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -106,6 +113,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       incremental: true,
       generateStats: true,
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   cohort_diagnostic_node: {
     title: "Cohort Diagnostic Module Specifications",
@@ -123,6 +136,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       runTemporalCohortCharacterization: true,
       incremental: false,
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   negative_control_outcome_cohort_node: {
     title: "Negative Control Outcome Cohort Shared Resource Specifications",
@@ -149,6 +168,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         tars: [],
       },
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   cohort_incidence_target_cohorts_node: {
     title: "Cohort Incidence Target Cohorts",
@@ -200,6 +225,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         },
       ],
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   target_comparator_outcomes_node: {
     title: "Target Compartor Outcomes",
@@ -389,8 +420,15 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   strategus_node: {
     title: "Strategus",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {},
+    inputs: [
+      {
+        label: "Module Specifications",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
+    outputs: [],
   },
   treatment_patterns_node: {
     title: "Treatment Patterns",
@@ -411,6 +449,21 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       minCellCount: 5,
       censorType: CensorType.MinCellCount,
     },
+    inputs: [
+      {
+        label: "Target Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+      {
+        label: "Event Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+      {
+        label: "Exit Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
+    outputs: [],
   },
   cohort_event_node: {
     title: "Event Cohort Selection",
@@ -420,6 +473,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       type: "event",
       cohorts: [],
     },
+    outputs: [
+      {
+        label: "Treatment Patterns",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
   },
   cohort_target_node: {
     title: "Target Cohort Selection",
@@ -429,6 +488,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       type: "target",
       cohorts: [],
     },
+    outputs: [
+      {
+        label: "Treatment Patterns",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
   },
   cohort_exit_node: {
     title: "Exit Cohort Selection",
@@ -438,8 +503,50 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       type: "exit",
       cohorts: [],
     },
+    outputs: [
+      {
+        label: "Treatment Patterns",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
   },
 };
+
+type HandleDirection = "inputs" | "outputs";
+
+const getNodeHandleTypeMap = (direction: HandleDirection = "outputs") => {
+  const handleTypeMap: Record<HandleIOType, Set<NodeType>> = {} as Record<
+    HandleIOType,
+    Set<NodeType>
+  >;
+
+  // if handleDirection is output, should get the inputs
+  // if handleDirection is input, should get the outputs
+  const directionMap = {
+    inputs: "outputs",
+    outputs: "inputs",
+  };
+
+  Object.entries(NodeChoiceMap).forEach(([key, node]) => {
+    const handles = node[directionMap[direction]];
+    handles?.forEach((handle: NodeConnection) => {
+      if (!handleTypeMap[handle.handleType]) {
+        handleTypeMap[handle.handleType] = new Set<NodeType>();
+      }
+      handleTypeMap[handle.handleType].add(key as NodeType);
+    });
+  });
+
+  return handleTypeMap;
+};
+
+export const outputHandleTypeMap = getNodeHandleTypeMap("outputs");
+export const inputHandleTypeMap = getNodeHandleTypeMap("inputs");
+
+console.log("outputHandleTypeMap");
+console.log(outputHandleTypeMap);
+console.log("inputHandleTypeMap");
+console.log(inputHandleTypeMap);
 
 export const getNodeColors = (node: Node<NodeDataState>) => {
   if (node.type && Object.keys(NODE_COLORS).includes(node.type)) {

@@ -4,8 +4,6 @@ import { HandleType } from "reactflow";
 import { NodeType } from "../../NodeTypes";
 import { AddNodeButton } from "./AddNodeButton/AddNodeButton";
 import "./CustomHandle.scss";
-import { hasGroupedInputs } from "../../NodeTypes/mapping";
-
 export interface CustomHandleProps {
   name: string;
   color: string;
@@ -19,15 +17,11 @@ export const CustomHandle = ({
   name,
   color,
   type,
-  sourceNodeType,
   handleNodeType,
   node,
   style,
 }: CustomHandleProps) => {
-  const handleName =
-    hasGroupedInputs(sourceNodeType) && sourceNodeType
-      ? `${sourceNodeType}_${handleNodeType.toLowerCase().replace(" ", "")}`
-      : handleNodeType;
+  const handleLabel = name.toLowerCase().replace(/\s/g, "_");
   return (
     <div
       style={{
@@ -42,7 +36,7 @@ export const CustomHandle = ({
       <Handle
         className="custom-handle"
         type={type}
-        id={`${node.id}_${type}_${handleName}`}
+        id={`${node.id}_${type}_${handleLabel}_${handleNodeType}`}
         position={type === "source" ? Position.Right : Position.Left}
         style={{
           position: "absolute",
@@ -51,12 +45,14 @@ export const CustomHandle = ({
           width: "14px",
           height: "100%",
         }}
-      ></Handle>
+      />
+
       <span style={{ marginRight: "5px", marginLeft: "5px" }}>
         <AddNodeButton
           nodeId={node.id}
+          nodeHandleLabel={handleLabel}
           nodeHandleType={handleNodeType}
-          handleType={type == "source" ? "output" : "input"}
+          handleType={"input"}
           type={node.type as NodeType}
         />
       </span>
@@ -65,9 +61,6 @@ export const CustomHandle = ({
   );
 };
 
-export const OutputHandle: FC<Omit<CustomHandleProps, "type">> = (props) => (
-  <CustomHandle type="source" {...props} />
-);
 export const InputHandle: FC<Omit<CustomHandleProps, "type">> = (props) => (
   <CustomHandle type="target" {...props} />
 );

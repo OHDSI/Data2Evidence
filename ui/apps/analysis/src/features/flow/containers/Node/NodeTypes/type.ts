@@ -34,11 +34,36 @@ export enum NodeTag {
   Stable = "Stable",
 }
 
+export enum HandleIOType {
+  Cohort = "cohort",
+  ModuleSpecification = "module_specification",
+}
+
+export const HandleIODict: {
+  [key in HandleIOType]: { color: string; text: string; border?: string };
+} = {
+  [HandleIOType.Cohort]: {
+    color: "teal",
+    text: "Cohort",
+  },
+  [HandleIOType.ModuleSpecification]: {
+    color: "purple",
+    text: "Module Specification",
+  },
+};
+
+export interface NodeConnection {
+  label?: string;
+  handleType: HandleIOType;
+}
+
 export interface NodeChoiceAttr {
   title: string;
   description?: string;
   tag?: NodeTag;
   defaultData?: Record<string, any>;
+  inputs?: NodeConnection[];
+  outputs?: NodeConnection[];
 }
 
 export const OUTBOUND_CONNECTOR_STYLE = {
