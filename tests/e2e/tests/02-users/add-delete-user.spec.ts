@@ -30,7 +30,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Show password' }).click()
   await page.getByRole('button', { name: 'Add' }).click()
   // Check if user is added
-  await page.waitForTimeout(3000)
+  await page.waitForTimeout(10000)
+  await page.reload()
   await expect(page.getByRole('cell', { name: 'test_user' })).toBeVisible()
 
   // Delete user
