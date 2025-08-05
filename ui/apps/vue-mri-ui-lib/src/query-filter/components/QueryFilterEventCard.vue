@@ -324,8 +324,10 @@ const getTagInputValue = () => {
 }
 
 // Get event type display name
-const getEventTypeDisplay = (eventType?: string) => {
-  if (!eventType) return 'Unknown Event'
+const getEventTypeDisplay = (eventType?: string, criteriaType?: string) => {
+  // Use criteriaType as fallback if eventType is not available (happens after setData())
+  const typeToUse = eventType || criteriaType
+  if (!typeToUse) return 'Unknown Event'
 
   const typeMap: Record<string, string> = {
     conditionOccurrence: 'Condition Occurrence',
@@ -338,7 +340,7 @@ const getEventTypeDisplay = (eventType?: string) => {
     death: 'Death',
   }
 
-  return typeMap[eventType] || eventType
+  return typeMap[typeToUse] || typeToUse
 }
 
 // Get cardinality display text
@@ -427,7 +429,7 @@ const createAttributeModel = (attribute: QueryFilterAttribute) => {
         <div class="event-header__left">
           <div class="event-type-indicator">
             <span class="event-type-label">
-              {{ getEventTypeDisplay(eventData.eventType) }}
+              {{ getEventTypeDisplay(eventData.eventType, eventData.criteriaType) }}
             </span>
             <span v-if="nestedLevel > 0" class="nested-indicator"> (Level {{ nestedLevel }}) </span>
           </div>

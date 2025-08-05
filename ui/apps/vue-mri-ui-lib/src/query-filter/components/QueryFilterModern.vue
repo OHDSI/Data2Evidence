@@ -17,6 +17,7 @@ import {
   type StoredConceptItem,
 } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
+import { CriteriaConfigLoader } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
   ConceptSetItem,
@@ -624,8 +625,8 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       'Atlas ConceptSets for conversion:',
       atlasExpression.ConceptSets?.map(cs => `${cs.name} (ID: ${cs.id})`)
     )
-    const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value)
-    console.log('Converted Atlas JSON to tempManager:', tempManager)
+    const configLoader = new CriteriaConfigLoader()
+    const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value, configLoader)
 
     // Copy the criteria to our reactive manager
     criteriaManager.setData(tempManager.getData())
@@ -703,11 +704,6 @@ const loadConceptSetDetailsForAllEvents = async () => {
         }
       }
     }
-  }
-
-  if (conceptSetsToLoad.length === 0) {
-    console.log('No concept sets need details loaded')
-    return
   }
 
   console.log(
@@ -1006,17 +1002,10 @@ const handleSearchChange = (searchQuery: string) => {
 
 // Function to find an event by ID across all sections of criteria manager
 const findEventById = (eventId: string): QueryFilterEvent | undefined => {
-  console.log('jer DEBUG: findEventById searching for:', eventId)
-
   // Search in entry events
   const entryEvents = criteriaManager.getPrimaryEvents()
-  console.log(
-    'jer DEBUG: Searching in entry events:',
-    entryEvents.events.map(e => e.id)
-  )
   let foundEvent = entryEvents.events.find(e => e.id === eventId)
   if (foundEvent) {
-    console.log('jer DEBUG: Found event in entry events:', foundEvent.id)
     return foundEvent
   }
 
@@ -1027,7 +1016,6 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
         if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
           const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
           if (nestedEvent) {
-            console.log('jer DEBUG: Found event in primary events nested attributes:', nestedEvent.id)
             return nestedEvent
           }
         }
@@ -1037,30 +1025,17 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
 
   // Search in exit events (censoring criteria)
   const exitEvents = criteriaManager.getCensoringCriteria()
-  console.log(
-    'jer DEBUG: Searching in exit events:',
-    exitEvents.censoringCriteria.map(e => e.id)
-  )
   foundEvent = exitEvents.censoringCriteria.find(e => e.id === eventId)
   if (foundEvent) {
-    console.log('jer DEBUG: Found event in exit events:', foundEvent.id)
     return foundEvent
   }
 
   // Search in inclusion criteria groups
   const criteria = criteriaManager.getCriteria()
-  console.log('jer DEBUG: Searching in inclusion criteria:', criteria.criteria.length, 'groups')
   for (const group of criteria.criteria) {
-    console.log(
-      'jer DEBUG: Checking group:',
-      group.id,
-      'with events:',
-      group.events.map(e => e.id)
-    )
     for (const event of group.events) {
       // Now that we've fixed the types, group.events only contains QueryFilterEvent objects
       if (event.id === eventId) {
-        console.log('jer DEBUG: Found event in inclusion criteria:', event.id)
         return event
       }
 
@@ -1070,7 +1045,6 @@ const findEventById = (eventId: string): QueryFilterEvent | undefined => {
           if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
             const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
             if (nestedEvent) {
-              console.log('jer DEBUG: Found event in inclusion criteria nested attributes:', nestedEvent.id)
               return nestedEvent
             }
           }
@@ -1089,7 +1063,15 @@ const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeI
     return []
   }
 
-  const targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
+  // First try to find by id, then by attributeId
+  let targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
+  if (!targetAttribute) {
+    // Try to find by attributeId (for Atlas JSON loaded attributes)
+    targetAttribute = targetEvent.attributes?.find(
+      attr => 'attributeId' in attr && (attr as any).attributeId === targetAttributeId
+    )
+  }
+
   if (!targetAttribute) {
     return []
   }
@@ -1105,6 +1087,7 @@ const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeI
       conceptClassId: item.conceptClassId,
       standardConcept: item.standardConcept,
       concept: item.concept || item.text,
+      conceptName: item.conceptName || item.text, // Add conceptName property
       code: item.code,
       validStartDate: item.validStartDate,
       validEndDate: item.validEndDate,
@@ -1164,27 +1147,17 @@ const updateAttributeWithConcepts = (
     return
   }
 
-  console.log('jer DEBUG: Found target event for concept update:', {
-    eventId: targetEvent.id,
-    hasAttributes: !!targetEvent.attributes,
-    attributesCount: targetEvent.attributes?.length || 0,
-    attributes:
-      targetEvent.attributes?.map(attr => ({
-        id: attr.id,
-        attributeType: attr.attributeType,
-        hasAttributeId: 'attributeId' in attr,
-        attributeId: 'attributeId' in attr ? attr.attributeId : 'N/A',
-      })) || [],
-  })
+  // Find the attribute within the event - try by id first, then by attributeId
+  let targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
+  if (!targetAttribute) {
+    // Try to find by attributeId (for Atlas JSON loaded attributes)
+    targetAttribute = targetEvent.attributes?.find(
+      attr => 'attributeId' in attr && (attr as any).attributeId === targetAttributeId
+    )
+  }
 
-  // Find the attribute within the event
-  const targetAttribute = targetEvent.attributes?.find(attr => attr.id === targetAttributeId)
   if (!targetAttribute) {
     console.warn(`Attribute with ID ${targetAttributeId} not found in event ${targetEventId}`)
-    console.log(
-      `Available attributes:`,
-      targetEvent.attributes?.map(attr => ({ id: attr.id, attributeType: attr.attributeType }))
-    )
     return
   }
 
@@ -1199,25 +1172,8 @@ const updateAttributeWithConcepts = (
       delete (targetAttribute as any).conceptSet
     }
 
-    console.log('jer DEBUG: Updated attribute with individual concepts:', {
-      attributeId: 'attributeId' in targetAttribute ? targetAttribute.attributeId : 'N/A',
-      conceptItemsCount: conceptItems.length,
-      conceptItems: conceptItems.map(item => ({
-        conceptId: item.conceptId,
-        text: item.text,
-        display_value: item.display_value,
-      })),
-    })
-
     // Force reactivity update
     primaryEventsUpdateKey.value++
-
-    // Verify the attribute is correctly updated in the event
-    console.log('jer DEBUG: After update, target event attributes:', {
-      eventId: targetEvent.id,
-      attributesCount: targetEvent.attributes?.length || 0,
-      targetAttributeConceptItems: targetAttribute.conceptItems?.length || 0,
-    })
   }
 }
 
@@ -1250,7 +1206,10 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
                 if (nestedEvent) {
                   nestedEvent.conceptSetDetails = conceptSetDetails
                   nestedEvent.conceptSetLoading = false
-                  nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                  // Only update conceptSet name if the event actually has a conceptSetId
+                  if (nestedEvent.conceptSetId) {
+                    nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                  }
                   foundInPrimary = true
                   break
                 }

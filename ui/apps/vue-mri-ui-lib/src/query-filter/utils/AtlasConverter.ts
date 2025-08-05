@@ -74,15 +74,6 @@ const hasAge = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { 
   )
 }
 
-const hasGender = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Gender: ConceptSet[] } => {
-  return (
-    'Gender' in criteriaObj &&
-    criteriaObj !== null &&
-    typeof criteriaObj === 'object' &&
-    criteriaObj.Gender !== undefined
-  )
-}
-
 const hasCorrelatedCriteria = (
   criteriaObj: CriteriaObject
 ): criteriaObj is CriteriaObject & { CorrelatedCriteria: CorrelatedCriteria } => {
@@ -101,11 +92,88 @@ const hasDemographicAge = (
   return demoCriteria.Age !== undefined
 }
 
-// Type guard for demographic criteria with Gender
-const hasDemographicGender = (
-  demoCriteria: DemographicCriteria
-): demoCriteria is DemographicCriteria & { Gender: ConceptSet[] } => {
-  return demoCriteria.Gender !== undefined
+// Helper function to convert Atlas JSON concepts to StoredConceptItem format
+const convertAtlasConceptsToInternal = (atlasConcepts: any[]): any[] => {
+  return atlasConcepts.map(concept => ({
+    value: concept.CONCEPT_ID?.toString() || '',
+    text: concept.CONCEPT_NAME || '',
+    display_value: concept.CONCEPT_NAME || '',
+    conceptId: concept.CONCEPT_ID || 0,
+    conceptName: concept.CONCEPT_NAME || '', // Add conceptName for terminology UI compatibility
+    domainId: concept.DOMAIN_ID || '',
+    system: concept.VOCABULARY_ID || '',
+    code: concept.CONCEPT_CODE || '',
+    standardConcept: concept.STANDARD_CONCEPT || '',
+    conceptClassId: concept.CONCEPT_CLASS_ID || '', // Add conceptClassId if available
+    validity: concept.VALID_START_DATE && concept.VALID_END_DATE ? 'Valid' : undefined, // Basic validity info
+    validStartDate: concept.VALID_START_DATE,
+    validEndDate: concept.VALID_END_DATE,
+  }))
+}
+
+// Helper function to convert conceptSet arrays from Atlas JSON to attribute objects
+const convertConceptSetArrayToAttribute = (
+  attributeId: string,
+  conceptArray: any[],
+  eventType: string,
+  configLoader?: any
+): any => {
+  const conceptItems = convertAtlasConceptsToInternal(conceptArray)
+
+  // Try to get configuration for this attribute
+  let configType = 'conceptSet' // default
+  let domainFilter = 'Condition' // default
+
+  if (configLoader) {
+    try {
+      const attributeConfig = configLoader.getAttributeConfig(eventType, attributeId)
+      if (attributeConfig) {
+        configType = attributeConfig.type === 'concept' ? 'concept' : 'conceptSet'
+        domainFilter = attributeConfig.domainFilter || domainFilter
+      }
+    } catch (error) {
+      // Fallback to defaults if config not found
+      console.warn(`Could not find config for ${eventType}.${attributeId}, using defaults`)
+    }
+  }
+
+  // Get the display name from config
+  let displayName = attributeId // fallback to attributeId
+  if (configLoader) {
+    try {
+      const attributeConfig = configLoader.getAttributeConfig(eventType, attributeId)
+      if (attributeConfig && attributeConfig.name) {
+        displayName = attributeConfig.name
+      }
+    } catch (error) {
+      // Use fallback
+    }
+  }
+
+  // Create the correct attribute type based on config
+  if (configType === 'concept') {
+    // For individual concepts, use standard type with conceptItems
+    return {
+      id: `attribute_${Math.random().toString(36).substring(2)}`,
+      attributeId: attributeId,
+      attributeType: 'standard' as const,
+      configType: configType,
+      domainFilter: domainFilter,
+      conceptItems: conceptItems,
+      name: displayName, // Add display name for UI
+      title: displayName, // Add title as well in case UI uses this
+    }
+  } else {
+    // For concept sets, use conceptSet type
+    return {
+      id: `attribute_${Math.random().toString(36).substring(2)}`,
+      attributeId: attributeId,
+      attributeType: 'conceptSet' as const,
+      conceptSet: conceptArray[0],
+      name: displayName, // Add display name for UI
+      title: displayName, // Add title as well in case UI uses this
+    }
+  }
 }
 
 // Helper function to convert ConceptSetItem to SelectedConceptSet
@@ -132,7 +200,8 @@ const convertConceptSetItemToSelected = (item: ConceptSetItem): SelectedConceptS
 
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
-  availableConceptSets: ConceptSetItem[] = []
+  availableConceptSets: ConceptSetItem[] = [],
+  configLoader?: any
 ): QueryFilterCriteriaManager => {
   if (!atlasJson) {
     throw new Error('Invalid Atlas JSON input')
@@ -243,12 +312,34 @@ export const convertAtlasToFilters = (
       const criteriaType = getCriteriaType(criteriaItem)
       const criteriaObj = getCriteriaObject(criteriaItem)
       const codesetId = hasCodesetId(criteriaObj) ? criteriaObj.CodesetId : undefined
+      
 
       const conceptSetInfo = codesetId !== undefined ? findConceptSetByCodesetId(codesetId) : null
 
+      // Create a better display name for events without concept sets
+      let eventDisplayName = conceptSetInfo?.name
+      if (!eventDisplayName && codesetId !== undefined) {
+        eventDisplayName = `Concept Set ${codesetId}`
+      }
+      if (!eventDisplayName) {
+        // Use human-readable names based on criteria type
+        const typeDisplayNames = {
+          conditionOccurrence: 'Condition',
+          drugExposure: 'Drug Exposure', 
+          procedureOccurrence: 'Procedure',
+          observation: 'Observation',
+          measurement: 'Measurement',
+          visitOccurrence: 'Visit',
+          deviceExposure: 'Device Exposure',
+          death: 'Death',
+          observationPeriod: 'Observation Period'
+        }
+        eventDisplayName = typeDisplayNames[criteriaType] || 'Unknown Event'
+      }
+
       const event: QueryFilterEvent = {
         id: `event_${Math.random().toString(36).substring(2)}`,
-        conceptSet: conceptSetInfo?.name || `Concept Set ${codesetId}` || 'Unknown Concept Set',
+        conceptSet: eventDisplayName,
         eventType: criteriaType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
         criteriaType: criteriaType, // For nested events, this should be the medical event type initially
         isExpanded: true,
@@ -295,15 +386,19 @@ export const convertAtlasToFilters = (
         })
       }
 
-      // Handle direct Gender attributes on the event
-      if (hasGender(criteriaObj)) {
-        if (!event.attributes) {
-          event.attributes = []
-        }
-        event.attributes.push({
-          id: `attribute_${Math.random().toString(36).substring(2)}`,
-          attributeId: 'gender',
-          attributeType: 'conceptSet',
+      // Handle concept attributes on the event dynamically using configuration
+      if (configLoader) {
+        const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(criteriaType)
+
+        Object.keys(criteriaObj).forEach(atlasKey => {
+          const value = criteriaObj[atlasKey]
+          if (Array.isArray(value) && value.length > 0 && atlasKeyToAttributeIdMap[atlasKey]) {
+            const attributeId = atlasKeyToAttributeIdMap[atlasKey]
+            if (!event.attributes) {
+              event.attributes = []
+            }
+            event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, criteriaType, configLoader))
+          }
         })
       }
 
@@ -399,14 +494,22 @@ export const convertAtlasToFilters = (
             })
           }
 
-          if (hasDemographicGender(demoCriteria)) {
-            if (!demographicEvent.attributes) {
-              demographicEvent.attributes = []
-            }
-            demographicEvent.attributes.push({
-              id: `attribute_${Math.random().toString(36).substring(2)}`,
-              attributeId: 'gender',
-              attributeType: 'conceptSet',
+          // Handle demographic concept attributes dynamically using configuration
+          if (configLoader) {
+            // Use a general mapping approach since demographic attributes might not have their own criteria type
+            const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+            Object.keys(demoCriteria).forEach(atlasKey => {
+              const value = demoCriteria[atlasKey]
+              if (Array.isArray(value) && value.length > 0 && demographicAtlasKeyToAttributeIdMap[atlasKey]) {
+                const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+                if (!demographicEvent.attributes) {
+                  demographicEvent.attributes = []
+                }
+                demographicEvent.attributes.push(
+                  convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
+                )
+              }
             })
           }
 

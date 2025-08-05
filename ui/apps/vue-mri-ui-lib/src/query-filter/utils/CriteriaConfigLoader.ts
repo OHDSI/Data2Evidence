@@ -448,6 +448,68 @@ export class CriteriaConfigLoader {
   }
 
   /**
+   * Get specific attribute configuration for a criteria type and attribute ID
+   */
+  getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
+
+    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
+      const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
+      return attribute || null
+    }
+    return null
+  }
+
+  /**
+   * Generate mapping from Atlas JSON property names to internal attribute IDs
+   * This builds the mapping dynamically from the configuration instead of hardcoding it
+   */
+  getAtlasJsonToAttributeMapping(criteriaTypeId: string): Record<string, string> {
+    const mapping: Record<string, string> = {}
+
+    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
+      this.config.criteriaAttributes[criteriaTypeId].forEach(attr => {
+        // For concept-type attributes, we need to map from Atlas JSON property names
+        // to internal attribute IDs. The Atlas JSON uses PascalCase property names
+        // that correspond to the attribute names, not the atlasKey values.
+
+        // Convert internal attributeId to Atlas JSON property name format
+        // e.g., 'gender' -> 'Gender', 'conditionType' -> 'ConditionType'
+        const atlasJsonKey = attr.id.charAt(0).toUpperCase() + attr.id.slice(1)
+
+        mapping[atlasJsonKey] = attr.id
+      })
+    }
+
+    // Add some additional common mappings that don't follow the standard pattern
+    const commonMappings = {
+      ValueAsConcept: 'valueAsConcept',
+      RouteConcept: 'routeConcept',
+      DoseUnit: 'doseUnit',
+      DeathSourceConcept: 'deathSourceConcept',
+    }
+
+    Object.assign(mapping, commonMappings)
+
+    return mapping
+  }
+
+  /**
+   * Get all possible Atlas JSON to attribute mappings across all criteria types
+   */
+  getAllAtlasJsonToAttributeMappings(): Record<string, string> {
+    const allMappings: Record<string, string> = {}
+
+    if (this.config.criteriaAttributes) {
+      Object.keys(this.config.criteriaAttributes).forEach(criteriaTypeId => {
+        const typeMappings = this.getAtlasJsonToAttributeMapping(criteriaTypeId)
+        Object.assign(allMappings, typeMappings)
+      })
+    }
+
+    return allMappings
+  }
+
+  /**
    * Get display title for attribute with "Add" prefix
    */
   getAttributeDisplayTitle(_attributeId: string, baseName: string): string {
