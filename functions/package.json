@@ -22,7 +22,7 @@
       "init": [
         {
           "function": "/strategus-analysis/src/init",
-          "imports": "/strategus-analysis/import.json",
+          "imports": "/strategus-analysis/deno.json",
           "env": "strategus-analysis"
         },
         {
