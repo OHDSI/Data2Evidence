@@ -1,36 +1,37 @@
 import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
-import { PlainNode } from "./PlainNode/PlainNode";
-import { CohortGeneratorNode } from "./CohortGeneratorNode/CohortGeneratorNode";
-import { CohortDiagnosticsNode } from "./CohortDiagnosticsNode/CohortDiagnosticsNode";
-import { NegatveControlOutcomeNode } from "./NegativeControlOutcomeNode/NegativeControlOutcomeNode";
-import { CharacterizationNode } from "./CharacterizationNode/CharacterizationNode";
-import { TimeAtRiskNode } from "./TimeAtRiskNode/TimeAtRiskNode";
-import { SelfControlledCaseSeriesNode } from "./SelfControlledCaseSeriesNode/SelfControlledCaseSeriesNode";
-import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
 import { CalendarTimeCovariateSettingsNode } from "./CalendarTimeCovariateSettingsNode/CalendarTimeCovariateSettingsNode";
-import { SeasonalityCovariateSettingsNode } from "./SeasonalityCovariateSettingsNode/SeasonalityCovariateSettingsNode";
-import { CohortIncidentNode } from "./CohortIncidentNode/CohortIncidentNode";
-import { TargetComparatorOutcomesNode } from "./TargetComparatorOutcomesNode/TargetComparatorOutcomesNode";
-import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
-import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
-import { StudyPopulationSettingsNode } from "./StudyPopulationSettingsNode/StudyPopulationSettingsNode";
-import { SelfControlledCaseSeriesAnalysisNode } from "./SelfControlledCaseSeriesAnalysisNode/SelfControlledCaseSeriesAnalysisNode";
-import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode/CohortIncidentTargetCohortNode";
-import { NCOCohortSetNode } from "./NCOCohortSetNode/NCOCohortSetNode";
-import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
-import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
+import { CharacterizationNode } from "./CharacterizationNode/CharacterizationNode";
 import { CohortDefinitionSetNode } from "./CohortDefinitionSetNode/CohortDefinitionSetNode";
-import { ExposureNode } from "./ExposureNode/ExposureNode";
-import {
-  IncludeTreatments,
-  FilterTreatments,
-  CensorType,
-} from "./TreatmentPatternsNode/TreatmentPatternsType";
-import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import { CohortDiagnosticsNode } from "./CohortDiagnosticsNode/CohortDiagnosticsNode";
+import { CohortGeneratorNode } from "./CohortGeneratorNode/CohortGeneratorNode";
+import { CohortIncidentNode } from "./CohortIncidentNode/CohortIncidentNode";
+import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode/CohortIncidentTargetCohortNode";
+import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
+import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
-import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
+import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
+import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
+import { ExposureNode } from "./ExposureNode/ExposureNode";
+import { KaplanMeierNode } from "./KaplanMeierNode/KaplanMeierNode";
+import { NCOCohortSetNode } from "./NCOCohortSetNode/NCOCohortSetNode";
+import { NegatveControlOutcomeNode } from "./NegativeControlOutcomeNode/NegativeControlOutcomeNode";
+import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
+import { PlainNode } from "./PlainNode/PlainNode";
+import { SeasonalityCovariateSettingsNode } from "./SeasonalityCovariateSettingsNode/SeasonalityCovariateSettingsNode";
+import { SelfControlledCaseSeriesAnalysisNode } from "./SelfControlledCaseSeriesAnalysisNode/SelfControlledCaseSeriesAnalysisNode";
+import { SelfControlledCaseSeriesNode } from "./SelfControlledCaseSeriesNode/SelfControlledCaseSeriesNode";
+import { StudyPopulationSettingsNode } from "./StudyPopulationSettingsNode/StudyPopulationSettingsNode";
+import { TargetComparatorOutcomesNode } from "./TargetComparatorOutcomesNode/TargetComparatorOutcomesNode";
+import { TimeAtRiskNode } from "./TimeAtRiskNode/TimeAtRiskNode";
+import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import {
+  CensorType,
+  FilterTreatments,
+  IncludeTreatments,
+} from "./TreatmentPatternsNode/TreatmentPatternsType";
+import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -46,6 +47,7 @@ export const NODE_TYPES: {
   target_comparator_outcomes_node: TargetComparatorOutcomesNode,
   cohort_method_analysis_node: CohortMethodAnalysisNode,
   cohort_method_node: CohortMethodNode,
+  kaplan_meier_node: KaplanMeierNode,
   era_covariate_settings_node: EraCovariateSettingsNode,
   calendar_time_covariate_settings_node: CalendarTimeCovariateSettingsNode,
   seasonality_covariate_settings_node: SeasonalityCovariateSettingsNode,
@@ -79,6 +81,7 @@ export const NODE_COLORS: {
   target_comparator_outcomes_node: "indigo",
   cohort_method_analysis_node: "lavender",
   cohort_method_node: "mediumpurple",
+  kaplan_meier_node: "lavender",
   era_covariate_settings_node: "chocolate",
   calendar_time_covariate_settings_node: "chocolate",
   seasonality_covariate_settings_node: "chocolate",
@@ -204,7 +207,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   target_comparator_outcomes_node: {
     title: "Target Compartor Outcomes",
     description: "Run target comparator outcomes code",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       targetId: 1,
       comparatorId: 1,
@@ -239,11 +242,26 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   cohort_method_node: {
     title: "Cohort Method",
     description: "Run cohort method code.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
       cohortMethodConfigs: [],
+    },
+  },
+  kaplan_meier_node: {
+    title: "Kaplan-Meier Analysis",
+    description: "Run Kaplan-Meier survival analysis code.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      kaplanMeierArgs: {
+        targetCohortId: 1,
+        outcomeCohortId: 2,
+        analysisType: "single_event",
+        competingOutcomeCohortId: undefined,
+        estimateGap: 30,
+        strataCohorts: [],
+      },
     },
   },
   era_covariate_settings_node: {
@@ -331,8 +349,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   study_population_settings_node: {
     title: "Study Population Settings",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Configure risk windows, time at risk, and analysis-specific population parameters.",
+    tag: NodeTag.Stable,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
@@ -362,8 +381,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   outcomes_node: {
     title: "Outcomes",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Define clinical outcomes and endpoints for the study analysis.",
+    tag: NodeTag.Stable,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
@@ -448,13 +468,8 @@ export const getNodeColors = (node: Node<NodeDataState>) => {
   return "#999fcb";
 };
 
-export const getNodeClassName = (node: Node<NodeDataState>) => {
-  if (node.type === "start") {
-    return "node--round";
-  }
-  return "";
-};
+export const getNodeClassName = () => "node";
 
-export type { NodeType };
 export * from "./SelectNodeTypes/SelectNodeTypesDialog";
 export * from "./type";
+export type { NodeType };
