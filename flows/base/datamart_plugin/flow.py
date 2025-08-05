@@ -240,13 +240,14 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 entity_name="version",
                 logger=logger
                 )
-
+            
+            schema_version = None
             try:
                 # update schema version, latest_schema_version or error msg
                 schema_version = get_schema_version(dbdao, schema_name, cdm_version, logger)
-                latest_schema_version = schema_version
+
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", schema_version)
-                portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_schema_version)
+                portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", schema_version)
             except Exception as e:
                 logger.error(f"Failed to update attribute 'schema_version', 'latest_schema_version' for dataset '{dataset_id}' with value '{schema_version}': {e}")
             else:
