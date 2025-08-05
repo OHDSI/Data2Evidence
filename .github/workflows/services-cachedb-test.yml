@@ -18,7 +18,7 @@ jobs:
     env:
       LOCAL_DEBUG: "true"
       SERVICE_ROUTES: '{"portalServer": "dummy", "usermgmt": "dummy", "idIssuerUrl": "dummy"}'
-      DUCKDB_EXTENSIONS_FOLDER: "/home/runner/work/d2e/d2e/services/cachedb/duckdb_extensions"
+      DUCKDB_EXTENSIONS_FOLDER: "/home/runner/work/Data2Evidence/Data2Evidence/services/cachedb/duckdb_extensions"
     steps:
       - uses: actions/checkout@v4
 
