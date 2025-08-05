@@ -1,8 +1,7 @@
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
-from _shared_flow_utils.types import AuthToken
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_value
+from _shared_flow_utils.api.PrefectAPI import GetAuthToken
 
 class BaseAPI:
     def __init__(self):
@@ -30,5 +29,5 @@ class BaseAPI:
         # Prefect task to get token from flow input
         return {
             "Content-Type": "application/json",
-            "Authorization": get_auth_token_value().get_secret_value()
+            "Authorization": GetAuthToken().get_auth_token().get_secret_value()
         }
