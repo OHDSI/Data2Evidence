@@ -221,7 +221,7 @@ export class App {
       this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
 
       // Grant roles to users
-      const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
+      const pgUsers = this.getPGUsers(this.getDatabaseName(config.getProperties()["config_db_name"]));
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
@@ -320,6 +320,22 @@ export class App {
         await this.dbDao.createSchema(client, databaseName, schemaName);
       }
 
+      // set extension if schema and database in postgres_alter_extension_config
+      const alterExtensionConfig =
+        config.getProperties()["postgres_alter_extension_config"]["databases"];
+      
+      for (let database of Object.keys(alterExtensionConfig)) {
+        if (database === databaseName && schemaName === alterExtensionConfig[database].schema) {
+          await this.dbDao.alterExtensionSchema(
+            client,
+            alterExtensionConfig[databaseName].schema,
+            alterExtensionConfig[databaseName].extension
+          );
+          this.logger.info(
+            `Extension ${alterExtensionConfig[databaseName].extension} set to ${alterExtensionConfig[databaseName].schema} schema of ${databaseName} database`
+          );
+        }
+      }
       //Grant Manage & Usage Privileges
       await this.userDao.grantManagePrivilegesForSchema(
         client,

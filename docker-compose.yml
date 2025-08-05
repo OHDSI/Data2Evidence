@@ -51,7 +51,7 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: 1000
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-    PG__FHIR_DB_NAME: alp_fhir
+    PG__FHIR_DB_NAME: alp
   fhir: &x-fhir
     FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
@@ -177,7 +177,7 @@ services:
             "NODE_ENV": "${NODE_ENV:-development}",
             "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
             "PG__DB_NAME": "alp",
-            "PG__FHIR_DB_NAME": "alp_fhir",
+            "PG__FHIR_DB_NAME": "alp",
             "PG__DEBUG": "${PG_DEBUG:-1}",
             "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
             "PG__SSL": "${PG__SSL:-false}",
@@ -264,7 +264,8 @@ services:
             "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token"
+            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
+            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
           },
           "query-gen-svc": {
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
@@ -326,12 +327,7 @@ services:
             "PG_SCHEMA": "cdw_config",
             "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
             "PORT": 41114,
-            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
-            "USE_CACHEDB": "${USE_CACHEDB:-true}",
-            "USE_DUCKDB": "${USE_DUCKDB:-true}",
-            "isTestEnv": "${isTestEnv}",
-            "DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb",
-            "BUILT_IN_DUCKDB_PATH": "/home/docker/src/services/app/src/duckdb"
+            "isTestEnv": "${isTestEnv}"
           },
           "jobplugins-init": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -348,8 +344,8 @@ services:
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/flows.git}",
-            "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}"
+            "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+            "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}"
           },
           "dataset": {
             "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
@@ -377,10 +373,10 @@ services:
             "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
-            "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/notebooks.git}",
-            "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-develop}",
+            "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+            "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
             "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
-            "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-develop}"
+            "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}"
           },
           "files-manager": {
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -450,6 +446,11 @@ services:
             "WORKPOOL_NAME": "docker-pool",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+            "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
+            "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+            "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+            "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
+            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
             "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
             "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
             "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -522,17 +523,17 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: "${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}" #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
-      DATAFLOW_TEMPLATE_REPO_URL: ${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/flows.git}
-      DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-${DOCKER_TAG_NAME:-develop}}
-      NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/notebooks.git}
-      NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-develop}
+      DATAFLOW_TEMPLATE_REPO_URL: ${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
+      DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-main}
+      NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
+      NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -583,10 +584,16 @@ services:
             "+perseus": {},
             "+white_rabbit": {},
             "+trex": {},
-            "+storage": {}
+            "+storage": {},
+            "+fhir": {}
            }
           },
           "+${PG__FHIR_DB_NAME:-alp_fhir}": {
+           "schemas": {
+            "+public": {}
+           }
+          },
+          "+${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
            "schemas": {
             "+public": {}
            }
@@ -596,11 +603,20 @@ services:
       POSTGRES_PUBLICATION_CONFIG: |-
         {
          "databases": {
-          "+${PG_DB_NAME:-alp_fhir}": {
+          "+${PG__FHIR_DB_NAME:-alp}": {
            "+fhir_publication": {
-             "schema": "public",
+             "schema": "fhir",
              "publication": "fhir_publication"
            }
+          }
+         }
+        }
+      POSTGRES_ALTER_EXTENSION_CONFIG: |-
+        {
+         "databases": {
+          "${PG__FHIR_DB_NAME:-alp}": {
+             "schema": "fhir",
+             "extension": "pg_trgm"
           }
          }
         }
@@ -623,11 +639,20 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}"
+         },
+         "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
+          "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
+          "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
+          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
       POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
+      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
       PORT: 41110
       sqlOnly: false
 
@@ -1150,8 +1175,6 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway:
-        priority: 10
     platform: linux/amd64
     volumes:
       - demodb-data:/var/lib/postgresql/data
@@ -1279,7 +1302,7 @@ services:
     healthcheck:
       interval: 20s
       retries: 5
-      start_period: 240s
+      start_period: 420s
       test:
         - CMD
         - wget
@@ -1304,13 +1327,15 @@ services:
         - *x-pg
         - *x-redis
         - *x-fhir
-      PG__DB_NAME: alp_fhir
+      PG__DB_NAME: alp
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DUCKDB_PATH: /home/docker/app
+      FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
       FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
       FHIR_SCHEMA_FILE_NAME: fhir.schema.json
+      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
     profiles: [fhir]
 
   dicom-server:
@@ -1408,7 +1433,7 @@ services:
   #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
   #     profiles: [fhir]
   mlflow:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${DOCKER_TAG_NAME:-develop}
+    image: ghcr.io/mlflow/mlflow:v3.0.0
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
     platform: linux/amd64
     logging:

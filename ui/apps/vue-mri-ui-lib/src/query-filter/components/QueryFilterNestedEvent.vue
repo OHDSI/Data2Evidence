@@ -36,7 +36,7 @@ const emit = defineEmits<{
   'update:event': [event: QueryFilterEvent]
   'remove-event': []
   'duplicate-event': []
-  'concept-set-selected': [conceptSet: ConceptSetItem]
+  'concept-set-selected': [conceptSet: ConceptSetItem | null]
   'attribute-selected': [attribute: any]
   'attribute-removed': [attributeId: string]
 }>()
@@ -68,7 +68,7 @@ const handleEventDuplicate = () => {
 }
 
 // Handle concept set selection
-const handleConceptSetSelected = (conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = (conceptSet: ConceptSetItem | null) => {
   emit('concept-set-selected', conceptSet)
 }
 
@@ -97,7 +97,7 @@ const handleNestedCriteriaUpdate = (updatedCriteria: any) => {
 const getLevelStyle = computed(() => ({
   marginLeft: `${props.level * 16}px`,
   borderLeft: props.level > 0 ? `2px solid #1976d2` : 'none',
-  paddingLeft: props.level > 0 ? '12px' : '0'
+  paddingLeft: props.level > 0 ? '12px' : '0',
 }))
 
 // Get operator display
@@ -107,24 +107,22 @@ const getOperatorDisplay = computed(() => {
 </script>
 
 <template>
-  <div 
-    class="query-filter-nested-event"
-    :class="`query-filter-nested-event--level-${level}`"
-    :style="getLevelStyle"
-  >
+  <div class="query-filter-nested-event" :class="`query-filter-nested-event--level-${level}`" :style="getLevelStyle">
     <!-- Level indicator for nested events -->
     <div v-if="level > 0" class="nested-level-indicator">
       <span class="level-label">Level {{ level }}</span>
       <span class="operator-label">{{ getOperatorDisplay }}</span>
     </div>
-    
+
     <!-- Main event card -->
     <QueryFilterEventCard
       :event="event"
       :event-index="0"
       :concept-sets="conceptSets"
-      :concept-set-domain-values="conceptSetDomainValues"
-      :concept-set-texts="conceptSetTexts"
+      :concept-set-domain-values="
+        conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+      "
+      :concept-set-texts="conceptSetTexts || {}"
       :nested-level="level"
       :readonly="readonly"
       @update:event="handleEventUpdate"
@@ -134,15 +132,17 @@ const getOperatorDisplay = computed(() => {
       @attribute-selected="handleAttributeSelected"
       @attribute-removed="handleAttributeRemoved"
     />
-    
+
     <!-- Nested criteria (recursive) -->
     <div v-if="hasNestedCriteria && nestedCriteria" class="nested-criteria-container">
       <QueryFilterNestedCriteria
         :nested-criteria="nestedCriteria"
         :level="level + 1"
         :concept-sets="conceptSets"
-        :concept-set-domain-values="conceptSetDomainValues"
-        :concept-set-texts="conceptSetTexts"
+        :concept-set-domain-values="
+          conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+        "
+        :concept-set-texts="conceptSetTexts || {}"
         :readonly="readonly"
         @update:nested-criteria="handleNestedCriteriaUpdate"
       />
@@ -153,17 +153,17 @@ const getOperatorDisplay = computed(() => {
 <style lang="scss" scoped>
 .query-filter-nested-event {
   margin-bottom: 8px;
-  
+
   &--level-0 {
-    // Root level styling
+    border: 1px solid #e0e0e0;
   }
-  
+
   &--level-1 {
     background: rgba(25, 118, 210, 0.02);
     border-radius: 4px;
     padding: 8px;
   }
-  
+
   &--level-2 {
     background: rgba(25, 118, 210, 0.04);
     border-radius: 4px;
