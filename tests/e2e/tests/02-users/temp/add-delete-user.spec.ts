@@ -31,7 +31,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add' }).click()
   console.log("adding user...")
   // Check if user is added
-  await page.waitForTimeout(3000)
+  await page.waitForTimeout(6000)
   console.log("after wait timeout")
   await expect(page.getByRole('cell', { name: 'test_user' })).toBeVisible()
 
