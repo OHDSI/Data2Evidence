@@ -23,6 +23,7 @@
     "UserMgmtAPI": "../_shared/alp-base-utils/src/api/UserMgmtAPI.ts",
     "../_shared/alp-base-utils/src/api/request-util": "../_shared/alp-base-utils/src/api/request-util.ts",
     "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
     "fs": "node:fs",
     "path": "node:path",
     "multer": "npm:multer@^1.4.5-lts.1",
