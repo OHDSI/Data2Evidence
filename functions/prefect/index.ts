@@ -1,5 +1,5 @@
-import express from "npm:express";
-import { createProxyMiddleware } from "npm:http-proxy-middleware";
+import express from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const app = express();
 const env = Deno.env.toObject();

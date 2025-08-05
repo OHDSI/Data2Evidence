@@ -242,6 +242,8 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
@@ -273,6 +275,11 @@ case $cmd in
         cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
+        if [[ -n "$jupyter" ]]; then
+            cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
+            echo . $cmd
+            $cmd
+        fi
         cmd="$dockerbasecmd pull"
         echo . $cmd
         $cmd

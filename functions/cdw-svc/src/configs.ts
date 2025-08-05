@@ -9,28 +9,15 @@ const Env = z
     ENV_MOUNT_PATH: z.string().optional(),
     PORT: z.string(),
     MRI_USER: z.string().optional(),
-    USE_DUCKDB: z.string(),
-
-    USE_CACHEDB: z.string(),
-    CACHEDB__HOST: z.string(),
-    CACHEDB__PORT: z
-      .string()
-      .refine((val) => !isNaN(parseInt(val)))
-      .transform(Number),
-
-    USE_TREX_DB_CONN: z.string(),
 
     TLS__INTERNAL__KEY: z.string().optional(),
     TLS__INTERNAL__CRT: z.string().optional(),
-    DUCKDB_PATH: z.string(),
-    BUILT_IN_DUCKDB_PATH: z.string(),
 
     LOCAL_DEBUG: z.string(),
     isHttpTestRun: z.string().optional(),
     isTestEnv: z.string().optional(),
     TESTSCHEMA: z.string().optional(),
 
-    PG__HOST: z.string(),
     PG__SSL: z.string(),
     PG__CA_ROOT_CERT: z.string().optional(),
     PG__HOST: z.string(),
@@ -55,6 +42,17 @@ const Env = z
       .string()
       .refine((val) => !isNaN(parseInt(val)))
       .transform(Number),
+    VCAP_SERVICES: z.unknown(),
+    SERVICE_ROUTES: z
+      .string()
+      .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
+        try {
+          return JSON.parse(str);
+        } catch (e) {
+          ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+          return z.never();
+        }
+      }),
   })
   .superRefine(
     (
@@ -87,13 +85,14 @@ function initEnv(__env) {
   _env.PG_SCHEMA = _env.PG_SCHEMA || "cdw_config";
 
   const result = Env.safeParse(_env);
-
-  if (!result.success) {
+  env = _env as unknown as z.infer<typeof Env>;
+  if (result.success) {
+    env = result.data;
+  } else {
     console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
     throw new Error("ZOD parse failed");
   }
 
-  env = _env as unknown as z.infer<typeof Env>;
   return env;
 }
 
