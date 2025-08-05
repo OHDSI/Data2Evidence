@@ -24,8 +24,8 @@ class GetAuthToken:
     def initialize_tokens(cls) -> None:
         if cls._initialized:
             return
-        tokens = get_auth_token_from_input()
-        cls.auth_token = getattr(tokens, "thirdpartyrefreshtoken", None)
+        tokens: AuthToken = get_auth_token_from_input()
+        cls.auth_token = getattr(tokens, "token", None)
         cls.refresh_token = getattr(tokens, "thirdpartyrefreshtoken", None)
         cls.third_party_token = getattr(tokens, "thirdpartytoken", None)
         cls._initialized = True
