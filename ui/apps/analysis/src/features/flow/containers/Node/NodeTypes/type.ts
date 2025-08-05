@@ -23,9 +23,7 @@ export type NodeType =
   | "exposure_node"
   | "strategus_node"
   | "treatment_patterns_node"
-  | "cohort_event_node"
-  | "cohort_target_node"
-  | "cohort_exit_node";
+  | "cohort_node";
 
 export type NodeTypeChoice = Exclude<NodeType, "start">;
 
@@ -37,6 +35,8 @@ export enum NodeTag {
 export enum HandleIOType {
   Cohort = "cohort",
   ModuleSpecification = "module_specification",
+  CovariateSettings = "covariate_settings",
+  Population = "population",
 }
 
 export const HandleIODict: {
@@ -49,6 +49,14 @@ export const HandleIODict: {
   [HandleIOType.ModuleSpecification]: {
     color: "purple",
     text: "Module Specification",
+  },
+  [HandleIOType.CovariateSettings]: {
+    color: "orange",
+    text: "Covariate Settings",
+  },
+  [HandleIOType.Population]: {
+    color: "blue",
+    text: "Population",
   },
 };
 

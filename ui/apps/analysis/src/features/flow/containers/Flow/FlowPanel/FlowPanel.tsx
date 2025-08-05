@@ -49,12 +49,6 @@ import {
 import { NodeChoiceMap, NodeTypeChoice } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
-import {
-  getNodeInputs,
-  getNodeOutputs,
-  hasGroupedInputs,
-  getGroupNameForNode,
-} from "../../Node/NodeTypes/mapping";
 
 interface FlowPanelProps {}
 

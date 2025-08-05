@@ -8,7 +8,6 @@ import {
   outputHandleTypeMap,
 } from "../index";
 import { NodeTag, NodeTypeChoice } from "../type";
-import { getAllNodeTypes } from "../mapping";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
@@ -33,8 +32,8 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     [onClose]
   );
 
-  const nodesToSelect = useMemo(() => {
-    if (!handleNodeType) return getAllNodeTypes();
+  const nodesToSelect: string[] = useMemo(() => {
+    if (!handleNodeType) return Object.keys(NodeChoiceMap);
     return handleType === "input"
       ? Array.from(inputHandleTypeMap[handleNodeType])
       : Array.from(outputHandleTypeMap[handleNodeType]);
