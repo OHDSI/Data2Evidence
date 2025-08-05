@@ -543,11 +543,6 @@ const getNodeHandleTypeMap = (direction: HandleDirection = "outputs") => {
 export const outputHandleTypeMap = getNodeHandleTypeMap("outputs");
 export const inputHandleTypeMap = getNodeHandleTypeMap("inputs");
 
-console.log("outputHandleTypeMap");
-console.log(outputHandleTypeMap);
-console.log("inputHandleTypeMap");
-console.log(inputHandleTypeMap);
-
 export const getNodeColors = (node: Node<NodeDataState>) => {
   if (node.type && Object.keys(NODE_COLORS).includes(node.type)) {
     return NODE_COLORS[node.type as NodeType];

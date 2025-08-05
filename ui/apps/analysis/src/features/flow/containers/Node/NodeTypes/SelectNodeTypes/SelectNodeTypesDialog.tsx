@@ -15,14 +15,12 @@ export interface SelectNodeTypesDialogProps
   extends Omit<DialogProps, "onClose"> {
   onClose: (nodeType?: NodeTypeChoice) => void;
   handleType: "input" | "output";
-  sourceNodeType?: NodeType;
   handleNodeType?: string;
 }
 
 export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   onClose,
   handleType, // this should be renamed to handle direction type since its only "input" or "output"
-  sourceNodeType,
   handleNodeType,
   ...props
 }) => {
@@ -40,7 +38,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     return handleType === "input"
       ? Array.from(inputHandleTypeMap[handleNodeType])
       : Array.from(outputHandleTypeMap[handleNodeType]);
-  }, [handleNodeType, handleType, sourceNodeType]);
+  }, [handleNodeType, handleType]);
 
   return (
     <Dialog

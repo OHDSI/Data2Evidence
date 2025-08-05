@@ -330,7 +330,6 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         handleType={addNodeTypeDialog.handleType}
         onClose={handleCloseDialog}
         handleNodeType={addNodeTypeDialog.selectedNodeHandleType}
-        sourceNodeType={addNodeTypeDialog.nodeType}
       />
     </div>
   );
