@@ -123,13 +123,22 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
             password=Secret.load("trex-sql-password").get(),
             dbname=Variable.get("trex_sql_dbname")
         )
-        # Copy schema to cache
-        cur = trex_conn.cursor()
-        copy_schema_to_cache(cur, dbdao, schema_name, False, True)
-        cur.close()
-        trex_conn.close()
-    logger.info(
-        f"""Duckdb database successfully created.""")
+        try:
+            # Copy schema to cache
+            cur = trex_conn.cursor()
+            copy_schema_to_cache(cur, dbdao, schema_name, False, True)
+            cur.close()
+            logger.info(f"""Duckdb database successfully created.""")
+        except Exception as e:
+            logger.error(f"Error while creating cache database: {e}")
+            trex_conn.rollback()
+            raise e
+        finally:
+            try:
+                cur.close()
+            except Exception:
+                pass
+            trex_conn.close()
 
 if __name__ == '__main__':
     database_code = "alpdev_pg"
