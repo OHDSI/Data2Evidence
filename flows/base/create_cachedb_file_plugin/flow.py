@@ -1,6 +1,7 @@
 import os
 import duckdb
 import psycopg2
+from flows._shared_flow_utils.types import SupportedDatabaseDialects
 from prefect import flow
 from prefect.logging import get_run_logger
 
@@ -28,7 +29,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=duckdb_database_name)
-    dbCredentials = dbdao.tenant_configs
+    db_credentials = dbdao.tenant_configs
     if options.create_duckdb_file:
         # Check if dialect is supported by duckdb
         check_supported_duckdb_dialects(dbdao.dialect, logger)
@@ -64,7 +65,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 dbname=Variable.get("trex_sql_dbname")
             )
         cur = trex_conn.cursor()
-        if db_credentials.dialect == "bigquery":
+        if db_credentials.dialect == SupportedDatabaseDialects.BIGQUERY.value:
             # set google service account credentials to connect to BigQuery
             google_service_account_json_path = Secret.load("google-service-account-json").get()
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
