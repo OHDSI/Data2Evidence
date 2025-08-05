@@ -24,7 +24,7 @@ jobs:
 
       - name: Create folder to store duckdb extensions for offline plugins
         run: |
-          mkdir $DUCKDB_EXTENSIONS_FOLDER
+          mkdir -p $DUCKDB_EXTENSIONS_FOLDER
 
       - uses: dorny/paths-filter@v3
         id: check_file_changed
