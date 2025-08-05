@@ -16,8 +16,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     database_code = options.database_code
     schema_name = options.schema_name
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code, 
-                  connect_to_duckdb=True)
+                  database_code=database_code)
     
     duckdb_database_name = f"{database_code}"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"

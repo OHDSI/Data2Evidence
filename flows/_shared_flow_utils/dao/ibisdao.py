@@ -18,11 +18,10 @@ class IbisDao(SqlAlchemyDao):
     def __init__(self, use_cache_db: bool, 
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb = False, 
                  is_study_results_db: bool = False,
                  metadata = None):
 
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb, is_study_results_db)
+        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
@@ -241,13 +240,15 @@ class IbisDao(SqlAlchemyDao):
         con = None
         try:
             configs = self.tenant_configs
-            if self.connect_to_duckdb:
+            if self.use_cache_db:
                 connection_string = self.create_cachedb_connection_url(
                     user=configs.adminUser,
                     host=configs.host,
                     port=configs.port,
-                    database_name=configs.databaseName
+                    database_name=configs.databaseName,
+                    password=configs.adminPassword.get_secret_value()
                 )
+                connection_string = connection_string + "?autocommit=true"
             else:
                 connection_string = self.create_ibis_connection_url(
                     dialect=configs.dialect,

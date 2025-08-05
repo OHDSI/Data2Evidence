@@ -6,6 +6,7 @@ from rpy2 import robjects
 from string import Template
 from functools import partial
 from sqlalchemy import text
+import psycopg2
 
 from prefect import flow, task
 from prefect.variables import Variable
@@ -17,6 +18,9 @@ from .types import *
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType
+
+from prefect.blocks.system import Secret
+
 os.environ['plugin_name'] = 'data_characterization_plugin'
 
 @flow(log_prints=True,
@@ -43,15 +47,21 @@ def data_characterization_plugin(options: DCOptionsType):
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
-    set_admin_connection_string = ""
-    set_read_connection_string = ""
+    
+    if dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        dbdao = DBDao(dialect=SupportedDatabaseDialects.TREX_DUCKDB,
+                      use_cache_db=True,
+                      database_code=database_code)
+        set_admin_connection_string = ""
+        set_read_connection_string = ""
     match dbdao.dialect:
-        case SupportedDatabaseDialects.POSTGRES:
+        case SupportedDatabaseDialects.TREX_DUCKDB | SupportedDatabaseDialects.POSTGRES:
             results_schema = results_schema.lower()
             vocab_schema = vocab_schema.lower()
             schema_name = schema_name.lower()
             set_admin_connection_string = dbdao.get_trex_connection_string()
             set_read_connection_string = set_admin_connection_string
+            print(set_admin_connection_string)
         case SupportedDatabaseDialects.HANA:
             results_schema = results_schema.upper()
             vocab_schema = vocab_schema.upper()
@@ -133,10 +143,11 @@ def create_data_characterization_schema(results_schema: str,
         enable_audit_policies_wo(dbdao, results_schema)
 
         # task
-        create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
+        if dbdao.dialect == SupportedDatabaseDialects.HANA:
+            create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
+                on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
 
-        create_and_assign_roles_wo(dbdao, results_schema)
+            create_and_assign_roles_wo(dbdao, results_schema)
 
         logger.info(
             f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
@@ -149,13 +160,20 @@ def create_data_characterization_schema(results_schema: str,
 
 @task(log_prints=True)
 def create_results_tables(sql_script, dbdao):
-    with dbdao.engine.begin() as conn:
-        for statement in sql_script.strip().split(";"):
-            if statement.strip():
-                conn.execute(text(statement))
-
-
-  
+    if dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        with dbdao.connect() as conn:
+            with conn.cursor() as cursor:
+                for statement in sql_script.strip().split(";"):
+                    if statement.strip():
+                        print(statement)
+                        cursor.execute(statement)
+            conn.commit()
+    else:
+        with dbdao.engine.begin() as conn:
+            for statement in sql_script.strip().split(";"):
+                if statement.strip():
+                    conn.execute(text(statement))
+                
 @task(log_prints=True)
 def execute_data_characterization(schema_name: str,
                                   results_schema: str,
