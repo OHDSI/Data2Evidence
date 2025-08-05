@@ -48,7 +48,9 @@ export class TerminologySvcAPI {
     conceptSetId: number
   ): Promise<ITerminologyConceptSetWithConceptData> {
     try {
-      const url = `${this.baseURL}/concept-set/${conceptSetId}`;
+      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
+        conceptSetId
+      )}`;
       console.log(`Calling ${url} to get concept set by id`);
       const options = this.getRequestConfig();
       const params = new URLSearchParams();
@@ -90,7 +92,9 @@ export class TerminologySvcAPI {
     conceptSetDto: ITerminologyCreateConceptSet
   ): Promise<number> {
     try {
-      const url = `${this.baseURL}/concept-set/${conceptSetId}`;
+      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
+        conceptSetId
+      )}`;
       console.log(`Calling ${url} to update concept sets`);
       const options = this.getRequestConfig();
 
