@@ -274,8 +274,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const displaySchemaNameInput = useMemo(
     () =>
       formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM || 
-      formData.schemaOption === SchemaTypes.FHIR,
+      formData.schemaOption === SchemaTypes.ExistingCDM,
     [formData.schemaOption]
   );
 
@@ -410,7 +409,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if ([SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(schemaOption) && cdmSchemaValue == "") {
+    if ([SchemaTypes.ExistingCDM].includes(schemaOption) && cdmSchemaValue == "") {
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
@@ -632,10 +631,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               onChange={(event: SelectChangeEvent<string>) =>
                 handleFormDataChange({
                   schemaOption: event.target.value,
-                  cdmSchemaValue: "",
+                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? "fhir" : "",
                   isSameCdmSchemaForVocab: false,
                   vocabSchemaValue: "",
-                  databaseCode: "",
+                  databaseCode: event.target.value === SchemaTypes.FHIR ? "alp_fhir" : "",
                   dialect: "",
                 })
               }
