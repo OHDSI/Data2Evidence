@@ -70,7 +70,7 @@ class CreateCDWValidationConfig(BaseModel):
     schemaName: str
     @property
     def create_duckdb_file(self) -> bool:
-        return False
+        return True
     
     @property
     def use_cache_db(self) -> str:

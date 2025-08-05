@@ -64,25 +64,32 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 password=Secret.load("trex-sql-password").get(),
                 dbname=Variable.get("trex_sql_dbname")
             )
-        cur = trex_conn.cursor()
-        if db_credentials.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-            # set google service account credentials to connect to BigQuery
-            google_service_account_json_path = Secret.load("google-service-account-json").get()
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
-            # Create cache schema and copy bigquery schema to cache
-            copy_bigquery_schema_to_cache(cur, dbdao)
-        else:
-            for schema in schemas_to_copy:
-                logger.info(f"Handling schema {schema}...")
-                copy_schema_to_cache(cur, dbdao, schema, False, True)
-                create_duckdb_fts_index(
-                    cur, dbdao, schema, tables_to_create_duckdb_fts_index)
-        cur.close()
-        trex_conn.commit()
-        trex_conn.close()
-    logger.info(
-            f"""Cache database successfully created.""")
-
+        try:
+            cur = trex_conn.cursor()
+            if db_credentials.dialect == SupportedDatabaseDialects.BIGQUERY.value:
+                # set google service account credentials to connect to BigQuery
+                google_service_account_json_path = Secret.load("google-service-account-json").get()
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
+                # Create cache schema and copy bigquery schema to cache
+                copy_bigquery_schema_to_cache(cur, dbdao)
+            else:
+                for schema in schemas_to_copy:
+                    logger.info(f"Handling schema {schema}...")
+                    copy_schema_to_cache(cur, dbdao, schema, False, True)
+                    create_duckdb_fts_index(
+                        cur, dbdao, schema, tables_to_create_duckdb_fts_index)
+            trex_conn.commit()
+            logger.info(f"""Cache database successfully created.""")
+        except Exception as e:
+            logger.error(f"Error while creating cache database: {e}")
+            trex_conn.rollback()
+            raise e
+        finally:
+            try:
+                cur.close()
+            except Exception:
+                pass
+            trex_conn.close()
 
 @flow(log_prints=True)
 def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
