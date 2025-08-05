@@ -84,24 +84,64 @@ getCohortDefinition <- function(cohortId) {
   return(RJSONIO::toJSON(x = x, digits = 23, pretty = pretty))
 }
 
-createCohortDefinition <- function(name, description, cohortDefinitionJson) {
+
+#' Create the cohort defintion
+#'
+#' This function creates cohort defintion compatible to use in R packages.
+#' It accepts name, description and a cohort definition JSON object
+#' with or without an expression field.
+#'
+#' @param name a string value indicating the name of the cohort definition
+#' @param description a string value indicating the description of the cohort definition
+#' @param cohort_definition a list object containing the cohort definition JSON.
+#' @return CohortDefinition object
+#' @export
+create_cohort_definition <- function(name, description, cohort_definition) {
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  url <- paste0(host, "/d2e-webapi/cohortdefinition/", cohortId)
+  url <- paste0(host, "/d2e-webapi/cohortdefinition/")
 
+  assertthat::assert_that(
+    !is.null(name) && name != "",
+    msg = "Name must be provided and cannot be empty."
+  )
+  assertthat::assert_that(
+    !is.null(description) && description != "",
+    msg = "Description must be provided and cannot be empty."
+  )
+  assertthat::assert_that(
+    !is.null(cohort_definition) && length(cohort_definition) > 0,
+    msg = "Cohort definition must be provided and cannot be empty."
+  )
 
-  if ("expression" %in% names(cohortDefinitionJson)) {
-    expression <- cohortDefinitionJson$expression
-  } else {
-    expression <- cohortDefinitionJson
+  if (is.character(cohort_definition)) {
+    cohort_definition <- jsonlite::fromJSON(cohort_definition)
   }
+  expression <- ifelse(
+    exists("cohort_definition$expression"),
+    cohort_definition$expression,
+    cohort_definition
+  )
+  expressionType <- ifelse(
+    exists("cohort_definition$expressionType"),
+    cohort_definition$expressionType,
+    "SIMPLE_EXPRESSION"
+  )
 
   parameters <- list(
+    id = 0,
     name = name,
     description = description,
-    expression = cohortDefinitionJson
+    expression = expression,
+    expressionType = expressionType,
+    createdBy = NULL,
+    createdDate = as.numeric(Sys.time()),
+    modifiedBy = NULL,
+    modifiedDate = as.numeric(Sys.time()),
+    tags = list()
   )
+
   response <- tryCatch(
     expr = httr::POST(
       url,
@@ -129,5 +169,6 @@ createCohortDefinition <- function(name, description, cohortDefinitionJson) {
     ))
   }
   response <- httr::content(response)
+  message(paste0("Cohort definition created successfully with id: ", response$id))
   return(response)
 }

@@ -1,6 +1,6 @@
 services:
   trex:
-    command: npm run startdev
+    command: npm run watch
     build:
       context: .
       dockerfile: ./services/trex/Dockerfile
@@ -11,17 +11,17 @@ services:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/chat_functions:/usr/src/plugins/chat
-      - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
+      # - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./ui/resources:/usr/src/local-resources # For local ui development only
-      # - ./services/trex/core:/usr/src/core # For debugging trex with local code
-      # - ./services/trex/deno.json:/usr/src/deno.json 
-      # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
+      - ./services/trex/core:/usr/src/core # For debugging trex with local code
+      - ./services/trex/deno.json:/usr/src/deno.json 
+      - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
