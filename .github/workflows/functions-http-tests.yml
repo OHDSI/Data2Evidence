@@ -103,8 +103,8 @@ jobs:
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
-          sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
-          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
+          sed -i -r '/^\s*$/d' internal/build/hana/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/hana/httptest-ddl.sql
 
       - name: Setup Test DB
         run: |
