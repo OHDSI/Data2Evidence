@@ -15,11 +15,11 @@ import {
   DeleteDataflowResponseDto,
   DeleteDataflowDto,
 } from "../types";
-import { baseQueryFn } from "./base-query";
+import { createBaseQueryFn } from "./base-query";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
-  baseQuery: baseQueryFn,
+  baseQuery: createBaseQueryFn("jobplugins/"),
   tagTypes: ["Dataflow", "DataflowRevision", "DataflowResult", "DataflowState"],
   endpoints: (builder) => ({
     getDataflows: builder.query<DataflowDto[], void>({
