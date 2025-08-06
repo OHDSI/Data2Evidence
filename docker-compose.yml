@@ -615,8 +615,8 @@ services:
         {
          "databases": {
           "${PG__FHIR_DB_NAME:-alp}": {
-             "schema": "fhir",
-             "extension": "pg_catalog"
+             "schema": "pg_catalog",
+             "extension": "pg_trgm"
           }
          }
         }
