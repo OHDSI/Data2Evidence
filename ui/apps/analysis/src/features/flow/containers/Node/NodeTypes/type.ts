@@ -34,9 +34,10 @@ export enum NodeTag {
 
 export enum HandleIOType {
   Cohort = "cohort",
-  ModuleSpecification = "module_specification",
-  CovariateSettings = "covariate_settings",
+  ModuleSpecification = "moduleSpecification",
+  CovariateSettings = "covariateSettings",
   Population = "population",
+  PatientLevelPrediction = "patientLevelPrediction",
 }
 
 export const HandleIODict: {
@@ -57,6 +58,10 @@ export const HandleIODict: {
   [HandleIOType.Population]: {
     color: "blue",
     text: "Population",
+  },
+  [HandleIOType.PatientLevelPrediction]: {
+    color: "green",
+    text: "Patient Level Prediction",
   },
 };
 

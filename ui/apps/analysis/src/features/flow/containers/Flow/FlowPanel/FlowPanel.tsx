@@ -61,7 +61,7 @@ const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 
 const getHandleType = (handleId: string) => {
   const arr = handleId.split("_");
-  return arr[2];
+  return arr[arr.length - 1];
 };
 
 export const FlowPanel: FC<FlowPanelProps> = () => {
