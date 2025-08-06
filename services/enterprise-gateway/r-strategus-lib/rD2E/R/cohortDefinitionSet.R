@@ -88,7 +88,7 @@ getCohortDefinition <- function(cohortId) {
 #' Create the cohort defintion
 #'
 #' This function creates cohort defintion compatible to use in R packages.
-#' It accepts name, description and a cohort definition JSON object
+#' It accepts name, description and a cohort definition JSON string
 #' with or without an expression field.
 #'
 #' @param name a string value indicating the name of the cohort definition

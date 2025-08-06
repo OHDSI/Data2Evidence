@@ -4,20 +4,20 @@
 \alias{create_cohort_definition}
 \title{Create the cohort defintion}
 \usage{
-create_cohort_definition(name, description, cohort_definition_json)
+create_cohort_definition(name, description, cohort_definition)
 }
 \arguments{
 \item{name}{a string value indicating the name of the cohort definition}
 
 \item{description}{a string value indicating the description of the cohort definition}
 
-\item{cohort_definition_json}{a list object containing the cohort definition JSON.}
+\item{cohort_definition}{a list object containing the cohort definition JSON.}
 }
 \value{
 CohortDefinition object
 }
 \description{
 This function creates cohort defintion compatible to use in R packages.
-It accepts name, description and a cohort definition JSON object
+It accepts name, description and a cohort definition JSON string
 with or without an expression field.
 }
