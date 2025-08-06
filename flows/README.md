@@ -2,23 +2,71 @@
 
 [![Docker Build](https://github.com/data2evidence/d2e-flows/actions/workflows/docker-build-push.yaml/badge.svg)](https://github.com/data2evidence/d2e-flows/actions/workflows/docker-build-push.yaml) &nbsp;&nbsp; [![build plugin](https://github.com/data2evidence/d2e-flows/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e-flows/actions/workflows/plugin-ci.yml)
 
-## Local Development Setup
+## Local Development Setup for Python
 
-1. Start a python virtual environment using your prefered tool e.g if using venv
+### Managing plugin dependencies with UV
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/). The easiest way is to 
     ```
-    python -m venv venv
-    source venv/bin/activate
-    ```
-2. Install development packages from `requirements-dev.txt`. These are required to generate the `pacakge.json` for each flow plugin and the openapi spec for the flows.
-    ```
-    pip install --upgrade -r requirements-dev.txt
+    pip install uv==0.8.4
     ```
 
-3. (Optional) If working with flow plugins in base folder, create a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with **no scopes** to avoid rate limiting with downloading the OHDSI packages https://ohdsi.github.io/Hades/rSetup.html | section GitHub Personal Access Token. Export PAT as env 
+2. Navigate to the plugin group folder e.g. base, hades etc.
+    ```
+    cd base
+    ```
+
+3. If creating a new plugin group folder i.e. no existing `pyproject.toml` file, run
+    ```
+    uv init
+    ```
+    This will create a uv project with `pyproject.toml`, `.python-version`, `main.py` in the folder.
+
+    Add/remove dependencies with uv
+    ```
+    uv add 'prefect[shell,docker]==3.0.3'
+    uv add sqlalchemy-hana==2.2.0 --optional hana
+    uv remove pandas
+    ```
+    This will create install dependencies in a virtual environment, update the dependencies in `pyproject.toml`, and create a `uv.lock` file.
+
+4. If modifying an existing uv project in a plugin group folder i.e. has an existing `pyproject.toml` and `uv.lock`, run 
+    ```
+    uv sync --extra dev
+    ```
+    This will install base and dev dependencies in a virtual environment based on the `uv.lock file`. To install optional dependencies
+    ```
+    uv sync --extra dev hana 
+    ```
+    or 
+    ```
+    uv sync --all-groups
+    ```
+    Add/remove dependencies with uv
+    ```
+    uv add 'prefect[shell,docker]==3.0.3'
+    uv add sqlalchemy-hana==2.2.0 --optional hana
+    uv remove pandas
+    ```
+    This update the dependencies in `pyproject.toml` and the `uv.lock` file.
+
+5. (Optional) If working with flow plugins in base folder, create a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with **no scopes** to avoid rate limiting with downloading the OHDSI packages https://ohdsi.github.io/Hades/rSetup.html | section GitHub Personal Access Token. Export PAT as env 
     ```
     export GITHUB_PAT=<GITHUB_PAT>
     ```
- Its the flow/package name that will be added to the 'name' attribute of generated package.json file. 
+
+### Linting and Formatters
+
+### Tests
+
+## Local Development Setup for R
+Capture all installed packages
+```
+renv::settings$snapshot.type("all")
+renv::snapshot()
+```
+This will produce a renv.lock file
+
+
 ## Developing a new flow
 ### Develop a new flow with a new folder
 1. Create a subfolder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.

@@ -1,0 +1,14 @@
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/.venv/
+**/env/
+**/venv/
+**/.cache/
+**/build/
+**/dist/
+**/*.log
+**/.python-version
+**/package.json

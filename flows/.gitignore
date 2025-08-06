@@ -4,3 +4,4 @@ venv
 .env
 **/*private*
 **/.env*
+**/.venv*

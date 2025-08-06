@@ -1,4 +1,32 @@
-FROM python:3.12-slim
+ARG PYTHON_VERSION=3.12
+
+FROM python:${PYTHON_VERSION}-slim AS base-build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
+
+WORKDIR /app
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never
+
+# Install dependencies with uv into a venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./data_management/uv.lock,target=uv.lock \
+    --mount=type=bind,source=./data_management/pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-editable --no-dev
+
+
+FROM python:${PYTHON_VERSION}-slim AS runtime
 
 ARG BUILD_TYPE
 ARG USER=docker
@@ -7,24 +35,27 @@ ARG UID=1000
 ARG GID=1000
 RUN groupadd -g $GID ${USER}
 RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER}
+
 WORKDIR /app
 
-RUN apt-get update && apt-get install libpq5 libpq-dev curl wget gcc g++ -y --no-install-recommends && apt-get clean
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    openjdk-17-jdk\
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
 
 # Set environment variables
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
 
-# OpenJDK 11
-RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_x64_linux_11.0.16_8.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_aarch64_linux_11.0.16_8.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
+# OpenJDK 17
+RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
 
-RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 && \
-    update-alternatives --install /usr/bin/javac javac ${JAVA_HOME}/bin/javac 100 && \
-    rm openjdk.tgz*
-
-# Verify the installation
-RUN java -version
+RUN rm openjdk.tgz*
 
 COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
 # COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
@@ -32,23 +63,22 @@ COPY --chown=docker:docker ./__init__.py .
 
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
+RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/ && rm liquibase-4.5.0.tar.gz
 
 # Grant docker ownership to create properties file
 RUN chown -R docker:docker ./liquibase/
 
-RUN mkdir /output
-RUN chown -R docker:docker /output
+COPY --from=base-build --chown=app:app /app/.venv /app/.venv
 
-COPY --chown=docker:docker --chmod=711 ./data_management/requirements_data_management.txt .
-ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip install -r requirements_data_management.txt
+COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
+COPY --chown=docker:docker ./__init__.py .
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./data_management flows
+COPY --chown=docker:docker --chmod=711 ./data_management/data_management_plugin flows/data_management_plugin
 
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-# USER docker
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER docker
