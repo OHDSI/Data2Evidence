@@ -296,6 +296,10 @@ case $cmd in
         setup_zx_cmd
         $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
         ;;
+    getnoproxy)
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/get-noproxy.mjs" --script_full_path "$node_modules_path" 
+        ;;
     *)
         if [ -z ${cmd:-} ]; then
             echo "d2e: command is missing"
