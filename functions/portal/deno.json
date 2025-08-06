@@ -31,6 +31,7 @@
     "class-transformer": "npm:class-transformer@0.5.1",
     "mime-types": "npm:mime-types@2.1.35",
     "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
     "http": "node:http",
     "fs": "node:fs",
     "path": "node:path",

@@ -107,6 +107,19 @@ export default class PGDBRouter {
     await client.query(`ALTER TABLE "${tableName}" REPLICA IDENTITY FULL;`);
   };
 
+  alterExtensionSchema = async (
+    client: any,
+    schemaName: string,
+    extensionName: string
+  ) => {
+    await client.query(
+      `ALTER EXTENSION ${extensionName} SET SCHEMA ${schemaName};`
+    );
+    this.logger.info(
+      `Extension ${extensionName} schema altered to ${schemaName} successfully.`
+    );
+  };
+
   openConnection = async (config: any) => {
     if (!config.hasOwnProperty("password") || !config["password"]) {
       this.logger.info(`Password unavailable. Attempting to acquire JWT.`);

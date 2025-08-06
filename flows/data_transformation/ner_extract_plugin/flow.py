@@ -27,8 +27,8 @@ def ner_extract_plugin(options: NerExtractOptions):
 
     with dbdao.ibis_connect() as conn:
         logger.info("Loading Notes")
-        note = conn.table(database=schema_name, name=note_table)
-        note_nlp = conn.table(database=schema_name, name=note_nlp_table)
+        note = conn.table(note_table, database=schema_name)
+        note_nlp = conn.table(note_nlp_table, database=schema_name)
         record = note.select(['note_id','note_text']).execute()
         count = note_nlp.count().execute()
         rst_df = pd.DataFrame()
@@ -38,11 +38,11 @@ def ner_extract_plugin(options: NerExtractOptions):
             logger.info(f"Start to analyze note {note_id}")
             medical_ner_nel = EntityExtractorLinker()
             medical_ner_nel.add_pipeline(model_name="en_ner_bc5cdr_md", linker_name="umls")
-            df1 = medical_ner_nel.extract_entities(text=note_text, confidence_threshold=0.8)
+            df1 = medical_ner_nel.extract_entities(text=note_text, confidence_threshold=0.75)
 
             medical_ner_nel = EntityExtractorLinker()
             medical_ner_nel.add_pipeline(model_name="en_core_med7_trf", linker_name="rxnorm")
-            df2 = medical_ner_nel.extract_entities(text=note_text, confidence_threshold=0.8)
+            df2 = medical_ner_nel.extract_entities(text=note_text, confidence_threshold=0.75)
             note_df = pd.concat([df1,df2]).reset_index(drop=True)
 
             # logger.info(f"Complete the analysis of note {note_id}")

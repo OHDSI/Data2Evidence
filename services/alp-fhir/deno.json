@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": ["ES2022", "DOM", "deno.ns"]
+  },
+  "tasks": {
+    "start": "deno run --allow-all index.ts",
+    "start:server": "cd medplum && deno run --allow-all --unstable-detect-cjs --unstable-node-globals --unstable-sloppy-imports --node-modules-dir=auto ./packages/server/dist/index.js",
+    "test": "deno test -A spec"
+  },
+  "unstable": ["byonm"]
+}
