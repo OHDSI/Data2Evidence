@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { EntryEvent, ExitEvent, QueryFilterEvent } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
 import ObservationPeriodBlock from './ObservationPeriodBlock.vue'
@@ -22,7 +22,7 @@ interface Props {
   type: 'ENTRY' | 'EXIT'
   primaryEventsData?: EntryEvent
   exitCriteriaData?: ExitEvent
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   readonly?: boolean
@@ -167,7 +167,7 @@ const offsetOptions = ['0', '1', '2', '3', '7', '14', '30', '60', '90', '180']
 const daysSupplyOverrideOptions = ['1', '7', '14', '30', '60', '90', '180', '365']
 
 // Default values for CONT_DRUG
-const selectedConceptSet = ref<ConceptSetItem | null>(null)
+const selectedConceptSet = ref<ConceptSetItemDisplay | null>(null)
 const selectedGapDays = ref<number>(30)
 const selectedOffset = ref<number>(0)
 const selectedDaysSupplyOverride = ref<number>(1)
@@ -178,7 +178,7 @@ const showContDrugInputs = computed(() => {
 })
 
 // Handle concept set changes for CONT_DRUG
-const handleContDrugConceptSetChange = (values: ConceptSetItem[]) => {
+const handleContDrugConceptSetChange = (values: ConceptSetItemDisplay[]) => {
   if (!values || values.length === 0) {
     selectedConceptSet.value = null
   } else {

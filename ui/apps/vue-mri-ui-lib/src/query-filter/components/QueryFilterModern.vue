@@ -20,7 +20,7 @@ import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import { CriteriaConfigLoader } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import type {
-  ConceptSetItem,
+  ConceptSetItemDisplay,
   ConceptSetDomainValues,
   TagInputModel,
   ConceptSetAction,
@@ -132,10 +132,10 @@ const tagInputModel = computed<TagInputModel>(() => {
   }
 })
 
-const selectedConceptSets = ref<ConceptSetItem[]>([])
+const selectedConceptSets = ref<ConceptSetItemDisplay[]>([])
 
 const conceptSetsFromCriteria = computed(() => {
-  const conceptSets: ConceptSetItem[] = []
+  const conceptSets: ConceptSetItemDisplay[] = []
   const seenIds = new Set<string>()
 
   const criteria = criteriaManager.getCriteria()
@@ -149,7 +149,7 @@ const conceptSetsFromCriteria = computed(() => {
         } else if (event.selectedConceptSet) {
           console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
           // Convert SelectedConceptSet to ConceptSetItem
-          const convertedConceptSet: ConceptSetItem = {
+          const convertedConceptSet: ConceptSetItemDisplay = {
             value: event.selectedConceptSet.value?.toString() || event.conceptSetId,
             text: event.selectedConceptSet.text,
             display_value: event.selectedConceptSet.display_value,
@@ -171,7 +171,7 @@ const loadingConceptDetails = ref(false)
 
 const tagInputTexts = getTagInputTexts()
 
-const allConceptSets = ref<ConceptSetItem[]>([])
+const allConceptSets = ref<ConceptSetItemDisplay[]>([])
 const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
 const datasetId = computed(() => {
@@ -223,7 +223,7 @@ const loadConceptSets = async () => {
   }
 }
 
-const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItem[]) => {
+const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[]) => {
   if (selectedConceptSets.length === 0) {
     conceptSetDetails.value = {}
     return
@@ -575,7 +575,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
       console.log('Processing Atlas concept sets:', atlasExpression.ConceptSets.length)
 
-      const handledConceptSets: ConceptSetItem[] = []
+      const handledConceptSets: ConceptSetItemDisplay[] = []
       const idMapping: Record<number, number> = {} // originalId → sequentialId
       let conceptSetsUpdated = false
 
@@ -666,7 +666,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
   const criteria = criteriaManager.getCriteria()
 
   // Collect all unique concept sets that need details loaded
-  const conceptSetsToLoad: ConceptSetItem[] = []
+  const conceptSetsToLoad: ConceptSetItemDisplay[] = []
   const eventsByConceptSetId = new Map<string, QueryFilterEvent[]>()
 
   for (const group of criteria.criteria) {
@@ -900,7 +900,7 @@ const updateCodesetIdReferences = (atlasExpression: AtlasCohortDefinition, idMap
 
 const handleConceptSetFromAtlas = async (
   atlasConceptSet: ConceptSet & { conceptSetId?: number }
-): Promise<ConceptSetItem | null> => {
+): Promise<ConceptSetItemDisplay | null> => {
   const datasetId = getDatasetId()
   if (!datasetId) {
     console.error('Missing datasetId for concept set handling')
@@ -954,7 +954,7 @@ const handleConceptSetFromAtlas = async (
 
       // Create a temporary concept set item to return immediately
       // The actual reload will happen at the end of all concept set processing
-      const tempConceptSet: ConceptSetItem = {
+      const tempConceptSet: ConceptSetItemDisplay = {
         value: newConceptSetId.toString(),
         text: sanitizedName,
         display_value: sanitizedName,
@@ -979,7 +979,7 @@ const handleConceptSetFromAtlas = async (
 }
 
 // Handle concept set updates
-const handleConceptSetUpdate = (value: ConceptSetItem[]) => {
+const handleConceptSetUpdate = (value: ConceptSetItemDisplay[]) => {
   try {
     console.log('handleConceptSetUpdate called with:', value)
     if (Array.isArray(value) && selectedConceptSets) {
@@ -1193,7 +1193,7 @@ const updateAttributeWithConcepts = (
 }
 
 // Helper function to load concept set details for Atlas conversion
-const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetItem) => {
+const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetItemDisplay) => {
   try {
     const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetId())
@@ -1305,7 +1305,7 @@ const exitCriteriaData = computed(() => {
   return criteriaManager.getCensoringCriteria()
 })
 
-const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
+const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDisplay) => {
   const criteria = criteriaManager.getCriteria()
 
   // Check primary entry events first
@@ -1435,7 +1435,7 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItem) => {
 }
 
 // Helper function to update attribute concept set
-const updateAttributeConceptSet = (eventId: string, attributeId: string, conceptSet: ConceptSetItem) => {
+const updateAttributeConceptSet = (eventId: string, attributeId: string, conceptSet: ConceptSetItemDisplay) => {
   const criteria = criteriaManager.getCriteria()
 
   // Check criteria groups
@@ -1516,7 +1516,7 @@ const handleConceptSetAction = ({
 
         // Find the concept set with complete data from the fresh API response
         const completeConceptSet = allConceptSets.value.find(
-          (cs: ConceptSetItem) => cs.value.toString() === conceptSetIdToFind.toString()
+          (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetIdToFind.toString()
         )
 
         if (completeConceptSet) {
@@ -1525,7 +1525,9 @@ const handleConceptSetAction = ({
             // Updating existing concept set
             console.log('Updating concept set:', completeConceptSet.text)
             const currentSets = selectedConceptSets.value
-            const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value.toString() === conceptSetId.toString())
+            const index = currentSets.findIndex(
+              (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetId.toString()
+            )
             if (index !== -1) {
               const updatedSets = [...currentSets]
               updatedSets[index] = completeConceptSet
@@ -1558,7 +1560,9 @@ const handleConceptSetAction = ({
         // Fallback to basic data if reload fails
         if (conceptSetId) {
           const currentSets = selectedConceptSets.value
-          const index = currentSets.findIndex((cs: ConceptSetItem) => cs.value.toString() === conceptSetId.toString())
+          const index = currentSets.findIndex(
+            (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetId.toString()
+          )
           if (index !== -1) {
             const updatedSets = [...currentSets]
             const currentItem = updatedSets[index]

@@ -12,14 +12,14 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import QueryFilterNestedCriteria from './QueryFilterNestedCriteria.vue'
 import type { QueryFilterEvent } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 
 interface Props {
   event: QueryFilterEvent
   parentEventId?: string
   level?: number
   operator?: 'OR' | 'AND'
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   readonly?: boolean
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   'update:event': [event: QueryFilterEvent]
   'remove-event': []
   'duplicate-event': []
-  'concept-set-selected': [conceptSet: ConceptSetItem | null]
+  'concept-set-selected': [conceptSet: ConceptSetItemDisplay | null]
   'attribute-selected': [attribute: any]
   'attribute-removed': [attributeId: string]
 }>()
@@ -68,7 +68,7 @@ const handleEventDuplicate = () => {
 }
 
 // Handle concept set selection
-const handleConceptSetSelected = (conceptSet: ConceptSetItem | null) => {
+const handleConceptSetSelected = (conceptSet: ConceptSetItemDisplay | null) => {
   emit('concept-set-selected', conceptSet)
 }
 

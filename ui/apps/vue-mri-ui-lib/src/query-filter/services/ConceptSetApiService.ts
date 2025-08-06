@@ -4,7 +4,7 @@
 import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import type {
-  ConceptSetItem,
+  ConceptSetItemDisplay,
   ConceptDetail,
   ConceptSetDomainValues,
   CreateConceptSetRequest,
@@ -185,12 +185,12 @@ const formatConceptForAtlas = (
   }
 }
 
-const extractConceptIds = (conceptSet: ConceptSetItem): number[] => {
+const extractConceptIds = (conceptSet: ConceptSetItemDisplay): number[] => {
   return conceptSet.conceptIds || []
 }
 
 export const loadConceptSetDetails = async (
-  selectedConceptSets: ConceptSetItem[],
+  selectedConceptSets: ConceptSetItemDisplay[],
   datasetId: string
 ): Promise<Record<string, any[]>> => {
   if (selectedConceptSets.length === 0) {
@@ -265,7 +265,10 @@ export const loadConceptSetDetails = async (
   }
 }
 
-export const loadSingleConceptSetDetails = async (conceptSet: ConceptSetItem, datasetId: string): Promise<any[]> => {
+export const loadSingleConceptSetDetails = async (
+  conceptSet: ConceptSetItemDisplay,
+  datasetId: string
+): Promise<any[]> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept details API call')
     return []

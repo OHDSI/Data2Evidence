@@ -11,7 +11,7 @@ export default {
 import { ref, computed, nextTick, watch } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import EditIcon from './icons/EditIcon.vue'
 import CloseIcon from './icons/CloseIcon.vue'
 import GroupCriteriaSidebar from './GroupCriteriaSidebar.vue'
@@ -19,7 +19,7 @@ import GroupCriteriaSidebar from './GroupCriteriaSidebar.vue'
 interface Props {
   group: QueryFilterGroup
   groupIndex: number
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null

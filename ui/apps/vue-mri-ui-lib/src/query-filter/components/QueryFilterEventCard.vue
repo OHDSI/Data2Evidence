@@ -18,7 +18,7 @@ import type {
   QueryFilterAttribute,
   SelectedConceptSet,
 } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
@@ -27,7 +27,7 @@ import TrashIcon from './icons/TrashIcon.vue'
 interface Props {
   event: QueryFilterEvent
   eventIndex: number
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -45,7 +45,7 @@ const emit = defineEmits<{
   'update:event': [event: QueryFilterEvent]
   'remove-event': []
   'duplicate-event': []
-  'concept-set-selected': [conceptSet: ConceptSetItem | null]
+  'concept-set-selected': [conceptSet: ConceptSetItemDisplay | null]
   'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
   'concept-set-action': [action: ConceptSetAction]
@@ -82,7 +82,7 @@ const updateCardinality = (updatedEventCardinality: QueryFilterCardinality) => {
 }
 
 // Handle concept set changes (add/remove/update)
-const handleConceptSetChange = async (values: ConceptSetItem[]) => {
+const handleConceptSetChange = async (values: ConceptSetItemDisplay[]) => {
   if (!values || values.length === 0) {
     // Remove concept set
     const updatedEvent: QueryFilterEvent = {
@@ -106,7 +106,7 @@ const handleConceptSetChange = async (values: ConceptSetItem[]) => {
 }
 
 // Handle concept set selection
-const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   const selectedConceptSet: SelectedConceptSet = {
     value: parseInt(conceptSet.value),
     text: conceptSet.text || '',
@@ -248,7 +248,7 @@ const removeEvent = () => {
 }
 
 // Handle attribute concept set selection
-const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItem) => {
+const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItemDisplay) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId && attr.attributeType === 'conceptSet') {

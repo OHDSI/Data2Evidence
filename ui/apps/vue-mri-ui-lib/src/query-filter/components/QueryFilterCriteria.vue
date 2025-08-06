@@ -11,14 +11,14 @@ export default {
 import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import ButtonMaterial from './ButtonMaterial.vue'
 import AddIcon from './icons/AddIcon.vue'
 import GroupButtons from './GroupButtons.vue'
 
 interface Props {
   criteriaData?: any
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -147,7 +147,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"
-          @concept-set-action="(action) => $emit('concept-set-action', action)"
+          @concept-set-action="action => $emit('concept-set-action', action)"
         />
       </div>
     </div>

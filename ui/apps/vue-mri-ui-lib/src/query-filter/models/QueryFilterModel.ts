@@ -4,153 +4,45 @@
  * with support for Atlas cohort definition conversion.
  */
 import type { NumericRange, DemographicCriteria } from './AtlasCohortDefinition'
-import type { ConceptSetItem } from '../types/ConceptSetTypes'
+import type {
+  QueryFilterCardinality,
+  QueryFilterEvent,
+  QueryFilterAttribute,
+  QueryFilterGroup,
+  QueryFilterCriteria,
+  EntryEvent,
+  ExitEvent,
+  InclusionCriteria,
+} from '../types/QueryFilterTypes'
 
-// Interface for stored concept items in attributes
-export interface StoredConceptItem {
-  value: string
-  text: string
-  display_value: string
-  conceptId: number
-  domainId?: string | undefined
-  system?: string | undefined
-  conceptClassId?: string | undefined
-  standardConcept?: string | undefined
-  concept?: string | undefined
-  code?: string | undefined
-  validStartDate?: string | undefined
-  validEndDate?: string | undefined
-  validity?: string | undefined
-  useDescendants?: boolean | undefined
-  useMapped?: boolean | undefined
-  isExcluded?: boolean | undefined
-  score?: number | undefined
-  conceptName?: string | undefined
-}
+// Re-export types for backwards compatibility
+export type {
+  // From ConceptSetTypes
+  StoredConceptItem,
+  ConceptSetDetail,
+  ConceptSetDetailConcept,
+  SelectedConceptSet,
+  SelectedConceptSetConcept,
+  ConceptSetItemDisplay,
+} from '../types/ConceptSetTypes'
 
-export interface QueryFilterCardinality {
-  type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
-  count: number
-  using: 'ALL' | 'DISTINCT_CONCEPT' | 'DISTINCT_START_DATE' | 'DISTINCT_VISIT'
-}
+export type {
+  // From QueryFilterTypes
+  QueryFilterCardinality,
+  QueryFilterEvent,
+  QueryFilterAttribute,
+  QueryFilterGroup,
+  QueryFilterCriteria,
+  EntryEvent,
+  ExitEvent,
+  InclusionCriteria,
+} from '../types/QueryFilterTypes'
 
-export interface ConceptSetDetailConcept {
-  CONCEPT_ID: number
-  CONCEPT_NAME: string
-  STANDARD_CONCEPT: string
-  STANDARD_CONCEPT_CAPTION: string
-  INVALID_REASON: string
-  INVALID_REASON_CAPTION: string
-  CONCEPT_CODE: string
-  DOMAIN_ID: string
-  VOCABULARY_ID: string
-  CONCEPT_CLASS_ID: string
-}
-
-export interface ConceptSetDetail {
-  concept: ConceptSetDetailConcept
-  isExcluded: boolean
-  includeDescendants: boolean
-  includeMapped: boolean
-}
-
-export interface SelectedConceptSetConcept {
-  id: number
-  useMapped: boolean
-  isExcluded: boolean
-  useDescendants: boolean
-}
-
-export interface SelectedConceptSet {
-  value: number
-  text: string
-  display_value: string
-  conceptIds: number[]
-  concepts: SelectedConceptSetConcept[]
-  shared: boolean
-  userName: string
-  createdDate: string
-  modifiedDate: string
-}
-
-export interface QueryFilterGroup {
-  id: string
-  title: string
-  description: string
-  criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
-  criteriaCount?: number
-  events: QueryFilterEvent[]
-}
-
-export interface QueryFilterCriteria {
-  id: string
-  criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'
-  criteria: QueryFilterGroup[]
-}
-
-export interface QueryFilterEvent {
-  id: string
-  conceptSet: string
-  conceptSetId?: string | undefined
-  isEditing?: boolean
-  criteriaType?: string | undefined
-  selectedAttributes?: string[] | undefined
-  isDemographic?: boolean
-  parentEventId?: string | undefined
-  attributeConfig?:
-    | {
-        id: string
-        name: string
-        description: string
-        type: string
-        category: string
-        operator?: string | undefined
-        value?: number | undefined
-      }
-    | undefined
-  selectedConceptSet?: SelectedConceptSet | undefined
-  conceptSetDetails?: ConceptSetDetail[] | undefined
-  conceptSetLoading?: boolean | undefined
-  cardinality?: QueryFilterCardinality | undefined
-  isExpanded?: boolean | undefined
-  attributes?: QueryFilterAttribute[] | undefined
-  eventType?: string | undefined
-}
-export type QueryFilterAttribute =
-  | {
-      id: string
-      attributeType: 'nested'
-      nestedCriteria: {
-        id: string
-        criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
-        events: QueryFilterEvent[]
-      }
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'numericRange'
-      operator: string
-      value: string
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'conceptSet'
-      conceptSet?: ConceptSetItem
-      conceptSetId?: string
-      conceptItems?: StoredConceptItem[]
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'standard'
-      configType?: string // Original type from config (concept, conceptSet, etc.)
-      domainFilter?: string // Domain filter from config
-      operator?: string
-      value?: string
-      conceptItems?: StoredConceptItem[]
-    }
+export type {
+  // From AtlasTypes (which re-exports from AtlasCohortDefinition)
+  NumericRange,
+  DemographicCriteria,
+} from '../types/AtlasTypes'
 
 // Type guards for QueryFilterAttribute discriminated union
 const isNestedAttribute = (
@@ -175,32 +67,6 @@ const isNumericRangeAttribute = (
 
 const hasAttributeId = (attr: QueryFilterAttribute): attr is QueryFilterAttribute & { attributeId: string } => {
   return 'attributeId' in attr
-}
-
-export interface EntryEvent {
-  primaryCriteriaLimit: 'ALL' | 'EARLIEST' | 'LATEST'
-  events: QueryFilterEvent[]
-  priorDays: number
-  postDays: number
-}
-export interface ExitEvent {
-  endStrategy: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
-  censoringCriteria: QueryFilterEvent[]
-  fixedDuration?: {
-    dateField: 'StartDate' | 'EndDate'
-    offset: number
-  }
-  contDrugSettings?: {
-    conceptSetId: string
-    gapDays: number
-    offset: number
-    daysSupplyOverride: number
-  }
-}
-
-export interface InclusionCriteria {
-  qualifyingEventsLimit: 'ALL' | 'EARLIEST' | 'LATEST'
-  criteria: QueryFilterGroup[]
 }
 
 export class QueryFilterCardModel {

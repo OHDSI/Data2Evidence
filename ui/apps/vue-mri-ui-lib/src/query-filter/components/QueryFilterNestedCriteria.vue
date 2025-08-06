@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { QueryFilterGroup } from '../models/QueryFilterModel'
 
 export interface NestedCriteria {
@@ -21,7 +21,7 @@ export interface NestedCriteria {
 
 interface Props {
   nestedCriteria: NestedCriteria
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -87,7 +87,7 @@ const handleGroupRemove = () => {
       :hide-header="true"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
-      @concept-set-action="(action) => $emit('concept-set-action', action)"
+      @concept-set-action="action => $emit('concept-set-action', action)"
     />
   </div>
 </template>

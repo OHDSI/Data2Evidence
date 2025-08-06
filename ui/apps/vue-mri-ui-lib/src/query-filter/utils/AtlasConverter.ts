@@ -23,12 +23,12 @@ import {
   DemographicCriteria,
   CorrelatedCriteria,
 } from '../models/AtlasCohortDefinition'
-import type { ConceptSetItem } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay } from '../types/ConceptSetTypes'
 
 export interface ConceptSetMapping {
   name: string
   id: string
-  conceptSetItem: ConceptSetItem | null
+  conceptSetItem: ConceptSetItemDisplay | null
 }
 
 type CriteriaObject =
@@ -177,7 +177,7 @@ const convertConceptSetArrayToAttribute = (
 }
 
 // Helper function to convert ConceptSetItem to SelectedConceptSet
-const convertConceptSetItemToSelected = (item: ConceptSetItem): SelectedConceptSet | null => {
+const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedConceptSet | null => {
   if (!item.value || !item.text) return null
 
   return {
@@ -200,7 +200,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItem): SelectedConceptS
 
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
-  availableConceptSets: ConceptSetItem[] = [],
+  availableConceptSets: ConceptSetItemDisplay[] = [],
   configLoader?: any
 ): QueryFilterCriteriaManager => {
   if (!atlasJson) {
@@ -231,7 +231,7 @@ export const convertAtlasToFilters = (
         console.warn(`Local concept set not found for system ID: ${systemConceptSetId}`)
       }
 
-      const conceptSetItem: ConceptSetItem = {
+      const conceptSetItem: ConceptSetItemDisplay = {
         value: systemConceptSetId.toString(),
         text: atlasConceptSet.name,
         display_value: atlasConceptSet.name,
@@ -312,7 +312,6 @@ export const convertAtlasToFilters = (
       const criteriaType = getCriteriaType(criteriaItem)
       const criteriaObj = getCriteriaObject(criteriaItem)
       const codesetId = hasCodesetId(criteriaObj) ? criteriaObj.CodesetId : undefined
-      
 
       const conceptSetInfo = codesetId !== undefined ? findConceptSetByCodesetId(codesetId) : null
 
@@ -325,14 +324,14 @@ export const convertAtlasToFilters = (
         // Use human-readable names based on criteria type
         const typeDisplayNames = {
           conditionOccurrence: 'Condition',
-          drugExposure: 'Drug Exposure', 
+          drugExposure: 'Drug Exposure',
           procedureOccurrence: 'Procedure',
           observation: 'Observation',
           measurement: 'Measurement',
           visitOccurrence: 'Visit',
           deviceExposure: 'Device Exposure',
           death: 'Death',
-          observationPeriod: 'Observation Period'
+          observationPeriod: 'Observation Period',
         }
         eventDisplayName = typeDisplayNames[criteriaType] || 'Unknown Event'
       }
@@ -557,7 +556,7 @@ export const convertAtlasToFilters = (
 
 export const getConceptSetMappings = (
   atlasJson: AtlasCohortDefinition,
-  availableConceptSets: ConceptSetItem[] = []
+  availableConceptSets: ConceptSetItemDisplay[] = []
 ): ConceptSetMapping[] => {
   const mappings: ConceptSetMapping[] = []
 

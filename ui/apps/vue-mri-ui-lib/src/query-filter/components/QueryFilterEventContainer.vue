@@ -12,14 +12,14 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
 import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
   eventType?: 'ENTRY' | 'EXIT' | 'CRITERIA'
   parentGroup?: QueryFilterGroup
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -121,7 +121,7 @@ const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   console.log('Attribute removed:', eventId, attributeId)
 }
 
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | null) => {
+const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
     const currentEvent = eventsData.value[eventIndex]
