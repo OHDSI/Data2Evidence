@@ -817,6 +817,8 @@ services:
         condition: service_completed_successfully
       supabase-storage-post-init:
         condition: service_completed_successfully
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 30s
       retries: 30
@@ -1299,6 +1301,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 5
