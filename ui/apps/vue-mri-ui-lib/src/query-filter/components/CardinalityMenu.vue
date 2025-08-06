@@ -13,7 +13,7 @@ import ButtonMaterial from './ButtonMaterial.vue'
 import DropdownMenu from './DropdownMenu.vue'
 import { ref } from 'vue'
 import GroupButtons from './GroupButtons.vue'
-import { QueryFilterCardinality } from '../models/QueryFilterModel'
+import { QueryFilterCardinality } from '../types/QueryFilterTypes'
 
 interface Props {
   type: 'GROUP' | 'EVENT'

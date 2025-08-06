@@ -11,8 +11,13 @@ export default {
 import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
-import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
+import type { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
+import type {
+  ConceptSetItemDisplay,
+  ConceptSetDomainValues,
+  ConceptSetAction,
+  SelectedConceptSet,
+} from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {

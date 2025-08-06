@@ -11,7 +11,7 @@ export default {
 import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
-import type { QueryFilterGroup } from '../models/QueryFilterModel'
+import type { QueryFilterGroup } from '../types/QueryFilterTypes'
 
 export interface NestedCriteria {
   id: string

@@ -1,9 +1,5 @@
-import {
-  QueryFilterEvent,
-  QueryFilterCriteriaManager,
-  InclusionCriteria,
-  SelectedConceptSet,
-} from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterEvent, InclusionCriteria } from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
   CriteriaListItem,
@@ -24,7 +20,7 @@ import {
   CorrelatedCriteria,
 } from '../types/AtlasTypes'
 
-import type { ConceptSetItemDisplay } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, SelectedConceptSet } from '../types/ConceptSetTypes'
 
 export interface ConceptSetMapping {
   name: string

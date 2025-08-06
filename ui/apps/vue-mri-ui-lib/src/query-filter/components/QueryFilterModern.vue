@@ -10,12 +10,8 @@ export default {
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import {
-  QueryFilterCriteriaManager,
-  QueryFilterEvent,
-  QueryFilterGroup,
-  type StoredConceptItem,
-} from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 import { CriteriaConfigLoader } from '../utils/CriteriaConfigLoader'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -26,6 +22,7 @@ import type {
   ConceptSetAction,
   ConceptSetDetails,
   CreateConceptSetRequest,
+  StoredConceptItem,
 } from '../types/ConceptSetTypes'
 import type { AtlasCohortDefinition, ConceptSet, CriteriaGroup, CriteriaListItem } from '../types/AtlasTypes'
 

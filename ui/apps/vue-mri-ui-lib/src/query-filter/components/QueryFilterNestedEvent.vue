@@ -11,7 +11,7 @@ export default {
 import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import QueryFilterNestedCriteria from './QueryFilterNestedCriteria.vue'
-import type { QueryFilterEvent } from '../models/QueryFilterModel'
+import type { QueryFilterEvent } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 
 interface Props {

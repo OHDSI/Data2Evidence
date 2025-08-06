@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
-import type { QueryFilterGroup } from '../models/QueryFilterModel'
+import type { QueryFilterGroup } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import EditIcon from './icons/EditIcon.vue'
 import CloseIcon from './icons/CloseIcon.vue'

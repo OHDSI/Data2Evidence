@@ -12,13 +12,13 @@ import { ref, computed, getCurrentInstance } from 'vue'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
+import type { QueryFilterCardinality, QueryFilterEvent, QueryFilterAttribute } from '../types/QueryFilterTypes'
 import type {
-  QueryFilterCardinality,
-  QueryFilterEvent,
-  QueryFilterAttribute,
+  ConceptSetItemDisplay,
+  ConceptSetDomainValues,
+  ConceptSetAction,
   SelectedConceptSet,
-} from '../models/QueryFilterModel'
-import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
+} from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'

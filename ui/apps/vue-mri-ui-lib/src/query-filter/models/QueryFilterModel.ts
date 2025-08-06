@@ -15,35 +15,6 @@ import type {
   InclusionCriteria,
 } from '../types/QueryFilterTypes'
 
-// Re-export types for backwards compatibility
-export type {
-  // From ConceptSetTypes
-  StoredConceptItem,
-  ConceptSetDetail,
-  ConceptSetDetailConcept,
-  SelectedConceptSet,
-  SelectedConceptSetConcept,
-  ConceptSetItemDisplay,
-} from '../types/ConceptSetTypes'
-
-export type {
-  // From QueryFilterTypes
-  QueryFilterCardinality,
-  QueryFilterEvent,
-  QueryFilterAttribute,
-  QueryFilterGroup,
-  QueryFilterCriteria,
-  EntryEvent,
-  ExitEvent,
-  InclusionCriteria,
-} from '../types/QueryFilterTypes'
-
-export type {
-  // From AtlasTypes (which re-exports from AtlasCohortDefinition)
-  NumericRange,
-  DemographicCriteria,
-} from '../types/AtlasTypes'
-
 // Type guards for QueryFilterAttribute discriminated union
 const isNestedAttribute = (
   attr: QueryFilterAttribute

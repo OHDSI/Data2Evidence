@@ -9,7 +9,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { EntryEvent, ExitEvent, QueryFilterEvent } from '../models/QueryFilterModel'
+import { EntryEvent, ExitEvent, QueryFilterEvent } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
