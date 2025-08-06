@@ -164,6 +164,9 @@ interface Datamodel {
   flowId: string;
 }
 
+const FHIR_DB_CODE = "fhir";
+const FHIR_SCHEMA_NAME = "alp_fhir";
+
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
   NoCDM: "no_cdm",
@@ -631,10 +634,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               onChange={(event: SelectChangeEvent<string>) =>
                 handleFormDataChange({
                   schemaOption: event.target.value,
-                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? "fhir" : "",
+                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
                   isSameCdmSchemaForVocab: false,
                   vocabSchemaValue: "",
-                  databaseCode: event.target.value === SchemaTypes.FHIR ? "alp_fhir" : "",
+                  databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: "",
                 })
               }
