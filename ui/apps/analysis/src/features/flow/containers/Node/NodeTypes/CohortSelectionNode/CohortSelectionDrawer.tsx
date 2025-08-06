@@ -48,7 +48,7 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
   const { data: cohortDefinitions } = useGetWebApiCohortDefinitionsQuery(null, {
     selectFromResult: ({ data }) => ({
       data: data?.filter(
-        (cohort) => !formData.cohorts.some((c) => c.cohortId == cohort.id)
+        (cohort) => !formData.cohorts.some((c) => c.cohortId === cohort.id)
       ),
     }),
   });
