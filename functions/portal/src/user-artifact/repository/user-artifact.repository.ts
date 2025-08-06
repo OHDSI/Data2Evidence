@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@danet/core'
-import { Repository, DataSource } from 'npm:typeorm'
+import { Repository, DataSource, JsonContains } from 'npm:typeorm'
 import { DATABASE } from '../../database/module.ts'
 import { PostgresService } from '../../database/postgres.service.ts'
 import { UserArtifact } from '../entity/user-artifact.entity.ts'
@@ -12,6 +12,15 @@ export class UserArtifactRepository {
   private dataSource: DataSource | null = null;
   constructor(@Inject(DATABASE) private dbService: PostgresService) {
   }
+
+  private readonly sharedConditionMap = {
+    [ServiceName.NOTEBOOKS]: "isShared",
+    [ServiceName.CONCEPT_SETS]: "shared",
+    [ServiceName.ANALYSIS_FLOW]: undefined,
+    [ServiceName.ATLAS_COHORT_DEFINITIONS]: undefined,
+    [ServiceName.BOOKMARKS]: "shared",
+  }
+  
   private async getRepository() {
     if (!this.repository) {
       const dataSource = await this.dbService.getDataSourceAsync();
@@ -26,21 +35,23 @@ export class UserArtifactRepository {
     return this.dataSource;
   }
 
-  async findOne(userId: string, serviceName: ServiceName): Promise<UserArtifact | null> {
+  async findUserServiceArtifactsForService(userId: string, serviceName: ServiceName): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
-    return await repository.findOne({
+    return await repository.find({
       where: {
         userId,
         serviceName
       }
-    });
+    })
   }
 
-  async find(serviceName: ServiceName): Promise<UserArtifact[]> {
+    async findUserServiceArtifactByServiceArtifactId(userId: string, serviceName: ServiceName, id: string | number): Promise<UserArtifact> {
     const repository = await this.getRepository()
-    return await repository.find({
+    return await repository.findOne({
       where: {
-        serviceName
+        userId,
+        serviceName,
+        id
       }
     })
   }
@@ -78,34 +89,40 @@ export class UserArtifactRepository {
 
   async getAllServiceArtifacts(serviceName: ServiceName): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
-    const result = await repository
-      .createQueryBuilder('user_artifact')
-      .select(`jsonb_array_elements(user_artifact.artifacts)`, 'artifact')
-      .where(`user_artifact.service_name = :serviceName`, { serviceName })
-      .getRawMany()
-    return result.map(row => row.artifact)
+    return await repository.find({
+      where: {
+        serviceName
+      }
+    })
   }
 
   async findSharedArtifacts(userId: string, serviceName: ServiceName): Promise<UserArtifact[]> {
     const repository = await this.getRepository()
+    
+    const sharedConditionKey = this.sharedConditionMap[serviceName]
+    // If block is required to catch cases where serviceName is not in this.sharedConditionMap as it does not fully implement the ServiceName enum
+    if (sharedConditionKey === undefined) {
+      const errorMsg = `this.sharedConditionMap does not implement serviceName:${serviceName}`
+      console.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+
     // TODO: Fix to return only shared artifacts instead of all artifacts from in each serviceName
     return repository
       .createQueryBuilder('userArtifact')
       .where('userArtifact.userId != :userId', { userId })
       .andWhere(`userArtifact.service_name = :serviceName`, { serviceName })
+      .andWhere({ artifact: JsonContains({ [sharedConditionKey]: true }) })
       .getMany()
   }
 
   async findByServiceArtifactId(serviceName: ServiceName, id: string | number): Promise<UserArtifact> {
     const repository = await this.getRepository()
-    // TODO: Fix to return only a single value in artifacts array as it is find by id
     return repository
       .createQueryBuilder('user_artifact')
       .where(`user_artifact.service_name = :serviceName`, { serviceName })
-      .andWhere(`user_artifact.artifacts @> :jsonValue`, {
-        jsonValue: JSON.stringify([{ id }])
-      })
-      .getOne()  
+      .andWhere(`user_artifact.id = :id`, { id })
+      .getOne()
   }
 
   async getUserArtifactSequenceNextval(serviceName: ServiceName): Promise<number> {

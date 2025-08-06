@@ -60,7 +60,7 @@ export class SplitUserArtifact1749110029676 implements MigrationInterface {
             'MIGRATION_STEP_COMBINE' service_name,
             json_object_agg(service_name, artifacts) as artifacts
           from
-            user_artifact
+            "portal"."user_artifact"
           group by
             user_id, created_by, created_date, modified_by, modified_date
           );
