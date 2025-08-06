@@ -78,6 +78,7 @@ export interface QueryFilterGroup {
   title: string
   description: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaCount?: number
   events: QueryFilterEvent[]
 }
 
@@ -185,6 +186,16 @@ export interface EntryEvent {
 export interface ExitEvent {
   endStrategy: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
   censoringCriteria: QueryFilterEvent[]
+  fixedDuration?: {
+    dateField: 'StartDate' | 'EndDate'
+    offset: number
+  }
+  contDrugSettings?: {
+    conceptSetId: string
+    gapDays: number
+    offset: number
+    daysSupplyOverride: number
+  }
 }
 
 export interface InclusionCriteria {
@@ -804,6 +815,7 @@ export class QueryFilterCriteriaManager {
           description: group.description, // Maps group.description → Atlas InclusionRule.description
           expression: {
             Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
+            Count: group.criteriaCount, // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
             CriteriaList: group.events.flatMap(event =>
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType) // Only non-demographic main events with eventType
@@ -950,7 +962,7 @@ export class QueryFilterCriteriaManager {
           },
         }
       }),
-      EndStrategy: {},
+      EndStrategy: this.buildEndStrategy(),
       CensoringCriteria: (this.exitEvents?.censoringCriteria || [])
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
@@ -1134,6 +1146,30 @@ export class QueryFilterCriteriaManager {
     })
 
     return atlasDef
+  }
+
+  private buildEndStrategy(): any {
+    if (this.exitEvents?.endStrategy === 'FIXED' && this.exitEvents.fixedDuration) {
+      return {
+        DateOffset: {
+          DateField: this.exitEvents.fixedDuration.dateField,
+          Offset: this.exitEvents.fixedDuration.offset,
+        },
+      }
+    }
+
+    if (this.exitEvents?.endStrategy === 'CONT_DRUG' && this.exitEvents.contDrugSettings) {
+      return {
+        CustomEra: {
+          DrugCodesetId: parseInt(this.exitEvents.contDrugSettings.conceptSetId) || 0,
+          GapDays: this.exitEvents.contDrugSettings.gapDays,
+          Offset: this.exitEvents.contDrugSettings.offset,
+          DaysSupplyOverride: this.exitEvents.contDrugSettings.daysSupplyOverride,
+        },
+      }
+    }
+
+    return {}
   }
 
   // Helper method to recursively collect all events including nested ones
@@ -1410,6 +1446,22 @@ export class QueryFilterCriteriaManager {
       this.entryEvents.priorDays = days
     } else if (type === 'POST') {
       this.entryEvents.postDays = days
+    }
+  }
+
+  updateFixedDuration(eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number) {
+    this.exitEvents.fixedDuration = {
+      dateField: eventDateOffset,
+      offset: daysOffset,
+    }
+  }
+
+  updateContDrugSettings(conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number) {
+    this.exitEvents.contDrugSettings = {
+      conceptSetId,
+      gapDays,
+      offset,
+      daysSupplyOverride,
     }
   }
 

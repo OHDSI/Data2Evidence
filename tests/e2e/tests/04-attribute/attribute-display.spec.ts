@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'attribute-display'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -35,6 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Attribute Id' }).fill('test_display')
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Test Display')
   await page.getByRole('button', { name: 'Save' }).click()
+  await page.waitForTimeout(3000) // Wait for the save
 
   // Verify attribute creation
   expect(page.locator('.metadata-attribute-table__table')).toContainText('test_display')
