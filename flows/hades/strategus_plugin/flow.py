@@ -167,7 +167,6 @@ def runStrategus(json_graph, options):
     base_path = f'/tmp/{flow_run_id}'
     work_folder = f'{base_path}/work'
     path_to_results = f'{base_path}/results'
-    log_file_name = f'{base_path}/strategus-log.txt'
 
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
@@ -178,11 +177,11 @@ def runStrategus(json_graph, options):
         analysisSpec = json.loads(analysisSpec)
     
     analysisSpec = json.dumps(analysisSpec)
-    defaultExecutionSettings = json.dumps(getRCdmExecutionSettings({
-        "schema_name": schema_name,
+    defaultExecutionSettings = getRCdmExecutionSettings({
+        "schemaName": schema_name,
         "workFolder": work_folder,
-        "resultsFolder": path_to_results,
-    }))
+        "resultsFolder": path_to_results
+    })
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
