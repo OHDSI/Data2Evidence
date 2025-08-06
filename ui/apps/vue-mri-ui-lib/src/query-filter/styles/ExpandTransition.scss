@@ -1,0 +1,40 @@
+.btn-toggle-expand {
+  border: none;
+  background: none;
+  padding: 6px;
+  border-radius: 4px;
+  color: #000080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  margin-right: 4px;
+  &:hover {
+    background: #f2f0f1;
+  }
+}
+
+.chevron-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(0deg);
+
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  overflow: hidden;
+}
+.expand-enter-to,
+.expand-leave-from {
+  max-height: 1000px;
+  overflow: hidden;
+}
+
