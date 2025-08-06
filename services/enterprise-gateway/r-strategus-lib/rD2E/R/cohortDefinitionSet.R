@@ -101,6 +101,8 @@ create_cohort_definition <- function(name, description, cohort_definition) {
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
   url <- paste0(host, "/d2e-webapi/cohortdefinition/")
+  expression <- NULL
+  expressionType <- NULL
 
   assertthat::assert_that(
     !is.null(name) && name != "",
@@ -115,19 +117,31 @@ create_cohort_definition <- function(name, description, cohort_definition) {
     msg = "Cohort definition must be provided and cannot be empty."
   )
 
-  if (is.character(cohort_definition)) {
-    cohort_definition <- jsonlite::fromJSON(cohort_definition)
+  # convert cohort_definition to JSON if it is not already
+  if (is.list(cohort_definition)) {
+    cohort_definition <- jsonlite::toJSON(cohort_definition, auto_unbox = TRUE)
+  } else if (is.character(cohort_definition)) {
+    # if it is a string, assume it is already in JSON format
+    cohort_definition <- cohort_definition
+  } else {
+    stop("cohort_definition must be a list or a JSON string.")
   }
-  expression <- ifelse(
-    exists("cohort_definition$expression"),
-    cohort_definition$expression,
-    cohort_definition
-  )
-  expressionType <- ifelse(
-    exists("cohort_definition$expressionType"),
-    cohort_definition$expressionType,
-    "SIMPLE_EXPRESSION"
-  )
+
+  cohort_definition_json <- jsonlite::fromJSON(cohort_definition)
+  if (!"expression" %in% names(cohort_definition_json)) {
+    expression <- cohort_definition_json
+  } else {
+    if (is.null(cohort_definition_json$expression)) {
+      stop("Cohort definition JSON must contain an 'expression' field.")
+    }
+    expression <- cohort_definition_json$expression
+  }
+
+  if (!"expressionType" %in% names(cohort_definition_json)) {
+    expressionType <- "SIMPLE_EXPRESSION"
+  } else {
+    expressionType <- cohort_definition_json$expressionType
+  }
 
   parameters <- list(
     id = 0,
@@ -135,11 +149,11 @@ create_cohort_definition <- function(name, description, cohort_definition) {
     description = description,
     expression = expression,
     expressionType = expressionType,
-    createdBy = NULL,
+    createdBy = "admin",
     createdDate = as.numeric(Sys.time()),
-    modifiedBy = NULL,
+    modifiedBy = "admin",
     modifiedDate = as.numeric(Sys.time()),
-    tags = list()
+    tags = list("created_by_rD2E")
   )
 
   response <- tryCatch(
