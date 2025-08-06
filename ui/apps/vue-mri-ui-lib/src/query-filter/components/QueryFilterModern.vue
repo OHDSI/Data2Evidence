@@ -27,12 +27,8 @@ import type {
   ConceptSetDetails,
   CreateConceptSetRequest,
 } from '../types/ConceptSetTypes'
-import type {
-  AtlasCohortDefinition,
-  ConceptSet,
-  CriteriaGroup,
-  CriteriaListItem,
-} from '../models/AtlasCohortDefinition'
+import type { AtlasCohortDefinition, ConceptSet, CriteriaGroup, CriteriaListItem } from '../types/AtlasTypes'
+
 import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,

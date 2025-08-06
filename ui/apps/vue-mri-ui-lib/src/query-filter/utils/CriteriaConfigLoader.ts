@@ -5,7 +5,7 @@
 // Import JSON configuration
 import criteriaConfigData from '../config/cohort-criteria-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
-import type { ConceptSet, OccurrenceSettings } from '../models/AtlasCohortDefinition'
+import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -451,7 +451,6 @@ export class CriteriaConfigLoader {
    * Get specific attribute configuration for a criteria type and attribute ID
    */
   getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
-
     if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
       const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
       return attribute || null

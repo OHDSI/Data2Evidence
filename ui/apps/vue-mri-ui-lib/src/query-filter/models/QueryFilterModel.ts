@@ -3,7 +3,7 @@
  * Provides interfaces and classes for managing filter cards and events,
  * with support for Atlas cohort definition conversion.
  */
-import type { NumericRange, DemographicCriteria } from './AtlasCohortDefinition'
+import type { NumericRange, DemographicCriteria } from '../types/AtlasTypes'
 import type {
   QueryFilterCardinality,
   QueryFilterEvent,

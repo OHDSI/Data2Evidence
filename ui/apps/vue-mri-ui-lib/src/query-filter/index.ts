@@ -11,6 +11,5 @@ export { default as QueryFilterEventContainer } from './components/QueryFilterEv
 export { default as QueryFilterEventCard } from './components/QueryFilterEventCard.vue'
 
 export * from './models/QueryFilterModel'
-export * from './models/AtlasCohortDefinition'
 
 export * from './utils/CriteriaConfigLoader'

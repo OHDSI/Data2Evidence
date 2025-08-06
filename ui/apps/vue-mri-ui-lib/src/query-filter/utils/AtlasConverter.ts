@@ -22,7 +22,8 @@ import {
   NumericRange,
   DemographicCriteria,
   CorrelatedCriteria,
-} from '../models/AtlasCohortDefinition'
+} from '../types/AtlasTypes'
+
 import type { ConceptSetItemDisplay } from '../types/ConceptSetTypes'
 
 export interface ConceptSetMapping {
