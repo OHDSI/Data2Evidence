@@ -38,9 +38,18 @@ if (fs.existsSync(dockerComposePath)) {
 }
 
 // Get noProxy settings from docker-compose.yml
-let dcContainerName;
-dcContainerName = await $`docker compose -f ${composeFile} --profile "*" config 2>/dev/null | yq '.services[].container_name'`;
-let containerNames = dcContainerName.stdout.trim().split('\n').filter(name => name).join(',');
+let dcConfig;
+dcConfig = await $`docker compose -f ${composeFile} --profile "*" config --format json 2>/dev/null`;
+  
+// Parse the JSON output
+const dcContainerName = JSON.parse(dcConfig.stdout);
+
+// Extract container names from the services
+const containerNames = Object.values(dcContainerName.services || {})
+  .map(service => service.container_name)
+  .filter(name => name && name !== null)
+  .join(',');
+
 let newNoProxy = `.alp.local,registry-1.docker.io,localhost,::1,${containerNames}`;
 let newHttpProxy = process.env.HTTP_PROXY || '' ;
 let newHttpsProxy = process.env.HTTPS_PROXY || '' ;
@@ -59,4 +68,4 @@ dockerConfig.proxies.default.httpsProxy = [dockerConfig.proxies.default.httpsPro
 dockerConfig.proxies.default.noProxy = [dockerConfig.proxies.default.noProxy,newNoProxy].filter(Boolean).join(',');
 
 // Print updated config
-console.log(`Updated docker proxy:\n${JSON.stringify(dockerConfig, null, 2)}`);
+console.log(`New docker config to update:\n${JSON.stringify(dockerConfig, null, 2)}`);
