@@ -216,6 +216,7 @@ const toggleExpanded = () => {
               :dataset-id="datasetId || null"
               :readonly="readonly"
               @update-events="handleEventsUpdate"
+              @concept-set-action="action => $emit('concept-set-action', action)"
             />
           </div>
         </div>
