@@ -1,7 +1,7 @@
 import os
 import duckdb
 import psycopg2
-from flows._shared_flow_utils.types import SupportedDatabaseDialects
+from _shared_flow_utils.types import SupportedDatabaseDialects
 from prefect import flow
 from prefect.logging import get_run_logger
 
@@ -74,6 +74,9 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 # Create cache schema and copy bigquery schema to cache
                 copy_bigquery_schema_to_cache(cur, dbdao)
             else:
+                # Filter out system schemas
+                schemas_to_copy = list(set(dbdao.get_schema_names()) -
+                            set(SYSTEM_SCHEMAS[dbdao.dialect]))
                 for schema in schemas_to_copy:
                     logger.info(f"Handling schema {schema}...")
                     copy_schema_to_cache(cur, dbdao, schema, False, True)
@@ -85,7 +88,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
             logger.error(f"Error while creating cache database: {e}")
             trex_conn.rollback()
             raise e
-        finally
+        finally:
             if cur:
                 cur.close()
             trex_conn.close()
