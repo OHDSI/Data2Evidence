@@ -319,6 +319,16 @@ const handleUpdateEntryDays = (type: 'PRIOR' | 'POST', days: number) => {
   console.log('Entry days updated:', days, 'Type:', type)
 }
 
+const handleUpdateFixedDuration = (eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number) => {
+  criteriaManager.updateFixedDuration(eventDateOffset, daysOffset)
+  console.log('Fixed duration updated:', eventDateOffset, daysOffset)
+}
+
+const handleUpdateContDrugSettings = (conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number) => {
+  criteriaManager.updateContDrugSettings(conceptSetId, gapDays, offset, daysSupplyOverride)
+  console.log('CONT_DRUG settings updated:', conceptSetId, gapDays, offset, daysSupplyOverride)
+}
+
 // Handle adding new criteria group
 const handleAddCriteriaGroup = (groupData: Partial<QueryFilterGroup>) => {
   criteriaManager.addCriteriaGroup(groupData)
@@ -1173,6 +1183,8 @@ defineExpose({
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdateExitStrategy"
+            @update-fixed-duration="handleUpdateFixedDuration"
+            @update-cont-drug-settings="handleUpdateContDrugSettings"
           />
         </div>
       </div>
