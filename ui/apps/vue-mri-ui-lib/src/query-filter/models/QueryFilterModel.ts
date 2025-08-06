@@ -917,27 +917,6 @@ export class QueryFilterCriteriaManager {
                 const demographicCriteria: DemographicCriteria[] = []
 
                 demographicEvents.forEach(event => {
-                  // Check if this demographic event has age attributes in selectedAttributes/attributeConfig (transformed)
-                  if (event.selectedAttributes?.includes('age') && event.attributeConfig?.id === 'age') {
-                    const ageConfig: NumericRange = {
-                      Op: 'gt', // Default operator
-                      Value: 0, // Default value
-                    }
-
-                    // Map operator and value if available
-                    if (event.attributeConfig.operator) {
-                      ageConfig.Op = this.mapOperatorToAtlas(event.attributeConfig.operator)
-                    }
-
-                    if (event.attributeConfig.value !== undefined) {
-                      ageConfig.Value = event.attributeConfig.value
-                    }
-
-                    demographicCriteria.push({
-                      Age: ageConfig,
-                    })
-                  }
-
                   // Also check for age attributes directly in the original attributes array (for events not fully transformed)
                   const eventAny = event as any
                   if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
@@ -1047,7 +1026,6 @@ export class QueryFilterCriteriaManager {
 
     // Convert entryEvents to PrimaryCriteria.CriteriaList
     if (this.entryEvents?.events && this.entryEvents.events.length > 0) {
-
       atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
