@@ -135,6 +135,16 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         tars: [],
       },
     },
+    inputs: [
+      {
+        label: "Cohort Incidence Target Cohorts",
+        handleType: HandleIOType.CohortIncidenceTargetCohorts,
+      },
+      {
+        label: "Time At Risk",
+        handleType: HandleIOType.TimeAtRisk,
+      },
+    ],
     outputs: [
       {
         label: "Strategus",
@@ -150,6 +160,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       cohortId: 3,
       cleanWindow: 9999,
     },
+    outputs: [
+      { label: "Cohort Incidence", handleType: HandleIOType.CohortIncidence },
+    ],
   },
   time_at_risk_node: {
     title: "Time At Risk",
@@ -160,6 +173,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       startWith: "start",
       endWith: "end",
     },
+
+    outputs: [
+      {
+        label: "Cohort Incidence",
+        handleType: HandleIOType.CohortIncidence,
+      },
+    ],
   },
   default_covariate_settings_node: {
     title: "Covariate Settings",
@@ -172,6 +192,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       addDescendantsToInclude: false,
       includedCovariateIds: [],
     },
+    outputs: [
+      {
+        label: "Patient Level Prediction",
+        handleType: HandleIOType.PatientLevelPrediction,
+      },
+    ],
   },
   characterization_node: {
     title: "Characterization",
@@ -211,6 +237,18 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       excludedCovariateConceptIds: [],
       includedCovariateConceptIds: [],
     },
+    inputs: [
+      {
+        label: "Outcomes",
+        handleType: HandleIOType.TargetComparatorOutcomes,
+      },
+    ],
+    outputs: [
+      {
+        label: "Cohort Method",
+        handleType: HandleIOType.CohortMethod,
+      },
+    ],
   },
   cohort_method_analysis_node: {
     title: "Cohort Method Analysis",
@@ -232,13 +270,20 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         control: false,
         cvRepetition: 1,
       },
-      inputs: [
-        {
-          label: "Study Population",
-          handleType: HandleIOType.Population,
-        },
-      ],
     },
+    inputs: [
+      {
+        label: "Study Population",
+        handleType: HandleIOType.Population,
+      },
+      // default covariate settings node
+    ],
+    outputs: [
+      {
+        label: "Cohort Method",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
   },
   cohort_method_node: {
     title: "Cohort Method",
@@ -249,6 +294,16 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       priorOutcomeLookback: 30,
       cohortMethodConfigs: [],
     },
+    inputs: [
+      {
+        label: "Target Comparator Outcomes",
+        handleType: HandleIOType.TargetComparatorOutcomes,
+      },
+      {
+        label: "CM Analysis",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
     outputs: [
       { label: "Strategus", handleType: HandleIOType.ModuleSpecification },
     ],
@@ -376,7 +431,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     tag: NodeTag.Experimental,
     defaultData: {},
     inputs: [
+      { label: "Exposures", handleType: HandleIOType.Exposure },
       { label: "Population Settings", handleType: HandleIOType.Population },
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
     ],
     outputs: [
       {
@@ -432,6 +492,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
     },
+    outputs: [
+      {
+        label: "Target Comparator Outcomes",
+        handleType: HandleIOType.TargetComparatorOutcomes,
+      },
+    ],
   },
   cohort_definition_set_node: {
     title: "Cohort Definition Set",
@@ -447,6 +513,11 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       outcomeOfInterestIds: [],
       exposureOfInterestIds: [],
     },
+    outputs: [
+      {
+        handleType: HandleIOType.Exposure,
+      },
+    ],
   },
   strategus_node: {
     title: "Strategus",

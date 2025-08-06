@@ -38,6 +38,13 @@ export enum HandleIOType {
   CovariateSettings = "covariateSettings",
   Population = "population",
   PatientLevelPrediction = "patientLevelPrediction",
+  TargetComparatorOutcomes = "targetComparatorOutcomes",
+  Exposure = "exposure",
+  CohortMethodAnalysis = "cohortMethodAnalysis",
+  CohortMethod = "cohortMethod",
+  TimeAtRisk = "timeAtRisk",
+  CohortIncidence = "cohortIncidence",
+  CohortIncidenceTargetCohorts = "cohortIncidenceTargetCohorts",
 }
 
 export const HandleIODict: {
@@ -48,7 +55,7 @@ export const HandleIODict: {
     text: "Cohort",
   },
   [HandleIOType.ModuleSpecification]: {
-    color: "purple",
+    color: "black",
     text: "Module Specification",
   },
   [HandleIOType.CovariateSettings]: {
@@ -62,6 +69,34 @@ export const HandleIODict: {
   [HandleIOType.PatientLevelPrediction]: {
     color: "green",
     text: "Patient Level Prediction",
+  },
+  [HandleIOType.TargetComparatorOutcomes]: {
+    color: "red",
+    text: "Target Comparator Outcomes",
+  },
+  [HandleIOType.Exposure]: {
+    color: "pink",
+    text: "Exposure",
+  },
+  [HandleIOType.CohortMethodAnalysis]: {
+    color: "purple",
+    text: "Cohort Method Analysis",
+  },
+  [HandleIOType.CohortMethod]: {
+    color: "mediumpurple",
+    text: "Cohort Method",
+  },
+  [HandleIOType.TimeAtRisk]: {
+    color: "wheat",
+    text: "Time At Risk",
+  },
+  [HandleIOType.CohortIncidence]: {
+    color: "wheat",
+    text: "Cohort Incidence",
+  },
+  [HandleIOType.CohortIncidenceTargetCohorts]: {
+    color: "aquamarine",
+    text: "Cohort Incidence Target Cohorts",
   },
 };
 
