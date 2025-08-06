@@ -72,7 +72,7 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
           .defaultData,
       });
     }
-  }, [node.data]);
+  }, [node.data, setFormData]);
 
   const handleOk = useCallback(() => {
     const updated: NodeState<CompetingOutcomeCohortStratificationNodeData> = {
@@ -83,7 +83,7 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, nodeState, onClose]);
 
   const { competingOutcomeCohortStratificationArgs } = formData;
 

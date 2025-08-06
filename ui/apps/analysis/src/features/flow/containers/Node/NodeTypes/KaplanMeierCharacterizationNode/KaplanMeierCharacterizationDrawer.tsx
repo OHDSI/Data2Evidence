@@ -70,7 +70,7 @@ export const KaplanMeierCharacterizationDrawer: FC<
         ...NodeChoiceMap["kaplan_meier_characterization_node"].defaultData,
       });
     }
-  }, [node.data]);
+  }, [node.data, setFormData]);
 
   const handleOk = useCallback(() => {
     const updated: NodeState<KaplanMeierCharacterizationNodeData> = {
@@ -81,7 +81,7 @@ export const KaplanMeierCharacterizationDrawer: FC<
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, nodeState, onClose]);
 
   const { kaplanMeierCharacterizationArgs } = formData;
 
