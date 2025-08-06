@@ -2,12 +2,9 @@ import pandas as pd
 import spacy
 from scispacy.linking import EntityLinker
 from scispacy.abbreviation import AbbreviationDetector
-
-from .umls2omop import mapper
-
 from prefect.logging import get_run_logger
 
-
+from .umls2omop import mapper
 class EntityExtractorLinker(object):
     def __init__(self) -> None:
         self.pipelines= list()
@@ -19,14 +16,7 @@ class EntityExtractorLinker(object):
         logger.info(f"Loading model ...")
         nlp = spacy.load(model_name) 
         logger.info(f"Adding pipe ...")
-
-        # @spacy.Language.factory("abbreviation_detector")
-        # def create_abbreviation_detector(nlp, name):
-        #     return AbbreviationDetector(nlp)
-
         nlp.add_pipe("abbreviation_detector")
-        # nlp.add_pipe("abbreviation_detector", name="abbreviation_detector", last=True)
-
         logger.info("Loading linker ...")
         nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": linker_name})
         logger.info("Adding pipeline done")
@@ -40,6 +30,7 @@ class EntityExtractorLinker(object):
         
         data = dict()    
         for model_name, linker_name, nlp in self.pipelines:
+            logger.info(f"Processing text with model '{model_name}' and linker '{linker_name}'")
             linker = nlp.get_pipe("scispacy_linker")
             doc = nlp(text)
             logger.info(f"Found {len(doc.ents)} entities.")
@@ -59,7 +50,7 @@ class EntityExtractorLinker(object):
                 #convert CUI codes to rxNorm or SNOMED
                 mappings = mapper.get_codes(code)
                 if not any(key in mappings for key in ["RxNorm","SNOMED"]):
-                    logger.info("No mapping found for UMLS CUI '{code}' to either RxNorm or SNOMED. Skipping.")
+                    logger.info(f"No mapping found for UMLS CUI {code} to either RxNorm or SNOMED. Skipping.")
                     continue
 
                 omop_code, vocabulary = (mappings.get("RxNorm"), "RxNorm") if "RxNorm" in mappings else (mappings.get("SNOMED"), "SNOMED")               
