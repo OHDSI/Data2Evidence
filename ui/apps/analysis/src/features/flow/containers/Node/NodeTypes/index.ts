@@ -242,15 +242,10 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     inputs: [
       {
         label: "Outcomes",
-        handleType: HandleIOType.TargetComparatorOutcomes,
+        handleType: HandleIOType.Outcomes,
       },
     ],
-    outputs: [
-      {
-        label: "Cohort Method",
-        handleType: HandleIOType.CohortMethod,
-      },
-    ],
+    outputs: [{ handleType: HandleIOType.TargetComparatorOutcomes }],
   },
   cohort_method_analysis_node: {
     title: "Cohort Method Analysis",
@@ -276,7 +271,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     inputs: [
       {
         label: "Study Population",
-        handleType: HandleIOType.Population,
+        handleType: HandleIOType.StudyPopulation,
       },
       // default covariate settings node
     ],
@@ -324,6 +319,18 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         strataCohorts: [],
       },
     },
+    inputs: [
+      {
+        label: "Study Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+    ],
+    outputs: [
+      {
+        label: "Cohort Method Analysis",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
   },
   era_covariate_settings_node: {
     title: "Era Covariate Settings",
@@ -417,13 +424,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       },
       {
         label: "Study Population",
-        handleType: HandleIOType.Population,
+        handleType: HandleIOType.StudyPopulation,
       },
     ],
     outputs: [
       {
         label: "Study Population",
-        handleType: HandleIOType.Population,
+        handleType: HandleIOType.StudyPopulation,
       },
     ],
   },
@@ -449,7 +456,10 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     defaultData: {},
     inputs: [
       { label: "Exposures", handleType: HandleIOType.Exposure },
-      { label: "Population Settings", handleType: HandleIOType.Population },
+      {
+        label: "Population Settings",
+        handleType: HandleIOType.StudyPopulation,
+      },
       {
         label: "Covariate Settings",
         handleType: HandleIOType.CovariateSettings,
@@ -490,7 +500,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     outputs: [
       {
         label: "Population",
-        handleType: HandleIOType.Population,
+        handleType: HandleIOType.StudyPopulation,
       },
     ],
   },
@@ -511,12 +521,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
     },
-    outputs: [
-      {
-        label: "Target Comparator Outcomes",
-        handleType: HandleIOType.TargetComparatorOutcomes,
-      },
-    ],
+    outputs: [{ handleType: HandleIOType.Outcomes }],
   },
   cohort_definition_set_node: {
     title: "Cohort Definition Set",

@@ -37,8 +37,9 @@ export enum HandleIOType {
   Cohort = "cohort",
   ModuleSpecification = "moduleSpecification",
   CovariateSettings = "covariateSettings",
-  Population = "population",
+  StudyPopulation = "studyPopulation",
   PatientLevelPrediction = "patientLevelPrediction",
+  Outcomes = "outcomes",
   TargetComparatorOutcomes = "targetComparatorOutcomes",
   Exposure = "exposure",
   CohortMethodAnalysis = "cohortMethodAnalysis",
@@ -63,16 +64,20 @@ export const HandleIODict: {
     color: "orange",
     text: "Covariate Settings",
   },
-  [HandleIOType.Population]: {
-    color: "blue",
+  [HandleIOType.StudyPopulation]: {
+    color: "pink",
     text: "Population",
   },
   [HandleIOType.PatientLevelPrediction]: {
     color: "green",
     text: "Patient Level Prediction",
   },
+  [HandleIOType.Outcomes]: {
+    color: "green",
+    text: "Outcomes",
+  },
   [HandleIOType.TargetComparatorOutcomes]: {
-    color: "red",
+    color: "purple",
     text: "Target Comparator Outcomes",
   },
   [HandleIOType.Exposure]: {
@@ -80,7 +85,7 @@ export const HandleIODict: {
     text: "Exposure",
   },
   [HandleIOType.CohortMethodAnalysis]: {
-    color: "purple",
+    color: "lavender",
     text: "Cohort Method Analysis",
   },
   [HandleIOType.CohortMethod]: {
