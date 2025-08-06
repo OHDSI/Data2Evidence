@@ -153,6 +153,8 @@ export default {
               })
             }
           })
+      } else {
+        this.$emit('busyEv', false)
       }
     },
     shouldRerenderChart() {

@@ -10,6 +10,7 @@ export type NodeType =
   | "target_comparator_outcomes_node"
   | "cohort_method_analysis_node"
   | "cohort_method_node"
+  | "kaplan_meier_node"
   | "era_covariate_settings_node"
   | "calendar_time_covariate_settings_node"
   | "seasonality_covariate_settings_node"
