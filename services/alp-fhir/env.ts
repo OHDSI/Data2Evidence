@@ -20,6 +20,9 @@ export const env = {
   PG_CA_ROOT_CERT: Deno.env.get("PG__CA_ROOT_CERT"),
   PG_SSL: _env.PG__SSL,
   
+  // Custom FHIR Schema
+  FHIR_CUSTOM_SCHEMA: Deno.env.get("FHIR_CUSTOM_SCHEMA") || "fhir",
+  
   // Redis configuration
   REDIS_HOST: Deno.env.get("REDIS_HOST") || 'localhost',
   REDIS_PORT: Number(Deno.env.get("REDIS_PORT")) || 6379,

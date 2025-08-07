@@ -1,36 +1,45 @@
 import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
-import { PlainNode } from "./PlainNode/PlainNode";
-import { CohortGeneratorNode } from "./CohortGeneratorNode/CohortGeneratorNode";
-import { CohortDiagnosticsNode } from "./CohortDiagnosticsNode/CohortDiagnosticsNode";
-import { NegatveControlOutcomeNode } from "./NegativeControlOutcomeNode/NegativeControlOutcomeNode";
-import { CharacterizationNode } from "./CharacterizationNode/CharacterizationNode";
-import { TimeAtRiskNode } from "./TimeAtRiskNode/TimeAtRiskNode";
-import { SelfControlledCaseSeriesNode } from "./SelfControlledCaseSeriesNode/SelfControlledCaseSeriesNode";
-import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
 import { CalendarTimeCovariateSettingsNode } from "./CalendarTimeCovariateSettingsNode/CalendarTimeCovariateSettingsNode";
-import { SeasonalityCovariateSettingsNode } from "./SeasonalityCovariateSettingsNode/SeasonalityCovariateSettingsNode";
-import { CohortIncidentNode } from "./CohortIncidentNode/CohortIncidentNode";
-import { TargetComparatorOutcomesNode } from "./TargetComparatorOutcomesNode/TargetComparatorOutcomesNode";
-import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
-import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
-import { StudyPopulationSettingsNode } from "./StudyPopulationSettingsNode/StudyPopulationSettingsNode";
-import { SelfControlledCaseSeriesAnalysisNode } from "./SelfControlledCaseSeriesAnalysisNode/SelfControlledCaseSeriesAnalysisNode";
-import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode/CohortIncidentTargetCohortNode";
-import { NCOCohortSetNode } from "./NCOCohortSetNode/NCOCohortSetNode";
-import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
-import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
+import { CharacterizationNode } from "./CharacterizationNode/CharacterizationNode";
 import { CohortDefinitionSetNode } from "./CohortDefinitionSetNode/CohortDefinitionSetNode";
-import { ExposureNode } from "./ExposureNode/ExposureNode";
-import {
-  IncludeTreatments,
-  FilterTreatments,
-  CensorType,
-} from "./TreatmentPatternsNode/TreatmentPatternsType";
-import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import { CohortDiagnosticsNode } from "./CohortDiagnosticsNode/CohortDiagnosticsNode";
+import { CohortGeneratorNode } from "./CohortGeneratorNode/CohortGeneratorNode";
+import { CohortIncidentNode } from "./CohortIncidentNode/CohortIncidentNode";
+import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode/CohortIncidentTargetCohortNode";
+import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
+import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
-import { NodeChoiceAttr, NodeType, NodeTypeChoice, NodeTag } from "./type";
+import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
+import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
+import { ExposureNode } from "./ExposureNode/ExposureNode";
+import { KaplanMeierNode } from "./KaplanMeierNode/KaplanMeierNode";
+import { NCOCohortSetNode } from "./NCOCohortSetNode/NCOCohortSetNode";
+import { NegatveControlOutcomeNode } from "./NegativeControlOutcomeNode/NegativeControlOutcomeNode";
+import { OutcomesNode } from "./OutcomesNode/OutcomesNode";
+import { PlainNode } from "./PlainNode/PlainNode";
+import { SeasonalityCovariateSettingsNode } from "./SeasonalityCovariateSettingsNode/SeasonalityCovariateSettingsNode";
+import { SelfControlledCaseSeriesAnalysisNode } from "./SelfControlledCaseSeriesAnalysisNode/SelfControlledCaseSeriesAnalysisNode";
+import { SelfControlledCaseSeriesNode } from "./SelfControlledCaseSeriesNode/SelfControlledCaseSeriesNode";
+import { StudyPopulationSettingsNode } from "./StudyPopulationSettingsNode/StudyPopulationSettingsNode";
+import { TargetComparatorOutcomesNode } from "./TargetComparatorOutcomesNode/TargetComparatorOutcomesNode";
+import { TimeAtRiskNode } from "./TimeAtRiskNode/TimeAtRiskNode";
+import { TreatmentPatternsNode } from "./TreatmentPatternsNode/TreatmentPatternsNode";
+import {
+  CensorType,
+  FilterTreatments,
+  IncludeTreatments,
+} from "./TreatmentPatternsNode/TreatmentPatternsType";
+import {
+  NodeChoiceAttr,
+  NodeTag,
+  NodeType,
+  NodeTypeChoice,
+  NodeConnection,
+  HandleIOType,
+  HandleIODict,
+} from "./type";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -46,6 +55,7 @@ export const NODE_TYPES: {
   target_comparator_outcomes_node: TargetComparatorOutcomesNode,
   cohort_method_analysis_node: CohortMethodAnalysisNode,
   cohort_method_node: CohortMethodNode,
+  kaplan_meier_node: KaplanMeierNode,
   era_covariate_settings_node: EraCovariateSettingsNode,
   calendar_time_covariate_settings_node: CalendarTimeCovariateSettingsNode,
   seasonality_covariate_settings_node: SeasonalityCovariateSettingsNode,
@@ -60,41 +70,7 @@ export const NODE_TYPES: {
   exposure_node: ExposureNode,
   strategus_node: PlainNode,
   treatment_patterns_node: TreatmentPatternsNode,
-  cohort_event_node: CohortSelectionNode,
-  cohort_target_node: CohortSelectionNode,
-  cohort_exit_node: CohortSelectionNode,
-};
-
-export const NODE_COLORS: {
-  [key in NodeType]: string;
-} = {
-  cohort_generator_node: "grey",
-  cohort_diagnostic_node: "grey",
-  negative_control_outcome_cohort_node: "lime",
-  cohort_incidence_node: "cyan",
-  cohort_incidence_target_cohorts_node: "aquamarine",
-  time_at_risk_node: "wheat",
-  default_covariate_settings_node: "darkgreen",
-  characterization_node: "orange",
-  target_comparator_outcomes_node: "indigo",
-  cohort_method_analysis_node: "lavender",
-  cohort_method_node: "mediumpurple",
-  era_covariate_settings_node: "chocolate",
-  calendar_time_covariate_settings_node: "chocolate",
-  seasonality_covariate_settings_node: "chocolate",
-  self_controlled_case_series_analysis_node: "red",
-  self_controlled_case_series_node: "darkred",
-  patient_level_prediction_node: "magenta",
-  study_population_settings_node: "lightpink",
-  nco_cohort_set_node: "blue",
-  outcomes_node: "green",
-  cohort_definition_set_node: "grey",
-  exposure_node: "lightgrey",
-  strategus_node: "black",
-  treatment_patterns_node: "salmon",
-  cohort_event_node: "teal",
-  cohort_target_node: "teal",
-  cohort_exit_node: "teal",
+  cohort_node: CohortSelectionNode,
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -106,6 +82,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       incremental: true,
       generateStats: true,
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   cohort_diagnostic_node: {
     title: "Cohort Diagnostic Module Specifications",
@@ -123,6 +105,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       runTemporalCohortCharacterization: true,
       incremental: false,
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   negative_control_outcome_cohort_node: {
     title: "Negative Control Outcome Cohort Shared Resource Specifications",
@@ -149,6 +137,22 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         tars: [],
       },
     },
+    inputs: [
+      {
+        label: "Cohort Incidence Target Cohorts",
+        handleType: HandleIOType.CohortIncidenceTargetCohorts,
+      },
+      {
+        label: "Time At Risk",
+        handleType: HandleIOType.TimeAtRisk,
+      },
+    ],
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   cohort_incidence_target_cohorts_node: {
     title: "Cohort Incidence Target Cohorts",
@@ -158,6 +162,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       cohortId: 3,
       cleanWindow: 9999,
     },
+    outputs: [
+      { label: "Cohort Incidence", handleType: HandleIOType.CohortIncidence },
+    ],
   },
   time_at_risk_node: {
     title: "Time At Risk",
@@ -168,6 +175,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       startWith: "start",
       endWith: "end",
     },
+
+    outputs: [
+      {
+        label: "Cohort Incidence",
+        handleType: HandleIOType.CohortIncidence,
+      },
+    ],
   },
   default_covariate_settings_node: {
     title: "Covariate Settings",
@@ -180,6 +194,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       addDescendantsToInclude: false,
       includedCovariateIds: [],
     },
+    outputs: [
+      {
+        label: "Patient Level Prediction",
+        handleType: HandleIOType.PatientLevelPrediction,
+      },
+    ],
   },
   characterization_node: {
     title: "Characterization",
@@ -200,11 +220,17 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         },
       ],
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   target_comparator_outcomes_node: {
     title: "Target Compartor Outcomes",
     description: "Run target comparator outcomes code",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       targetId: 1,
       comparatorId: 1,
@@ -213,6 +239,13 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       excludedCovariateConceptIds: [],
       includedCovariateConceptIds: [],
     },
+    inputs: [
+      {
+        label: "Outcomes",
+        handleType: HandleIOType.Outcomes,
+      },
+    ],
+    outputs: [{ handleType: HandleIOType.TargetComparatorOutcomes }],
   },
   cohort_method_analysis_node: {
     title: "Cohort Method Analysis",
@@ -235,16 +268,69 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         cvRepetition: 1,
       },
     },
+    inputs: [
+      {
+        label: "Study Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+      // default covariate settings node
+    ],
+    outputs: [
+      {
+        label: "Cohort Method",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
   },
   cohort_method_node: {
     title: "Cohort Method",
     description: "Run cohort method code.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
       cohortMethodConfigs: [],
     },
+    inputs: [
+      {
+        label: "Target Comparator Outcomes",
+        handleType: HandleIOType.TargetComparatorOutcomes,
+      },
+      {
+        label: "CM Analysis",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
+    outputs: [
+      { label: "Strategus", handleType: HandleIOType.ModuleSpecification },
+    ],
+  },
+  kaplan_meier_node: {
+    title: "Kaplan-Meier Analysis",
+    description: "Run Kaplan-Meier survival analysis code.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      kaplanMeierArgs: {
+        targetCohortId: 1,
+        outcomeCohortId: 2,
+        analysisType: "single_event",
+        competingOutcomeCohortId: undefined,
+        estimateGap: 30,
+        strataCohorts: [],
+      },
+    },
+    inputs: [
+      {
+        label: "Study Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+    ],
+    outputs: [
+      {
+        label: "Cohort Method Analysis",
+        handleType: HandleIOType.CohortMethodAnalysis,
+      },
+    ],
   },
   era_covariate_settings_node: {
     title: "Era Covariate Settings",
@@ -264,6 +350,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       profileLikelihood: true,
       exposureOfInterest: true,
     },
+    outputs: [
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
+    ],
   },
   calendar_time_covariate_settings_node: {
     title: "Calendar Time Covariate Settings",
@@ -274,6 +366,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       allowRegularization: true,
       computeConfidenceIntervals: false,
     },
+    outputs: [
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
+    ],
   },
   seasonality_covariate_settings_node: {
     title: "Seasonality Covariate Settings",
@@ -284,6 +382,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       allowRegularization: true,
       computeConfidenceIntervals: false,
     },
+    outputs: [
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
+    ],
   },
   self_controlled_case_series_analysis_node: {
     title: "Self Controlled Case Series Analysis",
@@ -313,6 +417,22 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         noiseLevel: "quiet",
       },
     },
+    inputs: [
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
+      {
+        label: "Study Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+    ],
+    outputs: [
+      {
+        label: "Study Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+    ],
   },
   self_controlled_case_series_node: {
     title: "Self Controlled Case Series",
@@ -321,6 +441,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     defaultData: {
       combineDataFetchAcrossOutcomes: false,
     },
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   patient_level_prediction_node: {
     title: "Patient Level Prediction",
@@ -328,11 +454,29 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium.",
     tag: NodeTag.Experimental,
     defaultData: {},
+    inputs: [
+      { label: "Exposures", handleType: HandleIOType.Exposure },
+      {
+        label: "Population Settings",
+        handleType: HandleIOType.StudyPopulation,
+      },
+      {
+        label: "Covariate Settings",
+        handleType: HandleIOType.CovariateSettings,
+      },
+    ],
+    outputs: [
+      {
+        label: "Strategus",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
   },
   study_population_settings_node: {
     title: "Study Population Settings",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Configure risk windows, time at risk, and analysis-specific population parameters.",
+    tag: NodeTag.Stable,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
@@ -353,6 +497,12 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         minTimeAtRisk: 1,
       },
     },
+    outputs: [
+      {
+        label: "Population",
+        handleType: HandleIOType.StudyPopulation,
+      },
+    ],
   },
   nco_cohort_set_node: {
     title: "NCO Cohort Set",
@@ -362,14 +512,16 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   outcomes_node: {
     title: "Outcomes",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    description:
+      "Define clinical outcomes and endpoints for the study analysis.",
+    tag: NodeTag.Stable,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
     },
+    outputs: [{ handleType: HandleIOType.Outcomes }],
   },
   cohort_definition_set_node: {
     title: "Cohort Definition Set",
@@ -385,12 +537,24 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       outcomeOfInterestIds: [],
       exposureOfInterestIds: [],
     },
+    outputs: [
+      {
+        handleType: HandleIOType.Exposure,
+      },
+    ],
   },
   strategus_node: {
     title: "Strategus",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    tag: NodeTag.Experimental,
+    tag: NodeTag.Stable,
     defaultData: {},
+    inputs: [
+      {
+        label: "Module Specifications",
+        handleType: HandleIOType.ModuleSpecification,
+      },
+    ],
+    outputs: [],
   },
   treatment_patterns_node: {
     title: "Treatment Patterns",
@@ -411,35 +575,83 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       minCellCount: 5,
       censorType: CensorType.MinCellCount,
     },
+    inputs: [
+      {
+        label: "Target Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+      {
+        label: "Event Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+      {
+        label: "Exit Cohorts",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
+    outputs: [],
   },
-  cohort_event_node: {
-    title: "Event Cohort Selection",
-    description: "Select event cohorts for analysis.",
+  cohort_node: {
+    title: "Cohort Selection",
+    description: "Select cohort for analysis.",
     tag: NodeTag.Stable,
     defaultData: {
       type: "event",
       cohorts: [],
     },
-  },
-  cohort_target_node: {
-    title: "Target Cohort Selection",
-    description: "Select target cohorts for analysis.",
-    tag: NodeTag.Stable,
-    defaultData: {
-      type: "target",
-      cohorts: [],
-    },
-  },
-  cohort_exit_node: {
-    title: "Exit Cohort Selection",
-    description: "Select exit cohorts for analysis.",
-    tag: NodeTag.Stable,
-    defaultData: {
-      type: "exit",
-      cohorts: [],
-    },
+    outputs: [
+      {
+        label: "Treatment Patterns",
+        handleType: HandleIOType.Cohort,
+      },
+    ],
   },
 };
+
+type HandleDirection = "inputs" | "outputs";
+
+const getNodeHandleTypeMap = (direction: HandleDirection = "outputs") => {
+  const handleTypeMap: Record<HandleIOType, Set<NodeType>> = {} as Record<
+    HandleIOType,
+    Set<NodeType>
+  >;
+
+  // if handleDirection is output, should get the inputs
+  // if handleDirection is input, should get the outputs
+  const directionMap = {
+    inputs: "outputs",
+    outputs: "inputs",
+  };
+
+  Object.entries(NodeChoiceMap).forEach(([key, node]) => {
+    const handles = node[directionMap[direction]];
+    handles?.forEach((handle: NodeConnection) => {
+      if (!handleTypeMap[handle.handleType]) {
+        handleTypeMap[handle.handleType] = new Set<NodeType>();
+      }
+      handleTypeMap[handle.handleType].add(key as NodeType);
+    });
+  });
+
+  return handleTypeMap;
+};
+
+export const outputHandleTypeMap = getNodeHandleTypeMap("outputs");
+export const inputHandleTypeMap = getNodeHandleTypeMap("inputs");
+
+// Color of the node is based on the output handle type
+export const NODE_COLORS: Record<NodeType, string> = Object.keys(
+  NodeChoiceMap
+).reduce((acc, nodeType) => {
+  const outputHandles = NodeChoiceMap[nodeType as NodeType]?.outputs;
+  if (outputHandles && outputHandles.length > 0) {
+    const handleType = outputHandles[0].handleType;
+    acc[nodeType as NodeType] = HandleIODict[handleType]?.color ?? "#999fcb";
+  } else {
+    acc[nodeType as NodeType] = "#999fcb"; // default color if no output handle
+  }
+  return acc;
+}, {} as Record<NodeType, string>);
 
 export const getNodeColors = (node: Node<NodeDataState>) => {
   if (node.type && Object.keys(NODE_COLORS).includes(node.type)) {
@@ -448,13 +660,8 @@ export const getNodeColors = (node: Node<NodeDataState>) => {
   return "#999fcb";
 };
 
-export const getNodeClassName = (node: Node<NodeDataState>) => {
-  if (node.type === "start") {
-    return "node--round";
-  }
-  return "";
-};
+export const getNodeClassName = () => "node";
 
-export type { NodeType };
 export * from "./SelectNodeTypes/SelectNodeTypesDialog";
 export * from "./type";
+export type { NodeType };

@@ -1,19 +1,26 @@
-import React, { ChangeEvent, FC, useCallback, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useState, useMemo } from "react";
 import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
-import { NODE_COLORS, NodeChoiceMap } from "../index";
+import {
+  NodeChoiceMap,
+  NodeType,
+  inputHandleTypeMap,
+  outputHandleTypeMap,
+} from "../index";
 import { NodeTag, NodeTypeChoice } from "../type";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
   extends Omit<DialogProps, "onClose"> {
   onClose: (nodeType?: NodeTypeChoice) => void;
-  connectorType?: string;
+  handleType: "input" | "output";
+  handleNodeType?: string;
 }
 
 export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   onClose,
-  connectorType,
+  handleType, // this should be renamed to handle direction type since its only "input" or "output"
+  handleNodeType,
   ...props
 }) => {
   const [hideExperimental, setHideExperimental] = useState(true);
@@ -24,6 +31,13 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     },
     [onClose]
   );
+
+  const nodesToSelect: string[] = useMemo(() => {
+    if (!handleNodeType) return Object.keys(NodeChoiceMap);
+    return handleType === "input"
+      ? Array.from(inputHandleTypeMap[handleNodeType])
+      : Array.from(outputHandleTypeMap[handleNodeType]);
+  }, [handleNodeType, handleType]);
 
   return (
     <Dialog
@@ -42,14 +56,11 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       {...props}
     >
       <Box className="select-node-type-dialog__content">
-        {Object.keys(NodeChoiceMap)
+        {nodesToSelect
           .filter((nodeType: NodeTypeChoice) =>
             hideExperimental
               ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
               : true
-          )
-          .filter((nodeType: NodeTypeChoice) =>
-            connectorType ? NODE_COLORS[nodeType] === connectorType : true
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection
