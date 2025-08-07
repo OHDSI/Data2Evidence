@@ -80,6 +80,11 @@ jobs:
           sudo systemctl start postgresql
           sudo systemctl enable postgresql
 
+          # create runner role
+          sudo -u postgres psql -c "CREATE ROLE runner WITH LOGIN PASSWORD 'Toor1234';"
+
+          # Set PostgreSQL connection string
+          echo "DATABASE_URL=postgresql://postgres:Toor1234@localhost:5432/postgres" >> $GITHUB_ENV
       - name: Verify PostgreSQL connection
         env:
           PGHOST: localhost
