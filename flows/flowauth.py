@@ -1,11 +1,3 @@
-### Develop plugin that needs Authentication Token
-The pipeline triggers the flow job first and subsequently sends the bearer token to the running flow job, for testing flows that requires bearer token.
-
-- Replace `deployment_id`, `parameters`, and `bearer_token` from jobs portal.
-- Run the following pipeline below.
-
-
-```
 import json, requests
 
 class PluginsAuthTokenTest():
@@ -82,5 +74,4 @@ if __name__ == "__main__":
     plugin_test = PluginsAuthTokenTest(deployment_id=deployment_id, parameters=parameters, bearer_token=bearer_token)
     plugin_test.create_flow_input()
     print("Flow input created successfully.")
-```
     

@@ -39,8 +39,6 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
     """
     pandas2ri.activate()
     numpy2ri.activate()
-    logger = get_run_logger()
-    logger.info('Getting cohort definitions from Phenotype Library (no DB connection)')
     
     # Set cohorts_id string for R
     if cohorts_id == 'default':
@@ -61,7 +59,6 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
                     for (i in 1:nrow(cohortDefinitionSets)) {{
                         cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschema_name))
                     }}
-                    print('Complete creating cohortDefinitionSets')
                 }} else if (class(cohorts_ID) == "integer") {{
                     if (921 %in% cohorts_ID) {{
                         print(paste0(c("Phenotype 921 is not supported currently, only the following phenotype id will run through:", cohorts_ID), collapse=" "))
@@ -71,7 +68,6 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
                     for (i in 1:nrow(cohortDefinitionSets)) {{
                         cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschema_name))
                     }}
-                    print('Complete creating cohortDefinitionSets')
                 }} else {{
                     print('Invalid cohorts_ID, should be either "default" or integer string')
                 }}
@@ -94,6 +90,7 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
                 )
             }}
         ''')
+        cohort_definitions_r = robjects.r['cohortDefinitionSets']
         r_result = robjects.r['result_list']
     
         # Convert R result to Python list
@@ -106,7 +103,7 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
                 'sql': str(r_result[i].rx2('sql')[0])
             }
             cohort_definitions.append(cohort_def)
-        return cohort_definitions
+        return {"cohort_definitions": cohort_definitions, "cohort_definitions_r": cohort_definitions_r}
 
 @task(log_prints=True)
 def create_cohort_definitions(cohort_definitions, dataset_id, user_name):
@@ -124,20 +121,16 @@ def create_cohort_definitions(cohort_definitions, dataset_id, user_name):
     return created_cohorts
 
 @task(log_prints=True)
-def materialize_cohort_definitions(cohort_definitions, dbdao, cdmschema_name, cohortschema_name, cohorttable_name, user):
+def materialize_cohort_definitions(dbdao, cohort_definitions_r, cdmschema_name, cohortschema_name, cohorttable_name, user):
     """Materialize cohort definitions into the database."""
-    logger = get_run_logger()
-    logger.info('Materializing cohort definitions into the database')
-    
     # Setup database connection for R
     set_db_driver_env_string = dbdao.set_db_driver_env()
     set_connection_string = dbdao.get_database_connector_connection_string(user_type=user)
     
-    # Convert Python cohort definitions back to R format
-    cohort_ids = [str(cd['cohortId']) for cd in cohort_definitions]
-    cohort_ids_str = ','.join(cohort_ids)
-    
     with robjects.conversion.localconverter(robjects.default_converter):
+        # Assign the R object to the current R environment
+        robjects.r.assign('cohortDefinitionSets', cohort_definitions_r)
+        
         robjects.r(f'''
             library('CohortGenerator')
             library('PhenotypeLibrary')
@@ -146,17 +139,20 @@ def materialize_cohort_definitions(cohort_definitions, dbdao, cdmschema_name, co
             {set_connection_string}
             
             create_replica <- function(connection, cohortschema, cohort_table_name) {{
+                # Get table names first
                 getTablesSQL <- paste0("SELECT tablename FROM pg_tables WHERE schemaname = '", cohortschema, "' AND tablename LIKE '", cohort_table_name, "%'")
                 tables <- DatabaseConnector::querySql(connection, getTablesSQL)
+
+                # Set replica identity for each table individually
                 for(i in 1:nrow(tables)) {{
                     tableName <- tables$TABLENAME[i]
                     replicaSql <- paste0("ALTER TABLE ", cohortschema, ".", tableName, " REPLICA IDENTITY FULL")
                     DatabaseConnector::executeSql(connection, replicaSql)
                 }}
-                print('Complete setting replica identity for phenotype tables')
             }}
 
             create_cohorts <- function(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets) {{
+                # Create the cohort tables to hold the cohort generation results
                 cohortTableNames <- CohortGenerator::getCohortTableNames(cohortTable = cohort_table_name)
                 CohortGenerator::createCohortTables(connection = connection,
                                                     cohortDatabaseSchema = cohortschema,
@@ -164,107 +160,88 @@ def materialize_cohort_definitions(cohort_definitions, dbdao, cdmschema_name, co
                                     
                 create_replica(connection, cohortschema, cohort_table_name)
 
+                # Generate the cohorts
                 cohortsGenerated <- CohortGenerator::generateCohortSet(connection = connection,
                                                                     cdmDatabaseSchema = cdmschema,
                                                                     cohortDatabaseSchema = cohortschema,
                                                                     cohortTableNames = cohortTableNames,
                                                                     cohortDefinitionSet = cohortDefinitionSets)
 
+                # Get the cohort counts
                 cohortCounts <- CohortGenerator::getCohortCounts(connection = connection,
                                                                 cohortDatabaseSchema = cohortschema,
                                                                 cohortTable = cohortTableNames$cohortTable)
             
-                print(cohortCounts)
-                print('Complete generating the cohort tables')
 
-                print("Dropping temporary cohort stats tables")
                 CohortGenerator::dropCohortStatsTables(
                 connection = connection,
                 cohortDatabaseSchema = cohortschema,
                 cohortTableNames = cohortTableNames
                 )
-
-                DatabaseConnector::insertTable(
-                    connection = connection,
-                    databaseSchema = cohortschema,
-                    tableName = paste0("{cohorttable_name}", "_cohortgenerated"),
-                    data = cohortsGenerated,
-                    createTable = TRUE,
-                    tempTable = FALSE
-                )
-                print(paste0("Complete saving cohort table to ", cohortschema))
-
                 return(list(cohortsGenerated=cohortsGenerated, cohortCounts=cohortCounts))
             }}
 
-            create_result_tables <- function(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets) {{
+            create_result_tables <- function(connection, cohortschema, cohort_table_name, cohortDefinitionSets) {{
                 cohorts_id <- cohortDefinitionSets$cohortId
                 sql <- paste0("SELECT ROW_NUMBER() OVER (ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID) AS phenotype_result_id, SUBJECT_ID as person_id, COHORT_DEFINITION_ID as phenotype_id, cohort_start_date, cohort_end_date FROM ", cohortschema,".", cohort_table_name, " ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID")
                 result_df <- DatabaseConnector::querySql(connection=connection, sql=sql)
-                
+                # remove raw cohort tables
                 DatabaseConnector::dbRemoveTable(
                     conn = connection,
                     name = cohort_table_name,
                     databaseSchema = cohortschema
                     )
 
+                # save result_df
                 DatabaseConnector::insertTable(
                     connection = connection,
                     databaseSchema = cohortschema,
-                    tableName = paste0("{cohorttable_name}","_result_all"),
+                    tableName = paste0(cohort_table_name,"_result_all"),
                     data = result_df,
                     createTable = TRUE,
                     tempTable = FALSE
                 )
-                sql <- paste0("ALTER TABLE ", cohortschema, ".", "{cohorttable_name}", "_result_all ADD PRIMARY KEY (phenotype_result_id);")
+                sql <- paste0("ALTER TABLE ", cohortschema, ".", cohort_table_name, "_result_all ADD PRIMARY KEY (phenotype_result_id);")
                 DatabaseConnector::executeSql(connection=connection, sql=sql)
 
+                # Save master table, showHidden=TRUE, display each required cohort in master table
                 master_table <- data.frame(getPhenotypeLog(cohorts_id, showHidden=TRUE)) 
                 DatabaseConnector::insertTable(
                     connection = connection,
                     databaseSchema = cohortschema,
-                    tableName = paste0("{cohorttable_name}","_result_master"),
+                    tableName = paste0(cohort_table_name,"_result_master"),
                     data = master_table,
                     createTable = TRUE,
                     tempTable = FALSE
                 )
-                print(paste0("Complete saving result table to ", cohortschema))
             }}
 
             connection <- DatabaseConnector::connect(connectionDetails)
             cdmschema <- '{cdmschema_name}'
             cohortschema <- '{cohortschema_name}'
             cohort_table_name <- '{cohorttable_name}'
-            
-            # Recreate cohortDefinitionSets from the provided cohort IDs
-            cohorts_id <- as.integer(c({cohort_ids_str}))
-            cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(cohorts_id)
-            
             cohorts <- create_cohorts(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets)
-            create_result_tables(connection, cdmschema, cohortschema, cohort_table_name, cohortDefinitionSets)
+            create_result_tables(connection, cohortschema, cohort_table_name, cohortDefinitionSets)
             
             DatabaseConnector::disconnect(connection)
         ''')
-
-    logger.info('Cohort definitions materialized successfully')
 
 @flow(log_prints=True)
 def phenotype_plugin(options: PhenotypeOptionsType):
     # Setup rpy2 logger
     logging.basicConfig()
     rpy2_logger.setLevel(logging.DEBUG)
-
     logger = get_run_logger()
-    logger.info('Running Phenotype Plugin')
+    logger.info('******************* Running Phenotype Plugin *******************')
 
     database_code = options.database_code
     cdmschema_name = options.cdmschema_name
-    cohortschema_name = options.cdmschema_name
-    cohorttable_name = 'phenotypes'  # Fix the prefix of the phenotype result tables
-    cohorts_id = options.cohorts_id
+    cohortschema_name = options.cohortschema_name
+    cohorttable_name = 'phenotypes'  # Fixed the prefix of the phenotype result tables
     vocabschema_name = options.vocabschema_name
-    materialize = False #options.materialize
-    dataset_id = "9a8d342e-8958-4386-93c3-69d90f44741f" #options.dataset_id
+    cohorts_id = options.cohorts_id
+    materialize = options.materialize
+    dataset_id = options.dataset_id
     user_name = options.user_name
     use_cache_db = options.use_cache_db
     user = UserType.ADMIN_USER
@@ -273,11 +250,13 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     if cohorts_id != 'default':
         validate_integer_string(cohorts_id)
    
-    logger.info("Getting cohort definitions")
-    cohort_definitions = get_cohort_definitions(
+    coohort_definitions_rst = get_cohort_definitions(
         cohorts_id=cohorts_id,
         vocabschema_name=vocabschema_name
     )
+    logger.info("******************* Complete Retrieving Cohort Definition Sets *******************")
+    cohort_definitions = coohort_definitions_rst['cohort_definitions']
+    cohort_definitions_r = coohort_definitions_rst['cohort_definitions_r']
 
     if materialize:
         logger.info("Materializing cohort definitions to database")
@@ -285,14 +264,14 @@ def phenotype_plugin(options: PhenotypeOptionsType):
         dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
         
         materialize_cohort_definitions(
-            cohort_definitions=cohort_definitions,
+            cohort_definitions_r=cohort_definitions_r,
             dbdao=dbdao,
             cdmschema_name=cdmschema_name,
             cohortschema_name=cohortschema_name,
             cohorttable_name=cohorttable_name,
             user=user
         )
-        logger.info('Phenotype plugin completed - cohorts materialized to database')
+        logger.info("******************* Complete Materializing Cohort *******************")
     else:
         logger.info("Creating cohort definitions")
         created_cohorts = create_cohort_definitions(
@@ -300,4 +279,5 @@ def phenotype_plugin(options: PhenotypeOptionsType):
             dataset_id=dataset_id,
             user_name = user_name
         )
-        logger.info(f'Phenotype plugin completed - {len(created_cohorts)} cohorts created in Atlas')
+        logger.info("******************* Complete Creating Cohort Definition Sets *******************")
+        logger.info(f'{len(created_cohorts)} cohorts created successfully.')
