@@ -1,16 +1,15 @@
 import { ArrowBack, OpenInBrowser, PlayCircleFilled } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Card, RunStudyIcon, TrashIcon } from "@portal/components";
+import { Button, Card, RunStudyIcon, TrashIcon } from "@portal/components";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
-import { usePollingEffect } from "../../../../hooks";
-import { Button } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
-import { StrategusStudy } from "../../../../types/strategusStudy";
 import env from "../../../../env";
+import { usePollingEffect } from "../../../../hooks";
+import { StrategusStudy } from "../../../../types/strategusStudy";
 import "./StudyCard.scss";
 
 interface StudyCardProps {
@@ -253,7 +252,10 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         <div className="study-card__content">
           <div className="study-card__header">
             <div className="study-card__title">
-              <HighlightText text={study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)} searchText={highlightText} />
+              <HighlightText
+                text={(study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)).replace(/_/g, " ")}
+                searchText={highlightText}
+              />
             </div>
             {study.email && (
               <div className="study-card__contact">
@@ -357,7 +359,9 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               <ArrowBack className="study-card__back-icon" />
               <span>Back</span>
             </button>
-            <span className="study-card__viewer-title">Results Viewer - {study.name || study.id}</span>
+            <span className="study-card__viewer-title">
+              Results Viewer - {(study.name || study.id)?.replace(/_/g, " ")}
+            </span>
           </div>
           <iframe
             ref={iframeRef}
