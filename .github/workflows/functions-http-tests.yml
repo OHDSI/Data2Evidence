@@ -64,6 +64,9 @@ jobs:
         with:
           clean: false
 
+      - name: Add /usr/bin to PATH
+        run: echo "export PATH=$PATH:/usr/bin" >> ~/.bashrc && source ~/.bashrc
+
       - name: Setup PostgreSQL
         run: |
           # install and start PG DB
