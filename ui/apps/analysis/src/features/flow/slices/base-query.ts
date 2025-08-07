@@ -20,6 +20,12 @@ export const createBaseQueryFn =
         if (token === null) return headers;
 
         headers.set("Authorization", `Bearer ${token}`);
+
+        const datasetId = pluginMetadata.studyId;
+
+        if (datasetId) {
+          headers.set("datasetid", datasetId);
+        }
         return headers;
       },
     });
