@@ -147,53 +147,60 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
     >
       <Divider />
       <div className="add-user-dialog__content">
-        <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <TextField
-              variant="standard"
-              label={getText(i18nKeys.ADD_USER_DIALOG__USERNAME)}
-              value={formData.username}
-              onChange={(event) => setFormData((formData) => ({ ...formData, username: event.target.value }))}
-              helperText={getText(i18nKeys.ADD_USER_DIALOG__USERNAME_HELPER)}
-              error={formError.username.required || formError.username.valid}
-            />
-          </FormControl>
-        </div>
-        <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleAdd();
+          }}
+        >
+          <div className="u-padding-vertical--normal">
+            <FormControl fullWidth>
               <TextField
-                fullWidth
-                type={passwordShown ? "text" : "password"}
                 variant="standard"
-                label={getText(i18nKeys.ADD_USER_DIALOG__PASSWORD)}
-                value={formData.password}
-                onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
-                error={formError.password.required}
+                label={getText(i18nKeys.ADD_USER_DIALOG__USERNAME)}
+                value={formData.username}
+                onChange={(event) => setFormData((formData) => ({ ...formData, username: event.target.value }))}
+                helperText={getText(i18nKeys.ADD_USER_DIALOG__USERNAME_HELPER)}
+                error={formError.username.required || formError.username.valid}
               />
-              <Tooltip
-                title={
-                  passwordShown
-                    ? getText(i18nKeys.ADD_USER_DIALOG__HIDE_PASSWORD)
-                    : getText(i18nKeys.ADD_USER_DIALOG__SHOW_PASSWORD)
-                }
-              >
-                <IconButton
-                  startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
-                  onClick={handleTogglePassword}
+            </FormControl>
+          </div>
+          <div className="u-padding-vertical--normal">
+            <FormControl fullWidth>
+              <Box display="flex" alignItems="flex-end">
+                <TextField
+                  fullWidth
+                  type={passwordShown ? "text" : "password"}
+                  variant="standard"
+                  label={getText(i18nKeys.ADD_USER_DIALOG__PASSWORD)}
+                  value={formData.password}
+                  onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+                  error={formError.password.required}
                 />
-              </Tooltip>
-              <Button
-                text={getText(i18nKeys.ADD_USER_DIALOG__GENERATE)}
-                variant="text"
-                onClick={handleGeneratePassword}
-              />
-            </Box>
-          </FormControl>
-          {formError.password.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-        </div>
+                <Tooltip
+                  title={
+                    passwordShown
+                      ? getText(i18nKeys.ADD_USER_DIALOG__HIDE_PASSWORD)
+                      : getText(i18nKeys.ADD_USER_DIALOG__SHOW_PASSWORD)
+                  }
+                >
+                  <IconButton
+                    startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
+                    onClick={handleTogglePassword}
+                  />
+                </Tooltip>
+                <Button
+                  text={getText(i18nKeys.ADD_USER_DIALOG__GENERATE)}
+                  variant="text"
+                  onClick={handleGeneratePassword}
+                />
+              </Box>
+            </FormControl>
+            {formError.password.required && (
+              <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </div>
+        </form>
       </div>
       <Divider />
       <div className="button-group-actions">

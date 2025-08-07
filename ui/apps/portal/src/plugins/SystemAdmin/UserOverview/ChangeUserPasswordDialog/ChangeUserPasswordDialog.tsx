@@ -94,35 +94,42 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       <Divider />
       <div className="change-user-password-dialog__content">
         <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
-              <TextField
-                fullWidth
-                type={passwordShown ? "text" : "password"}
-                variant="standard"
-                label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
-                value={formData.password}
-                onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
-              />
-              <Tooltip
-                title={
-                  passwordShown
-                    ? getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD)
-                    : getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__SHOW_PASSWORD)
-                }
-              >
-                <IconButton
-                  startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
-                  onClick={handleTogglePassword}
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleUpdate();
+            }}
+          >
+            <FormControl fullWidth>
+              <Box display="flex" alignItems="flex-end">
+                <TextField
+                  fullWidth
+                  type={passwordShown ? "text" : "password"}
+                  variant="standard"
+                  label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
+                  value={formData.password}
+                  onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
                 />
-              </Tooltip>
-              <Button
-                text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__GENERATE)}
-                variant="text"
-                onClick={handleGeneratePassword}
-              />
-            </Box>
-          </FormControl>
+                <Tooltip
+                  title={
+                    passwordShown
+                      ? getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD)
+                      : getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__SHOW_PASSWORD)
+                  }
+                >
+                  <IconButton
+                    startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
+                    onClick={handleTogglePassword}
+                  />
+                </Tooltip>
+                <Button
+                  text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__GENERATE)}
+                  variant="text"
+                  onClick={handleGeneratePassword}
+                />
+              </Box>
+            </FormControl>
+          </form>
         </div>
       </div>
       <Divider />
