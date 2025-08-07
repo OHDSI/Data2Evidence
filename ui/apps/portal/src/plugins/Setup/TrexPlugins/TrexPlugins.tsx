@@ -1,4 +1,3 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Table, TableBody, TableContainer, TableHead, TablePagination } from "@mui/material";
 import {
   Box,
@@ -11,11 +10,12 @@ import {
   Title,
   TrashIcon,
 } from "@portal/components";
-import { useFeedback, useTranslation } from "../../../contexts";
+import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
-import { CloseDialogType, TrexPlugin } from "../../../types";
+import { useFeedback, useTranslation } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
 import { useDialogHelper } from "../../../hooks";
+import { CloseDialogType, TrexPlugin } from "../../../types";
 import { ChipEllipsis } from "./ChipEllipsis";
 import TrexPluginInstallDialog from "./TrexPluginInstallDialog/TrexPluginInstallDialog";
 import TrexPluginUninstallDialog from "./TrexPluginUninstallDialog/TrexPluginUninstallDialog";
@@ -153,6 +153,7 @@ export const TrexPlugins: FC = () => {
             <col style={{ width: 200 }} />
             <col style={{ width: 200 }} />
             <col style={{ width: 200 }} />
+            <col style={{ width: 300 }} />
             <col />
             <col />
           </colgroup>
@@ -162,6 +163,7 @@ export const TrexPlugins: FC = () => {
               <TableCell>{getText(i18nKeys.TREX_PLUGINS__VERSION)}</TableCell>
               <TableCell>{getText(i18nKeys.TREX_PLUGINS__LATEST_VERSION)}</TableCell>
               <TableCell>{getText(i18nKeys.TREX_PLUGINS__URL)}</TableCell>
+              <TableCell>{getText(i18nKeys.TREX_PLUGINS__DESCRIPTION)}</TableCell>
               <TableCell>{getText(i18nKeys.TREX_PLUGINS__STATUS)}</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -169,7 +171,7 @@ export const TrexPlugins: FC = () => {
           <TableBody>
             {(!data || data.length === 0) && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   {getText(i18nKeys.TREX_PLUGINS__NO_DATA)}
                 </TableCell>
               </TableRow>
@@ -180,6 +182,7 @@ export const TrexPlugins: FC = () => {
                 <TableCell>{row.version && <ChipEllipsis label={row.version} />}</TableCell>
                 <TableCell>{row.registry_version && <ChipEllipsis label={row.registry_version} />}</TableCell>
                 <TableCell>{row.url}</TableCell>
+                <TableCell>{row.description || "-"}</TableCell>
                 <TableCell>
                   {installing === row.name ? (
                     <Loader type="horizontal" text={getText(i18nKeys.TREX_PLUGINS__INSTALLING)} />
