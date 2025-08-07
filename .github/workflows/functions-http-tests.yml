@@ -67,8 +67,8 @@ jobs:
       - name: Setup PostgreSQL
         run: |
           # install and start PG DB
-          sudo apt update
-          sudo apt install postgresql postgresql-contrib -y
+          sudo apt-get update
+          sudo apt-get install postgresql postgresql-contrib -y
           sudo systemctl start postgresql
           sudo systemctl enable postgresql
           # create the test user and grant permission
