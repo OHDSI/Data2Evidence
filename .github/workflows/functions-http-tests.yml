@@ -79,26 +79,6 @@ jobs:
           sudo apt-get install postgresql postgresql-contrib -y
           sudo systemctl start postgresql
           sudo systemctl enable postgresql
-          # create the test user and grant permission
-          sudo -u postgres psql
-          psql -c "
-            CREATE DATABASE test_db;
-            CREATE USER test_user WITH PASSWORD 'Toor1234';
-            GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user;
-          "
-          # update the pg config for local access 
-          PG_CONF_FILE_PATH=$(psql -U "username" -d "dbname" -t -c "show hba_file;")
-          echo "Original PG conf file:"
-          cat $PG_CONF_FILE_PATH
-          {
-            sed -n '1p' $PG_CONF_FILE_PATH
-            echo "local  all all trust   "
-            tail -n +2 file.txt
-          } > tmp && mv tmp $PG_CONF_FILE_PATH
-          echo "Updated PG conf file:"
-          cat $PG_CONF_FILE_PATH
-          # reload the PG DB for the config changes to take efffect
-          sudo systemctl reload postgresql
 
       - name: Verify PostgreSQL connection
         env:
