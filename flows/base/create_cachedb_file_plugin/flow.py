@@ -25,13 +25,14 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
 
     duckdb_database_name = options.databaseCode
     use_cache_db = options.use_cache_db
-    batch_size = options.batch_size
+    batch_size = options.get_batch_size() if hasattr(options, 'get_batch_size') else 100000
+    print(f"Batch size: {batch_size}")
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=duckdb_database_name)
     db_credentials = dbdao.tenant_configs
-    if options.create_duckdb_file:
+    if hasattr(options, 'get_create_duckdb_file') and options.get_create_duckdb_file():
         # Check if dialect is supported by duckdb
         check_supported_duckdb_dialects(dbdao.dialect, logger)
 
@@ -103,7 +104,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     duckdb_database_name = "cdw_config_svc_validation_schema"
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
-    if options.create_duckdb_file:
+    if hasattr(options, 'get_create_duckdb_file') and options.get_create_duckdb_file():
         duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, True)
 
         # Check if dialect is supported by duckdb
