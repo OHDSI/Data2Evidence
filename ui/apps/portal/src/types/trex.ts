@@ -1,6 +1,6 @@
 export interface TrexPlugin {
   name: string;
-  description?: string;
+  description: string;
   registry_version: string;
   version: string;
   url: string;
