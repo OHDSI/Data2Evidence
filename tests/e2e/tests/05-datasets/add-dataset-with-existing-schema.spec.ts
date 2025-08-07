@@ -44,7 +44,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(60000)
 
   // Copy the schema name for later use
-  const schemaText = await page.getByRole('cell', { name: /^CDM_NEWTESTDATASET_/ }).textContent()
+  const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).textContent()
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
