@@ -11,6 +11,14 @@ export default class StrategusAnalysisService {
         this.strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     }
 
+    async getAllAnalysis() {
+        const analysisList = await this.strategusAnalysisRepository.find();
+        if (!analysisList || analysisList.length === 0) {
+            throw new Error("No analysis specifications found");
+        }
+        return analysisList;
+    }
+
     async getStudyAnalysis(studyId: string) {
         const analysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }

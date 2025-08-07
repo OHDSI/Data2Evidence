@@ -13,6 +13,19 @@ export default class StrategusAnalysisRouter {
     this.router.post("/", this.createStrategusAnalysis.bind(this));
     this.router.put("/", this.createStrategusAnalysis.bind(this));
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
+    this.router.get("/", this.getAllStrategusAnalysis.bind(this));
+  }
+
+  private async getAllStrategusAnalysis(req: Request, res: Response) {
+    try {
+      const analysisList = await this.strategusAnalysisService.getAllAnalysis();
+      res.status(200).json(analysisList);
+    } catch (error) {
+      console.error("Error fetching all strategus analysis specifications:", error);
+      res.status(500).json({
+        message: "An error occurred while fetching all analysis specifications",
+      });
+    }
   }
 
   private async getStrategusAnalysis(req: Request, res: Response) {
