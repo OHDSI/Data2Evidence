@@ -1,13 +1,18 @@
+import { ResearcherStudyMetadata } from "@portal/plugin";
 import React, { FC } from "react";
 import * as ReactDOM from "react-dom/client";
-import { SystemAdminPageMetadata } from "@portal/plugin";
-import { plugin } from "./module";
 import { FlowAppProps } from "./FlowApp";
+import { plugin } from "./module";
 
-const mockMetadata: SystemAdminPageMetadata<void> = {
-  system: "Local",
+const mockMetadata: ResearcherStudyMetadata = {
   userId: "Mock user",
   getToken: () => Promise.resolve("MockToken"),
+  tenantId: "mock-tenant",
+  studyId: "mock-dataset-id",
+  releaseId: "mock-release",
+  data: {},
+  fetchMenu: () => {},
+  subFeatureFlags: {},
 };
 
 const pageProps: FlowAppProps = {
