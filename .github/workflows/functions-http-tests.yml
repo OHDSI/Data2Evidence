@@ -64,6 +64,12 @@ jobs:
         with:
           clean: false
 
+      - name: Print OS details
+        run: |
+          uname -a
+          lsb_release -a
+          cat /etc/os-release
+
       - name: Add /usr/bin to PATH
         run: echo "export PATH=$PATH:/usr/bin" >> ~/.bashrc && source ~/.bashrc
 
