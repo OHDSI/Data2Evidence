@@ -79,7 +79,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
             f"Schema '{schema_name}' succesfully copied into duckdb database file!")
 
 @task(log_prints=True)
-def copy_bigquery_schema_to_cache(con, dbdao: any):
+def copy_bigquery_schema_to_cache(con, dbdao: any, batch_size):
     logger = get_run_logger()
     # Get credentials for database code
     db_credentials = dbdao.tenant_configs
@@ -132,7 +132,6 @@ def copy_bigquery_schema_to_cache(con, dbdao: any):
             column_names = [col['column_name'] for col in columns]
             insert_sql = f"INSERT INTO {schema_name}.{table} ({', '.join([f'\"{c}\"' for c in column_names])}) VALUES ({', '.join(['%s'] * len(column_names))})"
             batch = []
-            batch_size = 10000
             row_count = 0
             for row in bq_data_iter:
                 batch.append(tuple(row[c] for c in column_names))

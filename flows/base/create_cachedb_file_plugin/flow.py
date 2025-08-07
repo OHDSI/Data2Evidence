@@ -25,6 +25,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
 
     duckdb_database_name = options.databaseCode
     use_cache_db = options.use_cache_db
+    batch_size = options.batch_size
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
@@ -72,7 +73,7 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 google_service_account_json_path = Secret.load("google-service-account-json").get()
                 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
                 # Create cache schema and copy bigquery schema to cache
-                copy_bigquery_schema_to_cache(cur, dbdao)
+                copy_bigquery_schema_to_cache(cur, dbdao, batch_size)
             else:
                 # Filter out system schemas
                 schemas_to_copy = list(set(dbdao.get_schema_names()) -

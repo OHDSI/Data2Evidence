@@ -62,6 +62,9 @@ class CreateDuckdbDatabaseFileType(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
+    @property
+    def batch_size(self) -> int:
+        return 100000
 
 
 class CreateCDWValidationConfig(BaseModel):
