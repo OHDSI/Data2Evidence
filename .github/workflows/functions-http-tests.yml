@@ -45,8 +45,7 @@ jobs:
   run-http-tests:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on:
-      ["${{ vars.ENVIRONMENT_NAME_HTTP_TESTS }}", self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       TESTSCHEMA: HTTP_${{github.run_id}}
