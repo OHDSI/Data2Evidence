@@ -1,29 +1,27 @@
-import React from "react";
-import { Connection, Handle, NodeProps, Position } from "reactflow";
+import React, { FC } from "react";
+import { Handle, NodeProps, Position } from "reactflow";
 import { HandleType } from "reactflow";
+import { NodeType } from "../../NodeTypes";
 import { AddNodeButton } from "./AddNodeButton/AddNodeButton";
 import "./CustomHandle.scss";
-
 export interface CustomHandleProps {
   name: string;
   color: string;
   type: HandleType;
-  classifier: string;
+  sourceNodeType?: NodeType;
+  handleNodeType: string;
   node: NodeProps<any>;
-  position: Position;
   style: object;
-  onConnect: (connection: Connection) => void;
 }
 export const CustomHandle = ({
   name,
   color,
   type,
-  classifier,
+  handleNodeType,
   node,
-  position,
   style,
-  onConnect,
 }: CustomHandleProps) => {
+  const handleLabel = name.toLowerCase().replace(/\s/g, "_");
   return (
     <div
       style={{
@@ -31,32 +29,38 @@ export const CustomHandle = ({
         border: "1px solid #999fcb",
         borderRadius: "5px", // Rounded corners
         textAlign: "center",
+        right: type === "source" ? "0px" : "auto",
         ...style,
       }}
     >
       <Handle
         className="custom-handle"
         type={type}
-        id={`${node.id}_target_${classifier}_${color}`}
-        position={position}
+        id={`${node.id}_${type}_${handleLabel}_${handleNodeType}`}
+        position={type === "source" ? Position.Right : Position.Left}
         style={{
           position: "absolute",
           background: color,
           borderRadius: "3px",
           width: "14px",
           height: "100%",
-          left: "-10px",
         }}
-        onConnect={onConnect}
-      ></Handle>
+      />
+
       <span style={{ marginRight: "5px", marginLeft: "5px" }}>
         <AddNodeButton
           nodeId={node.id}
-          nodeClassifier={classifier}
-          type={color}
+          nodeHandleLabel={handleLabel}
+          nodeHandleType={handleNodeType}
+          handleType={"input"}
+          type={node.type as NodeType}
         />
-      </span>{" "}
+      </span>
       <span style={{ marginRight: "5px" }}>{name}</span>
     </div>
   );
 };
+
+export const InputHandle: FC<Omit<CustomHandleProps, "type">> = (props) => (
+  <CustomHandle type="target" {...props} />
+);
