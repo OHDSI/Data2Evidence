@@ -5,6 +5,6 @@ export enum CohortType {
 }
 
 export type Cohort = {
-  cohortId: string;
+  cohortId: number;
   cohortName: string;
 };
