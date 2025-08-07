@@ -10,7 +10,7 @@ from .types import PhenotypeOptionsType
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.api.PhenotypeAPI import PheynotypeAPI
+from _shared_flow_utils.api.PhenotypeAPI import PhenotypeAPI
 
 os.environ['plugin_name'] = 'phenotype_plugin'
 
@@ -109,7 +109,7 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
 def create_cohort_definitions(cohort_definitions, dataset_id, user_name):
     """Create cohort definitions using the REST API."""
     logger = get_run_logger()
-    phenotype_api = PheynotypeAPI()
+    phenotype_api = PhenotypeAPI()
     created_cohorts = []
     
     for cohort_def in cohort_definitions:

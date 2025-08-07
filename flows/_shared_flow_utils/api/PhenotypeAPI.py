@@ -4,7 +4,7 @@ import json
 from prefect.logging import get_run_logger
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
-class PheynotypeAPI(BaseAPI):
+class PhenotypeAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("d2e-webapi")  
