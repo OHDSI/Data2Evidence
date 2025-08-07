@@ -164,8 +164,8 @@ interface Datamodel {
   flowId: string;
 }
 
-const FHIR_DB_CODE = "fhir";
-const FHIR_SCHEMA_NAME = "alp_fhir";
+const FHIR_DB_CODE = "alp_fhir"; // dummy value set for the database in FHIR dataset creation
+const FHIR_SCHEMA_NAME = "fhir"; // hardcoded schema name for FHIR dataset creation
 
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
@@ -503,8 +503,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     let fhirProjectId;
 
-    // TODO: add hardcoded value for FHIR database code
-    // TODO: find out schema name for FHIR is required or not?
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
       detail: {
