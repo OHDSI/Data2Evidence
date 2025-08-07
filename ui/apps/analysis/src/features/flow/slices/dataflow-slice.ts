@@ -1,19 +1,19 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
 import {
   DataflowDto,
-  LatestDataflowItemDto,
   DataflowItemDto,
-  SaveDataflowDto,
-  SaveDataflowResponseDto,
-  DuplicateDataflowDto,
-  DuplicateDataflowResponseDto,
+  DeleteDataflowDto,
+  DeleteDataflowResponseDto,
   DeleteDataflowRevisionDto,
   DeleteDataflowRevisionResponseDto,
-  TestDataflowDto,
-  NodeResultDto,
+  DuplicateDataflowDto,
+  DuplicateDataflowResponseDto,
   FlowRunStateDto,
-  DeleteDataflowResponseDto,
-  DeleteDataflowDto,
+  LatestDataflowItemDto,
+  NodeResultDto,
+  SaveDataflowDto,
+  SaveDataflowResponseDto,
+  TestDataflowDto,
 } from "../types";
 import { createBaseQueryFn } from "./base-query";
 
@@ -128,9 +128,10 @@ export const dataflowApiSlice = createApi({
       ],
     }),
     runDataflow: builder.mutation({
-      query: (id) => ({
+      query: ({ id, datasetId }: { id: string; datasetId: string }) => ({
         url: `prefect/analysis-run/${id}`,
         method: "POST",
+        body: { datasetId },
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Dataflow", id },
