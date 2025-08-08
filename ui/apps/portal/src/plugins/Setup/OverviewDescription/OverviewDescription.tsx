@@ -47,6 +47,7 @@ export const OverviewDescription: FC = () => {
       ConfigTypes.PRIVACY_POLICY_DISPLAY,
       ConfigTypes.TERMS_OF_USE,
       ConfigTypes.TERMS_OF_USE_DISPLAY,
+      ConfigTypes.DISCLAIMER_DISPLAY,
     ],
     refetch
   );
