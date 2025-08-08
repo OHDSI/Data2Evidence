@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'patient-analytics-cohort-entry-and-exit'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -50,12 +50,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Exit Select a Filter Card ◢' }).click()
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Go to PA config and uncheck CEE
   await page.getByRole('link', { name: 'Account' }).click()
