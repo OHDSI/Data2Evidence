@@ -160,16 +160,14 @@ export async function createCohort(req: IMRIRequest, res: Response) {
 
         const portalServerAPI = new PortalServerAPI();
         // Get bookmark
-        const bookmarks = await portalServerAPI.getBookmarkById(
+        const bookmark = await portalServerAPI.getBookmarkById(
             token,
             bookmarkId,
             datasetId
         );
-        if (bookmarks.length === 0) {
+        if (!bookmark) {
             throw `No bookmarks found with bookmark_id: ${bookmarkId}`;
         }
-        // Assuming all bookmarks with the same bookmark_id are the same
-        const bookmark = bookmarks[0];
 
         // Get bookmark cohort definition id filtered by dataset id
         const bookmarkCohortDefinitionId: number | undefined =

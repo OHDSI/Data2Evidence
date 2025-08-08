@@ -251,8 +251,7 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
   }
   try {
     const portalAPI = new PortalAPI(token)
-    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId, datasetId)
-    const currentBookmark = bookmarkResult[0]
+    const currentBookmark = await portalAPI.getBookmarkById(bookmarkId, datasetId)
 
     if (!currentBookmark) {
       throw `Unable to find bookmark with id:${bookmarkId}, aborting delete bookmark`
@@ -322,11 +321,9 @@ export async function _renameBookmark(
       },
     }
     const portalAPI = new PortalAPI(token)
-    const result = await portalAPI.updateBookmark(updateBookmarkDto, datasetId)
+    const updatedBookmark = await portalAPI.updateBookmark(updateBookmarkDto, datasetId)
 
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
-    const updatedBookmark = result.artifacts.find(bookmark => bookmark.id === bookmarkId)
-
     const materializedBookmarkCohortDefinitionId = _getBookmarkMaterializedCohortDefinitionId(
       updatedBookmark,
       datasetId
@@ -336,7 +333,7 @@ export async function _renameBookmark(
       await analyticsSvcAPI.renameCohortDefinition(datasetId, materializedBookmarkCohortDefinitionId, newBookmarkName)
     }
 
-    callback(null, result)
+    callback(null, updatedBookmark)
   } catch (error) {
     console.error(error)
     callback(error, null)
@@ -380,8 +377,7 @@ export async function _updateBookmark( //TODO remove user input
 ) {
   try {
     const portalAPI = new PortalAPI(token)
-    const bookmarkResult = await portalAPI.getBookmarkById(bookmarkId, datasetId)
-    const currentBookmark = bookmarkResult[0]
+    const currentBookmark = await portalAPI.getBookmarkById(bookmarkId, datasetId)
 
     if (!currentBookmark) {
       throw `Unable to find bookmark with id:${bookmarkId}, aborting update bookmark`

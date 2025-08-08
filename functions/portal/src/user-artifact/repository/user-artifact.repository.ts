@@ -45,13 +45,13 @@ export class UserArtifactRepository {
     })
   }
 
-    async findUserServiceArtifactByServiceArtifactId(userId: string, serviceName: ServiceName, id: string | number): Promise<UserArtifact> {
+  async findUserServiceArtifactByServiceArtifactId(userId: string, serviceName: ServiceName, id: string | number): Promise<UserArtifact> {
     const repository = await this.getRepository()
     return await repository.findOne({
       where: {
         userId,
         serviceName,
-        id
+        id: String(id)
       }
     })
   }
@@ -63,28 +63,27 @@ export class UserArtifactRepository {
 
   async update(entity: Partial<UserArtifact>): Promise<UserArtifact | null> {
     const repository = await this.getRepository();
+    const artifactCompositeKey = {
+      id: String(entity.id),
+      serviceName: entity.serviceName,
+    };
 
-    await repository.update(
-      {
-        userId: entity.userId,
-        serviceName: entity.serviceName
-      },
-      {
-        modifiedBy: entity.modifiedBy,
-        artifacts: entity.artifacts,
-        modifiedDate: new Date()
-      }
-    );
-
-    return await repository.findOneBy({ 
-      userId: entity.userId,
-      serviceName: entity.serviceName
+    await repository.update(artifactCompositeKey, {
+      artifact: entity.artifact,
+      modifiedBy: entity.modifiedBy,
+      modifiedDate: new Date(),
     });
+    return await repository.findOneBy(artifactCompositeKey);
   }
 
   async save(entity: Partial<UserArtifact>): Promise<UserArtifact> {
     const repository = await this.getRepository()
     return await repository.save(entity)
+  }
+
+  async deleteServiceArtifact(id: string | number, serviceName: ServiceName): Promise<void> {
+    const repository = await this.getRepository();
+    await repository.delete({ id: String(id), serviceName });
   }
 
   async getAllServiceArtifacts(serviceName: ServiceName): Promise<UserArtifact[]> {
@@ -121,7 +120,7 @@ export class UserArtifactRepository {
     return repository
       .createQueryBuilder('user_artifact')
       .where(`user_artifact.service_name = :serviceName`, { serviceName })
-      .andWhere(`user_artifact.id = :id`, { id })
+      .andWhere(`user_artifact.id = :id`, { id: String(id) })
       .getOne()
   }
 
