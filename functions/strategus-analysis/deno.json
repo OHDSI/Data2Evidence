@@ -22,7 +22,7 @@
     "pako": "npm:pako",
     "http": "node:http",
     "fs": "node:fs",
-    "path": "node:path",
+    "path": "jsr:@std/path@^1.0.0",
     "crypto": "node:crypto",
     "url": "node:url",
     "util": "node:util",
