@@ -72,6 +72,22 @@ declare global {
     ["@DRUGEXP.START"]: string;
     ["@DRUGEXP.END"]: string;
     ["@DRUGEXP.INTERACTION_TYPE"]: string;
+    ["@EPISODE"]: string;
+    ["@EPISODE.PATIENT_ID"]: string;
+    ["@EPISODE.INTERACTION_ID"]: string;
+    ["@EPISODE.CONDITION_ID"]: string;
+    ["@EPISODE.PARENT_INTERACT_ID"]: string;
+    ["@EPISODE.START"]: string;
+    ["@EPISODE.END"]: string;
+    ["@EPISODE.INTERACTION_TYPE"]: string;
+    ["@EPISODE_EVENT"]: string;
+    ["@EPISODE_EVENT.PATIENT_ID"]: string;
+    ["@EPISODE_EVENT.INTERACTION_ID"]: string;
+    ["@EPISODE_EVENT.CONDITION_ID"]: string;
+    ["@EPISODE_EVENT.PARENT_INTERACT_ID"]: string;
+    ["@EPISODE_EVENT.START"]: string;
+    ["@EPISODE_EVENT.END"]: string;
+    ["@EPISODE_EVENT.INTERACTION_TYPE"]: string;
     ["@OBS"]: string;
     ["@OBS.PATIENT_ID"]: string;
     ["@OBS.INTERACTION_ID"]: string;
@@ -136,14 +152,6 @@ declare global {
     ["@RESPONSE.START"]: string;
     ["@RESPONSE.END"]: string;
     ["@RESPONSE.INTERACTION_TYPE"]: string;
-    ["@PTOKEN"]: string;
-    ["@PTOKEN.PATIENT_ID"]: string;
-    ["@PTOKEN.INTERACTION_ID"]: string;
-    ["@PTOKEN.CONDITION_ID"]: string;
-    ["@PTOKEN.PARENT_INTERACT_ID"]: string;
-    ["@PTOKEN.START"]: string;
-    ["@PTOKEN.END"]: string;
-    ["@PTOKEN.INTERACTION_TYPE"]: string;
     ["@PATIENT"]: string;
     ["@PATIENT.PATIENT_ID"]: string;
     ["@PATIENT.DOD"]: string;
@@ -305,6 +313,7 @@ declare global {
     order: number;
     parentInteraction?: string[];
     parentInteractionLabel?: string;
+    parentInteractionsMapping?: [];
     from?: Partial<PholderTableMapType>;
     attributes: SMap<CDMConfigAttributeType>;
   }
