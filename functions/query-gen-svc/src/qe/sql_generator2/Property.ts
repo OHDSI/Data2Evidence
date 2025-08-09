@@ -44,12 +44,21 @@ export class Property extends AstElement {
                 if (!this.scopeEntityDef) {
                     return null;
                 }
-                let scopeConfig = this.scopeEntityDef.entityConfig;
-                let attrConfig = <AttributeConfig>(
-                    scopeConfig.getAttribute(this.node.path)
-                );
-
                 let queryNode = this.resolveQuery(this.parent);
+                let scopeConfig = this.scopeEntityDef.entityConfig;
+                let parentInteractionBaseEntity;
+
+                if (this.node.path.toLowerCase() === "parent_interact_id") {
+                    const parentOperand = this.parent.node.operand.find((operand) => operand.path === "INTERACTION_ID")
+                    parentInteractionBaseEntity = defRoot.getEntity(parentOperand.node.scope).getBaseEntity();
+                    if (!parentInteractionBaseEntity) {
+                        throw new Error("parentInteraction BaseEntity undefined!")
+                    }
+                }
+
+                const attrConfig = <AttributeConfig>(
+                    scopeConfig.getAttribute(this.node.path, parentInteractionBaseEntity)
+                );
 
                 if (
                     this.name !== "groupBy" &&
