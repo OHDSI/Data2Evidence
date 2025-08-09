@@ -235,7 +235,7 @@ sap.ui.define([
 
         // bind visibility of controls
         var itemsArray = ["DefaultFilter",
-            "condTypeLabelId", "condTypeDDId", "pInteractionDDId", "pInteractionLabelId", "pInteractionLabelLabelId", "pInteractionLabel",
+            "condTypeLabelId", "condTypeDDId", "pInteractionDDId", "pInteractionLabelId", "pInteractionLabelLabelId", "pInteractionLabel", "pInteractionMappingLabelId","pInteractionMappingLabel",
             "LangListLayout", "tableListLayout"];
 
         itemsArray

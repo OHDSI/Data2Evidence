@@ -171,6 +171,18 @@
 						enabled="{editableModel>/editable}" 
 						tooltip="{configEditorModel>parentInteractionLabel/value}" 
 						valueLiveUpdate="true"></Input>
+
+					<Label class="sapMxConfigPropLabel" 
+						text="Parent Interaction Mapping" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
+						id="pInteractionMappingLabelId"></Label>
+
+					<Input id="pInteractionMappingLabel" 
+						class="sapTriggerSave sapMxConfigProp" 
+						value="{configEditorModel>parentInteractionsMapping/value}" 
+						enabled="{editableModel>/editable}" 
+						tooltip="{configEditorModel>parentInteractionsMapping/value}" 
+						valueLiveUpdate="true"></Input>
 				</l:content>
 			</l:VerticalLayout>
 		</l:content>

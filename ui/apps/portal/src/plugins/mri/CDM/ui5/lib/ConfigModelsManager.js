@@ -269,6 +269,7 @@ sap.ui.define([
 
         if (!dimTable.hierarchy) {
             currentData.parentInteraction = [];
+            currentData.parentInteractionsMapping.value = [];
             currentData.parentInteractionLabel.value = "";
         }
 
