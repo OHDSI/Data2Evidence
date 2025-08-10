@@ -1,0 +1,37 @@
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('https://localhost:443');
+  await page.getByTestId('button').nth(1).click();
+  await page.locator('input[name="identifier"]').click();
+  await page.locator('input[name="identifier"]').fill('admin');
+  await page.locator('input[name="password"]').click();
+  await page.locator('input[name="password"]').fill('Updatepassword12345');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByTestId('button').nth(1).click();
+  await page.getByRole('button', { name: 'Dataset' }).click();
+  await page.getByRole('option', { name: 'synpuf5pct' }).click();
+  await page.getByRole('link', { name: 'Cohorts' }).click();
+  await page.getByRole('button', { name: 'D2E' }).click();
+  await page.getByTitle('Basic Data - Age').click();
+  await page.getByRole('textbox').fill('[35-80]');
+  await page.getByRole('textbox').press('Enter');
+  await page.getByTitle('Add Filter Card').getByRole('button').click();
+  await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
+  await page.locator('#pane-left div').filter({ hasText: 'Basic DataAgeSupported' }).nth(1).click();
+  await page.getByRole('button', { name: '+' }).click();
+  await page.getByRole('textbox', { name: 'Concept set name' }).click();
+  await page.getByRole('textbox', { name: 'Concept set name' }).fill('Type 2 diabetes mellitus');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort test');
+  await page.getByTitle('Allow bookmark to be visible').locator('div').click();
+  await page.locator('footer').getByRole('button', { name: 'Save' }).click();
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
+  await page.getByRole('button', { name: 'Current' }).click();
+  await page.getByRole('button', { name: 'Current' }).click();
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
+  await page.locator('div:nth-child(5) > svg').first().click();
+  await page.getByRole('button', { name: 'Delete' }).click();
+});
