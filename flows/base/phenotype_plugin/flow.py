@@ -46,7 +46,7 @@ def validate_integer_string(input_string: str) -> bool:
         return True
     
 @task(log_prints=True)
-def get_cohort_definitions(cohorts_id: str, vocabschema_name: str) -> dict:
+def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: bool):
     """
     Retrieve cohort definitions from the Phenotype Library.
     Args:
@@ -105,20 +105,22 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str) -> dict:
                 )
             }}
         ''')
-        cohort_definitions_r = robjects.r['cohortDefinitionSets']
-        r_result = robjects.r['result_list']
-    
-        # Convert R result to Python list
-        cohort_definitions = []
-        for i in range(0, len(r_result)):
-            cohort_def = {
-                'cohortId': int(r_result[i].rx2('cohortId')[0]),
-                'cohortName': str(r_result[i].rx2('cohortName')[0]),
-                'json': str(r_result[i].rx2('json')[0]),
-                'sql': str(r_result[i].rx2('sql')[0])
-            }
-            cohort_definitions.append(cohort_def)
-        return {"cohort_definitions": cohort_definitions, "cohort_definitions_r": cohort_definitions_r}
+        
+        if materialize:
+            return robjects.r['cohortDefinitionSets']
+        else:
+            # Convert R result to Python list
+            r_result = robjects.r['result_list']
+            cohort_definitions = []
+            for i in range(0, len(r_result)):
+                cohort_def = {
+                    'cohortId': int(r_result[i].rx2('cohortId')[0]),
+                    'cohortName': str(r_result[i].rx2('cohortName')[0]),
+                    'json': str(r_result[i].rx2('json')[0]),
+                    'sql': str(r_result[i].rx2('sql')[0])
+                }
+                cohort_definitions.append(cohort_def)
+            return cohort_definitions
 
 @task(log_prints=True)
 def create_cohort_definitions(cohort_definitions: list, dataset_id: str, user_name: str) -> list:
@@ -281,13 +283,12 @@ def phenotype_plugin(options: PhenotypeOptionsType):
         error_message = f"Invalid cohorts_id: {cohorts_id}. It should be a comma-separated string of integers or 'default'."
         logger.error(error_message)
         
-    cohort_definitions_rst = get_cohort_definitions(
+    cohort_definitions = get_cohort_definitions(
         cohorts_id=cohorts_id,
-        vocabschema_name=vocabschema_name
+        vocabschema_name=vocabschema_name,
+        materialize=materialize
     )
     logger.info("******************* Complete Retrieving Cohort Definition Sets *******************")
-    cohort_definitions = cohort_definitions_rst['cohort_definitions']
-    cohort_definitions_r = cohort_definitions_rst['cohort_definitions_r']
 
     if materialize:
         logger.info("Materializing cohort definitions to database")
@@ -295,7 +296,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
         dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
         
         materialize_cohort_definitions(
-            cohort_definitions_r=cohort_definitions_r,
+            cohort_definitions_r=cohort_definitions,
             dbdao=dbdao,
             cdmschema_name=cdmschema_name,
             cohortschema_name=cohortschema_name,
