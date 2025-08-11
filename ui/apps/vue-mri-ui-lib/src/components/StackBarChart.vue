@@ -80,7 +80,7 @@ export default {
           this.completeDownloadCSV()
         })
     },
-    getFireRequest() {
+    getFireRequestAndBookmark() {
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
@@ -131,7 +131,7 @@ export default {
                 categories: [],
                 totalPatientCount: 0,
                 noDataReason,
-              });
+              })
               return
             }
 
@@ -153,8 +153,6 @@ export default {
               })
             }
           })
-      } else {
-        this.$emit('busyEv', false)
       }
     },
     shouldRerenderChart() {
@@ -178,6 +176,9 @@ export default {
       'sortProperty',
       'processResponse',
     ]),
+    getFireRequestAndBookmark() {
+      return [this.getFireRequest, this.getBookmarksData]
+    },
   },
   beforeDestroy() {
     if (stackBarChart) {
