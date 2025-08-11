@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useDisclaimer } from "../contexts";
 import { api } from "../axios/api";
 
@@ -10,7 +10,7 @@ export const useDisclaimerHook = () => {
   const fetchDisclaimerConfig = useCallback(async () => {
     const configs = await api.systemPortal.getConfigsByTypes([ConfigTypes.DISCLAIMER_DISPLAY]);
     setShouldDisplayDisclaimer(configs[ConfigTypes.DISCLAIMER_DISPLAY] === "1");
-  }, []);
+  }, [setShouldDisplayDisclaimer]);
 
   useEffect(() => {
     if (disclaimer.shouldDisplay !== undefined) {

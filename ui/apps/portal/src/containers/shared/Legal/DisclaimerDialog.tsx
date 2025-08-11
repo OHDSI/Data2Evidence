@@ -1,5 +1,5 @@
 import React, { FC, useCallback } from "react";
-import { Dialog, Button, Title } from "@portal/components";
+import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import { useDisclaimer } from "../../../contexts";
 import { LegalCard } from "./LegalCard";

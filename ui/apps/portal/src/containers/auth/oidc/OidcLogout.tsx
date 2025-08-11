@@ -16,7 +16,7 @@ export const OidcLogout: FC = () => {
       await oidcLogout();
     };
     logout();
-  }, [clearUser]);
+  }, [clearUser, clearToken, clearDisclaimer]);
 
   return null;
 };

@@ -6,9 +6,12 @@ export const useDisclaimer = () => {
   const { disclaimer } = useContext(AppContext);
   const dispatch = useContext(AppDispatchContext);
 
-  const setIsDisclaimerAccepted = useCallback((accepted: boolean) => {
-    dispatch({ type: ACTION_TYPES.SET_DISCLAIMER_ACCEPTED, payload: accepted });
-  }, []);
+  const setIsDisclaimerAccepted = useCallback(
+    (accepted: boolean) => {
+      dispatch({ type: ACTION_TYPES.SET_DISCLAIMER_ACCEPTED, payload: accepted });
+    },
+    [dispatch]
+  );
 
   const setShouldDisplayDisclaimer = useCallback(
     (display: boolean) => {
