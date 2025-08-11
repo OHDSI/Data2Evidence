@@ -114,7 +114,7 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
     conceptIds: conceptSet.conceptIds || [],
     concepts:
       conceptSet.concepts?.map(c => ({
-        id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+        id: c.id || c.concept_id || 0,
         useMapped: c.useMapped || false,
         isExcluded: c.isExcluded || false,
         useDescendants: c.useDescendants || false,

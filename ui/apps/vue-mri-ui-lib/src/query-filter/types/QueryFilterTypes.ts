@@ -1,12 +1,22 @@
 /**
  * Core types for the query filter system
  */
-import type { StoredConceptItem, ConceptSetDetail, SelectedConceptSet } from './ConceptSetTypes'
+import type { StoredConceptItem, ConceptSetDetail, SelectedConceptSet, ConceptSetItemDisplay } from './ConceptSetTypes'
 
 export interface QueryFilterCardinality {
   type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
   count: number
   using: 'ALL' | 'DISTINCT_CONCEPT' | 'DISTINCT_START_DATE' | 'DISTINCT_VISIT'
+}
+
+export interface AttributeConfig {
+  id: string
+  name: string
+  description: string
+  type: string
+  category: string
+  operator?: string | undefined
+  value?: number | undefined
 }
 
 export interface QueryFilterEvent {
@@ -18,17 +28,7 @@ export interface QueryFilterEvent {
   selectedAttributes?: string[] | undefined
   isDemographic?: boolean
   parentEventId?: string | undefined
-  attributeConfig?:
-    | {
-        id: string
-        name: string
-        description: string
-        type: string
-        category: string
-        operator?: string | undefined
-        value?: number | undefined
-      }
-    | undefined
+  attributeConfig?: AttributeConfig
   selectedConceptSet?: SelectedConceptSet | undefined
   conceptSetDetails?: ConceptSetDetail[] | undefined
   conceptSetLoading?: boolean | undefined
@@ -59,7 +59,7 @@ export type QueryFilterAttribute =
       id: string
       attributeId: string
       attributeType: 'conceptSet'
-      conceptSet?: any
+      conceptSet?: ConceptSetItemDisplay
       conceptSetId?: string
       conceptItems?: StoredConceptItem[]
     }
@@ -114,4 +114,11 @@ export interface ExitEvent {
 export interface InclusionCriteria {
   qualifyingEventsLimit: 'ALL' | 'EARLIEST' | 'LATEST'
   criteria: QueryFilterGroup[]
+}
+
+// We use plural as the events array is inside each type
+export interface QueryFilterCriteriaManageData {
+  entryEvents?: EntryEvent
+  inclusionCriteria?: InclusionCriteria
+  exitEvents?: ExitEvent
 }

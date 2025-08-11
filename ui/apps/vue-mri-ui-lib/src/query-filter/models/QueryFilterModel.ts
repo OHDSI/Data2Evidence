@@ -3,9 +3,8 @@
  * Provides interfaces and classes for managing filter cards and events,
  * with support for Atlas cohort definition conversion.
  */
-import type { NumericRange, DemographicCriteria } from '../types/AtlasTypes'
+import type { NumericRange, DemographicCriteria, CriteriaGroup } from '../types/AtlasTypes'
 import type {
-  QueryFilterCardinality,
   QueryFilterEvent,
   QueryFilterAttribute,
   QueryFilterGroup,
@@ -13,6 +12,7 @@ import type {
   EntryEvent,
   ExitEvent,
   InclusionCriteria,
+  QueryFilterCriteriaManageData,
 } from '../types/QueryFilterTypes'
 
 // Type guards for QueryFilterAttribute discriminated union
@@ -36,7 +36,7 @@ const isNumericRangeAttribute = (
   return attr.attributeType === 'numericRange'
 }
 
-const hasAttributeId = (attr: QueryFilterAttribute): attr is QueryFilterAttribute & { attributeId: string } => {
+const hasAttributeId = (attr: QueryFilterAttribute): attr is Extract<QueryFilterAttribute, { attributeId: string }> => {
   return 'attributeId' in attr
 }
 
@@ -45,7 +45,7 @@ export class QueryFilterCriteriaManager {
   private exitEvents: ExitEvent
   private inclusionCriteria: InclusionCriteria
 
-  constructor(data: any = {}) {
+  constructor(data: QueryFilterCriteriaManageData = {}) {
     try {
       // Always initialize all properties
 
@@ -81,19 +81,13 @@ export class QueryFilterCriteriaManager {
         this.inclusionCriteria = {
           qualifyingEventsLimit: data.inclusionCriteria.qualifyingEventsLimit || 'ALL',
           criteria:
-            data.inclusionCriteria.criteria?.map((criteria: any) => ({
+            data.inclusionCriteria.criteria.map(criteria => ({
               id: criteria.id,
               title: criteria.title,
               description: criteria.description,
               criteriaType: criteria.criteriaType,
               events: this.transformEvents(criteria.events || []),
             })) || [],
-        }
-      } else {
-        // Handle original structure - initialize inclusionCriteria with proper structure
-        this.inclusionCriteria = {
-          qualifyingEventsLimit: data.criteriaType || 'ALL',
-          criteria: data.criteria || [],
         }
       }
     } catch (error) {
@@ -212,8 +206,8 @@ export class QueryFilterCriteriaManager {
 
     events.forEach(event => {
       // Keep track of which attributes are processed to avoid duplication
-      const processedAttributes: any[] = []
-      const remainingAttributes: any[] = []
+      const processedAttributes: QueryFilterAttribute[] = []
+      const remainingAttributes: QueryFilterAttribute[] = []
 
       // Main event
       const mainEvent: QueryFilterEvent = {
@@ -239,7 +233,7 @@ export class QueryFilterCriteriaManager {
 
           if (attributeType === 'nested' && attr.nestedCriteria) {
             // Keep nested criteria in the attributes format, just process the events
-            const processedAttr = {
+            const processedAttr: QueryFilterAttribute = {
               id: attr.id,
               attributeType: 'nested', // Ensure normalized attributeType
               nestedCriteria: {
@@ -492,7 +486,7 @@ export class QueryFilterCriteriaManager {
                 .filter(e => e.eventType !== 'demographic' && e.eventType) // Only non-demographic main events with eventType
                 .map(event => {
                   const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
-                  const criteria: any = {
+                  const criteria: CriteriaGroup = {
                     Criteria: {
                       [atlasEventType]: {
                         // Add CodesetId if available
@@ -997,7 +991,7 @@ export class QueryFilterCriteriaManager {
       const eventType = nestedEvent.eventType || 'conditionOccurrence'
       const atlasEventType = this.mapEventTypeToAtlas(eventType)
 
-      const criteria: any = {
+      const criteria: CriteriaGroup = {
         Criteria: {
           [atlasEventType]: {},
         },

@@ -682,7 +682,7 @@ const loadConceptSetDetailsForAllEvents = async () => {
             display_value: conceptSet.display_value || conceptSet.text || '',
             conceptIds: conceptSet.conceptIds || [],
             concepts: (conceptSet.concepts || []).map(concept => ({
-              id: concept.id || concept.concept_id || concept.CONCEPT_ID || 0,
+              id: concept.id || concept.concept_id || 0,
               useMapped: concept.useMapped || false,
               isExcluded: concept.isExcluded || false,
               useDescendants: concept.useDescendants || false,
@@ -922,7 +922,7 @@ const handleConceptSetFromAtlas = async (
       // Extract concepts from Atlas format
       const concepts = atlasConceptSet.expression.items
         .map(item => ({
-          id: item.concept?.CONCEPT_ID,
+          id: item.concept.CONCEPT_ID,
           useDescendants: item.includeDescendants !== false, // Default to true
           useMapped: item.includeMapped !== false, // Default to true
           isExcluded: item.isExcluded === true, // Default to false
@@ -1119,9 +1119,9 @@ const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeI
     const conceptSet = targetAttribute.conceptSet
     const concepts = targetAttribute.conceptSet.concepts
     return concepts
-      .filter(concept => concept.id || concept.concept_id || concept.CONCEPT_ID) // Only include concepts with valid IDs
+      .filter(concept => concept.id || concept.concept_id) // Only include concepts with valid IDs
       .map(concept => ({
-        conceptId: concept.id || concept.concept_id || concept.CONCEPT_ID || 0,
+        conceptId: concept.id || concept.concept_id || 0,
         display: conceptSet.display_value || conceptSet.text || 'Unknown',
         domainId: 'Unknown',
         system: undefined,
