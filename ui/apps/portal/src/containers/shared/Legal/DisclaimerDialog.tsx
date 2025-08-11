@@ -1,12 +1,14 @@
 import React, { FC, useCallback } from "react";
 import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
-import { useDisclaimer } from "../../../contexts";
+import { useDisclaimer, useTranslation } from "../../../contexts";
 import { LegalCard } from "./LegalCard";
 import "./DisclaimerDialog.scss";
+import { i18nKeys } from "../../../contexts/app-context/states";
 
 export const DisclaimerDialog: FC = () => {
   const { disclaimer, setIsDisclaimerAccepted } = useDisclaimer();
+  const { getText } = useTranslation();
 
   const shouldOpen = disclaimer.shouldDisplay! && !disclaimer.isDisclaimerAccepted;
   const handleAccept = useCallback(() => {
@@ -14,7 +16,12 @@ export const DisclaimerDialog: FC = () => {
   }, [setIsDisclaimerAccepted]);
 
   return (
-    <Dialog title="Disclaimer" className="disclaimer-dialog" open={shouldOpen} maxWidth="lg">
+    <Dialog
+      title={getText(i18nKeys.DISCLAIMER_DIALOG__TITLE)}
+      className="disclaimer-dialog"
+      open={shouldOpen}
+      maxWidth="lg"
+    >
       <div className="disclaimer-dialog__content">
         <LegalCard />
       </div>

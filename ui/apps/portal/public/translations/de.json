@@ -355,6 +355,8 @@
   "DELETE_USER_DIALOG__DESCRIPTION": "Bitte versuchen Sie es erneut. Um den Fehler zu melden, senden Sie eine E-Mail an help@data4life.care.",
   "DELETE_USER_DIALOG__ERROR": "Ein Fehler ist aufgetreten.",
   "DELETE_USER_DIALOG__YES": "Ja, löschen",
+  "DISCLAIMER__TITLE": "Haftungsausschluss",
+  "DISCLAIMER_DIALOG__TITLE": "Haftungsausschluss",
   "DOMAIN_CONTINUITY_CHART__NO_DATA": "Keine Daten",
   "DOMAIN_CONTINUITY_CHART__X_AXIS_NAME": "CDM-Veröffentlichungsdatum",
   "DOMAIN_CONTINUITY_CHART__Y_AXIS_NAME": "Anzahl der Datensätze",

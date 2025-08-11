@@ -195,7 +195,7 @@ export const OverviewDescription: FC = () => {
       </div>
 
       <div className="overview_description__header">
-        <Title>{getText(i18nKeys.IMPRINT__TITLE)}</Title>
+        <Title>{getText(i18nKeys.DISCLAIMER__TITLE)}</Title>
       </div>
 
       <div className="overview_description__content">
