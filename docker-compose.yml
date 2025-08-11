@@ -16,6 +16,7 @@ volumes:
   dicom-sqlite-storage:
   fhir-binary-1:
   supabase-storage-data:
+  hana-data:
 
 x-envs:
   db-svc: &x-dbsvc
@@ -615,7 +616,7 @@ services:
         {
          "databases": {
           "${PG__FHIR_DB_NAME:-alp}": {
-             "schema": "fhir",
+             "schema": "pg_catalog",
              "extension": "pg_trgm"
           }
          }
@@ -816,6 +817,8 @@ services:
       alp-logto-post-init:
         condition: service_completed_successfully
       supabase-storage-post-init:
+        condition: service_completed_successfully
+      alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
     healthcheck:
       interval: 30s
@@ -1299,6 +1302,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 5
@@ -1332,7 +1337,7 @@ services:
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DUCKDB_PATH: /home/docker/app
-      FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
+      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
       FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
       FHIR_SCHEMA_FILE_NAME: fhir.schema.json
       BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
@@ -1445,3 +1450,21 @@ services:
       enterprise-gateway:
     command: mlflow server --host 0.0.0.0 --port 5000
     profiles: [mlflow]
+
+  hana:
+    container_name: hana
+    hostname: hana
+    image: saplabs/hanaexpress:2.00.082.00.20250528.1
+    platform: linux/amd64
+    ports:
+      - 1128-1129:1128-1129
+      - 39013:39013
+      - 39017:39017
+      - 39041-39045:39041-39045 
+      - 59013-59014:59013-59014
+    volumes:
+      - hana-data:/hana/mounts
+    networks:
+      alp:
+      data:
+    profiles: [hana]
