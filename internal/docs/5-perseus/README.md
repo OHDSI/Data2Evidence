@@ -11,7 +11,7 @@ The currently supported perseus services are
 
 This command starts perseus along with the alp services.
 ```bash
-yarn start:minerva:perseus
+yarn start:perseus
 ```
 
 - open `localhost:41100` to access the portal

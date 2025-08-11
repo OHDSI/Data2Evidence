@@ -69,7 +69,7 @@ yarn inittestdb
 ########################
 # Build system services
 ########################
-yarn build:minerva
+yarn build
 
 ########################
 # Manipulate configuration
@@ -95,7 +95,7 @@ echo "LOGTO__ALP_APP__CLIENT_ID=$LOGTO__ALP_APP__CLIENT_ID" >>$GITHUB_ENV # Make
 ########################
 # Start system services
 ########################
-yarn start:minerva -d
+yarn start -d
 echo "Waiting 120 secs for services to start..."
 sleep 120
 

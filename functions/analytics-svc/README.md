@@ -70,7 +70,7 @@ isHttpTestRun=true
 
 4. Start ALP 
 ```
-yarn start:minerva
+yarn start
 ``` 
 ```
 yarn start:mercury

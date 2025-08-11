@@ -356,6 +356,6 @@ jobs:
       - name: Clean Docker compose
         if: always()
         run: |
-          yarn clean:minerva
+          yarn clean
           docker container prune --force
           docker network rm combined_network -f

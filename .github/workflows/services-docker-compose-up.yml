@@ -34,12 +34,12 @@ jobs:
       - name: Generate dotenv
         run: |
           # generate dotenv
-          npm run init:minerva
+          npm run init
 
       - name: Docker compose build
         run: |
           # Build DataNode services
-          npm run build:minerva
+          npm run build
 
       - name: Docker compose up Local Mode
         uses: nick-fields/retry@v3
@@ -70,11 +70,11 @@ jobs:
       - name: Logs minerva
         if: success() || failure()
         run: |
-          yarn ci:logs:minerva
+          yarn ci:logs
 
       - name: Clean Docker compose
         if: always()
         run: |
           # Clean DataNode services
-          yarn clean:minerva
+          yarn clean
           docker system prune -af
