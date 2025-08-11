@@ -36,6 +36,7 @@ import {
   loadConceptSets as apiLoadConceptSets,
   loadConceptSetDetails as apiLoadConceptSetDetails,
   createConceptSet,
+  loadSingleConceptSetDetails,
 } from '../services/ConceptSetApiService'
 import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
@@ -72,6 +73,13 @@ interface TerminologyCloseValues {
   currentConceptSet?: { id: string; name: string }
   selectedConcepts?: SelectedConcept[]
 }
+
+// Interface for component props
+interface Props {
+  atlasData?: AtlasBookmark | null
+}
+
+const props = defineProps<Props>()
 
 // Interface for terminology modal event properties
 interface TerminologyEventProps {
@@ -165,7 +173,6 @@ const conceptSetsFromCriteria = computed(() => {
   return conceptSets
 })
 
-const conceptSetDetails = ref<ConceptSetDetails>({})
 const loadingConceptDetails = ref(false)
 
 const tagInputTexts = getTagInputTexts()
@@ -224,14 +231,12 @@ const loadConceptSets = async () => {
 
 const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[]) => {
   if (selectedConceptSets.length === 0) {
-    conceptSetDetails.value = {}
     return
   }
 
   const currentDatasetId = getDatasetId()
   if (!currentDatasetId) {
     console.warn('Cannot load concept set details: Dataset ID not available from store or portalAPI')
-    conceptSetDetails.value = {}
     return
   }
 
@@ -239,10 +244,8 @@ const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[
 
   try {
     const result = await apiLoadConceptSetDetails(selectedConceptSets, currentDatasetId)
-    conceptSetDetails.value = result
   } catch (error) {
     console.error('Error loading concept set details:', error)
-    conceptSetDetails.value = {}
   } finally {
     loadingConceptDetails.value = false
   }
@@ -298,14 +301,24 @@ watch(
   async newSelection => {
     if (newSelection && newSelection.length > 0) {
       await loadConceptSetDetails(newSelection)
-    } else {
-      conceptSetDetails.value = {}
     }
   },
   { deep: true }
 )
 
 // Watch for changes in conceptSetsFromCriteria and sync with selectedConceptSets
+// Watch for Atlas data prop changes and automatically load
+watch(
+  () => props.atlasData,
+  async newAtlasData => {
+    if (newAtlasData) {
+      console.log('jer Auto-loading Atlas data from prop:', newAtlasData.name)
+      await loadAtlasCohortDefinition(newAtlasData)
+    }
+  },
+  { immediate: true }
+)
+
 watch(
   conceptSetsFromCriteria,
   newConceptSets => {
@@ -1182,7 +1195,6 @@ const updateAttributeWithConcepts = (
 // Helper function to load concept set details for Atlas conversion
 const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetItemDisplay) => {
   try {
-    const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetId())
 
     // Update the event with concept set details

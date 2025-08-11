@@ -39,39 +39,44 @@ export interface QueryFilterEvent {
 }
 
 export type QueryFilterAttribute =
-  | {
-      id: string
-      attributeType: 'nested'
-      nestedCriteria: {
-        id: string
-        criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
-        events: QueryFilterEvent[]
-      }
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'numericRange'
-      operator: string
-      value: string
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'conceptSet'
-      conceptSet?: ConceptSetItemDisplay
-      conceptSetId?: string
-      conceptItems?: StoredConceptItem[]
-    }
-  | {
-      id: string
-      attributeId: string
-      attributeType: 'standard'
-      configType?: string // Original type from config (concept, conceptSet, etc.)
-      domainFilter?: string // Domain filter from config
-      operator?: string
-      value?: string
-      conceptItems?: StoredConceptItem[]
+  | (
+      | {
+          id: string
+          attributeType: 'nested'
+          nestedCriteria: {
+            id: string
+            criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+            events: QueryFilterEvent[]
+          }
+        }
+      | {
+          id: string
+          attributeId: string
+          attributeType: 'numericRange'
+          operator: string
+          value: string
+        }
+      | {
+          id: string
+          attributeId: string
+          attributeType: 'conceptSet'
+          conceptSet?: ConceptSetItemDisplay
+          conceptSetId?: string
+          conceptItems?: StoredConceptItem[]
+        }
+      | {
+          id: string
+          attributeId: string
+          attributeType: 'standard'
+          configType?: string // Original type from config (concept, conceptSet, etc.)
+          domainFilter?: string // Domain filter from config
+          operator?: string
+          value?: string
+          conceptItems?: StoredConceptItem[]
+        }
+    ) & {
+      name?: string
+      title?: string
     }
 
 export interface QueryFilterGroup {

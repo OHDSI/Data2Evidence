@@ -133,7 +133,7 @@ export interface AttributeOption {
   domainFilter?: string
   atlasKey: string
   special: boolean
-  action: (criteriaInstance: CriteriaItem) => CriteriaItem | void
+  action: () => CriteriaItem | void
 }
 
 export interface CriteriaConfig {
@@ -359,7 +359,7 @@ export class CriteriaConfigLoader {
           type: attr.type || 'text',
           atlasKey: attr.atlasKey || '',
           special: attr.special || false,
-          action: this.createAttributeActionFunction(attr, criteriaTypeId),
+          action: this.createAttributeActionFunction(attr),
         }
 
         // Only add domainFilter if it exists
@@ -392,7 +392,7 @@ export class CriteriaConfigLoader {
         type: attr.type || 'text',
         atlasKey: attr.atlasKey || '',
         special: attr.special || false,
-        action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig, criteriaTypeId),
+        action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig),
       }
     })
   }
@@ -400,11 +400,8 @@ export class CriteriaConfigLoader {
   /**
    * Create action function for attribute-level options
    */
-  createAttributeActionFunction(
-    attribute: CriteriaAttributeConfig,
-    _criteriaTypeId: string
-  ): (criteriaInstance: CriteriaItem) => CriteriaItem | void {
-    return function (_criteriaInstance: CriteriaItem) {
+  createAttributeActionFunction(attribute: CriteriaAttributeConfig): () => CriteriaItem | void {
+    return function () {
       if (attribute.special && attribute.id === 'nested') {
         // Add nested criteria group
         console.log('Adding nested criteria group...')

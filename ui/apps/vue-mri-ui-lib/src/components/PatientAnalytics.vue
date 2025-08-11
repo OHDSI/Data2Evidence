@@ -47,7 +47,7 @@
               v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"
             ></filters>
 
-            <QueryFilter v-else-if="showQueryFilter" ref="queryFilterRef" />
+            <QueryFilter v-else-if="showQueryFilter" ref="queryFilterRef" :atlas-data="atlasDataForQueryFilter" />
           </div>
         </pane>
 
@@ -215,6 +215,7 @@ export default {
       PANEL,
       splitterMinWidth: 0,
       showQueryFilter: false,
+      atlasDataForQueryFilter: null,
     }
   },
   created() {
@@ -462,14 +463,22 @@ export default {
     },
     async handleLoadAtlasCohortDefinition(atlasJson) {
       try {
-        await this.$nextTick()
-        if (this.$refs.queryFilterRef) {
-          await this.$refs.queryFilterRef.loadAtlasCohortDefinition(atlasJson)
-        } else {
-          console.error('QueryFilter ref not found in Filters component')
+        console.log('jer Handling Atlas cohort definition load:', atlasJson?.name)
+        
+        // Ensure QueryFilter is shown
+        if (!this.showQueryFilter) {
+          this.toggleQueryFilter(true)
         }
+        
+        // Wait for component to be mounted
+        await this.$nextTick()
+        
+        // Set the atlas data prop - the QueryFilter will automatically load it via watcher
+        this.atlasDataForQueryFilter = atlasJson
+        
+        console.log('jer Atlas data set to QueryFilter prop')
       } catch (error) {
-        console.error('Error loading Atlas cohort definition into QueryFilter:', error)
+        console.error('jer Error setting Atlas data:', error)
       }
     },
   },

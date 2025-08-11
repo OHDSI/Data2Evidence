@@ -148,3 +148,17 @@ export interface SelectedConceptSet {
   createdDate: string
   modifiedDate: string
 }
+
+export interface GetConceptSetsResponse {
+  id: number
+  name: string
+  value: number
+  text: string
+  display_value: string
+  conceptIds: number[]
+  concepts: SelectedConceptSetConcept[]
+  shared: boolean
+  userName: string
+  createdDate: string
+  modifiedDate: string
+}

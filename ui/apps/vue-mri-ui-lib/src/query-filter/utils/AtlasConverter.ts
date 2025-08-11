@@ -1,9 +1,9 @@
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { QueryFilterEvent, InclusionCriteria } from '../types/QueryFilterTypes'
+import { QueryFilterEvent, InclusionCriteria, QueryFilterAttribute } from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
   CriteriaListItem,
-  ConditionOccurrence,
+  AtlasEvent,
   DrugExposure,
   ProcedureOccurrence,
   Observation,
@@ -18,9 +18,11 @@ import {
   NumericRange,
   DemographicCriteria,
   CorrelatedCriteria,
+  Concept,
 } from '../types/AtlasTypes'
 
-import type { ConceptSetItemDisplay, SelectedConceptSet } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
+import type CriteriaConfigLoader from './CriteriaConfigLoader'
 
 export interface ConceptSetMapping {
   name: string
@@ -29,7 +31,7 @@ export interface ConceptSetMapping {
 }
 
 type CriteriaObject =
-  | ConditionOccurrence
+  | AtlasEvent
   | DrugExposure
   | ProcedureOccurrence
   | Observation
@@ -90,7 +92,7 @@ const hasDemographicAge = (
 }
 
 // Helper function to convert Atlas JSON concepts to StoredConceptItem format
-const convertAtlasConceptsToInternal = (atlasConcepts: any[]): any[] => {
+const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConceptItem[] => {
   return atlasConcepts.map(concept => ({
     value: concept.CONCEPT_ID?.toString() || '',
     text: concept.CONCEPT_NAME || '',
@@ -111,10 +113,10 @@ const convertAtlasConceptsToInternal = (atlasConcepts: any[]): any[] => {
 // Helper function to convert conceptSet arrays from Atlas JSON to attribute objects
 const convertConceptSetArrayToAttribute = (
   attributeId: string,
-  conceptArray: any[],
+  conceptArray: Concept[],
   eventType: string,
-  configLoader?: any
-): any => {
+  configLoader?: typeof CriteriaConfigLoader
+): QueryFilterAttribute => {
   const conceptItems = convertAtlasConceptsToInternal(conceptArray)
 
   // Try to get configuration for this attribute
@@ -166,7 +168,7 @@ const convertConceptSetArrayToAttribute = (
       id: `attribute_${Math.random().toString(36).substring(2)}`,
       attributeId: attributeId,
       attributeType: 'conceptSet' as const,
-      conceptSet: conceptArray[0],
+      conceptSet: conceptItems[0],
       name: displayName, // Add display name for UI
       title: displayName, // Add title as well in case UI uses this
     }
@@ -198,7 +200,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItemDisplay[] = [],
-  configLoader?: any
+  configLoader?: typeof CriteriaConfigLoader
 ): QueryFilterCriteriaManager => {
   if (!atlasJson) {
     throw new Error('Invalid Atlas JSON input')

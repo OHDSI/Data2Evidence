@@ -1,7 +1,7 @@
 /**
  * Utility functions for Atlas cohort definition operations
  */
-import type { CriteriaListItem } from '../types/AtlasTypes'
+import type { AtlasEvent, CriteriaListItem } from '../types/AtlasTypes'
 
 export function getCriteriaType(item: CriteriaListItem): string | null {
   if (item.ConditionOccurrence) return 'ConditionOccurrence'
@@ -17,7 +17,7 @@ export function getCriteriaType(item: CriteriaListItem): string | null {
   return null
 }
 
-export function getCriteriaObject(item: CriteriaListItem): any {
+export function getCriteriaObject(item: CriteriaListItem): AtlasEvent {
   return (
     item.ConditionOccurrence ||
     item.DrugExposure ||
