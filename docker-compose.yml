@@ -616,7 +616,7 @@ services:
         {
          "databases": {
           "${PG__FHIR_DB_NAME:-alp}": {
-             "schema": "fhir",
+             "schema": "pg_catalog",
              "extension": "pg_trgm"
           }
          }
@@ -817,6 +817,8 @@ services:
       alp-logto-post-init:
         condition: service_completed_successfully
       supabase-storage-post-init:
+        condition: service_completed_successfully
+      alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
     healthcheck:
       interval: 30s
@@ -1300,6 +1302,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
     healthcheck:
       interval: 20s
       retries: 5
@@ -1333,7 +1337,7 @@ services:
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DUCKDB_PATH: /home/docker/app
-      FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
+      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
       FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
       FHIR_SCHEMA_FILE_NAME: fhir.schema.json
       BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
