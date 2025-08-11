@@ -61,7 +61,9 @@ export const env = {
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
     "supabase-storage-jwt-token": _env.SUPABASE_STORAGE_JWT_TOKEN,
     "trex-sql-password": _env.TREX__SQL__PASSWORD,
+    "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS
   },
+  PREFECT_API_URL: _env.PREFECT_API_URL,
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
   WORKPOOL_NAME: _env.WORKPOOL_NAME,

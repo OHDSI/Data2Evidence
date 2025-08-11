@@ -48,12 +48,11 @@ class DialectDrivers(BaseModel):
 
 class DaoBase(ABC):
     path_to_driver = "/app/inst/drivers"
-    big_query_key_path = "/app/key.json"
     use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
     is_study_results_db: bool = False
-
+    
     def __init__(self,
                  use_cache_db: bool,
                  database_code: str,
@@ -65,7 +64,6 @@ class DaoBase(ABC):
         if secret_block is None:
             raise ValueError(
                 "'DATABASE_CREDENTIALS' secret block is undefined!")
-
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
@@ -255,7 +253,8 @@ class DaoBase(ABC):
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
                 connect_args = {"user": user, "password": password.get_secret_value()}
             case SupportedDatabaseDialects.BIGQUERY:
-                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={DaoBase.big_query_key_path}"
+                big_query_key_path = Secret.load("google-service-account-json").get()
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:
