@@ -149,7 +149,7 @@ def create_cohort_definitions(cohort_definitions: list, dataset_id: str, user_na
     return created_cohorts
 
 @task(log_prints=True)
-def materialize_cohort_definitions(dbdao, cohort_definitions_r, cdmschema_name: str, cohortschema_name: str, cohorttable_name: str, user: UserType):
+def materialize_cohort_definitions(dbdao: DBDao, cohort_definitions_r, cdmschema_name: str, cohortschema_name: str, cohorttable_name: str, user: UserType):
     """
     Materialize cohort definitions into the database.
     """
@@ -281,13 +281,13 @@ def phenotype_plugin(options: PhenotypeOptionsType):
         error_message = f"Invalid cohorts_id: {cohorts_id}. It should be a comma-separated string of integers or 'default'."
         logger.error(error_message)
         
-    coohort_definitions_rst = get_cohort_definitions(
+    cohort_definitions_rst = get_cohort_definitions(
         cohorts_id=cohorts_id,
         vocabschema_name=vocabschema_name
     )
     logger.info("******************* Complete Retrieving Cohort Definition Sets *******************")
-    cohort_definitions = coohort_definitions_rst['cohort_definitions']
-    cohort_definitions_r = coohort_definitions_rst['cohort_definitions_r']
+    cohort_definitions = cohort_definitions_rst['cohort_definitions']
+    cohort_definitions_r = cohort_definitions_rst['cohort_definitions_r']
 
     if materialize:
         logger.info("Materializing cohort definitions to database")
