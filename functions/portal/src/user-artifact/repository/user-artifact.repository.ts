@@ -106,7 +106,6 @@ export class UserArtifactRepository {
       throw new Error(errorMsg)
     }
 
-    // TODO: Fix to return only shared artifacts instead of all artifacts from in each serviceName
     return repository
       .createQueryBuilder('userArtifact')
       .where('userArtifact.userId != :userId', { userId })

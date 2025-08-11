@@ -34,7 +34,6 @@ export class UserArtifact extends Audit {
   @Column({ name: "user_id" })
   userId: string;
 
-  // TODO: ADD Types for each user artifact
   @Column("jsonb")
   artifact: IUserArtifactColumn;
 }
