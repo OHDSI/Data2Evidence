@@ -351,6 +351,7 @@
   "DELETE_USER_DIALOG__DESCRIPTION": "请再试一次。如果需要报告错误，请发送电子邮件至help@data4life.care。",
   "DELETE_USER_DIALOG__ERROR": "发生了错误。",
   "DELETE_USER_DIALOG__YES": "是的，删除",
+  "DISCLAIMER_DIALOG__ACCEPT": "确认",
   "DISCLAIMER__TITLE": "免责声明",
   "DISCLAIMER_DIALOG__TITLE": "免责声明",
   "DOMAIN_CONTINUITY_CHART__NO_DATA": "没有数据",

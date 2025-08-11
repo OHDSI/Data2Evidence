@@ -407,6 +407,7 @@ export const i18nDefault = {
     DELETE_USER_DIALOG__ERROR: "An error has occurred.",
     DELETE_USER_DIALOG__YES: "Yes, delete",
     DISCLAIMER__TITLE: "Disclaimer",
+    DISCLAIMER_DIALOG__ACCEPT: "Accept",
     DISCLAIMER_DIALOG__TITLE: "Disclaimer",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",

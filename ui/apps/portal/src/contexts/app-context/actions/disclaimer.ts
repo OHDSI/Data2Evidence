@@ -16,7 +16,7 @@ export const setShouldDisplayDisclaimer = (state: AppState, payload: boolean): A
   },
 });
 
-export const clearDisclaimer = (state: AppState, payload: boolean): AppState => ({
+export const clearDisclaimer = (state: AppState): AppState => ({
   ...state,
   disclaimer: initialState.disclaimer,
 });

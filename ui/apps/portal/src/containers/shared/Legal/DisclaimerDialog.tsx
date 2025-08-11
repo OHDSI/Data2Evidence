@@ -10,7 +10,7 @@ export const DisclaimerDialog: FC = () => {
   const { disclaimer, setIsDisclaimerAccepted } = useDisclaimer();
   const { getText } = useTranslation();
 
-  const shouldOpen = disclaimer.shouldDisplay! && !disclaimer.isDisclaimerAccepted;
+  const shouldOpen = disclaimer.shouldDisplay === true && !disclaimer.isDisclaimerAccepted;
   const handleAccept = useCallback(() => {
     setIsDisclaimerAccepted(true);
   }, [setIsDisclaimerAccepted]);
@@ -27,7 +27,7 @@ export const DisclaimerDialog: FC = () => {
       </div>
       <Divider />
       <div className="button-group-actions">
-        <Button onClick={handleAccept} text="Accept" block />
+        <Button onClick={handleAccept} text={i18nKeys.DISCLAIMER_DIALOG__ACCEPT} block />
       </div>
     </Dialog>
   );
