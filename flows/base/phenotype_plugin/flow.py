@@ -86,7 +86,6 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str) -> dict:
                         cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschema_name))
                     }}
                 }}
-                }}
                 return(cohortDefinitionSets)
             }}
             
