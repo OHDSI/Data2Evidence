@@ -73,6 +73,7 @@ x-envs:
        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
+       "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
        "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
@@ -200,6 +201,7 @@ services:
               "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
               "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
               "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
+              "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
               "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
               "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
@@ -464,7 +466,16 @@ services:
           },
           "jupyter-gateway": {},
           "mlflow": {},
-          "strategus-results": {}
+          "strategus-analysis": {
+            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+            "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+            "PG_PORT": "${PG_PORT:-5432}",
+            "PG_DATABASE": "${PG_DB_NAME:-alp}",
+            "PG_SCHEMA": "strategus",
+            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          }
         }
       SERVICE_ROUTES: |-
         {
@@ -476,6 +487,7 @@ services:
         "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
         "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
+        "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
@@ -586,6 +598,7 @@ services:
             "+white_rabbit": {},
             "+trex": {},
             "+storage": {},
+            "+strategus": {},
             "+fhir": {}
            }
           },
