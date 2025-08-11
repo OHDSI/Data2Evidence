@@ -34,7 +34,9 @@ export interface ConceptSet {
   expression: ConceptSetExpression
 }
 
-export interface ConditionOccurrence {
+// was originally `export interface ConditionOccurrence` but we should probably make it more generic, along with other events
+// so we wont need to update this when the config changes
+export interface AtlasEvent {
   CodesetId?: number
   ConditionTypeExclude?: boolean
   First?: boolean
@@ -181,7 +183,7 @@ export interface ObservationPeriod {
 }
 
 export interface CriteriaListItem {
-  ConditionOccurrence?: ConditionOccurrence
+  ConditionOccurrence?: AtlasEvent
   DrugExposure?: DrugExposure
   DrugEra?: DrugEra
   ProcedureOccurrence?: ProcedureOccurrence
@@ -234,7 +236,7 @@ export interface DateOffset {
 }
 
 export interface CustomEra {
-  CodesetId: number
+  DrugCodesetId: number
   GapDays: number
   Offset: number
 }
@@ -319,7 +321,9 @@ export interface GroupCriteria {
 }
 
 export interface CensoringCriteria {
-  [key: string]: any
+  [key: string]: {
+    CodesetId: number
+  }
 }
 
 export interface AtlasCohortDefinition {
@@ -330,24 +334,24 @@ export interface AtlasCohortDefinition {
   ExpressionLimit: ExpressionLimit
   InclusionRules: InclusionRule[]
   EndStrategy?: EndStrategy
-  CensoringCriteria: CensoringCriteria[]
+  CensoringCriteria: CriteriaListItem[]
   CollapseSettings: CollapseSettings
   CensorWindow: CensorWindow
   name?: string
   description?: string
 }
 
-export interface AtlasCohortDefinitionResponse {
+export type AtlasBookmark = {
   id: number
   name: string
-  description?: string
+  description: string
   expressionType: string
-  expression: AtlasCohortDefinition
+  expression: string
   createdBy: string
   createdDate: number
   modifiedBy: string
   modifiedDate: number
-  tags: any[]
+  tags: string[]
   hasWriteAccess: boolean
   hasReadAccess: boolean
 }

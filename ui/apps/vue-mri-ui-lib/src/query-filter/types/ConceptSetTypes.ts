@@ -119,6 +119,8 @@ export interface ConceptSetDetailConcept {
   DOMAIN_ID: string
   VOCABULARY_ID: string
   CONCEPT_CLASS_ID: string
+  VALID_START_DATE: string
+  VALID_END_DATE: string
 }
 
 export interface ConceptSetDetail {

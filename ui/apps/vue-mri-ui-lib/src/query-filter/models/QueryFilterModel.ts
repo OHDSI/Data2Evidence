@@ -3,7 +3,14 @@
  * Provides interfaces and classes for managing filter cards and events,
  * with support for Atlas cohort definition conversion.
  */
-import type { NumericRange, DemographicCriteria, CriteriaGroup } from '../types/AtlasTypes'
+import type {
+  NumericRange,
+  DemographicCriteria,
+  CriteriaGroup,
+  ConceptSet,
+  AtlasCohortDefinition,
+  CriteriaListItem,
+} from '../types/AtlasTypes'
 import type {
   QueryFilterEvent,
   QueryFilterAttribute,
@@ -323,11 +330,11 @@ export class QueryFilterCriteriaManager {
   }
 
   // Conversion methods
-  convertToAtlasFormat(): any {
+  convertToAtlasFormat(): AtlasCohortDefinition {
     // Build Atlas cohort definition from hierarchical structure
 
     // Initialize mapping objects early so they can be used throughout the method
-    const conceptSets: any[] = []
+    const conceptSets: ConceptSet[] = []
     const usedConceptSetIds = new Set<string>()
     const systemIdToAtlasId = new Map<string, number>() // System ID → Atlas sequential ID
 
@@ -343,7 +350,7 @@ export class QueryFilterCriteriaManager {
             const atlasSequentialId = conceptSets.length // Use sequential ID starting from 0
             systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: any = {
+            const conceptSetDef: ConceptSet = {
               id: atlasSequentialId, // Sequential ID for Atlas JSON
               name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
               expression: {
@@ -370,7 +377,7 @@ export class QueryFilterCriteriaManager {
             const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
             systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: any = {
+            const conceptSetDef: ConceptSet = {
               id: atlasSequentialId, // Sequential ID for Atlas JSON
               name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
               expression: {
@@ -407,7 +414,7 @@ export class QueryFilterCriteriaManager {
             const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
             systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: any = {
+            const conceptSetDef: ConceptSet = {
               id: atlasSequentialId, // Sequential ID for Atlas JSON
               name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
               expression: {
@@ -456,7 +463,8 @@ export class QueryFilterCriteriaManager {
       )
     }
 
-    const atlasDef: any = {
+    const atlasDef: AtlasCohortDefinition = {
+      cdmVersionRange: '>=5.0.0',
       ConceptSets: conceptSets, // Now populated with all concept sets
       PrimaryCriteria: {
         CriteriaList: [],
@@ -530,7 +538,7 @@ export class QueryFilterCriteriaManager {
                     }) || []
 
                   if (attributesNestedCriteria.length > 0) {
-                    let criteriaList: any[] = []
+                    let criteriaList: CriteriaGroup[] = []
                     let demographicCriteriaList: DemographicCriteria[] = []
 
                     // Process nested criteria from attributes
@@ -595,7 +603,7 @@ export class QueryFilterCriteriaManager {
 
                 demographicEvents.forEach(event => {
                   // Also check for age attributes directly in the original attributes array (for events not fully transformed)
-                  const eventAny = event as any
+                  const eventAny = event
                   if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
                     eventAny.attributes.forEach((attr: QueryFilterAttribute) => {
                       if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
@@ -632,7 +640,7 @@ export class QueryFilterCriteriaManager {
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
           const criteriaType = this.mapEventTypeToAtlas(event.eventType!)
-          const criteria: any = {
+          const criteria: CriteriaListItem = {
             [criteriaType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!), // Use Atlas sequential ID
             },
@@ -645,7 +653,7 @@ export class QueryFilterCriteriaManager {
             }) || []
 
           if (attributesNestedCriteria.length > 0) {
-            let criteriaList: any[] = []
+            let criteriaList: CriteriaGroup[] = []
             let demographicCriteriaList: DemographicCriteria[] = []
 
             // Process nested criteria from attributes
@@ -707,7 +715,7 @@ export class QueryFilterCriteriaManager {
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
           const criteriaType = this.mapEventTypeToAtlas(event.eventType!)
-          const criteria: any = {
+          const criteria: CriteriaListItem = {
             [criteriaType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!),
             },
@@ -720,7 +728,7 @@ export class QueryFilterCriteriaManager {
             }) || []
 
           if (attributesNestedCriteria.length > 0) {
-            let criteriaList: any[] = []
+            let criteriaList: CriteriaGroup[] = []
             let demographicCriteriaList: DemographicCriteria[] = []
 
             // Process nested criteria from attributes
@@ -786,9 +794,9 @@ export class QueryFilterCriteriaManager {
 
     // Also add CodesetId to the criteria (use Atlas sequential IDs)
     let ruleIndex = 0
-    atlasDef.InclusionRules.forEach((rule: any) => {
+    atlasDef.InclusionRules.forEach(rule => {
       let criteriaIndex = 0
-      rule.expression.CriteriaList.forEach((criteriaItem: any) => {
+      rule.expression.CriteriaList.forEach(criteriaItem => {
         // Find the corresponding event for this specific criteriaItem
         const correspondingGroup = (this.inclusionCriteria.criteria || [])[ruleIndex]
         if (correspondingGroup && correspondingGroup.events[criteriaIndex]) {
@@ -813,7 +821,7 @@ export class QueryFilterCriteriaManager {
     return atlasDef
   }
 
-  private buildEndStrategy(): any {
+  private buildEndStrategy() {
     if (this.exitEvents?.endStrategy === 'FIXED' && this.exitEvents.fixedDuration) {
       return {
         DateOffset: {
@@ -862,7 +870,7 @@ export class QueryFilterCriteriaManager {
   }
 
   // Helper methods for mapping values to Atlas format
-  private mapCriteriaTypeToAtlas(type: string): string {
+  private mapCriteriaTypeToAtlas(type: string) {
     switch (type) {
       case 'EARLIEST':
         return 'First'
@@ -932,7 +940,7 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  private mapCardinalityExtras(using: string): Record<string, any> {
+  private mapCardinalityExtras(using: string) {
     switch (using) {
       case 'ALL':
         return { CountColumn: 'START_DATE' }
@@ -948,7 +956,7 @@ export class QueryFilterCriteriaManager {
   }
 
   // Serialization
-  toJSON(): any {
+  toJSON(): QueryFilterCriteriaManageData {
     return {
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
@@ -956,34 +964,16 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  static fromJSON(data: any): QueryFilterCriteriaManager {
-    // Handle new sample2 structure directly
-    if (data.inclusionCriteria) {
-      return new QueryFilterCriteriaManager(data)
-    }
-
-    // Handle original structure
-    const criteria = {
-      id: data.id,
-      criteriaType: data.criteriaType,
-      criteria:
-        data.criteria?.map((group: any) => ({
-          id: group.id,
-          title: group.title,
-          description: group.description,
-          criteriaType: group.criteriaType,
-          events: group.events || [],
-        })) || [],
-    }
-    return new QueryFilterCriteriaManager(criteria)
+  static fromJSON(data: QueryFilterCriteriaManageData): QueryFilterCriteriaManager {
+    return new QueryFilterCriteriaManager(data)
   }
 
   // Helper method to build nested criteria from attributes.nestedCriteria format
   private buildNestedCriteriaFromAttributes(
     nestedCriteriaEvents: QueryFilterEvent[],
     systemIdToAtlasId: Map<string, number>
-  ): { criteriaList: any[]; demographicCriteriaList: DemographicCriteria[] } {
-    const criteriaList: any[] = []
+  ): { criteriaList: CriteriaGroup[]; demographicCriteriaList: DemographicCriteria[] } {
+    const criteriaList: CriteriaGroup[] = []
     const demographicCriteriaList: DemographicCriteria[] = []
 
     nestedCriteriaEvents.forEach(nestedEvent => {
@@ -1053,7 +1043,8 @@ export class QueryFilterCriteriaManager {
                 criteria.Criteria[atlasEventType][fieldName] = []
               }
             } else if (attr.attributeId === 'age' && isNumericRangeAttribute(attr)) {
-              const ageConfig: any = {
+              const ageConfig: NumericRange = {
+                Value: 0,
                 Op: 'gt', // Default operator
               }
               if (attr.operator) {
@@ -1068,7 +1059,7 @@ export class QueryFilterCriteriaManager {
         })
 
         if (furtherNestedCriteria.length > 0) {
-          let nestedCriteriaList: any[] = []
+          let nestedCriteriaList: CriteriaGroup[] = []
           let nestedDemographicCriteriaList: DemographicCriteria[] = []
 
           furtherNestedCriteria.forEach(attrObj => {
@@ -1188,26 +1179,10 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  // Clone
+  // Clone. Used for tests
   clone(): QueryFilterCriteriaManager {
     const jsonData = this.toJSON()
-    // Generate new IDs for the cloned structure
-    const cloneData = {
-      ...jsonData,
-      inclusionCriteria: {
-        ...jsonData.inclusionCriteria,
-        criteria:
-          jsonData.inclusionCriteria.criteria?.map((criteria: any) => ({
-            ...criteria,
-            id: `criteria_${Math.random().toString(36).substring(2)}`,
-            events: criteria.events.map((event: any) => ({
-              ...event,
-              id: `event_${Math.random().toString(36).substring(2)}`,
-            })),
-          })) || [],
-      },
-    }
-    return QueryFilterCriteriaManager.fromJSON(cloneData)
+    return QueryFilterCriteriaManager.fromJSON(jsonData)
   }
 
   // Helper method to collect concept sets from nested events that were missed in initial collection
@@ -1215,7 +1190,7 @@ export class QueryFilterCriteriaManager {
     groups: QueryFilterGroup[],
     systemIdToAtlasId: Map<string, number>,
     usedConceptSetIds: Set<string>,
-    conceptSets: any[]
+    conceptSets: ConceptSet[]
   ): void {
     groups.forEach(group => {
       if (group.events) {
@@ -1229,7 +1204,7 @@ export class QueryFilterCriteriaManager {
     events: QueryFilterEvent[],
     systemIdToAtlasId: Map<string, number>,
     usedConceptSetIds: Set<string>,
-    conceptSets: any[]
+    conceptSets: ConceptSet[]
   ): void {
     events.forEach(event => {
       // Check if this event has attributes with nested events
@@ -1250,7 +1225,7 @@ export class QueryFilterCriteriaManager {
                   const atlasSequentialId = conceptSets.length
                   systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-                  const conceptSetDef: any = {
+                  const conceptSetDef: ConceptSet = {
                     id: atlasSequentialId,
                     name: nestedEvent.conceptSet || `Concept Set ${systemConceptSetId}`,
                     expression: {

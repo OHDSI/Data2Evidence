@@ -24,7 +24,13 @@ import type {
   CreateConceptSetRequest,
   StoredConceptItem,
 } from '../types/ConceptSetTypes'
-import type { AtlasCohortDefinition, ConceptSet, CriteriaGroup, CriteriaListItem } from '../types/AtlasTypes'
+import type {
+  AtlasBookmark,
+  AtlasCohortDefinition,
+  ConceptSet,
+  CriteriaGroup,
+  CriteriaListItem,
+} from '../types/AtlasTypes'
 
 import {
   loadConceptSets as apiLoadConceptSets,
@@ -460,21 +466,6 @@ const convertToAtlasFormat = () => {
   }
 }
 
-type AtlasBookmark = {
-  id: number
-  name: string
-  description: string
-  expressionType: string
-  expression: string
-  createdBy: string
-  createdDate: number
-  modifiedBy: string
-  modifiedDate: number
-  tags: string[]
-  hasWriteAccess: boolean
-  hasReadAccess: boolean
-}
-
 const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
   try {
     console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
@@ -494,8 +485,11 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       const conceptSetIds = new Set<number>()
 
       // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
-      const extractFromCriteria = (criteriaItem: CriteriaGroup | CriteriaListItem | Record<string, unknown>) => {
-        const criteria = 'Criteria' in criteriaItem ? criteriaItem.Criteria : criteriaItem
+      const extractFromCriteria = (criteriaItem: CriteriaGroup | CriteriaListItem) => {
+        const isCriteriaListItem = (value: CriteriaGroup | CriteriaListItem): value is CriteriaGroup => {
+          return 'Criteria' in criteriaItem
+        }
+        const criteria = isCriteriaListItem(criteriaItem) ? criteriaItem.Criteria : criteriaItem
         if (criteria && typeof criteria === 'object') {
           Object.values(criteria).forEach((criteriaObj: unknown) => {
             if (
