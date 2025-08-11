@@ -139,7 +139,6 @@ export class NotebookService {
       await this.userArtifactService.createServiceArtifact(
         ServiceName.NOTEBOOKS,
         {
-          serviceName: ServiceName.NOTEBOOKS,
           serviceArtifact: notebookEntity,
         }
       );
@@ -681,7 +680,6 @@ export class NotebookService {
         await this.userArtifactService.createServiceArtifact(
           ServiceName.NOTEBOOKS,
           {
-            serviceName: ServiceName.NOTEBOOKS,
             serviceArtifact: newServiceEntity,
           }
         );
@@ -924,7 +922,6 @@ export class NotebookService {
           await this.userArtifactService.createServiceArtifact(
             ServiceName.NOTEBOOKS,
             {
-              serviceName: ServiceName.NOTEBOOKS,
               serviceArtifact: notebookEntity,
             }
           );
