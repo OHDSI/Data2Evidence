@@ -15,20 +15,38 @@ from _shared_flow_utils.api.PhenotypeAPI import PhenotypeAPI
 os.environ['plugin_name'] = 'phenotype_plugin'
 
 @task(log_prints=True)
-def validate_integer_string(input_string):
-    input_string = input_string.strip()
+def validate_integer_string(input_string: str) -> bool:
+    """
+    Validates that the input string contains only comma-separated integers.
+    
+    Args:
+        input_string (str): A string containing comma-separated integers or 'default'. 
+        Example: '3,4,25' or 'default'
+        
+    Returns:
+        bool: True if validation passes
+    """
     logger = get_run_logger()
-    numbers = input_string.split(',')
-    for num in numbers:
-        num = num.strip()  # Remove any surrounding whitespace
-        if not num.isdigit():
-            error_message = f"""Input CohortsId: {input_string} is not supported, use ',' as seperator, e.g.: '3,4,25' """
-            logger.error(error_message)
-            raise ValueError(error_message)
-    return True
-
+    if input_string == 'default':
+        logger.info("Cohorts ID is set to 'default', retrieving all cohorts from the Phenotype.")
+        logger.warning("Cohort 921 is not supported currently, it will be skipped.")
+        return True
+    else:
+        input_string = input_string.strip()
+        logger = get_run_logger()
+        numbers = input_string.split(',')
+        for num in numbers:
+            num = num.strip()  # Remove any surrounding whitespace
+            if not num.isdigit():
+                error_message = f"""Input CohortsId: {input_string} is not supported, use ',' as seperator, e.g.: '3,4,25' """
+                logger.error(error_message)
+                raise ValueError(error_message)
+            if num.strip() == '921':
+                logger.warning("Cohort 921 is not supported currently, it will be skipped.")
+        return True
+    
 @task(log_prints=True)
-def get_cohort_definitions(cohorts_id, vocabschema_name):
+def get_cohort_definitions(cohorts_id: str, vocabschema_name: str) -> dict:
     """
     Retrieve cohort definitions from the Phenotype Library.
     Args:
@@ -61,15 +79,13 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
                     }}
                 }} else if (class(cohorts_ID) == "integer") {{
                     if (921 %in% cohorts_ID) {{
-                        print(paste0(c("Phenotype 921 is not supported currently, only the following phenotype id will run through:", cohorts_ID), collapse=" "))
                         cohorts_ID <- cohorts_ID[cohorts_ID!=921]
                     }}
                     cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(cohorts_ID)
                     for (i in 1:nrow(cohortDefinitionSets)) {{
                         cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschema_name))
                     }}
-                }} else {{
-                    print('Invalid cohorts_ID, should be either "default" or integer string')
+                }}
                 }}
                 return(cohortDefinitionSets)
             }}
@@ -106,8 +122,19 @@ def get_cohort_definitions(cohorts_id, vocabschema_name):
         return {"cohort_definitions": cohort_definitions, "cohort_definitions_r": cohort_definitions_r}
 
 @task(log_prints=True)
-def create_cohort_definitions(cohort_definitions, dataset_id, user_name):
-    """Create cohort definitions using the REST API."""
+def create_cohort_definitions(cohort_definitions: list, dataset_id: str, user_name: str) -> list:
+    """
+    Create cohort definitions using the REST API.
+    Args:
+        cohort_definitions (list): List of cohort definition dictionaries containing
+                                  cohortId, cohortName, json, and sql keys
+        dataset_id (str): Unique identifier for the target dataset
+        user_name (str): Username of the person creating the cohorts
+    
+    Returns:
+        list: List of API response objects for successfully created cohorts
+    
+    """
     logger = get_run_logger()
     phenotype_api = PhenotypeAPI()
     created_cohorts = []
@@ -117,12 +144,16 @@ def create_cohort_definitions(cohort_definitions, dataset_id, user_name):
             result = phenotype_api.create_single_cohort_definition(cohort_def, dataset_id, user_name)
             created_cohorts.append(result)
         except Exception as e:
-            logger.error(f"Error creating cohort {cohort_def['cohortId']}: {str(e)}")
+            error_message = f"Failed to create cohort {cohort_def['cohortId']}: {str(e)}"
+            logger.error(error_message)
+            raise Exception(error_message) from e
     return created_cohorts
 
 @task(log_prints=True)
-def materialize_cohort_definitions(dbdao, cohort_definitions_r, cdmschema_name, cohortschema_name, cohorttable_name, user):
-    """Materialize cohort definitions into the database."""
+def materialize_cohort_definitions(dbdao, cohort_definitions_r, cdmschema_name: str, cohortschema_name: str, cohorttable_name: str, user: UserType):
+    """
+    Materialize cohort definitions into the database.
+    """
     # Setup database connection for R
     set_db_driver_env_string = dbdao.set_db_driver_env()
     set_connection_string = dbdao.get_database_connector_connection_string(user_type=user)
@@ -247,9 +278,10 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     user = UserType.ADMIN_USER
     
     # Validate cohorts_id if not default
-    if cohorts_id != 'default':
-        validate_integer_string(cohorts_id)
-   
+    if not validate_integer_string(cohorts_id):
+        error_message = f"Invalid cohorts_id: {cohorts_id}. It should be a comma-separated string of integers or 'default'."
+        logger.error(error_message)
+        
     coohort_definitions_rst = get_cohort_definitions(
         cohorts_id=cohorts_id,
         vocabschema_name=vocabschema_name

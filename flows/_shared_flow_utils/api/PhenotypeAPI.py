@@ -9,7 +9,6 @@ class PhenotypeAPI(BaseAPI):
         super().__init__()
         self.url = self.get_service_route("d2e-webapi")  
         self.cohort_definition_url = self.url + 'cohortdefinition'
-        # hardcoded for now, can be made dynamic later
         self.headers = self.get_options()
         
     def create_single_cohort_definition(self, cohort_def, dataset_id, user_name):
