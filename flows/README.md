@@ -71,7 +71,7 @@ The pipeline triggers the flow job first and subsequently sends the bearer token
 
 - Replace `deployment_id`, `parameters`, and `bearer_token` from jobs portal.
 - Run the following pipeline below.
-`python flowauth.py`
+`python -m docs.tests.flowauth`
 
 ## Modifying an existing flow
 ### Modify flow parameters
