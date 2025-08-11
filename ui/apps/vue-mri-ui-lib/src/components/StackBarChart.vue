@@ -80,7 +80,7 @@ export default {
           this.completeDownloadCSV()
         })
     },
-    getFireRequestAndBookmark() {
+    getFireRequest() {
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
@@ -176,9 +176,6 @@ export default {
       'sortProperty',
       'processResponse',
     ]),
-    getFireRequestAndBookmark() {
-      return [this.getFireRequest, this.getBookmarksData]
-    },
   },
   beforeDestroy() {
     if (stackBarChart) {

@@ -296,6 +296,7 @@ export default {
       'fireDeleteAtlasCohortDefinitionQuery',
       'fetchDataQualityFlowRun',
       'generateDataQualityFlowRun',
+      'resetChart'
     ]),
     ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
@@ -509,11 +510,7 @@ export default {
       return uniqueName
     },
     reset() {
-      this[types.CONFIG_SET_HAS_ASSIGNED](false)
-      this.$nextTick(() => {
-        this.resetChartProperties()
-        this[types.CONFIG_SET_HAS_ASSIGNED](true)
-      })
+      this.resetChart()
     },
     isMScohort(bookmarkDisplay) {
       // MS cohort only contains a cohort definition
