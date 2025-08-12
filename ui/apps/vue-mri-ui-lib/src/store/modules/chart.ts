@@ -334,6 +334,12 @@ const actions = {
   setFireRequest({ commit }) {
     commit(types.CHART_SET_FIRE_REQUEST)
   },
+  resetChart({ dispatch, getters }) {
+    const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
+    dispatch('setIFRState', { ifr: initialIFR })
+    dispatch('setupChartDefaults')
+    dispatch('resetChartProperties')
+  },
 }
 
 // mutations
