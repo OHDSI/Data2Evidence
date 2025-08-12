@@ -1079,7 +1079,7 @@ const handleConceptSetAction = ({
 
       // For multi-select mode, handle selected concepts via the onClose callback
       eventProps.onClose = (onCloseValues?: TerminologyCloseValues | undefined) => {
-        if (onCloseValues?.selectedConcepts && onCloseValues.selectedConcepts.length > 0 && eventId) {
+        if (onCloseValues?.selectedConcepts && onCloseValues.selectedConcepts.length >= 0 && eventId) {
           // Transform selected concepts into tag input format while preserving all concept details
           const conceptItems: StoredConceptItem[] = onCloseValues.selectedConcepts.map((concept: SelectedConcept) => ({
             value: String(concept.conceptId),
