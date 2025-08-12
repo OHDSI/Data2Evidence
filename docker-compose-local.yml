@@ -1,6 +1,6 @@
 services:
   trex:
-    command: npm run watch
+    command: npm run startdev
     build:
       context: .
       dockerfile: ./services/trex/Dockerfile
