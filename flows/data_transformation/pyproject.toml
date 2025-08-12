@@ -1,0 +1,45 @@
+[project]
+name = "data-transformation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb==1.2.1",
+    "httpx==0.27.2",
+    "ibis-framework[duckdb,postgres]==10.0.0",
+    "numpy==2.0.0",
+    "pandas==2.2.2",
+    "prefect[docker,shell]==3.0.3",
+    "psycopg2-binary==2.9.6",
+    "pydantic==2.10.6",
+    "pyjwt==2.10.1",
+    "sqlalchemy==2.0.38",
+]
+
+[project.optional-dependencies]
+dataflow_ui = [
+    "genson==1.3.0",
+    "jsonpath-ng==1.7.0",
+    "prefect[dask]==3.0.3",
+]
+dicom-etl = [
+    "orthanc-api-client==0.15.3",
+    "pydicom==2.4.4",
+    "s3fs==2023.1.0",
+]
+white-rabbit = [
+    "pandasql==0.7.3",
+    "python-calamine==0.3.1",
+]
+ner-extract = [
+    "en-ner-bc5cdr-md",
+    "nmslib",
+    "scipy==1.16.0",
+    "scispacy==0.5.5",
+    "spacy-transformers==1.3.9",
+]
+
+[tool.uv.sources]
+nmslib = { git = "https://github.com/nmslib/nmslib.git", subdirectory = "python_bindings", rev = "2ae5378" }
+en-ner-bc5cdr-md = { url = "https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz" }

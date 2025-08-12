@@ -7,8 +7,12 @@
 **/env/
 **/venv/
 **/.cache/
-**/build/
 **/dist/
 **/*.log
 **/.python-version
 **/package.json
+.github
+.gitignore
+.npmignore
+flowinit.py
+README.md

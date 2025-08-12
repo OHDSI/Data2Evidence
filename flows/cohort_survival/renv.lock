@@ -1,17 +1,17 @@
 {
   "R": {
-    "Version": "4.4.1",
+    "Version": "4.4.3",
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://p3m.dev/cran/2025-04-10"
+        "URL": "https://packagemanager.posit.co/cran/latest"
       }
     ]
   },
   "Packages": {
     "CDMConnector": {
       "Package": "CDMConnector",
-      "Version": "1.5.0",
+      "Version": "1.4.0",
       "Source": "Repository",
       "Title": "Connect to an OMOP Common Data Model",
       "Authors@R": "c( person(\"Adam\", \"Black\", , \"black@ohdsi.org\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0001-5576-8701\")), person(\"Artem\", \"Gorbachev\", , \"artem.gorbachev@odysseusinc.com\", role = \"aut\"), person(\"Edward\", \"Burn\", , \"edward.burn@ndorms.ox.ac.uk\", role = \"aut\"), person(\"Marti\", \"Catala Sabate\", , \"marti.catalasabate@ndorms.ox.ac.uk\", role = \"aut\") )",
@@ -82,7 +82,7 @@
       "NeedsCompilation": "no",
       "Author": "Adam Black [aut, cre] (<https://orcid.org/0000-0001-5576-8701>), Artem Gorbachev [aut], Edward Burn [aut], Marti Catala Sabate [aut]",
       "Maintainer": "Adam Black <black@ohdsi.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "CohortSurvival": {
       "Package": "CohortSurvival",
@@ -135,7 +135,7 @@
       "NeedsCompilation": "no",
       "Author": "Edward Burn [aut, cre] (<https://orcid.org/0000-0002-9286-1128>), Kim Lopez [aut] (<https://orcid.org/0000-0002-8462-8668>), Marti Catala [ctb] (<https://orcid.org/0000-0003-3308-9905>), Xintong Li [ctb] (<https://orcid.org/0000-0003-3308-9905>), Danielle Newby [ctb] (<https://orcid.org/0000-0002-3001-1478>)",
       "Maintainer": "Edward Burn <edward.burn@ndorms.ox.ac.uk>",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "DBI": {
       "Package": "DBI",
@@ -332,7 +332,7 @@
       "VignetteBuilder": "knitr",
       "NeedsCompilation": "no",
       "Author": "Marti Catala [aut, cre] (<https://orcid.org/0000-0003-3308-9905>), Yuchen Guo [aut] (<https://orcid.org/0000-0002-0847-4855>), Mike Du [aut] (<https://orcid.org/0000-0002-9517-8834>), Kim Lopez-Guell [aut] (<https://orcid.org/0000-0002-8462-8668>), Edward Burn [aut] (<https://orcid.org/0000-0002-9286-1128>), Nuria Mercade-Besora [aut] (<https://orcid.org/0009-0006-7948-3747>), Xintong Li [ctb] (<https://orcid.org/0000-0002-6872-5804>), Xihang Chen [ctb] (<https://orcid.org/0009-0001-8112-8959>)",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "R6": {
       "Package": "R6",
@@ -375,7 +375,8 @@
       "Description": "Provides color schemes for maps (and other graphics) designed by Cynthia Brewer as described at http://colorbrewer2.org.",
       "License": "Apache License 2.0",
       "NeedsCompilation": "no",
-      "Repository": "CRAN"
+      "Repository": "CRAN",
+      "Encoding": "UTF-8"
     },
     "RPostgres": {
       "Package": "RPostgres",
@@ -425,7 +426,7 @@
       "NeedsCompilation": "yes",
       "Author": "Hadley Wickham [aut], Jeroen Ooms [aut], Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>), RStudio [cph], R Consortium [fnd], Tomoaki Nishiyama [ctb] (Code for encoding vectors into strings derived from RPostgreSQL)",
       "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "Rcpp": {
       "Package": "Rcpp",
@@ -1094,7 +1095,7 @@
       "NeedsCompilation": "yes",
       "Author": "Hannes Mühleisen [aut] (<https://orcid.org/0000-0001-8552-0029>), Mark Raasveldt [aut] (<https://orcid.org/0000-0001-5005-6844>), Kirill Müller [cre] (<https://orcid.org/0000-0002-1416-3412>), Stichting DuckDB Foundation [cph], Apache Software Foundation [cph], PostgreSQL Global Development Group [cph], The Regents of the University of California [cph], Cameron Desrochers [cph], Victor Zverovich [cph], RAD Game Tools [cph], Valve Software [cph], Rich Geldreich [cph], Tenacious Software LLC [cph], The RE2 Authors [cph], Google Inc. [cph], Facebook Inc. [cph], Steven G. Johnson [cph], Jiahao Chen [cph], Tony Kelman [cph], Jonas Fonseca [cph], Lukas Fittl [cph], Salvatore Sanfilippo [cph], Art.sy, Inc. [cph], Oran Agra [cph], Redis Labs, Inc. [cph], Melissa O'Neill [cph], PCG Project contributors [cph]",
       "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "farver": {
       "Package": "farver",
@@ -1163,7 +1164,7 @@
     },
     "generics": {
       "Package": "generics",
-      "Version": "0.1.3",
+      "Version": "0.1.4",
       "Source": "Repository",
       "Title": "Common S3 Generics not Provided by Base R Methods Related to Model Fitting",
       "Authors@R": "c( person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0003-4757-117X\")), person(\"Max\", \"Kuhn\", , \"max@posit.co\", role = \"aut\"), person(\"Davis\", \"Vaughan\", , \"davis@posit.co\", role = \"aut\"), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"), comment = c(ROR = \"https://ror.org/03wc8by49\")) )",
@@ -1461,7 +1462,8 @@
         "stats",
         "graphics"
       ],
-      "Repository": "CRAN"
+      "Repository": "CRAN",
+      "Encoding": "UTF-8"
     },
     "lattice": {
       "Package": "lattice",
@@ -1723,7 +1725,7 @@
       "NeedsCompilation": "no",
       "Author": "Marti Catala [aut, cre] (<https://orcid.org/0000-0003-3308-9905>), Edward Burn [aut] (<https://orcid.org/0000-0002-9286-1128>), Mike Du [ctb] (<https://orcid.org/0000-0002-9517-8834>), Yuchen Guo [ctb] (<https://orcid.org/0000-0002-0847-4855>), Adam Black [ctb] (<https://orcid.org/0000-0001-5576-8701>), Marta Alcalde-Herraiz [ctb] (<https://orcid.org/0009-0002-4405-1814>)",
       "Maintainer": "Marti Catala <marti.catalasabate@ndorms.ox.ac.uk>",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "pillar": {
       "Package": "pillar",
@@ -2042,7 +2044,7 @@
       "NeedsCompilation": "no",
       "Author": "Kevin Ushey [aut, cre] (<https://orcid.org/0000-0003-2880-7407>), Hadley Wickham [aut] (<https://orcid.org/0000-0003-4757-117X>), Posit Software, PBC [cph, fnd]",
       "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
-      "Repository": "RSPM"
+      "Repository": "CRAN"
     },
     "rjson": {
       "Package": "rjson",
@@ -2656,7 +2658,7 @@
       "RoxygenNote": "7.3.1",
       "NeedsCompilation": "no",
       "Author": "Marti Catala [aut] (<https://orcid.org/0000-0003-3308-9905>), Núria Mercadé-Besora [aut, cre] (<https://orcid.org/0009-0006-7948-3747>)",
-      "Repository": "CRAN"
+      "Repository": "RSPM"
     },
     "vroom": {
       "Package": "vroom",

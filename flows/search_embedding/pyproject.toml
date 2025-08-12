@@ -3,7 +3,7 @@ name = "search-embedding"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 dependencies = [
     "duckdb==1.2.1",
     "ibis-framework[duckdb,postgres]==10.0.0",
@@ -18,12 +18,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-hana = [
-    "sqlalchemy-hana==2.2.0",
-]
+hana = []
 
 [dependency-groups]
 dev = [
     "pytest==8.4.1",
     "ruff==0.12.7",
+    "uv==0.8.4",
 ]

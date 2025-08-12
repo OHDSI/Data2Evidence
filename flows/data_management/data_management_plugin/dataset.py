@@ -174,7 +174,7 @@ def update_datamodel(flow_action_type: str,
                                         **dict(db=database_code, schema=schema_name))],
                     on_failure=[partial(update_cdm_version_hook,
                                         **dict(db=database_code, schema=schema_name))])
-                update_cdm_version_wo(schema_dao, cdm_version)
+                update_cdm_version_wo(schema_dao, schema_name, cdm_version)
         logger.info(
             "Dataset schema successfully updated!")
     except Exception as e:
@@ -285,7 +285,7 @@ def insert_cdm_version(schema_dao: DBDao, schema_name: str, cdm_version: str):
     get_run_logger().info(f"Successfully inserted cdm version '{cdm_version}' into '{schema_name}.cdm_source' table..")
 
 @task(log_prints=True)
-def update_cdm_version(schema_dao: DBDao, schema_name, cdm_version: str):
+def update_cdm_version(schema_dao: DBDao, schema_name: str, cdm_version: str):
     get_run_logger().info(f"Updating cdm version '{cdm_version}' for '{schema_name}.cdm_source' table..")
     schema_dao.update_cdm_version(schema_name, cdm_version)
     get_run_logger().info(f"Successfully updated cdm version '{cdm_version}' for '{schema_name}.cdm_source' table..")

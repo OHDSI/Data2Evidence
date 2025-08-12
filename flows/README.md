@@ -35,7 +35,7 @@
     ```
     This will install base and dev dependencies in a virtual environment based on the `uv.lock file`. To install optional dependencies
     ```
-    uv sync --extra dev hana 
+    uv sync --extra hana 
     ```
     or 
     ```
@@ -45,6 +45,7 @@
     ```
     uv add 'prefect[shell,docker]==3.0.3'
     uv add sqlalchemy-hana==2.2.0 --optional hana
+    uv add --dev uv==0.8.4
     uv remove pandas
     ```
     This update the dependencies in `pyproject.toml` and the `uv.lock` file.
