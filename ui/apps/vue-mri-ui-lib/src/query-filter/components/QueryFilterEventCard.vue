@@ -330,21 +330,6 @@ const getEventTypeDisplay = (eventType?: string) => {
   return typeMap[eventType] || eventType
 }
 
-// Get cardinality display text
-const getCardinalityDisplay = () => {
-  const cardinality = eventData.value.cardinality
-  if (!cardinality) return 'At least 1'
-
-  const typeText =
-    {
-      AT_LEAST: 'At least',
-      EXACTLY: 'Exactly',
-      AT_MOST: 'At most',
-    }[cardinality.type] || cardinality.type
-
-  return `${typeText} ${cardinality.count}`
-}
-
 // Get concept set display name for readonly mode
 const getConceptSetDisplayName = (): string => {
   // Priority: selectedConceptSet.text > selectedConceptSet.display_value > conceptSet property > conceptSetId
@@ -367,8 +352,6 @@ const getConceptSetDisplayName = (): string => {
 
   return ''
 }
-
-const sideBarRef = ref<HTMLElement | null>(null)
 
 // Expand/collapse state
 const isExpanded = ref(true)
