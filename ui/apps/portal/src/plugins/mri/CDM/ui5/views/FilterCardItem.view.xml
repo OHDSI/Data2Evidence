@@ -173,8 +173,8 @@
 						valueLiveUpdate="true"></Input>
 
 					<Label class="sapMxConfigPropLabel" 
-						text="Parent Interaction Mapping" 
-						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
+					    value="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPING_LABEL}" 
+						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPING_LABEL}" 
 						id="pInteractionMappingLabelId"></Label>
 
 					<Input id="pInteractionMappingLabel" 
