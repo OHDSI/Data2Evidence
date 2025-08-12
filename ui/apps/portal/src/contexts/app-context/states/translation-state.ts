@@ -1057,6 +1057,7 @@ export const i18nDefault = {
     TREX_PLUGINS__LATEST_VERSION: "Latest version",
     TREX_PLUGINS__NAME: "Name",
     TREX_PLUGINS__NO_DATA: "No plugins",
+    TREX_PLUGINS__DESCRIPTION: "Description",
     TREX_PLUGINS__REGISTRY_VERSION: "Registry version",
     TREX_PLUGINS__STATUS: "Status",
     TREX_PLUGINS__TITLE: "Plugins",

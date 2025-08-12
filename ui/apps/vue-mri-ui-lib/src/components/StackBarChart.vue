@@ -131,7 +131,7 @@ export default {
                 categories: [],
                 totalPatientCount: 0,
                 noDataReason,
-              });
+              })
               return
             }
 
@@ -153,8 +153,6 @@ export default {
               })
             }
           })
-      } else {
-        this.$emit('busyEv', false)
       }
     },
     shouldRerenderChart() {
