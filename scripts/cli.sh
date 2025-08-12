@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.7.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.7.1-beta
+version=0.8.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.8.1-beta
 
 
 cmd=""
@@ -64,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         -p|--port) export PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
         -m|--mlflow) mlflow=--profile="mlflow" ;;
+        --hana) hana=--profile="hana" ;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -98,7 +99,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $hana $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -118,6 +119,18 @@ generate_jwt() {
   echo "$header.$payload.$signature"
 }
 
+# Setup zx command with fallbacks
+setup_zx_cmd() {
+  if [ -f "$node_modules_path/node_modules/.bin/zx" ]; then
+    ZX_CMD="$node_modules_path/node_modules/.bin/zx"
+  elif [ -f "$node_modules_path/node_modules/zx/build/cli.js" ]; then
+    ZX_CMD="node $node_modules_path/node_modules/zx/build/cli.js"
+  else
+    echo "Error: zx not found in node_modules"
+    exit 1
+  fi
+}
+
 case $cmd in
     start)
         source "$ENVFILE"
@@ -126,6 +139,27 @@ case $cmd in
             cmd="$cmd --no-deps $services"
         fi
         echo . $cmd
+        $cmd
+        ;;
+    inithana)
+        echo "This will initialize SAP HANA Express Edition."
+        echo "By proceeding, you agree to the SAP License Agreement."
+        echo "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
+        read -p "Do you agree to the SAP license terms and want to continue? (y/N): " license_agreement
+        case "$license_agreement" in
+            y|Y|yes|YES)
+                echo "License accepted. Proceeding with HANA initialization..."
+                ;;
+            *)
+                echo "License not accepted. Aborting HANA initialization."
+                exit 1
+                ;;
+        esac
+        
+        source $node_modules_path/scripts/lib.sh # functions here
+        hanapw=$(random-password 16)
+        echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
+        cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         $cmd
         ;;
     stop)
@@ -230,6 +264,8 @@ case $cmd in
         echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+        echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
         echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
         echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
@@ -261,6 +297,11 @@ case $cmd in
         cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
         echo . $cmd
         $cmd
+        if [[ -n "$jupyter" ]]; then
+            cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
+            echo . $cmd
+            $cmd
+        fi
         cmd="$dockerbasecmd pull"
         echo . $cmd
         $cmd
@@ -269,11 +310,13 @@ case $cmd in
         source "$ENVFILE"
         $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
-        npx zx $node_modules_path/scripts/setupdemo.mjs -n "$ENVFILE" 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs -n "$ENVFILE" 
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
-        npx zx $node_modules_path/scripts/check-setupdemo-flow.mjs
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
         ;;
     *)
         if [ -z ${cmd:-} ]; then

@@ -30,6 +30,7 @@ import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
 import { api } from "../../../axios/api";
 import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
+import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import "./StudyOverview.scss";
 
 const enum StudyAttributeConfigIds {
@@ -65,6 +66,8 @@ const StudyOverview: FC = () => {
   const [showDataCharacterizationDialog, openDataCharacterizationDialog, closeDataCharacterizationDialog] =
     useDialogHelper(false);
   const [showCreateCacheDialog, openCreateCacheDialog, closeCreateCacheDialog] = useDialogHelper(false);
+  const [showSetupSemanticSearchDialog, openSetupSemanticSearchDialog, closeSetupSemanticSearchDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
@@ -151,6 +154,14 @@ const StudyOverview: FC = () => {
       openCreateCacheDialog();
     },
     [openCreateCacheDialog]
+  );
+
+  const handleSetupSemanticSearch = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openSetupSemanticSearchDialog();
+    },
+    [openSetupSemanticSearchDialog]
   );
 
   const visibilityImgAlt = useCallback((value?: string) => {
@@ -379,7 +390,7 @@ const StudyOverview: FC = () => {
                         {...(dataset.schemaName && { showCopy: true })}
                         textStyle={{ paddingTop: "5px" }}
                       >
-                        {dataset.schemaName ? dataset.schemaName.toUpperCase() : "-"}
+                        {dataset.schemaName || "-"}
                       </Text>
                       {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
                         <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
@@ -417,6 +428,7 @@ const StudyOverview: FC = () => {
                         handleDataQuality={handleDataQuality}
                         handleDataCharacterization={handleDataCharacterization}
                         handleCreateCache={handleCreateCache}
+                        handleSetupSemanticSearch={handleSetupSemanticSearch}
                       />
                     </TableCell>
                   </TableRow>
@@ -489,6 +501,14 @@ const StudyOverview: FC = () => {
 
           {showCreateCacheDialog && (
             <CreateCacheDialog dataset={activeDataset} open={showCreateCacheDialog} onClose={closeCreateCacheDialog} />
+          )}
+
+          {showSetupSemanticSearchDialog && (
+            <SetupSemanticSearchDialog
+              dataset={activeDataset}
+              open={showSetupSemanticSearchDialog}
+              onClose={closeSetupSemanticSearchDialog}
+            />
           )}
         </div>
       </div>

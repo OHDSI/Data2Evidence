@@ -1,5 +1,5 @@
-@import './variables.scss';
-@import './fonts.scss';
+@use './variables.scss' as *;
+@use './fonts.scss' as *;
 
 body {
   margin: 0;

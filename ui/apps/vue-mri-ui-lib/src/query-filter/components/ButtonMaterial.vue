@@ -10,61 +10,57 @@ export default {
 <script setup lang="ts">
 import { ref, computed, useSlots } from 'vue'
 
-const props = defineProps({
-  variant: {
-    type: String,
-    default: 'contained',
-    validator: (value: string) => ['contained', 'outlined', 'text'].includes(value),
-  },
-  color: {
-    type: String,
-    default: 'primary',
-    validator: (value: string) => ['primary', 'secondary', 'error', 'warning', 'info', 'success'].includes(value),
-  },
-  size: {
-    type: String,
-    default: 'medium',
-    validator: (value: string) => ['small', 'medium', 'large'].includes(value),
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
-  fullWidth: {
-    type: Boolean,
-    default: false,
-  },
+type Variant = 'contained' | 'outlined' | 'text'
+type Color = 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'
+type Size = 'small' | 'medium' | 'large'
+
+interface Props {
+  variant?: Variant
+  color?: Color
+  size?: Size
+  disabled?: boolean
+  fullWidth?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'contained',
+  color: 'primary',
+  size: 'medium',
+  disabled: false,
+  fullWidth: false,
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits<{
+  'button-click': [event: MouseEvent]
+}>()
 const slots = useSlots()
 
-const isPressed = ref(false)
+const isPressed = ref<boolean>(false)
 
-const hasStartIcon = computed(() => !!slots.startIcon)
-const hasEndIcon = computed(() => !!slots.endIcon)
+const hasStartIcon = computed<boolean>(() => !!slots['startIcon'])
+const hasEndIcon = computed<boolean>(() => !!slots['endIcon'])
 
-const handleMouseDown = () => {
+const handleMouseDown = (): void => {
   if (!props.disabled) {
     isPressed.value = true
   }
 }
 
-const handleMouseUp = () => {
+const handleMouseUp = (): void => {
   isPressed.value = false
 }
 
-const handleMouseLeave = () => {
+const handleMouseLeave = (): void => {
   isPressed.value = false
 }
 
-const handleClick = event => {
+const handleClick = (event: MouseEvent): void => {
   if (!props.disabled) {
-    emit('click', event)
+    emit('button-click', event)
   }
 }
 
-const buttonClasses = computed(() => {
+const buttonClasses = computed<string[]>(() => {
   const classes = ['material-button']
 
   classes.push(`material-button--${props.variant}`)
@@ -83,13 +79,13 @@ const buttonClasses = computed(() => {
   <button
     :class="buttonClasses"
     :disabled="disabled"
-    @click="handleClick"
+    @click.prevent="handleClick"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   >
     <slot name="startIcon"></slot>
-    <span v-if="$slots.default" :class="{ 'button-text': hasStartIcon || hasEndIcon }">
+    <span v-if="$slots['default']" :class="{ 'button-text': hasStartIcon || hasEndIcon }">
       <slot></slot>
     </span>
     <slot name="endIcon"></slot>

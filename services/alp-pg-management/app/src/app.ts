@@ -221,7 +221,7 @@ export class App {
       this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
 
       // Grant roles to users
-      const pgUsers = this.getPGUsers(this.getDatabaseName("alp"));
+      const pgUsers = this.getPGUsers(this.getDatabaseName(config.getProperties()["config_db_name"]));
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
@@ -493,6 +493,29 @@ export class App {
     }
   }
 
+
+  async alterExtensionSchema(databaseName: string, alterExtensionConfig: any) {
+    let client;
+
+    try {
+      const pg_owneruser_config =
+        config.getProperties()["postgres_connection_config"];
+      const client = await this.dbDao.openConnection(pg_owneruser_config);
+
+      await this.dbDao.alterExtensionSchema(
+          client,
+          alterExtensionConfig[databaseName].schema,
+          alterExtensionConfig[databaseName].extension
+      );
+      await this.dbDao.closeConnection(client);
+      return true;
+    } catch (e: any) {
+      this.logger.error(e.message);
+      await this.dbDao.closeConnection(client);
+      return false;
+    }
+  }
+
   async start() {
     const pg_management_config =
       config.getProperties()["postgres_manage_config"];
@@ -526,7 +549,20 @@ export class App {
             await this.createSchema(databaseName, this.getSchemaName(schema));
           }
         }
+
+        // set extension if schema and database in postgres_alter_extension_config
+        const alter_extension_config =
+          config.getProperties()["postgres_alter_extension_config"]["databases"];
+
+        if (alter_extension_config && Object.prototype.hasOwnProperty.call(alter_extension_config, databaseName)) {
+          await this.alterExtensionSchema(
+            databaseName,
+            alter_extension_config
+          )
+        }
       }
+
+
 
       // create publication if database in POSTGRES_PUBLICATION_CONFIG
       // const pg_publication_config =

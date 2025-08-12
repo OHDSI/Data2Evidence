@@ -1,27 +1,43 @@
-import React, { FC, useCallback } from "react";
-import { Box, Dialog, DialogProps } from "@portal/components";
+import React, { ChangeEvent, FC, useCallback, useState, useMemo } from "react";
+import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
-import { NodeChoiceMap } from "../index";
-import { NodeTypeChoice } from "../type";
+import {
+  NodeChoiceMap,
+  NodeType,
+  inputHandleTypeMap,
+  outputHandleTypeMap,
+} from "../index";
+import { NodeTag, NodeTypeChoice } from "../type";
 import "./SelectNodeTypesDialog.scss";
 
 export interface SelectNodeTypesDialogProps
   extends Omit<DialogProps, "onClose"> {
   onClose: (nodeType?: NodeTypeChoice) => void;
-  connectorType?: string;
+  handleType: "input" | "output";
+  handleNodeType?: string;
 }
 
 export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   onClose,
-  connectorType,
+  handleType, // this should be renamed to handle direction type since its only "input" or "output"
+  handleNodeType,
   ...props
 }) => {
+  const [hideExperimental, setHideExperimental] = useState(true);
+
   const handleClose = useCallback(
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
     },
     [onClose]
   );
+
+  const nodesToSelect: string[] = useMemo(() => {
+    if (!handleNodeType) return Object.keys(NodeChoiceMap);
+    return handleType === "input"
+      ? Array.from(inputHandleTypeMap[handleNodeType])
+      : Array.from(outputHandleTypeMap[handleNodeType]);
+  }, [handleNodeType, handleType]);
 
   return (
     <Dialog
@@ -40,9 +56,11 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       {...props}
     >
       <Box className="select-node-type-dialog__content">
-        {Object.keys(NodeChoiceMap)
+        {nodesToSelect
           .filter((nodeType: NodeTypeChoice) =>
-            connectorType ? NodeChoiceMap[nodeType].tag === connectorType : true
+            hideExperimental
+              ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
+              : true
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection
@@ -52,7 +70,15 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
             />
           ))}
       </Box>
-      <Box className="select-node-type-dialog__footer"></Box>
+      <Box className="select-node-type-dialog__footer">
+        <Checkbox
+          label="Hide experimental"
+          checked={hideExperimental}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setHideExperimental(e.target.checked)
+          }
+        />
+      </Box>
     </Dialog>
   );
 };
