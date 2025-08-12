@@ -35,7 +35,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
     setSelectedDatasetId(event.target.value);
   }, []);
 
-  const handleTabSelectionChange = useCallback(async (event: React.SyntheticEvent, newValue: StudyLocationTab) => {
+  const handleTabSelectionChange = useCallback((event: React.SyntheticEvent, newValue: StudyLocationTab) => {
     setTabValue(newValue);
   }, []);
 
