@@ -162,3 +162,24 @@ export interface GetConceptSetsResponse {
   createdDate: string
   modifiedDate: string
 }
+
+// Interface for concept selection from terminology modal (matches portal's FhirValueSetExpansionContainsWithExt)
+export interface SelectedConcept {
+  conceptId: number
+  display: string
+  domainId: string
+  system?: string | undefined
+  conceptClassId?: string | undefined
+  standardConcept?: string | undefined
+  concept?: string | undefined
+  code?: string | undefined
+  validStartDate?: string | undefined
+  validEndDate?: string | undefined
+  validity?: string | undefined
+  useDescendants?: boolean | undefined
+  useMapped?: boolean | undefined
+  isExcluded?: boolean | undefined
+  score?: number | undefined
+  // Backward compatibility field (our custom addition)
+  conceptName?: string | undefined
+}

@@ -62,7 +62,9 @@ const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is Cri
 }
 
 // Type guard for criteria objects that have CodesetId
-const hasCodesetId = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { CodesetId?: number } => {
+export const hasCodesetId = (
+  criteriaObj: CriteriaObject
+): criteriaObj is Extract<CriteriaObject, { CodesetId: number }> => {
   return 'CodesetId' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object'
 }
 
