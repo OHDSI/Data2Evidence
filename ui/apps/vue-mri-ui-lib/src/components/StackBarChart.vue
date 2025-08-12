@@ -29,12 +29,6 @@ export default {
     this.setFireRequest()
   },
   watch: {
-    getHasAssignedConfig(hasAssignedConfig) {
-      if (hasAssignedConfig) {
-        this.setupAxes()
-        this.setFireRequest()
-      }
-    },
     'sortProperty.props.value': function sorter(newVal) {
       this.chartData = this.processResponse(this.chartData, newVal)
       this.renderChart()
@@ -81,7 +75,12 @@ export default {
         })
     },
     getFireRequest() {
-      this.setupAxes()
+      // Check if the chart has been reset
+      const chartSortProperty = this.getChartProperty(Constants.MRIChartProperties.Sort)
+      if (chartSortProperty?.props?.active === false) {
+        this.setupAxes()
+      }
+
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
@@ -176,6 +175,7 @@ export default {
       'getChartableFilterCardByInstanceId',
       'sortProperty',
       'processResponse',
+      'getChartProperty',
     ]),
   },
   beforeDestroy() {
