@@ -27,7 +27,7 @@ export const DisclaimerDialog: FC = () => {
       </div>
       <Divider />
       <div className="button-group-actions">
-        <Button onClick={handleAccept} text={i18nKeys.DISCLAIMER_DIALOG__ACCEPT} block />
+        <Button onClick={handleAccept} text={getText(i18nKeys.DISCLAIMER_DIALOG__ACCEPT)} block />
       </div>
     </Dialog>
   );
