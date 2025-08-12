@@ -1340,9 +1340,10 @@ export class QueryFilterCriteriaManager {
     const demographicCriteriaList: DemographicCriteria[] = []
 
     nestedCriteriaEvents.forEach(nestedEvent => {
+      const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType || 'conditionOccurrence')
       const criteria: any = {
         Criteria: {
-          ConditionOccurrence: {},
+          [atlasEventType]: {},
         },
         StartWindow: {
           Start: {
@@ -1363,7 +1364,7 @@ export class QueryFilterCriteriaManager {
       if (nestedEvent.conceptSetId) {
         const atlasConceptSetId = systemIdToAtlasId.get(nestedEvent.conceptSetId)
         if (atlasConceptSetId !== undefined) {
-          criteria.Criteria.ConditionOccurrence.CodesetId = atlasConceptSetId
+          criteria.Criteria[atlasEventType].CodesetId = atlasConceptSetId
         }
       }
 
@@ -1383,7 +1384,7 @@ export class QueryFilterCriteriaManager {
         demographicAttributes.forEach(attr => {
           if (hasAttributeId(attr)) {
             if (attr.attributeId === 'gender') {
-              criteria.Criteria.ConditionOccurrence.Gender = []
+              criteria.Criteria[atlasEventType].Gender = []
             } else if (attr.attributeId === 'age' && isNumericRangeAttribute(attr)) {
               const ageConfig: any = {
                 Op: 'gt', // Default operator
@@ -1394,7 +1395,7 @@ export class QueryFilterCriteriaManager {
               if (attr.value !== undefined) {
                 ageConfig.Value = parseInt(attr.value)
               }
-              criteria.Criteria.ConditionOccurrence.Age = ageConfig
+              criteria.Criteria[atlasEventType].Age = ageConfig
             }
           }
         })
@@ -1412,7 +1413,7 @@ export class QueryFilterCriteriaManager {
           })
 
           if (nestedCriteriaList.length > 0 || nestedDemographicCriteriaList.length > 0) {
-            criteria.Criteria.ConditionOccurrence.CorrelatedCriteria = {
+            criteria.Criteria[atlasEventType].CorrelatedCriteria = {
               Type: 'ALL',
               CriteriaList: nestedCriteriaList,
               DemographicCriteriaList: nestedDemographicCriteriaList,
