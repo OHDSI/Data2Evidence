@@ -185,9 +185,9 @@ class CohortIncidenceModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/CohortIncidenceModule/v0.4.0/SettingsFunctions.R')
-                rCohortIncidence = ro.packages.importr('CohortIncidence')
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortIncidence = rStrategus.CohortIncidenceModule['new']()
+                rCreateCohortIncidenceModuleSpecifications = rCohortIncidence['createModuleSpecifications']
                 rTargets = []
                 for o in self.cohortRefs:
                     rTargets.append(rCohortIncidence.createCohortRef(id = convert_py_to_R(int(o['id'])), name = o['name']))
@@ -236,12 +236,12 @@ class CharacterizationModuleSpecNode(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CharacterizationModule/v0.5.0/SettingsFunctions.R")
-                rCreateCharacterizationModuleSpecifications = ro.globalenv['createCharacterizationModuleSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcm = rStrategus.CharacterizationModule['new']()
+                rcmCreateModuleSpec = rcm['createModuleSpecifications']
                 # ensure rCovariateSettings has at least one value
                 rCovariateSettings = get_results_by_class_type(input, DefaultCovariateSettingsNode)
-                rCharacterizationSpec = rCreateCharacterizationModuleSpecifications(
+                rCharacterizationSpec = rcmCreateModuleSpec(
                     targetIds = convert_py_to_R(self.targetIds), 
                     outcomeIds = convert_py_to_R(self.outcomeIds), 
                     covariateSettings = rCovariateSettings[0], 
@@ -289,9 +289,9 @@ class CohortDefinitionSharedResource(Node):
                     sqlFolder = 'testdata/sql',
                     packageName = 'Strategus'
                 )
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R")
-                rCreateCohortSharedResourceSpecifications = ro.globalenv['createCohortSharedResourceSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcgm = rStrategus.CohortGeneratorModule['new']()
+                rCreateCohortSharedResourceSpecifications = rcgm['createCohortSharedResourceSpecifications']
                 rCohortDefinitionSharedResource = rCreateCohortSharedResourceSpecifications(cohortDefinitionSet = rCohortDefinitionSet)
                 return Result(False,  rCohortDefinitionSharedResource, self, task_run_context)
             except Exception as e:
@@ -310,10 +310,10 @@ class NegativeControlOutcomeCohortSharedResource(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource("https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R")
                 rNcoCohortSet = get_results_by_class_type(_input, NegativeControlCohortSet)
-                rCreateNegativeControlOutcomeCohortSharedResourceSpecifications = ro.globalenv['createNegativeControlOutcomeCohortSharedResourceSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rcgm = rStrategus.CohortGeneratorModule['new']()
+                rCreateNegativeControlOutcomeCohortSharedResourceSpecifications = rcgm['createNegativeControlOutcomeCohortSharedResourceSpecifications']
                 rNegativeCoSharedResource = rCreateNegativeControlOutcomeCohortSharedResourceSpecifications(
                     negativeControlOutcomeCohortSet = rNcoCohortSet[0],
                     occurrenceType = convert_py_to_R(self.occurenceType),
@@ -333,10 +333,10 @@ class CohortGeneratorSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try: 
-                rSource = ro.r['source']
-                rSource(Variable.get("cohort_generator_module_settings_url"))
-                rCreateCohortGeneratorModuleSpecifications = ro.globalenv['createCohortGeneratorModuleSpecifications']
-                rCohortGeneratorModuleSpecifications = rCreateCohortGeneratorModuleSpecifications(convert_py_to_R(self.incremental), convert_py_to_R(self.generate_stats))
+                rStrategus = importr('Strategus')
+                rcgModule = rStrategus.CohortGeneratorModule['new']()
+                rCreateModuleSpecifications = rcgModule['createModuleSpecifications']
+                rCohortGeneratorModuleSpecifications = rCreateModuleSpecifications(convert_py_to_R(self.incremental), convert_py_to_R(self.generate_stats))
                 return Result(False,  rCohortGeneratorModuleSpecifications, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
@@ -362,9 +362,9 @@ class CohortDiagnosticsModuleSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource(Variable.get("cohort_diagnostics_module_settings_url"))
-                rCreateCohortDiagnosticsModuleSpecifications = ro.globalenv["createCohortDiagnosticsModuleSpecifications"]
+                rStrategus = ro.packages.importr('Strategus')
+                rcdm = rStrategus.CohortDiagnosticsModule['new']()
+                rCreateCohortDiagnosticsModuleSpecifications = rcdm['createCohortDiagnosticsModuleSpecifications']
                 rCohortDiagnosticsSpec = rCreateCohortDiagnosticsModuleSpecifications(
                     runInclusionStatistics = convert_py_to_R(self.runInclusionStatistics),
                     runIncludedSourceConcepts = convert_py_to_R(self.runIncludedSourceConcepts),
@@ -490,9 +490,9 @@ class CohortMethodModuleSpecNode(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/CohortMethodModule/v0.3.0/SettingsFunctions.R')
-                rCreateCohortMethodModuleSpecifications = ro.globalenv["createCohortMethodModuleSpecifications"]
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortMethodModule = rStrategus.CohortMethodModule['new']()
+                rCreateCohortMethodModuleSpecifications = rCohortMethodModule['createModuleSpecifications']
                 rCmAnalysisList = get_results_by_class_type(_input, CohortMethodAnalysis)
                 rTargetComparatorOutcomesList = get_results_by_class_type(_input, TargetComparatorOutcomes)
                 rCohortMethodSpec = rCreateCohortMethodModuleSpecifications(
@@ -731,10 +731,10 @@ class SCCSModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/SelfControlledCaseSeriesModule/v0.4.1/SettingsFunctions.R')
+                rStrategus = ro.packages.importr('Strategus')
+                rSccsModule = rStrategus.SelfControlledCaseSeriesModule['new']()
+                rCreatSelfControlledCaseSeriesModuleSpecifications = rSccsModule['createModuleSpecifications']
                 rSccsAnalysisList = get_results_by_class_type(input, SCCSAnalysis)
-                rCreatSelfControlledCaseSeriesModuleSpecifications = ro.globalenv['creatSelfControlledCaseSeriesModuleSpecifications']
                 rSccsModuleSpec = rCreatSelfControlledCaseSeriesModuleSpecifications(
                     sccsAnalysisList = rSccsAnalysisList,
                     exposuresOutcomeList = get_results_by_class_type(input, ExposuresOutcome), 
@@ -771,8 +771,6 @@ class PLPModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                rSource = ro.r['source']
-                rSource('https://raw.githubusercontent.com/OHDSI/PatientLevelPredictionModule/v0.3.0/SettingsFunctions.R')
                 studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
                 # filter patientLevelPredictionArgs from StudyPopulationResults (as it contains other args)
                 rPlpPopulationSettings = [r["patientLevelPredictionArgs"] for r in studyPopulationResults if r["patientLevelPredictionArgs"] != None]
@@ -791,7 +789,9 @@ class PLPModuleSpec(Node):
                             )
                             rModelDesignList.append([rModelDesignSettings])
 
-                rCreatePatientLevelPredictionModuleSpecifications = ro.globalenv['createPatientLevelPredictionModuleSpecifications']
+                rStrategus = ro.packages.importr('Strategus')
+                rPlpModule = rStrategus.PatientLevelPredictionModule['new']()
+                rCreatePatientLevelPredictionModuleSpecifications = rPlpModule['createModuleSpecifications']
                 rPlpModuleSpecifications = rCreatePatientLevelPredictionModuleSpecifications(modelDesignList = rModelDesignList)
                 return Result(False,  rPlpModuleSpecifications, self, task_run_context)
             except Exception as e:
