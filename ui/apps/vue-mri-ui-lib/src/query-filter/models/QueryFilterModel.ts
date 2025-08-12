@@ -1257,9 +1257,19 @@ export class QueryFilterCriteriaManager {
         return 'Death'
       case 'deviceExposure':
         return 'DeviceExposure'
+      case 'drugEra':
+        return 'DrugEra'
+      case 'locationRegion':
+        return 'LocationRegion'
       default:
-        return 'ConditionOccurrence' // Default fallback
+        // Convert camelCase to PascalCase for unknown event types
+        return this.toPascalCase(eventType)
     }
+  }
+
+  // Helper method to convert camelCase to PascalCase
+  private toPascalCase(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1)
   }
 
   private mapOperatorToAtlas(operator: string): NumericRange['Op'] {
