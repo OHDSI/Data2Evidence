@@ -14,7 +14,7 @@ def get_auth_token_from_input() -> AuthToken:
     return iter.next()
 
 
-class GetAuthToken:
+class GetAuthTokens:
     auth_token: SecretStr = None
     refresh_token: SecretStr = None
     third_party_token: SecretStr = None

@@ -9,7 +9,7 @@ from sqlalchemy import text
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from _shared_flow_utils.types import UserType
-from _shared_flow_utils.api.PrefectAPI import build_user_from_token, GetAuthToken
+from _shared_flow_utils.api.PrefectAPI import build_user_from_token, GetAuthTokens
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
@@ -265,7 +265,7 @@ class DaoBase(ABC):
         if dialect == SupportedDatabaseDialects.HANA:
             hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
             if auth_mode == AuthMode.JWT:
-                token = GetAuthToken().get_third_party_token()
+                token = GetAuthTokens().get_third_party_token()
                 hana_connect_args["password"] = token.get_secret_value()
                 
                 # Add APPLICATION and APPLICATIONUSER as session variables for JWT
@@ -317,7 +317,7 @@ class DaoBase(ABC):
 
         if database_credentials.authMode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
             user = ""
-            token = GetAuthToken().get_third_party_token()
+            token = GetAuthTokens().get_third_party_token()
             # Add APPLICATION and APPLICATIONUSER as session variables for JWT
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
