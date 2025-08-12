@@ -290,7 +290,6 @@ export default {
     ...mapActions([
       'fireBookmarkQuery',
       'loadbookmarkToState',
-      'resetChartProperties',
       'fireRenameMaterializedCohortQuery',
       'fireDeleteMaterializedCohortQuery',
       'fireDeleteAtlasCohortDefinitionQuery',

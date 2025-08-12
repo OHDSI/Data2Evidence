@@ -250,7 +250,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['fireBookmarkQuery', 'resetChartProperties', 'loadbookmarkToState', 'resetChart']),
+    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
     ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
