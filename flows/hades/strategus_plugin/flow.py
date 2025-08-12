@@ -10,12 +10,12 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, serialize_result_to_json, Result
 
 
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
-    logger = get_run_logger()
+    # logger = get_run_logger()
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
@@ -60,13 +60,13 @@ def strategus_plugin(json_graph, options):
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
-            nodes_out[k] = n[k]
+            nodes_out[k] = n[k].serialize_result()
 
     # Create an artifact to store the nodes output
-    create_markdown_artifact(
-        key="strategus-plugin-nodes-output",
-        markdown=json.dumps(nodes_out)
-    )
+    # create_markdown_artifact(
+    #     key="strategus-plugin-nodes-output",
+    #     markdown=json.dumps(nodes_out)
+    # )
 
 
 @flow(name="execute-nodes",

@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 from rpy2 import robjects
+from rpy2.robjects import pandas2ri
 
 def get_node_list(graph):
     nodes = {}
@@ -35,7 +36,7 @@ def convert_py_to_R(python_obj):
     if python_obj is None:
         return robjects.r("NULL")
     elif isinstance(python_obj, pd.DataFrame):
-        with (robjects.default_converter + robjects.pandas2ri.converter).context():
+        with (robjects.default_converter + pandas2ri.converter).context():
             r_df = robjects.conversion.get_conversion().py2rpy(python_obj)
         return r_df
     elif isinstance(python_obj, np.ndarray):
@@ -65,7 +66,7 @@ def convert_R_to_py(r_obj, name=""):
     if r_obj == robjects.vectors.NULL:
         return None
     elif isinstance(r_obj, robjects.vectors.DataFrame):
-        with (robjects.default_converter + robjects.pandas2ri.converter).context():
+        with (robjects.default_converter + pandas2ri.converter).context():
             pd_df = robjects.conversion.get_conversion().rpy2py(r_obj)
             return pd_df
     elif isinstance(r_obj, (robjects.vectors.StrVector,
