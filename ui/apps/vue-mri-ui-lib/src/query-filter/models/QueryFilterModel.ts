@@ -50,6 +50,12 @@ export interface SelectedConceptSet {
   modifiedDate: string
 }
 
+export interface QueryFilterNestedCriteria {
+  id: string
+  criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  events: QueryFilterEvent[]
+}
+
 export interface QueryFilterGroup {
   id: string
   title: string
@@ -92,16 +98,13 @@ export interface QueryFilterEvent {
   isExpanded?: boolean | undefined
   attributes?: QueryFilterAttribute[] | undefined
   eventType?: string | undefined
+  nestedCriteria?: QueryFilterNestedCriteria | undefined
 }
 export type QueryFilterAttribute =
   | {
       id: string
       attributeType: 'nested'
-      nestedCriteria: {
-        id: string
-        criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
-        events: QueryFilterEvent[]
-      }
+      nestedCriteria: QueryFilterNestedCriteria
     }
   | {
       id: string
@@ -130,7 +133,7 @@ const isNestedAttribute = (
   attr: QueryFilterAttribute
 ): attr is QueryFilterAttribute & {
   attributeType: 'nested'
-  nestedCriteria: { id: string; criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'; events: QueryFilterEvent[] }
+  nestedCriteria: QueryFilterNestedCriteria
 } => {
   return attr.attributeType === 'nested'
 }
@@ -790,7 +793,7 @@ export class QueryFilterCriteriaManager {
             Count: group.criteriaCount, // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
             CriteriaList: group.events.flatMap(event =>
               [event]
-                .filter(e => e.eventType !== 'demographic' && e.eventType) // Only non-demographic main events with eventType
+                .filter(e => e.eventType !== 'demographic' && e.eventType !== 'group' && e.eventType) // Exclude demographic and group events
                 .map(event => {
                   const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
                   const criteria: any = {
@@ -924,7 +927,55 @@ export class QueryFilterCriteriaManager {
 
                 return demographicCriteria
               }),
-            Groups: [],
+            Groups: group.events
+              .filter(event => event.eventType === 'group' && event.nestedCriteria)
+              .map(groupEvent => {
+                return {
+                  Type: groupEvent.nestedCriteria!.criteriaType,
+                  CriteriaList: groupEvent
+                    .nestedCriteria!.events.filter(
+                      nestedEvent =>
+                        nestedEvent.eventType !== 'demographic' &&
+                        nestedEvent.eventType !== 'group' &&
+                        nestedEvent.eventType
+                    )
+                    .map(nestedEvent => {
+                      const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
+                      console.log('Processing nested event:', nestedEvent, atlasEventType)
+                      return {
+                        Criteria: {
+                          [atlasEventType]: {
+                            ...(nestedEvent.conceptSetId && {
+                              CodesetId: systemIdToAtlasId.get(nestedEvent.conceptSetId),
+                            }),
+                          },
+                        },
+                        StartWindow: {
+                          Start: {
+                            Coeff: -1,
+                          },
+                          End: {
+                            Coeff: 1,
+                          },
+                          UseEventEnd: false,
+                        },
+                        Occurrence: {
+                          Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+                          Count: nestedEvent.cardinality?.count || 1,
+                        },
+                      }
+                    }),
+                  DemographicCriteriaList: groupEvent
+                    .nestedCriteria!.events.filter(nestedEvent => nestedEvent.eventType === 'demographic')
+                    .flatMap(nestedEvent => {
+                      // Process demographic events in nested groups
+                      const demographicCriteria: DemographicCriteria[] = []
+                      // Add age processing logic similar to main demographic processing if needed
+                      return demographicCriteria
+                    }),
+                  Groups: this.processNestedGroups(groupEvent.nestedCriteria!.events, systemIdToAtlasId),
+                }
+              }),
           },
         }
       }),
@@ -1086,6 +1137,54 @@ export class QueryFilterCriteriaManager {
     return {}
   }
 
+  // Helper method to recursively process nested groups
+  private processNestedGroups(events: QueryFilterEvent[], systemIdToAtlasId: Map<string, number>): any[] {
+    return events
+      .filter(event => event.eventType === 'group' && event.nestedCriteria)
+      .map(groupEvent => {
+        return {
+          Type: groupEvent.nestedCriteria!.criteriaType,
+          CriteriaList: groupEvent
+            .nestedCriteria!.events.filter(
+              nestedEvent =>
+                nestedEvent.eventType !== 'demographic' && nestedEvent.eventType !== 'group' && nestedEvent.eventType
+            )
+            .map(nestedEvent => {
+              const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
+              return {
+                Criteria: {
+                  [atlasEventType]: {
+                    ...(nestedEvent.conceptSetId && { CodesetId: systemIdToAtlasId.get(nestedEvent.conceptSetId) }),
+                  },
+                },
+                StartWindow: {
+                  Start: {
+                    Coeff: -1,
+                  },
+                  End: {
+                    Coeff: 1,
+                  },
+                  UseEventEnd: false,
+                },
+                Occurrence: {
+                  Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+                  Count: nestedEvent.cardinality?.count || 1,
+                },
+              }
+            }),
+          DemographicCriteriaList: groupEvent
+            .nestedCriteria!.events.filter(nestedEvent => nestedEvent.eventType === 'demographic')
+            .flatMap(nestedEvent => {
+              // Process demographic events in nested groups
+              const demographicCriteria: DemographicCriteria[] = []
+              // Add age processing logic similar to main demographic processing if needed
+              return demographicCriteria
+            }),
+          Groups: this.processNestedGroups(groupEvent.nestedCriteria!.events, systemIdToAtlasId), // Recursive call for further nesting
+        }
+      })
+  }
+
   // Helper method to recursively collect all events including nested ones
   private collectAllEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
     const allEvents: QueryFilterEvent[] = []
@@ -1102,6 +1201,11 @@ export class QueryFilterCriteriaManager {
               collectRecursively(attr.nestedCriteria.events)
             }
           })
+        }
+
+        // Collect from event.nestedCriteria structure (for group events)
+        if (event.nestedCriteria?.events) {
+          collectRecursively(event.nestedCriteria.events)
         }
       })
     }
@@ -1502,6 +1606,41 @@ export class QueryFilterCriteriaManager {
             )
           }
         })
+      }
+
+      // Check if this event has nestedCriteria (for group events)
+      if (event.nestedCriteria?.events) {
+        event.nestedCriteria.events.forEach(nestedEvent => {
+          // Collect concept sets from group events
+          if (nestedEvent.conceptSetDetails && nestedEvent.conceptSetDetails.length > 0 && nestedEvent.conceptSetId) {
+            const systemConceptSetId = nestedEvent.conceptSetId
+            if (!usedConceptSetIds.has(systemConceptSetId)) {
+              usedConceptSetIds.add(systemConceptSetId)
+              const atlasSequentialId = conceptSets.length
+              systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+              const conceptSetDef: any = {
+                id: atlasSequentialId,
+                name: nestedEvent.conceptSet || `Concept Set ${systemConceptSetId}`,
+                expression: {
+                  items: nestedEvent.conceptSetDetails,
+                },
+              }
+
+              // Add conceptSetId field with system database ID
+              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+              conceptSets.push(conceptSetDef)
+            }
+          }
+        })
+
+        // Recursively process further nested levels in group events
+        this.collectNestedConceptSetsFromEvents(
+          event.nestedCriteria.events,
+          systemIdToAtlasId,
+          usedConceptSetIds,
+          conceptSets
+        )
       }
     })
   }
