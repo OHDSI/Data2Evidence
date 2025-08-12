@@ -21,7 +21,6 @@ import { ChatItem } from "@nlux/react";
 import env from "../../env";
 import "./Starboard.scss";
 
-const MRI_ROOT_URL = "analytics-svc";
 const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 interface StarboardProps extends PageProps<ResearcherStudyMetadata> {}
 
