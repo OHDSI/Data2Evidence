@@ -879,7 +879,7 @@
   "TREE_MAP_TABLE__HEADER_NUM_PERSONS": "Personenzahl",
   "TREE_MAP_TABLE__HEADER_PERCENT_PERSONS": "Häufigkeit",
   "TREE_MAP_TABLE__HEADER_RECORDS_PER_PERSON": "Länge der Ära",
-  "UI_PLUGIN_ANALYSIS": "Analyse",
+  "UI_PLUGIN_ANALYSIS": "Analyse (experimentell)",
   "UI_PLUGIN_CDM_CONFIG": "CDM-Konfiguration",
   "UI_PLUGIN_COHORTS": "Kohorten",
   "UI_PLUGIN_CONCEPTS": "Konzepte",
