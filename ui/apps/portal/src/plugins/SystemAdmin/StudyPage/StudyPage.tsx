@@ -6,7 +6,7 @@ import Tabs from "@mui/material/Tabs";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { useDatasets } from "../../../hooks";
-import { StrategusStudy } from "../../../types";
+import { NetworkStrategusStudy, StrategusStudy, StrategusStudyType } from "../../../types";
 import { StudyCard } from "./StudyCard";
 import "./StudyPage.scss";
 
@@ -51,6 +51,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
             ...strategusStudy,
             id: studyId,
             name: strategusStudy.name || studyId,
+            type: StrategusStudyType.NETWORK,
           })
         );
 
@@ -69,30 +70,14 @@ export const StudyPage: FC<StudyPageProps> = () => {
       setStudiesError(null);
 
       try {
-        // TODO: Replace with actual logic to fetch local studies
-        const localStudiesData = [
-          {
-            strategus_json: "./studyA/strategus.json",
-            id: "local studyA",
-            name: "local studyA",
-          },
-          {
-            strategus_json: "./StrategusStudyRepoTemplate/inst/sampleStudy/sampleStudyAnalysisSpecification.json",
-            description: "Sample study description from ohdsi submodule-StrategusStudyRepoTemplate",
-            email: "we@data2evidence.care",
-            id: "local studyB",
-            name: "local studyB",
-          },
-          {
-            strategus_json: "./notfound",
-            description: "strategus.json does not exist for this study, test update",
-            email: "we@data2evidence.care",
-            id: "local studyC",
-            name: "local studyC",
-          },
-        ];
-
-        setStrategusStudies(localStudiesData);
+        const localStudiesData = await api.strategusAnalysis.getAllStrategusAnalysis();
+        const convertedStudies: StrategusStudy[] = localStudiesData.map((study: NetworkStrategusStudy) => ({
+          id: study.studyId,
+          name: study.notebookName || study.studyId,
+          strategus_json: study.analysisSpec,
+          type: StrategusStudyType.LOCAL,
+        }));
+        setStrategusStudies(convertedStudies);
       } catch (error) {
         console.error("Error fetching studies from service:", error);
         setStudiesError("Failed to fetch studies from service");

@@ -9,7 +9,7 @@ import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
 import env from "../../../../env";
 import { usePollingEffect } from "../../../../hooks";
-import { StrategusStudy } from "../../../../types/strategusStudy";
+import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
 import "./StudyCard.scss";
 
 interface StudyCardProps {
@@ -100,7 +100,12 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       try {
         let strategusJson;
         try {
-          strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+          if (study.type == StrategusStudyType.NETWORK) {
+            strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+          } else {
+            const strategusAnalysis = await api.strategusAnalysis.getStrategusAnalysis(study.id);
+            strategusJson = strategusAnalysis.analysisSpec;
+          }
         } catch (error) {
           console.error(`[${study.id}] Could not fetch strategus JSON from repository:`, error);
           setFeedback({
@@ -119,7 +124,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           options: {
             mode: "kernel",
             datasetId: selectedDatasetId,
-            studyId: study.id,
+            study_id: study.id,
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
