@@ -3,12 +3,9 @@ import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import {
   Box,
-  Button,
   IconButton,
-  TextInput,
   InputLabel,
   MenuItem,
-  FormControl,
   Select,
   SelectChangeEvent,
 } from "@portal/components";
@@ -16,6 +13,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import { useFormData } from "~/features/flow/hooks";
+import { useGetWebApiCohortDefinitionsQuery } from "~/features/flow/slices";
 import {
   markStatusAsDraft,
   selectNodeById,
@@ -25,7 +23,6 @@ import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { CohortSelectionNodeData } from "./CohortSelectionNode";
 import { Cohort, CohortType } from "./CohortSelectionType";
-
 export interface CohortSelectionDrawerProps
   extends Omit<NodeDrawerProps, "children"> {
   node: NodeProps<CohortSelectionNodeData>;
@@ -47,6 +44,15 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
 }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
+
+  const { data: cohortDefinitions } = useGetWebApiCohortDefinitionsQuery(null, {
+    selectFromResult: ({ data }) => ({
+      data: data?.filter(
+        (cohort) => !formData.cohorts.some((c) => c.cohortId === cohort.id)
+      ),
+    }),
+  });
+
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
@@ -77,66 +83,98 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
-  const EMPTY_COHORT: Cohort = {
-    cohortId: "",
-    cohortName: "",
-  };
+  const handleAddCohort = useCallback(
+    (value: Cohort) => {
+      onFormDataChange({
+        cohorts: [
+          ...formData.cohorts,
+          { cohortId: value.cohortId, cohortName: value.cohortName },
+        ],
+      });
+    },
+    [onFormDataChange, formData.cohorts]
+  );
 
-  const handleAddCohort = useCallback(() => {
-    onFormDataChange({
-      cohorts: [EMPTY_COHORT, ...formData.cohorts],
-    });
-  }, [onFormDataChange, formData.cohorts]);
+  const handleSelectChange = useCallback(
+    (event: SelectChangeEvent) => {
+      const selectedCohortId = Number(event.target.value);
+      const selectedCohort = cohortDefinitions?.find(
+        (cohort) => cohort.id === selectedCohortId
+      );
+
+      if (selectedCohort) {
+        handleAddCohort({
+          cohortId: selectedCohort.id,
+          cohortName: selectedCohort.name,
+        });
+      }
+    },
+    [cohortDefinitions, handleAddCohort]
+  );
+
+  const handleRemoveCohort = useCallback(
+    (index: number) => {
+      const updatedCohorts = formData.cohorts.filter((_, i) => i !== index);
+      onFormDataChange({ cohorts: updatedCohorts });
+    },
+    [formData.cohorts, onFormDataChange]
+  );
 
   return (
     <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
       <Box mb={4}>
-        <InputLabel shrink>Cohorts</InputLabel>
-        <Button variant="text" text="Add Cohort" onClick={handleAddCohort} />
+        <InputLabel shrink>Cohort Type</InputLabel>
+        <Select
+          fullWidth
+          value={formData.type}
+          onChange={(e: SelectChangeEvent) =>
+            onFormDataChange({ type: e.target.value as CohortType })
+          }
+          displayEmpty
+        >
+          <MenuItem value={CohortType.Target}>Target</MenuItem>
+          <MenuItem value={CohortType.Event}>Event</MenuItem>
+          <MenuItem value={CohortType.Exit}>Exit</MenuItem>
+        </Select>
+      </Box>
+      <Box mb={4}>
+        <InputLabel shrink>Cohort Selection</InputLabel>
+        <Select fullWidth value="" onChange={handleSelectChange} displayEmpty>
+          <MenuItem value="" disabled>
+            Select a cohort to add...
+          </MenuItem>
+          {cohortDefinitions?.map((cohort) => (
+            <MenuItem key={cohort.id} value={cohort.id}>
+              <Box>
+                <strong>Cohort Id:</strong> {cohort.id} <br />
+                <strong>Cohort Name:</strong> {cohort.name} <br />
+                <strong>Cohort Description:</strong> {cohort.description}
+              </Box>
+            </MenuItem>
+          ))}
+        </Select>
+
         {formData.cohorts.map((cohort, index) => (
           <Box
             key={index}
             display="flex"
-            flexDirection="column"
+            alignItems="center"
+            justifyContent="space-between"
             gap={1}
-            marginTop="-1px"
+            marginTop={1}
+            padding={1}
+            border="1px solid #ddd"
+            borderRadius={1}
           >
-            <Box display="flex" gap={1} mb="-1px" alignItems="end">
-              <TextInput
-                label="Cohort Id"
-                value={cohort.cohortId}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.map((cohort, i) =>
-                      i === index
-                        ? { ...cohort, cohortId: e.target.value }
-                        : cohort
-                    ),
-                  })
-                }
-              />
-              <TextInput
-                label="Cohort Name"
-                value={cohort.cohortName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.map((cohort, i) =>
-                      i === index
-                        ? { ...cohort, cohortName: e.target.value }
-                        : cohort
-                    ),
-                  })
-                }
-              />
-              <IconButton
-                startIcon={<ClearIcon />}
-                onClick={() =>
-                  onFormDataChange({
-                    cohorts: formData.cohorts.filter((_, i) => i !== index),
-                  })
-                }
-              />
+            <Box>
+              <strong>Cohort Id:</strong> {cohort.cohortId} <br />
+              <strong>Cohort Name:</strong> {cohort.cohortName} <br />
             </Box>
+            <IconButton
+              size="small"
+              onClick={() => handleRemoveCohort(index)}
+              startIcon={<ClearIcon />}
+            ></IconButton>
           </Box>
         ))}
       </Box>
