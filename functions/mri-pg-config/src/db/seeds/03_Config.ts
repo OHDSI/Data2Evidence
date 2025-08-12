@@ -13345,7 +13345,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@CONDERA",
                 "order": 14,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "ConditionEra",
                 "conceptIdentifierType": "",
@@ -13680,9 +13679,10 @@ export const cdwConfigDuckdb = {
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@COND",
                 "order": 13,
-                "parentInteraction": [],
-                "parentInteractionsMapping": [],
-                "parentInteractionLabel": "parent",
+                "parentInteraction": [
+                    "patient.interactions.visit"
+                ],
+                "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "ConditionOccurrence",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -14211,7 +14211,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@DEATH",
                 "order": 12,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "Death",
                 "conceptIdentifierType": "",
@@ -14596,7 +14595,6 @@ export const cdwConfigDuckdb = {
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "DeviceExposure",
                 "conceptIdentifierType": "",
@@ -14983,7 +14981,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@DOSEERA",
                 "order": 10,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "DoseEra",
                 "conceptIdentifierType": "",
@@ -15366,7 +15363,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@DRUGERA",
                 "order": 9,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "DrugEra",
                 "conceptIdentifierType": "",
@@ -15749,7 +15745,6 @@ export const cdwConfigDuckdb = {
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "DrugExposure",
                 "conceptIdentifierType": "",
@@ -16563,7 +16558,6 @@ export const cdwConfigDuckdb = {
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "Measurement",
                 "conceptIdentifierType": "",
@@ -17043,9 +17037,10 @@ export const cdwConfigDuckdb = {
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@OBS",
                 "order": 6,
-                "parentInteraction": [],
-                "parentInteractionsMapping": [],
-                "parentInteractionLabel": "parent",
+                "parentInteraction": [
+                    "patient.interactions.visit"
+                ],
+                "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "Observation",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -17764,7 +17759,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@OBSPER",
                 "order": 5,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "ObservationPeriod",
                 "conceptIdentifierType": "",
@@ -18051,7 +18045,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@PPPER",
                 "order": 3,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "PayerPlanPeriod",
                 "conceptIdentifierType": "",
@@ -18290,12 +18283,6 @@ export const cdwConfigDuckdb = {
                 "order": 2,
                 "parentInteraction": [
                     "patient.interactions.episode"
-                ],
-                "parentInteractionsMapping": [
-                    {
-                        "currentMappingInteractionId": "@EPISODEEVENT.episode_id",
-                        "parentMappingInteraction": "@EPISODE"
-                    }
                 ],
                 "parentInteractionLabel": "Episode parent",
                 "cohortDefinitionKey": "ProcedureOccurrence",
@@ -18877,7 +18864,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@SPEC",
                 "order": 1,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "Specimen",
                 "conceptIdentifierType": "",
@@ -19458,7 +19444,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@VISIT",
                 "order": 0,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "VisitOccurrence",
                 "conceptIdentifierType": "",
@@ -20927,7 +20912,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@COHORT",
                 "order": 15,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": "",
@@ -21570,7 +21554,6 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@EPISODE",
                 "order": 4,
                 "parentInteraction": [],
-                "parentInteractionsMapping": [],
                 "parentInteractionLabel": "Episoparent",
                 "cohortDefinitionKey": "Episode",
                 "conceptIdentifierType": "",
@@ -22408,7 +22391,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@COND",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22440,7 +22423,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@DEVEXP",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22464,7 +22447,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@DRUGEXP",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22472,7 +22455,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@OBS",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": true,
                     "condition": false
@@ -22504,7 +22487,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@MEAS",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22685,6 +22668,10 @@ export const cdwConfigDuckdb = {
             "@PROC.START": "\"procedure_date\"",
             "@PROC.END": "\"procedure_end_date\"",
             "@PROC.INTERACTION_TYPE": "\"procedure_type_concept_id\"",
+            "@EPISODEEVENT": "$$SCHEMA$$.\"episode_event\"",
+            "@EPISODEEVENT.INTERACTION_ID": "\"event_id\"",
+            "@EPISODEEVENT.ATTRIBUTE": "\"episode_id\"",
+            "@EPISODEEVENT.VALUE": "\"episode_id\"",
             "@CONSENT": "$$SCHEMA$$.\"VIEW::GDM.CONSENT_BASE\"",
             "@CONSENT.PATIENT_ID": "\"PERSON_ID\"",
             "@CONSENT.INTERACTION_ID": "\"CONSENT_DETAIL_ID\"",
@@ -22701,10 +22688,6 @@ export const cdwConfigDuckdb = {
             "@RESPONSE.START": "\"AUTHORED\"",
             "@RESPONSE.END": "\"AUTHORED\"",
             "@RESPONSE.INTERACTION_TYPE": "\"VALUE_TYPE\"",
-            "@EPISODEEVENT": "$$SCHEMA$$.\"episode_event\"",
-            "@EPISODEEVENT.INTERACTION_ID": "\"event_id\"",
-            "@EPISODEEVENT.ATTRIBUTE": "\"episode_id\"",
-            "@EPISODEEVENT.VALUE": "\"episode_id\"",
             "@COHORT": "$$SCHEMA_DIRECT_CONN$$.cohort",
             "@COHORT.PATIENT_ID": "\"subject_id\"",
             "@COHORT.INTERACTION_ID": "\"cohort_definition_id\"",
@@ -22774,7 +22757,8 @@ export const cdwConfigDuckdb = {
             "timeFormat": "HH:mm:ss",
             "otsTableMap": {
                 "@CODE": "$$VOCAB_SCHEMA$$.\"concept\""
-            }
+            },
+            "datasetId": "DEFAULT"
         },
         "shared": {},
         "schemaVersion": "3"
@@ -23111,7 +23095,7 @@ const paConfigDuckdb = {
                 }
             ],
             "initialPatientlistColumn": true,
-            "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
+            "modelName": "Basic Data"
         },
         {
             "source": "patient.interactions.visit",
@@ -26060,8 +26044,8 @@ const paConfigDuckdb = {
                     "modelName": "Questionaire extension valuedate"
                 }
             ],
-            "modelName": "Questionnaire",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Questionnaire"
         },
         {
             "source": "patient.interactions.item",
@@ -26130,8 +26114,8 @@ const paConfigDuckdb = {
                     "modelName": "Text"
                 }
             ],
-            "modelName": "Item",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Item"
         },
         {
             "source": "patient.interactions.answer",
@@ -26220,8 +26204,8 @@ const paConfigDuckdb = {
                     "modelName": "Value"
                 }
             ],
-            "modelName": "Answer",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Answer"
         },
         {
             "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b",
@@ -26410,8 +26394,8 @@ const paConfigDuckdb = {
                     "modelName": "Consent Detail Id"
                 }
             ],
-            "modelName": "Consent",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Consent"
         }
     ],
     "chartOptions": {
