@@ -96,6 +96,11 @@ export class QueryFilterCriteriaManager {
               events: this.transformEvents(criteria.events || []),
             })) || [],
         }
+      } else {
+        this.inclusionCriteria = {
+          qualifyingEventsLimit: 'ALL',
+          criteria: [],
+        }
       }
     } catch (error) {
       console.error('Error initializing QueryFilterCriteriaManager:', error)

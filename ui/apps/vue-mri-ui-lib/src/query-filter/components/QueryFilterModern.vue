@@ -306,19 +306,6 @@ watch(
   { deep: true }
 )
 
-// Watch for changes in conceptSetsFromCriteria and sync with selectedConceptSets
-// Watch for Atlas data prop changes and automatically load
-watch(
-  () => props.atlasData,
-  async newAtlasData => {
-    if (newAtlasData) {
-      console.log('jer Auto-loading Atlas data from prop:', newAtlasData.name)
-      await loadAtlasCohortDefinition(newAtlasData)
-    }
-  },
-  { immediate: true }
-)
-
 watch(
   conceptSetsFromCriteria,
   newConceptSets => {
@@ -331,7 +318,6 @@ watch(
 )
 
 onMounted(() => {
-  console.log('QueryFilterModern component mounted')
   initializeComponent()
 })
 
@@ -481,11 +467,7 @@ const convertToAtlasFormat = () => {
 
 const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
   try {
-    console.log('Loading Atlas cohort definition:', atlasJson?.name || 'Unnamed cohort')
-    console.log('Available concept sets:', allConceptSets.value.length)
-
     isLoading.value = true
-
     // Ensure concept sets are loaded before processing Atlas JSON
     if (allConceptSets.value.length === 0) {
       await loadConceptSets()
@@ -500,7 +482,7 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       // Helper function to extract CodesetId from criteria and handle nested CorrelatedCriteria
       const extractFromCriteria = (criteriaItem: CriteriaGroup | CriteriaListItem) => {
         const isCriteriaListItem = (value: CriteriaGroup | CriteriaListItem): value is CriteriaGroup => {
-          return 'Criteria' in criteriaItem
+          return 'Criteria' in value
         }
         const criteria = isCriteriaListItem(criteriaItem) ? criteriaItem.Criteria : criteriaItem
         if (criteria && typeof criteria === 'object') {
@@ -641,12 +623,11 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
       atlasExpression.ConceptSets?.map(cs => `${cs.name} (ID: ${cs.id})`)
     )
     const configLoader = new CriteriaConfigLoader()
+
     const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value, configLoader)
 
     // Copy the criteria to our reactive manager
     criteriaManager.setData(tempManager.getData())
-
-    console.log('Successfully loaded Atlas cohort definition into QueryFilterModern')
 
     // Force reactivity update
     await nextTick()
@@ -660,6 +641,20 @@ const loadAtlasCohortDefinition = async (atlasJson: AtlasBookmark) => {
     throw error
   }
 }
+
+// Watch for Atlas data prop changes and automatically load (moved here to avoid hoisting issues)
+watch(
+  () => {
+    return props.atlasData
+  },
+  async (newAtlasData, oldAtlasData) => {
+    if (newAtlasData) {
+      await loadAtlasCohortDefinition(newAtlasData)
+    } else {
+    }
+  },
+  { immediate: true }
+)
 
 const loadConceptSetDetailsForAllEvents = async () => {
   console.log('Loading concept set details for all events...')
@@ -1756,12 +1751,6 @@ const saveAtlasCohort = async () => {
     console.error('Error saving Atlas cohort:', error)
   }
 }
-
-// Expose functions so parent components can access them
-defineExpose({
-  convertToAtlasFormat,
-  loadAtlasCohortDefinition,
-})
 </script>
 
 <template>
@@ -1987,231 +1976,7 @@ defineExpose({
 </template>
 
 <style lang="scss" scoped>
-.query-filter-modern {
-  height: calc(100% - 35px);
-  overflow: auto;
-  position: relative;
-
-  // Overlay styles for SplashScreen
-  .splash-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .query-filter-debug-header {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 8px;
-
-    h2 {
-      margin: 0 0 8px 0;
-      font-size: 20px;
-    }
-
-    .debug-info {
-      display: flex;
-      gap: 8px;
-    }
-
-    .debug-badge {
-      padding: 4px 8px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-  }
-
-  .query-filter-main-container {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    justify-content: center;
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    padding: 16px 0 16px 0;
-    // margin-bottom: 16px;
-  }
-
-  .query-filter-header-container {
-    width: 90%;
-    display: flex;
-    justify-content: space-between;
-  }
-  .query-filter-container {
-    width: 90%;
-    // padding: 16px;
-    // margin: 16px;
-    // margin: 4px &__section {
-    //   margin-bottom: 0; // Remove bottom margin since container handles spacing
-    // }
-  }
-
-  .debug-toggle-section {
-    padding: 12px 16px;
-    border-top: 1px solid #e0e0e0;
-    background: #f8f9fa;
-  }
-
-  .debug-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .debug-checkbox {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-  }
-
-  .debug-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-  }
-
-  .query-filter-legacy-section {
-    .legacy-notice {
-      padding: 12px;
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      border-radius: 6px;
-      margin-bottom: 16px;
-
-      p {
-        margin: 0;
-        color: #856404;
-        font-size: 14px;
-
-        code {
-          background: rgba(133, 100, 4, 0.1);
-          padding: 2px 4px;
-          border-radius: 3px;
-          font-size: 12px;
-        }
-      }
-    }
-  }
-
-  .query-filter-debug-section {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-  }
-
-  .concept-set-debug {
-    margin-bottom: 16px;
-  }
-
-  .query-filter-actions {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-
-    .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &.btn-primary {
-        background: #1976d2;
-        color: white;
-
-        &:hover {
-          background: #1565c0;
-        }
-      }
-
-      &.btn-secondary {
-        background: #6c757d;
-        color: white;
-
-        &:hover {
-          background: #5a6268;
-        }
-      }
-
-      &.btn-link {
-        background: transparent;
-        color: #1976d2;
-        border: 1px solid #1976d2;
-
-        &:hover {
-          background: #1976d2;
-          color: white;
-        }
-      }
-    }
-  }
-
-  .query-filter-debug {
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-
-    h3 {
-      margin: 0 0 16px 0;
-      font-size: 16px;
-      color: #333;
-    }
-
-    .debug-columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-
-      @media (max-width: 1024px) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .debug-column {
-      h4 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        color: #666;
-      }
-
-      pre {
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 12px;
-        font-size: 11px;
-        overflow-x: auto;
-        max-height: 400px;
-        overflow-y: auto;
-      }
-    }
-  }
-}
-
+@import '../styles/QueryFilterModern';
 // Import existing styles for backward compatibility
 @import '../styles/QueryFilter';
 </style>
