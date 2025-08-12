@@ -44,16 +44,6 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
 
   const activeDatasetId = metadata?.studyId!;
 
-  const setupPYQE = `\n#%% [python]
-import os
-import micropip
-await micropip.install('ssl')
-await micropip.install('pyjwt==2.9.0')
-await micropip.install('${uiFilesUrl}starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
-os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/'
-os.environ['TOKEN'] = '${jwtToken}'
-os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
-
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
     setIsShared(notebook?.isShared ?? false);
@@ -86,7 +76,6 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
         const findJwtToken = (await metadata?.getToken()) || "";
         setJWTToken(findJwtToken);
       }
-      notebookContent += setupPYQE;
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
         mount.removeChild(mount.firstChild);
@@ -107,7 +96,7 @@ os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
       setRuntime(embedEl);
       setUnsaved(false);
     },
-    [jwtToken, metadata, activeDatasetId, setupPYQE]
+    [jwtToken, metadata, activeDatasetId]
   );
 
   const handleReadContent = useCallback(() => {
