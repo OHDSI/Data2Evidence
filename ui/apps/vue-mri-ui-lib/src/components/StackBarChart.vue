@@ -81,6 +81,7 @@ export default {
         })
     },
     getFireRequest() {
+      this.setupAxes()
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
