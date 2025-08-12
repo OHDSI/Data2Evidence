@@ -20,7 +20,7 @@ import type {
 } from '../models/QueryFilterModel'
 import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
-import CardinalityMenu from './CardinalityMenu.vue'
+import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 
@@ -377,9 +377,12 @@ const toggleExpanded = () => {
     }"
   >
     <div class="card-side">
-      <div class="event-sidebar" ref="sideBarRef">
-        <span class="sidebar-label">{{ getCardinalityDisplay() }}</span>
-      </div>
+      <CardinalitySidebar
+        :cardinality="eventData.cardinality || { type: 'AT_LEAST', count: 1, using: 'ALL' }"
+        :event-id="eventData.id"
+        :readonly="readonly"
+        @update-cardinality="updateCardinality"
+      />
     </div>
 
     <div class="card-main">
@@ -526,14 +529,6 @@ const toggleExpanded = () => {
 
     <!-- Event Body with Sidebar -->
   </div>
-  <CardinalityMenu
-    v-if="sideBarRef"
-    type="EVENT"
-    :target="sideBarRef"
-    :name-prefix="eventData.id"
-    @updateCardinalityField="updateCardinality"
-    :cardinality="eventData.cardinality || { type: 'AT_LEAST', count: 1, using: 'ALL' }"
-  />
 </template>
 
 <style lang="scss" scoped>
