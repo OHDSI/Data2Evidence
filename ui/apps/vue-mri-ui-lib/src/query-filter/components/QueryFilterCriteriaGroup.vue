@@ -197,7 +197,7 @@ const toggleExpanded = () => {
         </div>
       </div>
       <!-- Group Content Area -->
-      <transition name="expand">
+      <transition-group name="expand">
         <div v-show="isExpanded" class="group-main">
           <!-- Group Criteria Sidebar -->
           <GroupCriteriaSidebar :group="localGroup" :readonly="readonly" @update-group-criteria="updateGroupCriteria" />
@@ -238,7 +238,7 @@ const toggleExpanded = () => {
             @concept-set-action="action => $emit('concept-set-action', action)"
           />
         </div>
-      </transition>
+      </transition-group>
     </div>
   </div>
 </template>
