@@ -83,13 +83,13 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env.local init
 
       - name: Initialise HANA
         if: success() || failure()
         id: inithana
         run: |
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env.local ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
