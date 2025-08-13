@@ -22,7 +22,6 @@
     "@dx/reflect": "jsr:@dx/reflect@0.2.14",
     "reflect-metadata": "npm:reflect-metadata@0.2.2",
     "@danet/validatte": "jsr:@danet/validatte@0.7.9",
-    "@danet/zod": "jsr:@danet/zod@0.0.9",
     "winston": "npm:winston@^3.7.2",
     "axios": "npm:axios@^0.21.2",
     "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
