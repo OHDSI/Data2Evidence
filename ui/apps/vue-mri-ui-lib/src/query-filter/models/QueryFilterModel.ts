@@ -116,7 +116,6 @@ export class QueryFilterCriteriaManager {
   getCriteria(): QueryFilterCriteria {
     return {
       id: this.generateId(),
-      criteriaType: this.mapQualifyingEventsLimit(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
       criteria: this.inclusionCriteria.criteria || [],
     }
   }
@@ -200,17 +199,6 @@ export class QueryFilterCriteriaManager {
   }
 
   // Helper method to map qualifyingEventsLimit to criteriaType
-  private mapQualifyingEventsLimit(limit: string): 'ALL' | 'EARLIEST' | 'LATEST' {
-    switch (limit) {
-      case 'EARLIEST':
-        return 'EARLIEST'
-      case 'LATEST':
-        return 'LATEST'
-      case 'ALL':
-      default:
-        return 'ALL'
-    }
-  }
 
   // Transform events from new structure to internal structure
   private transformEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
@@ -229,7 +217,7 @@ export class QueryFilterCriteriaManager {
         conceptSetDetails: event.conceptSetDetails,
         selectedConceptSet: event.selectedConceptSet,
         conceptSetLoading: event.conceptSetLoading,
-        criteriaType: event.eventType,
+        criteriaType: event.criteriaType,
         eventType: event.eventType,
         isExpanded: event.isExpanded,
         cardinality: event.cardinality,
@@ -303,7 +291,8 @@ export class QueryFilterCriteriaManager {
         conceptSetDetails: event.conceptSetDetails,
         selectedConceptSet: event.selectedConceptSet,
         conceptSetLoading: event.conceptSetLoading,
-        criteriaType: event.eventType,
+        criteriaType: event.criteriaType,
+        eventType: event.eventType,
         isExpanded: event.isExpanded,
         cardinality: event.cardinality,
         parentEventId: parentId,
@@ -644,9 +633,9 @@ export class QueryFilterCriteriaManager {
       CensoringCriteria: (this.exitEvents?.censoringCriteria || [])
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
-          const criteriaType = this.mapEventTypeToAtlas(event.eventType!)
+          const eventType = this.mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
-            [criteriaType]: {
+            [eventType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!), // Use Atlas sequential ID
             },
           }
@@ -671,7 +660,7 @@ export class QueryFilterCriteriaManager {
             })
 
             if (criteriaList.length > 0 || demographicCriteriaList.length > 0) {
-              criteria[criteriaType].CorrelatedCriteria = {
+              criteria[eventType].CorrelatedCriteria = {
                 Type:
                   attributesNestedCriteria[0] && isNestedAttribute(attributesNestedCriteria[0])
                     ? attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL'
@@ -700,7 +689,7 @@ export class QueryFilterCriteriaManager {
                 }))
 
                 const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria[criteriaType][fieldName] = conceptData
+                criteria[eventType][fieldName] = conceptData
               }
             })
           }
@@ -719,9 +708,9 @@ export class QueryFilterCriteriaManager {
       atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events
         .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
         .map(event => {
-          const criteriaType = this.mapEventTypeToAtlas(event.eventType!)
+          const eventType = this.mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
-            [criteriaType]: {
+            [eventType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!),
             },
           }
@@ -746,7 +735,7 @@ export class QueryFilterCriteriaManager {
             })
 
             if (criteriaList.length > 0 || demographicCriteriaList.length > 0) {
-              criteria[criteriaType].CorrelatedCriteria = {
+              criteria[eventType].CorrelatedCriteria = {
                 Type:
                   attributesNestedCriteria[0] && isNestedAttribute(attributesNestedCriteria[0])
                     ? attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL'
@@ -783,7 +772,7 @@ export class QueryFilterCriteriaManager {
                 })
 
                 const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria[criteriaType][fieldName] = conceptData
+                criteria[eventType][fieldName] = conceptData
               }
             })
           }
@@ -806,12 +795,12 @@ export class QueryFilterCriteriaManager {
         const correspondingGroup = (this.inclusionCriteria.criteria || [])[ruleIndex]
         if (correspondingGroup && correspondingGroup.events[criteriaIndex]) {
           const event = correspondingGroup.events[criteriaIndex]
-          if (event && event.conceptSetId && event.criteriaType) {
-            const criteriaType = this.mapEventTypeToAtlas(event.criteriaType)
-            if (criteriaItem.Criteria[criteriaType]) {
+          if (event && event.conceptSetId && event.eventType) {
+            const eventType = this.mapEventTypeToAtlas(event.eventType)
+            if (criteriaItem.Criteria[eventType]) {
               const atlasId = systemIdToAtlasId.get(event.conceptSetId)
               if (atlasId !== undefined) {
-                criteriaItem.Criteria[criteriaType].CodesetId = atlasId // Use Atlas sequential ID
+                criteriaItem.Criteria[eventType].CodesetId = atlasId // Use Atlas sequential ID
               } else {
                 console.error(`Missing Atlas ID mapping for concept set ${event.conceptSetId}`)
               }
@@ -983,7 +972,7 @@ export class QueryFilterCriteriaManager {
 
     nestedCriteriaEvents.forEach(nestedEvent => {
       // Determine the event type for this nested event
-      const eventType = nestedEvent.eventType || 'conditionOccurrence'
+      const eventType = nestedEvent.eventType
       const atlasEventType = this.mapEventTypeToAtlas(eventType)
 
       const criteria: CriteriaGroup = {

@@ -3,6 +3,8 @@
  */
 import type { StoredConceptItem, ConceptSetDetail, SelectedConceptSet, ConceptSetItemDisplay } from './ConceptSetTypes'
 
+export type CriteriaType = 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+
 export interface QueryFilterCardinality {
   type: 'AT_LEAST' | 'EXACTLY' | 'AT_MOST'
   count: number
@@ -24,7 +26,7 @@ export interface QueryFilterEvent {
   conceptSet: string
   conceptSetId?: string | undefined
   isEditing?: boolean
-  criteriaType?: string | undefined
+  criteriaType?: CriteriaType
   selectedAttributes?: string[] | undefined
   isDemographic?: boolean
   parentEventId?: string | undefined
@@ -45,7 +47,7 @@ export type QueryFilterAttribute =
           attributeType: 'nested'
           nestedCriteria: {
             id: string
-            criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+            criteriaType: CriteriaType
             events: QueryFilterEvent[]
           }
         }
@@ -83,14 +85,13 @@ export interface QueryFilterGroup {
   id: string
   title: string
   description: string
-  criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaType: CriteriaType
   criteriaCount?: number
   events: QueryFilterEvent[]
 }
 
 export interface QueryFilterCriteria {
   id: string
-  criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'
   criteria: QueryFilterGroup[]
 }
 

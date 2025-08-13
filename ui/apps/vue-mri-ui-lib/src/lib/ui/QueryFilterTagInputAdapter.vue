@@ -79,9 +79,9 @@ export default {
     handleSearchChange(searchQuery: any) {
       this.$emit('search-change', searchQuery)
     },
-    handleConceptSetAction({ values, config, componentType }: ConceptSetAction) {
+    handleConceptSetAction(params: ConceptSetAction) {
       // For query filter, we'll emit the event to let the parent handle it
-      this.$emit('concept-set-action', { values, config: config || this.conceptSetConfig, componentType })
+      this.$emit('concept-set-action', params)
     },
   },
 }

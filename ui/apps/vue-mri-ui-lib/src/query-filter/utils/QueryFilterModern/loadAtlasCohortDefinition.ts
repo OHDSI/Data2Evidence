@@ -521,4 +521,3 @@ export const loadAtlasCohortDefinition = async (
     throw error
   }
 }
-

@@ -1,5 +1,5 @@
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { QueryFilterEvent, InclusionCriteria, QueryFilterAttribute } from '../types/QueryFilterTypes'
+import { QueryFilterEvent, InclusionCriteria, QueryFilterAttribute, CriteriaType } from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
   CriteriaListItem,
@@ -263,7 +263,7 @@ export const convertAtlasToFilters = (
     }
 
     // TODO: these mappings could just be Pascal to camel case instead of being hardcoded
-    const getCriteriaType = (criteria: CriteriaListItem): string => {
+    const getCriteriaType = (criteria: CriteriaListItem) => {
       if (criteria.ConditionOccurrence) return 'conditionOccurrence'
       if (criteria.DrugExposure) return 'drugExposure'
       if (criteria.ProcedureOccurrence) return 'procedureOccurrence'
@@ -273,7 +273,7 @@ export const convertAtlasToFilters = (
       if (criteria.DeviceExposure) return 'deviceExposure'
       if (criteria.Death) return 'death'
       if (criteria.ObservationPeriod) return 'observationPeriod'
-      return 'conditionOccurrence'
+      return
     }
 
     // TODO: these mappings could come from the config instead of being hardcoded
@@ -293,7 +293,10 @@ export const convertAtlasToFilters = (
     // This function is used both entry (PrimaryCriteria) and inclusion criteria.
     // For PrimaryCriteria, it uses CriteriaListItem.
     // For InclusionCriteria, it uses CriteriaGroup which has a Criteria property.
-    const convertCriteriaListToEvents = (criteriaList: (CriteriaListItem | CriteriaGroup)[]): QueryFilterEvent[] => {
+    const convertCriteriaListToEvents = (
+      criteriaList: (CriteriaListItem | CriteriaGroup)[],
+      criteriaType: CriteriaType
+    ): QueryFilterEvent[] => {
       if (!criteriaList || criteriaList.length === 0) {
         return []
       }
@@ -312,8 +315,7 @@ export const convertAtlasToFilters = (
         if (!criteriaItem) {
           return // Skip if no valid criteria
         }
-
-        const criteriaType = getCriteriaType(criteriaItem)
+        const eventType = getCriteriaType(criteriaItem)
         const criteriaObj = getCriteriaObject(criteriaItem)
         const codesetId = hasCodesetId(criteriaObj) ? criteriaObj.CodesetId : undefined
 
@@ -337,14 +339,14 @@ export const convertAtlasToFilters = (
             death: 'Death',
             observationPeriod: 'Observation Period',
           }
-          eventDisplayName = typeDisplayNames[criteriaType] || 'Unknown Event'
+          eventDisplayName = typeDisplayNames[eventType] || 'Unknown Event'
         }
 
         const event: QueryFilterEvent = {
           id: `event_${Math.random().toString(36).substring(2)}`,
           conceptSet: eventDisplayName,
-          eventType: criteriaType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
-          criteriaType: criteriaType, // For nested events, this should be the medical event type initially
+          eventType: eventType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
+          criteriaType, // For nested events, this should be the medical event type initially
           isExpanded: true,
           cardinality: {
             type: 'AT_LEAST',
@@ -391,7 +393,7 @@ export const convertAtlasToFilters = (
 
         // Handle concept attributes on the event dynamically using configuration
         if (configLoader) {
-          const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(criteriaType)
+          const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(eventType)
 
           Object.keys(criteriaObj).forEach(atlasKey => {
             const value = criteriaObj[atlasKey]
@@ -400,14 +402,18 @@ export const convertAtlasToFilters = (
               if (!event.attributes) {
                 event.attributes = []
               }
-              event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, criteriaType, configLoader))
+              event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, eventType, configLoader))
             }
           })
         }
 
         // Handle CorrelatedCriteria (nested structure) - Convert to attributes format
         if (hasCorrelatedCriteria(criteriaObj)) {
-          const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || [])
+          criteriaObj.CorrelatedCriteria.Type
+          const nestedCriteriaEvents = convertCriteriaListToEvents(
+            criteriaObj.CorrelatedCriteria.CriteriaList || [],
+            criteriaObj.CorrelatedCriteria.Type
+          )
 
           const nestedAttribute = {
             id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -471,7 +477,7 @@ export const convertAtlasToFilters = (
 
         // Handle regular CriteriaList
         if (rule.expression?.CriteriaList?.length > 0) {
-          criteriaItem.events = convertCriteriaListToEvents(rule.expression.CriteriaList)
+          criteriaItem.events = convertCriteriaListToEvents(rule.expression.CriteriaList, rule.expression.Type)
         }
         // Handle DemographicCriteriaList - create demographic events
         if (rule.expression?.DemographicCriteriaList && rule.expression.DemographicCriteriaList.length > 0) {
@@ -531,7 +537,7 @@ export const convertAtlasToFilters = (
     }
 
     if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
-      exitEvents.censoringCriteria = convertCriteriaListToEvents(cohortDefinition.CensoringCriteria)
+      exitEvents.censoringCriteria = convertCriteriaListToEvents(cohortDefinition.CensoringCriteria, 'ALL')
     }
 
     // Process PrimaryCriteria for entryEvents
@@ -543,7 +549,7 @@ export const convertAtlasToFilters = (
     }
 
     if (cohortDefinition.PrimaryCriteria?.CriteriaList) {
-      entryEvents.events = convertCriteriaListToEvents(cohortDefinition.PrimaryCriteria.CriteriaList)
+      entryEvents.events = convertCriteriaListToEvents(cohortDefinition.PrimaryCriteria.CriteriaList, 'ALL')
 
       // Add observation window if present
       if (cohortDefinition.PrimaryCriteria.ObservationWindow) {

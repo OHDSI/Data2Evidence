@@ -463,22 +463,16 @@ export default {
     },
     async handleLoadAtlasCohortDefinition(atlasJson) {
       try {
-        console.log('jer Handling Atlas cohort definition load:', atlasJson?.name)
-        
         // Ensure QueryFilter is shown
         if (!this.showQueryFilter) {
           this.toggleQueryFilter(true)
         }
-        
         // Wait for component to be mounted
         await this.$nextTick()
-        
         // Set the atlas data prop - the QueryFilter will automatically load it via watcher
         this.atlasDataForQueryFilter = atlasJson
-        
-        console.log('jer Atlas data set to QueryFilter prop')
       } catch (error) {
-        console.error('jer Error setting Atlas data:', error)
+        console.error('Error setting Atlas data:', error)
       }
     },
   },

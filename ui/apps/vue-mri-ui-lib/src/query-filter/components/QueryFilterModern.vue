@@ -533,7 +533,7 @@ const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeI
   if (!targetAttribute) {
     // Try to find by attributeId (for Atlas JSON loaded attributes)
     targetAttribute = targetEvent.attributes?.find(
-      attr => 'attributeId' in attr && (attr as any).attributeId === targetAttributeId
+      attr => 'attributeId' in attr && attr.attributeId === targetAttributeId
     )
   }
 
@@ -542,7 +542,7 @@ const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeI
   }
 
   // Check if attribute has conceptItems (from previous CONCEPT_MULTI_SELECT)
-  if ('conceptItems' in targetAttribute && (targetAttribute as any).conceptItems) {
+  if ('conceptItems' in targetAttribute && targetAttribute.conceptItems) {
     const storedItems = targetAttribute.conceptItems as StoredConceptItem[]
     return storedItems.map((item: StoredConceptItem) => ({
       conceptId: Number(item.conceptId || item.value),
@@ -617,7 +617,7 @@ const updateAttributeWithConcepts = (
   if (!targetAttribute) {
     // Try to find by attributeId (for Atlas JSON loaded attributes)
     targetAttribute = targetEvent.attributes?.find(
-      attr => 'attributeId' in attr && (attr as any).attributeId === targetAttributeId
+      attr => 'attributeId' in attr && attr.attributeId === targetAttributeId
     )
   }
 
@@ -634,16 +634,13 @@ const updateAttributeWithConcepts = (
 
     // Clear any existing conceptSet property since these are individual concepts, not concept sets
     if ('conceptSet' in targetAttribute) {
-      delete (targetAttribute as any).conceptSet
+      delete targetAttribute.conceptSet
     }
-
-    // Force reactivity update
-    primaryEventsUpdateKey.value++
   }
 }
 
 // Helper function to load concept set details for Atlas conversion
-const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetItemDisplay) => {
+const loadConceptSetDetailsForEvent = async (event: QueryFilterEvent, conceptSet: ConceptSetItemDisplay) => {
   try {
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetId())
 
@@ -653,7 +650,7 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
 
     // Try to update the event in primary events (for regular events)
     const primaryEvents = criteriaManager.getPrimaryEvents()
-    const primaryEvent = primaryEvents?.events?.find((e: any) => e.id === event.id)
+    const primaryEvent = primaryEvents?.events?.find(e => e.id === event.id)
     if (primaryEvent) {
       primaryEvent.conceptSetDetails = conceptSetDetails
       primaryEvent.conceptSetLoading = false
@@ -666,7 +663,7 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
           if (primaryEvent.attributes) {
             for (const attribute of primaryEvent.attributes) {
               if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-                const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === event.id)
+                const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === event.id)
                 if (nestedEvent) {
                   nestedEvent.conceptSetDetails = conceptSetDetails
                   nestedEvent.conceptSetLoading = false
@@ -691,7 +688,7 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
 
         for (const group of criteria.criteria) {
           // Check regular events in this group
-          const regularEvent = group.events.find((e: any) => e.id === event.id)
+          const regularEvent = group.events.find(e => e.id === event.id)
           if (regularEvent) {
             regularEvent.conceptSetDetails = conceptSetDetails
             regularEvent.conceptSetLoading = false
@@ -705,7 +702,7 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
             if (groupEvent.attributes) {
               for (const attribute of groupEvent.attributes) {
                 if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-                  const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === event.id)
+                  const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === event.id)
                   if (nestedEvent) {
                     nestedEvent.conceptSetDetails = conceptSetDetails
                     nestedEvent.conceptSetLoading = false
@@ -722,45 +719,32 @@ const loadConceptSetDetailsForEvent = async (event: any, conceptSet: ConceptSetI
         }
       }
     }
-
-    // Trigger another UI update after details are loaded
-    primaryEventsUpdateKey.value++
   } catch (error) {
     console.error('Failed to load concept set details:', error)
     event.conceptSetLoading = false
   }
 }
 
-// Helper function to update event concept set
-// Reactive references for forcing UI updates
-const primaryEventsUpdateKey = ref(0)
 const primaryEventsData = computed(() => {
-  // This computed property will trigger when primaryEventsUpdateKey changes
-  primaryEventsUpdateKey.value // Access this to create dependency
   return criteriaManager.getPrimaryEvents()
 })
 
 // Reactive criteria data for nested attribute reactivity
 const criteriaData = computed(() => {
-  // This computed property will trigger when primaryEventsUpdateKey changes
-  primaryEventsUpdateKey.value // Access this to create dependency
   return criteriaManager.getCriteria()
 })
 
 // Reactive exit criteria data for exit event reactivity
 const exitCriteriaData = computed(() => {
-  // This computed property will trigger when primaryEventsUpdateKey changes
-  primaryEventsUpdateKey.value // Access this to create dependency
   return criteriaManager.getCensoringCriteria()
 })
 
 const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDisplay) => {
   const criteria = criteriaManager.getCriteria()
-
   // Check primary entry events first
   const primaryEvents = criteriaManager.getPrimaryEvents()
   if (primaryEvents?.events) {
-    const event = primaryEvents.events.find((event: any) => event.id === eventId)
+    const event = primaryEvents.events.find(event => event.id === eventId)
     if (event) {
       // For events, use Vue's reactive assignment to ensure updates are detected
       Object.assign(event, {
@@ -778,13 +762,8 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
           modifiedDate: new Date().toISOString(),
         },
       })
-
       // Load concept set details for Atlas conversion
       loadConceptSetDetailsForEvent(event, conceptSet)
-
-      // Update reactive reference to trigger UI updates
-      primaryEventsUpdateKey.value++
-
       return
     }
 
@@ -793,11 +772,10 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
       if (event.attributes) {
         for (const attribute of event.attributes) {
           if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
             if (nestedEvent) {
-              // For nested events in primary events, store the concept set ID as a string
+              // Direct assignment since nestedEvent is already reactive
               nestedEvent.conceptSetId = conceptSet.value.toString()
-              // Store a minimal concept set reference
               nestedEvent.selectedConceptSet = {
                 value: Number(conceptSet.value),
                 text: conceptSet.text || '',
@@ -809,11 +787,10 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
                 createdDate: new Date().toISOString(),
                 modifiedDate: new Date().toISOString(),
               }
+              nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || ''
+
               // Load concept set details for Atlas conversion
               loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
-
-              // Trigger UI update for nested events in primary events too
-              primaryEventsUpdateKey.value++
               return
             }
           }
@@ -824,7 +801,7 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
 
   // Check inclusion criteria groups
   for (const group of criteria.criteria) {
-    const event = group.events.find((event: any) => event.id === eventId)
+    const event = group.events.find(event => event.id === eventId)
     if (event) {
       // For events, store the concept set ID as a string
       event.conceptSetId = conceptSet.value.toString()
@@ -842,9 +819,6 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
       }
       // Load concept set details for Atlas conversion
       loadConceptSetDetailsForEvent(event, conceptSet)
-
-      // Trigger UI update for criteria groups too
-      primaryEventsUpdateKey.value++
       return
     }
 
@@ -853,7 +827,7 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
       if (event.attributes) {
         for (const attribute of event.attributes) {
           if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
             if (nestedEvent) {
               // For nested events, store the concept set ID as a string
               nestedEvent.conceptSetId = conceptSet.value.toString()
@@ -871,9 +845,6 @@ const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDispla
               }
               // Load concept set details for Atlas conversion
               loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
-
-              // Trigger UI update for nested criteria too
-              primaryEventsUpdateKey.value++
               return
             }
           }
@@ -889,14 +860,12 @@ const updateAttributeConceptSet = (eventId: string, attributeId: string, concept
 
   // Check criteria groups
   for (const group of criteria.criteria) {
-    const event = group.events.find((event: any) => event.id === eventId)
+    const event = group.events.find(event => event.id === eventId)
     if (event) {
-      const attribute = event.attributes?.find((attr: any) => attr.id === attributeId)
+      const attribute = event.attributes?.find(attr => attr.id === attributeId)
       if (attribute && 'conceptSet' in attribute) {
         // For attributes, store the full concept set object
-        ;(attribute as any).conceptSet = conceptSet
-        // Trigger UI update for attribute changes too
-        primaryEventsUpdateKey.value++
+        attribute.conceptSet = conceptSet
         return
       } else {
       }
@@ -908,14 +877,12 @@ const updateAttributeConceptSet = (eventId: string, attributeId: string, concept
         for (const attribute of event.attributes) {
           if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
             // Look for the event in nested criteria
-            const nestedEvent = attribute.nestedCriteria.events.find((ne: any) => ne.id === eventId)
+            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
             if (nestedEvent) {
-              const nestedAttribute = nestedEvent.attributes?.find((attr: any) => attr.id === attributeId)
+              const nestedAttribute = nestedEvent.attributes?.find(attr => attr.id === attributeId)
               if (nestedAttribute && 'conceptSet' in nestedAttribute) {
                 // For nested attributes, store the full concept set object
-                ;(nestedAttribute as any).conceptSet = conceptSet
-                // Trigger UI update for nested attribute changes too
-                primaryEventsUpdateKey.value++
+                nestedAttribute.conceptSet = conceptSet
                 return
               }
             }
@@ -933,15 +900,38 @@ const handleConceptSetAction = ({
   attributeId,
   eventId,
   parentAttributeId,
+  action,
+  removedItem,
 }: ConceptSetAction) => {
   try {
+    // Handle concept removal for multiselect concepts
+    if (action === 'remove' && componentType === 'concept' && attributeId && eventId) {
+      // Find the target attribute and update its conceptItems
+      const targetEvent = findEventById(eventId)
+      if (targetEvent) {
+        const targetAttribute = targetEvent.attributes?.find(
+          attr => 'attributeId' in attr && attr.attributeId === attributeId
+        )
+
+        if (targetAttribute && 'conceptItems' in targetAttribute) {
+          // Remove the concept from conceptItems array
+          const updatedConceptItems = targetAttribute.conceptItems.filter(
+            item => item.conceptId !== removedItem.conceptId
+          )
+
+          // Update the attribute's conceptItems
+          targetAttribute.conceptItems = updatedConceptItems
+          return // Exit early for removal actions
+        }
+      }
+    }
+
     const currentDatasetId = getDatasetId()
     if (!currentDatasetId) {
       console.error('Cannot open terminology - dataset ID not available')
       return
     }
     const conceptSetId = values?.value
-
     const domainFilter = config?.domainFilter
     const standardConceptCodeFilter = config?.standardConceptCodeFilter
 
@@ -962,12 +952,10 @@ const handleConceptSetAction = ({
       try {
         // Reload all concept sets to get complete data with concepts and flags
         await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
-
         // Find the concept set with complete data from the fresh API response
         const completeConceptSet = allConceptSets.value.find(
           (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetIdToFind.toString()
         )
-
         if (completeConceptSet) {
           // Use complete concept set data if found
           if (conceptSetId) {
@@ -1023,7 +1011,6 @@ const handleConceptSetAction = ({
               }
             }
             selectedConceptSets.value = updatedSets
-
             // Update the specific field that triggered the modal
             if (eventId && attributeId && !parentAttributeId) {
               updateAttributeConceptSet(eventId, attributeId, updatedSets[index])
@@ -1228,7 +1215,6 @@ const saveAtlasCohort = async () => {
           <QueryFilterEntryExit
             type="ENTRY"
             :primary-events-data="primaryEventsData"
-            :key="`entry-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
@@ -1243,7 +1229,6 @@ const saveAtlasCohort = async () => {
         <div class="query-filter-container__section">
           <QueryFilterCriteria
             :criteria-data="criteriaData"
-            :key="`criteria-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
@@ -1264,7 +1249,6 @@ const saveAtlasCohort = async () => {
           <QueryFilterEntryExit
             type="EXIT"
             :exit-criteria-data="exitCriteriaData"
-            :key="`exit-${primaryEventsUpdateKey}`"
             :concept-sets="allConceptSets"
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"

@@ -224,8 +224,23 @@ export default {
         delete this.tagRefs[value]
       }
     },
-    remove(removedOption, id) {
-      this.removeFromNewTags(removedOption.value)
+    remove(removedOption) {
+      // Handle multiselect concepts (pa-atlas case) - emit concept-set-action for proper state management
+      if (this.componentType === 'concept') {
+        // Create an updated value array without the removed concept
+        const updatedValue = this.value.filter(item => item.value !== removedOption.value)
+        // Emit concept-set-action to properly update the attribute's conceptItems
+        this.$emit('concept-set-action', {
+          values: updatedValue,
+          config: this.conceptSetConfig,
+          componentType: this.componentType,
+          action: 'remove',
+          removedItem: removedOption,
+        })
+      } else {
+        // PA Filter card behavior)
+        this.removeFromNewTags(removedOption.value)
+      }
     },
     handleContainerInteraction() {
       // For concept and conceptSet types, directly open terminology modal

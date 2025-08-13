@@ -68,8 +68,23 @@ export interface ConceptSetAction {
   attributeId?: string // ID of the attribute that triggered this action
   eventId?: string // ID of the event that contains the attribute
   parentAttributeId?: string // ID of the parent nested attribute (for nested events)
+  action?: string // Action type (e.g., 'remove' for concept removal)
+  removedItem?: {
+    code: string
+    conceptClassId: string
+    conceptId: number
+    conceptName: string
+    display_value: string
+    domainId: string
+    standardConcept: string
+    system: string
+    text: string
+    validEndDate?: string
+    validStartDate?: string
+    validity?: string
+    value: string
+  } // The item that was removed (for remove actions)
 }
-
 export interface ConceptSetDetails {
   [conceptSetId: string]: ConceptDetail[]
 }

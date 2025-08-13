@@ -8,7 +8,6 @@ export const loadConceptSets = async (
   conceptSetDomainValues: Ref<ConceptSetDomainValues>
 ) => {
   const currentDatasetId = getDatasetId()
-
   if (!currentDatasetId) {
     console.warn('Cannot load concept sets: Dataset ID not available from store or portalAPI')
     allConceptSets.value = []

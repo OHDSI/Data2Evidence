@@ -55,14 +55,10 @@ const emit = defineEmits<{
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties['$store']
 
-// Local reactive copy of the event
-const localEvent = ref<QueryFilterEvent>({ ...props.event })
-
-// Two-way binding computed
+// Use the reactive prop directly instead of local copy
 const eventData = computed({
-  get: () => localEvent.value,
+  get: () => props.event,
   set: (value: QueryFilterEvent) => {
-    localEvent.value = value
     emit('update:event', value)
   },
 })
@@ -286,41 +282,44 @@ const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria
 }
 
 // Create tag input model for concept set selection
-const tagInputModel = computed(() => ({
-  id: `event-concept-set-${eventData.value.id}`,
-  props: {
-    type: 'conceptSet',
-    value: eventData.value.selectedConceptSet
-      ? [
-          {
-            value: String(eventData.value.selectedConceptSet.value),
-            text: eventData.value.selectedConceptSet.text,
-            display_value: eventData.value.selectedConceptSet.display_value,
-            conceptIds: eventData.value.selectedConceptSet.conceptIds,
-            concepts: eventData.value.selectedConceptSet.concepts,
-          },
-        ]
-      : [],
-    attributePath: 'condition_occurrence.concept_id',
-    domainFilter: 'Condition',
-    standardConceptCodeFilter: 'Standard',
-  },
-}))
+const tagInputModel = computed(() => {
+  const model = {
+    id: `event-concept-set-${eventData.value.id}`,
+    props: {
+      type: 'conceptSet',
+      value: eventData.value.selectedConceptSet
+        ? [
+            {
+              value: String(eventData.value.selectedConceptSet.value),
+              text: eventData.value.selectedConceptSet.text,
+              display_value: eventData.value.selectedConceptSet.display_value,
+              conceptIds: eventData.value.selectedConceptSet.conceptIds,
+              concepts: eventData.value.selectedConceptSet.concepts,
+            },
+          ]
+        : [],
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: 'Condition',
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+  return model
+})
 
 // Get the external value for the tag input (ensuring it's always an array)
 const getTagInputValue = () => {
-  if (eventData.value.selectedConceptSet) {
-    return [
-      {
-        value: String(eventData.value.selectedConceptSet.value),
-        text: eventData.value.selectedConceptSet.text,
-        display_value: eventData.value.selectedConceptSet.display_value,
-        conceptIds: eventData.value.selectedConceptSet.conceptIds,
-        concepts: eventData.value.selectedConceptSet.concepts,
-      },
-    ]
-  }
-  return []
+  const result = eventData.value.selectedConceptSet
+    ? [
+        {
+          value: String(eventData.value.selectedConceptSet.value),
+          text: eventData.value.selectedConceptSet.text,
+          display_value: eventData.value.selectedConceptSet.display_value,
+          conceptIds: eventData.value.selectedConceptSet.conceptIds,
+          concepts: eventData.value.selectedConceptSet.concepts,
+        },
+      ]
+    : []
+  return result
 }
 
 // Get event type display name
@@ -389,23 +388,25 @@ const createAttributeModel = (attribute: QueryFilterAttribute) => {
   const hasDomainFilter = 'domainFilter' in attribute && attribute.domainFilter
   const domainFilter = hasDomainFilter ? attribute.domainFilter : 'Condition'
 
-  return {
+  const value =
+    'configType' in attribute && attribute.configType === 'concept'
+      ? 'conceptItems' in attribute && attribute.conceptItems
+        ? attribute.conceptItems
+        : []
+      : 'conceptSet' in attribute && attribute.conceptSet
+      ? [attribute.conceptSet]
+      : []
+  const model = {
     id: `attribute-${attribute.id}-${eventData.value.id}`,
     props: {
       type: attrType,
-      value:
-        'configType' in attribute && attribute.configType === 'concept'
-          ? 'conceptItems' in attribute && attribute.conceptItems
-            ? attribute.conceptItems
-            : []
-          : 'conceptSet' in attribute && attribute.conceptSet
-          ? [attribute.conceptSet]
-          : [],
+      value: value,
       attributePath: 'condition_occurrence.concept_id',
       domainFilter: domainFilter,
       standardConceptCodeFilter: 'Standard',
     },
   }
+  return model
 }
 // Expand/collapse state
 const isExpanded = ref(true)
@@ -557,24 +558,18 @@ const toggleExpanded = () => {
                     "
                     :external-texts="conceptSetTexts || {}"
                     :is-catalog-attribute="false"
-                    @update:value="values => {
-                    if ('configType' in attribute && attribute.configType === 'concept') {
-                      // For individual concepts, emit concept-set-action to trigger the concept update logic
-                      if (values && values.length > 0) {
-                        $emit('concept-set-action', { 
-                          values: values, 
-                          attributeId: (attribute as any).attributeId || (attribute as any).id, 
-                          eventId: eventData.id,
-                          componentType: 'CONCEPT_MULTI_SELECT'
-                        })
+                    @update:value="
+                      values => {
+                        if ('configType' in attribute && attribute.configType === 'concept') {
+                          return
+                        } else {
+                          // For concept sets, use the existing handler
+                          values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
+                        }
                       }
-                    } else {
-                      // For concept sets, use the existing handler
-                      values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
-                    }
-                  }"
+                    "
                     @concept-set-action="(action: ConceptSetAction) => {
-                    $emit('concept-set-action', { ...action, attributeId: (attribute as any).attributeId || (attribute as any).id, eventId: eventData.id })
+                    $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
                   }"
                   />
                   <div v-else class="attribute-concept-set-readonly">
