@@ -749,7 +749,7 @@ const toggleExpanded = () => {
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     background: #fafafa;
-    // overflow: hidden; // Avoid CriteriaSelectorDropdown being clipped in the Nested Criteria
+    overflow: visible; // Avoid CriteriaSelectorDropdown being clipped in the Nested Criteria
 
     &:last-child {
       margin-bottom: 0;
