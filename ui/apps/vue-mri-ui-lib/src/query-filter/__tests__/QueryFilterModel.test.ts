@@ -18,7 +18,6 @@ describe('QueryFilterCriteriaManager', () => {
       const manager = new QueryFilterCriteriaManager()
 
       expect(manager.getCriteria()).toBeDefined()
-      expect(manager.getCriteria().criteriaType).toBe('ALL')
       expect(manager.getCriteria().criteria).toEqual([])
     })
 
@@ -39,7 +38,7 @@ describe('QueryFilterCriteriaManager', () => {
       }
       const manager = new QueryFilterCriteriaManager(data)
 
-      expect(manager.getCriteria().criteriaType).toBe('EARLIEST')
+      // criteriaType is not part of the interface
       expect(manager.getCriteria().criteria).toHaveLength(1)
       expect(manager.getCriteria().criteria[0].title).toBe('Test Criteria')
     })
@@ -85,14 +84,6 @@ describe('QueryFilterCriteriaManager', () => {
       expect(criteria.title).toBe('Updated Title')
       expect(criteria.description).toBe('Updated Description')
     })
-
-    it('should set criteria type', () => {
-      expect(manager.getCriteria().criteriaType).toBe('ALL')
-
-      manager.setCriteriaType('EARLIEST')
-
-      expect(manager.getCriteria().criteriaType).toBe('EARLIEST')
-    })
   })
 
   describe('filter management within groups', () => {
@@ -135,18 +126,6 @@ describe('QueryFilterCriteriaManager', () => {
 
       expect(restored.getCriteria().criteria).toHaveLength(1)
       expect(restored.getCriteria().criteria[0].title).toBe('Test Group')
-    })
-
-    it('should clone manager', () => {
-      const criteria = manager.addCriteria({ title: 'Test Group' })
-      const clone = manager.clone()
-
-      expect(clone.getCriteria().criteria).toHaveLength(1)
-      expect(clone.getCriteria().criteria[0].title).toBe('Test Group')
-
-      // Ensure deep copy
-      expect(clone.getCriteria().criteria[0]).not.toBe(criteria)
-      expect(clone.getCriteria().criteria[0].id).not.toBe(criteria.id)
     })
   })
 

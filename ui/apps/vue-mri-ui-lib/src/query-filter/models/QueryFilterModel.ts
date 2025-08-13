@@ -1181,12 +1181,6 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  // Clone. Used for tests
-  clone(): QueryFilterCriteriaManager {
-    const jsonData = this.toJSON()
-    return QueryFilterCriteriaManager.fromJSON(jsonData)
-  }
-
   // Helper method to collect concept sets from nested events that were missed in initial collection
   private collectNestedConceptSets(
     groups: QueryFilterGroup[],

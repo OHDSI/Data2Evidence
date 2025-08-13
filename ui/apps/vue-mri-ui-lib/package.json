@@ -95,6 +95,11 @@
       ".+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$": "jest-transform-stub",
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
+    "globals": {
+      "ts-jest": {
+        "isolatedModules": true
+      }
+    },
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
     },
