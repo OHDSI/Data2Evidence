@@ -231,54 +231,6 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
           </Box>
         ))}
       </Box>
-
-      {/* Stratification Specific Settings */}
-      {competingOutcomeCohortStratificationArgs.cohortType ===
-        "stratification" && (
-        <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
-          <div style={{ paddingBottom: "20px" }}>Stratification Settings</div>
-
-          <Box mb={4}>
-            <TextInput
-              label="Stratification Variable"
-              value={
-                competingOutcomeCohortStratificationArgs.stratificationVariable ||
-                ""
-              }
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({
-                  competingOutcomeCohortStratificationArgs: {
-                    ...competingOutcomeCohortStratificationArgs,
-                    stratificationVariable: e.target.value,
-                  },
-                })
-              }
-            />
-          </Box>
-
-          <Box mb={4}>
-            <TextInput
-              label="Stratification Levels (comma-separated)"
-              value={
-                competingOutcomeCohortStratificationArgs.stratificationLevels?.join(
-                  ", "
-                ) || ""
-              }
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({
-                  competingOutcomeCohortStratificationArgs: {
-                    ...competingOutcomeCohortStratificationArgs,
-                    stratificationLevels: e.target.value
-                      .split(",")
-                      .map((level) => level.trim())
-                      .filter(Boolean),
-                  },
-                })
-              }
-            />
-          </Box>
-        </Box>
-      )}
     </NodeDrawer>
   );
 };

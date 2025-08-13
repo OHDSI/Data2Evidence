@@ -1,6 +1,5 @@
 import {
   Box,
-  Checkbox,
   FormControl,
   InputLabel,
   MenuItem,
@@ -135,104 +134,6 @@ export const KaplanMeierCharacterizationDrawer: FC<
             </Select>
           </FormControl>
         </Box>
-      </Box>
-
-      {/* Cohort Configuration */}
-      <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
-        <div style={{ paddingBottom: "20px" }}>Cohort Configuration</div>
-
-        <Box mb={4}>
-          <TextInput
-            label="Target Cohort ID"
-            type="number"
-            value={kaplanMeierCharacterizationArgs.targetCohortId || ""}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({
-                kaplanMeierCharacterizationArgs: {
-                  ...kaplanMeierCharacterizationArgs,
-                  targetCohortId: parseInt(e.target.value) || undefined,
-                },
-              })
-            }
-          />
-        </Box>
-
-        <Box mb={4}>
-          <TextInput
-            label="Outcome Cohort ID"
-            type="number"
-            value={kaplanMeierCharacterizationArgs.outcomeCohortId || ""}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({
-                kaplanMeierCharacterizationArgs: {
-                  ...kaplanMeierCharacterizationArgs,
-                  outcomeCohortId: parseInt(e.target.value) || undefined,
-                },
-              })
-            }
-          />
-        </Box>
-
-        {kaplanMeierCharacterizationArgs.analysisType === "competing_risk" && (
-          <Box mb={4}>
-            <TextInput
-              label="Competing Outcome Cohort ID"
-              type="number"
-              value={
-                kaplanMeierCharacterizationArgs.competingOutcomeCohortId || ""
-              }
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({
-                  kaplanMeierCharacterizationArgs: {
-                    ...kaplanMeierCharacterizationArgs,
-                    competingOutcomeCohortId:
-                      parseInt(e.target.value) || undefined,
-                  },
-                })
-              }
-            />
-          </Box>
-        )}
-
-        {kaplanMeierCharacterizationArgs.analysisType === "single_event" && (
-          <>
-            <Box mb={4}>
-              <Checkbox
-                checked={kaplanMeierCharacterizationArgs.useStratification}
-                label="Use Stratification"
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  onFormDataChange({
-                    kaplanMeierCharacterizationArgs: {
-                      ...kaplanMeierCharacterizationArgs,
-                      useStratification: e.target.checked,
-                    },
-                  })
-                }
-              />
-            </Box>
-
-            {kaplanMeierCharacterizationArgs.useStratification && (
-              <Box mb={4}>
-                <TextInput
-                  label="Stratification Cohort ID"
-                  type="number"
-                  value={
-                    kaplanMeierCharacterizationArgs.stratificationCohortId || ""
-                  }
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    onFormDataChange({
-                      kaplanMeierCharacterizationArgs: {
-                        ...kaplanMeierCharacterizationArgs,
-                        stratificationCohortId:
-                          parseInt(e.target.value) || undefined,
-                      },
-                    })
-                  }
-                />
-              </Box>
-            )}
-          </>
-        )}
       </Box>
     </NodeDrawer>
   );

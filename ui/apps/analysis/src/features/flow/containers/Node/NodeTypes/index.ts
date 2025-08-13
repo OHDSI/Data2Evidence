@@ -559,7 +559,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   },
   strategus_node: {
     title: "Strategus",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    description: "Run Strategus code.",
     tag: NodeTag.Stable,
     defaultData: {},
     inputs: [
@@ -621,9 +621,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     ],
   },
   kaplan_meier_characterization_node: {
-    title: "Kaplan-Meier Characterization Analysis",
+    title: "Kaplan-Meier Characterization",
     description:
-      "Enhanced Kaplan-Meier survival analysis with competing risks and stratification support.",
+      "Kaplan-Meier survival analysis with competing risks and stratification.",
     tag: NodeTag.Stable,
     defaultData: {
       kaplanMeierCharacterizationArgs: {
@@ -638,9 +638,9 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     outputs: [{ handleType: HandleIOType.CohortMethodAnalysis }],
   },
   competing_outcome_cohort_stratification_node: {
-    title: "Competing Outcome Cohort / Stratification",
+    title: "Competing Outcome / Stratification",
     description:
-      "Define competing outcome cohorts or stratification variables for Kaplan-Meier analysis.",
+      "Define competing outcome cohorts or stratification cohort for Kaplan-Meier analysis.",
     tag: NodeTag.Stable,
     defaultData: {
       competingOutcomeCohortStratificationArgs: {
