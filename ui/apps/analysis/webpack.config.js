@@ -31,6 +31,11 @@ module.exports = (env, argv) => {
           context: ['/jobplugins'],
           target: 'https://localhost:41100',
           secure: false
+        },
+        {
+          context: ['/d2e-webapi'],
+          target: 'https://localhost:41100',
+          secure: false
         }
       ]
     },
