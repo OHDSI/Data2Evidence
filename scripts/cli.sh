@@ -146,7 +146,7 @@ case $cmd in
         echo "By proceeding, you agree to the SAP License Agreement."
         echo "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
         
-        if [[ -n "${CI:-}" || -n "${GITHUB_ACTIONS:-}" || -n "${ACCEPT_SAP_LICENSE:-}" ]]; then
+        if [[ -n "${ACCEPT_SAP_LICENSE:-}" ]]; then
             echo "CI environment detected. Auto-accepting SAP license terms..."
             license_agreement="y"
         else

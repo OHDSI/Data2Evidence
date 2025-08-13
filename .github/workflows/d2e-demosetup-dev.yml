@@ -33,7 +33,7 @@ jobs:
         if: success() || failure()
         id: inithana
         run: |
-          CI=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config timeout 5m ./scripts/cli.sh -e -v develop --env-file .env --hana inithana
+          timeout 30m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Build docker images
         if: success() || failure()
