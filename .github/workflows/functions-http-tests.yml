@@ -45,8 +45,7 @@ jobs:
   run-http-tests:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on:
-      ["${{ vars.ENVIRONMENT_NAME_HTTP_TESTS }}", self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       TESTSCHEMA: HTTP_${{github.run_id}}
@@ -79,27 +78,22 @@ jobs:
         with:
           node-version: "18.20.4"
 
-      - name: create .env.local for docker-compose in system services
-        env:
-          DOTENV_FILE: .env.local
-          DOTENV_LOCAL_YML: ${{ secrets.DOTENV_LOCAL_YML }}
+            - name: npm install
+        if: success() || failure()
         run: |
-          echo "${DOTENV_LOCAL_YML}" | yq -o sh > $DOTENV_FILE
+          npm install 
 
-          source scripts/lib.sh
-          gen-logto-values
-          gen-tls-internal
+      - name: Initialise d2e
+        if: success() || failure()
+        id: init
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env init
 
-          echo D2E_MEMORY_LIMIT=5G >> $DOTENV_FILE
-          sed -i "s/CDMDEFAULT/${TESTSCHEMA}/g" $DOTENV_FILE
-          grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
-
-          # HTTP tests use HANA db, hence the following envs must be false
-          # due to logic in analytics service getDBConnections
-          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-          echo "USE_DUCKDB=false" >> $DOTENV_FILE
-          echo "USE_CACHEDB=false" >> $DOTENV_FILE
-          echo "NODE_ENV=production" >> $DOTENV_FILE
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
@@ -113,7 +107,7 @@ jobs:
 
       - name: Build system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 build
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -127,7 +121,7 @@ jobs:
 
       - name: Start system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 start
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
