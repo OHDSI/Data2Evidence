@@ -129,9 +129,17 @@ export class QueryFilterCriteriaManager {
     return this.entryEvents
   }
 
+  updatePrimaryEvents(events: QueryFilterEvent[]): void {
+    this.entryEvents.events = events
+  }
+
   // Primary criteria management
   getCensoringCriteria(): ExitEvent {
     return this.exitEvents
+  }
+
+  updateCensoringCriteria(events: QueryFilterEvent[]): void {
+    this.exitEvents.censoringCriteria = events
   }
 
   // Group management

@@ -23,6 +23,7 @@ import type { AttributeOption } from '../utils/CriteriaConfigLoader'
 import CardinalityMenu from './CardinalityMenu.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
+import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 
 interface Props {
   event: QueryFilterEvent
@@ -133,8 +134,6 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
 
   // Load concept set details for Atlas conversion
   try {
-    // Import the API service function
-    const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
 
     // Update event with concept set details

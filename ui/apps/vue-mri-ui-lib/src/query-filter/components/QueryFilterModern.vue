@@ -313,6 +313,16 @@ const handleUpdateContDrugSettings = (
   console.log('CONT_DRUG settings updated:', conceptSetId, gapDays, offset, daysSupplyOverride)
 }
 
+// Handle primary events updates
+const handleUpdatePrimaryEvents = (events: QueryFilterEvent[]) => {
+  criteriaManager.updatePrimaryEvents(events)
+}
+
+// Handle exit events updates
+const handleUpdateExitEvents = (events: QueryFilterEvent[]) => {
+  criteriaManager.updateCensoringCriteria(events)
+}
+
 // Handle adding new criteria group
 const handleAddCriteriaGroup = (groupData: Partial<QueryFilterGroup>) => {
   criteriaManager.addCriteriaGroup(groupData)
@@ -1220,6 +1230,7 @@ const saveAtlasCohort = async () => {
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdatePrimaryCriteriaLimit"
             @update-entry-days="handleUpdateEntryDays"
+            @update-primary-events="handleUpdatePrimaryEvents"
             @concept-set-action="handleConceptSetAction"
           />
         </div>
@@ -1253,6 +1264,7 @@ const saveAtlasCohort = async () => {
             :concept-set-domain-values="conceptSetDomainValues"
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdateExitStrategy"
+            @update-exit-events="handleUpdateExitEvents"
             @concept-set-action="handleConceptSetAction"
             @update-fixed-duration="handleUpdateFixedDuration"
             @update-cont-drug-settings="handleUpdateContDrugSettings"

@@ -39,6 +39,8 @@ const emit = defineEmits<{
   'concept-set-action': [action: ConceptSetAction]
   'update-fixed-duration': [eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number]
   'update-cont-drug-settings': [conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number]
+  'update-primary-events': [events: QueryFilterEvent[]]
+  'update-exit-events': [events: QueryFilterEvent[]]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -114,10 +116,10 @@ const eventsData = computed(() => {
 })
 
 const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
-  if (isEntry.value && props.primaryEventsData) {
-    props.primaryEventsData.events = [...updatedEvents]
-  } else if (!isEntry.value && props.exitCriteriaData) {
-    props.exitCriteriaData.censoringCriteria = [...updatedEvents]
+  if (isEntry.value) {
+    emit('update-primary-events', updatedEvents)
+  } else {
+    emit('update-exit-events', updatedEvents)
   }
 }
 

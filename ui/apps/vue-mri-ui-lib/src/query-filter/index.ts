@@ -1,5 +1,4 @@
 export { default as QueryFilterEvent } from './components/QueryFilterEvent.vue'
-export { default as QueryFilterNestedEvent } from './components/QueryFilterNestedEvent.vue'
 export { default as QueryFilterNestedCriteria } from './components/QueryFilterNestedCriteria.vue'
 export { default as AttributesDropdown } from './components/AttributesDropdown.vue'
 export { default as CriteriaSelectorDropdown } from './components/CriteriaSelectorDropdown.vue'
