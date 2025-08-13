@@ -197,7 +197,7 @@ const toggleExpanded = () => {
         </div>
       </div>
       <!-- Group Content Area -->
-      <transition-group name="expand">
+      <transition name="expand">
         <div v-show="isExpanded" class="group-main">
           <!-- Group Criteria Sidebar -->
           <GroupCriteriaSidebar :group="localGroup" :readonly="readonly" @update-group-criteria="updateGroupCriteria" />
@@ -220,25 +220,7 @@ const toggleExpanded = () => {
             />
           </div>
         </div>
-        <!-- Group Content -->
-        <div class="group-content">
-          <!-- Events Container -->
-          <QueryFilterEventContainer
-            :events="groupEvents"
-            event-type="CRITERIA"
-            :parent-group="localGroup"
-            :concept-sets="conceptSets"
-            :concept-set-domain-values="
-              conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
-            "
-            :concept-set-texts="conceptSetTexts || {}"
-            :dataset-id="datasetId || null"
-            :readonly="readonly"
-            @update-events="handleEventsUpdate"
-            @concept-set-action="action => $emit('concept-set-action', action)"
-          />
-        </div>
-      </transition-group>
+      </transition>
     </div>
   </div>
 </template>
