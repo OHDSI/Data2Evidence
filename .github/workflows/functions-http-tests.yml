@@ -58,6 +58,7 @@ jobs:
       CADDY__CONFIG: ./deploy/caddy-config
       ENV_TYPE: local
       DOTENV_FILE: .env.local
+      D2E_RESOURCE_LIMIT: 1.0
 
     steps:
       - uses: actions/checkout@v4
@@ -347,6 +348,10 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
+      - name: print logs for hana
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs hana -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
