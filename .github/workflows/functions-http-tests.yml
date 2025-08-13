@@ -47,7 +47,7 @@ jobs:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HANASERVER: hana # az-hn-db/SG_FQDN
       HDIPORT: 39041 # az-hn-db/DB Port
       HDIPW: TestPW1234 # az-hn-db/Admin password
       HDIUSER: SYSTEM # az-hn-db/Admin user
