@@ -187,33 +187,23 @@
             "enabled": true,
             "name": "Analysis",
             "nameI18nKey": "UI_PLUGIN_ANALYSIS",
-            "route": "analysis_parent",
+            "route": "analysis",
+            "pluginPath": "https://$$FQDN$$/analysis/module.js",
+            "featureFlag": "strategus",
+            "requiredRoles": [
+              "RESEARCHER"
+            ]
+          },
+          {
+            "name": "Kaplan-Meier",
+            "nameI18nKey": "UI_PLUGIN_KAPLAN_MEIER",
+            "route": "kaplan-meier",
+            "pluginPath": "plugins/Researcher/KaplanMeier/module",
+            "featureFlag": "kaplanMeier",
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "children": [
-              {
-                "name": "Kaplan-Meier",
-                "nameI18nKey": "UI_PLUGIN_KAPLAN_MEIER",
-                "route": "kaplan-meier",
-                "pluginPath": "plugins/Researcher/KaplanMeier/module",
-                "featureFlag": "kaplanMeier",
-                "requiredRoles": [
-                  "RESEARCHER"
-                ],
-                "enabled": false
-              },
-              {
-                "name": "Strategus",
-                "route": "analysis",
-                "pluginPath": "https://$$FQDN$$/analysis/module.js",
-                "featureFlag": "strategus",
-                "requiredRoles": [
-                  "RESEARCHER"
-                ],
-                "enabled": true
-              }
-            ]
+            "enabled": false
           }
         ],
         "setup": [
