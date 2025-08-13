@@ -96,11 +96,6 @@ jobs:
           sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
           sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
 
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
-
       - name: Build system services
         run: |
           PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
@@ -124,6 +119,11 @@ jobs:
       - name: Check status of docker containers
         run: |
           docker ps -a
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb
 
       - name: Login to logto and get Bearer token and sub
         run: |
