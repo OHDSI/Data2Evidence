@@ -74,7 +74,7 @@ jobs:
         with:
           node-version: "18.20.4"
 
-            - name: npm install
+      - name: npm install
         if: success() || failure()
         run: |
           npm install 
