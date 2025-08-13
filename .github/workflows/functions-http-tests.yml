@@ -47,12 +47,12 @@ jobs:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      HANASERVER: ${{ secrets.HN_SG_FQDN }} # az-hn-db/SG_FQDN
-      HDIPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
-      HDIPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
-      HDIUSER: ${{ vars.HN_SG_ADMIN_USERNAME }} # az-hn-db/Admin user
-      TESTPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
-      TESTSYSTEMPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
+      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HDIPORT: 39041 # az-hn-db/DB Port
+      HDIPW: TestPW1234 # az-hn-db/Admin password
+      HDIUSER: SYSTEM # az-hn-db/Admin user
+      TESTPORT: 39041 # az-hn-db/DB Port
+      TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
 
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +89,7 @@ jobs:
         if: success() || failure()
         id: inithana
         run: |
-          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |

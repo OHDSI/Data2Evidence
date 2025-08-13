@@ -164,7 +164,7 @@ case $cmd in
         esac
         
         source $node_modules_path/scripts/lib.sh # functions here
-        hanapw=$(random-password 16)
+        hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         $cmd
