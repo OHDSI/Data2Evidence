@@ -469,8 +469,14 @@ export default {
         }
         // Wait for component to be mounted
         await this.$nextTick()
-        // Set the atlas data prop - the QueryFilter will automatically load it via watcher
-        this.atlasDataForQueryFilter = atlasJson
+        
+        if (atlasJson === null) {
+          // Clear any existing data and set null for empty initialization
+          this.atlasDataForQueryFilter = null
+        } else {
+          // Existing logic for loading Atlas JSON
+          this.atlasDataForQueryFilter = atlasJson
+        }
       } catch (error) {
         console.error('Error setting Atlas data:', error)
       }

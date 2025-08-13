@@ -37,6 +37,7 @@ import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
+import * as types from '../../store/mutation-types'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -420,7 +421,19 @@ watch(
     return props.atlasData
   },
   async newAtlasData => {
-    if (newAtlasData) {
+    if (newAtlasData === null) {
+      // Initialize empty state for new Atlas cohort
+      criteriaManager.clearAllCriteria()
+      selectedConceptSets.value = []
+      isLoading.value = true
+      
+      // Load concept sets for new Atlas cohort so they're available in dropdown
+      await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
+      
+      isLoading.value = false
+      console.log('jer Initialized empty Atlas cohort state with concept sets loaded')
+    } else if (newAtlasData) {
+      // Load existing Atlas cohort
       await loadAtlasCohortDefinition(
         newAtlasData,
         isLoading,
@@ -432,7 +445,6 @@ watch(
         nextTick,
         selectedConceptSets
       )
-    } else {
     }
   },
   { immediate: true }
@@ -1167,7 +1179,7 @@ const saveAtlasCohort = async () => {
     const currentDatasetId = getDatasetId()
 
     if (!currentDatasetId) {
-      console.error('Cannot save cohort: Dataset ID not available')
+      console.error('jer Cannot save cohort: Dataset ID not available')
       return
     }
 
@@ -1186,21 +1198,58 @@ const saveAtlasCohort = async () => {
       hasReadAccess: true,
     }
 
-    console.log('Saving Atlas cohort:', cohortDefinition)
+    console.log('jer Saving Atlas cohort:', cohortDefinition)
 
     const activeBookmark = store?.getters?.getActiveBookmark
+    const isNewBookmark = !activeBookmark?.bmkId || activeBookmark?.isNew
 
-    await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
-      content: {
-        id: parseInt(activeBookmark.bmkId),
-        ...cohortDefinition,
-      },
-    })
+    if (isNewBookmark) {
+      // Create new Atlas cohort
+      console.log('jer Creating new Atlas cohort')
+      const response = await store.dispatch('fireCreateAtlasCohortDefinitionQuery', {
+        content: {
+          ...cohortDefinition,
+          id: 0, // 0 indicates a new cohort in webapi
+        },
+      })
 
-    console.log('Atlas cohort saved successfully')
+      console.log('jer Atlas cohort created with ID:', response.id)
+
+      // Update active bookmark with the new ID
+      const updatedBookmark = {
+        ...activeBookmark,
+        bmkId: response.id?.toString(),
+        bookmarkname: cohortName.value.trim(),
+        isNew: false,
+      }
+
+      store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
+      console.log('jer Updated active bookmark:', updatedBookmark)
+    } else {
+      // Update existing Atlas cohort
+      console.log('jer Updating existing Atlas cohort with ID:', activeBookmark.bmkId)
+      await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
+        content: {
+          id: parseInt(activeBookmark.bmkId),
+          ...cohortDefinition,
+        },
+      })
+
+      // Update bookmark name if changed
+      if (activeBookmark.bookmarkname !== cohortName.value.trim()) {
+        const updatedBookmark = {
+          ...activeBookmark,
+          bookmarkname: cohortName.value.trim(),
+        }
+        store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
+        console.log('jer Updated bookmark name:', cohortName.value.trim())
+      }
+    }
+
+    console.log('jer Atlas cohort saved successfully')
     closeSaveDialog()
   } catch (error) {
-    console.error('Error saving Atlas cohort:', error)
+    console.error('jer Error saving Atlas cohort:', error)
   }
 }
 </script>
