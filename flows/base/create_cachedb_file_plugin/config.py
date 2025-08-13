@@ -56,18 +56,18 @@ class CreateDuckdbDatabaseFileType(BaseModel):
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
     tablesToCreateDuckdbFtsIndex: List[DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM] = [
         "concept"]
-    create_duckdb_file: Optional[bool] = None
-    batch_size: Optional[int] = None
+    create_duckdb_file: Optional[bool] = False
+    batch_size: Optional[int] = 10000
 
-    def get_create_duckdb_file(self) -> bool:
-        if self.create_duckdb_file is not None:
-            return self.create_duckdb_file
-        return False
+    # def get_create_duckdb_file(self) -> bool:
+    #     if self.create_duckdb_file is not None:
+    #         return self.create_duckdb_file
+    #     return False
 
-    def get_batch_size(self) -> int:
-        if self.batch_size is not None:
-            return self.batch_size
-        return 100000
+    # def get_batch_size(self) -> int:
+    #     if self.batch_size is not None:
+    #         return self.batch_size
+    #     return 100000
 
     @property
     def use_cache_db(self) -> str:

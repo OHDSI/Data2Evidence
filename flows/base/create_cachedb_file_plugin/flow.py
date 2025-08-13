@@ -25,14 +25,16 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
 
     duckdb_database_name = options.databaseCode
     use_cache_db = options.use_cache_db
-    batch_size = options.get_batch_size() if hasattr(options, 'get_batch_size') else 100000
-    print(f"Batch size: {batch_size}")
+    batch_size = options.batch_size
+    logger.info(f"Batch size: {batch_size}")
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=duckdb_database_name)
     db_credentials = dbdao.tenant_configs
-    if hasattr(options, 'get_create_duckdb_file') and options.get_create_duckdb_file():
+
+    # Todo: hardcoded for testing    
+    if options.create_duckdb_file:
         # Check if dialect is supported by duckdb
         check_supported_duckdb_dialects(dbdao.dialect, logger)
 
@@ -61,11 +63,12 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
         #Connect to Trex Sql Interface
         trex_conn = psycopg2.connect(
                 host= Variable.get("trex_sql_host"),
-                port=Variable.get("trex_sql_ports"),
+                port=Variable.get("trex_sql_port"),
                 user=Variable.get("trex_sql_user"),
                 password=Secret.load("trex-sql-password").get(),
-                dbname=Variable.get("trex_sql_dbname")
+                dbname=dbdao.database_code # Variable.get("trex_sql_dbname")
             )
+        trex_conn.autocommit = True
         cur = None
         try:
             cur = trex_conn.cursor()
@@ -79,6 +82,8 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 # Filter out system schemas
                 schemas_to_copy = list(set(dbdao.get_schema_names()) -
                             set(SYSTEM_SCHEMAS[dbdao.dialect]))
+                
+
                 for schema in schemas_to_copy:
                     logger.info(f"Handling schema {schema}...")
                     copy_schema_to_cache(cur, dbdao, schema, False, True)

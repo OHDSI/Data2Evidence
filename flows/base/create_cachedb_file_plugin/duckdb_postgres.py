@@ -17,11 +17,18 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
     # If create_for_cdw_config_validation is True, add a LIMIT 0 to select statement so that only an empty table is created
     limit_statement = "LIMIT 0" if create_for_cdw_config_validation else ""
 
+    dbname = dbdao.database_code
+
     try:
-        if(is_trex_cache):
-            con.execute(f"DROP SCHEMA IF EXISTS {schema_name};")            
-        con.execute(f"""CREATE SCHEMA {schema_name};""")
+        con.execute(f"select distinct schema_name from information_schema.schemata where catalog_name = '{dbname}';")
+        cached_schemas = set(schema[0] for schema in con.fetchall())
+
+        if is_trex_cache and schema_name in cached_schemas:
+            con.execute(f"DROP SCHEMA {dbname}.{schema_name} CASCADE;")    
+        
+        con.execute(f"""CREATE SCHEMA {dbname}.{schema_name};""")
         # Include views when creating duckdb file for cdw config validation
+
         table_names = dbdao.get_table_names(
             schema_name, include_views=create_for_cdw_config_validation)
 
@@ -29,7 +36,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
         for table in table_names:
             try:
                 result_proxy = con.execute(
-                    f"""CREATE TABLE {schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
+                    f"""CREATE TABLE {dbname}.{schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
                 )
                 # DuckDB's execute() returns None for DDL, so fetchone() is not always valid
                 if result_proxy is not None:
@@ -50,9 +57,9 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
 
                     # by default indexes created on columns in asc order
                     if unique:
-                        index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                        index_query = f"CREATE UNIQUE INDEX {index_name} ON {dbname}.{schema_name}.{table} ({columns_str})"
                     else:
-                        index_query = f"CREATE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
+                        index_query = f"CREATE INDEX {index_name} ON {dbname}.{schema_name}.{table} ({columns_str})"
 
                     logger.info(f"Running query: {index_query}")
                     con.execute(index_query)
@@ -62,7 +69,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
                 pk_index_columns = pk_index.get("constrained_columns")
 
                 if pk_index_name is not None and pk_index_columns != []:
-                    pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {schema_name}.{table} ({', '.join(pk_index_columns)})"
+                    pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {dbname}.{schema_name}.{table} ({', '.join(pk_index_columns)})"
                     logger.info(f"Running query: {pk_index_query}")
                     con.execute(pk_index_query)
             except Exception as e:
