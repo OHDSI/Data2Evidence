@@ -1,14 +1,15 @@
-import { Controller, Get, Middleware, Param, Put } from "@danet/core";
-import { Body, Query } from "@danet/zod";
-import { z } from "zod";
+import {
+  Body,
+  Controller,
+  Get,
+  Middleware,
+  Param,
+  Put,
+  Query,
+} from "@danet/core";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { ConfigService } from "./config.service.ts";
-import {
-  ConfigUpdateDto,
-  ConfigUpdateSchema,
-  TypesQuerySchema,
-  type TypesQuerySchema as TypesQuery,
-} from "./dto/config.update.dto.ts";
+import { ConfigUpdateDto } from "./dto/config.update.dto.ts";
 
 @Middleware(RequestContextMiddleware)
 @Controller("system-portal/config")
@@ -16,9 +17,9 @@ export class ConfigController {
   constructor(private readonly configService: ConfigService) {}
 
   @Get("types")
-  async getConfigValuesByTypes(@Query(TypesQuerySchema) query: TypesQuery) {
+  async getConfigValuesByTypes(@Query("types") types: string) {
     return await this.configService.getRedactedConfigValuesByTypes(
-      JSON.parse(query.types)
+      JSON.parse(types)
     );
   }
 
@@ -31,11 +32,9 @@ export class ConfigController {
   }
 
   @Get("public/types")
-  async getPublicConfigValuesByTypes(
-    @Query(TypesQuerySchema) query: TypesQuery
-  ) {
+  async getPublicConfigValuesByTypes(@Query("types") types: string) {
     return await this.configService.getPublicConfigValuesByTypes(
-      JSON.parse(query.types)
+      JSON.parse(types)
     );
   }
 
@@ -48,12 +47,8 @@ export class ConfigController {
   }
 
   @Get("secret/types")
-  async getSecretConfigValuesByTypes(
-    @Query(TypesQuerySchema) query: TypesQuery
-  ) {
-    return await this.configService.getConfigValuesByTypes(
-      JSON.parse(query.types)
-    );
+  async getSecretConfigValuesByTypes(@Query("types") types: string) {
+    return await this.configService.getConfigValuesByTypes(JSON.parse(types));
   }
 
   @Get("secret/:type")
@@ -63,9 +58,7 @@ export class ConfigController {
   }
 
   @Put()
-  async insertOrUpdateConfigs(
-    @Body(z.array(ConfigUpdateSchema)) configUpdateDtos: ConfigUpdateDto[]
-  ) {
+  async insertOrUpdateConfigs(@Body() configUpdateDtos: ConfigUpdateDto[]) {
     return await this.configService.insertOrUpdateConfigs(configUpdateDtos);
   }
 }

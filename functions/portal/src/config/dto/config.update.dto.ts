@@ -1,21 +1,11 @@
-import { z } from "zod";
+// import { IsNotEmpty, IsString } from 'npm:class-validator'
+import { IsNotEmpty, IsString } from '@danet/validatte'
+import { IConfigUpdateDto } from '../../types.d.ts'
 
-const ConfigUpdateSchema = z.object({
-  type: z.string().min(1),
-  value: z.string(),
-});
+export class ConfigUpdateDto implements IConfigUpdateDto {
+  @IsNotEmpty()
+  type: string
 
-type ConfigUpdateSchema = z.infer<typeof ConfigUpdateSchema>;
-
-const TypesQuerySchema = z.object({
-  types: z.string(),
-});
-
-type TypesQuerySchema = z.infer<typeof TypesQuerySchema>;
-
-export {
-  ConfigUpdateSchema,
-  TypesQuerySchema,
-  type ConfigUpdateSchema as ConfigUpdateDto,
-  type TypesQuerySchema,
-};
+  @IsString()
+  value: string
+}
