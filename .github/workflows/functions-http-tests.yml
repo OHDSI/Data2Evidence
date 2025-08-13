@@ -53,6 +53,7 @@ jobs:
       HDIUSER: SYSTEM # az-hn-db/Admin user
       TESTPORT: 39041 # az-hn-db/DB Port
       TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
+      PROJECT_NAME: alp
 
     steps:
       - uses: actions/checkout@v4
