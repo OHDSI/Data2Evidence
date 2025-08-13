@@ -8,10 +8,6 @@ on:
       - develop
   workflow_dispatch:
 
-# Run only one job per branch
-concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-http-tests # Run the latest push
-  cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
 
 jobs:
   check_file_changes:
@@ -107,7 +103,7 @@ jobs:
 
       - name: Build system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 build
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -121,7 +117,7 @@ jobs:
 
       - name: Start system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 start
+          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
