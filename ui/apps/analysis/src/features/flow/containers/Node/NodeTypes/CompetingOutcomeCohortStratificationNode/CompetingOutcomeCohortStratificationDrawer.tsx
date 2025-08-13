@@ -6,11 +6,14 @@ import {
   Select,
   SelectChangeEvent,
   TextInput,
+  IconButton,
 } from "@portal/components";
+import ClearIcon from "@mui/icons-material/Clear";
 import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import { useFormData } from "~/features/flow/hooks";
+import { useGetWebApiCohortDefinitionsQuery } from "~/features/flow/slices";
 import {
   markStatusAsDraft,
   selectNodeById,
@@ -26,6 +29,7 @@ import {
   CompetingOutcomeCohortStratificationArgs,
   EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
 } from "./types";
+import { Cohort } from "../CohortSelectionNode/CohortSelectionType";
 
 export interface CompetingOutcomeCohortStratificationDrawerProps
   extends Omit<NodeDrawerProps, "children"> {
@@ -37,6 +41,7 @@ interface FormData {
   name: string;
   description: string;
   competingOutcomeCohortStratificationArgs: CompetingOutcomeCohortStratificationArgs;
+  cohorts: { cohortId: number; cohortName: string }[];
 }
 
 const EMPTY_FORM_DATA: FormData = {
@@ -45,6 +50,7 @@ const EMPTY_FORM_DATA: FormData = {
     "Competing Outcome Cohort / Stratification input for Kaplan-Meier analysis",
   competingOutcomeCohortStratificationArgs:
     EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
+  cohorts: [],
 };
 
 export const CompetingOutcomeCohortStratificationDrawer: FC<
@@ -55,6 +61,13 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const { data: cohortDefinitions } = useGetWebApiCohortDefinitionsQuery(null, {
+    selectFromResult: ({ data }) => ({
+      data: data?.filter(
+        (cohort) => !formData.cohorts.some((c) => c.cohortId === cohort.id)
+      ),
+    }),
+  });
 
   useEffect(() => {
     if (node.data) {
@@ -64,6 +77,7 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
         competingOutcomeCohortStratificationArgs:
           node.data.competingOutcomeCohortStratificationArgs ||
           EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
+        cohorts: [],
       });
     } else {
       setFormData({
@@ -84,6 +98,43 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
 
     typeof onClose === "function" && onClose();
   }, [formData, nodeState, onClose]);
+
+  const handleAddCohort = useCallback(
+    (value: Cohort) => {
+      onFormDataChange({
+        cohorts: [
+          ...formData.cohorts,
+          { cohortId: value.cohortId, cohortName: value.cohortName },
+        ],
+      });
+    },
+    [onFormDataChange, formData.cohorts]
+  );
+
+  const handleSelectChange = useCallback(
+    (event: SelectChangeEvent) => {
+      const selectedCohortId = Number(event.target.value);
+      const selectedCohort = cohortDefinitions?.find(
+        (cohort) => cohort.id === selectedCohortId
+      );
+
+      if (selectedCohort) {
+        handleAddCohort({
+          cohortId: selectedCohort.id,
+          cohortName: selectedCohort.name,
+        });
+      }
+    },
+    [cohortDefinitions, handleAddCohort]
+  );
+
+  const handleRemoveCohort = useCallback(
+    (index: number) => {
+      const updatedCohorts = formData.cohorts.filter((_, i) => i !== index);
+      onFormDataChange({ cohorts: updatedCohorts });
+    },
+    [formData.cohorts, onFormDataChange]
+  );
 
   const { competingOutcomeCohortStratificationArgs } = formData;
 
@@ -139,57 +190,46 @@ export const CompetingOutcomeCohortStratificationDrawer: FC<
         </Box>
       </Box>
 
-      {/* Basic Cohort Configuration */}
-      <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
-        <div style={{ paddingBottom: "20px" }}>Cohort Configuration</div>
+      <Box mb={4}>
+        <InputLabel shrink>Cohort Selection</InputLabel>
+        <Select fullWidth value="" onChange={handleSelectChange} displayEmpty>
+          <MenuItem value="" disabled>
+            Select a cohort to add...
+          </MenuItem>
+          {cohortDefinitions?.map((cohort) => (
+            <MenuItem key={cohort.id} value={cohort.id}>
+              <Box>
+                <strong>Cohort Id:</strong> {cohort.id} <br />
+                <strong>Cohort Name:</strong> {cohort.name} <br />
+                <strong>Cohort Description:</strong> {cohort.description}
+              </Box>
+            </MenuItem>
+          ))}
+        </Select>
 
-        <Box mb={4}>
-          <TextInput
-            label="Cohort ID"
-            type="number"
-            value={competingOutcomeCohortStratificationArgs.cohortId || ""}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({
-                competingOutcomeCohortStratificationArgs: {
-                  ...competingOutcomeCohortStratificationArgs,
-                  cohortId: parseInt(e.target.value) || undefined,
-                },
-              })
-            }
-          />
-        </Box>
-
-        <Box mb={4}>
-          <TextInput
-            label="Cohort Name"
-            value={competingOutcomeCohortStratificationArgs.cohortName || ""}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({
-                competingOutcomeCohortStratificationArgs: {
-                  ...competingOutcomeCohortStratificationArgs,
-                  cohortName: e.target.value,
-                },
-              })
-            }
-          />
-        </Box>
-
-        <Box mb={4}>
-          <TextInput
-            label="Cohort Description"
-            value={
-              competingOutcomeCohortStratificationArgs.cohortDescription || ""
-            }
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({
-                competingOutcomeCohortStratificationArgs: {
-                  ...competingOutcomeCohortStratificationArgs,
-                  cohortDescription: e.target.value,
-                },
-              })
-            }
-          />
-        </Box>
+        {formData.cohorts.map((cohort, index) => (
+          <Box
+            key={index}
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+            marginTop={1}
+            padding={1}
+            border="1px solid #ddd"
+            borderRadius={1}
+          >
+            <Box>
+              <strong>Cohort Id:</strong> {cohort.cohortId} <br />
+              <strong>Cohort Name:</strong> {cohort.cohortName} <br />
+            </Box>
+            <IconButton
+              size="small"
+              onClick={() => handleRemoveCohort(index)}
+              startIcon={<ClearIcon />}
+            ></IconButton>
+          </Box>
+        ))}
       </Box>
 
       {/* Stratification Specific Settings */}

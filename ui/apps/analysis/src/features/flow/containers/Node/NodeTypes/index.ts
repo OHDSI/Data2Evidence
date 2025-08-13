@@ -249,6 +249,14 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         label: "Outcomes",
         handleType: HandleIOType.Outcomes,
       },
+      {
+        label: "Target Cohort",
+        handleType: HandleIOType.Cohort,
+      },
+      {
+        label: "Comparator Cohort",
+        handleType: HandleIOType.Cohort,
+      },
     ],
     outputs: [{ handleType: HandleIOType.TargetComparatorOutcomes }],
   },
@@ -526,6 +534,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       trueEffectSize: 1,
       priorOutcomeLookback: 30,
     },
+    inputs: [{ label: "Outcome Cohort", handleType: HandleIOType.Cohort }],
     outputs: [{ handleType: HandleIOType.Outcomes }],
   },
   cohort_definition_set_node: {
@@ -594,7 +603,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         handleType: HandleIOType.Cohort,
       },
     ],
-    outputs: [],
+    outputs: [{ handleType: HandleIOType.ModuleSpecification }],
   },
   cohort_node: {
     title: "Cohort Selection",
@@ -610,6 +619,35 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         handleType: HandleIOType.Cohort,
       },
     ],
+  },
+  kaplan_meier_characterization_node: {
+    title: "Kaplan-Meier Characterization Analysis",
+    description:
+      "Enhanced Kaplan-Meier survival analysis with competing risks and stratification support.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      kaplanMeierCharacterizationArgs: {
+        analysisType: "single_event",
+        useStratification: false,
+      },
+    },
+    inputs: [
+      { label: "Competing Outcome", handleType: HandleIOType.Cohort },
+      { label: "Stratification", handleType: HandleIOType.Cohort },
+    ],
+    outputs: [{ handleType: HandleIOType.CohortMethodAnalysis }],
+  },
+  competing_outcome_cohort_stratification_node: {
+    title: "Competing Outcome Cohort / Stratification",
+    description:
+      "Define competing outcome cohorts or stratification variables for Kaplan-Meier analysis.",
+    tag: NodeTag.Stable,
+    defaultData: {
+      competingOutcomeCohortStratificationArgs: {
+        cohortType: "competing_outcome",
+      },
+    },
+    outputs: [{ handleType: HandleIOType.Cohort }],
   },
 };
 

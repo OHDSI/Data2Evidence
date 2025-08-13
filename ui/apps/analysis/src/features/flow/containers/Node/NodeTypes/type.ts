@@ -49,6 +49,7 @@ export enum HandleIOType {
   TimeAtRisk = "timeAtRisk",
   CohortIncidence = "cohortIncidence",
   CohortIncidenceTargetCohorts = "cohortIncidenceTargetCohorts",
+  
 }
 
 export const HandleIODict: {
