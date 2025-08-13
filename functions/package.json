@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/strategus-analysis/src/init",
+          "imports": "/strategus-analysis/deno.json",
+          "env": "strategus-analysis"
+        },
+        {
           "function": "/jobplugins-init",
           "imports": "/jobplugins-init/deno.json",
           "env": "jobplugins-init"
@@ -266,9 +271,15 @@
         },
         {
           "source": "/strategus-results",
-          "function": "/strategus-results",
-          "env": "strategus-results",
-          "imports": "/strategus-results/deno.json"
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
+        },
+        {
+          "source": "/strategus",
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
         },
         {
           "source": "/mlflow",
@@ -279,11 +290,9 @@
       "roles": {
         "MRI_SUPER_USER": [
           "PA.svc",
-          "PAConfig.i18n",
           "PAConfig.svc/read",
           "CDWConfig.svc/read",
           "PAConfig.ui",
-          "PAConfig.i18n",
           "PAConfig.svc",
           "PSConfig.svc",
           "CDWConfig.ui",
@@ -314,7 +323,6 @@
         ],
         "ALP_SYSTEM_ADMIN": [
           "PAConfig.ui",
-          "PAConfig.i18n",
           "PAConfig.svc",
           "PAConfig.svc/read",
           "PSConfig.svc",
@@ -375,7 +383,6 @@
           "portal.supabaseStorage.delete",
           "portal.notebook.systemAdmin.write",
           "portal.gitStudies.read",
-          "terminology.user.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
           "dataflowmgmt.dataflow.add",
@@ -396,9 +403,7 @@
           "dataflowmgmt.jobHistory.filter.read",
           "dataflowmgmt.dqd.job.dataset.flowRun.latest.read",
           "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read",
-          "dataflowmgmt.dqd.dataQuality.flowRun.add",
           "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read",
-          "dataflowmgmt.dqd.dataCharacterization.flowRun.add",
           "dataflowmgmt.dbSvc.flowRun.add",
           "dbSvc.schema.create",
           "dbSvc.snapshot.create",
@@ -482,7 +487,6 @@
         ],
         "RESEARCHER": [
           "PA.svc",
-          "PAConfig.i18n",
           "PAConfig.svc/read",
           "CDWConfig.svc/read",
           "portal.dataset.paConfig.read",
@@ -494,7 +498,6 @@
           "portal.notebook.update",
           "portal.notebook.delete",
           "portal.config.read",
-          "terminology.user.read",
           "gateway.terminology.conceptSet.read",
           "gateway.terminology.conceptSet.create",
           "gateway.terminology.conceptSet.update",
@@ -503,10 +506,6 @@
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
           "gateway.terminology.fhir.read",
-          "dataflowmgmt.analysisflow.read",
-          "dataflowmgmt.analysisflow.add",
-          "dataflowmgmt.analysisflow.delete",
-          "dataflowmgmt.analysisflow.revision.delete",
           "codesuggestion.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
@@ -520,7 +519,6 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "d2e.webapi",
-          "jupyter",
           "usermgmt.me.jupyter"
         ],
         "ALP_SHARED": [
@@ -544,9 +542,10 @@
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
+          "strategus.analysis.read",
+          "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "dataflowmgmt.dqd.dataQuality.flowRun.add",
-          "dataflowmgmt.dqd.dataCharacterization.flowRun.add"
+          "jupyter"
         ]
       },
       "scopes": [
@@ -2373,6 +2372,25 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]*$",
+          "scopes": [
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
           ]
         }
       ]

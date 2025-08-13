@@ -4,6 +4,7 @@ import { CreateArtifactDto, UpdateArtifactDto } from './dto/index.ts'
 import { UserArtifact } from './entity/user-artifact.entity.ts'
 import { ServiceName } from './enums/index.ts'
 import { UserArtifactRepository } from './repository/user-artifact.repository.ts'
+import { userArtifactValidator } from './validator/user-artifact.validator.ts';
 
 export const ArtifactSequenceMapping = {
   [ServiceName.CONCEPT_SETS]: "concept_set_id_seq",
@@ -58,8 +59,7 @@ export class UserArtifactService {
   }
 
   async createServiceArtifact<T>(serviceName: ServiceName, createArtifactDto: CreateArtifactDto<T>): Promise<UserArtifact | null> {
-    const { serviceArtifact } = createArtifactDto
-
+    const serviceArtifact = await userArtifactValidator(serviceName, createArtifactDto.serviceArtifact);
     let artifact = await this.userArtifactRepository.findOne(this.userId, serviceName)
 
     if (artifact) {
@@ -98,7 +98,7 @@ export class UserArtifactService {
     serviceName: ServiceName,
     updateArtifactDto: UpdateArtifactDto<T>
   ): Promise<UserArtifact> {
-    const { id, serviceArtifact } = updateArtifactDto
+    const { id } = updateArtifactDto
     const artifact = await this.userArtifactRepository.findOne(this.userId, serviceName)
 
     if (artifact?.artifacts) {
@@ -107,10 +107,12 @@ export class UserArtifactService {
         throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`)
       }
 
-      artifact.artifacts[index] = {
+      const updatedServiceArtifact = await userArtifactValidator(serviceName, {
         ...artifact.artifacts[index],
-        ...serviceArtifact
-      }
+        ...updateArtifactDto.serviceArtifact,
+      });
+      artifact.artifacts[index] = updatedServiceArtifact;
+
       const updatedEntity = this.addOwner(artifact)
       return this.userArtifactRepository.save(updatedEntity)
     }
@@ -132,12 +134,11 @@ export class UserArtifactService {
         const artifactIndex = artifacts.findIndex(artifact => artifact.id === updatedEntity.id)
 
         if (artifactIndex !== -1) {
-          const updatedProps = updatedEntity.serviceArtifact;
-
-          artifacts[artifactIndex] = {
+          const updatedServiceArtifact = await userArtifactValidator(serviceName, {
             ...artifacts[artifactIndex],
-            ...updatedProps
-          };
+            ...updatedEntity.serviceArtifact,
+          });
+          artifacts[artifactIndex] = updatedServiceArtifact;
 
           console.log('Updated artifact:', JSON.stringify(artifacts[artifactIndex], null, 2));
 
@@ -225,6 +226,12 @@ export class UserArtifactService {
     }
 
     const sharedConditionKey = this.sharedConditionMap[serviceName]
+    // If block is required to catch cases where serviceName is not in this.sharedConditionMap as it does not fully implement the ServiceName enum
+    if (sharedConditionKey === undefined) {
+      const errorMsg = `this.sharedConditionMap does not implement serviceName:${serviceName}`
+      console.error(errorMsg)
+      throw new Error(errorMsg)
+    }
     return sharedArtifacts
       .flatMap(artifact => artifact.artifacts || [])
       .filter(artifact => artifact[sharedConditionKey] === true)
