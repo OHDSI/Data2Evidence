@@ -1,18 +1,21 @@
 import { z } from "zod";
 
-import { IResolveConceptSetExpressionConcept } from "../api/types.ts";
+import {
+  IResolveConceptSetExpressionConcept,
+  ITerminologyFiltersSchema,
+} from "../api/types.ts";
 import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
   ConceptSetExpressionDto,
   IConceptRecommendedListResponseDto,
   IVocabulariesResponseDto,
   IConceptRelatedResponseDto,
+  IConceptListDto,
 } from "../dto/vocabulary.ts";
 import { CachedbDAO } from "../dao/cachedb.dao.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { IConcept } from "../types.ts";
-import { IAncestorsLookup } from "../dao/types.ts";
-import { CachedbDialect } from "../dao/types.ts";
+import { IAncestorsLookup, CachedbDialect } from "../dao/types.ts";
 import {
   ILookupIdentifierAncestorsResponseDto,
   IVocabularySourceInfo,
@@ -231,17 +234,30 @@ export const getRecommendedConceptsFromIdentifiers = async (
 export const searchConcept = async (
   token: string,
   datasetId: string,
-  query: string,
-  filters?: { domainId?: string[] }
+  conceptListDto: IConceptListDto,
+  page: number = 0,
+  rowsPerPage: number = 9999
 ): Promise<IConceptListResponseDto> => {
   const terminologySvcApi = new TerminologySvcAPI(token);
+  const { QUERY: query } = conceptListDto;
+  const filters: ITerminologyFiltersSchema = {
+    conceptClassId: conceptListDto.CONCEPT_CLASS_ID ?? [],
+    vocabularyId: conceptListDto.VOCABULARY_ID ?? [],
+    domainId: conceptListDto.DOMAIN_ID ?? [],
+    validity: conceptListDto.INVALID_REASON
+      ? [conceptListDto.INVALID_REASON as "Valid" | "Invalid"]
+      : [],
+    standardConcept: conceptListDto.STANDARD_CONCEPT
+      ? [conceptListDto.STANDARD_CONCEPT]
+      : [],
+  };
 
   // ATLAS UI expects all concept search results in a single request, so send count as 9999
   const concepts = await terminologySvcApi.searchConcept(
     datasetId,
     query,
-    0,
-    9999,
+    page,
+    rowsPerPage,
     filters
   );
 

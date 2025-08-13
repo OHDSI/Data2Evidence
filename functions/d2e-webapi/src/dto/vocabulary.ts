@@ -17,6 +17,17 @@ export const ConceptSetExpressionDto = z.object({
   items: z.array(ConceptSetExpression),
 });
 
+export const ConceptListDto = z.object({
+  IS_LEXICAL: z.string().optional(),
+  CONCEPT_CLASS_ID: z.array(z.string()).optional(),
+  VOCABULARY_ID: z.array(z.string()).optional(),
+  DOMAIN_ID: z.array(z.string()).optional(),
+  INVALID_REASON: z.string().optional(),
+  STANDARD_CONCEPT: z.string().optional(),
+  QUERY: z.string(),
+});
+export type IConceptListDto = z.infer<typeof ConceptListDto>;
+
 export const ConceptListResponseDto = z.array(Concept);
 export type IConceptListResponseDto = z.infer<typeof ConceptListResponseDto>;
 

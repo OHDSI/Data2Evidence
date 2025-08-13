@@ -8,6 +8,7 @@ import {
   ITerminologyConcept,
   ITerminologyCreateConceptSet,
   ITerminologyConceptSetWithConceptData,
+  ITerminologyFiltersSchema,
 } from "./types.ts";
 
 export class TerminologySvcAPI {
@@ -137,7 +138,7 @@ export class TerminologySvcAPI {
     query: string,
     offset: number,
     count: number,
-    filters?: { domainId?: string[] }
+    filters?: ITerminologyFiltersSchema
   ): Promise<ITerminologyFhirResource> {
     try {
       const url = `${this.baseURL}/fhir/4_0_0/valueset/$expand`;
