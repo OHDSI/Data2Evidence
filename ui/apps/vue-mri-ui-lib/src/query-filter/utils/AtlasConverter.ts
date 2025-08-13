@@ -42,7 +42,6 @@ type CriteriaObject =
   | ObservationPeriod
   | Record<string, never>
 
-// Type guards for proper type narrowing
 const isCriteriaGroup = (item: CriteriaListItem | CriteriaGroup): item is CriteriaGroup => {
   return 'Criteria' in item
 }
@@ -61,14 +60,12 @@ const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is Cri
   )
 }
 
-// Type guard for criteria objects that have CodesetId
 export const hasCodesetId = (
   criteriaObj: CriteriaObject
 ): criteriaObj is Extract<CriteriaObject, { CodesetId: number }> => {
   return 'CodesetId' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object'
 }
 
-// Type guards for specific Atlas attributes
 const hasAge = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Age: NumericRange } => {
   return (
     'Age' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object' && criteriaObj.Age !== undefined
@@ -86,14 +83,12 @@ const hasCorrelatedCriteria = (
   )
 }
 
-// Type guard for demographic criteria with Age
 const hasDemographicAge = (
   demoCriteria: DemographicCriteria
 ): demoCriteria is DemographicCriteria & { Age: NumericRange } => {
   return demoCriteria.Age !== undefined
 }
 
-// Helper function to convert Atlas JSON concepts to StoredConceptItem format
 const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConceptItem[] => {
   return atlasConcepts.map(concept => ({
     value: concept.CONCEPT_ID?.toString() || '',
@@ -112,7 +107,6 @@ const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConcept
   }))
 }
 
-// Helper function to convert conceptSet arrays from Atlas JSON to attribute objects
 const convertConceptSetArrayToAttribute = (
   attributeId: string,
   conceptArray: Concept[],
@@ -121,7 +115,6 @@ const convertConceptSetArrayToAttribute = (
 ): QueryFilterAttribute => {
   const conceptItems = convertAtlasConceptsToInternal(conceptArray)
 
-  // Try to get configuration for this attribute
   let configType = 'conceptSet' // default
   let domainFilter = 'Condition' // default
 
@@ -133,12 +126,10 @@ const convertConceptSetArrayToAttribute = (
         domainFilter = attributeConfig.domainFilter || domainFilter
       }
     } catch (error) {
-      // Fallback to defaults if config not found
       console.warn(`Could not find config for ${eventType}.${attributeId}, using defaults`)
     }
   }
 
-  // Get the display name from config
   let displayName = attributeId // fallback to attributeId
   if (configLoader) {
     try {
@@ -147,13 +138,11 @@ const convertConceptSetArrayToAttribute = (
         displayName = attributeConfig.name
       }
     } catch (error) {
-      // Use fallback
+      console.warn(`Could not find config for ${eventType}.${attributeId}`)
     }
   }
 
-  // Create the correct attribute type based on config
   if (configType === 'concept') {
-    // For individual concepts, use standard type with conceptItems
     return {
       id: `attribute_${Math.random().toString(36).substring(2)}`,
       attributeId: attributeId,
@@ -161,28 +150,26 @@ const convertConceptSetArrayToAttribute = (
       configType: configType,
       domainFilter: domainFilter,
       conceptItems: conceptItems,
-      name: displayName, // Add display name for UI
-      title: displayName, // Add title as well in case UI uses this
+      name: displayName,
+      title: displayName,
     }
   } else {
-    // For concept sets, use conceptSet type
     return {
       id: `attribute_${Math.random().toString(36).substring(2)}`,
       attributeId: attributeId,
       attributeType: 'conceptSet' as const,
       conceptSet: conceptItems[0],
-      name: displayName, // Add display name for UI
-      title: displayName, // Add title as well in case UI uses this
+      name: displayName,
+      title: displayName,
     }
   }
 }
 
-// Helper function to convert ConceptSetItem to SelectedConceptSet
 const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedConceptSet | null => {
   if (!item.value || !item.text) return null
 
   return {
-    value: parseInt(item.value), // Convert string to number
+    value: parseInt(item.value),
     text: item.text,
     display_value: item.display_value || item.text,
     conceptIds: item.conceptIds || [],
@@ -192,8 +179,8 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
       isExcluded: c.isExcluded || false,
       useDescendants: c.useDescendants || false,
     })),
-    shared: false, // Default value
-    userName: '', // Default value
+    shared: false,
+    userName: '',
     createdDate: new Date().toISOString(),
     modifiedDate: new Date().toISOString(),
   }

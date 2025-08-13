@@ -54,8 +54,6 @@ export class QueryFilterCriteriaManager {
 
   constructor(data: QueryFilterCriteriaManageData = {}) {
     try {
-      // Always initialize all properties
-
       if (data.entryEvents) {
         this.entryEvents = {
           primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'ALL',
@@ -182,13 +180,6 @@ export class QueryFilterCriteriaManager {
     return false
   }
 
-  // Filter management within groups
-  // NOTE: This method was architecturally incorrect - QueryFilterCardModel objects
-  // should not be added to group.events arrays. Groups should only contain QueryFilterEvent objects.
-  // If you need to add a QueryFilterCardModel, consider using it as a separate container.
-
-  // addFilterToGroup method removed - was mixing incompatible types
-
   removeEventFromGroup(groupId: string, eventId: string): boolean {
     const group = this.getGroup(groupId)
     if (group) {
@@ -206,14 +197,11 @@ export class QueryFilterCriteriaManager {
     return this.removeEventFromGroup(groupId, filterId)
   }
 
-  // Helper method to map qualifyingEventsLimit to criteriaType
-
   // Transform events from new structure to internal structure
   private transformEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
     const transformedEvents: QueryFilterEvent[] = []
 
     events.forEach(event => {
-      // Keep track of which attributes are processed to avoid duplication
       const processedAttributes: QueryFilterAttribute[] = []
       const remainingAttributes: QueryFilterAttribute[] = []
 
@@ -243,7 +231,7 @@ export class QueryFilterCriteriaManager {
             // Keep nested criteria in the attributes format, just process the events
             const processedAttr: QueryFilterAttribute = {
               id: attr.id,
-              attributeType: 'nested', // Ensure normalized attributeType
+              attributeType: 'nested',
               nestedCriteria: {
                 ...attr.nestedCriteria,
                 events: this.transformNestedEvents(attr.nestedCriteria.events || [], mainEvent.id),
@@ -252,14 +240,12 @@ export class QueryFilterCriteriaManager {
             remainingAttributes.push(processedAttr)
             processedAttributes.push(attr)
           } else if (hasAttributeId(attr) && attributeType && attributeType !== 'nested') {
-            // Handle direct attributes (like age, gender on demographic events)
             if (!mainEvent.selectedAttributes) {
               mainEvent.selectedAttributes = []
             }
             const attributeId = attr.attributeId
             mainEvent.selectedAttributes.push(attributeId)
 
-            // Store attribute config for later processing
             mainEvent.attributeConfig = {
               id: attributeId,
               name: attributeId,
@@ -268,7 +254,6 @@ export class QueryFilterCriteriaManager {
               category: 'criteria-specific',
             }
 
-            // Store operator and value for age attributes
             if (attributeId === 'age' && attributeType === 'numericRange') {
               mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
               mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
@@ -276,20 +261,17 @@ export class QueryFilterCriteriaManager {
 
             processedAttributes.push(attr)
           } else {
-            // Keep attributes that weren't specifically processed
             remainingAttributes.push(attr)
           }
         })
       }
 
-      // Only preserve attributes that weren't processed into selectedAttributes or nested events
       mainEvent.attributes = remainingAttributes
     })
 
     return transformedEvents
   }
 
-  // Recursively transform nested events to handle multiple levels
   private transformNestedEvents(events: QueryFilterEvent[], parentId: string): QueryFilterEvent[] {
     return events.map(event => {
       const nestedChildEvent: QueryFilterEvent = {
@@ -306,17 +288,14 @@ export class QueryFilterCriteriaManager {
         parentEventId: parentId,
       }
 
-      // Handle further nesting if this event has attributes
       if (event.attributes && event.attributes.length > 0) {
         nestedChildEvent.attributes = event.attributes.map(attr => {
-          // Normalize attributeType from either attributeType or type field
           const attributeType = attr.attributeType
 
           if (attributeType === 'nested' && attr.nestedCriteria) {
-            // Recursively process nested criteria, keeping attributes format
             return {
               id: attr.id,
-              attributeType: 'nested', // Ensure normalized attributeType
+              attributeType: 'nested',
               nestedCriteria: {
                 ...attr.nestedCriteria,
                 events: this.transformNestedEvents(attr.nestedCriteria.events || [], nestedChildEvent.id),
@@ -331,17 +310,12 @@ export class QueryFilterCriteriaManager {
     })
   }
 
-  // Conversion methods
   convertToAtlasFormat(): AtlasCohortDefinition {
-    // Build Atlas cohort definition from hierarchical structure
-
-    // Initialize mapping objects early so they can be used throughout the method
     const conceptSets: ConceptSet[] = []
     const usedConceptSetIds = new Set<string>()
     const systemIdToAtlasId = new Map<string, number>() // System ID → Atlas sequential ID
 
-    // FIRST: Build concept sets and mapping before processing InclusionRules
-    ;(this.inclusionCriteria.criteria || []).forEach((group: QueryFilterGroup) => {
+    this.inclusionCriteria.criteria.forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
       const allGroupEvents = this.collectAllEvents(group.events)
       allGroupEvents.forEach(event => {

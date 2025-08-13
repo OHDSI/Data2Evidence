@@ -340,7 +340,6 @@ const handleRemoveCriteriaGroup = (index: number) => {
   console.log('Criteria group removed:', index)
 }
 
-// Note: handleCriteriaSelected removed - not needed in modern component
 
 const applyFilters = () => {
   try {
@@ -415,7 +414,6 @@ const convertToAtlasFormat = () => {
   }
 }
 
-// Watch for Atlas data prop changes and automatically load (moved here to avoid hoisting issues)
 watch(
   () => {
     return props.atlasData
@@ -426,12 +424,11 @@ watch(
       criteriaManager.clearAllCriteria()
       selectedConceptSets.value = []
       isLoading.value = true
-      
+
       // Load concept sets for new Atlas cohort so they're available in dropdown
       await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
-      
+
       isLoading.value = false
-      console.log('jer Initialized empty Atlas cohort state with concept sets loaded')
     } else if (newAtlasData) {
       // Load existing Atlas cohort
       await loadAtlasCohortDefinition(
@@ -450,7 +447,6 @@ watch(
   { immediate: true }
 )
 
-// Handle concept set updates
 const handleConceptSetUpdate = (value: ConceptSetItemDisplay[]) => {
   try {
     console.log('handleConceptSetUpdate called with:', value)
@@ -1179,7 +1175,6 @@ const saveAtlasCohort = async () => {
     const currentDatasetId = getDatasetId()
 
     if (!currentDatasetId) {
-      console.error('jer Cannot save cohort: Dataset ID not available')
       return
     }
 
@@ -1198,22 +1193,17 @@ const saveAtlasCohort = async () => {
       hasReadAccess: true,
     }
 
-    console.log('jer Saving Atlas cohort:', cohortDefinition)
-
     const activeBookmark = store?.getters?.getActiveBookmark
     const isNewBookmark = !activeBookmark?.bmkId || activeBookmark?.isNew
 
     if (isNewBookmark) {
       // Create new Atlas cohort
-      console.log('jer Creating new Atlas cohort')
       const response = await store.dispatch('fireCreateAtlasCohortDefinitionQuery', {
         content: {
           ...cohortDefinition,
           id: 0, // 0 indicates a new cohort in webapi
         },
       })
-
-      console.log('jer Atlas cohort created with ID:', response.id)
 
       // Update active bookmark with the new ID
       const updatedBookmark = {
@@ -1224,10 +1214,8 @@ const saveAtlasCohort = async () => {
       }
 
       store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
-      console.log('jer Updated active bookmark:', updatedBookmark)
     } else {
       // Update existing Atlas cohort
-      console.log('jer Updating existing Atlas cohort with ID:', activeBookmark.bmkId)
       await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
         content: {
           id: parseInt(activeBookmark.bmkId),
@@ -1242,14 +1230,11 @@ const saveAtlasCohort = async () => {
           bookmarkname: cohortName.value.trim(),
         }
         store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
-        console.log('jer Updated bookmark name:', cohortName.value.trim())
       }
     }
-
-    console.log('jer Atlas cohort saved successfully')
     closeSaveDialog()
   } catch (error) {
-    console.error('jer Error saving Atlas cohort:', error)
+    console.error('Error saving Atlas cohort:', error)
   }
 }
 </script>
