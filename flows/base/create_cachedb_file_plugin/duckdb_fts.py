@@ -61,7 +61,7 @@ def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_
                 con.execute(
                     f"CREATE SEQUENCE {dbname}.{schema_name}.{sequence_name} START 1;")
                 con.execute(
-                    f"ALTER TABLE {dbname}.{schema_name}.{vocab_table_name} ADD COLUMN {config_document_identifier} INTEGER DEFAULT nextval('{sequence_name}');")
+                    f"ALTER TABLE {dbname}.{schema_name}.{vocab_table_name.value} ADD COLUMN {config_document_identifier} INTEGER DEFAULT nextval('{sequence_name}');")
                 logger.info(
                     f"Colum successfully addded")
 
