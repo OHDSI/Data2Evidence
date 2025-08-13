@@ -11,7 +11,7 @@ class PhenotypeAPI(BaseAPI):
         self.cohort_definition_url = self.url + 'cohortdefinition'
         self.headers = self.get_options()
         
-    def create_single_cohort_definition(self, cohort_def, dataset_id, user_name):
+    def create_single_cohort_definition(self, cohort_def: json, dataset_id: str, user_name: str):
         logger = get_run_logger()
         current_time = int(time.time() * 1000)
         headers = self.headers.copy()
