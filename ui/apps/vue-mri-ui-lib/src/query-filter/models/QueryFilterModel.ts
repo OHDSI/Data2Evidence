@@ -941,7 +941,6 @@ export class QueryFilterCriteriaManager {
                     )
                     .map(nestedEvent => {
                       const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
-                      console.log('Processing nested event:', nestedEvent, atlasEventType)
                       return {
                         Criteria: {
                           [atlasEventType]: {
