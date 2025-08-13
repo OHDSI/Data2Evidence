@@ -1,4 +1,4 @@
-name: d2e/demosetup-dev
+name: d2e/demosetup-hana
 
 on:
   workflow_dispatch: # Allow manual triggering
@@ -27,13 +27,19 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --hana init
+
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config timeout 5m ./scripts/cli.sh -e -v develop --hana inithana
 
       - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --hana -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -46,7 +52,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions --hana start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -102,42 +108,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Restart d2e services
-        if: success() || failure()
-        run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
-
-      - name: e2e tests setup
-        run: |
-          cd ./tests/e2e
-          npm install
-          npm run init
-
-      - name: e2e tests
-        # continue-on-error: true
-        run: |
-          cd ./tests/e2e
-          npm test
-
-      - name: Upload Error Context
-        if: always()  # Always run, even if the previous step fails
-        uses: actions/upload-artifact@v4
-        with:
-          name: error-context
-          path: tests/e2e/test-results/**/*
-
-      - name: Logs 
-        if: success() || failure()
-        run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
-
-      - name: Publish Test Report
-        if: always()
-        uses: ctrf-io/github-test-reporter@v1
-        with:
-          report-path: './tests/e2e/ctrf/*.json'
-          file-report: true
         
       - name: Stop d2e services
         if: success() || failure()
