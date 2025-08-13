@@ -15,7 +15,7 @@ const DEMO__DB_PASSWORD = "TestPW1234"
 async function createCredentials (password,public_key) {
     try {
         //const salt = crypto.randomBytes(16).toString("base64");
-        var passwordSalt = password;
+        var passwordSalt = password.concat("salt");
         var encryptedCredential = crypto.publicEncrypt({
             key: String(public_key).replace(/\\n/g, "\n"),
             padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
