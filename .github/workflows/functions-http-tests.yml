@@ -54,6 +54,8 @@ jobs:
       TESTPORT: 39041 # az-hn-db/DB Port
       TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
       PROJECT_NAME: alp
+      CADDY__CONFIG: ./deploy/caddy-config
+      ENV_TYPE: local
 
     steps:
       - uses: actions/checkout@v4
@@ -84,13 +86,13 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env.local init
+          ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
       - name: Initialise HANA
         if: success() || failure()
         id: inithana
         run: |
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env.local ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env.local ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
@@ -99,7 +101,7 @@ jobs:
 
       - name: Build system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -113,7 +115,7 @@ jobs:
 
       - name: Start system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
@@ -339,10 +341,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
-      - name: print logs for fhir-server
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-fhir-server-1 -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
