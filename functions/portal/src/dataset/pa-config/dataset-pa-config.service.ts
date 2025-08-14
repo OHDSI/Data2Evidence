@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@danet/core'
+import { HttpException, Injectable, NotFoundException } from '@danet/core'
 import { DEFAULT_ERROR_MESSAGE } from '../../common/const.ts'
 import { PatientAnalyticsConfigService } from '../../pa-config/pa-config.service.ts'
 import { DatasetRepository } from '../repository/index.ts'
@@ -19,9 +19,9 @@ export class DatasetPaConfigService {
       );
     } catch (e) {
       if (e instanceof NotFoundException) {
-        throw new NotFoundException(`Dataset with id ${datasetId} does not have backend PA config`)
+        throw new HttpException(404, `Dataset with id ${datasetId} does not have backend PA config`)
       }
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
@@ -31,16 +31,16 @@ export class DatasetPaConfigService {
       return this.paConfigService.getMyConfig(dataset.paConfigId, datasetId);
     } catch (e) {
       if (e instanceof NotFoundException) {
-        throw new NotFoundException(`Dataset with id ${datasetId} does not have user's PA config`)
+        throw new HttpException(404, `Dataset with id ${datasetId} does not have user's PA config`)
       }
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
   private async getDataset(id: string) {
     const dataset = await this.datasetRepo.findOne({ where: { id } })
     if (!dataset) {
-      throw new NotFoundException(`Dataset with id ${id} not found`)
+      throw new HttpException(404, `Dataset with id ${id} not found`)
     }
     return dataset
   }

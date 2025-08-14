@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import CardinalityMenu from './CardinalityMenu.vue'
-import type { QueryFilterCardinality } from '../models/QueryFilterModel'
+import type { QueryFilterCardinality } from '../types/QueryFilterTypes'
 
 interface Props {
   cardinality?: QueryFilterCardinality
@@ -53,7 +53,7 @@ const handleCardinalityUpdate = (cardinality: QueryFilterCardinality) => {
 const getSidebarClass = computed(() => {
   const cardinality = props.cardinality
   if (!cardinality) return 'event-sidebar--at-least' // Default
-  
+
   const cardinalityType = cardinality.type.toLowerCase()
   return `event-sidebar--${cardinalityType}`
 })
@@ -103,7 +103,7 @@ const getSidebarClass = computed(() => {
   border-radius: 6px 0 0 6px;
 
   // Default styling (AT_LEAST)
-  background: #2686EB;
+  background: #2686eb;
 
   // Different colors matching CardinalityMenu
   &--exactly {
@@ -111,19 +111,19 @@ const getSidebarClass = computed(() => {
   }
 
   &--at_least {
-    background: #2686EB; // Blue
+    background: #2686eb; // Blue
   }
 
   &--at_most {
-    background: #FA9087; // Light red
+    background: #fa9087; // Light red
   }
 
-  &:hover:not([style*="cursor: default"]) {
+  &:hover:not([style*='cursor: default']) {
     opacity: 0.9;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   }
 
-  &:active:not([style*="cursor: default"]) {
+  &:active:not([style*='cursor: default']) {
     transform: translateX(0);
     box-shadow: 1px 0 4px rgba(0, 0, 0, 0.1);
   }

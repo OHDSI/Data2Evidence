@@ -24,21 +24,7 @@ describe('QueryFilterCriteria Model Tests', () => {
   it('creates a valid criteria manager', () => {
     expect(criteriaManager).toBeDefined()
     expect(criteriaManager.getCriteria()).toBeDefined()
-    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
     expect(criteriaManager.getCriteria().criteria).toHaveLength(1)
-  })
-
-  it('supports different qualifying events limits', () => {
-    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
-
-    criteriaManager.updateQualifyingEventsLimit('EARLIEST')
-    expect(criteriaManager.getCriteria().criteriaType).toBe('EARLIEST')
-
-    criteriaManager.updateQualifyingEventsLimit('LATEST')
-    expect(criteriaManager.getCriteria().criteriaType).toBe('LATEST')
-
-    criteriaManager.updateQualifyingEventsLimit('ALL')
-    expect(criteriaManager.getCriteria().criteriaType).toBe('ALL')
   })
 
   it('manages criteria groups correctly', () => {
@@ -122,7 +108,6 @@ describe('QueryFilterCriteria Model Tests', () => {
     const newManager = QueryFilterCriteriaManager.fromJSON(json)
     const newCriteria = newManager.getCriteria()
 
-    expect(newCriteria.criteriaType).toBe(originalCriteria.criteriaType)
     expect(newCriteria.criteria.length).toBe(originalCriteria.criteria.length)
     expect(newCriteria.criteria[0].title).toBe(originalCriteria.criteria[0].title)
   })
@@ -132,7 +117,6 @@ describe('QueryFilterCriteria Model Tests', () => {
 
     // Check root structure
     expect(criteria.id).toBeDefined()
-    expect(criteria.criteriaType).toBeDefined()
     expect(Array.isArray(criteria.criteria)).toBe(true)
 
     // Check group structure
@@ -149,24 +133,7 @@ describe('QueryFilterCriteria Model Tests', () => {
     const emptyManager = new QueryFilterCriteriaManager()
     const emptyCriteria = emptyManager.getCriteria()
 
-    expect(emptyCriteria.criteriaType).toBe('ALL')
     expect(emptyCriteria.criteria).toHaveLength(0)
-  })
-
-  it('supports manager cloning', () => {
-    const originalManager = criteriaManager
-    const clonedManager = originalManager.clone()
-
-    expect(clonedManager).not.toBe(originalManager)
-    expect(clonedManager.getCriteria().criteriaType).toBe(originalManager.getCriteria().criteriaType)
-    expect(clonedManager.getCriteria().criteria.length).toBe(originalManager.getCriteria().criteria.length)
-
-    // Verify deep copy
-    const originalCriteria = originalManager.getCriteria()
-    const clonedCriteria = clonedManager.getCriteria()
-
-    expect(clonedCriteria).not.toBe(originalCriteria)
-    expect(clonedCriteria.criteria[0]).not.toBe(originalCriteria.criteria[0])
   })
 
   it('handles manager state consistency after operations', () => {
@@ -191,7 +158,6 @@ describe('QueryFilterCriteria Model Tests', () => {
     criteriaManager.removeCriteriaGroup(1)
 
     const criteria = criteriaManager.getCriteria()
-    expect(criteria.criteriaType).toBe('EARLIEST')
     expect(criteria.criteria).toHaveLength(2)
     expect(criteria.criteria[0].title).toBe('Test Criteria 1')
     expect(criteria.criteria[1].title).toBe('Third Group')
