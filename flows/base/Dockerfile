@@ -4,7 +4,7 @@ FROM alpine AS builder
 ARG GITHUB_PAT
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
-FROM rocker/r-ver:4.4 as base-build
+FROM rocker/r-ver:4.4 AS base-build
 
 RUN mkdir -p /app
 
