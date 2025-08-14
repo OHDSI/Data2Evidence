@@ -8,8 +8,6 @@ import { TargetComparatorOutcomesDrawer } from "./TargetComparatorOutcomesDrawer
 import "./TargetComparatorOutcomesNode.scss";
 
 export interface TargetComparatorOutcomesNodeData extends NodeDataState {
-  targetId: number;
-  comparatorId: number;
   excludedCovariateConceptIds: string[];
   includedCovariateConceptIds: string[];
 }

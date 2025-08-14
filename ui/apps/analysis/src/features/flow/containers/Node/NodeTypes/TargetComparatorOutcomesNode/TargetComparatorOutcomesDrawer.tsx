@@ -26,8 +26,6 @@ interface FormData extends TargetComparatorOutcomesNodeData {}
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
-  targetId: 1,
-  comparatorId: 1,
   excludedCovariateConceptIds: [],
   includedCovariateConceptIds: [],
 };
@@ -46,8 +44,6 @@ export const TargetComparatorOutcomesDrawer: FC<
       setFormData({
         name: node.data.name,
         description: node.data.description,
-        targetId: node.data.targetId,
-        comparatorId: node.data.comparatorId,
         excludedCovariateConceptIds: node.data.excludedCovariateConceptIds,
         includedCovariateConceptIds: node.data.includedCovariateConceptIds,
       });
@@ -102,26 +98,6 @@ export const TargetComparatorOutcomesDrawer: FC<
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ description: e.target.value })
           }
-        />
-      </Box>
-      <Box mb={4}>
-        <TextInput
-          label="targetId"
-          value={formData.targetId}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ targetId: e.target.value })
-          }
-          type="number"
-        />
-      </Box>
-      <Box mb={4}>
-        <TextInput
-          label="comparatorId"
-          value={formData.comparatorId}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ comparatorId: e.target.value })
-          }
-          type="number"
         />
       </Box>
       <Box mb={4}>
