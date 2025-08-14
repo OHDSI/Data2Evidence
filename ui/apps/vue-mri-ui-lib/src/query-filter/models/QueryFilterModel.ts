@@ -927,54 +927,7 @@ export class QueryFilterCriteriaManager {
 
                 return demographicCriteria
               }),
-            Groups: group.events
-              .filter(event => event.eventType === 'group' && event.nestedCriteria)
-              .map(groupEvent => {
-                return {
-                  Type: groupEvent.nestedCriteria!.criteriaType,
-                  CriteriaList: groupEvent
-                    .nestedCriteria!.events.filter(
-                      nestedEvent =>
-                        nestedEvent.eventType !== 'demographic' &&
-                        nestedEvent.eventType !== 'group' &&
-                        nestedEvent.eventType
-                    )
-                    .map(nestedEvent => {
-                      const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
-                      return {
-                        Criteria: {
-                          [atlasEventType]: {
-                            ...(nestedEvent.conceptSetId && {
-                              CodesetId: systemIdToAtlasId.get(nestedEvent.conceptSetId),
-                            }),
-                          },
-                        },
-                        StartWindow: {
-                          Start: {
-                            Coeff: -1,
-                          },
-                          End: {
-                            Coeff: 1,
-                          },
-                          UseEventEnd: false,
-                        },
-                        Occurrence: {
-                          Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-                          Count: nestedEvent.cardinality?.count || 1,
-                        },
-                      }
-                    }),
-                  DemographicCriteriaList: groupEvent
-                    .nestedCriteria!.events.filter(nestedEvent => nestedEvent.eventType === 'demographic')
-                    .flatMap(nestedEvent => {
-                      // Process demographic events in nested groups
-                      const demographicCriteria: DemographicCriteria[] = []
-                      // Add age processing logic similar to main demographic processing if needed
-                      return demographicCriteria
-                    }),
-                  Groups: this.processNestedGroups(groupEvent.nestedCriteria!.events, systemIdToAtlasId),
-                }
-              }),
+            Groups: this.processNestedGroups(group.events, systemIdToAtlasId),
           },
         }
       }),
