@@ -10,7 +10,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema
+from .nodes import drop_strategus_results_schema, execute_r_strategus, generate_nodes_flow, getRCdmExecutionSettings, upload_strategus_results
 
 
 @flow(log_prints=True)
@@ -167,7 +167,6 @@ def runStrategus(json_graph, options):
     base_path = f'/tmp/{flow_run_id}'
     work_folder = f'{base_path}/work'
     path_to_results = f'{base_path}/results'
-    log_file_name = f'{base_path}/strategus-log.txt'
 
     if(type(json_graph) == str):
         json_graph = json.loads(json_graph)
@@ -178,18 +177,10 @@ def runStrategus(json_graph, options):
         analysisSpec = json.loads(analysisSpec)
     
     analysisSpec = json.dumps(analysisSpec)
-    defaultExecutionSettings = json.dumps({
-        "workDatabaseSchema": schema_name,
-        "cdmDatabaseSchema": schema_name,
+    defaultExecutionSettings = getRCdmExecutionSettings({
+        "schemaName": schema_name,
         "workFolder": work_folder,
-        "resultsFolder": path_to_results,
-        "logFileName": log_file_name,
-        "minCellCount": 5,
-        "maxCores": 8,
-        "attr_class": [
-            "CdmExecutionSettings",
-            "ExecutionSettings"
-        ]
+        "resultsFolder": path_to_results
     })
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
