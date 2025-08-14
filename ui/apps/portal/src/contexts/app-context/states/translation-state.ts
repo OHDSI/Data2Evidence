@@ -406,6 +406,9 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to help@data4life.care.",
     DELETE_USER_DIALOG__ERROR: "An error has occurred.",
     DELETE_USER_DIALOG__YES: "Yes, delete",
+    DISCLAIMER__TITLE: "Disclaimer",
+    DISCLAIMER_DIALOG__ACCEPT: "Accept",
+    DISCLAIMER_DIALOG__TITLE: "Disclaimer",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",
     DEMO_SETUP__SETUP_DEMO_TITLE: "Demo setup",
@@ -1213,6 +1216,8 @@ export const i18nDefault = {
     STUDY_PAGE__REPOSITORY_SERVICE_ISSUE: "Repository service issue: {0}",
     STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR: "No studies available due to repository error",
     STUDY_PAGE__NO_STUDIES_FOUND: "No studies found in repository",
+    STUDY_PAGE__TAB_NETWORK_STUDIES: "Network Studies",
+    STUDY_PAGE__TAB_LOCAL_STUDIES: "Local Studies",
   },
 };
 
