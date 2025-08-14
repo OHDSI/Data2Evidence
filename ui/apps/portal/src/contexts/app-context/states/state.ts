@@ -4,6 +4,8 @@ import { TranslationState, i18nDefault } from "./translation-state";
 import { TokenState } from "./token-state";
 import { UserState } from "./user-state";
 import { ChatItem } from "@nlux/react";
+import { DisclaimerState } from "./disclaimer-state";
+
 export interface AppState {
   feedback: FeedbackState | undefined;
   translation: TranslationState;
@@ -15,6 +17,8 @@ export interface AppState {
   user: UserState;
 
   conversationHistory: Array<ChatItem>;
+
+  disclaimer: DisclaimerState;
 }
 
 export const initialState: AppState = {
@@ -51,4 +55,8 @@ export const initialState: AppState = {
     isDatasetResearcher: {},
   },
   conversationHistory: [],
+  disclaimer: {
+    shouldDisplay: undefined,
+    isDisclaimerAccepted: false,
+  },
 };
