@@ -58,7 +58,11 @@ export class LookupService {
   ) {
     return `${path
       .dirname(path.fromFileUrl(import.meta.url).replace(/\/lookup/, ""))
-      .replace(/\/usr\/src/, ".")}/${basePath}/${relativePath}`;
+      .replace(/\/usr\/src/, ".")
+      .replace(
+        /\/var\/tmp\/sb-compile-trex\/d2ef/,
+        Deno.env.get("TREX_FUNCTION_PATH")
+      )}/${basePath}/${relativePath}`;
   }
 
   private async getLookupsFromDirectory(
