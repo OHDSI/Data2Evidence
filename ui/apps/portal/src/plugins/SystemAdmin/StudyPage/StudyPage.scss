@@ -8,7 +8,14 @@
   }
 
   &__header {
+    display: flex;
+    justify-content: space-between;
     margin-bottom: 32px;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
   }
 
   &__dataset-selector {

@@ -7,12 +7,14 @@ import {
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
+import { StrategusAnalysisApi } from "../api/StrategusAnalysis.ts";
 
 export class PrefectService {
   private dataflowService;
   private prefectParamsTransformer;
   private prefectAnalysisParamsTransformer;
   private prefectApi;
+  private strategusAnalysisApi;
   private analysisflowService;
 
   constructor() {
@@ -71,6 +73,11 @@ export class PrefectService {
 
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       options['datasetId']
+    );
+
+    this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+    await this.strategusAnalysisApi.saveAnalysis(
+      options['study_id'], options['notebookName'], json_graph['analysisSpecification']
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(

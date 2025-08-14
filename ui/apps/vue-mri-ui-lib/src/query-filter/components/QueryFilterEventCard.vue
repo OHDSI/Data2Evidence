@@ -20,7 +20,7 @@ import type {
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
-import CardinalityMenu from './CardinalityMenu.vue'
+import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
@@ -328,32 +328,27 @@ const getEventTypeDisplay = (eventType?: string, criteriaType?: string) => {
   if (!typeToUse) return 'Unknown Event'
 
   const typeMap: Record<string, string> = {
+    conditionEra: 'Condition Era',
     conditionOccurrence: 'Condition Occurrence',
-    drugExposure: 'Drug Exposure',
-    procedureOccurrence: 'Procedure Occurrence',
-    measurement: 'Measurement',
-    observation: 'Observation',
-    visitOccurrence: 'Visit Occurrence',
-    deviceExposure: 'Device Exposure',
     death: 'Death',
+    demographic: 'Demographic',
+    deviceExposure: 'Device Exposure',
+    doseEra: 'Dose Era',
+    drugEra: 'Drug Era',
+    drugExposure: 'Drug Exposure',
+    locationRegion: 'Location Region',
+    measurement: 'Measurement',
+    observationPeriod: 'Observation Period',
+    payerPlanPeriod: 'Payer Plan Period',
+    procedureOccurrence: 'Procedure Occurrence',
+    specimen: 'Specimen',
+    observation: 'Observation',
+    visit: 'Visit',
+    visitDetail: 'Visit Detail',
+    visitOccurrence: 'Visit Occurrence',
   }
 
   return typeMap[typeToUse] || typeToUse
-}
-
-// Get cardinality display text
-const getCardinalityDisplay = () => {
-  const cardinality = eventData.value.cardinality
-  if (!cardinality) return 'At least 1'
-
-  const typeText =
-    {
-      AT_LEAST: 'At least',
-      EXACTLY: 'Exactly',
-      AT_MOST: 'At most',
-    }[cardinality.type] || cardinality.type
-
-  return `${typeText} ${cardinality.count}`
 }
 
 // Get concept set display name for readonly mode
@@ -378,8 +373,6 @@ const getConceptSetDisplayName = (): string => {
 
   return ''
 }
-
-const sideBarRef = ref<HTMLElement | null>(null)
 
 // Create attribute model for TagInputAdapter
 const createAttributeModel = (attribute: QueryFilterAttribute) => {
@@ -424,9 +417,12 @@ const toggleExpanded = () => {
     }"
   >
     <div class="card-side">
-      <div class="event-sidebar" ref="sideBarRef">
-        <span class="sidebar-label">{{ getCardinalityDisplay() }}</span>
-      </div>
+      <CardinalitySidebar
+        :cardinality="eventData.cardinality || { type: 'AT_LEAST', count: 1, using: 'ALL' }"
+        :event-id="eventData.id"
+        :readonly="readonly"
+        @update-cardinality="updateCardinality"
+      />
     </div>
 
     <div class="card-main">
@@ -591,14 +587,6 @@ const toggleExpanded = () => {
 
     <!-- Event Body with Sidebar -->
   </div>
-  <CardinalityMenu
-    v-if="sideBarRef"
-    type="EVENT"
-    :target="sideBarRef"
-    :name-prefix="eventData.id"
-    @updateCardinalityField="updateCardinality"
-    :cardinality="eventData.cardinality || { type: 'AT_LEAST', count: 1, using: 'ALL' }"
-  />
 </template>
 
 <style lang="scss" scoped>
@@ -826,7 +814,7 @@ const toggleExpanded = () => {
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     background: #fafafa;
-    overflow: hidden;
+    overflow: visible; // Avoid CriteriaSelectorDropdown being clipped in the Nested Criteria
 
     &:last-child {
       margin-bottom: 0;

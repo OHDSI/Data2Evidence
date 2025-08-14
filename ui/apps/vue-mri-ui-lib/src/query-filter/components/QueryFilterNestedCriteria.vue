@@ -11,12 +11,12 @@ export default {
 import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
-import type { QueryFilterGroup } from '../types/QueryFilterTypes'
+import type { QueryFilterGroup, QueryFilterEvent } from '../types/QueryFilterTypes'
 
 export interface NestedCriteria {
   id: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
-  events: any[]
+  events: QueryFilterEvent[]
 }
 
 interface Props {

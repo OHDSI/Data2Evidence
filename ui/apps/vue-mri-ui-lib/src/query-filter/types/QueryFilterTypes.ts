@@ -21,6 +21,12 @@ export interface AttributeConfig {
   value?: number | undefined
 }
 
+export interface QueryFilterNestedCriteria {
+  id: string
+  criteriaType: CriteriaType
+  events: QueryFilterEvent[]
+}
+
 export interface QueryFilterEvent {
   id: string
   conceptSet: string
@@ -38,6 +44,7 @@ export interface QueryFilterEvent {
   isExpanded?: boolean | undefined
   attributes?: QueryFilterAttribute[] | undefined
   eventType?: string | undefined
+  nestedCriteria?: QueryFilterNestedCriteria | undefined
 }
 
 export type QueryFilterAttribute =
@@ -45,11 +52,7 @@ export type QueryFilterAttribute =
       | {
           id: string
           attributeType: 'nested'
-          nestedCriteria: {
-            id: string
-            criteriaType: CriteriaType
-            events: QueryFilterEvent[]
-          }
+          nestedCriteria: QueryFilterNestedCriteria
         }
       | {
           id: string
