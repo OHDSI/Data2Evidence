@@ -53,7 +53,10 @@ export default {
                                             {
                                               id: 'attribute_1749626300527',
                                               attributeId: 'gender',
-                                              type: 'conceptSet',
+                                              attributeType: 'standard',
+                                              configType: 'concept',
+                                              domainFilter: 'Gender',
+                                              conceptItems: [],
                                             },
                                           ],
                                           cardinality: {
@@ -160,4 +163,3 @@ export default {
     ],
   },
 }
-

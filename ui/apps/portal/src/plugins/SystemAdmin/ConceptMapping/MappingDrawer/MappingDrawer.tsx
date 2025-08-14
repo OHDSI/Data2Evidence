@@ -2,6 +2,7 @@ import React, { FC, useCallback, useContext, useEffect } from "react";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { conceptData } from "../types";
 import { TerminologyProps } from "../../../Researcher/Terminology/Terminology";
+import { FhirValueSetExpansionContainsWithExt } from "../../../Researcher/Terminology/utils/types";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers/reducer";
 
 interface MappingDrawerProps {
@@ -17,7 +18,18 @@ const MappingDrawer: FC<MappingDrawerProps> = ({ selectedDatasetId }) => {
   // get data from terminology
   // passes data to reducer to update list
   const handleTerminologySelect = useCallback(
-    (conceptData: conceptData) => {
+    (fhirData: FhirValueSetExpansionContainsWithExt) => {
+      // Map FhirValueSetExpansionContainsWithExt to conceptData format
+      const conceptData: conceptData = {
+        conceptId: fhirData.conceptId,
+        conceptName: fhirData.display, // map display to conceptName
+        domainId: fhirData.domainId,
+        system: fhirData.system,
+        validStartDate: fhirData.validStartDate,
+        validEndDate: fhirData.validEndDate,
+        validity: fhirData.validity || null,
+      };
+
       dispatch({
         type: ACTION_TYPES.SET_SINGLE_MAPPING,
         payload: {
