@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  HTTP_STATUS,
   HttpException,
   Middleware,
   Param,
@@ -19,13 +18,13 @@ export class GroupController {
   @Post()
   async addUserToGroup(@Body("userId") userId: string) {
     if (!userId) {
-      throw new HttpException(HTTP_STATUS.BAD_REQUEST, "userId is required");
+      throw new HttpException(400, "userId is required");
     }
 
     const userExists = await this.groupsService.userExists(userId);
     if (userExists) {
       throw new HttpException(
-        HTTP_STATUS.CONFLICT,
+        409,
         "User already exists in the group"
       );
     }
