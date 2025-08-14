@@ -307,32 +307,27 @@ const getEventTypeDisplay = (eventType?: string) => {
   if (!eventType) return 'Unknown Event'
 
   const typeMap: Record<string, string> = {
+    conditionEra: "Condition Era",
     conditionOccurrence: 'Condition Occurrence',
-    drugExposure: 'Drug Exposure',
-    procedureOccurrence: 'Procedure Occurrence',
-    measurement: 'Measurement',
-    observation: 'Observation',
-    visitOccurrence: 'Visit Occurrence',
+    death: "Death",
+    demographic: 'Demographic',
     deviceExposure: 'Device Exposure',
-    death: 'Death',
+    doseEra: 'Dose Era',
+    drugEra: 'Drug Era',
+    drugExposure: 'Drug Exposure',
+    locationRegion: 'Location Region',
+    measurement: 'Measurement',
+    observationPeriod: 'Observation Period',
+    payerPlanPeriod: 'Payer Plan Period',
+    procedureOccurrence: 'Procedure Occurrence',
+    specimen: 'Specimen',
+    observation: 'Observation',
+    visit: 'Visit',
+    visitDetail: 'Visit Detail',
+    visitOccurrence: 'Visit Occurrence',
   }
 
   return typeMap[eventType] || eventType
-}
-
-// Get cardinality display text
-const getCardinalityDisplay = () => {
-  const cardinality = eventData.value.cardinality
-  if (!cardinality) return 'At least 1'
-
-  const typeText =
-    {
-      AT_LEAST: 'At least',
-      EXACTLY: 'Exactly',
-      AT_MOST: 'At most',
-    }[cardinality.type] || cardinality.type
-
-  return `${typeText} ${cardinality.count}`
 }
 
 // Get concept set display name for readonly mode
@@ -357,8 +352,6 @@ const getConceptSetDisplayName = (): string => {
 
   return ''
 }
-
-const sideBarRef = ref<HTMLElement | null>(null)
 
 // Expand/collapse state
 const isExpanded = ref(true)
@@ -756,7 +749,7 @@ const toggleExpanded = () => {
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     background: #fafafa;
-    overflow: hidden;
+    overflow: visible; // Avoid CriteriaSelectorDropdown being clipped in the Nested Criteria
 
     &:last-child {
       margin-bottom: 0;
