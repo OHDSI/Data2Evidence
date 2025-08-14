@@ -409,7 +409,7 @@ export const i18nDefault = {
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",
     DEMO_SETUP__SETUP_DEMO_TITLE: "Demo setup",
-    DEMO_SETUP__SETUP_DEMO_DESCRIPTION: "Setup demo database & dataset",
+    DEMO_SETUP__SETUP_DEMO_DESCRIPTION: "Initialize System",
     DEMO_SETUP__SETUP_PHENOTYPE_DESCRIPTION: "Run standalone phenotype flow",
     DOMAIN_CONTINUITY_CHART__NO_DATA: "No data",
     DOMAIN_CONTINUITY_CHART__X_AXIS_NAME: "CDM Release Date",
