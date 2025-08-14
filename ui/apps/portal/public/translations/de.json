@@ -355,6 +355,9 @@
   "DELETE_USER_DIALOG__DESCRIPTION": "Bitte versuchen Sie es erneut. Um den Fehler zu melden, senden Sie eine E-Mail an help@data4life.care.",
   "DELETE_USER_DIALOG__ERROR": "Ein Fehler ist aufgetreten.",
   "DELETE_USER_DIALOG__YES": "Ja, löschen",
+  "DISCLAIMER_DIALOG__ACCEPT": "akzeptieren",
+  "DISCLAIMER__TITLE": "Haftungsausschluss",
+  "DISCLAIMER_DIALOG__TITLE": "Haftungsausschluss",
   "DOMAIN_CONTINUITY_CHART__NO_DATA": "Keine Daten",
   "DOMAIN_CONTINUITY_CHART__X_AXIS_NAME": "CDM-Veröffentlichungsdatum",
   "DOMAIN_CONTINUITY_CHART__Y_AXIS_NAME": "Anzahl der Datensätze",
@@ -993,5 +996,7 @@
   "STUDY_PAGE__ERROR_LOADING_DATASETS": "Fehler beim Laden der Datensätze: {0}",
   "STUDY_PAGE__REPOSITORY_SERVICE_ISSUE": "Repository-Service-Problem: {0}",
   "STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR": "Aufgrund eines Repository-Fehlers sind keine Studien verfügbar",
-  "STUDY_PAGE__NO_STUDIES_FOUND": "Keine Studien im Repository gefunden"
+  "STUDY_PAGE__NO_STUDIES_FOUND": "Keine Studien im Repository gefunden",
+  "STUDY_PAGE__TAB_NETWORK_STUDIES": "Netzwerkstudien",
+  "STUDY_PAGE__TAB_LOCAL_STUDIES": "Lokale Studien"
 }

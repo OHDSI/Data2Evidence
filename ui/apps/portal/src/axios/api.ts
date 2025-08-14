@@ -9,6 +9,7 @@ import { Translation } from "./translation";
 import { Trex } from "./trex";
 import { Demo } from "./demo";
 import { StrategusResults } from "./strategus-results";
+import { StrategusAnalysis } from "./strategus-analysis";
 
 export const api = {
   userMgmt: new UserMgmt(),
@@ -22,4 +23,5 @@ export const api = {
   trex: new Trex(),
   demo: new Demo(),
   strategusResults: new StrategusResults(),
+  strategusAnalysis: new StrategusAnalysis(),
 };
