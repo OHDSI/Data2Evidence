@@ -149,17 +149,18 @@ create_cohort_definition <- function(name, description, cohort_definition) {
     description = description,
     expression = expression,
     expressionType = expressionType,
-    createdBy = "admin",
+    createdBy = NULL,
     createdDate = as.numeric(Sys.time()),
-    modifiedBy = "admin",
+    modifiedBy = NULL,
     modifiedDate = as.numeric(Sys.time()),
     tags = list("created_by_rD2E")
   )
 
+  body <- jsonlite::toJSON(parameters, auto_unbox = TRUE, null = "null")
   response <- tryCatch(
     expr = httr::POST(
       url,
-      body = parameters,
+      body = body,
       encode = "json",
       httr::add_headers(
         `Content-Type` = "application/json",
