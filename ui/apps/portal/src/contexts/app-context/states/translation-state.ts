@@ -1083,7 +1083,7 @@ export const i18nDefault = {
     TREX_PLUGIN_UNINSTALL_DIALOG__SUCCESS:
       "Plugin {0} successfully uninstalled. Changes will be reflected upon system restart.",
     TREX_PLUGIN_UNINSTALL_DIALOG__UNINSTALL: "Uninstall plugin",
-    UI_PLUGIN_ANALYSIS: "Analysis (Experimental)",
+    UI_PLUGIN_ANALYSIS: "Analysis",
     UI_PLUGIN_CDM_CONFIG: "CDM configuration",
     UI_PLUGIN_COHORTS: "Cohorts",
     UI_PLUGIN_CONCEPTS: "Concepts",
