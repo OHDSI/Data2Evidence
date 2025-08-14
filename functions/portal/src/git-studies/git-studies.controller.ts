@@ -3,7 +3,7 @@ import {
   Get,
   Middleware,
   Query,
-  BadRequestException,
+  HttpException,
 } from "@danet/core";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { GitStudiesService } from "./git-studies.service.ts";
@@ -23,7 +23,7 @@ export class GitStudiesController {
   async getStudyStrategus(@Query() queryParams: GitStudiesQueryDto) {
     const { studyId } = queryParams;
     if (!studyId) {
-      throw new BadRequestException("Study ID is required");
+      throw new HttpException(400, "Study ID is required");
     }
     return await this.gitStudiesService.getStudyStrategusJson(studyId);
   }
