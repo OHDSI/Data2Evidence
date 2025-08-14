@@ -25,7 +25,7 @@ class PhenotypeOptionsType(BaseModel):
                     raise ValueError(f'{field} is required when materialize=True')
         else:
             # When materialize=False, API parameters are required
-            required_api_fields = ['user_name', 'dataset_id']
+            required_api_fields = ['dataset_id']
             for field in required_api_fields:
                 if not getattr(self, field):
                     raise ValueError(f'{field} is required when materialize=False')
