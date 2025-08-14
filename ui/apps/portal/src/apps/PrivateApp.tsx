@@ -9,10 +9,12 @@ import { config } from "../config";
 import { usePostLoginRedirectUri, useUser } from "../contexts";
 import { TerminologyWithEventListener } from "../plugins/Researcher/Terminology/TerminologyWithEventListener";
 import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/ResultsDialog/ResultsDialogWithEventListener";
-
+import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
+import { useDisclaimerHook } from "../hooks/useDisclaimer";
 export const PrivateApp: FC = () => {
   const { popPostLoginRedirectUri } = usePostLoginRedirectUri();
   const { user } = useUser();
+  useDisclaimerHook();
 
   const defaultRoute = useMemo(() => {
     let defaultRoute = config.ROUTES.researcher;
@@ -35,6 +37,7 @@ export const PrivateApp: FC = () => {
     <div className="App">
       <TerminologyWithEventListener />
       <ResultsDialogWithEventLister />
+      <DisclaimerDialog />
       <LoginSilent />
       <Routes>
         {user?.canAccessSystemAdminPortal && (
