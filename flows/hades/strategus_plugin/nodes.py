@@ -13,7 +13,7 @@ from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
 
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.daobase import DialectDrivers
@@ -896,8 +896,8 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms='postgresql', 
                 connectionString=construct_jdbc_url(db_credentials),
-                user=db_credentials.readUser,
-                password=db_credentials.readPassword.get_secret_value(),
+                user=db_credentials.adminUser,
+                password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
             )
 
@@ -984,3 +984,24 @@ def drop_strategus_results_schema(dbSettings):
         dbdao.drop_schema(results_schema, True)
     else:
         raise Exception(f"Schema {results_schema} not found")
+
+def getRCdmExecutionSettings(settings) -> str:
+    with ro.default_converter.context():
+        try:
+            rStrategus = importr('Strategus')
+            rParallelLogger = importr('ParallelLogger')
+            rCohortGenerator = importr('CohortGenerator')
+
+            rExecutionSettings = rStrategus.createCdmExecutionSettings(
+                workDatabaseSchema = settings['schemaName'],
+                cdmDatabaseSchema = settings['schemaName'],
+                cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
+                workFolder = settings['workFolder'],
+                resultsFolder = settings['resultsFolder'],
+                minCellCount = 5,
+                maxCores = 8
+            )
+            return convert_R_to_py(rParallelLogger.convertSettingsToJson(rExecutionSettings))
+        except Exception as e:
+            print('Error: ', e)
+            raise RuntimeError('Execution of strategus has failed')
