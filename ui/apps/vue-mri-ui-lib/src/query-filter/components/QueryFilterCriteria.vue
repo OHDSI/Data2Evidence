@@ -8,17 +8,17 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import ButtonMaterial from './ButtonMaterial.vue'
 import AddIcon from './icons/AddIcon.vue'
 import GroupButtons from './GroupButtons.vue'
 
 interface Props {
   criteriaData?: any
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -38,14 +38,12 @@ const emit = defineEmits<{
   'add-criteria-group': [groupData: any]
   'update-criteria-group': [index: number, groupData: any]
   'remove-criteria-group': [index: number]
+  'concept-set-action': [action: any]
 }>()
 
-// Get current criteria data (now from props instead of criteriaManager)
 const currentCriteriaData = computed(() => props.criteriaData)
 
-// Handle qualifying events limit selection
 const updateQualifyingLimit = (value: string) => {
-  // Type guard to ensure the value is valid
   if (value === 'ALL' || value === 'EARLIEST' || value === 'LATEST') {
     emit('update-qualifying-limit', value)
   }
@@ -61,11 +59,8 @@ const currentQualifyingLimit = computed(() => {
   return currentCriteriaData.value.criteriaType || 'ALL'
 })
 
-// Event name changed from 'click' to 'button-click' to avoid native event conflicts
 
-// Handle adding new criteria group
 const addNewGroup = () => {
-  // Create new criteria group
   const staticCount = currentCriteriaData.value.criteria.length + 1
   const newGroup = {
     id: `criteria_${Date.now()}`,
@@ -78,12 +73,10 @@ const addNewGroup = () => {
   emit('add-criteria-group', newGroup)
 }
 
-// Handle group updates
 const handleGroupUpdate = (groupIndex: number, updatedGroup: any) => {
   emit('update-criteria-group', groupIndex, updatedGroup)
 }
 
-// Handle group removal
 const handleGroupRemove = (groupIndex: number) => {
   emit('remove-criteria-group', groupIndex)
 }
@@ -120,10 +113,6 @@ const handleGroupRemove = (groupIndex: number) => {
       <div class="criteria-groups-content">
         <!-- Add Group Button (Outside the sidebar layout) -->
         <div v-if="!readonly" class="add-group-container">
-          <!-- <button class="btn-add-group" @click="addNewGroup">
-            <span class="btn-add-group__icon">+</span>
-            <span class="btn-add-group__text">Add Criteria Group</span>
-          </button> -->
 
           <ButtonMaterial variant="text" color="primary" @button-click="addNewGroup">
             <template #startIcon>
@@ -146,6 +135,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"
+          @concept-set-action="action => $emit('concept-set-action', action)"
         />
       </div>
     </div>
@@ -190,11 +180,9 @@ const handleGroupRemove = (groupIndex: number) => {
     align-items: center;
     justify-content: center;
     padding: 12px 6px;
-    background: #000080; // Blue to match other sidebars
+    background: #000080;
     position: relative;
-    border-radius: 0 0 0 8px; // Round left corners
-
-    // Add subtle border to indicate different states
+    border-radius: 0 0 0 8px;
     &::after {
       content: '';
       position: absolute;

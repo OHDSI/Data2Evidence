@@ -12,22 +12,23 @@ import { ref, computed, getCurrentInstance } from 'vue'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
+import type { QueryFilterCardinality, QueryFilterEvent, QueryFilterAttribute } from '../types/QueryFilterTypes'
 import type {
-  QueryFilterCardinality,
-  QueryFilterEvent,
-  QueryFilterAttribute,
+  ConceptSetItemDisplay,
+  ConceptSetDomainValues,
+  ConceptSetAction,
   SelectedConceptSet,
-} from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+} from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/CriteriaConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
+import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 
 interface Props {
   event: QueryFilterEvent
   eventIndex: number
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -45,23 +46,20 @@ const emit = defineEmits<{
   'update:event': [event: QueryFilterEvent]
   'remove-event': []
   'duplicate-event': []
-  'concept-set-selected': [conceptSet: ConceptSetItem | null]
+  'concept-set-selected': [conceptSet: ConceptSetItemDisplay | null]
   'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 // Get store access for dataset ID
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties['$store']
 
-// Local reactive copy of the event
-const localEvent = ref<QueryFilterEvent>({ ...props.event })
-
-// Two-way binding computed
+// Use the reactive prop directly instead of local copy
 const eventData = computed({
-  get: () => localEvent.value,
+  get: () => props.event,
   set: (value: QueryFilterEvent) => {
-    localEvent.value = value
     emit('update:event', value)
   },
 })
@@ -81,7 +79,7 @@ const updateCardinality = (updatedEventCardinality: QueryFilterCardinality) => {
 }
 
 // Handle concept set changes (add/remove/update)
-const handleConceptSetChange = async (values: ConceptSetItem[]) => {
+const handleConceptSetChange = async (values: ConceptSetItemDisplay[]) => {
   if (!values || values.length === 0) {
     // Remove concept set
     const updatedEvent: QueryFilterEvent = {
@@ -105,7 +103,7 @@ const handleConceptSetChange = async (values: ConceptSetItem[]) => {
 }
 
 // Handle concept set selection
-const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
+const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   const selectedConceptSet: SelectedConceptSet = {
     value: parseInt(conceptSet.value),
     text: conceptSet.text || '',
@@ -113,7 +111,7 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
     conceptIds: conceptSet.conceptIds || [],
     concepts:
       conceptSet.concepts?.map(c => ({
-        id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+        id: c.id || c.concept_id || 0,
         useMapped: c.useMapped || false,
         isExcluded: c.isExcluded || false,
         useDescendants: c.useDescendants || false,
@@ -136,8 +134,6 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItem) => {
 
   // Load concept set details for Atlas conversion
   try {
-    // Import the API service function
-    const { loadSingleConceptSetDetails } = await import('../services/ConceptSetApiService')
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
 
     // Update event with concept set details
@@ -209,7 +205,9 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
     newAttribute = {
       id: attribute.id,
       attributeId: attribute.id,
-      attributeType: 'standard',
+      attributeType: 'standard' as const,
+      configType: attribute.type,
+      ...(attribute.domainFilter ? { domainFilter: attribute.domainFilter } : {}),
     }
   }
 
@@ -245,7 +243,7 @@ const removeEvent = () => {
 }
 
 // Handle attribute concept set selection
-const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItem) => {
+const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItemDisplay) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId && attr.attributeType === 'conceptSet') {
@@ -283,33 +281,56 @@ const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria
 }
 
 // Create tag input model for concept set selection
-const tagInputModel = computed(() => ({
-  id: `event-concept-set-${eventData.value.id}`,
-  props: {
-    type: 'conceptSet',
-    value: eventData.value.selectedConceptSet ? [eventData.value.selectedConceptSet] : [],
-    attributePath: 'condition_occurrence.concept_id',
-    domainFilter: 'Condition',
-    standardConceptCodeFilter: 'Standard',
-  },
-}))
+const tagInputModel = computed(() => {
+  const model = {
+    id: `event-concept-set-${eventData.value.id}`,
+    props: {
+      type: 'conceptSet',
+      value: eventData.value.selectedConceptSet
+        ? [
+            {
+              value: String(eventData.value.selectedConceptSet.value),
+              text: eventData.value.selectedConceptSet.text,
+              display_value: eventData.value.selectedConceptSet.display_value,
+              conceptIds: eventData.value.selectedConceptSet.conceptIds,
+              concepts: eventData.value.selectedConceptSet.concepts,
+            },
+          ]
+        : [],
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: 'Condition',
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+  return model
+})
 
 // Get the external value for the tag input (ensuring it's always an array)
 const getTagInputValue = () => {
-  if (eventData.value.selectedConceptSet) {
-    return [eventData.value.selectedConceptSet]
-  }
-  return []
+  const result = eventData.value.selectedConceptSet
+    ? [
+        {
+          value: String(eventData.value.selectedConceptSet.value),
+          text: eventData.value.selectedConceptSet.text,
+          display_value: eventData.value.selectedConceptSet.display_value,
+          conceptIds: eventData.value.selectedConceptSet.conceptIds,
+          concepts: eventData.value.selectedConceptSet.concepts,
+        },
+      ]
+    : []
+  return result
 }
 
 // Get event type display name
-const getEventTypeDisplay = (eventType?: string) => {
-  if (!eventType) return 'Unknown Event'
+const getEventTypeDisplay = (eventType?: string, criteriaType?: string) => {
+  // Use criteriaType as fallback if eventType is not available (happens after setData())
+  const typeToUse = eventType || criteriaType
+  if (!typeToUse) return 'Unknown Event'
 
   const typeMap: Record<string, string> = {
-    conditionEra: "Condition Era",
+    conditionEra: 'Condition Era',
     conditionOccurrence: 'Condition Occurrence',
-    death: "Death",
+    death: 'Death',
     demographic: 'Demographic',
     deviceExposure: 'Device Exposure',
     doseEra: 'Dose Era',
@@ -327,7 +348,7 @@ const getEventTypeDisplay = (eventType?: string) => {
     visitOccurrence: 'Visit Occurrence',
   }
 
-  return typeMap[eventType] || eventType
+  return typeMap[typeToUse] || typeToUse
 }
 
 // Get concept set display name for readonly mode
@@ -353,6 +374,32 @@ const getConceptSetDisplayName = (): string => {
   return ''
 }
 
+// Create attribute model for TagInputAdapter
+const createAttributeModel = (attribute: QueryFilterAttribute) => {
+  const attrType = 'configType' in attribute && attribute.configType === 'concept' ? 'concept' : 'conceptSet'
+  const hasDomainFilter = 'domainFilter' in attribute && attribute.domainFilter
+  const domainFilter = hasDomainFilter ? attribute.domainFilter : 'Condition'
+
+  const value =
+    'configType' in attribute && attribute.configType === 'concept'
+      ? 'conceptItems' in attribute && attribute.conceptItems
+        ? attribute.conceptItems
+        : []
+      : 'conceptSet' in attribute && attribute.conceptSet
+      ? [attribute.conceptSet]
+      : []
+  const model = {
+    id: `attribute-${attribute.id}-${eventData.value.id}`,
+    props: {
+      type: attrType,
+      value: value,
+      attributePath: 'condition_occurrence.concept_id',
+      domainFilter: domainFilter,
+      standardConceptCodeFilter: 'Standard',
+    },
+  }
+  return model
+}
 // Expand/collapse state
 const isExpanded = ref(true)
 const toggleExpanded = () => {
@@ -383,7 +430,7 @@ const toggleExpanded = () => {
         <div class="event-header__left">
           <div class="event-type-indicator">
             <span class="event-type-label">
-              {{ getEventTypeDisplay(eventData.eventType) }}
+              {{ getEventTypeDisplay(eventData.eventType, eventData.criteriaType) }}
             </span>
             <span v-if="nestedLevel > 0" class="nested-indicator"> (Level {{ nestedLevel }}) </span>
           </div>
@@ -432,6 +479,7 @@ const toggleExpanded = () => {
                 :is-catalog-attribute="false"
                 :max-selections="1"
                 @update:value="handleConceptSetChange"
+                @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })"
               />
               <div v-else class="concept-set-readonly">
                 {{ getConceptSetDisplayName() || 'No concept set selected' }}
@@ -470,6 +518,7 @@ const toggleExpanded = () => {
                     :readonly="readonly"
                     :hide-header="true"
                     @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+                    @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })"
                   />
                 </div>
 
@@ -484,23 +533,39 @@ const toggleExpanded = () => {
                   </label>
                   <QueryFilterTagInputAdapter
                     v-if="!readonly"
-                    :model="{
-                      id: `attribute-${attribute.id}-${eventData.id}`,
-                      props: {
-                        type: 'conceptSet',
-                        value: 'conceptSet' in attribute && attribute.conceptSet ? [attribute.conceptSet] : [],
-                        attributePath: 'condition_occurrence.concept_id',
-                        domainFilter: 'Condition',
-                        standardConceptCodeFilter: 'Standard',
-                      },
-                    }"
-                    :external-value="'conceptSet' in attribute && attribute.conceptSet ? [attribute.conceptSet] : []"
+                    :model="createAttributeModel(attribute)"
+                    :external-value="
+                      'conceptItems' in attribute && attribute.conceptItems
+                        ? attribute.conceptItems
+                        : 'conceptSet' in attribute && attribute.conceptSet
+                        ? [attribute.conceptSet]
+                        : []
+                    "
                     :external-domain-values="
-                      conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+                      // Using empty values so dropdown doesn't show for concepts type
+                      ('configType' in attribute &&
+                        attribute.configType === 'conceptSet' &&
+                        conceptSetDomainValues) || {
+                        values: [],
+                        isLoading: false,
+                        loadedStatus: 'NO_RESULTS',
+                      }
                     "
                     :external-texts="conceptSetTexts || {}"
                     :is-catalog-attribute="false"
-                    @update:value="values => values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])"
+                    @update:value="
+                      values => {
+                        if ('configType' in attribute && attribute.configType === 'concept') {
+                          return
+                        } else {
+                          // For concept sets, use the existing handler
+                          values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
+                        }
+                      }
+                    "
+                    @concept-set-action="(action: ConceptSetAction) => {
+                    $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
+                  }"
                   />
                   <div v-else class="attribute-concept-set-readonly">
                     {{
