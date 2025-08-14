@@ -335,10 +335,10 @@ const actions = {
     commit(types.CHART_SET_FIRE_REQUEST)
   },
   resetChart({ dispatch, getters }) {
+    dispatch('resetChartProperties')
     const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
     dispatch('setIFRState', { ifr: initialIFR })
     dispatch('setupChartDefaults')
-    dispatch('resetChartProperties')
   },
 }
 
