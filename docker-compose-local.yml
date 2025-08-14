@@ -53,8 +53,6 @@ services:
         }
 
   alp-caddy:
-    command: caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile --watch
-    image: caddy:2.8-alpine
     ports:
       - 41000:41000
       - 41130:41130
