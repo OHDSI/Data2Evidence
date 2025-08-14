@@ -9,7 +9,6 @@
 
 :construction: **Data2Evidence is beta software. There might be breaking changes.** :construction:
 
-
 ### Why the Data2Evidence platform?
 
 - **End-to-End Platform:**  
