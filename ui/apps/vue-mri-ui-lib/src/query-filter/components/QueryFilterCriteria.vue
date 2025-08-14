@@ -129,7 +129,7 @@ const handleGroupRemove = (groupIndex: number) => {
             <template #startIcon>
               <AddIcon />
             </template>
-            Add group
+            New inclusion criteria
           </ButtonMaterial>
         </div>
         <QueryFilterCriteriaGroup
