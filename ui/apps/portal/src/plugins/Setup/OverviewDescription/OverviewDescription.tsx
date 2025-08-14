@@ -22,6 +22,7 @@ interface FormData {
   [ConfigTypes.PRIVACY_POLICY_DISPLAY]: string;
   [ConfigTypes.IMPRINT]: string;
   [ConfigTypes.IMPRINT_DISPLAY]: string;
+  [ConfigTypes.DISCLAIMER_DISPLAY]: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
@@ -32,6 +33,7 @@ const EMPTY_FORM_DATA: FormData = {
   [ConfigTypes.PRIVACY_POLICY_DISPLAY]: "0",
   [ConfigTypes.IMPRINT]: "",
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
+  [ConfigTypes.DISCLAIMER_DISPLAY]: "0",
 };
 
 export const OverviewDescription: FC = () => {
@@ -45,6 +47,7 @@ export const OverviewDescription: FC = () => {
       ConfigTypes.PRIVACY_POLICY_DISPLAY,
       ConfigTypes.TERMS_OF_USE,
       ConfigTypes.TERMS_OF_USE_DISPLAY,
+      ConfigTypes.DISCLAIMER_DISPLAY,
     ],
     refetch
   );
@@ -187,6 +190,20 @@ export const OverviewDescription: FC = () => {
           label="Display Imprint"
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.IMPRINT_DISPLAY]: event.target.checked ? "1" : "0" })
+          }
+        />
+      </div>
+
+      <div className="overview_description__header">
+        <Title>{getText(i18nKeys.DISCLAIMER__TITLE)}</Title>
+      </div>
+
+      <div className="overview_description__content">
+        <Checkbox
+          checked={convertStringToBoolean(formData[ConfigTypes.DISCLAIMER_DISPLAY])}
+          label="Display Disclaimer When Logged In"
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            handleFormDataChange({ [ConfigTypes.DISCLAIMER_DISPLAY]: event.target.checked ? "1" : "0" })
           }
         />
       </div>

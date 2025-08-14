@@ -818,52 +818,70 @@
           "name": "phenotype_plugin",
           "entrypoint": "flows.phenotype_plugin.flow.phenotype_plugin",
           "parameter_openapi_schema": {
-            "title": "Parameters",
             "type": "object",
+            "title": "Parameters",
+            "required": ["options"],
             "properties": {
               "options": {
                 "$ref": "#/definitions/PhenotypeOptionsType",
-                "position": 0,
-                "title": "options"
+                "title": "options",
+                "position": 0
               }
             },
-            "required": [
-              "options"
-            ],
             "definitions": {
-              "PhenotypeOptionsType": {
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "cdmschemaName": {
-                    "title": "Cdmschemaname",
-                    "type": "string"
-                  },
-                  "cohortschemaName": {
-                    "title": "Cohortschemaname",
-                    "type": "string"
-                  },
-                  "cohortsId": {
-                    "title": "Cohortsid",
-                    "type": "string"
-                  },
-                  "vocabschemaName": {
-                    "title": "Vocabschemaname",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "databaseCode",
-                  "cdmschemaName",
-                  "cohortschemaName",
-                  "cohortsId",
-                  "vocabschemaName"
-                ],
-                "title": "PhenotypeOptionsType",
-                "type": "object"
-              }
+                "PhenotypeOptionsType": {
+                    "type": "object",
+                    "title": "PhenotypeOptionsType",
+                    "required": ["cohorts_id"],
+                    "properties": {
+                        "cohorts_id": {
+                            "type": "string", 
+                            "title": "Cohorts Id",
+                            "description": "Comma-separated string of cohort IDs or 'default'"
+                        },
+                        "materialize": {
+                            "type": "boolean",
+                            "title": "Materialize",
+                            "default": false
+                        },
+                        "user_name": {
+                            "type": "string",
+                            "title": "User Name",
+                            "default": null,
+                            "description": "Required when materialize=false."
+                        },
+                        "dataset_id": {
+                            "type": "string",
+                            "title": "Dataset Id",
+                            "default": null,
+                            "description": "Required when materialize=false."
+                        },
+                        "database_code": {
+                            "type": "string",
+                            "title": "Database Code",
+                            "default": null,
+                            "description": "Required when materialize=true."
+                        },
+                        "cdmschema_name": {
+                            "type": "string",
+                            "title": "CDM Schema Name",
+                            "default": null,
+                            "description": "Required when materialize=true."
+                        },
+                        "vocabschema_name": {
+                            "type": "string",
+                            "title": "Vocabulary Schema Name",
+                            "default": null,
+                            "description": "Required when materialize=true."
+                        },
+                        "cohortschema_name": {
+                            "type": "string",
+                            "title": "Cohort Schema Name",
+                            "default": null,
+                            "description": "Required when materialize=true."
+                        }
+                    }
+                }
             }
           },
           "type": "phenotype"
