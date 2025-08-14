@@ -345,6 +345,18 @@ interface ICreateWhiteRabbitFlowRunOptions {
   run_type: string;
 }
 
+export interface PhenotypeFlowRunDto {
+  options: PhenotypeFlowRunOptions;
+}
+
+interface PhenotypeFlowRunOptions {
+  databaseCode: string;
+  cdmschemaName: string;
+  cohortschemaName: string;
+  cohortsId: string;
+  vocabSchemaName: string;
+}
+
 export interface IPrefectArtifact {
   id: string;
   created: string;

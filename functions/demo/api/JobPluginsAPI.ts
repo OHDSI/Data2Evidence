@@ -1,12 +1,12 @@
 import { AxiosRequestConfig } from "axios";
 import { services } from "../env.ts";
-import { post } from "./request-util.ts";
 import {
-  ICacheCreateFlowRun,
   IDcCreateFlowRun,
   IDqdCreateFlowRun,
   IGetVersionInfoCreateFlowRun,
+  IPhenotypeCreateFlowRun,
 } from "../type.d.ts";
+import { post } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
@@ -83,6 +83,19 @@ export class JobPluginsAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while creating data-model version-info: ${error}`);
+      throw error;
+    }
+  }
+
+  async createPhenotypeFlowRun(dto: IPhenotypeCreateFlowRun) {
+    try {
+      this.logger.info(`Create phenotype flow run: ${JSON.stringify(dto)}`);
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/phenotype/flow-run`;
+      const result = await post(url, dto, options);
+      return result.data;
+    } catch (error) {
+      console.error(`Error while creating phenotype flow run: ${error}`);
       throw error;
     }
   }

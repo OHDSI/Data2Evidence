@@ -1,14 +1,14 @@
 import { DatasetAPI } from "../api/DatasetAPI.ts";
 import { DbCredentialsAPI } from "../api/DbCredentialsAPI.ts";
-import { PortalAPI } from "../api/PortalAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
+import { PortalAPI } from "../api/PortalAPI.ts";
+import { env } from "../env.ts";
 import {
   IDbCreateDto,
   IDbCredentialDto,
   IDemoInput,
   IProgress,
 } from "../type.d.ts";
-import { env } from "../env.ts";
 
 const algo: RsaOaepParams = { name: "RSA-OAEP" };
 
@@ -190,6 +190,53 @@ export class DemoService {
 
     this.logger.info(
       `Dataset metadata updated: ${JSON.stringify(result.data)}`
+    );
+    return result.flowRunId ? result : result.data;
+  }
+
+  public async runPhenotype(
+    token: string,
+    _input: IDemoInput,
+    progress?: IProgress
+  ) {
+    this.logger.info("Running Phenotype");
+
+    const jobPluginsAPI = new JobPluginsAPI(token);
+    let dataset = progress?.steps?.find(
+      (step) => step.code === "dataset"
+    )?.result;
+
+    if (!dataset) {
+      // For standalone phenotype flow, get the first available dataset from portal
+      const portalAPI = new PortalAPI(token);
+      const datasets = await portalAPI.getDatasets();
+      if (datasets.length === 0) {
+        throw new Error("No datasets available");
+      }
+      dataset = datasets[0];
+      this.logger.info(
+        `Using first available dataset: ${JSON.stringify(dataset)}`
+      );
+    }
+
+    const {
+      id: datasetId,
+      databaseCode,
+      schemaName,
+      vocabSchemaName,
+    } = dataset;
+    const result = await jobPluginsAPI.createPhenotypeFlowRun({
+      options: {
+        databaseCode,
+        cdmschemaName: schemaName,
+        cohortschemaName: schemaName,
+        cohortsId: "default",
+        vocabSchemaName,
+      },
+    });
+
+    this.logger.info(
+      `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`
     );
     return result.flowRunId ? result : result.data;
   }

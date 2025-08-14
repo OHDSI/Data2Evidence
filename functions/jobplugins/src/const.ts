@@ -33,6 +33,7 @@ export enum PrefectDeploymentName {
   CACHEDB_CREATE_FILE = "create_cachedb_file_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
+  PHENOTYPE = "phenotype_plugin",
 }
 
 export enum PrefectFlowName {
@@ -50,6 +51,7 @@ export enum PrefectFlowName {
   DATAMART = "datamart_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
+  PHENOTYPE = "phenotype_plugin",
 }
 
 export enum FLOW_RUN_STATE_TYPES {

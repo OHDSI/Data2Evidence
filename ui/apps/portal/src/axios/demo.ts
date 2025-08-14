@@ -15,6 +15,14 @@ export class Demo {
     });
   }
 
+  public setupPhenotype(): Promise<ISetupResponse> {
+    return request({
+      baseURL: DEMO_BASE_URL,
+      url: "setup-phenotype",
+      method: "POST",
+    });
+  }
+
   public getProgress(id: string): Promise<IProgressResponse> {
     return request({
       baseURL: DEMO_BASE_URL,

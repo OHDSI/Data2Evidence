@@ -1,19 +1,20 @@
 import express from "npm:express";
 import pg from "npm:pg";
+import { AnalysisController } from "./src/controllers/AnalysisController.ts";
+import { CachedbController } from "./src/controllers/CachedbController.ts";
 import { CohortController } from "./src/controllers/CohortController.ts";
 import { CohortSurvivalController } from "./src/controllers/CohortSurvivalController.ts";
 import { DataCharacterizationController } from "./src/controllers/DataCharacterizationController.ts";
-import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
 import { DataModelFlowController } from "./src/controllers/DataModelFlowController.ts";
+import { DataTransformationController } from "./src/controllers/DataTransformationController.ts";
 import { DbSvcController } from "./src/controllers/DbSvcController.ts";
 import { DqdController } from "./src/controllers/DqdController.ts";
-import { initialiseDataSource } from "./src/db/data-migration.ts";
-import { DataTransformationController } from "./src/controllers/DataTransformationController.ts";
-import { PrefectController } from "./src/controllers/PrefectController.ts";
-import { AnalysisController } from "./src/controllers/AnalysisController.ts";
-import { CachedbController } from "./src/controllers/CachedbController.ts";
-import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
 import { PerseusController } from "./src/controllers/PerseusController.ts";
+import { PhenotypeController } from "./src/controllers/PhenotypeController.ts";
+import { PrefectController } from "./src/controllers/PrefectController.ts";
+import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
+import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
+import { initialiseDataSource } from "./src/db/data-migration.ts";
 import extractUsernameFromJwt from "./src/middlewares/extractUsernameFromJwt.ts";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/jobplugins/analysisflow", new AnalysisController().router);
 app.use("/jobplugins/cachedb", new CachedbController().router);
 app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
 app.use("/jobplugins/perseus", new PerseusController().router);
+app.use("/jobplugins/phenotype", new PhenotypeController().router);
 
 let ssl = JSON.parse(env.PG__SSL.toLowerCase());
 if (env.PG__CA_ROOT_CERT) {

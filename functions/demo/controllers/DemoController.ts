@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { DemoService } from "../services/DemoService.ts";
-import { IStepInfo, IProgress, IStepTask } from "../type.d.ts";
+import { IProgress, IStepInfo, IStepTask } from "../type.d.ts";
 
 export class DemoController {
   public router = express.Router();
@@ -15,6 +15,7 @@ export class DemoController {
     this.router.post("/setup", this.executeSetup.bind(this));
     this.router.post("/setup-db", this.executeSetupDb.bind(this));
     this.router.post("/setup-dataset", this.executeSetupDataset.bind(this));
+    this.router.post("/setup-phenotype", this.executeSetupPhenotype.bind(this));
     this.router.get("/progress/:id", this.getProgress.bind(this));
   }
 
@@ -92,6 +93,24 @@ export class DemoController {
       steps,
       undefined,
       "Setup completed successfully. Go to Job Runs to view the result."
+    );
+  }
+
+  private async executeSetupPhenotype(req: Request, res: Response) {
+    const steps: IStepTask[] = [
+      {
+        code: "phenotype",
+        message: "Running Phenotype flow...",
+        task: this.service.runPhenotype.bind(this.service),
+      },
+    ];
+
+    return await this.executeSteps(
+      req,
+      res,
+      steps,
+      "Phenotype flow initiated.",
+      "Phenotype flow triggered successfully."
     );
   }
 
