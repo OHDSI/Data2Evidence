@@ -115,7 +115,7 @@ jobs:
           npm run init
 
       - name: e2e tests
-        continue-on-error: true
+        # continue-on-error: true
         run: |
           cd ./tests/e2e
           npm test
