@@ -12,6 +12,7 @@ const EMPTY_CONFIGS = {
   [ConfigTypes.IMPRINT]: "",
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
   [ConfigTypes.HYBRID_SEARCH]: "{}",
+  [ConfigTypes.DISCLAIMER_DISPLAY]: "0",
 };
 
 export const useConfigsByTypes = (

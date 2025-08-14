@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Delete, Post, Query, Req } from "@danet/core";
+import { HttpException, Controller, Delete, Post, Query, Req } from "@danet/core";
 import { SupabaseStorageClient } from "./supabase.storage.client.ts";
 
 @Controller("system-portal/supabase-storage")
@@ -11,19 +11,19 @@ export class SupabaseStorageController {
     @Req() request: Request
   ) {
     if (!nodeId) {
-      throw new BadRequestException("nodeId query parameter is required");
+      throw new HttpException(400, "nodeId query parameter is required");
     }
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
-      throw new BadRequestException("No file provided");
+      throw new HttpException(400, "No file provided");
     }
 
     // Validate CSV file type
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      throw new BadRequestException("Only CSV files are allowed");
+      throw new HttpException(400, "Only CSV files are allowed");
     }
 
     const uploadedFile = {
@@ -41,11 +41,11 @@ export class SupabaseStorageController {
     @Query("fileName") fileName: string
   ) {
     if (!nodeId) {
-      throw new BadRequestException("nodeId query parameter is required");
+      throw new HttpException(400, "nodeId query parameter is required");
     }
 
     if (!fileName) {
-      throw new BadRequestException("fileName query parameter is required");
+      throw new HttpException(400, "fileName query parameter is required");
     }
 
     return await this.storageClient.delete(nodeId, fileName, "data-transformation", "data-transformation");

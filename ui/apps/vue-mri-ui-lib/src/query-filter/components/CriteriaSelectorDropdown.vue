@@ -88,7 +88,7 @@ onUnmounted(() => {
       <template #startIcon>
         <AddIcon />
       </template>
-      Add event
+      Add filter
     </ButtonMaterial>
 
     <div v-if="isOpen" class="criteria-selector-dropdown__menu" role="menu">
