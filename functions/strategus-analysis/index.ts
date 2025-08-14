@@ -27,7 +27,7 @@ export class App {
       console.log("strategus datasource initialisation failed with: ", err);
       Deno.exit(0);
     }
-  };
+  }
 }
 
 let app = new App();
