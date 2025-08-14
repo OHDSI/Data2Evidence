@@ -1,10 +1,8 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  HTTP_STATUS,
   Head,
   HttpException,
   Middleware,
@@ -13,7 +11,6 @@ import {
   Put,
   Query,
 } from "@danet/core";
-// import { transformPipe } from '../common/pipe/TransformPipe.ts'
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { IDataset } from "../types.d.ts";
 import { DATASET_SYSTEM_ADMIN_ROLE, DATASET_RESEARCHER_ROLE } from '../common/const.ts'
@@ -44,7 +41,7 @@ export class DatasetController {
     const id = queryParams.datasetId
     if (!id) {
       console.error(`No datasetId provided ${JSON.stringify(queryParams)}`);
-      throw new BadRequestException("datasetId is required");
+      throw new HttpException(400, "datasetId is required");
     }
     return await this.datasetQueryService.getDataset(id);
   }

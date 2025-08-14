@@ -13,7 +13,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     wget \
-    # openjdk-17-jdk \
+    default-jdk \
     libpq5 \
     libpq-dev \
     gcc \
