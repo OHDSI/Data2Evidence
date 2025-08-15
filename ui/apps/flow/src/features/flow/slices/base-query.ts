@@ -6,22 +6,22 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { pluginMetadata } from "~/FlowApp";
 
-export const baseQueryFn: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, WebApi, extraOptions) => {
-  const rawBaseQuery = fetchBaseQuery({
-    baseUrl: "jobplugins/",
-    prepareHeaders: async (headers) => {
-      if (!pluginMetadata) return headers;
+export const createBaseQueryFn =
+  (
+    baseUrl: string
+  ): BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =>
+  async (args, WebApi, extraOptions) => {
+    const rawBaseQuery = fetchBaseQuery({
+      baseUrl,
+      prepareHeaders: async (headers) => {
+        if (!pluginMetadata) return headers;
 
-      const token = await pluginMetadata.getToken();
-      if (token === null) return headers;
+        const token = await pluginMetadata.getToken();
+        if (token === null) return headers;
 
-      headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  });
-  return rawBaseQuery(args, WebApi, extraOptions);
-};
+        headers.set("Authorization", `Bearer ${token}`);
+        return headers;
+      },
+    });
+    return rawBaseQuery(args, WebApi, extraOptions);
+  };
