@@ -1,4 +1,4 @@
-import d from "../../../../../functions/package.json" assert { type: "json" };
+import d from "../../../../../functions/package.json" with { type: "json" };
 import { global as _global } from "../env.ts";
 
 const envGlobal = JSON.parse(JSON.stringify(_global));

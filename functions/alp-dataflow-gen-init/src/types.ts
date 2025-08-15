@@ -62,7 +62,7 @@ export enum AuthMode {
   JWT = "JWT",
 }
 
-interface TransformedDBCredentials {
+export interface TransformedDBCredentials {
   readUser: string | null;
   readPassword?: string | null;
   adminUser: string | null;

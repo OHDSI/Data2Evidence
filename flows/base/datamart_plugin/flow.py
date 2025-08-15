@@ -9,7 +9,6 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 
 from _shared_flow_utils.create_dataset_tasks import create_schema_task, create_and_assign_roles_task
 from _shared_flow_utils.update_dataset_metadata import update_entity_value, update_entity_distinct_count
@@ -141,9 +140,6 @@ def update_dataset_metadata(options: CreateDatamartOptions):
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
     else:
-        
-        # Store token in cache
-        get_auth_token_from_input()
 
         logger.info(f"Successfully fetched {len(dataset_list)} datasets from portal")
         for dataset in dataset_list:
@@ -240,13 +236,14 @@ def get_and_update_attributes(use_cache_db: bool, dataset: dict):
                 entity_name="version",
                 logger=logger
                 )
-
+            
+            schema_version = None
             try:
                 # update schema version, latest_schema_version or error msg
                 schema_version = get_schema_version(dbdao, schema_name, cdm_version, logger)
-                latest_schema_version = schema_version
+
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", schema_version)
-                portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_schema_version)
+                portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", schema_version)
             except Exception as e:
                 logger.error(f"Failed to update attribute 'schema_version', 'latest_schema_version' for dataset '{dataset_id}' with value '{schema_version}': {e}")
             else:

@@ -29,7 +29,9 @@ export class PortalServerAPI {
     releaseId: string
   ): Promise<{ releaseDate: string }> {
     try {
-      const url = `${this.baseURL}/dataset/release/${releaseId}`;
+      const url = `${this.baseURL}/dataset/release/${encodeURIComponent(
+        releaseId
+      )}`;
       const options = this.createOptions("GET");
       const result = await fetch(url, options);
       if (!result.ok) {

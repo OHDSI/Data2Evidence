@@ -1,5 +1,6 @@
 /* eslint-disable @silverhand/fp/no-mutation */
 import { redirectUrl } from '../consts';
+import { syncUserGroups } from '../api/user-mgmt';
 
 const render = async (container, logtoClient) => {
   const isAuthenticated = await logtoClient.isAuthenticated();
@@ -8,6 +9,15 @@ const render = async (container, logtoClient) => {
 
   if (isAuthenticated) {
     const bearerToken = await logtoClient.getIdToken();
+    
+    try {
+      const accessToken = await logtoClient.getAccessToken();
+      const idTokenClaims = await logtoClient.getIdTokenClaims();
+      await syncUserGroups(accessToken, idTokenClaims?.sub)
+    } catch (error) {
+      console.error('Failed to sync user group:', error);
+    }
+
     try {
       await logtoClient.jwtVerifier.verifyIdToken(bearerToken)
       const expires = new Date(Date.now() + 3600000).toUTCString();

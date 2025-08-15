@@ -1,4 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
+import pako from "pako";
+import { Buffer } from "buffer";
 import {
   CreateFromTemplateDto,
   DataflowDto,
@@ -19,11 +21,16 @@ import {
   TemplateDto,
   TestDataflowDto,
 } from "../types";
-import { baseQueryFn } from "./base-query";
+import { createBaseQueryFn } from "./base-query";
+import {
+  ScanDataDBConnectionForm,
+  ScannedSchemaState,
+} from "~/features/flow/types/white-rabbit";
+import { csvToJSON } from "~/utils";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
-  baseQuery: baseQueryFn,
+  baseQuery: createBaseQueryFn("jobplugins/"),
   tagTypes: [
     "Dataflow",
     "DataflowRevision",
@@ -232,6 +239,92 @@ export const dataflowApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
     }),
+    createDBScanReport: builder.mutation<
+      any,
+      { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
+    >({
+      query: ({ postgresqlForm, tablesToScan }) => {
+        const iniSettings = {
+          ...postgresqlForm,
+          server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
+          tables_to_scan: tablesToScan.join(","),
+          database: postgresqlForm.schema,
+        };
+        const data = {
+          options: {
+            data: iniSettings,
+            run_type: "SCAN_REPORT_DB",
+          },
+        };
+        return {
+          url: "white-rabbit/flow-run",
+          method: "POST",
+          body: data,
+        };
+      },
+    }),
+    createScanReport: builder.mutation<
+      any,
+      { files: File[]; delimiter: string }
+    >({
+      async queryFn(
+        { files, delimiter = "," },
+        _queryApi,
+        _extraOptions,
+        fetchWithBQ
+      ) {
+        const fileContents = await Promise.all(
+          files.map(async (file) => ({
+            fileName: file.name,
+            fileContent: await csvToJSON(file),
+          }))
+        );
+
+        const jsonString = JSON.stringify({
+          files: fileContents,
+          settings: {
+            delimiter,
+          },
+        });
+
+        const compressed = pako.gzip(jsonString);
+        const base64Compressed = Buffer.from(compressed).toString("base64");
+
+        const data = {
+          options: {
+            data: base64Compressed,
+            run_type: "SCAN_REPORT_FILES",
+          },
+        };
+
+        const response = await fetchWithBQ({
+          url: "white-rabbit/flow-run",
+          method: "POST",
+          body: data,
+        });
+
+        if (response.error) {
+          return { error: response.error };
+        }
+        return { data: response.data };
+      },
+    }),
+    getFlowRunStatus: builder.query<
+      {
+        state_name: string;
+        id: string;
+      },
+      string
+    >({
+      query: (flowRunId) => {
+        return `white-rabbit/results/${flowRunId}`;
+      },
+    }),
+    getSourceSchemaByFlowRunId: builder.query<any, string>({
+      query: (flowRunId) => {
+        return `perseus/artifacts/${flowRunId}`;
+      },
+    }),
   }),
 });
 
@@ -254,4 +347,8 @@ export const {
   useOverwriteCanvasFromRemoteMutation,
   useGetTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
+  useCreateDBScanReportMutation,
+  useCreateScanReportMutation,
+  useLazyGetFlowRunStatusQuery,
+  useLazyGetSourceSchemaByFlowRunIdQuery,
 } = dataflowApiSlice;

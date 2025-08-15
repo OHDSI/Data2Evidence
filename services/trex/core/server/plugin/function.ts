@@ -17,7 +17,7 @@ const getFullyQualifiedUserFunctionName = (function_name: string) => {
 
 async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: string, dir: string) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fnEnv)
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv])
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv], {TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
@@ -25,7 +25,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
-		decoratorType: "typescript_with_metadata" 
+		decoratorType: "typescript_with_metadata" ,
+		allowHostFsAccess: true,
 	}
 	if(eszip) {
 		logger.log(`ESZIP ${dir}${eszip} %%% ${options["importMapPath"]}`)
@@ -46,7 +47,7 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
     
 async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fncfg.env);
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY})
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv = Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fncfg.env] || false; 
 
@@ -55,7 +56,8 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 1000000, cpuTimeHardLimitMs: 2000000,
-		decoratorType: "typescript_with_metadata" 
+		decoratorType: "typescript_with_metadata",
+		allowHostFsAccess: true,
 	}
 	if(fncfg.eszip) {
 		logger.log(`ESZIP ${dir}${fncfg.eszip} %%% ${options["importMapPath"]}`)

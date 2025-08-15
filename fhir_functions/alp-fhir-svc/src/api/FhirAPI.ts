@@ -65,7 +65,7 @@ export class FhirAPI {
     resourceDetails: any,
     fhirHeaders?: Headers
   ) {
-    const resourceUrl = `${this.baseUrl}/${resourcePath}`;
+    const resourceUrl = `${this.baseUrl}/${encodeURIComponent(resourcePath)}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
 
     try {

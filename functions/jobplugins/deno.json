@@ -1,0 +1,45 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "pg": "npm:pg@^8.4.2",
+    "uuid": "npm:uuid@^10.0.0",
+    "jsonwebtoken": "npm:jsonwebtoken@^9.0.2",
+    "axios": "npm:axios@^0.21.2",
+    "dotenv": "npm:dotenv@^16.3.1",
+    "dayjs": "npm:dayjs@^1.11.9",
+    "typeorm": "npm:typeorm@^0.3.20",
+    "buffer": "node:buffer",
+    "UserMgmtAPI": "../_shared/alp-base-utils/src/api/UserMgmtAPI.ts",
+    "../_shared/alp-base-utils/src/api/request-util": "../_shared/alp-base-utils/src/api/request-util.ts",
+    "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
+    "fs": "node:fs",
+    "path": "node:path",
+    "multer": "npm:multer@^1.4.5-lts.1",
+    "winston": "npm:winston",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "https": "node:https",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "process": "node:process",
+    "assert": "node:assert"
+  }
+}

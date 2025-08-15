@@ -61,8 +61,6 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
-          - PKGPATH: ./plugins/chat_functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/chat
 
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +73,10 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
+      - name: deno install
+        run: |
+          npm install -g deno@2.1.13
+          node ./install-deno-deps.js ${{ matrix.PKGPATH }}
       - name: Prepare
         working-directory: ${{ matrix.PKGPATH }}
         run: |
@@ -96,7 +98,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: npm build
         working-directory: ${{ matrix.DESTPATH }}
-        run: npm run build
+        run: |
+          export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
+          echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
+          npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'

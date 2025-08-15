@@ -45,9 +45,13 @@ export class AnalyticsSvcAPI {
     try {
       console.log(`vocabSchema ${vocabSchema} datasetId ${datasetId}`);
       const options = await this.createOptions("GET");
-      const url = `${
-        this.baseURL
-      }/data-characterization/${databaseCode}/${vocabSchema}/${resultsSchema.toLowerCase()}/${sourceKey}?datasetId=${datasetId}`;
+      const url = `${this.baseURL}/data-characterization/${encodeURIComponent(
+        databaseCode
+      )}/${encodeURIComponent(vocabSchema)}/${encodeURIComponent(
+        resultsSchema.toLowerCase()
+      )}/${encodeURIComponent(sourceKey)}?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
       const response = await fetch(url, options);
       if (!response.ok) {
         throw new Error(errorMessage);
@@ -69,9 +73,13 @@ export class AnalyticsSvcAPI {
     datasetId: string
   ) {
     try {
-      const url = `${
-        this.baseURL
-      }/data-characterization/${databaseCode}/${vocabSchema}/${resultsSchema.toLowerCase()}/${sourceKey}/${conceptId}?datasetId=${datasetId}`;
+      const url = `${this.baseURL}/data-characterization/${encodeURIComponent(
+        databaseCode
+      )}/${encodeURIComponent(vocabSchema)}/${encodeURIComponent(
+        resultsSchema.toLowerCase()
+      )}/${encodeURIComponent(sourceKey)}/${encodeURIComponent(
+        conceptId
+      )}?datasetId=${encodeURIComponent(datasetId)}`;
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
       const result = await fetch(url, options);

@@ -18,6 +18,7 @@ sap.ui.define([
         "@PATIENT",
         "@TEXT"
     ];
+    var datasetIdPath = "/settings/datasetId/value";
 
     var SettingsController = Controller.extend("legacy.config.global.ui.views.GlobalSettings");
     SettingsController.developerMode = false;
@@ -319,9 +320,10 @@ sap.ui.define([
         var that = this;
         var dbObject = oEvent.getSource().getValue();
         var path = oEvent.oSource.mBindingInfos.value.binding.sPath;
+        var datasetId = this.getView().getModel(ConfigUtils.models.CONFIG_EDITOR).getProperty(datasetIdPath);
         var key = path.match(/@[^.^\s]+/g);
         if (key) {
-            BackendLinker.getColumns(dbObject, function (err, result) {
+            BackendLinker.getColumns(dbObject, datasetId, function (err, result) {
                 that.getView().getModel("tableColumns").setProperty("/" + key, result);
             });
         }
@@ -331,8 +333,9 @@ sap.ui.define([
     SettingsController.prototype.getAllColumns = function (pholdertableMap) {
         var that = this;
         that.getView().setModel(new sap.ui.model.json.JSONModel({}), "tableColumns");
+        var datasetId = this.getView().getModel(ConfigUtils.models.CONFIG_EDITOR).getProperty(datasetIdPath);
         pholderKeys.forEach(function (key) {
-            BackendLinker.getColumns(pholdertableMap[key], function (err, result) {
+            BackendLinker.getColumns(pholdertableMap[key], datasetId, function (err, result) {
                 that.getView().getModel("tableColumns").setProperty("/" + key, result);
             });
         });

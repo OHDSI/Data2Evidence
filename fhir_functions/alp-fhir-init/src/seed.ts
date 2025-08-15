@@ -12,6 +12,12 @@ const queryPostgres = async (
 export const seed = async () => {
   const FHIR_CLIENT_ID = env.FHIR__CLIENT_ID;
   const FHIR_CLIENT_SECRET = env.FHIR__CLIENT_SECRET;
+  const fhirCustomSchema = env.FHIR_CUSTOM_SCHEMA;
+
+  // Sanitize schema name to prevent SQL injection
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fhirCustomSchema)) {
+    throw new Error("Invalid schema name");
+  }
 
   if (!FHIR_CLIENT_ID || !FHIR_CLIENT_SECRET) {
     throw new Error("No client credentials are set for Fhir");
@@ -31,7 +37,7 @@ export const seed = async () => {
 
   const projectIdResult = await queryPostgres(
     client,
-    `SELECT "projectId", "content" FROM public."Project" WHERE name = 'Super Admin'`,
+    `SELECT "projectId", "content" FROM ${fhirCustomSchema}."Project" WHERE name = 'Super Admin'`,
     []
   );
 
@@ -40,7 +46,7 @@ export const seed = async () => {
 
   const practitionerResult = await queryPostgres(
     client,
-    `SELECT id FROM public."Practitioner" WHERE "projectId" = $1`,
+    `SELECT id FROM ${fhirCustomSchema}."Practitioner" WHERE "projectId" = $1`,
     [projectId]
   );
 
@@ -72,15 +78,15 @@ export const seed = async () => {
 
   await queryPostgres(
     client,
-    `INSERT INTO public."Project_History" ("versionId", id, "content", "lastUpdated")
-    values('2c8b0331-863a-432e-a5d1-ef0619acc3d2', $1, $2, $3) ON CONFLICT("versionId") \
+    `INSERT INTO ${fhirCustomSchema}."Project_History" ("versionId", id, "content", "lastUpdated")
+    values('2c8b0331-863a-432e-a5d1-ef0619acc3d2', $1, $2, $3) ON CONFLICT("versionId")
     DO NOTHING;`,
     [projectId, jsonParsedProjectContent, "2024-06-13 14:40:48.738 +0800"]
   );
 
   await queryPostgres(
     client,
-    `UPDATE public."Project" SET "content" = $1 WHERE name = 'Super Admin'`,
+    `UPDATE ${fhirCustomSchema}."Project" SET "content" = $1 WHERE name = 'Super Admin'`,
     [jsonParsedProjectContent]
   );
 
@@ -89,7 +95,7 @@ export const seed = async () => {
 
   await queryPostgres(
     client,
-    `INSERT INTO public."ClientApplication" (id, content, "lastUpdated", compartments, name, "projectId") \
+    `INSERT INTO ${fhirCustomSchema}."ClientApplication" (id, content, "lastUpdated", compartments, name, "projectId") \
     VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT(id) \
     DO NOTHING;`,
     [
@@ -106,7 +112,7 @@ export const seed = async () => {
 
   await queryPostgres(
     client,
-    `INSERT INTO public."ClientApplication_History" ("versionId", id, content, "lastUpdated") \
+    `INSERT INTO ${fhirCustomSchema}."ClientApplication_History" ("versionId", id, content, "lastUpdated") \
     VALUES ($1, $2, $3, $4) ON CONFLICT("versionId") \
     DO NOTHING;`,
     [
@@ -121,7 +127,7 @@ export const seed = async () => {
 
   await queryPostgres(
     client,
-    `INSERT INTO public."ProjectMembership" (id, content, "lastUpdated", compartments, project, "user", profile, "profileType", "projectId") \
+    `INSERT INTO ${fhirCustomSchema}."ProjectMembership" (id, content, "lastUpdated", compartments, project, "user", profile, "profileType", "projectId") \
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(id) \
     DO NOTHING;
     `,
@@ -142,7 +148,7 @@ export const seed = async () => {
 
   await queryPostgres(
     client,
-    `INSERT INTO public."ProjectMembership_History" ("versionId", id, content,"lastUpdated") \ 
+    `INSERT INTO ${fhirCustomSchema}."ProjectMembership_History" ("versionId", id, content,"lastUpdated") \ 
     VALUES ($1, $2, $3, $4) ON CONFLICT("versionId") \
     DO NOTHING;`,
     [

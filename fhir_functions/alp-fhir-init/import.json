@@ -1,8 +1,0 @@
-{
-  "imports":
-  {
-    "pg": "npm:pg@^8.4.2",
-    "./src/seed": "./src/seed.ts",
-    "./src/env": "./src/env.ts"
-  }
-}

@@ -19,9 +19,10 @@ class IbisDao(SqlAlchemyDao):
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
                  connect_to_duckdb = False, 
+                 is_study_results_db: bool = False,
                  metadata = None):
 
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
+        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb, is_study_results_db)
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:

@@ -1,8 +1,7 @@
-import { env } from "./env";
-import { BlockType, DBCredentials, transformDBCredentials } from "./types";
+import { env, getStudyResultsDbCredentials } from "./env";
+import { BlockType, DBCredentials, PrefectVariable, PrefectSecret, transformDBCredentials } from "./types";
 import { PrefectAPI } from "./PrefectAPI";
 import { customDockerWorkpool } from "./customWorkpool";
-import { PrefectVariable, PrefectSecret } from "./types";
 
 export async function seed(): Promise<void> {
   let prefectApi = new PrefectAPI();
@@ -47,6 +46,17 @@ export async function seed(): Promise<void> {
   const dbCredBlockId = await prefectApi.createBlockDocument(
     dbCredBlockName,
     dbCredentialsOptions,
+    BlockType.SECRET
+  );
+
+  const strategusDbCredBlockName = "study-results-database-credentials";
+  const strategusDbCredentials = getStudyResultsDbCredentials();
+  const strategusDbCredentialsOptions: PrefectSecret = {
+    value: strategusDbCredentials
+  };
+  const strategusDbCredBlockId = await prefectApi.createBlockDocument(
+    strategusDbCredBlockName,
+    strategusDbCredentialsOptions,
     BlockType.SECRET
   );
 

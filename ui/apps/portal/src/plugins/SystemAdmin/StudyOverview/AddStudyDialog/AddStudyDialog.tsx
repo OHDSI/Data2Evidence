@@ -164,6 +164,9 @@ interface Datamodel {
   flowId: string;
 }
 
+const FHIR_DB_CODE = "alp_fhir"; // dummy value set for the database in FHIR dataset creation
+const FHIR_SCHEMA_NAME = "fhir"; // hardcoded schema name for FHIR dataset creation
+
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
   NoCDM: "no_cdm",
@@ -237,7 +240,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const displayDatabases = useMemo(
     () =>
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(
         formData.schemaOption
       ),
     [formData.schemaOption]
@@ -274,8 +277,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const displaySchemaNameInput = useMemo(
     () =>
       formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM ||
-      formData.schemaOption === SchemaTypes.FHIR,
+      formData.schemaOption === SchemaTypes.ExistingCDM,
     [formData.schemaOption]
   );
 
@@ -398,7 +400,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, tokenStudyCode: { valid: true } };
     }
 
-    if (![SchemaTypes.NoCDM].includes(formData.schemaOption) && !databaseCode) {
+    if (![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption) && !databaseCode) {
       formError = { ...formError, databaseCode: { required: true } };
     }
 
@@ -410,7 +412,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
-    if ([SchemaTypes.ExistingCDM, SchemaTypes.FHIR].includes(schemaOption) && cdmSchemaValue == "") {
+    if ([SchemaTypes.ExistingCDM].includes(schemaOption) && cdmSchemaValue == "") {
       formError = { ...formError, cdmSchemaValue: { required: true } };
     }
 
@@ -630,10 +632,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               onChange={(event: SelectChangeEvent<string>) =>
                 handleFormDataChange({
                   schemaOption: event.target.value,
-                  cdmSchemaValue: "",
+                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
                   isSameCdmSchemaForVocab: false,
                   vocabSchemaValue: "",
-                  databaseCode: "",
+                  databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: "",
                 })
               }

@@ -32,7 +32,7 @@ export class DataCharacterizationEndpoint {
     ) => {
         const SQL_BASE_PATH = "../../db/sql/data-characterization/";
         const sqlStatement = this.getSqlStatementFromFile(
-            normalize(join(__dirname, SQL_BASE_PATH, sqlFilePath)),
+            normalize(join(__dirname, SQL_BASE_PATH, sqlFilePath).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH").replace(/\/[^\/]*\/?$/, ''))),
             dcReplacementConfig
         );
         return new Promise(async (resolve, reject) => {

@@ -37,6 +37,10 @@ export const getProperties = (): any => {
         "POSTGRES_PUBLICATION_CONFIG",
         true
       ),
+      postgres_alter_extension_config: fetchSecretsAsPerEnvironment(
+        "POSTGRES_ALTER_EXTENSION_CONFIG",
+        true
+      ),
       config_db_name: fetchSecretsAsPerEnvironment("POSTGRES_CONFIG_DB_NAME"),
     };
   }

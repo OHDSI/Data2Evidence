@@ -1,20 +1,20 @@
+import { ThemeProvider } from "@mui/material";
+import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import React, { FC } from "react";
 import { Provider } from "react-redux";
 import { ReactFlowProvider } from "reactflow";
-import { ThemeProvider } from "@mui/material";
-import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
-import { store } from "./store";
-import { theme } from "./theme/theme";
+import "reactflow/dist/style.css";
 import { FlowLayout } from "./features/flow/containers/FlowLayout";
 import "./monaco";
+import { store } from "./store";
 import "./theme/main.scss";
-import "reactflow/dist/style.css";
+import { theme } from "./theme/theme";
 
-export interface FlowAppProps extends PageProps<SystemAdminPageMetadata<void>> {
+export interface FlowAppProps extends PageProps<ResearcherStudyMetadata> {
   isStandalone: boolean;
 }
 
-export let pluginMetadata: SystemAdminPageMetadata<void> | undefined;
+export let pluginMetadata: ResearcherStudyMetadata | undefined;
 
 export const FlowApp: FC<FlowAppProps> = ({
   metadata,

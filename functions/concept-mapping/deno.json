@@ -1,0 +1,50 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "express": "npm:express@^4.19.2",
+    "winston": "npm:winston",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "zod": "npm:zod@^3.23.8",
+    "pg": "npm:pg@^8.4.2",
+    "pg-promise": "npm:pg-promise@^10.10.1",
+    "axios": "npm:axios@^1.7.7",
+    "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
+    "./src/env": "./src/env.ts",
+    "./src/types": "./src/types.ts",
+    "./src/constants": "./src/constants.ts",
+    "./src/api/PortalAPI": "./src/api/PortalAPI.ts",
+    "./src/concept-mapping/dao/dao": "./src/concept-mapping/dao/dao.ts",
+    "./src/concept-mapping/middleware": "./src/concept-mapping/middleware.ts",
+    "./src/concept-mapping/routes": "./src/concept-mapping/routes.ts",
+    "./src/concept-mapping/services": "./src/concept-mapping/services.ts",
+    "../_shared/alp-base-utils/src/utils": "../_shared/alp-base-utils/src/utils.ts",
+    "../_shared/alp-base-utils/src/types": "../_shared/alp-base-utils/src/types.ts",
+    "../_shared/alp-base-utils/src/Logger": "../_shared/alp-base-utils/src/Logger.ts",
+    "path": "node:path",
+    "https": "node:https",
+    "pako": "npm:pako@1.0.11",
+    "bcryptjs": "npm:bcryptjs@^2.4.3",
+    "base64": "jsr:@std/encoding/base64",
+    "async": "npm:async",
+    "http": "node:http",
+    "fs": "node:fs",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "buffer": "node:buffer",
+    "process": "node:process",
+    "assert": "node:assert"
+  }
+}

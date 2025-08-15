@@ -236,16 +236,24 @@ class PythonNode(Node):
         self.source_code = _node["python_code"] + '\noutput = exec(myinput)'
         self.test_source_code = _node["python_code"]+'\noutput = test_exec(myinput)'
         
-    def test(self, _input: dict[str, Result], task_run_context):
-        params = {"myinput": _input, "output": {}}
-        testcode = compile(self.test_source_code, '<string>', 'exec')
-        e = exec(testcode, params)
-        return params["output"]
+    def test(self, _input: dict[str, Result], 
+             shared_variables: dict[str, str], 
+             importlibs: list[str], 
+             task_run_context):
+        return self.task(_input, shared_variables, importlibs, task_run_context)
 
-    def task(self, _input: dict[str, Result], task_run_context):
+    def task(self, _input: dict[str, Result], 
+             shared_variables: dict[str, str], 
+             importlibs: list[str], 
+             task_run_context):
         params = {"myinput": _input, "output": {}}
         try:
+            if shared_variables:
+                params.update(shared_variables)
+            if importlibs:
+                exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')
+
             data = exec(code, params)
             return Result(False,  params["output"], self, task_run_context)
         except Exception as e:
@@ -271,8 +279,7 @@ class RNode(Node):
 
     def task(self, _input: dict[str, Result], task_run_context):
         try:
-            
-            with robjects.robjects.conversion.localconverter(robjects.default_converter):
+            with robjects.conversion.localconverter(robjects.default_converter):
                 r_inst = robjects.r(self.r_code)
                 r_exec = robjects.globalenv['exec']
                 global_params = {"r_exec": r_exec, "convert_R_to_py": convert_R_to_py,

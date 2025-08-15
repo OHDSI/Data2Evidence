@@ -1,8 +1,8 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
+import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import Divider from "@mui/material/Divider";
-import { FormControl, InputLabel, Box, Button, Checkbox, Dialog, TextField } from "@portal/components";
+import { Box, Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType, DatasetAttributeConfig } from "../../../../../types";
@@ -78,8 +78,8 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
     } catch (err: any) {
       setFeedback({
         type: "error",
-        message: err.data.error,
-        description: err.data.message,
+        message: err.data?.error || err.message || "An error occurred",
+        description: err.data?.message || "",
         autoClose: 6000,
       });
     } finally {

@@ -20,6 +20,7 @@ import { AssignmentProxy } from "./AssignmentProxy";
 import { Settings } from "./qe/settings/Settings";
 import type { ICDWRequest, IDBCredentialsType } from "./types";
 import { getAnalyticsConnection } from "./utils/utils";
+import { getDatasetIdFromConfig } from "./qe/settings/Utils";
 
 const log = Logger.CreateLogger("cdw-log");
 
@@ -39,12 +40,12 @@ export const main = () => {
   //Determine if this application is being run for Development / testing / Production
   let isTestEnvironment = false;
 
-  let ssl: any = JSON.parse(env.PG__SSL.toLowerCase())
+  let ssl: any = JSON.parse(env.PG__SSL.toLowerCase());
   if (env.PG__CA_ROOT_CERT) {
     ssl = {
       rejectUnauthorized: true,
-      ca: env.PG__CA_ROOT_CERT
-    }
+      ca: env.PG__CA_ROOT_CERT,
+    };
   }
 
   const configCredentials = {
@@ -234,7 +235,7 @@ const initRoutes = (
     (req: ICDWRequest, res) => {
       const { configConnection } = req.dbConnections;
       const user = getUser(req);
-      const token = req.headers.authorization
+      const token = req.headers.authorization;
       const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
       try {
         const settings = new Settings();
@@ -281,9 +282,14 @@ const initRoutes = (
       const { configConnection } = req.dbConnections;
       const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
       const user = getUser(req);
-      const token = req.headers.authorization
+      const token = req.headers.authorization;
+      const datasetId = getDatasetIdFromConfig(req.body.config);
       const settings = new Settings();
-      let analyticsConnection = await getAnalyticsConnection(user, token);
+      let analyticsConnection = await getAnalyticsConnection(
+        user,
+        token,
+        datasetId
+      );
       new CDWServicesFacade(
         analyticsConnection,
         new FfhQeConfig(

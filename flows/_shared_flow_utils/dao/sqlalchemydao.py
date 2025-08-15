@@ -24,9 +24,10 @@ class SqlAlchemyDao(DaoBase):
     def __init__(self, use_cache_db: bool, 
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb=False):
+                 connect_to_duckdb=False,
+                 is_study_results_db: bool = False):
 
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb)
+        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb, is_study_results_db)
 
     # --- Property methods ---
 

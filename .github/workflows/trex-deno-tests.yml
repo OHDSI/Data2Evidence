@@ -29,7 +29,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.43.1
+          deno-version: v2.1.13
 
       - name: Run Authorization Tests
         working-directory: services/trex
@@ -55,7 +55,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.43.1
+          deno-version: v2.1.13
 
       - name: Run Load UI Plugin Tests
         working-directory: services/trex

@@ -30,6 +30,7 @@
         @closed="onClosed"
         @cleared="onCleared"
         class="dp-hidden-input"
+        :dark="false"
       />
     </div>
   </div>
@@ -403,30 +404,10 @@ defineExpose({
     margin-top: 0.25rem;
   }
 }
+</style>
 
-// Global styles for @vuepic/vue-datepicker customization
-:deep(.dp__theme_light) {
-  --dp-background-color: #ffffff;
-  --dp-text-color: #212529;
-  --dp-hover-color: #f8f9fa;
-  --dp-hover-text-color: #212529;
-  --dp-hover-icon-color: #6c757d;
-  --dp-primary-color: #007bff;
-  --dp-primary-text-color: #ffffff;
-  --dp-secondary-color: #6c757d;
-  --dp-border-color: #dee2e6;
-  --dp-menu-border-color: #dee2e6;
-  --dp-border-color-hover: #007bff;
-  --dp-disabled-color: #e9ecef;
-  --dp-scroll-bar-background: #f8f9fa;
-  --dp-scroll-bar-color: #6c757d;
-  --dp-success-color: #28a745;
-  --dp-success-color-disabled: #d4edda;
-  --dp-icon-color: #6c757d;
-  --dp-danger-color: #dc3545;
-  --dp-highlight-color: rgba(0, 123, 255, 0.1);
-}
-
+<!-- Global styles for @vuepic/vue-datepicker customization. In unscoped scss for it to apply-->
+<style lang="scss">
 // Hide the VueDatePicker input but keep the menu functionality
 .dp-hidden-input {
   position: absolute;
@@ -434,112 +415,22 @@ defineExpose({
   pointer-events: none;
   width: 1px;
   height: 1px;
+}
 
-  :deep(.dp__input_wrapper) {
-    display: none;
+.dp__theme_light {
+  --dp-text-color: #000080;
+  --dp-hover-color: #d2d2d2;
+  .dp__today {
+    border: 2.5px solid #ff5e59;
+    border-radius: 5px;
+    color: #ffffff;
+    background: #000080;
   }
-
-  :deep(.dp__input) {
-    display: none;
-  }
-}
-
-:deep(.dp__menu) {
-  border-radius: 0.375rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--dp-border-color);
-  z-index: 1000;
-  position: absolute;
-}
-
-// Position the menu relative to the input container
-:deep(.app-date-menu) {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
-:deep(.dp-custom-calendar) {
-  .dp__calendar_header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid var(--dp-border-color);
-    padding: 0.5rem;
-  }
-
-  .dp__calendar_row {
-    .dp__calendar_item {
-      &:hover {
-        background-color: var(--dp-hover-color);
-      }
-
-      &.dp__active_date {
-        background-color: var(--dp-primary-color);
-        color: var(--dp-primary-text-color);
-      }
-
-      &.dp__today {
-        border: 1px solid var(--dp-primary-color);
-      }
-    }
-  }
-}
-
-:deep(.dp-custom-time) {
-  border-top: 1px solid var(--dp-border-color);
-  padding: 0.5rem;
-}
-
-:deep(.dp__action_row) {
-  border-top: 1px solid var(--dp-border-color);
-  padding: 0.5rem;
-
-  .dp__action_button {
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    border: 1px solid var(--dp-border-color);
-    background-color: var(--dp-background-color);
-    color: var(--dp-text-color);
-    cursor: pointer;
-
+  .dp__tp_inline_btn_top,
+  .dp__tp_inline_btn_bottom {
     &:hover {
-      background-color: var(--dp-hover-color);
-    }
-
-    &.dp__action_select {
-      background-color: var(--dp-primary-color);
-      color: var(--dp-primary-text-color);
-      border-color: var(--dp-primary-color);
-    }
-  }
-}
-
-// Medical-specific styling
-:deep(.dp__calendar_header_item) {
-  font-weight: 500;
-  color: var(--dp-text-color);
-}
-
-:deep(.dp__instance_calendar) {
-  .dp__calendar_header_separator {
-    display: none;
-  }
-}
-
-// Responsive adjustments for medical tablets
-@media (max-width: 768px) {
-  :deep(.dp__menu) {
-    max-width: 100vw;
-    margin: 0 1rem;
-  }
-
-  .app-date {
-    .date-container {
-      .app-date__trigger {
-        input {
-          font-size: 16px; // Prevent zoom on iOS
-        }
+      .dp__tp_inline_btn_bar {
+        background: #000080;
       }
     }
   }

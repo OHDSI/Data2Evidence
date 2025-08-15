@@ -1,0 +1,39 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "process": "node:process",
+    "crypto": "node:crypto",
+    "lodash": "npm:lodash",
+    "winston": "npm:winston@^3.13.1",
+    "https": "node:https",
+    "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
+    "axios": "npm:axios@^0.21.2",
+    "./src/seed": "./src/seed.ts",
+    "./src/PrefectAPI": "./src/PrefectAPI.ts",
+    "./src/types": "./src/types.ts",
+    "./src/env": "./src/env.ts",
+    "./src/customWorkpool": "./src/customWorkpool.ts",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "fs": "node:fs",
+    "path": "node:path",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "buffer": "node:buffer",
+    "assert": "node:assert"
+  }
+}

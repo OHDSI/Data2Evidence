@@ -5,6 +5,7 @@ import { setActiveDatasetId, setActiveReleaseId } from "./actions/active-dataset
 import { clearToken, setIdToken, setIdTokenClaim } from "./actions/token";
 import { clearUser, setUser } from "./actions/user";
 import { setConversationHistory } from "./actions/conversation-history";
+import { setDisclaimerAccepted, setShouldDisplayDisclaimer, clearDisclaimer } from "./actions/disclaimer";
 
 export enum ACTION_TYPES {
   SET_FEEDBACK = "SET_FEEDBACK",
@@ -20,6 +21,9 @@ export enum ACTION_TYPES {
   SET_POST_LOGIN_REDIRECT_URI = "SET_POST_LOGIN_REDIRECT_URI",
   CLEAR_POST_LOGIN_REDIRECT_URI = "CLEAR_POST_LOGIN_REDIRECT_URI",
   SET_CONVERSATION_HISTORY = "SET_CONVERSATION_HISTORY",
+  SET_DISCLAIMER_ACCEPTED = "SET_DISCLAIMER_ACCEPTED",
+  SET_SHOULD_DISPLAY_DISCLAIMER = "SET_SHOULD_DISPLAY_DISCLAIMER",
+  CLEAR_DISCLAIMER = "CLEAR_DISCLAIMER",
 }
 
 type ActionType = keyof typeof ACTION_TYPES;
@@ -39,6 +43,9 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.SET_POST_LOGIN_REDIRECT_URI, setPostLoginRedirectUri],
   [ACTION_TYPES.CLEAR_POST_LOGIN_REDIRECT_URI, clearPostLoginRedirectUri],
   [ACTION_TYPES.SET_CONVERSATION_HISTORY, setConversationHistory],
+  [ACTION_TYPES.SET_DISCLAIMER_ACCEPTED, setDisclaimerAccepted],
+  [ACTION_TYPES.SET_SHOULD_DISPLAY_DISCLAIMER, setShouldDisplayDisclaimer],
+  [ACTION_TYPES.CLEAR_DISCLAIMER, clearDisclaimer],
 ]);
 
 export interface DispatchType {

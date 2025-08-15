@@ -538,9 +538,11 @@ export class PluginEndpoint {
                             }
                         };
 
+                        //Exception for duckdb
                         if (
                             dataStream.data.constructor.prototype.toString() !==
-                            "[object AsyncGenerator]"
+                                "[object AsyncGenerator]" &&
+                            !(dataStream.data instanceof ReadableStream)
                         ) {
                             dataStream.data.on("end", () => {
                                 log.debug(
@@ -674,71 +676,74 @@ export class PluginEndpoint {
             nql: any;
             noDataReason: string;
         }>(async (resolve, reject) => {
-                try{
-                    const { configId, configVersion } = cohortDefinition.configData;
-                    cohortDefinition[`uniquePatientTempTableName`] =
-                        this.uniquePatientTempTableName;
-                    const querySvcParams = {
-                        queryParams: {
-                            configId,
-                            configVersion,
-                            datasetId,
-                            queryType: "plugin",
-                            ifrRequest: cohortDefinition,
-                            language,
-                            requestQuery,
-                            metadataType,
-                            annotated,
-                            postFilters,
-                            insert,
-                        },
-                    };
-                    const queryResponse: QuerySvcResultType = await generateQuery(
-                        this.request,
-                        querySvcParams
-                    );
-                    const finalQueryObject = queryResponse.queryObject;
-                    const pCountQueryObject = queryResponse.pCountQueryObject;
-                    const nql: QueryObject = new QueryObject(
-                        finalQueryObject.queryString,
-                        finalQueryObject.parameterPlaceholders,
-                        finalQueryObject.sqlReturnOn
-                    );
-                    const pCountNql: QueryObject = new QueryObject(
-                        pCountQueryObject.queryString,
-                        pCountQueryObject.parameterPlaceholders,
-                        pCountQueryObject.sqlReturnOn
-                    );
-                    const fast: any = queryResponse.fast;
-                    this.config = queryResponse.config;
-                    const measures: MRIEndpointResultMeasureType[] =
-                        queryResponse.measures;
-                    const categories: MRIEndpointResultCategoryType[] =
-                        queryResponse.categories;
-                    const cdmConfigMetaData = queryResponse.cdmConfigMetaData;
+            try {
+                const { configId, configVersion } = cohortDefinition.configData;
+                cohortDefinition[`uniquePatientTempTableName`] =
+                    this.uniquePatientTempTableName;
+                const querySvcParams = {
+                    queryParams: {
+                        configId,
+                        configVersion,
+                        datasetId,
+                        queryType: "plugin",
+                        ifrRequest: cohortDefinition,
+                        language,
+                        requestQuery,
+                        metadataType,
+                        annotated,
+                        postFilters,
+                        insert,
+                    },
+                };
+                const queryResponse: QuerySvcResultType = await generateQuery(
+                    this.request,
+                    querySvcParams
+                );
+                const finalQueryObject = queryResponse.queryObject;
+                const pCountQueryObject = queryResponse.pCountQueryObject;
+                const nql: QueryObject = new QueryObject(
+                    finalQueryObject.queryString,
+                    finalQueryObject.parameterPlaceholders,
+                    finalQueryObject.sqlReturnOn
+                );
+                const pCountNql: QueryObject = new QueryObject(
+                    pCountQueryObject.queryString,
+                    pCountQueryObject.parameterPlaceholders,
+                    pCountQueryObject.sqlReturnOn
+                );
+                const fast: any = queryResponse.fast;
+                this.config = queryResponse.config;
+                const measures: MRIEndpointResultMeasureType[] =
+                    queryResponse.measures;
+                const categories: MRIEndpointResultCategoryType[] =
+                    queryResponse.categories;
+                const cdmConfigMetaData = queryResponse.cdmConfigMetaData;
 
-                    this.settingsObj = new Settings().initAdvancedSettings(
-                        this.config.advancedSettings
-                    );
-                    this.pholderTableMap = this.settingsObj.getGuardedPlaceholderMap();
-                    this.cdmConfigMetaData = cdmConfigMetaData;
-                    this.selectedAttributes = queryResponse.selectedAttributes;
-                    this.entityQueryMap = queryResponse.entityQueryMap;
+                this.settingsObj = new Settings().initAdvancedSettings(
+                    this.config.advancedSettings
+                );
+                this.pholderTableMap =
+                    this.settingsObj.getGuardedPlaceholderMap();
+                this.cdmConfigMetaData = cdmConfigMetaData;
+                this.selectedAttributes = queryResponse.selectedAttributes;
+                this.entityQueryMap = queryResponse.entityQueryMap;
 
-                    // Generate Local temp table creation query
-                    this.createTempTableQuery = this.genLocalTempTableCreationQuery(
-                        this.pholderTableMap[this.settingsObj.getFactTablePlaceholder()]
-                    );
-                    cohortDefinition = this._addInteractionId(cohortDefinition);
+                // Generate Local temp table creation query
+                this.createTempTableQuery = this.genLocalTempTableCreationQuery(
+                    this.pholderTableMap[
+                        this.settingsObj.getFactTablePlaceholder()
+                    ]
+                );
+                cohortDefinition = this._addInteractionId(cohortDefinition);
 
-                    resolve({
-                        query: nql,
-                        pCountQuery: pCountNql,
-                        nql: null,
-                        noDataReason: fast.message.noDataReason,
-                    });
-            } catch(err) {
-                reject(err)
+                resolve({
+                    query: nql,
+                    pCountQuery: pCountNql,
+                    nql: null,
+                    noDataReason: fast.message.noDataReason,
+                });
+            } catch (err) {
+                reject(err);
             }
         });
     };

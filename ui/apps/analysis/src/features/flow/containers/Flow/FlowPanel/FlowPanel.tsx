@@ -38,7 +38,7 @@ import {
 import { dispatch, RootState } from "../../../../../store";
 import { selectFlowNodes, selectLastNode } from "../../../selectors";
 import { useGetLatestDataflowByIdQuery } from "../../../slices";
-import { EdgeState, NodeState } from "../../../types";
+import { EdgeState, NodeState, AddNodeTypeDialogState } from "../../../types";
 import {
   getNodeClassName,
   getNodeColors,
@@ -46,14 +46,7 @@ import {
   NODE_TYPES,
   SelectNodeTypesDialog,
 } from "../../Node/NodeTypes";
-import {
-  NodeChoiceMap,
-  NodeTypeChoice,
-  SHARED_RESOURCES_NODE_COLORS,
-  MODULE_SPECIFICATIONS_NODE_COLORS,
-  SHARED_RESOURCES_HANDLE_COLOR,
-  MODULE_SPECIFICATIONS_HANDLE_COLOR,
-} from "../../Node/NodeTypes";
+import { NodeChoiceMap, NodeTypeChoice } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
 
@@ -65,6 +58,11 @@ const fitViewOptions: FitViewOptions = { minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM };
 const snapGrid: [number, number] = [10, 10];
 const flowStyles: CSSProperties = { backgroundColor: "#faf8f8" };
 const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
+
+const getHandleType = (handleId: string) => {
+  const arr = handleId.split("_");
+  return arr[arr.length - 1];
+};
 
 export const FlowPanel: FC<FlowPanelProps> = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
@@ -233,18 +231,17 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       dispatch(setNode(newNode));
 
       let edge: EdgeState | undefined;
+      edge = {
+        id: uuidv4(),
+        source: newNode.id,
+        target: addNodeTypeDialog.selectedNodeId,
+        sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
+        targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
+      };
 
-      if (newNode.id && addNodeTypeDialog.selectedNodeId) {
-        edge = {
-          id: uuidv4(),
-          source: newNode.id,
-          target: addNodeTypeDialog.selectedNodeId,
-          sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.nodeType}`,
-          targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.selectedNodeClassifier}_${addNodeTypeDialog.nodeType}`,
-        };
+      if (edge) {
         dispatch(setEdge(edge));
       }
-
       const { zoom } = getViewport();
       setCenter(
         newNode.position.x + newNode.width / 2,
@@ -277,34 +274,12 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         return acc;
       }, {});
 
-      // HandleId is defined as NODEID_TYPE_CLASSIFIER_COLOR, compare the last portion
-      const getHandleColor = (handleId: string) => {
-        const arr = handleId.split("_");
-        return arr[arr.length - 1];
-      };
-      const sourceHandleType = getHandleColor(connection.sourceHandle);
-      const targetHandleType = getHandleColor(connection.targetHandle);
-
-      const isSameNodeType = sourceHandleType === targetHandleType;
-
-      // Allow sharedResources / moduleSpecifications connections to the strategus node
-      const isSourceModuleSpecification =
-        MODULE_SPECIFICATIONS_NODE_COLORS.includes(sourceHandleType);
-      const isSourceSharedResources =
-        SHARED_RESOURCES_NODE_COLORS.includes(sourceHandleType);
-      const isTargetModuleSpecification =
-        MODULE_SPECIFICATIONS_HANDLE_COLOR === targetHandleType;
-      const isTargetSharedResources =
-        SHARED_RESOURCES_HANDLE_COLOR === targetHandleType;
-
-      const isValidStrategusConnection =
-        (isSourceModuleSpecification && isTargetModuleSpecification) ||
-        (isSourceSharedResources && isTargetSharedResources);
+      const sourceType = getHandleType(connection.sourceHandle);
+      const targetType = getHandleType(connection.targetHandle);
+      const isValidType = sourceType === targetType;
 
       return (
-        isDifferentNode &&
-        !isCircular(routes, source, target) &&
-        (isSameNodeType || isValidStrategusConnection)
+        isDifferentNode && !isCircular(routes, source, target) && isValidType
       );
     },
     [edges, nodes]
@@ -346,8 +321,9 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       </ReactFlow>
       <SelectNodeTypesDialog
         open={addNodeTypeDialog.visible}
+        handleType={addNodeTypeDialog.handleType}
         onClose={handleCloseDialog}
-        connectorType={addNodeTypeDialog.nodeType}
+        handleNodeType={addNodeTypeDialog.selectedNodeHandleType}
       />
     </div>
   );

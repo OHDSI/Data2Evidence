@@ -2335,7 +2335,7 @@ sap.ui.define([
             configForUi.configEditorModelData.censor = beConfig.censor;
         }
 
-        ["maxResultSize", "fuzziness", "dateFormat", "timeFormat"].forEach(function (settingItem) {
+        ["maxResultSize", "fuzziness", "dateFormat", "timeFormat", "datasetId"].forEach(function (settingItem) {
             configForUi.configEditorModelData.settings[settingItem] = {
                 value: beConfig.advancedSettings.settings[settingItem]
             };

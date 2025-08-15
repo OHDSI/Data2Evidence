@@ -1,5 +1,5 @@
 import { FhirConceptMapElementTarget } from "../types.ts";
-import { env as transformersEnv, pipeline } from "transformers";
+//import { env as transformersEnv, pipeline } from "transformers";
 
 export function groupBy(
   objectArray: FhirConceptMapElementTarget[],
@@ -35,15 +35,16 @@ export enum DB {
 
 /** Generate the embedding for query text */
 export async function getGTEEmbedding(searchText: string): Promise<number[]> {
-  transformersEnv.useBrowserCache = false;
-  transformersEnv.allowLocalModels = false;
+  //transformersEnv.useBrowserCache = false;
+  //transformersEnv.allowLocalModels = false;
   try {
-    const pipe = await pipeline("feature-extraction", "Supabase/gte-small");
-    const output = await pipe(searchText, {
-      pooling: "mean",
-      normalize: true,
-    });
-    const embedding = Array.from(output.data) as number[];
+    const session = new Supabase.ai.Session('gte-small');
+
+    const embedding = await session.run(searchText, {
+        mean_pool: true,
+        normalize: true,
+      });
+
     return embedding;
   } catch (error) {
     console.error("Detailed error:", error);

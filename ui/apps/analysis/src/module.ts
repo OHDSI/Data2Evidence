@@ -1,4 +1,4 @@
-import { SystemAdminPagePlugin } from "@portal/plugin";
+import { ResearcherStudyPlugin } from "@portal/plugin";
 import { FlowApp } from "./FlowApp";
 
-export const plugin = new SystemAdminPagePlugin(FlowApp);
+export const plugin = new ResearcherStudyPlugin(FlowApp);

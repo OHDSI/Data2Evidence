@@ -11,7 +11,7 @@ pyomopqlenv
 target
 .mypy_cache
 *.egg-info
-deno.lock
+import.json.bak
 services/trex_base
 package-lock.json
 pnpm-lock.yaml

@@ -390,7 +390,7 @@ const StudyOverview: FC = () => {
                         {...(dataset.schemaName && { showCopy: true })}
                         textStyle={{ paddingTop: "5px" }}
                       >
-                        {dataset.schemaName ? dataset.schemaName.toUpperCase() : "-"}
+                        {dataset.schemaName || "-"}
                       </Text>
                       {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
                         <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>

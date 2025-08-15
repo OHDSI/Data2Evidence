@@ -4,14 +4,13 @@ from typing import List, Dict
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .liquibase import Liquibase
+from .liquibase import Liquibase, LiquibaseAction
 from .types import PortalDatasetType, ExtractDatasetSchemaType
 from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import EntityCountDistributionType
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
@@ -31,9 +30,6 @@ def get_version_info_tasks(changelog_filepath_list: Dict,
     else:
         logger.info(
             f"Successfully fetched {len(dataset_list)} datasets from portal")
-
-        # Store token in cache
-        get_auth_token_from_input()
 
         dataset_schema_list = extract_db_schema(dataset_list)
 
@@ -105,14 +101,19 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 entity_name="created_date",
                 logger=logger
             )
-            
+
+            updated_date = None
+            current_schema_version = None
+            latest_available_schema_version = None
+            entity_count_distribution = None
+
             try:
                 # update with data model last updated date
                 updated_date = get_updated_date(dataset_dao, schema_name)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "updated_date", updated_date)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'updated_date' for dataset id '{dataset_id}' with value '{updated_date}' : {e}")
+                    f"Failed to update attribute 'updated_date' for dataset id '{dataset_id}' with value '{updated_date}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'updated_date' for dataset id '{dataset_id}' with value '{updated_date}'")
@@ -130,7 +131,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", current_schema_version)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'current_schema_version' for dataset id '{dataset_id}' with value '{current_schema_version}' : {e}")
+                    f"Failed to update attribute 'current_schema_version' for dataset id '{dataset_id}' with value '{current_schema_version}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'current_schema_version' for dataset id '{dataset_id}' with value '{current_schema_version}'")
@@ -159,7 +160,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                     portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count_distribution", json.dumps(entity_count_distribution))
                 except Exception as e:
                     logger.error(
-                        f"Failed to update attribute 'entity_count_distribution' for dataset id '{dataset_id}' with value '{entity_count_distribution}' : {e}")
+                        f"Failed to update attribute 'entity_count_distribution' for dataset id '{dataset_id}' : {e}")
                 else:
                     logger.info(
                         f"Updated attribute 'entity_count_distribution' for dataset id '{dataset_id}'  with value '{entity_count_distribution}'")
@@ -198,7 +199,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_available_schema_version)
             except Exception as e:
                 logger.error(
-                    f"Failed to update attribute 'latest_schema_version' for dataset id '{dataset_id}' with value '{latest_available_schema_version}' : {e}")
+                    f"Failed to update attribute 'latest_schema_version' for dataset id '{dataset_id}' with value '{latest_available_schema_version}': {e}")
             else:
                 logger.info(
                     f"Updated attribute 'latest_schema_version' for dataset id '{dataset_id}'  with value '{latest_available_schema_version}'")

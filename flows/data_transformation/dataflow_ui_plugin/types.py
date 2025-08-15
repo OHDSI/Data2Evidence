@@ -38,6 +38,8 @@ class DataflowUIJsonGraphType(BaseModel):
 
 class DataflowUIType(BaseModel):
     json_graph: DataflowUIJsonGraphType
+    importlibs: Optional[list[str]] = Field(default_factory=list)
+    variables: Optional[dict[str, str]] = Field(default_factory=dict)
     options: DataflowUIOptionsType
     
     

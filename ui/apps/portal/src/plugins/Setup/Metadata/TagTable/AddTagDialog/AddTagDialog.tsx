@@ -1,6 +1,6 @@
-import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { Box, Button, Dialog, TextField } from "@portal/components";
+import React, { FC, useCallback, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType } from "../../../../../types";
@@ -53,8 +53,8 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
     } catch (err: any) {
       setFeedback({
         type: "error",
-        message: err.data.error,
-        description: err.data.message,
+        message: err.data?.error || err.message || "An error occurred",
+        description: err.data?.message || "",
         autoClose: 6000,
       });
     } finally {

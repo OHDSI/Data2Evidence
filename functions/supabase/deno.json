@@ -1,0 +1,37 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "knex": "npm:knex@2.4.2",
+    "pg": "npm:pg@8.3.0",
+    "dotenv": "npm:dotenv@10.0.0",
+    "zod": "npm:zod@^3.23.8",
+    "path": "jsr:@std/path@^1.0.0",
+    "server": "jsr:@std/http@^1.0.0",
+    "winston": "npm:winston",
+    "axios": "npm:axios",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "https": "node:https",
+    "fs": "node:fs",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "buffer": "node:buffer",
+    "process": "node:process",
+    "assert": "node:assert"
+  }
+}

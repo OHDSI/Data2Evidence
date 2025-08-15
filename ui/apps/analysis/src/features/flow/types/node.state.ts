@@ -1,5 +1,5 @@
 import { Node } from "reactflow";
-
+import { NodeType } from "../containers/Node/NodeTypes";
 export interface NodeDataState {
   name?: string;
   description?: string;
@@ -14,7 +14,9 @@ export interface NodeState<TData extends NodeDataState = NodeDataState>
 
 export interface AddNodeTypeDialogState {
   visible: boolean;
-  nodeType?: string;
+  nodeHandleLabel?: string;
+  handleType?: "input" | "output";
+  nodeType?: NodeType;
   selectedNodeId?: string;
-  selectedNodeClassifier?: string;
+  selectedNodeHandleType?: string;
 }

@@ -60,7 +60,7 @@ class SeedSource {
 
     }
     async getMigrations() {
-      const files = Deno.readDir(`${path.dirname(path.fromFileUrl(import.meta.url)).replace(/\/usr\/src/, '.')}/${this.path}`);
+      const files = Deno.readDir(`/usr/src/core/server/plugin/${this.path}`);
       let res = []
       for await (const f of files) {
         res.push(f.name)

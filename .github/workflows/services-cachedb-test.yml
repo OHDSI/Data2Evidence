@@ -18,13 +18,13 @@ jobs:
     env:
       LOCAL_DEBUG: "true"
       SERVICE_ROUTES: '{"portalServer": "dummy", "usermgmt": "dummy", "idIssuerUrl": "dummy"}'
-      DUCKDB_EXTENSIONS_FOLDER: "/home/runner/work/d2e/d2e/services/cachedb/duckdb_extensions"
+      DUCKDB_EXTENSIONS_FOLDER: "/home/runner/work/Data2Evidence/Data2Evidence/services/cachedb/duckdb_extensions"
     steps:
       - uses: actions/checkout@v4
 
       - name: Create folder to store duckdb extensions for offline plugins
         run: |
-          mkdir $DUCKDB_EXTENSIONS_FOLDER
+          mkdir -p $DUCKDB_EXTENSIONS_FOLDER
 
       - uses: dorny/paths-filter@v3
         id: check_file_changed

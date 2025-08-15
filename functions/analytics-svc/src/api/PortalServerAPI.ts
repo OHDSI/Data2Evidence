@@ -86,7 +86,7 @@ export default class PortalServerAPI {
     ): Promise<any> {
         try {
             const options = await this.getRequestConfig(token);
-            const url = `${this.baseUrl}/user-artifact/bookmarks/${bookmarkId}?datasetId=${datasetId}`;
+            const url = `${this.baseUrl}/user-artifact/bookmarks/${encodeURIComponent(bookmarkId)}?datasetId=${encodeURIComponent(datasetId)}`;
             const result = await axios.get(url, options);
             return result.data;
         } catch (error) {

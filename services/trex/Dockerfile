@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:b69c4ac6f61be94398208ff9887d4896f09b3c2d386205ba1d9a9a49d0e51537 AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:b2bfefc3bfd693c54dacda16dc358e2bb5dbdbc8aea155a981b94d4e6a0c02c3 AS base
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -47,9 +47,15 @@ COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
 COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
 
 COPY ./services/trex/package.json /usr/src
+COPY ./services/trex/deno.json /usr/src
 
 RUN npm install
+RUN npm install -g deno@2.1
 
+WORKDIR /usr/src/core
+RUN deno install --allow-scripts
+
+WORKDIR /usr/src
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
 

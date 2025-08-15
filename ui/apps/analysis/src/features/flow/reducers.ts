@@ -29,7 +29,8 @@ const initialState: FlowRootState = {
     visible: false,
     nodeType: null,
     selectedNodeId: null,
-    selectedNodeClassifier: null,
+    selectedNodeHandleType: null,
+    handleType: undefined,
   },
 
   saveFlowDialog: { visible: false, dataflowId: null },

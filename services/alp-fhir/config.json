@@ -29,7 +29,8 @@
       "port": "${PG__PORT}",
       "dbname": "${PG__DB_NAME}",
       "username": "${PG_SUPER_USER}",
-      "password": "${PG_SUPER_PASSWORD}"
+      "password": "${PG_SUPER_PASSWORD}",
+      "schema": "${FHIR_CUSTOM_SCHEMA}"
     },
     "redis": {
       "host": "${REDIS_HOST}",

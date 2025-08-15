@@ -3,8 +3,6 @@ import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
 import * as Utils from "./Utils";
-import { getDuckdbSchemaName } from "../../utils/DuckdbConnection";
-import { env } from "../../configs";
 export class DbMeta {
   constructor(public connection: ConnectionInterface) {}
   public getColumns(dbObject: string, cb: CallBackInterface) {
@@ -19,18 +17,9 @@ export class DbMeta {
       // if (!Utils.isSchemaAllowed(schema)) {
       //   return cb(invalidErrorMsg, defaultList);
       // }
+      
       let query = ""
-      if (env.USE_DUCKDB === "true") {
-        schema = getDuckdbSchemaName()
-        query =  `SELECT COLUMN_NAME AS \"COLUMN_NAME\" 
-        from information_schema.columns 
-        where table_catalog = ?::text AND TABLE_NAME = ?::text 
-        UNION 
-        SELECT column_name as \"COLUMN_NAME\" 
-        from duckdb_columns() 
-        WHERE database_name = ?::text and table_name = ?::text
-        ORDER BY \"column_name\"`
-      }else{
+      if (this.connection.dialect === "hana") {
         query = `SELECT COLUMN_NAME 
         FROM TABLE_COLUMNS
         WHERE SCHEMA_NAME = ?
@@ -41,6 +30,15 @@ export class DbMeta {
         WHERE SCHEMA_NAME = ?
         AND VIEW_NAME = ?
         ORDER BY \"COLUMN_NAME\"`
+      }else{
+        query =  `SELECT COLUMN_NAME AS \"COLUMN_NAME\" 
+        from information_schema.columns 
+        where table_catalog = ?::text AND TABLE_NAME = ?::text 
+        UNION 
+        SELECT column_name as \"COLUMN_NAME\" 
+        from duckdb_columns() 
+        WHERE database_name = ?::text and table_name = ?::text
+        ORDER BY \"column_name\"`
       }
       this.connection.executeQuery(
        query,

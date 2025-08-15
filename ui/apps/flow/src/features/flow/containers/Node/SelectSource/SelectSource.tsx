@@ -68,7 +68,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
         (n) =>
           ({
             key: n.data.name,
-            value: n.data.name.replace(SourceTypes.NODE, ""),
+            value: n.data.name,
             data: NodeChoiceMap[n.type as NodeTypeChoice]?.title?.toLowerCase(),
           } as KeyValueData)
       );

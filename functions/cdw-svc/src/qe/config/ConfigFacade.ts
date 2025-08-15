@@ -5,6 +5,7 @@ import { Settings } from "../settings/Settings";
 import { FfhQeConfig, MESSAGES } from "./config";
 import { DbMeta } from "../settings/DbMeta";
 import { getAnalyticsConnection } from "../../utils/utils";
+import { getDatasetIdFromConfig } from "../settings/Utils";
 
 export class ConfigFacade {
   private settings: Settings;
@@ -78,7 +79,12 @@ export class ConfigFacade {
         );
         break;
       case "validate":
-        analyticsConn = await getAnalyticsConnection(this.userObj, this.token);
+        const datasetId = getDatasetIdFromConfig(request.config);
+        analyticsConn = await getAnalyticsConnection(
+          this.userObj,
+          this.token,
+          datasetId
+        );
         this.ffhQeConfig.validateCDMConfigAndTableMappings(
           request.config,
           analyticsConn,
@@ -174,7 +180,11 @@ export class ConfigFacade {
         callback(null, this.settings.getDefaultAdvancedSettings());
         break;
       case "getColumns":
-        analyticsConn = await getAnalyticsConnection(this.userObj, this.token)
+        analyticsConn = await getAnalyticsConnection(
+          this.userObj,
+          this.token,
+          request.datasetId
+        );
         let dbMeta = new DbMeta(analyticsConn);
         dbMeta.getColumnsForPlaceHolders(
           request.dbObjectList,

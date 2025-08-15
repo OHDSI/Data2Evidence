@@ -5,7 +5,7 @@ export class MigrationSource {
     const files = Deno.readDir(
       `${path
         .dirname(path.fromFileUrl(import.meta.url))
-        .replace(/\/usr\/src/, ".")}/migrations`
+        .replace(/\/usr\/src/, ".").replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH"))}/migrations`
     );
     let res = [];
     for await (const f of files) {

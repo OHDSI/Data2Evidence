@@ -4,10 +4,11 @@
   "scripts": {
     "test": "playwright test",
     "init": "playwright install chromium --with-deps",
-    "local-codegen": "playwright codegen --ignore-https-errors https://localhost:41100"
+    "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443"
   },
   "devDependencies": {
     "@playwright/test": "1.52.0",
-    "playwright": "1.52.0"
+    "playwright": "1.52.0",
+    "playwright-ctrf-json-reporter": "0.0.22"
   }
 }
