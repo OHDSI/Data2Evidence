@@ -301,7 +301,7 @@ export default {
       'generateDataQualityFlowRun',
       'resetChart',
     ]),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
       this.showCohortCompareDialog = true
     },
