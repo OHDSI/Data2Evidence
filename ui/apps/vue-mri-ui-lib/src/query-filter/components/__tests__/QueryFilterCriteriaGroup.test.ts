@@ -1,5 +1,4 @@
-import { QueryFilterEvent } from '../../models/QueryFilterModel'
-import type { QueryFilterGroup } from '../../models/QueryFilterModel'
+import type { QueryFilterEvent, QueryFilterGroup } from '../../types/QueryFilterTypes'
 
 describe('QueryFilterCriteriaGroup Model Tests', () => {
   let mockGroup: QueryFilterGroup

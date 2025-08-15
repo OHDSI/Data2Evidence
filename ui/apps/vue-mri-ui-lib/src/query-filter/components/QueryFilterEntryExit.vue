@@ -9,8 +9,8 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { EntryEvent, ExitEvent, QueryFilterEvent } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import { EntryEvent, ExitEvent, QueryFilterEvent } from '../types/QueryFilterTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
 import GroupButtons from './GroupButtons.vue'
 import ObservationPeriodBlock from './ObservationPeriodBlock.vue'
@@ -22,7 +22,7 @@ interface Props {
   type: 'ENTRY' | 'EXIT'
   primaryEventsData?: EntryEvent
   exitCriteriaData?: ExitEvent
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   readonly?: boolean
@@ -36,8 +36,11 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update-limit': [limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG']
   'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
+  'concept-set-action': [action: ConceptSetAction]
   'update-fixed-duration': [eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number]
   'update-cont-drug-settings': [conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number]
+  'update-primary-events': [events: QueryFilterEvent[]]
+  'update-exit-events': [events: QueryFilterEvent[]]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -53,16 +56,17 @@ const updateLimitValue = (value: string) => {
 
   if (isValidLimit(value)) {
     emit('update-limit', value)
-    
+
     // Emit default values when switching to FIXED or CONT_DRUG
     if (!isEntry.value) {
       if (value === 'FIXED') {
         emit('update-fixed-duration', selectedEventDateOffset.value, selectedDaysOffset.value)
       } else if (value === 'CONT_DRUG') {
-        emit('update-cont-drug-settings', 
-          selectedConceptSet.value?.value.toString() || '', 
-          selectedGapDays.value, 
-          selectedOffset.value, 
+        emit(
+          'update-cont-drug-settings',
+          selectedConceptSet.value?.value.toString() || '',
+          selectedGapDays.value,
+          selectedOffset.value,
           selectedDaysSupplyOverride.value
         )
       }
@@ -112,10 +116,10 @@ const eventsData = computed(() => {
 })
 
 const handleEventsUpdate = (updatedEvents: QueryFilterEvent[]) => {
-  if (isEntry.value && props.primaryEventsData) {
-    props.primaryEventsData.events = [...updatedEvents]
-  } else if (!isEntry.value && props.exitCriteriaData) {
-    props.exitCriteriaData.censoringCriteria = [...updatedEvents]
+  if (isEntry.value) {
+    emit('update-primary-events', updatedEvents)
+  } else {
+    emit('update-exit-events', updatedEvents)
   }
 }
 
@@ -125,12 +129,10 @@ const daysOffsetRef = ref<HTMLElement | null>(null)
 
 const eventDateOffsetOptions = [
   { value: 'StartDate', label: 'Start date' },
-  { value: 'EndDate', label: 'End date' }
+  { value: 'EndDate', label: 'End date' },
 ]
 
-const daysOffsetOptions = [
-  '1', '2', '3', '4', '5', '6', '7', '14', '21', '30', '60', '90', '180', '365'
-]
+const daysOffsetOptions = ['1', '2', '3', '4', '5', '6', '7', '14', '21', '30', '60', '90', '180', '365']
 
 // Default values for fixed duration
 const selectedEventDateOffset = ref<'StartDate' | 'EndDate'>('StartDate')
@@ -167,7 +169,7 @@ const offsetOptions = ['0', '1', '2', '3', '7', '14', '30', '60', '90', '180']
 const daysSupplyOverrideOptions = ['1', '7', '14', '30', '60', '90', '180', '365']
 
 // Default values for CONT_DRUG
-const selectedConceptSet = ref<ConceptSetItem | null>(null)
+const selectedConceptSet = ref<ConceptSetItemDisplay | null>(null)
 const selectedGapDays = ref<number>(30)
 const selectedOffset = ref<number>(0)
 const selectedDaysSupplyOverride = ref<number>(1)
@@ -178,7 +180,7 @@ const showContDrugInputs = computed(() => {
 })
 
 // Handle concept set changes for CONT_DRUG
-const handleContDrugConceptSetChange = (values: ConceptSetItem[]) => {
+const handleContDrugConceptSetChange = (values: ConceptSetItemDisplay[]) => {
   if (!values || values.length === 0) {
     selectedConceptSet.value = null
   } else {
@@ -232,19 +234,19 @@ const updateDaysSupplyOverride = (value: string) => {
 }
 
 const emitContDrugUpdate = () => {
-  emit('update-cont-drug-settings', 
-    selectedConceptSet.value?.value.toString() || '', 
-    selectedGapDays.value, 
-    selectedOffset.value, 
+  emit(
+    'update-cont-drug-settings',
+    selectedConceptSet.value?.value.toString() || '',
+    selectedGapDays.value,
+    selectedOffset.value,
     selectedDaysSupplyOverride.value
   )
 }
 
-
 // Tooltip configuration
 const tooltipConfig = {
   FIXED: `The event end date is derived from adding a number of days to the event's start or end date. If an offset is added to the event's start date, all cohort episodes will have the same fixed duration (subject to further censoring). If an offset is added to the event's end date, persons in the cohort may have varying cohort duration times due to the varying event durations (such as eras of persistent drug exposure or visit length of stay). This event persistence assures that the cohort end date will be no greater than the selected index event date, plus the days offset.`,
-  CONT_DRUG: `Specify a concept set that contains one or more drugs. A drug era will be derived from all drug exposure events for any of the drugs within the concept set, using the specified persistence window as a maximum allowable gap in days between successive exposure events and adding a specified surveillance window to the final exposure event. If no exposure event end date is provided, then an exposure event end date is inferred to be event start date + days supply in cases when days supply is available or event start date + 1 day otherwise. This event persistence assures that the cohort end date will be no greater than the drug era end date.`
+  CONT_DRUG: `Specify a concept set that contains one or more drugs. A drug era will be derived from all drug exposure events for any of the drugs within the concept set, using the specified persistence window as a maximum allowable gap in days between successive exposure events and adding a specified surveillance window to the final exposure event. If no exposure event end date is provided, then an exposure event end date is inferred to be event start date + days supply in cases when days supply is available or event start date + 1 day otherwise. This event persistence assures that the cohort end date will be no greater than the drug era end date.`,
 } as const
 
 // Determine which tooltip to show based on current selection
@@ -272,10 +274,7 @@ const activeTooltipKey = computed(() => {
           @update-limit-value="updateLimitValue"
         />
         <!-- Tooltip for EXIT options -->
-        <Tooltip 
-          :tooltip-config="tooltipConfig"
-          :active-key="activeTooltipKey"
-        />
+        <Tooltip :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
       </div>
 
       <div class="shadow-container">
@@ -287,7 +286,7 @@ const activeTooltipKey = computed(() => {
         />
       </div>
     </div>
-    
+
     <!-- Fixed Duration Inputs for EXIT when FIXED is selected - Below GroupButtons -->
     <div v-if="showFixedDurationInputs" class="fixed-duration-container">
       <div class="fixed-duration-inputs">
@@ -297,7 +296,7 @@ const activeTooltipKey = computed(() => {
             {{ eventDateOffsetOptions.find(opt => opt.value === selectedEventDateOffset)?.label || 'Start date' }}
           </div>
         </div>
-        
+
         <div class="fixed-input-group">
           <label class="fixed-input-label">Number of days offset:</label>
           <div class="fixed-dropdown-with-suffix">
@@ -309,7 +308,6 @@ const activeTooltipKey = computed(() => {
         </div>
       </div>
     </div>
-
 
     <!-- CONT_DRUG Inputs for EXIT when CONT_DRUG is selected - Below GroupButtons -->
     <div v-if="showContDrugInputs" class="cont-drug-container">
@@ -332,27 +330,32 @@ const activeTooltipKey = computed(() => {
             {{ selectedConceptSet?.text || selectedConceptSet?.display_value || 'No concept set selected' }}
           </div>
         </div>
-        
+
         <div class="cont-drug-input-group">
           <label class="cont-drug-input-label">Persistence window: allow for a maximum of</label>
           <div class="cont-drug-dropdown-with-suffix">
             <div class="cont-drug-dropdown" ref="gapDaysRef">
               {{ selectedGapDays }}
             </div>
-            <span class="cont-drug-suffix">days between exposure records when inferring the era of persistence exposure</span>
+            <span class="cont-drug-suffix"
+              >days between exposure records when inferring the era of persistence exposure</span
+            >
           </div>
         </div>
-        
+
         <div class="cont-drug-input-group">
           <label class="cont-drug-input-label">Surveillance window: add</label>
           <div class="cont-drug-dropdown-with-suffix">
             <div class="cont-drug-dropdown" ref="offsetRef">
               {{ selectedOffset }}
             </div>
-            <span class="cont-drug-suffix">days to the end of the era of persistence exposure as an additional period of surveillance prior to cohort exit</span>
+            <span class="cont-drug-suffix"
+              >days to the end of the era of persistence exposure as an additional period of surveillance prior to
+              cohort exit</span
+            >
           </div>
         </div>
-        
+
         <div class="cont-drug-input-group">
           <label class="cont-drug-input-label">Force drug exposure days supply to:</label>
           <div class="cont-drug-dropdown-with-suffix">
@@ -377,10 +380,11 @@ const activeTooltipKey = computed(() => {
         :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
+        @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
   </div>
-  
+
   <!-- Dropdown menus for Fixed Duration inputs -->
   <DropdownMenu
     v-if="eventDateOffsetRef && showFixedDurationInputs"
@@ -394,7 +398,7 @@ const activeTooltipKey = computed(() => {
     @select="updateDaysOffset"
     :target="daysOffsetRef"
   />
-  
+
   <!-- Dropdown menus for CONT_DRUG inputs -->
   <DropdownMenu
     v-if="gapDaysRef && showContDrugInputs"
@@ -590,33 +594,33 @@ const activeTooltipKey = computed(() => {
     justify-content: center;
     padding: 8px 0;
   }
-  
+
   .fixed-duration-container {
     padding: 16px;
     border-bottom: 1px solid #e0e0e0;
   }
-  
+
   .fixed-duration-inputs {
     display: flex;
     justify-content: center;
     gap: 24px;
-    
+
     label {
       margin-bottom: 0;
     }
-    
+
     .fixed-input-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .fixed-input-label {
         font-size: 13px;
         color: #666;
         font-weight: 500;
         white-space: nowrap;
       }
-      
+
       .fixed-dropdown {
         min-width: 100px;
         padding: 6px 12px;
@@ -626,18 +630,18 @@ const activeTooltipKey = computed(() => {
         font-size: 13px;
         cursor: pointer;
         transition: all 0.2s ease;
-        
+
         &:hover {
           border-color: #000080;
           background: white;
         }
       }
-      
+
       .fixed-dropdown-with-suffix {
         display: flex;
         align-items: center;
         gap: 6px;
-        
+
         .fixed-suffix {
           font-size: 13px;
           color: #666;
@@ -651,27 +655,27 @@ const activeTooltipKey = computed(() => {
     padding: 16px;
     border-bottom: 1px solid #e0e0e0;
   }
-  
+
   .cont-drug-inputs {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    
+
     label {
       margin-bottom: 0;
     }
-    
+
     .cont-drug-input-group {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      
+
       .cont-drug-input-label {
         font-size: 13px;
         color: #666;
         font-weight: 500;
       }
-      
+
       .cont-drug-dropdown {
         min-width: 200px;
         max-width: 400px;
@@ -682,13 +686,13 @@ const activeTooltipKey = computed(() => {
         font-size: 13px;
         cursor: pointer;
         transition: all 0.2s ease;
-        
+
         &:hover {
           border-color: #000080;
           background: white;
         }
       }
-      
+
       .cont-drug-concept-set-readonly {
         padding: 8px 12px;
         background: white;
@@ -699,18 +703,18 @@ const activeTooltipKey = computed(() => {
         min-width: 200px;
         max-width: 400px;
       }
-      
+
       .cont-drug-dropdown-with-suffix {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        
+
         .cont-drug-dropdown {
           flex-shrink: 0;
           min-width: 80px;
           max-width: 120px;
         }
-        
+
         .cont-drug-suffix {
           font-size: 13px;
           color: #666;
@@ -751,6 +755,5 @@ const activeTooltipKey = computed(() => {
       font-weight: 500;
     }
   }
-
 }
 </style>

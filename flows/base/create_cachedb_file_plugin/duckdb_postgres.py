@@ -20,13 +20,11 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
     dbname = dbdao.database_code
 
     try:
-        con.execute(f"select distinct schema_name from information_schema.schemata where catalog_name = '{dbname}';")
-        cached_schemas = set(schema[0] for schema in con.fetchall())
 
-        if is_trex_cache and schema_name in cached_schemas:
-            con.execute(f"DROP SCHEMA {dbname}.{schema_name} CASCADE;")    
-        
-        con.execute(f"""CREATE SCHEMA {dbname}.{schema_name};""")
+        # if(is_trex_cache):
+        #     con.execute(f"DROP SCHEMA IF EXISTS {schema_name};")            
+        con.execute(f"""CREATE SCHEMA IF NOT EXISTS {schema_name};""")
+
         # Include views when creating duckdb file for cdw config validation
 
         table_names = dbdao.get_table_names(
@@ -36,18 +34,24 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, create_for_cdw_confi
         for table in table_names:
             try:
                 result_proxy = con.execute(
-                    f"""CREATE TABLE {dbname}.{schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
+
+                    f"""CREATE OR REPLACE TABLE {schema_name}.{table} AS FROM (SELECT * FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_statement})"""
                 )
-                # DuckDB's execute() returns None for DDL, so fetchone() is not always valid
-                if result_proxy is not None:
-                    result = result_proxy.fetchone()
-                    if result is not None:
-                        logger.info(f"{result[0]} rows copied from '{schema_name}.{table}'!")
-                else:
-                    logger.info(f"Table '{schema_name}.{table}' created (row count not available for DDL statements).")
+                # # DuckDB's execute() returns None for DDL, so fetchone() is not always valid
+                # if result_proxy is not None:
+                #     result = result_proxy.fetchone()
+                #     if result is not None:
+                #         logger.info(f"{result[0]} rows copied from '{schema_name}.{table}'!")
+                # else:
+                #     logger.info(f"Table '{schema_name}.{table}' created (row count not available for DDL statements).")
+
+                con.execute(f"SELECT COUNT(*) FROM {schema_name}.{table}")
+                rows_copied = con.fetchall()[0][0]
 
                 # Create index based on index in db table
                 indexes = dbdao.get_indexes_for_table(schema_name, table)
+                logger.info(
+                f"'{table}' table from schema '{schema_name}' recreated with {rows_copied} rows.")
 
                 for index in indexes:
                     index_name = index.get("name")

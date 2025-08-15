@@ -1,10 +1,10 @@
 import { convertAtlasToFilters, getConceptSetMappings } from '../AtlasConverter'
 import { QueryFilterCriteriaManager } from '../../models/QueryFilterModel'
 import sample6Expected from '../../__tests__/data/sample6-expected'
-import { ConceptSetItem } from '@/query-filter/types/ConceptSetTypes'
+import { ConceptSetItemDisplay } from '@/query-filter/types/ConceptSetTypes'
 
 describe('AtlasConverter', () => {
-  const mockConceptSets: ConceptSetItem[] = [
+  const mockConceptSets: ConceptSetItemDisplay[] = [
     { value: '1', text: 'Test Condition', display_value: 'Test Condition' },
     { value: '2', text: 'Test Drug', display_value: 'Test Drug' },
   ]

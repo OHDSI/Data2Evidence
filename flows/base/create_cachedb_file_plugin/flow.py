@@ -24,16 +24,16 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
 
     duckdb_database_name = options.databaseCode
+    schema_to_copy = options.schemaName
     use_cache_db = options.use_cache_db
     batch_size = options.batch_size
-    logger.info(f"Batch size: {batch_size}")
+
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=duckdb_database_name)
     db_credentials = dbdao.tenant_configs
 
-    # Todo: hardcoded for testing    
     if options.create_duckdb_file:
         # Check if dialect is supported by duckdb
         check_supported_duckdb_dialects(dbdao.dialect, logger)
@@ -66,8 +66,9 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 port=Variable.get("trex_sql_port"),
                 user=Variable.get("trex_sql_user"),
                 password=Secret.load("trex-sql-password").get(),
-                dbname=dbdao.database_code # Variable.get("trex_sql_dbname")
+                dbname=duckdb_database_name# Variable.get("trex_sql_dbname")
             )
+        # Enable autocommit so transaction are started
         trex_conn.autocommit = True
         cur = None
         try:
@@ -80,15 +81,10 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                 copy_bigquery_schema_to_cache(cur, dbdao, batch_size)
             else:
                 # Filter out system schemas
-                schemas_to_copy = list(set(dbdao.get_schema_names()) -
-                            set(SYSTEM_SCHEMAS[dbdao.dialect]))
-                
+                logger.info(f"Handling schema {schema_to_copy}...")
+                copy_schema_to_cache(cur, dbdao, schema_to_copy, False, True)
+                create_duckdb_fts_index(cur, dbdao, schema_to_copy, tables_to_create_duckdb_fts_index)
 
-                for schema in schemas_to_copy:
-                    logger.info(f"Handling schema {schema}...")
-                    copy_schema_to_cache(cur, dbdao, schema, False, True)
-                    create_duckdb_fts_index(
-                        cur, dbdao, schema, tables_to_create_duckdb_fts_index)
             trex_conn.commit()
             logger.info(f"""Cache database successfully created.""")
         except Exception as e:

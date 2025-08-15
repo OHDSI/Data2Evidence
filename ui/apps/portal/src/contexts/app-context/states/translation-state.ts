@@ -999,6 +999,7 @@ export const i18nDefault = {
     TERMINOLOGY__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     TERMINOLOGY__RELATED_CONCEPTS: "Related concepts",
     TERMINOLOGY__SEARCH: "Search",
+    TERMINOLOGY__SELECT_CONCEPTS: "Select Concepts",
     TERMINOLOGY__SELECTED_CONCEPTS: "Selected concepts",
     TERMINOLOGY__SHARED: "Shared",
     TERMINOLOGY__UPDATE: "Update",
@@ -1216,6 +1217,8 @@ export const i18nDefault = {
     STUDY_PAGE__REPOSITORY_SERVICE_ISSUE: "Repository service issue: {0}",
     STUDY_PAGE__NO_STUDIES_REPOSITORY_ERROR: "No studies available due to repository error",
     STUDY_PAGE__NO_STUDIES_FOUND: "No studies found in repository",
+    STUDY_PAGE__TAB_NETWORK_STUDIES: "Network Studies",
+    STUDY_PAGE__TAB_LOCAL_STUDIES: "Local Studies",
   },
 };
 
