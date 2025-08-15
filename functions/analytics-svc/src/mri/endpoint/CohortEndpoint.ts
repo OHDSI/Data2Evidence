@@ -2,6 +2,7 @@ import {
     CohortType,
     CohortDefinitionTableType,
     QueryObjectType,
+    ANALYTICS_DB_DIALECTS,
 } from "../../types";
 import { Logger, QueryObject as qo } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
@@ -14,7 +15,8 @@ const logger = CreateLogger("analytics-log");
 export class CohortEndpoint {
     constructor(
         public connection: ConnectionInterface,
-        public schemaName: string
+        public schemaName: string,
+        public dialect: string
     ) {}
 
     private getInsertSyntaxQuery(): string {
@@ -70,7 +72,10 @@ export class CohortEndpoint {
 
     // Helper function to execute cohort queries
     private async executeCohortQuery(query: any) {
-        if (this.connection.constructor.name === "TrexConnection") {
+        if (
+            this.connection.constructor.name === "TrexConnection" &&
+            this.dialect !== ANALYTICS_DB_DIALECTS.BIGQUERY // If bigquery, execute cohort queries on cache instead of sourcedb
+        ) {
             return await query.executeQueryOnWriteConnection(this.connection);
         } else {
             return await query.executeQuery(this.connection);
@@ -350,7 +355,9 @@ export class CohortEndpoint {
             const rowCount = await this.executeCohortQuery(insertQuery);
             return rowCount;
         } catch (err) {
-            logger.error(`Failed to insert cohort with data: ${JSON.stringify(cohort)}`);
+            logger.error(
+                `Failed to insert cohort with data: ${JSON.stringify(cohort)}`
+            );
             // Cleanup previously inserted cohort definition and cohort rows
             await this.deleteCohortDefinitionFromDb(cohortDefinitionId);
             await this.deleteCohortFromDb(cohortDefinitionId);
