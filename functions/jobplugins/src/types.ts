@@ -351,8 +351,8 @@ export interface PhenotypeFlowRunDto {
 
 interface PhenotypeFlowRunOptions {
   materialize: boolean;
-  cohortsId: string;
-  datasetId: string;
+  cohorts_id: string;
+  dataset_id: string;
   user_name: string | null;
 }
 

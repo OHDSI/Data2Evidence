@@ -223,8 +223,8 @@ export class DemoService {
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
         materialize: false,
-        cohortsId: "default",
-        datasetId,
+        cohorts_id: "default",
+        dataset_id: datasetId,
         user_name: null,
       },
     });

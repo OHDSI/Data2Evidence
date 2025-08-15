@@ -6,15 +6,15 @@ export const validatePhenotypeFlowRunDto = () => [
     .isBoolean()
     .withMessage("materialize is required and must be a boolean"),
 
-  body("options.cohortsId")
+  body("options.cohorts_id")
     .isString()
     .notEmpty()
-    .withMessage("cohortsId is required and must be a string"),
+    .withMessage("cohorts_id is required and must be a string"),
 
-  body("options.datasetId")
+  body("options.dataset_id")
     .isString()
     .notEmpty()
-    .withMessage("datasetId is required and must be a string"),
+    .withMessage("dataset_id is required and must be a string"),
 
   body("options.user_name")
     .optional({ nullable: true })
