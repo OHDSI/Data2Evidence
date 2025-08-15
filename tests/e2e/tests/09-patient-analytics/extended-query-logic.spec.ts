@@ -39,26 +39,21 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('120 / 2694')).toBeVisible()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
-  // Explicitly wait for loading component to appear and then dissapear
-  await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
-  // Explicitly wait for loading component to appear and then dissapear
-  await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
-  // Explicitly wait for loading component to appear and then dissapear
-  await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select
