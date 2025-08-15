@@ -350,11 +350,10 @@ export interface PhenotypeFlowRunDto {
 }
 
 interface PhenotypeFlowRunOptions {
-  databaseCode: string;
-  cdmschemaName: string;
-  cohortschemaName: string;
+  materialize: boolean;
   cohortsId: string;
-  vocabSchemaName: string;
+  datasetId: string;
+  user_name: string | null;
 }
 
 export interface IPrefectArtifact {

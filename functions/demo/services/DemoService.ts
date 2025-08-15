@@ -219,19 +219,13 @@ export class DemoService {
       );
     }
 
-    const {
-      id: datasetId,
-      databaseCode,
-      schemaName,
-      vocabSchemaName,
-    } = dataset;
+    const { id: datasetId } = dataset;
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
-        databaseCode,
-        cdmschemaName: schemaName,
-        cohortschemaName: schemaName,
+        materialize: false,
         cohortsId: "default",
-        vocabSchemaName,
+        datasetId,
+        user_name: null,
       },
     });
 
