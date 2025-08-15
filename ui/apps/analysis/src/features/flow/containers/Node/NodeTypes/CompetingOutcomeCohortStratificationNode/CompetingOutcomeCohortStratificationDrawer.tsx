@@ -1,17 +1,17 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { NodeProps } from "reactflow";
 import {
   Box,
-  IconButton,
+  FormControl,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
+  TextInput,
+  IconButton,
 } from "@portal/components";
 import ClearIcon from "@mui/icons-material/Clear";
-import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import { NodeChoiceMap } from "..";
+import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { NodeProps } from "reactflow";
 import { useFormData } from "~/features/flow/hooks";
 import { useGetWebApiCohortDefinitionsQuery } from "~/features/flow/slices";
 import {
@@ -21,30 +21,46 @@ import {
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
-import { CohortSelectionNodeData } from "./CohortSelectionNode";
-import { Cohort, CohortType } from "./CohortSelectionType";
-export interface CohortSelectionDrawerProps
+import { NodeChoiceMap } from "..";
+import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
+import { CompetingOutcomeCohortStratificationNodeData } from "./CompetingOutcomeCohortStratificationNode";
+import {
+  COHORT_TYPE_OPTIONS,
+  CompetingOutcomeCohortStratificationArgs,
+  EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
+} from "./types";
+import { Cohort } from "../CohortSelectionNode/CohortSelectionType";
+
+export interface CompetingOutcomeCohortStratificationDrawerProps
   extends Omit<NodeDrawerProps, "children"> {
-  node: NodeProps<CohortSelectionNodeData>;
+  node: NodeProps<CompetingOutcomeCohortStratificationNodeData>;
   onClose: () => void;
 }
 
-interface FormData extends CohortSelectionNodeData {}
+interface FormData {
+  name: string;
+  description: string;
+  competingOutcomeCohortStratificationArgs: CompetingOutcomeCohortStratificationArgs;
+  cohorts: { cohortId: number; cohortName: string }[];
+}
 
 const EMPTY_FORM_DATA: FormData = {
   name: "",
-  type: CohortType.Event,
+  description:
+    "Competing Outcome Cohort / Stratification input for Kaplan-Meier analysis",
+  competingOutcomeCohortStratificationArgs:
+    EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
   cohorts: [],
 };
 
-export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
-  node,
-  onClose,
-  ...props
-}) => {
+export const CompetingOutcomeCohortStratificationDrawer: FC<
+  CompetingOutcomeCohortStratificationDrawerProps
+> = ({ node, onClose, ...props }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
-
+  const nodeState = useSelector((state: RootState) =>
+    selectNodeById(state, node.id)
+  );
   const { data: cohortDefinitions } = useGetWebApiCohortDefinitionsQuery(null, {
     selectFromResult: ({ data }) => ({
       data: data?.filter(
@@ -53,27 +69,27 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     }),
   });
 
-  const nodeState = useSelector((state: RootState) =>
-    selectNodeById(state, node.id)
-  );
-
   useEffect(() => {
     if (node.data) {
       setFormData({
         name: node.data.name,
-        type: node.data.type,
-        cohorts: node.data.cohorts,
+        description: node.data.description,
+        competingOutcomeCohortStratificationArgs:
+          node.data.competingOutcomeCohortStratificationArgs ||
+          EMPTY_COMPETING_OUTCOME_COHORT_STRATIFICATION_ARGS,
+        cohorts: [],
       });
     } else {
       setFormData({
         ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["cohort_selection_node"].defaultData,
+        ...NodeChoiceMap["competing_outcome_cohort_stratification_node"]
+          .defaultData,
       });
     }
-  }, [node.data]);
+  }, [node.data, setFormData]);
 
   const handleOk = useCallback(() => {
-    const updated: NodeState<CohortSelectionNodeData> = {
+    const updated: NodeState<CompetingOutcomeCohortStratificationNodeData> = {
       ...nodeState,
       data: formData,
     };
@@ -81,7 +97,7 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, nodeState, onClose]);
 
   const handleAddCohort = useCallback(
     (value: Cohort) => {
@@ -120,25 +136,60 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     [formData.cohorts, onFormDataChange]
   );
 
+  const { competingOutcomeCohortStratificationArgs } = formData;
+
   return (
-    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} width="600px" onOk={handleOk} onClose={onClose}>
       <Box mb={4}>
-        <InputLabel shrink>Cohort Type</InputLabel>
-        <Select
-          fullWidth
-          value={formData.type}
-          onChange={(e: SelectChangeEvent) =>
-            onFormDataChange({ type: e.target.value as CohortType })
+        <TextInput
+          label="Node Name"
+          value={formData.name}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ name: e.target.value })
           }
-          displayEmpty
-        >
-          <MenuItem value={CohortType.Target}>Target</MenuItem>
-          <MenuItem value={CohortType.Event}>Event</MenuItem>
-          <MenuItem value={CohortType.Exit}>Exit</MenuItem>
-          <MenuItem value={CohortType.Outcome}>Outcome</MenuItem>
-          <MenuItem value={CohortType.Comparator}>Comparator</MenuItem>
-        </Select>
+        />
       </Box>
+
+      <Box mb={4}>
+        <TextInput
+          label="Description"
+          value={formData.description}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ description: e.target.value })
+          }
+        />
+      </Box>
+
+      {/* Cohort Type Configuration */}
+      <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
+        <div style={{ paddingBottom: "20px" }}>Cohort Type</div>
+
+        <Box mb={4}>
+          <FormControl variant="standard" fullWidth>
+            <InputLabel shrink>Cohort Type</InputLabel>
+            <Select
+              value={competingOutcomeCohortStratificationArgs.cohortType}
+              onChange={(e: SelectChangeEvent) =>
+                onFormDataChange({
+                  competingOutcomeCohortStratificationArgs: {
+                    ...competingOutcomeCohortStratificationArgs,
+                    cohortType: e.target.value as
+                      | "competing_outcome"
+                      | "stratification",
+                  },
+                })
+              }
+            >
+              {COHORT_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+
       <Box mb={4}>
         <InputLabel shrink>Cohort Selection</InputLabel>
         <Select fullWidth value="" onChange={handleSelectChange} displayEmpty>

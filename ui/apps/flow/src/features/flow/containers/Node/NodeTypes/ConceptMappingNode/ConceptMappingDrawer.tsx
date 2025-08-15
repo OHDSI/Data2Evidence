@@ -51,7 +51,7 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     } else {
       setFormData({
         ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["data_mapping_node"].defaultData,
+        ...NodeChoiceMap["rabbit_in_a_hat"].defaultData,
       });
     }
   }, [node.data]);

@@ -21,7 +21,9 @@
     "react-redux": "^8.0.5",
     "reactflow": "^11.11.4",
     "systemjs": "0.21.6",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "pako": "^2.1.0",
+    "buffer": "^6.0.3"
   },
   "peerDependencies": {
     "@d4l/web-components-library": "^3.20.2",
@@ -53,7 +55,8 @@
     "typescript": "^4.6.2",
     "webpack": "^5.76.0",
     "webpack-cli": "^4.10.0",
-    "webpack-dev-server": "^4.7.4"
+    "webpack-dev-server": "^4.7.4",
+    "@types/pako": "^2.0.3"
   },
   "keywords": [],
   "author": "D4L",
