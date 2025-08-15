@@ -2,18 +2,18 @@ import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
 import { NodeDataState } from "../../../../types";
-import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
-import { TargetComparatorOutcomesDrawer } from "./TargetComparatorOutcomesDrawer";
-import "./TargetComparatorOutcomesNode.scss";
+import { NodeLayout } from "../../NodeLayout/NodeLayout";
+import { KaplanMeierCharacterizationDrawer } from "./KaplanMeierCharacterizationDrawer";
+import "./KaplanMeierCharacterizationNode.scss";
+import { KaplanMeierCharacterizationArgs } from "./types";
 
-export interface TargetComparatorOutcomesNodeData extends NodeDataState {
-  excludedCovariateConceptIds: string[];
-  includedCovariateConceptIds: string[];
+export interface KaplanMeierCharacterizationNodeData extends NodeDataState {
+  kaplanMeierCharacterizationArgs: KaplanMeierCharacterizationArgs;
 }
 
-export const TargetComparatorOutcomesNode = (
-  node: NodeProps<TargetComparatorOutcomesNodeData>
+export const KaplanMeierCharacterizationNode = (
+  node: NodeProps<KaplanMeierCharacterizationNodeData>
 ) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
@@ -21,8 +21,8 @@ export const TargetComparatorOutcomesNode = (
 
   return (
     <>
-      <NodeLayout<TargetComparatorOutcomesNodeData>
-        className="target-comparator-outcomes-node"
+      <NodeLayout<KaplanMeierCharacterizationNodeData>
+        className="kaplan-meier-characterization-node"
         name={data.name}
         onSettingClick={openSetting}
         resultType={data.error ? "error" : "success"}
@@ -31,10 +31,10 @@ export const TargetComparatorOutcomesNode = (
       >
         {data.description}
       </NodeLayout>
-      <TargetComparatorOutcomesDrawer
+      <KaplanMeierCharacterizationDrawer
         node={node}
-        title="Configure Target Comparator Outcomes Node"
-        className="target-comparator-outcomes-drawer"
+        title="Configure Kaplan-Meier Characterization Analysis Node"
+        className="kaplan-meier-characterization-drawer"
         open={settingVisible}
         onClose={closeSetting}
       />
