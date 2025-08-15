@@ -1,5 +1,46 @@
 import { Node } from "reactflow";
 
+export const csvToJSON = async (
+  file: File,
+  delimiter: string = ","
+): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = () => {
+      const csvText = reader.result as string;
+      const lines = csvText.split("\n");
+      const headers = lines[0].split(delimiter).map((header) => header.trim());
+
+      const jsonArray = lines
+        .slice(1)
+        .filter((line) => line.trim() !== "") // Skip empty lines
+        .map((line) => {
+          const values = line.split(delimiter);
+          return headers.reduce((obj, header, index) => {
+            obj[header] = values[index]?.trim() || "";
+            return obj;
+          }, {} as any);
+        });
+
+      resolve(jsonArray);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+export const saveBlobAs = (obj: Blob, filename: string) => {
+  const url = URL.createObjectURL(obj);
+  const link = document.createElement("a");
+  link.href = url;
+
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+
+  if (link.parentNode) link.parentNode.removeChild(link);
+};
+
 export const isValidJson = (json: string) => {
   try {
     JSON.parse(json);

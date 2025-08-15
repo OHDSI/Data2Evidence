@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, SCOPE } from '@danet/core'
+import { HttpException, Injectable, SCOPE } from '@danet/core'
 import { EntityManager, In } from 'npm:typeorm'
 import { v4 as uuidv4 } from 'uuid'
 import { TransactionRunner } from '../../common/data-source/transaction-runner.ts'
@@ -53,7 +53,7 @@ export class DatasetCommandService {
     const createDatasetFn = async (entityMgr: EntityManager, datasetDto: IDatasetDto) => {
       const tenant = this.tenantService.getTenant()
       if (datasetDto.tenantId !== tenant.id) {
-        throw new BadRequestException(`Invalid tenantId ${datasetDto.tenantId} provided`)
+        throw new HttpException(400, `Invalid tenantId ${datasetDto.tenantId} provided`)
       }
       const { detail, dashboards, attributes, tags, ...dataset } = datasetDto
       const { id } = dataset
@@ -104,7 +104,7 @@ export class DatasetCommandService {
       const entity = this.releaseRepo.create(datasetReleaseDto)
       const existingRecord = await this.releaseRepo.getReleaseByDatasetIdAndName(entity.datasetId, entity.name)
       if (existingRecord.length > 0) {
-        throw new BadRequestException(`Dataset with release name '${entity.name}' already exists`)
+        throw new HttpException(400, `Dataset with release name '${entity.name}' already exists`)
       }
       const result = await this.releaseRepo.insertRelease(entityMgr, this.addOwner(entity, true))
 
@@ -117,7 +117,7 @@ export class DatasetCommandService {
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id)
       if (result.affected === 0) {
-        throw new BadRequestException(`Invalid dataset ID provided: ${id}`)
+        throw new HttpException(400, `Invalid dataset ID provided: ${id}`)
       } else {
         return {
           id
@@ -132,7 +132,7 @@ export class DatasetCommandService {
       const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp } = snapshotDto
       const sourceDataset = await this.datasetRepo.getDataset(sourceDatasetId)
       if (!sourceDataset) {
-        throw new BadRequestException(`Dataset with id ${sourceDatasetId} not found`)
+        throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
       const { type, tenantId, databaseCode, vocabSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
@@ -241,7 +241,7 @@ export class DatasetCommandService {
     const currDataset = await this.datasetRepo.getDataset(datasetId)
 
     if (!currDataset) {
-      throw new BadRequestException(`Dataset with id ${datasetId} not found`)
+      throw new HttpException(400, `Dataset with id ${datasetId} not found`)
     }
     const dataset: Partial<Dataset> = {
       ...currDataset,
@@ -260,7 +260,7 @@ export class DatasetCommandService {
     if (detailEntity) {
       await entityMgr.getRepository(DatasetDetail).update({ datasetId }, this.addOwner(detail))
     } else {
-      throw new BadRequestException(`Dataset detail with datasetId ${datasetId} not found`)
+      throw new HttpException(400, `Dataset detail with datasetId ${datasetId} not found`)
     }
 
   }

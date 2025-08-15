@@ -5,7 +5,7 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { DataMappingDrawer } from "./DataMappingDrawer";
-import { SourceHandle } from "../../CustomHandle/CustomHandle";
+import { TargetHandle, SourceHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
 import "./DataMappingNode.scss";
 
@@ -27,7 +27,9 @@ export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
-        LeftHandle={null}
+        LeftHandle={
+          <TargetHandle ioType={HandleIOType.Object} nodeId={node.id} />
+        }
         RightHandle={
           <SourceHandle ioType={HandleIOType.Object} nodeId={node.id} />
         }
