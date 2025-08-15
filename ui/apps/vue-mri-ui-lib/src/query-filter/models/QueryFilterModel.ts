@@ -10,6 +10,7 @@ import type {
   ConceptSet,
   AtlasCohortDefinition,
   CriteriaListItem,
+  GroupCriteria,
 } from '../types/AtlasTypes'
 import type {
   QueryFilterEvent,
@@ -1327,7 +1328,7 @@ export class QueryFilterCriteriaManager {
     attributesNestedCriteria: QueryFilterAttribute[],
     systemIdToAtlasId: Map<string, number>
   ) {
-    const groups: any[] = []
+    const groups: GroupCriteria[] = []
 
     attributesNestedCriteria.forEach(attr => {
       if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
@@ -1379,8 +1380,11 @@ export class QueryFilterCriteriaManager {
   }
 
   // Helper method to recursively build nested groups within groups
-  private buildNestedGroupsRecursive(events: QueryFilterEvent[], systemIdToAtlasId: Map<string, number>): any[] {
-    const nestedGroups: any[] = []
+  private buildNestedGroupsRecursive(
+    events: QueryFilterEvent[],
+    systemIdToAtlasId: Map<string, number>
+  ): GroupCriteria[] {
+    const nestedGroups: GroupCriteria[] = []
 
     // Look for group events that can contain further groups
     const groupEvents = events.filter(event => event.eventType === 'group')
