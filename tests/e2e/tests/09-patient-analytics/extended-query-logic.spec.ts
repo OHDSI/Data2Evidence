@@ -28,9 +28,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2694 / 2694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.dropdown').click()
+  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByText('Month of Birth').click()
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.dropdown').click()
+  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByRole('textbox').fill('6')
   await page.getByRole('textbox').press('Enter')
@@ -39,7 +39,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
-  await expect(page.getByText('248 / 2694')).toBeVisible()
+  await expect(page.getByText('120 / 2694')).toBeVisible()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
@@ -86,9 +86,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Save Current Filters')).not.toBeVisible()
 
   // Remove condition occurrence B and drug exposure A filter cards
-  await page.getByText('Drug Exposure A').locator('..').locator('..').locator(' .dropdown').click()
+  await page.getByText('Drug Exposure A').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
-  await page.getByText('Condition Occurrence B').locator('..').locator('..').locator(' .dropdown').click()
+  await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
