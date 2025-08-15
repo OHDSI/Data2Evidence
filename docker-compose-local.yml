@@ -21,7 +21,7 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
@@ -49,7 +49,7 @@ services:
           "d2e-webapi": false,
           "perseus": false,
           "white-rabbit": false,
-          "strategus-results": false
+          "strategus-analysis": false
         }
 
   alp-caddy:

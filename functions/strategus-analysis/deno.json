@@ -22,7 +22,7 @@
     "pako": "npm:pako",
     "http": "node:http",
     "fs": "node:fs",
-    "path": "node:path",
+    "path": "jsr:@std/path@^1.0.0",
     "crypto": "node:crypto",
     "url": "node:url",
     "util": "node:util",
@@ -30,6 +30,11 @@
     "events": "node:events",
     "buffer": "node:buffer",
     "process": "node:process",
-    "assert": "node:assert"
+    "assert": "node:assert",
+    "jsonwebtoken": "npm:jsonwebtoken@^9.0.2",
+    "knex": "npm:knex@3.1.0",
+    "pg": "npm:pg@^8.4.2",
+    "uuid": "npm:uuid@^10.0.0",
+    "typeorm": "npm:typeorm@^0.3.20"
   }
 }

@@ -13,7 +13,7 @@ import ButtonMaterial from './ButtonMaterial.vue'
 import DropdownMenu from './DropdownMenu.vue'
 import { ref } from 'vue'
 import GroupButtons from './GroupButtons.vue'
-import { QueryFilterCardinality } from '../models/QueryFilterModel'
+import { QueryFilterCardinality } from '../types/QueryFilterTypes'
 
 interface Props {
   type: 'GROUP' | 'EVENT'
@@ -41,9 +41,7 @@ const occurrenceCountColumnOptions = [
 ]
 
 // Component refs for Popper
-const exactlyRef = ref<HTMLElement | null>(null)
-const atLeastRef = ref<HTMLElement | null>(null)
-const atMostRef = ref<HTMLElement | null>(null)
+const countDropdownRef = ref<HTMLElement | null>(null)
 
 // State variables
 const activeOccurrenceType = ref<OccurrenceType>(props.cardinality?.type || 'AT_LEAST')
@@ -118,44 +116,53 @@ const getCardinalityCount = () => {
             </div>
 
             <div v-else class="cardinality-menu__event">
-              <div class="event-button-container">
-                <div
-                  class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurrenceType('EXACTLY') }"
-                >
-                  <ButtonMaterial @button-click="updateActiveOccurrenceType('EXACTLY')">Exactly</ButtonMaterial>
-                  <div class="box" ref="exactlyRef">{{ exactlyCount }}</div>
-                </div>
-
-                <div
-                  class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurrenceType('AT_LEAST') }"
-                >
-                  <ButtonMaterial color="success" @button-click="updateActiveOccurrenceType('AT_LEAST')"
-                    >At least</ButtonMaterial
+              <!-- Button Layout Container -->
+              <div class="button-layout-container">
+                <!-- Segmented Button Group -->
+                <div class="segmented-button-group">
+                  <button
+                    class="segment-button segment-button--exactly"
+                    :class="{ 'segment-button--selected': isActiveOccurrenceType('EXACTLY') }"
+                    @click="updateActiveOccurrenceType('EXACTLY')"
                   >
-                  <div class="box" ref="atLeastRef">{{ atLeastCount }}</div>
-                </div>
-
-                <div
-                  class="button-container"
-                  :class="{ 'button-container__selected': isActiveOccurrenceType('AT_MOST') }"
-                >
-                  <ButtonMaterial color="secondary" @button-click="updateActiveOccurrenceType('AT_MOST')"
-                    >At most</ButtonMaterial
+                    Exactly
+                  </button>
+                  <button
+                    class="segment-button segment-button--at-least"
+                    :class="{ 'segment-button--selected': isActiveOccurrenceType('AT_LEAST') }"
+                    @click="updateActiveOccurrenceType('AT_LEAST')"
                   >
-                  <div class="box" ref="atMostRef">{{ atMostCount }}</div>
+                    At least
+                  </button>
+                  <button
+                    class="segment-button segment-button--at-most segment-button--last"
+                    :class="{ 'segment-button--selected': isActiveOccurrenceType('AT_MOST') }"
+                    @click="updateActiveOccurrenceType('AT_MOST')"
+                  >
+                    At most
+                  </button>
                 </div>
-
-                <div class="button-container">
-                  <GroupButtons
-                    :options="occurrenceCountColumnOptions"
-                    :limitValue="occurrenceCountColumn"
-                    :small="true"
-                    :namePrefix="props.namePrefix"
-                    @update-limit-value="value => updateOccurrenceCountColumn(value)"
-                  />
+                
+                <!-- Count Dropdown - Always reserve space -->
+                <div class="count-dropdown-container">
+                  <div 
+                    class="count-dropdown" 
+                    ref="countDropdownRef"
+                  >
+                    {{ getCardinalityCount() }}
+                  </div>
                 </div>
+              </div>
+              
+              <!-- Occurrence Count Column Options -->
+              <div class="occurrence-column-container">
+                <GroupButtons
+                  :options="occurrenceCountColumnOptions"
+                  :limitValue="occurrenceCountColumn"
+                  :small="true"
+                  :namePrefix="props.namePrefix"
+                  @update-limit-value="value => updateOccurrenceCountColumn(value)"
+                />
               </div>
             </div>
           </div>
@@ -176,42 +183,34 @@ const getCardinalityCount = () => {
   </Popper>
 
   <DropdownMenu
-    v-if="exactlyRef"
+    v-if="countDropdownRef"
     :options="occurrenceCountOptions"
-    @select="(value: string) => updateCountState('EXACTLY', value)"
-    :target="exactlyRef"
-  />
-  <DropdownMenu
-    v-if="atLeastRef"
-    :options="occurrenceCountOptions"
-    @select="(value: string) => updateCountState('AT_LEAST', value)"
-    :target="atLeastRef"
-  />
-  <DropdownMenu
-    v-if="atMostRef"
-    :options="occurrenceCountOptions"
-    @select="(value: string) => updateCountState('AT_MOST', value)"
-    :target="atMostRef"
+    @select="(value: string) => updateCountState(activeOccurrenceType, value)"
+    :target="countDropdownRef"
   />
 </template>
 
-<style lang="scss">
-.cardinality-menu-popper {
+<style lang="scss" scoped>
+.cardinality-menu-popper.popper {
   z-index: 1000;
+  background-color: transparent;
+  
+  .popover-content {
+    overflow-y: visible !important; // Override Popper's inline style to prevent shadow clipping
+  }
 }
 .cardinality-menu {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 16px;
   background: white;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 300px;
-  margin-top: 4px;
-  padding: 16px;
+  padding: 16px;  
 
   .body {
     width: 100%;
@@ -219,46 +218,123 @@ const getCardinalityCount = () => {
     flex-direction: column;
     gap: 16px;
 
-    .event-button-container {
+    .cardinality-menu__event {
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .button-layout-container {
+      display: flex;
       align-items: center;
+      gap: 12px;
       width: 100%;
-      height: auto;
+      height: 36px; // Fixed height to prevent changes
+    }
 
-      .button-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        gap: 8px;
-        height: 40px;
-        padding: 6px;
-        border-radius: 4px;
+    .segmented-button-group {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
 
-        &__selected {
-          border: 2px solid #000080;
-          background: #faf8f8;
+    .segment-button {
+      flex: 1;
+      height: 36px;
+      border: 3px solid transparent; // Always reserve 3px border space
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      box-sizing: border-box; // Ensure border is included in width calculation
+      
+      // Background colors for cardinality types
+      &--exactly {
+        background: #000000; // Black for Exactly
+        color: white;
+      }
+      
+      &--at-least {
+        background: #2686EB; // Blue for At least
+        color: white;
+      }
+      
+      &--at-most {
+        background: #FA9087; // Light red for At most
+        color: white;
+      }
+      
+      // Remove gaps between buttons
+      &:first-child {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+      }
+      
+      &--last {
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+      }
+      
+      &:not(:first-child) {
+        margin-left: -3px; // Overlap by border width to connect buttons
+      }
+      
+      // Selection state with 3px border
+      &--selected {
+        border: 3px solid #000080;
+        font-weight: 600;
+        z-index: 2;
+        
+        // Adjust background opacity when selected
+        &.segment-button--exactly {
+          background: rgba(0, 0, 0, 0.9);
         }
-        .material-button {
-          flex: 5;
+        
+        &.segment-button--at-least {
+          background: rgba(38, 134, 235, 0.9);
         }
-        .box {
-          flex: 1;
-          background-color: #fff;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 85%;
-          border: 1px solid #000080;
-          border-radius: 4px;
-          text-align: center;
-          font-weight: 500;
-          color: #000080;
-          cursor: pointer;
+        
+        &.segment-button--at-most {
+          background: rgba(250, 144, 135, 0.9);
         }
       }
+      
+      &:hover:not(.segment-button--selected) {
+        opacity: 0.8;
+      }
+    }
+
+    .count-dropdown-container {
+      min-width: 60px; // Reserve space to prevent layout shift
+      height: 36px; // Match button height
+      display: flex;
+      justify-content: center;
+      align-items: center; // Center vertically
+    }
+
+    .count-dropdown {
+      width: 50px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #000080;
+      border-radius: 4px;
+      background: #fff;
+      color: #000080;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #f8f9fa;
+      }
+    }
+
+    .occurrence-column-container {
+      display: flex;
+      justify-content: center;
     }
   }
   .footer {
@@ -266,7 +342,7 @@ const getCardinalityCount = () => {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 8px 0;
+    padding: 16px 0 0;
     border-top: 1px solid #e0e0e0;
 
     .material-button {

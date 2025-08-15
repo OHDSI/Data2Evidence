@@ -145,7 +145,14 @@ case $cmd in
         echo "This will initialize SAP HANA Express Edition."
         echo "By proceeding, you agree to the SAP License Agreement."
         echo "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
-        read -p "Do you agree to the SAP license terms and want to continue? (y/N): " license_agreement
+        
+        if [[ -n "${ACCEPT_SAP_LICENSE:-}" ]]; then
+            echo "CI environment detected. Auto-accepting SAP license terms..."
+            license_agreement="y"
+        else
+            read -p "Do you agree to the SAP license terms and want to continue? (y/N): " license_agreement
+        fi
+        
         case "$license_agreement" in
             y|Y|yes|YES)
                 echo "License accepted. Proceeding with HANA initialization..."
@@ -157,7 +164,7 @@ case $cmd in
         esac
         
         source $node_modules_path/scripts/lib.sh # functions here
-        hanapw=$(random-password 16)
+        hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         $cmd

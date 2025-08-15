@@ -2,9 +2,7 @@
   "workspace": [],
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "lib": [
-      "deno.window"
-    ],
+    "lib": ["deno.window"],
     "strict": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
@@ -23,7 +21,7 @@
     "uuid": "npm:uuid@9.0.1",
     "@dx/reflect": "jsr:@dx/reflect@0.2.14",
     "reflect-metadata": "npm:reflect-metadata@0.2.2",
-    "@danet/validatte": "jsr:@danet/validatte@0.7.4",
+    "@danet/validatte": "jsr:@danet/validatte@0.7.9",
     "winston": "npm:winston@^3.7.2",
     "axios": "npm:axios@^0.21.2",
     "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
@@ -32,6 +30,7 @@
     "mime-types": "npm:mime-types@2.1.35",
     "isomorphic-git": "npm:isomorphic-git@1.27.1",
     "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
+    "zod": "npm:zod@3.25.76",
     "http": "node:http",
     "fs": "node:fs",
     "path": "node:path",

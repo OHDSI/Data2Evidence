@@ -11,7 +11,6 @@ from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import EntityCountDistributionType
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
-from _shared_flow_utils.api.PrefectAPI import get_auth_token_from_input
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
@@ -31,9 +30,6 @@ def get_version_info_tasks(changelog_filepath_list: Dict,
     else:
         logger.info(
             f"Successfully fetched {len(dataset_list)} datasets from portal")
-
-        # Store token in cache
-        get_auth_token_from_input()
 
         dataset_schema_list = extract_db_schema(dataset_list)
 

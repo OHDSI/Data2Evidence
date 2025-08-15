@@ -16,12 +16,13 @@
 
 <script lang="ts">
 import BaseTagInput from './BaseTagInput.vue'
+import type { ConceptSetAction, TagInputModel } from '../../query-filter/types/ConceptSetTypes'
 
 export default {
   name: 'QueryFilterTagInputAdapter',
   props: {
     model: {
-      type: Object,
+      type: Object as () => TagInputModel,
       required: true,
     },
     externalValue: {
@@ -72,15 +73,15 @@ export default {
     },
   },
   methods: {
-    handleUpdateValue(value) {
+    handleUpdateValue(value: any) {
       this.$emit('update:value', value)
     },
-    handleSearchChange(searchQuery) {
+    handleSearchChange(searchQuery: any) {
       this.$emit('search-change', searchQuery)
     },
-    handleConceptSetAction({ values, config }) {
+    handleConceptSetAction(params: ConceptSetAction) {
       // For query filter, we'll emit the event to let the parent handle it
-      this.$emit('concept-set-action', { values, config })
+      this.$emit('concept-set-action', params)
     },
   },
 }

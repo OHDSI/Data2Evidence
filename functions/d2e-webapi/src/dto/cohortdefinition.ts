@@ -1,36 +1,16 @@
 import { z } from "zod";
-import { CohortExpression, CohortExpressionQueryOptions } from "../types.ts";
+import { CohortExpressionQueryOptions, CohortExpression } from "../types.ts";
+import { AtlasCohortDefinitionArtifact } from "../../../_shared/user-artifacts/types.ts";
 
-export const AtlasCohortDefinitionDto = z.object({
-  id: z.number(),
-  name: z.string(),
-  description: z.string().nullable(),
-  expressionType: z.string(),
-  expression: CohortExpression,
-  createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
-  createdDate: z.number().nullable(),
-  modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
-  modifiedDate: z.number().nullable(),
-  tags: z.array(z.string()),
+export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact.omit({
+  materializedCohortDefinitions: true,
 });
 export type IAtlasCohortDefinitionDto = z.infer<
   typeof AtlasCohortDefinitionDto
 >;
 
-export const MaterializedBookmarkCohortDefinition = z.object({
-  datasetId: z.string(),
-  cohortDefinitionId: z.number(),
-});
-export type IMaterializedBookmarkCohortDefinition = z.infer<
-  typeof MaterializedBookmarkCohortDefinition
->;
-
 export const UserArtifactAtlasCohortDefinitionDto =
-  AtlasCohortDefinitionDto.extend({
-    materializedCohortDefinitions: z.array(
-      MaterializedBookmarkCohortDefinition
-    ),
-  });
+  AtlasCohortDefinitionArtifact;
 export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
   typeof UserArtifactAtlasCohortDefinitionDto
 >;

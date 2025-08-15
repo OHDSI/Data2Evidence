@@ -1,12 +1,7 @@
-import { Type } from 'npm:class-transformer'
-import { IsString, ValidateNested } from 'npm:class-validator'
-import { ServiceName } from '../enums/index.ts'
-
+import { Type } from "class-transformer";
+import { ValidateNested } from "class-validator";
 export class CreateArtifactDto<T> {
-  @IsString()
-  serviceName: ServiceName
-
   @ValidateNested()
   @Type(() => Object)
-  serviceArtifact: T
+  serviceArtifact: T;
 }

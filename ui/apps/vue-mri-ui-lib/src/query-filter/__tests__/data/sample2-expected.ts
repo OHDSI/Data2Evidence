@@ -74,4 +74,5 @@ export default {
     EraPad: 0,
   },
   CensorWindow: {},
+  cdmVersionRange: '>=5.0.0',
 }

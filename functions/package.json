@@ -21,6 +21,11 @@
     "functions": {
       "init": [
         {
+          "function": "/strategus-analysis/src/init",
+          "imports": "/strategus-analysis/deno.json",
+          "env": "strategus-analysis"
+        },
+        {
           "function": "/jobplugins-init",
           "imports": "/jobplugins-init/deno.json",
           "env": "jobplugins-init"
@@ -266,9 +271,15 @@
         },
         {
           "source": "/strategus-results",
-          "function": "/strategus-results",
-          "env": "strategus-results",
-          "imports": "/strategus-results/deno.json"
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
+        },
+        {
+          "source": "/strategus",
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
         },
         {
           "source": "/mlflow",
@@ -531,6 +542,8 @@
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
+          "strategus.analysis.read",
+          "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
           "jupyter"
         ]
@@ -2359,6 +2372,25 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]*$",
+          "scopes": [
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
           ]
         }
       ]
