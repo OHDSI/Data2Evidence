@@ -324,20 +324,42 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     tag: NodeTag.Stable,
     defaultData: {
       kaplanMeierArgs: {
-        targetCohortId: 1,
-        outcomeCohortId: 2,
-        analysisType: "single_event",
-        competingOutcomeCohortId: undefined,
-        estimateGap: 30,
-        strataCohorts: [],
+        // CM Analysis Configuration
+        analysisId: 1,
+        description: "Kaplan-Meier survival analysis",
+
+        // DB Cohort Method Data Args
+        getDbCohortMethodDataArgs: {
+          studyStartDate: undefined,
+          studyEndDate: undefined,
+        },
+
+        // Create Study Population Args
+        createStudyPopArgs: {
+          firstExposureOnly: true,
+          removeDuplicateSubjects: "keep first",
+          removeSubjectsWithPriorOutcome: false,
+          priorOutcomeLookback: 0,
+          requireTimeAtRisk: false,
+          riskWindowStart: 1,
+          startAnchor: "cohort start",
+          riskWindowEnd: 0,
+          endAnchor: "cohort end",
+        },
+
+        // Time At Risk Configurations
+        timeAtRisks: [
+          {
+            label: "KM Analysis",
+            riskWindowStart: 1,
+            startAnchor: "cohort start",
+            riskWindowEnd: 0,
+            endAnchor: "cohort end",
+          },
+        ],
       },
     },
-    inputs: [
-      {
-        label: "Study Population",
-        handleType: HandleIOType.StudyPopulation,
-      },
-    ],
+    inputs: [],
     outputs: [
       {
         label: "Cohort Method Analysis",
