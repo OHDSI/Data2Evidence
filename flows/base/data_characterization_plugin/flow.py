@@ -19,9 +19,7 @@ from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType
 os.environ['plugin_name'] = 'data_characterization_plugin'
 
-@flow(log_prints=True,
-      timeout_seconds=3600
-      )
+@flow(log_prints=True)
 def data_characterization_plugin(options: DCOptionsType):
     logger = get_run_logger()
     

@@ -53,6 +53,21 @@ module.exports = (env, argv) => {
           target: "https://localhost:41100",
           secure: false,
         },
+        {
+          context: ["/white-rabbit"],
+          target: "https://localhost:41100",
+          secure: false,
+        },
+        {
+          context: ["/system-portal"],
+          target: "https://localhost:41100",
+          secure: false,
+        },
+        {
+          context: ["/backend"],
+          target: "https://localhost:41100",
+          secure: false,
+        },
       ],
     },
     entry: {

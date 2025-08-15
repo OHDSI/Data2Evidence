@@ -1,10 +1,12 @@
-import { Loader, MenuItem, Select, SelectChangeEvent } from "@portal/components";
+import { Loader, MenuItem, Select, SelectChangeEvent, Box } from "@portal/components";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import React, { FC, useCallback, useEffect, useState } from "react";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { useDatasets } from "../../../hooks";
-import { StrategusStudy } from "../../../types";
+import { NetworkStrategusStudy, StrategusStudy, StrategusStudyType } from "../../../types";
 import { StudyCard } from "./StudyCard";
 import "./StudyPage.scss";
 
@@ -14,17 +16,27 @@ interface StrategusStudiesData {
   [studyId: string]: StrategusStudy;
 }
 
+enum StudyLocationTab {
+  Local = "local",
+  Network = "network",
+}
+
 export const StudyPage: FC<StudyPageProps> = () => {
   const { getText, i18nKeys } = useTranslation();
   const { setFeedback } = useFeedback();
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
+  const [tabValue, setTabValue] = useState(StudyLocationTab.Local);
   const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
+  }, []);
+
+  const handleTabSelectionChange = useCallback((event: React.SyntheticEvent, newValue: StudyLocationTab) => {
+    setTabValue(newValue);
   }, []);
 
   useEffect(() => {
@@ -39,6 +51,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
             ...strategusStudy,
             id: studyId,
             name: strategusStudy.name || studyId,
+            type: StrategusStudyType.NETWORK,
           })
         );
 
@@ -52,8 +65,34 @@ export const StudyPage: FC<StudyPageProps> = () => {
       }
     };
 
-    fetchStudies();
-  }, [setFeedback]);
+    const fetchLocalStudies = async () => {
+      setLoadingStudies(true);
+      setStudiesError(null);
+
+      try {
+        const localStudiesData = await api.strategusAnalysis.getAllStrategusAnalysis();
+        const convertedStudies: StrategusStudy[] = localStudiesData.map((study: NetworkStrategusStudy) => ({
+          id: study.studyId,
+          name: study.notebookName || study.studyId,
+          strategus_json: study.analysisSpec,
+          type: StrategusStudyType.LOCAL,
+        }));
+        setStrategusStudies(convertedStudies);
+      } catch (error) {
+        console.error("Error fetching studies from service:", error);
+        setStudiesError("Failed to fetch studies from service");
+        setStrategusStudies([]);
+      } finally {
+        setLoadingStudies(false);
+      }
+    };
+
+    if (tabValue === StudyLocationTab.Network) {
+      fetchStudies();
+    } else {
+      fetchLocalStudies();
+    }
+  }, [setFeedback, tabValue]);
 
   if (loadingDatasets) return <Loader />;
 
@@ -96,6 +135,13 @@ export const StudyPage: FC<StudyPageProps> = () => {
           </Select>
         </div>
       </div>
+
+      <Box className="study-page__tabs">
+        <Tabs value={tabValue} onChange={handleTabSelectionChange}>
+          <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_LOCAL_STUDIES)} value={StudyLocationTab.Local} />
+          <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_NETWORK_STUDIES)} value={StudyLocationTab.Network} />
+        </Tabs>
+      </Box>
 
       <div className="study-page__content">
         <h2 className="study-page__section-title">{getText(i18nKeys.STUDY_PAGE__STUDY_LIST)}</h2>

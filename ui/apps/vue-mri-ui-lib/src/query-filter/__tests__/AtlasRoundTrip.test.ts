@@ -7,7 +7,7 @@
  * conversion functions work correctly in both directions.
  */
 
-import { QueryFilterCardModel, QueryFilterCriteriaManager } from '../models/QueryFilterModel'
+import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import { convertAtlasToFilters } from '../utils/AtlasConverter'
 
 describe('Atlas Round-Trip Conversion', () => {

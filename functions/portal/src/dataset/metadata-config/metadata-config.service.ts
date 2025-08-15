@@ -1,7 +1,6 @@
 import {
-  BadRequestException,
+  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   SCOPE,
 } from "@danet/core";
@@ -33,12 +32,7 @@ export class MetadataConfigService {
   async insertTagConfig(tagConfigDto: MetadataConfigTagDto): Promise<string> {
     const existingConfig = await this.tagConfigRepo.findOne({ where: { name: tagConfigDto.name } })
     if (existingConfig) {
-      throw new BadRequestException(
-        {
-          statusCode: 400,
-          message: `Tag config with name ${tagConfigDto.name} already exists`
-        }
-      );
+      throw new HttpException(400, `Tag config with name ${tagConfigDto.name} already exists`)
     }
     try {
       const tagConfigEntity = this.tagConfigRepo.create({ ...tagConfigDto })
@@ -47,7 +41,7 @@ export class MetadataConfigService {
       return tagConfigEntity.name
     } catch (error) {
       this.logger.error(`Error while creating new tag config: ${error}`)
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
@@ -59,16 +53,16 @@ export class MetadataConfigService {
     } catch (error) {
       this.logger.error(`Error deleting tag config with name ${name}: ${error}`)
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Tag config with name ${name} not found`)
+        throw new HttpException(404, `Tag config with name ${name} not found`)
       }
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
   private async getTagConfig(name: string): Promise<DatasetTagConfig> {
     const tagConfig = await this.tagConfigRepo.findOne({ where: { name } })
     if (!tagConfig) {
-      throw new NotFoundException(`Tag config with name ${name} not found`)
+      throw new HttpException(404, `Tag config with name ${name} not found`)
     }
     return tagConfig
   }
@@ -80,12 +74,7 @@ export class MetadataConfigService {
   async insertAttributeConfig(attributeConfigDto: MetdataConfigAttributeDto): Promise<string> {
     const existingConfig = await this.attributeConfigRepo.findOne({ where: { id: attributeConfigDto.id } })
     if (existingConfig) {
-      throw new BadRequestException(
-        {
-          statusCode: 400,
-          message: `Attribute config with id ${attributeConfigDto.id} already exists`
-        }
-      );
+      throw new HttpException(400, `Attribute config with id ${attributeConfigDto.id} already exists`)
     }
     try {
       const attributeConfigEntity = this.attributeConfigRepo.create({ ...attributeConfigDto })
@@ -94,7 +83,7 @@ export class MetadataConfigService {
       return attributeConfigEntity.id
     } catch (error) {
       console.log(`Error while creating new attribute config: ${error}`)
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
@@ -109,7 +98,7 @@ export class MetadataConfigService {
       return attributeConfigEntity.id
     } catch (error) {
       this.logger.error(`Error while updating attribute config: ${error}`)
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
@@ -121,16 +110,16 @@ export class MetadataConfigService {
     } catch (error) {
       this.logger.error(`Error deleting tag config with id ${id}: ${error}`)
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Tag config with id ${id} not found`)
+        throw new HttpException(404, `Tag config with id ${id} not found`)
       }
-      throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE)
+      throw new HttpException(500, DEFAULT_ERROR_MESSAGE)
     }
   }
 
   private async getAttributeConfig(id: string): Promise<DatasetAttributeConfig> {
     const attributeConfig = await this.attributeConfigRepo.findOne({ where: { id } })
     if (!attributeConfig) {
-      throw new NotFoundException(`Tag config with id ${id} not found`)
+      throw new HttpException(404, `Tag config with id ${id} not found`)
     }
     return attributeConfig
   }
