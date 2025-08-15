@@ -50,6 +50,7 @@ export const TerminologyWithEventListener = () => {
       mode={props?.mode}
       selectedDatasetId={props?.selectedDatasetId}
       defaultFilters={props?.defaultFilters}
+      initialSelectedConcepts={props?.initialSelectedConcepts}
     />
   );
 };

@@ -21,7 +21,7 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
@@ -53,13 +53,9 @@ services:
         }
 
   alp-caddy:
-    command: caddy run --environ --config /srv/caddy-config/Caddyfile --adapter caddyfile --watch
-    image: caddy:2.8-alpine
     ports:
       - 41000:41000
       - 41130:41130
-    volumes:
-      - ${CADDY__CONFIG:-./deploy/caddy-config}:/srv/caddy-config
     environment:
       CADDY__FHIR_SERVER__PUBLIC_FQDN: ${CADDY__FHIR_SERVER__PUBLIC_FQDN:-localhost}
       CADDY__CORS_LOCAL_UI: "import cors"

@@ -18,6 +18,7 @@ import {
     convertZlibBase64ToJson,
 } from "@alp/alp-base-utils";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
+import TrexCsvStreamWriter from "../../utils/TrexCsvStreamWriter";
 import csvWriter from "csv-write-stream";
 import * as crypto from "crypto";
 import * as parquet from "parquetjs";
@@ -259,21 +260,30 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             );
             res.setHeader("Content-Type", "text/csv");
 
-            const csvStreamWriter: NodeJS.ReadWriteStream = csvWriter();
-            csvStreamWriter.on("drain", () => {
-                log.debug("DRAIN csvStreamWriter");
-            });
-            csvStreamWriter.on("error", (err) => {
-                log.error(
-                    `${req.fileName}==========csvStreamWriter error=========`
-                );
-                log.error(err);
-            });
+            let csvStreamTransform;
+            if (result.data instanceof ReadableStream) {
+                // Trex connection returns stream results as a ReadableStream
+                const trexCsvStreamWriter = new TrexCsvStreamWriter();
+                csvStreamTransform = trexCsvStreamWriter;
+            } else {
+                const csvStreamWriter: NodeJS.ReadWriteStream = csvWriter();
+                csvStreamWriter.on("drain", () => {
+                    log.debug("DRAIN csvStreamWriter");
+                });
+                csvStreamWriter.on("error", (err) => {
+                    log.error(
+                        `${req.fileName}==========csvStreamWriter error=========`
+                    );
+                    log.error(err);
+                });
+                csvStreamTransform = csvStreamWriter;
+            }
 
             //Exception for duckdb
             if (
                 result.data.constructor.prototype.toString() !==
-                "[object AsyncGenerator]"
+                    "[object AsyncGenerator]" &&
+                !(result.data instanceof ReadableStream)
             ) {
                 result.data.on("error", (err) => {
                     log.error(
@@ -288,7 +298,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 log.error(err);
             });
 
-            pipeline(result.data, csvStreamWriter, res, async (err) => {
+            pipeline(result.data, csvStreamTransform, res, async (err) => {
                 if (
                     result.data.constructor.prototype.toString() ===
                     "[object AsyncGenerator]"
