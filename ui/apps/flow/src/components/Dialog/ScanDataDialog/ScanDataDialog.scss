@@ -1,0 +1,110 @@
+@import "../../../theme/variables";
+
+.scan-data-dialog {
+  .MuiDialogTitle-root {
+    color: $primary-color;
+    font-weight: bold;
+  }
+  .scan-data-dialog__content {
+    min-height: 60vh;
+    margin: 2em 1em;
+    color: var(--color-primary);
+    display: flex;
+    gap: 2em;
+    color: $primary-color;
+  }
+
+  &__section {
+    margin-bottom: 24px;
+  }
+
+  &__container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $border-color;
+
+    // Scrollable when postgres form overflow
+    overflow-y: auto;
+
+    .container-header {
+      background-color: rgb(235, 241, 248);
+      padding: 1em;
+      font-weight: bold;
+      position: sticky; // Use sticky positioning
+      top: 0;
+      z-index: 2;
+    }
+
+    .container-content-data {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      .form-container {
+        padding: 1em;
+      }
+
+      .button-group-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        .button-container {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 10px;
+        }
+        .success-message-container {
+          color: green;
+          display: flex;
+          justify-content: center;
+        }
+      }
+
+    }
+
+    .container-content-scan {
+      padding: 1em;
+      .button-container {
+        margin-bottom: 2em;
+      }
+    }
+  }
+
+  .scan-data-dialog__form-control {
+    margin-bottom: 24px;
+
+    .MuiInputBase-input {
+      cursor: pointer;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+
+  .MuiTable-root {
+    border: 1px solid #dad7d7;
+  }
+
+  .MuiTableCell-root {
+    padding: 16px;
+  }
+
+  .MuiCheckbox-root {
+    color: var(--color-primary);
+
+    &.Mui-checked {
+      color: var(--color-primary);
+    }
+  }
+}

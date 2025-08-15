@@ -1,0 +1,63 @@
+@import '../../../../../../theme/variables.scss';
+
+.mapping-handle {
+  display: flex;
+  justify-content: center;
+  cursor: default;
+  width: 100%;
+  font-size: 14px;
+  position: relative;
+  color: $primary-color;
+  border-radius: 8px;
+  background-color: #fff;
+  mix-blend-mode: multiply;
+
+  .alp-icon-button {
+    padding: 0;
+  }
+
+  .react-flow__handle {
+    background: transparent;
+    height: 100%;
+    width: 10px;
+    border-radius: 0;
+    border: 0;
+    &.connectionindicator {
+      cursor: pointer;
+    }
+
+    &-left {
+      left: 0;
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    &-right {
+      right: 0;
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+  }
+
+  &__input {
+    background-color: $primary-extra-lightest-color;
+
+    > .react-flow__handle {
+      background: $primary-lightest-color;
+    }
+  }
+
+  &__output {
+    background-color: $secondary-lightest-color;
+
+    > .react-flow__handle {
+      background: $secondary-lighter-color;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 0.5em 1em;
+    flex: 1;
+  }
+}
