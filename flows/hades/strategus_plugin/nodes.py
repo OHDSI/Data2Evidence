@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Any
 from pandas.api.types import is_list_like, is_dict_like
 
+from flows.hades.strategus_plugin.types import CohortNodeType
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
 import traceback as tb
@@ -25,6 +26,7 @@ from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.api.WebAPI import WebAPI
 
 os.environ['plugin_name'] = 'strategus_plugin'
 class Node:
@@ -326,24 +328,35 @@ class DefaultCovariateSettingsNode(Node):
 class CohortDefinitionSharedResource(Node):
     def __init__(self, node):
         super().__init__(node)
-    
+        self.cohortIds = node.get("cohorts", [])
+        self.type = node.get("type", CohortNodeType.EVENT)
+
     def task(self, task_run_context):
+        webapi = WebAPI()
+
         with ro.default_converter.context():
             try:
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
-                rGetCohortDefinitionSet = rCohortGenerator.getCohortDefinitionSet
-                # hardcoded to use testdata in Strategus R package
-                rCohortDefinitionSet = rGetCohortDefinitionSet(
-                    settingsFileName = 'testdata/Cohorts.csv',
-                    jsonFolder = 'testdata/cohorts',
-                    sqlFolder = 'testdata/sql',
-                    packageName = 'Strategus'
-                )
+                rCirce = ro.packages.importr('CirceR')
+                rDplyr = ro.packages.importr('dplyr')
+                rCohortDefinitionSet <- rCohortGenerator.createEmptyCohortDefinitionSet()
+                for c in self.cohortIds:
+                    cohort_definition = webapi.get_cohort_definition(c)
+                    cohortDefStr = json.dumps(cohort_definition["expression"])
+                    rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
+                    rOptions = rCirce.createGenerateOptions(convert_py_to_R(False))
+                    rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
+                    rCohortDefinitionSet = rDplyr.bind(rCohortDefinitionSet, rDplyr.tibble(
+                        cohortId = convert_py_to_R(c),
+                        cohortName = convert_py_to_R(cohort_definition["name"]),
+                        sql = rCohortSql,
+                        json = rcohortExpr,
+                    ))
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
                 rCreateCohortSharedResourceSpecifications = rcgm['createCohortSharedResourceSpecifications']
                 rCohortDefinitionSharedResource = rCreateCohortSharedResourceSpecifications(cohortDefinitionSet = rCohortDefinitionSet)
-                return Result(False,  rCohortDefinitionSharedResource, self, task_run_context)
+                return Result(False,  { "cohortDefinitionSharedResource": rCohortDefinitionSharedResource }, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -435,7 +448,7 @@ class CohortDiagnosticsModuleSpecNode(Node):
 class CMOutcomes(Node):
     def __init__(self, node):
         super().__init__(node)
-        self.ncoCohortSetIds = [int(i) for i in node['ncoCohortSetIds']]
+        self.cohortIds = []
         self.config = {
             "trueEffectSize": node["trueEffectSize"],
             "outcomeOfInterest": node["outcomeOfInterest"],
@@ -445,11 +458,13 @@ class CMOutcomes(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
+                cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
+                self.cohortIds = [cohortDefNode.cohortIds for cohortDefNode in cohortDefNodes]
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}
                 rOutcome = rlapply(
-                    X = convert_py_to_R(self.ncoCohortSetIds),
+                    X = convert_py_to_R(self.cohortIds),
                     FUN = rCohortMethod.createOutcome,
                     **kwargs
                 )
@@ -462,8 +477,9 @@ class TargetComparatorOutcomes(Node):
     
     def __init__(self, _node):
         super().__init__(_node)
-        self.targetId = int(_node['targetId'])
-        self.comparatorId = int(_node['comparatorId'])
+        self.targetId = -1
+        self.comparatorId = -1
+        self.outComesCohortIds = []
         self.includedCovariateConceptIds = [int(i) for i in _node['includedCovariateConceptIds']]
         self.excludedCovariateConceptIds = [int(i) for i in _node['excludedCovariateConceptIds']]
 
@@ -475,7 +491,20 @@ class TargetComparatorOutcomes(Node):
             try:
                 rappend = ro.r['append']
                 rCohortMethod = ro.packages.importr('CohortMethod')
+                cohortDefNodes = get_input_nodes_by_class_type_from_results(_input, CohortDefinitionSharedResource)
+                
+                targetCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.TARGET), None)
+                if targetCohortDefNode:
+                    self.targetId = targetCohortDefNode.cohortIds[0]
+                comparatorCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.COMPARATOR), None)
+                if comparatorCohortDefNode:
+                    self.comparatorId = comparatorCohortDefNode.cohortIds[0]
+
                 rOutcomes = get_results_by_class_type(_input, CMOutcomes)
+                cmOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, CMOutcomes)
+                for node in cmOutcomesNodes:
+                    self.outComesCohortIds.extend(node.cohortIds)
+
                 rCreateTargetComparatorOutcomes = rCohortMethod.createTargetComparatorOutcomes(
                     targetId = convert_py_to_R(self.targetId),
                     comparatorId = convert_py_to_R(self.comparatorId),
@@ -492,9 +521,11 @@ class CohortMethodAnalysis(Node):
     def __init__(self, node):
         super().__init__(node)
         self.analysisId = int(node["analysisId"])
-        self.dbCohortMethodDataArgs = node["dbCohortMethodDataArgs"]
-        self.fitOutcomeModelArgs = node["fitOutcomeModelArgs"]
-        self.psArgs = node["psArgs"]
+        self.dbCohortMethodDataArgs = node["dbCohortMethodDataArgs"] # required
+        self.studyPopArgs = node['createStudyPopArgs'] # required
+        self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
+        self.psArgs = getattr(node, "psArgs", None)
+
 
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
@@ -502,18 +533,29 @@ class CohortMethodAnalysis(Node):
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
-                rCovarSettings = get_results_by_class_type(input, DefaultCovariateSettingsNode)
+                covarSettingsNode = DefaultCovariateSettingsNode(None)
+                covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
                     washoutPeriod = convert_py_to_R(self.dbCohortMethodDataArgs["washoutPeriod"]),
                     firstExposureOnly = convert_py_to_R(self.dbCohortMethodDataArgs["firstExposureOnly"]),
                     removeDuplicateSubjects = convert_py_to_R(self.dbCohortMethodDataArgs["removeDuplicateSubjects"]),
                     maxCohortSize = convert_py_to_R(self.dbCohortMethodDataArgs["maxCohortSize"]),
-                    covariateSettings = rCovarSettings[0]
+                    covariateSettings = covarSettingsResult.data
                 )
-                rFitOutcomeModelArgs = rCohortMethod.createFitOutcomeModelArgs(modelType = convert_py_to_R(self.fitOutcomeModelArgs["modelType"]))
-                studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
-                rCreateStudyPopArgs = [r["cohortMethodArgs"] for r in studyPopulationResults if r["cohortMethodArgs"] != None]
-                assert len(rCreateStudyPopArgs) > 0, f"Expected at least one input of type: Cohort Method args in {StudyPopulationArgs.__class__}"
+                if self.fitOutcomeModelArgs:
+                    rFitOutcomeModelArgs = rCohortMethod.createFitOutcomeModelArgs(modelType = convert_py_to_R(self.fitOutcomeModelArgs["modelType"]))
+                rCreateCreateStudyPopulationArgs = rCohortMethod.createCreateStudyPopulationArgs
+                rCreateStudyPopArgs = rCreateCreateStudyPopulationArgs(
+                    riskWindowStart = convert_py_to_R(self.studyPopArgs["riskWindowStart"]),
+                    startAnchor = convert_py_to_R(self.studyPopArgs["startAnchor"]),
+                    riskWindowEnd = convert_py_to_R(self.studyPopArgs["riskWindowEnd"]),
+                    endAnchor = convert_py_to_R(self.studyPopArgs["endAnchor"]),
+                    firstExposureOnly = convert_py_to_R(self.studyPopArgs["firstExposureOnly"]),
+                    requireTimeAtRisk = convert_py_to_R(self.studyPopArgs["requireTimeAtRisk"]),
+                    priorOutcomeLookback = convert_py_to_R(self.studyPopArgs["priorOutcomeLookback"]),
+                    removeDuplicateSubjects = convert_py_to_R(self.studyPopArgs["removeDuplicateSubjects"]),
+                    removeSubjectsWithPriorOutcome = convert_py_to_R(self.studyPopArgs["removeSubjectsWithPriorOutcome"])
+                )
                 # matchOnPsArgs = matchOnPsArgs,
                 # computeSharedCovariateBalanceArgs = computeSharedCovBalArgs,
                 # computeCovariateBalanceArgs = computeCovBalArgs,
@@ -522,7 +564,7 @@ class CohortMethodAnalysis(Node):
                     analysisId = convert_py_to_R(self.analysisId),
                     description = "cohort method analysis",
                     getDbCohortMethodDataArgs = rGetDbCmDataArgs,
-                    createStudyPopArgs = rCreateStudyPopArgs[0],
+                    createStudyPopArgs = rCreateStudyPopArgs,
                     fitOutcomeModelArgs = rFitOutcomeModelArgs
                 )
                 return Result(False,  rCmAnalysis, self, task_run_context)
@@ -533,6 +575,7 @@ class CohortMethodAnalysis(Node):
 class CohortMethodModuleSpecNode(Node):
     def __init__(self, _node):
         super().__init__(_node)
+        self.cohortIds = []
         self.trueEffectSize = _node["trueEffectSize"]
         self.priorOutcomeLookback = _node["priorOutcomeLookback"]
         self.analysesToExclude = _node["cohortMethodConfigs"]
@@ -545,6 +588,11 @@ class CohortMethodModuleSpecNode(Node):
                 rCreateCohortMethodModuleSpecifications = rCohortMethodModule['createModuleSpecifications']
                 rCmAnalysisList = get_results_by_class_type(_input, CohortMethodAnalysis)
                 rTargetComparatorOutcomesList = get_results_by_class_type(_input, TargetComparatorOutcomes)
+                targetComparatorOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, TargetComparatorOutcomes)
+                for node in targetComparatorOutcomesNodes:
+                    self.cohortIds.extend(node.targetId)
+                    self.cohortIds.extend(node.comparatorId)
+                    self.cohortIds.extend(node.outComesCohortIds)
                 rCohortMethodSpec = rCreateCohortMethodModuleSpecifications(
                     cmAnalysisList = rCmAnalysisList,
                     targetComparatorOutcomesList = rTargetComparatorOutcomesList,
@@ -884,26 +932,137 @@ class ExposuresOutcome(Node):
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
+class TreatmentPatterns(Node):
+    def __init__(self, node):
+        super().__init__(node)
+        self.cohortIds = []
+        self.name = node["name"]
+        self.description = node["description"]
+        self.ageWindow = int(node.get("ageWindow", 5))  # default 5
+        self.splitTime = int(node.get("splitTime", None))  # default 0
+        self.censorType = node.get("censorType", "minCellCount")  # default "minCellCount"
+        self.minCellCount = int(node.get("minCellCount", 1))  # default 1
+        self.maxPathLength = int(node.get("maxPathLength", 5))  # default 5
+        self.minEraDuration = int(node.get("minEraDuration", 0))  # default 0
+        self.eraCollapseSize = int(node.get("eraCollapseSize", 30))  # default 30
+        self.indexDateOffset = int(node.get("indexDateOffset", 0))  # default 0
+        self.filterTreatments = node.get("filterTreatments", "First")  # default "First"
+        self.combinationWindow = int(node.get("combinationWindow", 30))  # default 30
+        self.includeTreatments = node.get("includeTreatments", "startDate")  # default "startDate"
+        self.splitEventCohorts = node.get("splitEventCohorts", None)  # default None
+        self.minPostCombinationDuration = int(node.get("minPostCombinationDuration", 30))  # default 30
+
+    def task(self, input: Dict[str, Result], task_run_context):
+        with ro.default_converter.context():
+            try:
+                rStrategus = ro.packages.importr('Strategus')
+                cohortDefinitionNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
+                for cohortDefinition in cohortDefinitionNodes:
+                    self.cohortIds.append(cohortDefinition.cohortIds)
+                rTreatmentPatternsModule = rStrategus.TreatmentPatternsModule['new']()
+                rCreateTreatmentPatternsModuleSpec = rTreatmentPatternsModule['createModuleSpecifications']
+                cohorts_df = pd.DataFrame.from_records([{
+                    'cohortId': cohortDefinitionNode.cohortIds[0],
+                    'cohortName': cohortDefinitionNode.name,
+                    "type": cohortDefinitionNode.type
+                } for cohortDefinitionNode in cohortDefinitionNodes])
+
+                rSpec = rCreateTreatmentPatternsModuleSpec(
+                    cohorts = convert_py_to_R(cohorts_df),
+                    includeTreatments = convert_py_to_R(self.includeTreatments),
+                    indexDateOffset = convert_py_to_R(self.indexDateOffset),
+                    minEraDuration = convert_py_to_R(self.minEraDuration),
+                    splitEventCohorts = convert_py_to_R(self.splitEventCohorts),
+                    splitTime = convert_py_to_R(self.splitTime),
+                    eraCollapseSize = convert_py_to_R(self.eraCollapseSize),
+                    combinationWindow = convert_py_to_R(self.combinationWindow),
+                    minPostCombinationDuration = convert_py_to_R(self.minPostCombinationDuration),
+                    filterTreatments = convert_py_to_R(self.filterTreatments),
+                    maxPathLength = convert_py_to_R(self.maxPathLength),
+                    ageWindow = convert_py_to_R(self.ageWindow),
+                    minCellCount = convert_py_to_R(self.minCellCount),
+                    censorType = convert_py_to_R(self.censorType)
+                )
+
+                return Result(False, rSpec, self, task_run_context)
+            except Exception as e:
+                return Result(True, tb.format_exc(), self, task_run_context)
+
+class KaplanMeierCMAnalysis(Node):
+    def __init__(self, node):
+        self.analysisId = int(node["analysisId"])
+        self.dbCohortMethodDataArgs = node["dbCohortMethodDataArgs"] # required
+        self.studyPopArgs = node['createStudyPopArgs'] # required
+        self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
+        self.psArgs = getattr(node, "psArgs", None)
+
+    def task(self, input: Dict[str, Result], task_run_context):
+        with ro.default_converter.context():
+            try:
+                rCohortMethod = ro.packages.importr('CohortMethod')
+                rCreateCmAnalysis = rCohortMethod.createCmAnalysis
+                rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
+                covarSettingsNode = DefaultCovariateSettingsNode(None)
+                covarSettingsResult = covarSettingsNode.task(task_run_context)
+                rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
+                    washoutPeriod = convert_py_to_R(self.dbCohortMethodDataArgs["washoutPeriod"]),
+                    firstExposureOnly = convert_py_to_R(self.dbCohortMethodDataArgs["firstExposureOnly"]),
+                    removeDuplicateSubjects = convert_py_to_R(self.dbCohortMethodDataArgs["removeDuplicateSubjects"]),
+                    maxCohortSize = convert_py_to_R(self.dbCohortMethodDataArgs["maxCohortSize"]),
+                    covariateSettings = covarSettingsResult.data
+                )
+                if self.fitOutcomeModelArgs:
+                    rFitOutcomeModelArgs = rCohortMethod.createFitOutcomeModelArgs(modelType = convert_py_to_R(self.fitOutcomeModelArgs["modelType"]))
+                rCreateCreateStudyPopulationArgs = rCohortMethod.createCreateStudyPopulationArgs
+                rCreateStudyPopArgs = rCreateCreateStudyPopulationArgs(
+                    riskWindowStart = convert_py_to_R(self.studyPopArgs["riskWindowStart"]),
+                    startAnchor = convert_py_to_R(self.studyPopArgs["startAnchor"]),
+                    riskWindowEnd = convert_py_to_R(self.studyPopArgs["riskWindowEnd"]),
+                    endAnchor = convert_py_to_R(self.studyPopArgs["endAnchor"]),
+                    firstExposureOnly = convert_py_to_R(self.studyPopArgs["firstExposureOnly"]),
+                    requireTimeAtRisk = convert_py_to_R(self.studyPopArgs["requireTimeAtRisk"]),
+                    priorOutcomeLookback = convert_py_to_R(self.studyPopArgs["priorOutcomeLookback"]),
+                    removeDuplicateSubjects = convert_py_to_R(self.studyPopArgs["removeDuplicateSubjects"]),
+                    removeSubjectsWithPriorOutcome = convert_py_to_R(self.studyPopArgs["removeSubjectsWithPriorOutcome"])
+                )
+                # matchOnPsArgs = matchOnPsArgs,
+                # computeSharedCovariateBalanceArgs = computeSharedCovBalArgs,
+                # computeCovariateBalanceArgs = computeCovBalArgs,
+                # UI does not support above configs, therefore backend also cannot suppor them for now
+                rCmAnalysis = rCreateCmAnalysis(
+                    analysisId = convert_py_to_R(self.analysisId),
+                    description = "cohort method analysis",
+                    getDbCohortMethodDataArgs = rGetDbCmDataArgs,
+                    createStudyPopArgs = rCreateStudyPopArgs,
+                    fitOutcomeModelArgs = rFitOutcomeModelArgs
+                )
+                return Result(False,  rCmAnalysis, self, task_run_context)
+            except Exception as e:
+                return Result(True, tb.format_exc(), self, task_run_context)
+
 
 class StrategusNode(Node):
     def __init__(self, node):
         super().__init__(node)
         self.sharedResourcesTypes = [CohortDefinitionSharedResource, NegativeControlOutcomeCohortSharedResource] 
-        self.moduleSpecTypes = [CohortGeneratorSpecNode, CohortDiagnosticsModuleSpecNode, CohortIncidenceModuleSpec, CharacterizationModuleSpecNode, CohortMethodModuleSpecNode]
+        self.moduleSpecTypes = [CohortGeneratorSpecNode, CohortDiagnosticsModuleSpecNode, CohortIncidenceModuleSpec, CharacterizationModuleSpecNode, CohortMethodModuleSpecNode, TreatmentPatterns]
 
-    def task(self, _input: Dict[str, Result], task_run_context):
+    def find_cohort_definition_nodes(self, results: List[Result]):
+        return [r.data for r in results if isinstance(r.node, CohortDefinitionSharedResource)]
+
+    def task(self, nodes, results, task_run_context):
         with ro.default_converter.context():
             try:
                 rStrategus = ro.packages.importr('Strategus')
-
                 rSpec = rStrategus.createEmptyAnalysisSpecificiations()
-                for sharedResourceType in self.sharedResourcesTypes:
-                    sharedResourceResults = get_results_by_class_type(_input, sharedResourceType)
-                    for sharedResource in sharedResourceResults:
-                        rSpec = rStrategus.addSharedResources(rSpec, sharedResource)
+
+                sharedResourceResults = self.find_cohort_definition_nodes(results)
+                for result in sharedResourceResults:
+                    rSharedResource = result["cohortDefinitionSharedResource"]
+                    rSpec = rStrategus.addSharedResources(rSpec, rSharedResource)
 
                 for moduleSpecType in self.moduleSpecTypes:
-                    moduleSpecResults = get_results_by_class_type(_input, moduleSpecType)
+                    moduleSpecResults = get_results_by_class_type(results, moduleSpecType)
                     for moduleSpec in moduleSpecResults:
                         rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpec)
                     # rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpecResults[0])
@@ -932,6 +1091,9 @@ class StrategusNode(Node):
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
+
+def get_strategus_node():
+    return StrategusNode(None)
 
 @flow(name="execute-r-strategus",
       log_prints=True)
