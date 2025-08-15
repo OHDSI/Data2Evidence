@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import criteriaConfigLoader, { type AttributeOption } from '../utils/CriteriaConfigLoader'
-import type { QueryFilterEvent } from '../models/QueryFilterModel'
+import type { QueryFilterEvent } from '../types/QueryFilterTypes'
 import MenuIcon from './icons/MenuIcon.vue'
 
 interface Props {

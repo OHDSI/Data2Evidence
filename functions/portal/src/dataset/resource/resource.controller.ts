@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Post, Query, Param, Req } from "@danet/core";
+import { HttpException, Controller, Delete, Get, Post, Query, Param, Req } from "@danet/core";
 import { Buffer } from "node:buffer";
 import { ResourceService } from "./resource.service.ts";
 
@@ -7,7 +7,10 @@ export class ResourceController {
   constructor(private readonly resourceService: ResourceService) {}
 
   @Get("list")
-  async getResources(@Query("datasetId") datasetId: any) {
+  async getResources(@Query("datasetId") datasetId: string) {
+    if (!datasetId) {
+      throw new HttpException(400, "Invalid datasetId");
+    }
     return await this.resourceService.getResources(datasetId);
   }
 
@@ -24,12 +27,11 @@ export class ResourceController {
       buffer: await file.arrayBuffer(),
       mimetype: file.type,
     };
-    console.log(`uploadedFile: ${uploadedFile}`);
     if (
       uploadedFile.originalname.includes("\\") ||
       uploadedFile.originalname.includes("/")
     ) {
-      throw new Error("Invalid filename");
+      throw new HttpException(400, "Invalid filename");
     }
 
     return await this.resourceService.uploadResource(datasetId, uploadedFile);
@@ -66,6 +68,9 @@ export class ResourceController {
     @Query("datasetId") datasetId: string,
     @Param("fileName") fileName: string
   ) {
+    if (!datasetId || !fileName) {
+      throw new HttpException(400, "Invalid datasetId or fileName");
+    }
     return await this.resourceService.deleteResource(datasetId, fileName);
   }
 }

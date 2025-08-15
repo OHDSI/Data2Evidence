@@ -1,7 +1,7 @@
 <template>
   <div
-    @focus="openControl"
-    @click="openControl"
+    @focus="handleContainerInteraction"
+    @click="handleContainerInteraction"
     tabindex="0"
     class="app-tag-input"
     ref="container"
@@ -75,11 +75,11 @@
         </span>
       </template>
     </multiselect>
-    <div v-if="componentType === 'conceptSet'">
+    <div v-if="componentType === 'conceptSet' || componentType === 'concept'">
       <d4l-button
         class="unicode-icon"
         text="+"
-        :title="texts.createConceptSet"
+        :title="componentType === 'concept' ? 'Select concepts' : texts.createConceptSet"
         style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 0px"
         @mousedown.stop.prevent="handleConceptSetAction(null)"
       />
@@ -224,8 +224,33 @@ export default {
         delete this.tagRefs[value]
       }
     },
-    remove(removedOption, id) {
-      this.removeFromNewTags(removedOption.value)
+    remove(removedOption) {
+      // Handle multiselect concepts (pa-atlas case) - emit concept-set-action for proper state management
+      if (this.componentType === 'concept') {
+        // Create an updated value array without the removed concept
+        const updatedValue = this.value.filter(item => item.value !== removedOption.value)
+        // Emit concept-set-action to properly update the attribute's conceptItems
+        this.$emit('concept-set-action', {
+          values: updatedValue,
+          config: this.conceptSetConfig,
+          componentType: this.componentType,
+          action: 'remove',
+          removedItem: removedOption,
+        })
+      } else {
+        // PA Filter card behavior)
+        this.removeFromNewTags(removedOption.value)
+      }
+    },
+    handleContainerInteraction() {
+      // For concept and conceptSet types, directly open terminology modal
+      if (this.componentType === 'concept') {
+        this.handleConceptSetAction(null)
+        return
+      }
+
+      // For other types, use normal behavior
+      this.openControl()
     },
     async openControl() {
       await this.$nextTick()
@@ -294,6 +319,13 @@ export default {
       })
     },
     open() {
+      // For concept types, open terminology modal directly instead of showing dropdown
+      // dropdown is still used to select existing concept sets
+      if (this.componentType === 'concept') {
+        this.handleConceptSetAction(null)
+        return
+      }
+
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
     },
@@ -362,7 +394,11 @@ export default {
       this.currentPlaceholder = this.texts.placeholder
     },
     handleConceptSetAction(values) {
-      this.$emit('concept-set-action', { values, config: this.conceptSetConfig })
+      this.$emit('concept-set-action', {
+        values,
+        config: this.conceptSetConfig,
+        componentType: this.componentType, // Pass component type for mode determination
+      })
     },
     tagClickHandler(props) {
       if (this.$refs.multiselect?.$refs?.search) {
