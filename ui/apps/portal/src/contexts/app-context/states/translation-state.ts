@@ -999,6 +999,7 @@ export const i18nDefault = {
     TERMINOLOGY__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     TERMINOLOGY__RELATED_CONCEPTS: "Related concepts",
     TERMINOLOGY__SEARCH: "Search",
+    TERMINOLOGY__SELECT_CONCEPTS: "Select Concepts",
     TERMINOLOGY__SELECTED_CONCEPTS: "Selected concepts",
     TERMINOLOGY__SHARED: "Shared",
     TERMINOLOGY__UPDATE: "Update",
