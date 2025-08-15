@@ -110,7 +110,7 @@ export class DemoController {
     const steps: IStepTask[] = [
       {
         code: "phenotype",
-        message: "Running Phenotype flow...",
+        message: "Running phenotype flow...",
         task: this.service.runPhenotype.bind(this.service),
       },
     ];
