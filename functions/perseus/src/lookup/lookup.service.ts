@@ -28,7 +28,10 @@ export class LookupService {
         return lookup.source_to_source;
       }
     } else {
-      if (name?.includes("template")) {
+      if (typeof name !== "string") {
+        throw new Error("Invalid or missing 'name' parameter");
+      }
+      if (name.includes("template")) {
         try {
           const lookup = await Deno.readFile(
             this.getRelativePath(`${name}.txt`)
