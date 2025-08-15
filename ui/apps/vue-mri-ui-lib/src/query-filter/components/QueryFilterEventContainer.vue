@@ -10,16 +10,22 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
+import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
+import type {
+  ConceptSetItemDisplay,
+  ConceptSetDomainValues,
+  ConceptSetAction,
+  SelectedConceptSet,
+} from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
   eventType?: 'ENTRY' | 'EXIT' | 'CRITERIA'
   parentGroup?: QueryFilterGroup
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -36,6 +42,7 @@ const emit = defineEmits<{
   'update-events': [events: QueryFilterEvent[]]
   'event-updated': [eventIndex: number, event: QueryFilterEvent]
   'event-removed': [eventIndex: number]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 // Work directly with props.events for reactivity
@@ -75,6 +82,16 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
       count: 1,
       using: 'ALL',
     },
+  }
+
+  // Handle group events differently
+  if (option.id === 'group') {
+    newEvent.conceptSet = 'Group'
+    newEvent.nestedCriteria = {
+      id: `nested_${Date.now()}`,
+      criteriaType: 'ALL',
+      events: [],
+    }
   }
 
   eventsData.value = [...eventsData.value, newEvent]
@@ -120,7 +137,7 @@ const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   console.log('Attribute removed:', eventId, attributeId)
 }
 
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | null) => {
+const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
     const currentEvent = eventsData.value[eventIndex]
@@ -145,7 +162,7 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | 
       conceptIds: conceptSet.conceptIds || [],
       concepts:
         conceptSet.concepts?.map(c => ({
-          id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+          id: c.id || c.concept_id || 0,
           useMapped: c.useMapped || false,
           isExcluded: c.isExcluded || false,
           useDescendants: c.useDescendants || false,
@@ -165,6 +182,21 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | 
     updateEvent(eventIndex, updatedEvent)
   }
 }
+
+// Handle nested criteria updates for group events
+const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriteria) => {
+  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
+  if (eventIndex !== -1) {
+    const currentEvent = eventsData.value[eventIndex]
+    if (!currentEvent) return
+
+    const updatedEvent: QueryFilterEvent = {
+      ...currentEvent,
+      nestedCriteria,
+    }
+    updateEvent(eventIndex, updatedEvent)
+  }
+}
 </script>
 
 <template>
@@ -180,32 +212,50 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | 
 
     <!-- Events List -->
     <div class="events-list">
-      <!-- Use new QueryFilterEventCard component for single event focus -->
-      <QueryFilterEventCard
-        v-for="(event, index) in mainEvents"
-        :key="event.id"
-        :event="event"
-        :event-index="index"
-        :all-events="eventsData"
-        :concept-sets="conceptSets"
-        :concept-set-domain-values="
-          conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
-        "
-        :concept-set-texts="conceptSetTexts || {}"
-        :dataset-id="datasetId || null"
-        :readonly="readonly"
-        @update:event="
-          updateEvent(
-            mainEvents.findIndex(e => e.id === event.id),
-            $event
-          )
-        "
-        @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
-        @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
-        @concept-set-selected="handleConceptSetSelected(event.id, $event)"
-        @attribute-selected="handleAttributeSelected(event.id, $event)"
-        @attribute-removed="handleAttributeRemoved(event.id, $event)"
-      />
+      <template v-for="(event, index) in mainEvents" :key="event.id">
+        <!-- Render QueryFilterNestedCriteria for group events -->
+        <QueryFilterNestedCriteria
+          v-if="event.eventType === 'group'"
+          :nested-criteria="event.nestedCriteria || { id: event.id, criteriaType: 'ALL', events: [] }"
+          :concept-sets="conceptSets"
+          :concept-set-domain-values="
+            conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+          "
+          :concept-set-texts="conceptSetTexts || {}"
+          :dataset-id="datasetId || null"
+          :readonly="readonly"
+          :hide-header="false"
+          @update:nested-criteria="criteria => updateEventNestedCriteria(event.id, criteria)"
+          @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
+        />
+
+        <!-- Use QueryFilterEventCard for regular events -->
+        <QueryFilterEventCard
+          v-else
+          :event="event"
+          :event-index="index"
+          :all-events="eventsData"
+          :concept-sets="conceptSets"
+          :concept-set-domain-values="
+            conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+          "
+          :concept-set-texts="conceptSetTexts || {}"
+          :dataset-id="datasetId || null"
+          :readonly="readonly"
+          @update:event="
+            updateEvent(
+              mainEvents.findIndex(e => e.id === event.id),
+              $event
+            )
+          "
+          @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
+          @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
+          @concept-set-selected="handleConceptSetSelected(event.id, $event)"
+          @attribute-selected="handleAttributeSelected(event.id, $event)"
+          @attribute-removed="handleAttributeRemoved(event.id, $event)"
+          @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
+        />
+      </template>
     </div>
   </div>
 </template>

@@ -115,6 +115,13 @@ This will produce a renv.lock file
 4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
 5. To run the flow locally, edit the deployment and change the image to the local image.
 
+### Developing a flow which needs authentication token
+The pipeline triggers the flow job first and subsequently sends the bearer token to the running flow job, for testing flows that requires bearer token.
+
+- Replace `deployment_id`, `parameters`, and `bearer_token` from jobs portal.
+- Run the following pipeline below.
+`python -m docs.tests.flowauth`
+
 ## Modifying an existing flow
 ### Modify flow parameters
 1. After modifying flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.

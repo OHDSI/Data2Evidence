@@ -13,9 +13,7 @@ export default class StrategusAnalysisService {
 
     async getAllAnalysis() {
         const analysisList = await this.strategusAnalysisRepository.find();
-        if (!analysisList || analysisList.length === 0) {
-            throw new Error("No analysis specifications found");
-        }
+        
         return analysisList;
     }
 
@@ -23,9 +21,7 @@ export default class StrategusAnalysisService {
         const analysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
-        if (!analysis) {
-            throw new Error(`No analysis found for studyId: ${studyId}`);
-        }
+        
         return analysis;
     }
 
