@@ -34,7 +34,9 @@ export interface ConceptSet {
   expression: ConceptSetExpression
 }
 
-export interface ConditionOccurrence {
+// was originally `export interface ConditionOccurrence` but we should probably make it more generic, along with other events
+// so we wont need to update this when the config changes
+export interface AtlasEvent {
   CodesetId?: number
   ConditionTypeExclude?: boolean
   First?: boolean
@@ -181,7 +183,7 @@ export interface ObservationPeriod {
 }
 
 export interface CriteriaListItem {
-  ConditionOccurrence?: ConditionOccurrence
+  ConditionOccurrence?: AtlasEvent
   DrugExposure?: DrugExposure
   DrugEra?: DrugEra
   ProcedureOccurrence?: ProcedureOccurrence
@@ -234,7 +236,7 @@ export interface DateOffset {
 }
 
 export interface CustomEra {
-  CodesetId: number
+  DrugCodesetId: number
   GapDays: number
   Offset: number
 }
@@ -319,7 +321,9 @@ export interface GroupCriteria {
 }
 
 export interface CensoringCriteria {
-  [key: string]: any
+  [key: string]: {
+    CodesetId: number
+  }
 }
 
 export interface AtlasCohortDefinition {
@@ -330,121 +334,24 @@ export interface AtlasCohortDefinition {
   ExpressionLimit: ExpressionLimit
   InclusionRules: InclusionRule[]
   EndStrategy?: EndStrategy
-  CensoringCriteria: CensoringCriteria[]
+  CensoringCriteria: CriteriaListItem[]
   CollapseSettings: CollapseSettings
   CensorWindow: CensorWindow
   name?: string
   description?: string
 }
 
-export interface AtlasCohortDefinitionResponse {
+export type AtlasBookmark = {
   id: number
   name: string
-  description?: string
+  description: string
   expressionType: string
-  expression: AtlasCohortDefinition
+  expression: string
   createdBy: string
   createdDate: number
   modifiedBy: string
   modifiedDate: number
-  tags: any[]
+  tags: string[]
   hasWriteAccess: boolean
   hasReadAccess: boolean
-}
-
-export function isConditionOccurrence(criteria: any): criteria is ConditionOccurrence {
-  return criteria && typeof criteria.CodesetId === 'number' && 'ConditionTypeExclude' in criteria
-}
-
-export function isDrugExposure(criteria: any): criteria is DrugExposure {
-  return criteria && typeof criteria.CodesetId === 'number' && 'DrugTypeExclude' in criteria
-}
-
-export function isProcedureOccurrence(criteria: any): criteria is ProcedureOccurrence {
-  return criteria && typeof criteria.CodesetId === 'number' && 'ProcedureTypeExclude' in criteria
-}
-
-export function isObservation(criteria: any): criteria is Observation {
-  return criteria && typeof criteria.CodesetId === 'number' && 'ObservationTypeExclude' in criteria
-}
-
-export function isVisitOccurrence(criteria: any): criteria is VisitOccurrence {
-  return criteria && typeof criteria.CodesetId === 'number' && 'VisitTypeExclude' in criteria
-}
-
-export function isDeviceExposure(criteria: any): criteria is DeviceExposure {
-  return criteria && typeof criteria.CodesetId === 'number' && 'DeviceTypeExclude' in criteria
-}
-
-export function isMeasurement(criteria: any): criteria is Measurement {
-  return criteria && typeof criteria.CodesetId === 'number' && 'MeasurementTypeExclude' in criteria
-}
-
-export function isDeath(criteria: any): criteria is Death {
-  return criteria && (typeof criteria.CodesetId === 'number' || 'DeathTypeExclude' in criteria)
-}
-
-export function isDrugEra(criteria: any): criteria is DrugEra {
-  return criteria && ('EraStartDate' in criteria || 'EraEndDate' in criteria || typeof criteria.CodesetId === 'number')
-}
-
-export function isObservationPeriod(criteria: any): criteria is ObservationPeriod {
-  return criteria && ('PeriodStartDate' in criteria || 'PeriodEndDate' in criteria)
-}
-
-export function getCriteriaType(item: CriteriaListItem): string | null {
-  if (item.ConditionOccurrence) return 'ConditionOccurrence'
-  if (item.DrugExposure) return 'DrugExposure'
-  if (item.DrugEra) return 'DrugEra'
-  if (item.ProcedureOccurrence) return 'ProcedureOccurrence'
-  if (item.Observation) return 'Observation'
-  if (item.VisitOccurrence) return 'VisitOccurrence'
-  if (item.DeviceExposure) return 'DeviceExposure'
-  if (item.Measurement) return 'Measurement'
-  if (item.Death) return 'Death'
-  if (item.ObservationPeriod) return 'ObservationPeriod'
-  return null
-}
-
-export function getCriteriaObject(item: CriteriaListItem): any {
-  return (
-    item.ConditionOccurrence ||
-    item.DrugExposure ||
-    item.DrugEra ||
-    item.ProcedureOccurrence ||
-    item.Observation ||
-    item.VisitOccurrence ||
-    item.DeviceExposure ||
-    item.Measurement ||
-    item.Death ||
-    item.ObservationPeriod ||
-    null
-  )
-}
-
-export type CardinalityType = 'EXACTLY' | 'AT_MOST' | 'AT_LEAST'
-export type AtlasOccurrenceType = 0 | 1 | 2
-
-export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurrenceType {
-  switch (cardinality) {
-    case 'EXACTLY':
-      return 0
-    case 'AT_MOST':
-      return 1
-    case 'AT_LEAST':
-    default:
-      return 2
-  }
-}
-
-export function mapCriteriaTypeToAtlas(criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'): 'All' | 'First' | 'Last' {
-  switch (criteriaType) {
-    case 'EARLIEST':
-      return 'First'
-    case 'LATEST':
-      return 'Last'
-    case 'ALL':
-    default:
-      return 'All'
-  }
 }
