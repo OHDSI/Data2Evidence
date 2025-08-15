@@ -2,44 +2,39 @@ import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
 import { NodeDataState } from "../../../../types";
-import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
-import { DataMappingDrawer } from "./DataMappingDrawer";
-import { TargetHandle, SourceHandle } from "../../CustomHandle/CustomHandle";
-import { HandleIOType } from "../type";
-import "./DataMappingNode.scss";
+import { NodeLayout } from "../../NodeLayout/NodeLayout";
+import { KaplanMeierCharacterizationDrawer } from "./KaplanMeierCharacterizationDrawer";
+import "./KaplanMeierCharacterizationNode.scss";
+import { KaplanMeierCharacterizationArgs } from "./types";
 
-export interface DataMappingNodeData extends NodeDataState {
-  data: any;
+export interface KaplanMeierCharacterizationNodeData extends NodeDataState {
+  kaplanMeierCharacterizationArgs: KaplanMeierCharacterizationArgs;
 }
 
-export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
+export const KaplanMeierCharacterizationNode = (
+  node: NodeProps<KaplanMeierCharacterizationNodeData>
+) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
   const [resultVisible, openResult, closeResult] = useBooleanHelper(false);
 
   return (
     <>
-      <NodeLayout<DataMappingNodeData>
-        className="data-mapping-node"
+      <NodeLayout<KaplanMeierCharacterizationNodeData>
+        className="kaplan-meier-characterization-node"
         name={data.name}
         onSettingClick={openSetting}
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
-        LeftHandle={
-          <TargetHandle ioType={HandleIOType.Object} nodeId={node.id} />
-        }
-        RightHandle={
-          <SourceHandle ioType={HandleIOType.Object} nodeId={node.id} />
-        }
       >
         {data.description}
       </NodeLayout>
-      <DataMappingDrawer
+      <KaplanMeierCharacterizationDrawer
         node={node}
-        title="Configure Data Mapping"
-        className="data-mapping-drawer"
+        title="Configure Kaplan-Meier Characterization Analysis Node"
+        className="kaplan-meier-characterization-drawer"
         open={settingVisible}
         onClose={closeSetting}
       />

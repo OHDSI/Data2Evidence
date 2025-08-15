@@ -4,42 +4,41 @@ import { useBooleanHelper } from "~/features/flow/hooks";
 import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
-import { DataMappingDrawer } from "./DataMappingDrawer";
 import { TargetHandle, SourceHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
-import "./DataMappingNode.scss";
+import { WhiteRabbitDrawer } from "./WhiteRabbitDrawer";
+import { ScannedSchemaState, TableSourceState } from "../../../../types";
 
-export interface DataMappingNodeData extends NodeDataState {
-  data: any;
+export interface WhiteRabbitNodeData extends NodeDataState {
+  scannedSchema: ScannedSchemaState;
+  sourceHandles: TableSourceState[];
 }
 
-export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
+export const WhiteRabbitNode = (node: NodeProps<WhiteRabbitNodeData>) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
   const [resultVisible, openResult, closeResult] = useBooleanHelper(false);
 
   return (
     <>
-      <NodeLayout<DataMappingNodeData>
-        className="data-mapping-node"
+      <NodeLayout<WhiteRabbitNodeData>
+        className="white-rabbit-node"
         name={data.name}
         onSettingClick={openSetting}
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
-        LeftHandle={
-          <TargetHandle ioType={HandleIOType.Object} nodeId={node.id} />
-        }
+        LeftHandle={null}
         RightHandle={
-          <SourceHandle ioType={HandleIOType.Object} nodeId={node.id} />
+          <SourceHandle nodeId={node.id} ioType={HandleIOType.Object} />
         }
       >
         {data.description}
       </NodeLayout>
-      <DataMappingDrawer
+      <WhiteRabbitDrawer
         node={node}
-        title="Configure Data Mapping"
-        className="data-mapping-drawer"
+        title="Configure White Rabbit"
+        className="white-rabbit-drawer"
         open={settingVisible}
         onClose={closeSetting}
       />
@@ -48,7 +47,7 @@ export const DataMappingNode = (node: NodeProps<DataMappingNodeData>) => {
         onClose={closeResult}
         title={data.name}
         error={data.error}
-        message={data.error ? data.errorMessage : data.result}
+        message={data.errorMessage || data.result}
         createdDate={data.resultDate}
       />
     </>

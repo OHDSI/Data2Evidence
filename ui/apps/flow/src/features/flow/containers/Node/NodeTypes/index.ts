@@ -13,6 +13,7 @@ import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
+import { WhiteRabbitNode } from "./WhiteRabbitNode/WhiteRabbitNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -22,12 +23,13 @@ export const NODE_TYPES: {
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
-  data_mapping_node: DataMappingNode,
+  rabbit_in_a_hat: DataMappingNode,
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
+  white_rabbit_node: WhiteRabbitNode,
 };
 
 export const NODE_COLORS: {
@@ -38,12 +40,13 @@ export const NODE_COLORS: {
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
-  data_mapping_node: "#999fcb",
+  rabbit_in_a_hat: "#999fcb",
   concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
+  white_rabbit_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -89,11 +92,30 @@ test_exec <- function(myinput) {
     tag: NodeTag.Stable,
     defaultData: {},
   },
-  data_mapping_node: {
-    title: "Data mapping",
+  rabbit_in_a_hat: {
+    title: "Rabbit in a Hat",
     description: "Map source data to OMOP data model.",
     tag: NodeTag.Experimental,
     defaultData: {},
+  },
+  white_rabbit_node: {
+    title: "White Rabbit",
+    description: "Scan source database schema.",
+    tag: NodeTag.Experimental,
+    defaultData: {
+      scannedSchema: {
+        etl_mapping: {
+          id: 0,
+          scan_report_id: 0,
+          scan_report_name: "",
+          source_schema_name: "",
+          cdm_version: "",
+          username: "",
+        },
+        source_tables: [],
+      },
+      sourceHandles: [],
+    },
   },
   concept_mapping_node: {
     title: "Concept mapping",
