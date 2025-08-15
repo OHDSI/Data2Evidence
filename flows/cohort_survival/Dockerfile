@@ -139,7 +139,7 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 
 FROM r-dependencies-build AS runtime
 
-ARG DUCKDB_VERSION=1.2.1
+ARG DUCKDB_VERSION=1.3.2
 ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 
 RUN apt-get purge -y \

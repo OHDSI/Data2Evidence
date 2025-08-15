@@ -4,10 +4,6 @@
 # Usage: ./download_duckdb_extensions.sh <duckdb_version> <extensions>
 set -e
 
-#wget "https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz"
-#wget "https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64_gcc4/fts.duckdb_extension.gz"
-#gzip -d postgres_scanner.duckdb_extension.gz
-#gzip -d fts.duckdb_extension.gz
 
 DUCKDB_VERSION="$1"
 EXTENSIONS="$2"
@@ -20,6 +16,6 @@ fi
 
 IFS=',' read -ra EXT_ARR <<< "$EXTENSIONS"
 for ext in "${EXT_ARR[@]}"; do
-  wget "https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64_gcc4/${ext}.duckdb_extension.gz"
+  wget "https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${ext}.duckdb_extension.gz"
   gzip -d "${ext}.duckdb_extension.gz"
 done
