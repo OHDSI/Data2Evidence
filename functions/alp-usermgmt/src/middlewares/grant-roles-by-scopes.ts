@@ -99,8 +99,11 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         const grantDatasetCodes = scopes
           .filter(x => x.startsWith(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX))
           .map(x => x.replace(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX, ''))
-          
+
         await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
+
+        const isAnyResearcher = datasets.some(dataset => grantDatasetCodes.includes(dataset.token_dataset_code))
+        await grantOrRevokeSystemRole(userId, ROLES.STUDY_WRITE_DQD_RESEARCHER, isAnyResearcher)
       }
     }
 
