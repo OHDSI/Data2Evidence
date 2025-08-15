@@ -8,8 +8,8 @@ from sqlalchemy import text
 
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
-from _shared_flow_utils.types import UserType, AuthToken
-from _shared_flow_utils.api.PrefectAPI import build_user_from_token, get_auth_token_from_input, get_third_party_token_value
+from _shared_flow_utils.types import UserType
+from _shared_flow_utils.api.PrefectAPI import build_user_from_token, GetAuthTokens
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
@@ -265,13 +265,12 @@ class DaoBase(ABC):
         if dialect == SupportedDatabaseDialects.HANA:
             hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
             if auth_mode == AuthMode.JWT:
-                # Prefect task to fetch token
-                auth_token: AuthToken = get_auth_token_from_input()
-                hana_connect_args["password"] = get_third_party_token_value(auth_token)
+                token = GetAuthTokens().get_third_party_token()
+                hana_connect_args["password"] = token.get_secret_value()
                 
                 # Add APPLICATION and APPLICATIONUSER as session variables for JWT
                 app_name = f"d2e-{os.environ.get('plugin_name')}"
-                token_user = build_user_from_token(get_third_party_token_value(auth_token=auth_token))
+                token_user = build_user_from_token(token)
                 base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
                 return base_url, hana_connect_args
             if auth_mode == AuthMode.PASSWORD:
@@ -318,15 +317,13 @@ class DaoBase(ABC):
 
         if database_credentials.authMode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
             user = ""
-            # Prefect task to fetch token
-            auth_token: AuthToken = get_auth_token_from_input()
-            
+            token = GetAuthTokens().get_third_party_token()
             # Add APPLICATION and APPLICATIONUSER as session variables for JWT
             app_name = f"d2e-{os.environ.get('plugin_name')}"
-            token_user = build_user_from_token(get_third_party_token_value(auth_token=auth_token))
+            token_user = build_user_from_token(token)
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
             
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{get_third_party_token_value(auth_token)}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{token.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         else:
             match user_type:

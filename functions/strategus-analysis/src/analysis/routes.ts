@@ -21,7 +21,10 @@ export default class StrategusAnalysisRouter {
       const analysisList = await this.strategusAnalysisService.getAllAnalysis();
       res.status(200).json(analysisList);
     } catch (error) {
-      console.error("Error fetching all strategus analysis specifications:", error);
+      console.error(
+        "Error fetching all strategus analysis specifications:",
+        error
+      );
       res.status(500).json({
         message: "An error occurred while fetching all analysis specifications",
       });
@@ -53,7 +56,7 @@ export default class StrategusAnalysisRouter {
   private async createStrategusAnalysis(req: Request, res: Response) {
     try {
       const { studyId, analysisSpec, mode, notebookName } = req.body;
-      const token = req.headers["authorization"]
+      const token = req.headers["authorization"];
       if (!studyId || !analysisSpec) {
         return res.status(400).json({
           message: "Missing required fields: studyId, or analysisSpec",
@@ -72,7 +75,6 @@ export default class StrategusAnalysisRouter {
         message: result.message,
         analysisId: result.analysisId,
       });
-
     } catch (error) {
       console.error("Error saving strategus analysis specification:", error);
       res.status(500).json({

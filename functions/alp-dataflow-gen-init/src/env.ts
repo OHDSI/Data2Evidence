@@ -61,6 +61,9 @@ export const env = {
     "pg-admin-password": _env.PG_ADMIN_PASSWORD,
     "supabase-storage-jwt-token": _env.SUPABASE_STORAGE_JWT_TOKEN,
     "trex-sql-password": _env.TREX__SQL__PASSWORD,
+    "refresh-token-endpoint": _env.REFRESH_TOKEN__ENDPOINT,
+    "refresh-token-client-id": _env.REFRESH_TOKEN__CLIENT_ID,
+    "refresh-token-client-secret": _env.REFRESH_TOKEN__CLIENT_SECRET,
     "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS
   },
   PREFECT_API_URL: _env.PREFECT_API_URL,

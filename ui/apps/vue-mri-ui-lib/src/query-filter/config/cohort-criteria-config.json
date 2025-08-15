@@ -322,7 +322,8 @@
         "id": "gender",
         "name": "Gender",
         "description": "Filter by patient gender",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Gender",
         "atlasKey": "addGender"
       },
       {
@@ -336,7 +337,8 @@
         "id": "conditionStatus",
         "name": "Condition Status",
         "description": "Filter by condition status",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Condition Status",
         "atlasKey": "addConditionStatus"
       },
       {
@@ -368,10 +370,11 @@
         "atlasKey": "addDateAdjustment"
       },
       {
-        "id": "type",
-        "name": "Type",
+        "id": "conditionType",
+        "name": "Condition Type",
         "description": "Filter by condition type",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Type Concept",
         "atlasKey": "addType"
       },
       {
@@ -385,7 +388,8 @@
         "id": "visit",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Visit",
         "atlasKey": "addVisit"
       },
       {
@@ -413,7 +417,8 @@
         "id": "providerSpecialty",
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Provider",
         "atlasKey": "addProviderSpecialty"
       },
       {
@@ -458,7 +463,8 @@
         "id": "gender",
         "name": "Gender",
         "description": "Filter by patient gender",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Gender",
         "atlasKey": "addGender"
       },
       {
@@ -483,10 +489,11 @@
         "atlasKey": "addEndDate"
       },
       {
-        "id": "type",
-        "name": "Type",
+        "id": "drugType",
+        "name": "Drug Type",
         "description": "Filter by drug type",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Type Concept",
         "atlasKey": "addType"
       },
       {
@@ -500,7 +507,8 @@
         "id": "visit",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Visit",
         "atlasKey": "addVisit"
       },
       {
@@ -542,7 +550,8 @@
         "id": "route",
         "name": "Route",
         "description": "Filter by route of administration",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Route",
         "atlasKey": "addRoute"
       },
       {
@@ -563,7 +572,8 @@
         "id": "unit",
         "name": "Unit",
         "description": "Filter by drug unit",
-        "type": "conceptSet",
+        "type": "concept",
+        "domainFilter": "Unit",
         "atlasKey": "addUnit"
       },
       {
@@ -591,7 +601,134 @@
         "id": "providerSpecialty",
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider",
+        "atlasKey": "addProviderSpecialty"
+      },
+      {
+        "id": "providerSpecialtyCS",
+        "name": "Provider Specialty Concept Set",
+        "description": "Filter by provider specialty using concept set",
         "type": "conceptSet",
+        "atlasKey": "addProviderSpecialtyCS"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested",
+        "special": true,
+        "atlasKey": "addNested"
+      }
+    ],
+    "deviceExposure": [
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment",
+        "atlasKey": "addDateAdjustment"
+      },
+      {
+        "id": "firstExposure",
+        "name": "First Exposure",
+        "description": "Limit to first device exposure in history",
+        "type": "boolean",
+        "atlasKey": "addFirstDiagnosis"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of exposure",
+        "type": "numericRange",
+        "atlasKey": "addAge"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender",
+        "atlasKey": "addGender"
+      },
+      {
+        "id": "genderCS",
+        "name": "Gender Concept Set",
+        "description": "Filter by patient gender using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addGenderCS"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by exposure start date",
+        "type": "dateRange",
+        "atlasKey": "addStartDate"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by exposure end date",
+        "type": "dateRange",
+        "atlasKey": "addEndDate"
+      },
+      {
+        "id": "deviceType",
+        "name": "Device Type",
+        "description": "Filter by device type",
+        "type": "concept",
+        "domainFilter": "Type Concept",
+        "atlasKey": "addType"
+      },
+      {
+        "id": "typeCS",
+        "name": "Type Concept Set",
+        "description": "Filter by device type using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addTypeCS"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit",
+        "atlasKey": "addVisit"
+      },
+      {
+        "id": "visitCS",
+        "name": "Visit Concept Set",
+        "description": "Filter based on visit occurrence using concept set",
+        "type": "conceptSet",
+        "atlasKey": "addVisitCS"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by device quantity",
+        "type": "numericRange",
+        "atlasKey": "addQuantity"
+      },
+      {
+        "id": "uniqueDeviceId",
+        "name": "Unique Device ID",
+        "description": "Filter by unique device identifier",
+        "type": "text",
+        "atlasKey": "addUniqueDeviceId"
+      },
+      {
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
+        "type": "text",
+        "atlasKey": "addSource"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider",
         "atlasKey": "addProviderSpecialty"
       },
       {
@@ -631,7 +768,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "visitOccurrence",
@@ -675,7 +815,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "daysSupply",
@@ -727,7 +870,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "visitOccurrence",
@@ -769,7 +915,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "valueAsNumber",
@@ -831,7 +980,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "valueAsNumber",
@@ -889,7 +1041,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "visitType",
@@ -936,7 +1091,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "quantity",
@@ -983,7 +1141,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "quantity",
@@ -1025,7 +1186,10 @@
         {
           "id": "gender",
           "name": "Gender",
-          "description": "Filter by patient gender"
+          "description": "Filter by patient gender",
+          "type": "concept",
+          "domainFilter": "Gender",
+          "atlasKey": "addGender"
         },
         {
           "id": "deathType",

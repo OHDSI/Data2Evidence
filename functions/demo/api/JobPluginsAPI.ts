@@ -33,7 +33,7 @@ export class JobPluginsAPI {
     }
   }
 
-  /*async createCacheFlowRun(dto: ICacheCreateFlowRun) {
+  async createCacheFlowRun(dto: ICacheCreateFlowRun) {
     try {
       this.logger.info(`Create cache flow run: ${JSON.stringify(dto)}`);
       const options = await this.getRequestConfig();
@@ -44,7 +44,7 @@ export class JobPluginsAPI {
       console.error(`Error while creating cache flow run: ${error}`);
       throw error;
     }
-  }*/
+  }
 
   async createDqdFlowRun(dto: IDqdCreateFlowRun) {
     try {
