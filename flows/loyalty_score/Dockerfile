@@ -40,13 +40,13 @@ RUN apt-get update && \
     && apt-get clean
 
 COPY --chown=docker:docker  ./__init__.py /app/
-COPY --chown=docker:docker ./_shared_flow_utils/drivers /app/inst/drivers/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./loyalty_score/*_plugin /app/flows/
+COPY --chown=docker:docker --chmod=711 ./loyalty_score/loyalty_score_plugin /app/flows/loyalty_score_plugin
 
 WORKDIR /app
 

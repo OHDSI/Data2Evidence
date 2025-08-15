@@ -183,7 +183,7 @@ RUN \
 
 
 COPY --chown=docker:docker  ./__init__.py /app/
-COPY --chown=docker:docker ./_shared_flow_utils/drivers /app/inst/drivers/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 # Copy the Python virtual environment and uv binary from the build stage
 COPY --from=python-dependencies-build --chown=docker:docker /bin/uv /usr/local/bin/uv

@@ -61,13 +61,13 @@ RUN \
     && rm -f /app/download_duckdb_extensions.sh
 
 COPY --chown=docker:docker  ./__init__.py /app/
-COPY --chown=docker:docker ./_shared_flow_utils/drivers /app/inst/drivers/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./search_embedding/*_plugin /app/flows/
+COPY --chown=docker:docker --chmod=711 ./search_embedding/search_embedding_plugin /app/flows/search_embedding_plugin
 
 WORKDIR /app
 

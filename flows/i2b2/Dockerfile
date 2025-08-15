@@ -51,7 +51,6 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     wget \
-    openjdk-17-jdk\
     libpq5 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
@@ -61,10 +60,18 @@ ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV APP_VERSION=0.0.0
 ENV PRING_PROFILES_ACTIVE=prod
 
-# # OpenJDK 17
-# RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
-
-# RUN rm openjdk.tgz*
+# OpenJDK 17
+RUN arch="$(dpkg --print-architecture)" && \
+    case "$arch" in \
+      'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz' ;; \
+      'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz' ;; \
+      *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; \
+    esac && \
+    wget --progress=dot:giga -O openjdk.tgz "$downloadUrl" && \
+    mkdir -p ${JAVA_HOME} && \
+    tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner && \
+    rm openjdk.tgz* && \
+    java --version
 
 # Add Apache Ant for i2b2 data model creation
 ARG ANT_VERSION=1.9.6
@@ -82,13 +89,13 @@ COPY --from=i2b2-source --chown=docker:docker /app/i2b2-data-$I2B2_TAG_NAME /app
 RUN chown -R docker:docker /app/i2b2-data-$I2B2_TAG_NAME
 
 COPY --chown=docker:docker  ./__init__.py /app/
-COPY --chown=docker:docker ./_shared_flow_utils/drivers /app/inst/drivers/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./i2b2/*_plugin /app/flows/
+COPY --chown=docker:docker --chmod=711 ./i2b2/i2b2_plugin /app/flows/
 
 RUN chmod -R 755 /app
 

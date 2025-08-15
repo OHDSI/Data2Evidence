@@ -26,45 +26,6 @@ RUN apt-get update && \
     && apt-get clean --yes \
     && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
 
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends \
-#     ca-certificates \
-#     cmake \
-#     curl \
-#     dirmngr \
-#     ed \
-#     gcc \
-#     git \
-#     less \
-#     libbz2-dev \
-#     libcairo2-dev \
-#     libcurl4-gnutls-dev \
-#     libfontconfig1-dev \
-#     libfreetype6-dev \
-#     libfribidi-dev \
-#     libgit2-dev \
-#     libharfbuzz-dev \
-#     libicu-dev \
-#     libjpeg-dev \
-#     libpng-dev \
-#     libpq-dev \
-#     libprotobuf-dev \
-#     libsodium23 libsodium-dev libsecret-tools \
-#     libssh2-1-dev \
-#     libssl-dev \
-#     libtiff-dev \
-#     libxml2-dev \
-#     libxt-dev \
-#     locales \
-#     openssh-client \
-#     protobuf-compiler \
-#     software-properties-common \
-#     sqlite3 \
-#     vim-tiny \
-#     wget \
-#     && rm -rf /var/lib/apt/lists/* \
-#     && apt-get clean
-
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
     # UV_PYTHON_DOWNLOADS=manual
@@ -213,15 +174,16 @@ RUN apt-get purge -y \
 
 
 COPY --chown=docker:docker  ./__init__.py /app/
-COPY --chown=docker:docker ./_shared_flow_utils/drivers /app/inst/drivers/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
-# Copy the Python virtual environment and uv binary from the build stage
+# Copy the Python virtual environment from the build stage
 COPY --from=python-dependencies-build --chown=docker:docker /app/python /app/python
 COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./hades/*_plugin /app/flows
+COPY --chown=docker:docker --chmod=711 ./hades/cohort_generator_plugin /app/flows/cohort_generator_plugin
+COPY --chown=docker:docker --chmod=711 ./hades/strategus_plugin /app/flows/strategus_plugin
 
 RUN chmod -R 755 /app
 
