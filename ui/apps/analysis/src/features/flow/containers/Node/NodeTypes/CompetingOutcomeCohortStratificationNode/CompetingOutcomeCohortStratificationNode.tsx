@@ -2,18 +2,19 @@ import React from "react";
 import { NodeProps } from "reactflow";
 import { useBooleanHelper } from "~/features/flow/hooks";
 import { NodeDataState } from "../../../../types";
-import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
-import { TargetComparatorOutcomesDrawer } from "./TargetComparatorOutcomesDrawer";
-import "./TargetComparatorOutcomesNode.scss";
+import { NodeLayout } from "../../NodeLayout/NodeLayout";
+import { CompetingOutcomeCohortStratificationDrawer } from "./CompetingOutcomeCohortStratificationDrawer";
+import "./CompetingOutcomeCohortStratificationNode.scss";
+import { CompetingOutcomeCohortStratificationArgs } from "./types";
 
-export interface TargetComparatorOutcomesNodeData extends NodeDataState {
-  excludedCovariateConceptIds: string[];
-  includedCovariateConceptIds: string[];
+export interface CompetingOutcomeCohortStratificationNodeData
+  extends NodeDataState {
+  competingOutcomeCohortStratificationArgs: CompetingOutcomeCohortStratificationArgs;
 }
 
-export const TargetComparatorOutcomesNode = (
-  node: NodeProps<TargetComparatorOutcomesNodeData>
+export const CompetingOutcomeCohortStratificationNode = (
+  node: NodeProps<CompetingOutcomeCohortStratificationNodeData>
 ) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
@@ -21,8 +22,8 @@ export const TargetComparatorOutcomesNode = (
 
   return (
     <>
-      <NodeLayout<TargetComparatorOutcomesNodeData>
-        className="target-comparator-outcomes-node"
+      <NodeLayout<CompetingOutcomeCohortStratificationNodeData>
+        className="competing-outcome-cohort-stratification-node"
         name={data.name}
         onSettingClick={openSetting}
         resultType={data.error ? "error" : "success"}
@@ -31,10 +32,10 @@ export const TargetComparatorOutcomesNode = (
       >
         {data.description}
       </NodeLayout>
-      <TargetComparatorOutcomesDrawer
+      <CompetingOutcomeCohortStratificationDrawer
         node={node}
-        title="Configure Target Comparator Outcomes Node"
-        className="target-comparator-outcomes-drawer"
+        title="Configure Competing Outcome Cohort / Stratification Node"
+        className="competing-outcome-cohort-stratification-drawer"
         open={settingVisible}
         onClose={closeSetting}
       />
