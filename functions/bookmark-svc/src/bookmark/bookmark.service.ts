@@ -169,7 +169,7 @@ export async function loadSingleBookmark(
   try {
     const portalAPI = new PortalAPI(token)
     const result = await portalAPI.getBookmarkById(bookmarkId, datasetId)
-    const formattedRows = formatUserArtifactData(paConfigId, result, userName, datasetId)
+    const formattedRows = formatUserArtifactData(paConfigId, [result], userName, datasetId)
     const returnValue = _convertBookmarkIFR({
       bookmarks: formattedRows,
     })
