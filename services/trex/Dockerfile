@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:fdd3838277e1890a1b435d3a76be955418121aff85700a781286bf7ea8251bd6 AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:b2bfefc3bfd693c54dacda16dc358e2bb5dbdbc8aea155a981b94d4e6a0c02c3 AS base
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
