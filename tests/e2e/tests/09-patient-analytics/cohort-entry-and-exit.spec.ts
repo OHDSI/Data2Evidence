@@ -50,12 +50,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Exit Select a Filter Card ◢' }).click()
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Go to PA config and uncheck CEE
   await page.getByRole('link', { name: 'Account' }).click()
