@@ -345,6 +345,17 @@ interface ICreateWhiteRabbitFlowRunOptions {
   run_type: string;
 }
 
+export interface PhenotypeFlowRunDto {
+  options: PhenotypeFlowRunOptions;
+}
+
+interface PhenotypeFlowRunOptions {
+  materialize: boolean;
+  cohorts_id: string;
+  dataset_id: string;
+  user_name: string | null;
+}
+
 export interface IPrefectArtifact {
   id: string;
   created: string;

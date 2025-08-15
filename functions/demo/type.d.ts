@@ -81,3 +81,13 @@ export interface IGetVersionInfoCreateFlowRun {
   flowRunName: string;
   options?: object;
 }
+
+export interface IPhenotypeCreateFlowRun {
+  options: {
+    databaseCode: string;
+    cdmschemaName: string;
+    cohortschemaName: string;
+    cohortsId: string;
+    vocabSchemaName: string;
+  };
+}
