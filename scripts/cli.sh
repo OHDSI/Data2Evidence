@@ -64,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         -p|--port) export PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
         -m|--mlflow) mlflow=--profile="mlflow" ;;
+        --hana) hana=--profile="hana" ;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -98,7 +99,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $hana $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -138,6 +139,34 @@ case $cmd in
             cmd="$cmd --no-deps $services"
         fi
         echo . $cmd
+        $cmd
+        ;;
+    inithana)
+        echo "This will initialize SAP HANA Express Edition."
+        echo "By proceeding, you agree to the SAP License Agreement."
+        echo "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
+        
+        if [[ -n "${ACCEPT_SAP_LICENSE:-}" ]]; then
+            echo "CI environment detected. Auto-accepting SAP license terms..."
+            license_agreement="y"
+        else
+            read -p "Do you agree to the SAP license terms and want to continue? (y/N): " license_agreement
+        fi
+        
+        case "$license_agreement" in
+            y|Y|yes|YES)
+                echo "License accepted. Proceeding with HANA initialization..."
+                ;;
+            *)
+                echo "License not accepted. Aborting HANA initialization."
+                exit 1
+                ;;
+        esac
+        
+        source $node_modules_path/scripts/lib.sh # functions here
+        hanapw=${HANAPW:-$(random-password 16)}
+        echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
+        cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         $cmd
         ;;
     stop)

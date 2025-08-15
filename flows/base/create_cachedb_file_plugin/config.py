@@ -1,7 +1,5 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
-from enum import Enum
-
 
 DUCKDB_FULLTEXT_SEARCH_CONFIG = {
     "concept": {
@@ -40,22 +38,16 @@ DUCKDB_FULLTEXT_SEARCH_CONFIG = {
     },
 }
 
-# Create enum based on keys in DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
-DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM = Enum(
-    "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
-    ((table_name, table_name)
-     for table_name in DUCKDB_FULLTEXT_SEARCH_CONFIG.keys()),
-    type=str,
-)
-
-
 class CreateDuckdbDatabaseFileType(BaseModel):
     databaseCode: str
+    schemaName: str
+    
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
-    tablesToCreateDuckdbFtsIndex: List[DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM] = [
-        "concept"]
+    tablesToCreateDuckdbFtsIndex: list[str] = ["concept"]
+    create_duckdb_file: Optional[bool] = False
+    batch_size: Optional[int] = 10000
 
     @property
     def use_cache_db(self) -> str:
@@ -65,6 +57,12 @@ class CreateDuckdbDatabaseFileType(BaseModel):
 class CreateCDWValidationConfig(BaseModel):
     databaseCode: str
     schemaName: str
+    create_duckdb_file: Optional[bool] = None
+
+    def get_create_duckdb_file(self) -> bool:
+        if self.create_duckdb_file is not None:
+            return self.create_duckdb_file
+        return True
 
     @property
     def use_cache_db(self) -> str:

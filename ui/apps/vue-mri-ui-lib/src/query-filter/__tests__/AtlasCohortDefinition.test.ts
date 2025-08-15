@@ -9,8 +9,11 @@ import {
   isDeath,
   isDrugEra,
   isObservationPeriod,
-  getCriteriaType,
-  getCriteriaObject,
+} from '../utils/AtlasTypeGuards'
+
+import { getCriteriaType, getCriteriaObject } from '../utils/AtlasUtils'
+
+import {
   CriteriaListItem,
   ConditionOccurrence,
   DrugExposure,
@@ -22,7 +25,7 @@ import {
   Death,
   DrugEra,
   ObservationPeriod,
-} from '../models/AtlasCohortDefinition'
+} from '../types/AtlasTypes'
 
 describe('AtlasCohortDefinition Type Guards', () => {
   describe('isConditionOccurrence', () => {

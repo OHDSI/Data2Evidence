@@ -8,10 +8,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
-import type { QueryFilterGroup } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { QueryFilterGroup } from '../types/QueryFilterTypes'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 import EditIcon from './icons/EditIcon.vue'
 import CloseIcon from './icons/CloseIcon.vue'
 import GroupCriteriaSidebar from './GroupCriteriaSidebar.vue'
@@ -19,7 +19,7 @@ import GroupCriteriaSidebar from './GroupCriteriaSidebar.vue'
 interface Props {
   group: QueryFilterGroup
   groupIndex: number
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -36,10 +36,20 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update-group': [group: QueryFilterGroup]
   'remove-group': []
+  'concept-set-action': [action: any]
 }>()
 
 // Local reactive copy of the group
 const localGroup = ref<QueryFilterGroup>({ ...props.group })
+
+// Watch for changes in props.group and update local copy
+watch(
+  () => props.group,
+  newGroup => {
+    localGroup.value = { ...newGroup }
+  },
+  { deep: true }
+)
 
 // Update local group when props change
 const groupData = computed({
@@ -127,6 +137,12 @@ const removeGroup = () => {
   }
 }
 
+// Expand/collapse state
+const isExpanded = ref(true)
+const toggleExpanded = () => {
+  isExpanded.value = !isExpanded.value
+}
+
 // Removed duplicate criteria selection handler
 </script>
 
@@ -166,43 +182,52 @@ const removeGroup = () => {
         </div>
 
         <div class="group-header__right">
+          <button
+            class="btn-toggle-expand"
+            @click="toggleExpanded"
+            :title="isExpanded ? 'Collapse group details' : 'Expand group details'"
+          >
+            <svg :class="['chevron-icon', { expanded: isExpanded }]" width="24" height="24" viewBox="0 0 24 24">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" fill="currentColor" />
+            </svg>
+          </button>
           <button v-if="!readonly" class="btn-remove-group" @click="removeGroup" title="Remove this criteria group">
             <CloseIcon />
           </button>
         </div>
       </div>
       <!-- Group Content Area -->
-      <div class="group-main">
-        <!-- Group Criteria Sidebar -->
-        <GroupCriteriaSidebar
-          :group="localGroup"
-          :readonly="readonly"
-          @update-group-criteria="updateGroupCriteria"
-        />
-        <!-- Group Content -->
-        <div class="group-content">
-          <!-- Events Container -->
-          <QueryFilterEventContainer
-            :events="groupEvents"
-            event-type="CRITERIA"
-            :parent-group="localGroup"
-            :concept-sets="conceptSets"
-            :concept-set-domain-values="
-              conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
-            "
-            :concept-set-texts="conceptSetTexts || {}"
-            :dataset-id="datasetId || null"
-            :readonly="readonly"
-            @update-events="handleEventsUpdate"
-          />
+      <transition name="expand">
+        <div v-show="isExpanded" class="group-main">
+          <!-- Group Criteria Sidebar -->
+          <GroupCriteriaSidebar :group="localGroup" :readonly="readonly" @update-group-criteria="updateGroupCriteria" />
+          <!-- Group Content -->
+          <div class="group-content">
+            <!-- Events Container -->
+            <QueryFilterEventContainer
+              :events="groupEvents"
+              event-type="CRITERIA"
+              :parent-group="localGroup"
+              :concept-sets="conceptSets"
+              :concept-set-domain-values="
+                conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+              "
+              :concept-set-texts="conceptSetTexts || {}"
+              :dataset-id="datasetId || null"
+              :readonly="readonly"
+              @update-events="handleEventsUpdate"
+              @concept-set-action="action => $emit('concept-set-action', action)"
+            />
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
+@import '@/query-filter/styles/ExpandTransition.scss';
+
 .query-filter-criteria-group {
   margin-top: 16px;
   border: 1px solid #e0e0e0;
@@ -344,8 +369,6 @@ const removeGroup = () => {
     color: #666;
   }
 
-  // Removed old operator dropdown styles
-
   .btn-remove-group {
     width: 32px;
     height: 32px;
@@ -367,7 +390,6 @@ const removeGroup = () => {
       background: #f2f0f1;
     }
   }
-
 
   .group-content {
     flex: 1;

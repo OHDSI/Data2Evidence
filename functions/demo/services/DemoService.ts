@@ -154,6 +154,29 @@ export class DemoService {
     return result.flowRunId ? result : result.data;
   }
 
+  public async createCache(
+    token: string,
+    _input: IDemoInput,
+    progress?: IProgress
+  ) {
+    this.logger.info("Creating cache");
+
+    const jobPluginsAPI = new JobPluginsAPI(token);
+    const dataset = progress?.steps?.find(
+      (step) => step.code === "dataset"
+    )?.result;
+
+    if (!dataset) {
+      throw new Error("Dataset not found");
+    }
+
+    const { id: datasetId } = dataset;
+    const result = await jobPluginsAPI.createCacheFlowRun({ datasetId });
+
+    this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
+    return result.flowRunId ? result : result.data;
+  }
+
   public async updateDatasetMetadata(
     token: string,
     _input: any,

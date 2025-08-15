@@ -298,7 +298,7 @@ export class CDWValidator {
   }
 
   public isValidCondition(str: string) {
-      return /^\s*<COND>s*$/.test(str)
+    return /^\s*<COND>s*$/.test(str);
   }
   public isValidAggregation(str: string) {
     return /^\s*<AGGR>\s*$/.test(str);
@@ -346,6 +346,17 @@ export class CDWValidator {
   }
 
   public validateString(config, definition, path) {
+    if (typeof config !== "string") {
+      this.errorStorage.addError(config, definition, path, {
+        messageKey: "HPH_CFG_VALIDATION_ERROR_INVALID_OBJECT_TYPE",
+        messageDefault: "Datatype is not supported: {0}",
+        values: [typeof config],
+        given: typeof config,
+        expected: "string",
+      });
+      return false;
+    }
+
     if (definition.minLength ? config.length < definition.minLength : false) {
       this.errorStorage.addError(config, definition, path, {
         messageKey: "HPH_CFG_VALIDATION_ERROR_STRING_IS_TO_SHORT",
@@ -593,6 +604,18 @@ export class CDWValidator {
 
   public validateArray(config, definition, path) {
     let valid = true;
+
+    if (!Array.isArray(config)) {
+      this.errorStorage.addError(config, definition, path, {
+        messageKey: "HPH_CFG_VALIDATION_ERROR_INVALID_OBJECT_TYPE",
+        messageDefault: "Datatype is not supported: {0}",
+        values: [typeof config],
+        given: typeof config,
+        expected: "array",
+      });
+      return false;
+    }
+
     let currentPath = path;
     if (definition.minLength ? config.length < definition.minLength : false) {
       this.errorStorage.addError(config, definition, path, {
