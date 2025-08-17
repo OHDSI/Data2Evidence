@@ -75,9 +75,10 @@ jobs:
       - name: Keep tunnel alive for a defined time
         run: |
           timeout_minutes=${{ inputs.timeout_minutes }}
+          timeout_seconds=$((timeout_minutes * 60))
           echo "Testing branch: ${{ github.ref }}"
-          echo "Keeping tunnel alive for ${timeout_minutes} minutes..."
-          timeout ${timeout_minutes}m sleep 7200  # Stop on whichever we reach first
+          echo "Keeping SSH tunnel alive for ${timeout_minutes} minutes..."
+          sleep $timeout_seconds
           
       - name: Cleanup
         if: always()
