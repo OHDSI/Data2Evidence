@@ -59,27 +59,66 @@ jobs:
           echo "Port bindings:"
           docker ps --format "table {{.Names}}\t{{.Ports}}"
           
-      - name: Expose tunnel
-        uses: codetalkio/expose-tunnel@v1.5.0
-        id: expose-tunnel
-        with:
-          service: localhost.run
-          port: 443
-          blocking: false
-          
-      - name: Display connection info
+      - name: Generate SSH key for tunnel
         run: |
-          echo "🚀 D2E is now accessible at: ${{ steps.expose-tunnel.outputs.tunnel-url }}"
-          echo "Testing branch: ${{ inputs.branch }}"
+          mkdir -p ~/.ssh
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/tunnel_key -N "" -q
+          chmod 600 ~/.ssh/tunnel_key
+          echo "SSH key generated successfully"
+          
+      - name: Setup SSH tunnel
+        id: tunnel
+        run: |
+          echo "Setting up SSH tunnel to localhost.run..."
+          
+          # Create a temporary file to capture SSH output
+          SSH_LOG=$(mktemp)
+          
+          # Start SSH tunnel and capture output
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+              -i ~/.ssh/tunnel_key -R 443:localhost:443 localhost.run > $SSH_LOG 2>&1 &
+          SSH_PID=$!
+          echo "ssh_pid=$SSH_PID" >> $GITHUB_OUTPUT
+          
+          # Wait for tunnel to establish and capture URL
+          sleep 15
+          
+          # Extract URL from SSH output (localhost.run typically shows: "your url is: https://...")
+          TUNNEL_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.lhr\.life|https://[a-zA-Z0-9.-]+\.localhost\.run' $SSH_LOG | head -1)
+          
+          if [ -z "$TUNNEL_URL" ]; then
+            # Fallback: look for any https URL in the output
+            TUNNEL_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+' $SSH_LOG | head -1)
+          fi
+          
+          if [ -n "$TUNNEL_URL" ]; then
+            echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+            echo "TUNNEL_URL=$TUNNEL_URL" >> $GITHUB_ENV
+            echo "✅ SSH tunnel established: $TUNNEL_URL"
+          else
+            echo "⚠️ Could not extract tunnel URL from SSH output"
+            echo "SSH output:"
+            cat $SSH_LOG
+          fi
+          
+          echo "SSH tunnel started with PID: $SSH_PID"
+          rm -f $SSH_LOG
           
       - name: Keep tunnel alive
         run: |
-          echo "Keeping tunnel alive for 30 minutes..."
+          echo "Testing branch: ${{ inputs.branch }}"
+          echo "Keeping SSH tunnel alive for 30 minutes..."
+          echo "Tunnel URL: ${TUNNEL_URL:-'Not available'}"
           sleep 1800  # 30 minutes = 1800 seconds
           
       - name: Cleanup
         if: always()
         run: |
-          echo "Cleaning up D2E services..."
+          echo "🧹 Cleaning up D2E services..."
+          # Kill SSH tunnel if still running
+          if [ -n "${{ steps.tunnel.outputs.ssh_pid }}" ]; then
+            kill ${{ steps.tunnel.outputs.ssh_pid }} 2>/dev/null || true
+            echo "SSH tunnel terminated"
+          fi
           ./scripts/cli.sh -v develop stop || true
           docker system prune -f || true
