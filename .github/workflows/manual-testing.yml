@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.branch || 'develop' }}
+          ref: ${{ inputs.branch }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -72,7 +72,7 @@ jobs:
       - name: Display connection info
         run: |
           echo "🚀 D2E is now accessible at: ${{ steps.expose-tunnel.outputs.tunnel-url }}"
-          echo "Testing branch: ${{ inputs.branch || 'develop' }}"
+          echo "Testing branch: ${{ inputs.branch }}"
           
       - name: Keep tunnel alive
         run: |
