@@ -55,10 +55,10 @@ jobs:
           
       - name: Display service status
         run: |
-          echo "📊 Docker container status:"
+          echo "Docker container status:"
           docker ps
           echo ""
-          echo "🌐 Port bindings:"
+          echo "Port bindings:"
           docker ps --format "table {{.Names}}\t{{.Ports}}"
           
       - name: Expose tunnel
@@ -72,7 +72,7 @@ jobs:
       - name: Display connection info
         run: |
           echo "🚀 D2E is now accessible at: ${{ steps.expose-tunnel.outputs.tunnel-url }}"
-          echo "🌿 Testing branch: ${{ inputs.branch || 'develop' }}"
+          echo "Testing branch: ${{ inputs.branch || 'develop' }}"
           
       - name: Keep tunnel alive
         run: |
