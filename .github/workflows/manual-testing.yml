@@ -37,17 +37,17 @@ jobs:
         run: chmod +x ./scripts/cli.sh
           
       - name: Initialize D2E environment
-        run: ./scripts/cli.sh -p 80 -v develop init
+        run: ./scripts/cli.sh -v develop init
         
       - name: Pull D2E images
-        run: ./scripts/cli.sh -p 80 -v develop -e pull
+        run: ./scripts/cli.sh -v develop -e pull
         
       - name: Start D2E services
-        run: ./scripts/cli.sh -p 80 -v develop -e start
+        run: ./scripts/cli.sh -v develop -e start
         
           
       - name: Setup demo dataset
-        run: ./scripts/cli.sh -p 80 -v develop setupdemo
+        run: ./scripts/cli.sh -v develop setupdemo
         
           
           
@@ -76,7 +76,7 @@ jobs:
           
           # Start SSH tunnel and capture output
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
-              -i ~/.ssh/tunnel_key -R 80:localhost:80 localhost.run > $SSH_LOG 2>&1 &
+              -i ~/.ssh/tunnel_key -R 80:localhost:443 localhost.run > $SSH_LOG 2>&1 &
           SSH_PID=$!
           echo "ssh_pid=$SSH_PID" >> $GITHUB_OUTPUT
           
