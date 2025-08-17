@@ -76,13 +76,12 @@ jobs:
           
       - name: Keep tunnel alive
         run: |
-          echo "⏰ Keeping tunnel alive for 30 minutes..."
-          echo "🔗 Tunnel URL: ${{ steps.expose-tunnel.outputs.tunnel-url }}"
+          echo "Keeping tunnel alive for 30 minutes..."
           sleep 1800  # 30 minutes = 1800 seconds
           
       - name: Cleanup
         if: always()
         run: |
-          echo "🧹 Cleaning up D2E services..."
+          echo "Cleaning up D2E services..."
           ./scripts/cli.sh -v develop stop || true
           docker system prune -f || true
