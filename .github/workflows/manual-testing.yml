@@ -59,69 +59,29 @@ jobs:
           echo "Port bindings:"
           docker ps --format "table {{.Names}}\t{{.Ports}}"
           
-      - name: Generate SSH key for tunnel
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keygen -t rsa -b 4096 -f ~/.ssh/tunnel_key -N "" -q
-          chmod 600 ~/.ssh/tunnel_key
-          echo "SSH key generated successfully"
+      - name: Starting services
+        run: echo "Start up your services before exposing them...."
+
+      - name: Expose tunnel
+        uses: codetalkio/expose-tunnel@v1.5.0
+        id: expose-tunnel
+        with:
+          service: bore.pub
+          port: 443
           
-      - name: Setup SSH tunnel
-        id: tunnel
-        run: |
-          echo "Setting up SSH tunnel to localhost.run..."
-          
-          # Create a temporary file to capture SSH output
-          SSH_LOG=$(mktemp)
-          
-          # Start SSH tunnel and capture output
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
-              -i ~/.ssh/tunnel_key -R 80:localhost:443 localhost.run > $SSH_LOG 2>&1 &
-          SSH_PID=$!
-          echo "ssh_pid=$SSH_PID" >> $GITHUB_OUTPUT
-          
-          # Wait for tunnel to establish and capture URL
-          sleep 15
-          
-          # Extract URL from SSH output (localhost.run typically shows: "your url is: https://...")
-          # Exclude admin.localhost.run and look for the actual tunnel subdomain
-          TUNNEL_URL=$(grep -oE 'https://[a-zA-Z0-9]+-[a-zA-Z0-9]+\.lhr\.life|https://[a-zA-Z0-9]+-[a-zA-Z0-9]+\.localhost\.run' $SSH_LOG | grep -v 'admin' | head -1)
-          
-          if [ -z "$TUNNEL_URL" ]; then
-            # Fallback: look for any https URL with random subdomain pattern (but not admin)
-            TUNNEL_URL=$(grep -oE 'https://[a-zA-Z0-9]{6,}\.localhost\.run|https://[a-zA-Z0-9]{6,}\.lhr\.life' $SSH_LOG | grep -v 'admin' | head -1)
-          fi
-          
-          if [ -n "$TUNNEL_URL" ]; then
-            echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
-            echo "TUNNEL_URL=$TUNNEL_URL" >> $GITHUB_ENV
-            echo "✅ SSH tunnel established: $TUNNEL_URL"
-          else
-            echo "⚠️ Could not extract tunnel URL from SSH output"
-            echo "SSH output:"
-            cat $SSH_LOG
-          fi
-          
-          echo "SSH tunnel started with PID: $SSH_PID"
-          rm -f $SSH_LOG
-          
-      - name: Keep tunnel alive
+      - name: Accessing the tunnel url
+        run: echo "Tunnel has been started at '${{ steps.expose-tunnel.outputs.tunnel-url }}'"
+
+      - name: Keep tunnel alive for a defined time
         run: |
           timeout_minutes=${{ inputs.timeout_minutes }}
-          timeout_seconds=$((timeout_minutes * 60))
           echo "Testing branch: ${{ github.ref }}"
-          echo "Keeping SSH tunnel alive for ${timeout_minutes} minutes..."
-          echo "Tunnel URL: ${TUNNEL_URL:-'Not available'}"
-          sleep $timeout_seconds
+          echo "Keeping tunnel alive for ${timeout_minutes} minutes..."
+          timeout ${timeout_minutes}m sleep 7200  # Stop on whichever we reach first
           
       - name: Cleanup
         if: always()
         run: |
           echo "🧹 Cleaning up D2E services..."
-          # Kill SSH tunnel if still running
-          if [ -n "${{ steps.tunnel.outputs.ssh_pid }}" ]; then
-            kill ${{ steps.tunnel.outputs.ssh_pid }} 2>/dev/null || true
-            echo "SSH tunnel terminated"
-          fi
           ./scripts/cli.sh -v develop stop || true
           docker system prune -f || true
