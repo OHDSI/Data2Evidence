@@ -1,5 +1,8 @@
 name: Manual D2E Testing Env
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
