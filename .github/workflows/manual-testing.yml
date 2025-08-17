@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -106,7 +106,7 @@ jobs:
           
       - name: Keep tunnel alive
         run: |
-          echo "Testing branch: ${{ inputs.branch }}"
+          echo "Testing branch: ${{ github.ref }}"
           echo "Keeping SSH tunnel alive for 30 minutes..."
           echo "Tunnel URL: ${TUNNEL_URL:-'Not available'}"
           sleep 1800  # 30 minutes = 1800 seconds
