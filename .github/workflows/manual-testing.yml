@@ -5,12 +5,18 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: 'How long to keep the tunnel open (in minutes)'
+        required: true
+        default: '30'
+        type: string
 
 
 jobs:
   manual-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 135
+    timeout-minutes: 150
     
     steps:
       - name: Checkout repository
@@ -70,7 +76,7 @@ jobs:
           
           # Start SSH tunnel and capture output
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
-              -i ~/.ssh/tunnel_key -R 443:localhost:443 localhost.run > $SSH_LOG 2>&1 &
+              -i ~/.ssh/tunnel_key -R 80:localhost:443 localhost.run > $SSH_LOG 2>&1 &
           SSH_PID=$!
           echo "ssh_pid=$SSH_PID" >> $GITHUB_OUTPUT
           
@@ -101,10 +107,12 @@ jobs:
           
       - name: Keep tunnel alive
         run: |
+          timeout_minutes=${{ inputs.timeout_minutes }}
+          timeout_seconds=$((timeout_minutes * 60))
           echo "Testing branch: ${{ github.ref }}"
-          echo "Keeping SSH tunnel alive for 30 minutes..."
+          echo "Keeping SSH tunnel alive for ${timeout_minutes} minutes..."
           echo "Tunnel URL: ${TUNNEL_URL:-'Not available'}"
-          sleep 1800  # 30 minutes = 1800 seconds
+          sleep $timeout_seconds
           
       - name: Cleanup
         if: always()
