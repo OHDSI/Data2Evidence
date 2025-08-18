@@ -64,7 +64,7 @@ def copy_bigquery_schema_to_cache(write_conn,
             execute_statement(write_conn, create_table_sql)
 
             # Fetch data from BigQuery in batches
-            bq_data_query = f"SELECT * FROM `{db_credentials.host}.{db_credentials.databaseCode}.{table}`"
+            bq_data_query = f"SELECT * FROM `{db_credentials.host}.{schema}.{db_credentials.databaseCode}.{table}`"
             bq_data_iter = client.query(bq_data_query).result(page_size=10000)
             column_names = [col['column_name'] for col in columns]
             insert_sql = f"INSERT INTO {schema}.{table} ({', '.join([f'\"{c}\"' for c in column_names])}) VALUES ({', '.join(['%s'] * len(column_names))})"
