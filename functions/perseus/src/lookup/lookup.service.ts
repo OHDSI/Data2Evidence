@@ -28,7 +28,10 @@ export class LookupService {
         return lookup.source_to_source;
       }
     } else {
-      if (name?.includes("template")) {
+      if (typeof name !== "string") {
+        throw new Error("Invalid or missing 'name' parameter");
+      }
+      if (name.includes("template")) {
         try {
           const lookup = await Deno.readFile(
             this.getRelativePath(`${name}.txt`)
@@ -58,7 +61,11 @@ export class LookupService {
   ) {
     return `${path
       .dirname(path.fromFileUrl(import.meta.url).replace(/\/lookup/, ""))
-      .replace(/\/usr\/src/, ".")}/${basePath}/${relativePath}`;
+      .replace(/\/usr\/src/, ".")
+      .replace(
+        /\/var\/tmp\/sb-compile-trex\/d2ef/,
+        Deno.env.get("TREX_FUNCTION_PATH")
+      )}/${basePath}/${relativePath}`;
   }
 
   private async getLookupsFromDirectory(
