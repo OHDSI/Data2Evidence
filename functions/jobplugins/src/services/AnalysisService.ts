@@ -16,13 +16,27 @@ export class AnalysisService {
   }
 
   public async getLastAnalysisflowRevision(id: string) {
-    return await this.graphRepo
+    console.log(`getLastAnalysisflowRevision called with id: ${id}`);
+
+    // First, get the canvas information
+    const canvas = await this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select(["canvas.id", "canvas.name", "canvas.lastFlowRunId"])
+      .where("canvas.id = :id", { id })
+      .andWhere("canvas.type = :type", { type: "analysis-flow" })
+      .getOne();
+
+    if (!canvas) {
+      console.log(`No canvas found for id: ${id}`);
+      return null;
+    }
+
+    console.log(`Canvas found:`, JSON.stringify(canvas, null, 2));
+
+    // Then get the latest revision for this canvas
+    const revision = await this.graphRepo
       .createQueryBuilder("revision")
-      .leftJoin("revision.canvas", "analysisflow")
       .select([
-        "analysisflow.id",
-        "analysisflow.name",
-        "analysisflow.lastFlowRunId",
         "revision.id",
         "revision.flow",
         "revision.comment",
@@ -30,9 +44,27 @@ export class AnalysisService {
         "revision.createdBy",
         "revision.version",
       ])
-      .where("analysisflow.id = :id", { id })
+      .where("revision.canvasId = :canvasId", { canvasId: id })
       .orderBy("revision.createdDate", "DESC")
       .getOne();
+
+    if (!revision) {
+      console.log(`No revisions found for canvas id: ${id}`);
+      return null;
+    }
+
+    console.log(`Latest revision found:`, JSON.stringify(revision, null, 2));
+
+    return {
+      id: canvas.id,
+      canvas: {
+        id: canvas.id,
+        name: canvas.name,
+        lastFlowRunId: canvas.lastFlowRunId,
+      },
+      lastFlowRunId: canvas.lastFlowRunId,
+      flow: revision.flow,
+    };
   }
 
   async createAnalysisflow(analysisflowDto: IDataflowDto, token: string) {
@@ -180,12 +212,27 @@ export class AnalysisService {
   }
 
   async getAnalysisflow(id) {
-    return await this.graphRepo
+    console.log(`getAnalysisflow called with id: ${id}`);
+
+    // First, get the canvas information
+    const canvas = await this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select(["canvas.id", "canvas.name", "canvas.lastFlowRunId"])
+      .where("canvas.id = :id", { id })
+      .andWhere("canvas.type = :type", { type: "analysis-flow" })
+      .getOne();
+
+    if (!canvas) {
+      console.log(`No canvas found for id: ${id}`);
+      return null;
+    }
+
+    console.log(`Canvas found:`, JSON.stringify(canvas, null, 2));
+
+    // Then get all revisions for this canvas
+    const revisions = await this.graphRepo
       .createQueryBuilder("revision")
-      .leftJoin("revision.canvas", "dataflow")
       .select([
-        "dataflow.id",
-        "dataflow.name",
         "revision.id",
         "revision.flow",
         "revision.comment",
@@ -193,8 +240,33 @@ export class AnalysisService {
         "revision.createdBy",
         "revision.version",
       ])
-      .where("dataflow.id = :id", { id })
-      .orderBy("revision.createdDate")
-      .getOne();
+      .where("revision.canvasId = :canvasId", { canvasId: id })
+      .orderBy("revision.createdDate", "DESC")
+      .getMany();
+
+    console.log(`Revisions found:`, JSON.stringify(revisions, null, 2));
+
+    return {
+      id: canvas.id,
+      name: canvas.name,
+      canvas: {
+        id: canvas.id,
+        name: canvas.name,
+        lastFlowRunId: canvas.lastFlowRunId,
+      },
+      revisions: revisions.map((rev) => ({
+        id: rev.id,
+        createdBy: rev.createdBy,
+        createdDate: rev.createdDate.toISOString(),
+        flow: rev.flow,
+        comment: rev.comment,
+        canvas: {
+          id: canvas.id,
+          name: canvas.name,
+          lastFlowRunId: canvas.lastFlowRunId,
+        },
+        version: rev.version,
+      })),
+    };
   }
 }
