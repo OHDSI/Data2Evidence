@@ -14,6 +14,7 @@ import DateInput from './DateInput.vue';
 import DateAdjustmentInput from './DateAdjustmentInput.vue';
 import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue';
 import NumericRangeInput from './NumericRangeInput.vue';
+import StringInput from './StringInput.vue';
 
 const props = defineProps<{
   attribute: QueryFilterAttribute
@@ -51,6 +52,7 @@ const getUpdate = (payload) => {
         <DateAdjustmentInput v-else-if="props.attribute.configType === 'dateAdjustment'" @update="getUpdate"/>
         <UserDefinedPeriodInput v-else-if="props.attribute.configType === 'userDefinedPeriod'" @update="getUpdate"/>
         <NumericRangeInput v-else-if="props.attribute.configType === 'numericRange'" @update="getUpdate"/>
+        <StringInput v-else-if="props.attribute.configType === 'text'" @update="getUpdate"/>
     </div>
     <div class="attribute-btn-container">
       <button
