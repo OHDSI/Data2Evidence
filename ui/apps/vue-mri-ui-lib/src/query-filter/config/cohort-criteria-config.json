@@ -305,7 +305,7 @@
   "criteriaAttributes": {
     "conditionOccurrence": [
       {
-        "id": "firstDiagnosis",
+        "id": "first",
         "name": "First Diagnosis",
         "description": "Limit to first diagnosis in history",
         "type": "boolean",
@@ -446,7 +446,7 @@
         "atlasKey": "addDateAdjustment"
       },
       {
-        "id": "firstExposure",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first drug exposure in history",
         "type": "boolean",
@@ -630,7 +630,7 @@
         "atlasKey": "addDateAdjustment"
       },
       {
-        "id": "firstExposure",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first device exposure in history",
         "type": "boolean",
@@ -756,7 +756,7 @@
       ],
       "attributes": [
         {
-          "id": "firstDiagnosis",
+          "id": "first",
           "name": "First Diagnosis",
           "description": "Limit to first diagnosis in history",
           "type": "boolean"
@@ -793,6 +793,20 @@
           "id": "conditionType",
           "name": "Condition Type",
           "description": "Filter by condition type"
+        },
+        {
+          "id": "startDate",
+          "name": "Start Date",
+          "description": "Era start date",
+          "type": "dateRange",
+          "atlasKey": "addStartDate"
+        },
+        {
+          "id": "endDate",
+          "name": "End Date",
+          "description": "Era end date",
+          "type": "dateRange",
+          "atlasKey": "addEndDate"
         }
       ]
     },
@@ -804,7 +818,7 @@
       ],
       "attributes": [
         {
-          "id": "firstExposure",
+          "id": "first",
           "name": "First Exposure",
           "description": "Limit to first exposure in history"
         },
@@ -859,7 +873,7 @@
       ],
       "attributes": [
         {
-          "id": "firstProcedure",
+          "id": "first",
           "name": "First Procedure",
           "description": "Limit to first procedure in history"
         },
@@ -904,7 +918,7 @@
       ],
       "attributes": [
         {
-          "id": "firstMeasurement",
+          "id": "first",
           "name": "First Measurement",
           "description": "Limit to first measurement in history"
         },
@@ -970,7 +984,7 @@
       ],
       "attributes": [
         {
-          "id": "firstObservation",
+          "id": "first",
           "name": "First Observation",
           "description": "Limit to first observation in history"
         },
@@ -1031,7 +1045,7 @@
       ],
       "attributes": [
         {
-          "id": "firstVisit",
+          "id": "first",
           "name": "First Visit",
           "description": "Limit to first visit in history"
         },
@@ -1081,7 +1095,7 @@
       ],
       "attributes": [
         {
-          "id": "firstExposure",
+          "id": "first",
           "name": "First Exposure",
           "description": "Limit to first device exposure in history"
         },
@@ -1131,7 +1145,7 @@
       ],
       "attributes": [
         {
-          "id": "firstOccurrence",
+          "id": "first",
           "name": "First Occurrence",
           "description": "Limit to first specimen in history"
         },
@@ -1206,7 +1220,7 @@
       ],
       "attributes": [
         {
-          "id": "firstPeriod",
+          "id": "first",
           "name": "First Period",
           "description": "Limit to first observation period in history"
         },
@@ -1238,7 +1252,7 @@
       ],
       "attributes": [
         {
-          "id": "firstPeriod",
+          "id": "first",
           "name": "First Period",
           "description": "Limit to first payer plan period in history"
         },

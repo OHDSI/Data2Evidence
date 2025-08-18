@@ -2,6 +2,7 @@
  * Utility functions for Atlas cohort definition operations
  */
 import type { AtlasEvent, CriteriaListItem } from '../types/AtlasTypes'
+import { attributeMap } from './AtlasAttributeLookup'
 
 export function getCriteriaType(item: CriteriaListItem): string | null {
   if (item.ConditionOccurrence) return 'ConditionOccurrence'
@@ -59,3 +60,8 @@ export function mapCriteriaTypeToAtlas(criteriaType: 'ALL' | 'EARLIEST' | 'LATES
       return 'All'
   }
 }
+
+export function getAtlasAttributeKey(attributeId: string, eventType: string): string {
+  return attributeMap[eventType]?.[attributeId] || attributeId
+}
+

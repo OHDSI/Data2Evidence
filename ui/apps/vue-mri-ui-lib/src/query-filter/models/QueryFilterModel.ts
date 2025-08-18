@@ -22,6 +22,7 @@ import type {
   QueryFilterCriteriaManageData,
   QueryFilterNestedCriteria,
 } from '../types/QueryFilterTypes'
+import { getAtlasAttributeKey } from '../utils/AtlasUtils'
 
 // Type guards for QueryFilterAttribute discriminated union
 const isNestedAttribute = (
@@ -574,17 +575,17 @@ export class QueryFilterCriteriaManager {
                     })
 
                     event.attributes.forEach(attr => {
-                      if (hasAttributeId(attr)) {
-                        console.log('Processing attribute:', attr)
+                      if (hasAttributeId(attr) && 'configType' in attr) {
+                        console.log('Processing attribute:', attr, atlasEventType, criteria.Criteria)
+
+                        const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
 
                         // Map boolean attributes to Atlas format
-                        if ('configType' in attr && attr.configType === 'boolean') {
-                          if (attr.attributeId.includes('first')) {
-                            criteria.Criteria[atlasEventType]['First'] = true
-                          }
-                          if (attr.attributeId.includes('abnormal')) {
-                            criteria.Criteria[atlasEventType]['Abnormal'] = true
-                          }
+                        if (attr.configType === 'boolean') {
+                          criteria.Criteria[atlasEventType][attributeKey] = true
+                        }
+                        if (attr.value) {
+                          criteria.Criteria[atlasEventType][attributeKey] = attr.value
                         }
 
                         // Add more mappings as needed for other boolean/flag attributes
@@ -1348,3 +1349,4 @@ export class QueryFilterCriteriaManager {
     })
   }
 }
+
