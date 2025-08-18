@@ -242,26 +242,38 @@ export class QueryFilterCriteriaManager {
             remainingAttributes.push(processedAttr)
             processedAttributes.push(attr)
           } else if (hasAttributeId(attr) && attributeType && attributeType !== 'nested') {
-            if (!mainEvent.selectedAttributes) {
-              mainEvent.selectedAttributes = []
-            }
-            const attributeId = attr.attributeId
-            mainEvent.selectedAttributes.push(attributeId)
+            // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
+            if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
+              remainingAttributes.push(attr)
 
-            mainEvent.attributeConfig = {
-              id: attributeId,
-              name: attributeId,
-              description: '',
-              type: attributeType || 'conceptSet',
-              category: 'criteria-specific',
-            }
+              // Also add to selectedAttributes for tracking
+              if (!mainEvent.selectedAttributes) {
+                mainEvent.selectedAttributes = []
+              }
+              mainEvent.selectedAttributes.push(attr.attributeId)
+            } else {
+              // For other attribute types (like age), move to selectedAttributes format
+              if (!mainEvent.selectedAttributes) {
+                mainEvent.selectedAttributes = []
+              }
+              const attributeId = attr.attributeId
+              mainEvent.selectedAttributes.push(attributeId)
 
-            if (attributeId === 'age' && attributeType === 'numericRange') {
-              mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
-              mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
-            }
+              mainEvent.attributeConfig = {
+                id: attributeId,
+                name: attributeId,
+                description: '',
+                type: attributeType || 'conceptSet',
+                category: 'criteria-specific',
+              }
 
-            processedAttributes.push(attr)
+              if (attributeId === 'age' && attributeType === 'numericRange') {
+                mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
+                mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
+              }
+
+              processedAttributes.push(attr)
+            }
           } else {
             remainingAttributes.push(attr)
           }
