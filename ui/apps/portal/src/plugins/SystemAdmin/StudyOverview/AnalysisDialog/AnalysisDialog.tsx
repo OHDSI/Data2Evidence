@@ -16,6 +16,7 @@ interface AnalysisDialogProps {
 }
 
 interface FormData {
+  resultsSchema?: string;
   comment: string;
 }
 
@@ -55,6 +56,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
         const dcRunData: CreateDcFlowRun = {
           datasetId: study?.id,
           releaseId: "",
+          resultsSchema: formData.resultsSchema,
           comment: formData.comment,
           excludeAnalysisIds: "",
         };
@@ -62,7 +64,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       }
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [String(runType), String(study?.id)]),
+        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [String(runType), String(study?.studyDetail?.name)]),
       });
       setTimeout(() => handleClose("success"), 6000);
     } catch (err: any) {
@@ -74,7 +76,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
     } finally {
       setUpdating(false);
     }
-  }, [formData, handleClose, study?.id, study?.vocabSchemaName, getText, runType]);
+  }, [formData, handleClose, study?.id, study?.studyDetail?.name, study?.vocabSchemaName, getText, runType]);
 
   const handleFormDataChange = useCallback((updates: { [field: string]: any }) => {
     setFormData((formData) => {
@@ -98,7 +100,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
   return (
     <Dialog
       className="analysis-dialog"
-      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [getRunName(runType), String(study?.id)])}
+      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [getRunName(runType), String(study?.studyDetail?.name)])}
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
@@ -113,11 +115,23 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
           {getText(i18nKeys.ANALYSIS_DIALOG__FORM_TITLE)}
         </Box>
 
+        {runType === JobRunTypes.DataCharacterization && (
+          <Box mb={4}>
+            <TextField
+              fullWidth
+              variant="standard"
+              label="Results schema name (optional)"
+              value={formData.resultsSchema}
+              onChange={(event) => handleFormDataChange({ resultsSchema: event.target.value })}
+            />
+          </Box>
+        )}
+
         <Box mb={4}>
           <TextField
             fullWidth
             variant="standard"
-            label="comment"
+            label="Comment"
             value={formData.comment}
             onChange={(event) => handleFormDataChange({ comment: event.target.value })}
           />
