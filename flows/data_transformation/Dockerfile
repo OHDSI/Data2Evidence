@@ -160,4 +160,6 @@ RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
 #White rabbit need to run as root user
 #USER docker
 
+ENV INSTALL_SQLALCHEMY_FLAG=false
+
 ENTRYPOINT []

@@ -1,8 +1,49 @@
-FROM rocker/r-ver:4.4
+ARG PYTHON_VERSION=3.12
+ARG R_VERSION=4.4.3
 
-ARG BUILD_TYPE
+FROM rocker/r-ver:${R_VERSION} AS python-dependencies-build
 
-### INSTALL PYTHON DEPENDENCIES ###
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    cmake \
+    gcc \
+    g++ \
+    software-properties-common \
+    # To build psycopg2-binary
+    libpq-dev \
+    # To build rpy2
+    liblzma-dev \
+    libdeflate-dev \
+    libcairo2-dev \
+    libssl-dev \
+    libxml2-dev \
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    # UV_PYTHON_DOWNLOADS=manual
+    # Install managed python which will be copied over to runtime build
+    UV_PYTHON_INSTALL_DIR=/app/python \
+    UV_PYTHON_PREFERENCE=only-managed
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
+RUN uv python install ${PYTHON_VERSION}
+
+WORKDIR /app
+
+# Install dependencies with uv into a venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./cohort_survival/uv.lock,target=uv.lock \
+    --mount=type=bind,source=./cohort_survival/pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev --no-editable
+
+    # To check on installation of rpy2:
+    # uv sync --all-groups
+    # ENV PATH="/app/.venv/bin:$PATH"
+    # pytest --pyargs 'rpy2.tests'
+
+FROM rocker/r-ver:${R_VERSION} AS r-dependencies-build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -24,6 +65,7 @@ RUN apt-get update && \
     libharfbuzz-dev \
     libicu-dev \
     libjpeg-dev \
+    libglpk-dev \
     libpng-dev \
     libpq-dev \
     libprotobuf-dev \
@@ -36,71 +78,85 @@ RUN apt-get update && \
     locales \
     openssh-client \
     protobuf-compiler \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
     software-properties-common \
-    sqlite3 \
     vim-tiny \
-    wget \
-    r-cran-snakecase \
-    r-cran-broom \
-    r-cran-dbplyr \
-    r-cran-rjson \
+    libnode-dev \
     xz-utils \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Python Library Setup
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20
-RUN python3 -m venv /usr/src/app
-# Enable venv
-ENV PATH="/usr/src/app/bin:$PATH"
-
-COPY ./cohort_survival/requirements_cohort_survival.txt /app/requirements_cohort_survival.txt
-ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip3 install -r /app/requirements_cohort_survival.txt
-
-### END INSTALL PYTHON DEPENDENCIES ###
+ENV R_REMOTES_UPGRADE="always"
 
 WORKDIR /app
 
-RUN Rscript -e 'install.packages(c("remotes"))'
+COPY ./cohort_survival/renv.lock ./build/.Rprofile ./build/install_and_verify_r_packages.R /app/
 
-### START COHORT SURVIVAL ###
+# Install R depdendencies in global library
+ARG REQUIRED_R_PACKAGES="CDMConnector PatientProfiles CohortSurvival RPostgres duckdb visOmopResults omopgenerics"
+RUN chmod +x /app/install_and_verify_r_packages.R && \
+    /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
+    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
 
-RUN Rscript -e "remotes::install_version('CDMConnector', version='1.4.0', quiet=TRUE, upgrade='never', force=FALSE, dependencies=NA, repos='https://cloud.r-project.org')" 
-RUN Rscript -e "remotes::install_version('PatientProfiles', version='1.0.0', quiet=TRUE, upgrade='never', force=FALSE, dependencies=TRUE, repos='https://cloud.r-project.org')" 
-RUN Rscript -e "remotes::install_version('CohortSurvival', version='0.5.1', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')" 
-RUN Rscript -e "remotes::install_version('RPostgres', version='1.4.5', quiet=TRUE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')"
-RUN Rscript -e "remotes::install_version('duckdb', version='1.2.1', quiet=FALSE, upgrade='never', force=FALSE, dependencies=FALSE, repos='https://cloud.r-project.org')"
+FROM r-dependencies-build AS runtime
 
-# force=TRUE used to override the packages PatientProfiles installs which versions are too high
-# force=TRUE packages should be put at the end of this list
-RUN Rscript -e "remotes::install_version('visOmopResults', version='0.3.0', quiet=TRUE, upgrade='never', force=TRUE, dependencies=TRUE, repos='https://cloud.r-project.org')" 
-RUN Rscript -e "remotes::install_version('omopgenerics', version='0.2.1', quiet=TRUE, upgrade='never', force=TRUE, dependencies=FALSE, repos='https://cloud.r-project.org')"
+ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 
-# Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('CDMConnector', 'PatientProfiles', 'CohortSurvival', 'RPostgres', 'duckdb', 'visOmopResults', 'omopgenerics'); \
-                installed <- rownames(installed.packages()); \
-                missing <- setdiff(required, installed); \
-                if (length(missing) > 0) { \
-                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
-                }"
-
-
-### END COHORT SURVIVAL ###
-
-RUN useradd docker -u 1001 \
+RUN apt-get purge -y \
+    libbz2-dev \
+    libcairo2-dev \
+    libcurl4-gnutls-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libgit2-dev \
+    libharfbuzz-dev \
+    libicu-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libpq-dev \
+    libprotobuf-dev \
+    libsodium-dev \
+    libssh2-1-dev \
+    libssl-dev \
+    libtiff-dev \
+    libxml2-dev \
+    libxt-dev \
+    libnode-dev \
+    g++ \
+    gcc \
+    cmake \
+    liblzma-dev \
+    libdeflate-dev \
+    && apt-get autoremove -y \
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/ \
+    # Create user and group for ownership
+    && useradd docker -u 1001 \
     && groupadd alp \
     && mkdir /home/docker \
     && chown docker:docker /home/docker \
     && adduser docker staff \
     && adduser docker alp
 
-COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./cohort_survival/cohort_survival_plugin flows/cohort_survival_plugin
+
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
+
+# Copy the Python virtual environment from the build stage
+COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+
+# Application files
+COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
+COPY --chown=docker:docker --chmod=711 ./cohort_survival/cohort_survival_plugin /app/flows/cohort_survival_plugin
+
+RUN chmod -R 755 /app
+
+WORKDIR /app
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_FLAG=false
 
 USER docker
-
