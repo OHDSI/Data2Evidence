@@ -12,6 +12,7 @@ import TrashIcon from '../icons/TrashIcon.vue'
 import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
 import DateInput from './DateInput.vue';
 import DateAdjustmentInput from './DateAdjustmentInput.vue';
+import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue';
 
 const props = defineProps<{
   attribute: QueryFilterAttribute
@@ -47,6 +48,7 @@ const getUpdate = (payload) => {
     <div v-if="!isBooleanAttribute(props.attribute)" class="attribute-input">
         <DateInput v-if="props.attribute.configType === 'dateRange'" @update="getUpdate"/>
         <DateAdjustmentInput v-else-if="props.attribute.configType === 'dateAdjustment'" @update="getUpdate"/>
+        <UserDefinedPeriodInput v-else-if="props.attribute.configType === 'userDefinedPeriod'" @update="getUpdate"/>
     </div>
     <div class="attribute-btn-container">
       <button

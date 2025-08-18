@@ -104,7 +104,7 @@ export const attributeMap = {
     first: 'First',
     startDate: 'PeriodStartDate',
     endDate: 'PeriodEndDate',
-    userDefiniedPeriod: 'UserDefinedPeriod',
+    userDefinedPeriod: 'UserDefinedPeriod',
     ageAtStart: 'AgeAtStart',
     ageAtEnd: 'AgeAtEnd',
     length: 'PeriodLength',
@@ -114,7 +114,7 @@ export const attributeMap = {
     first: 'First',
     startDate: 'PeriodStartDate',
     endDate: 'PeriodEndDate',
-    userDefiniedPeriod: 'UserDefinedPeriod',
+    userDefinedPeriod: 'UserDefinedPeriod',
     length: 'PeriodLength',
     ageAtStart: 'AgeAtStart',
     ageAtEnd: 'AgeAtEnd',
@@ -156,6 +156,7 @@ export const attributeMap = {
     dateAdjustment: 'DateAdjustment',
   },
 }
+
 
 
 

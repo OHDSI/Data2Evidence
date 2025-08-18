@@ -1243,6 +1243,12 @@
           "id": "periodType",
           "name": "Period Type",
           "description": "Filter by observation period type"
+        },
+        {
+          "id": "userDefinedPeriod",
+          "name": "User Defined Period",
+          "description": "Specify Start and End Dates",
+          "type": "userDefinedPeriod"
         }
       ]
     },
@@ -1290,6 +1296,12 @@
           "id": "stopReasonConcept",
           "name": "Stop Reason",
           "description": "Filter by stop reason"
+        },
+        {
+          "id": "userDefinedPeriod",
+          "name": "User Defined Period",
+          "description": "Specify Start and End Dates",
+          "type": "userDefinedPeriod"
         }
       ]
     }
