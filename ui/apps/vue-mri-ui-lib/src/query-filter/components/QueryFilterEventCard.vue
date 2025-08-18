@@ -239,6 +239,24 @@ const handleAttributeRemoved = (attributeId: string) => {
   emit('attribute-removed', attributeId)
 }
 
+// Update a specific attribute's value by id
+const updateAttribute = (attributeId: string, value: any) => {
+  console.log('Update attribute:', attributeId, value);
+  
+  const currentAttributes = eventData.value.attributes || [];
+  const updatedAttributes = currentAttributes.map(attr => {
+    if (attr.id === attributeId) {
+      return { ...attr, value };
+    }
+    return attr;
+  });
+  const updatedEvent: QueryFilterEvent = {
+    ...eventData.value,
+    attributes: updatedAttributes,
+  };
+  eventData.value = updatedEvent;
+}
+
 // Handle event removal
 const removeEvent = () => {
   if (confirm('Are you sure you want to remove this event?')) {
@@ -599,6 +617,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                     <AttributeContainer
                       :on-remove-attribute="() => handleAttributeRemoved(attribute.id)"
                       :attribute="attribute"
+                      @update-attribute="updateAttribute"
                     />
                   </div>
                 </template>
