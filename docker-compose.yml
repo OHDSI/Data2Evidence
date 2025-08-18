@@ -1492,3 +1492,15 @@ services:
       alp:
       data:
     profiles: [hana]
+
+  logging:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      alp:
+    environment:
+      - DOZZLE_FILTER=name=alp
+      - DOZZLE_BASE=/logs
+      - DOZZLE_ENABLE_ACTIONS=true
+      - DOZZLE_NO_ANALYTICS=true
