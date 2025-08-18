@@ -320,7 +320,6 @@ export class QueryFilterCriteriaManager {
     this.inclusionCriteria.criteria.forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
       const allGroupEvents = this.collectAllEvents(group.events)
-
       allGroupEvents.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
@@ -1258,10 +1257,6 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  mapAttributesToAtlas(attributes) {
-    const result = []
-  }
-
   // Helper method to collect concept sets from nested events that were missed in initial collection
   private collectNestedConceptSets(
     groups: QueryFilterGroup[],
@@ -1365,4 +1360,3 @@ export class QueryFilterCriteriaManager {
     })
   }
 }
-

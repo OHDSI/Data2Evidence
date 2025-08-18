@@ -59,9 +59,7 @@ const store = instance?.appContext.config.globalProperties['$store']
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({
-  get: () => {
-    return props.event
-  },
+  get: () => props.event,
   set: (value: QueryFilterEvent) => {
     emit('update:event', value)
   },
@@ -240,19 +238,19 @@ const handleAttributeRemoved = (attributeId: string) => {
 }
 
 // Update a specific attribute's value by id
-const updateAttribute = (attributeId: string, value: any) => {  
-  const currentAttributes = eventData.value.attributes || [];
+const updateAttribute = (attributeId: string, value: any) => {
+  const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId) {
-      return { ...attr, value };
+      return { ...attr, value }
     }
-    return attr;
-  });
+    return attr
+  })
   const updatedEvent: QueryFilterEvent = {
     ...eventData.value,
     attributes: updatedAttributes,
-  };
-  eventData.value = updatedEvent;
+  }
+  eventData.value = updatedEvent
 }
 
 // Handle event removal
