@@ -24,7 +24,6 @@ const startEndDateOptions = [
   { label: 'end date', value: 'END_DATE' },
 ]
 
-// Watch for changes and emit formatted state
 watch(
   [startWithModel, endWithModel, startOffsetModel, endOffsetModel],
   ([startWith, endWith, startOffset, endOffset]) => {
@@ -57,7 +56,7 @@ watch(
     </div>
     <div>+</div>
     <div class="input-container">
-      <input type="number" name="startOffset" class="number-input" v-model="endOffsetModel" />
+      <input type="number" name="endOffset" class="number-input" v-model="endOffsetModel" />
     </div>
   </div>
 </template>

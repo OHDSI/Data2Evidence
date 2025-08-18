@@ -9,6 +9,7 @@ export default {
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
 import { computed, ref, watch } from 'vue'
+import { numericRangeOptions } from '../../utils/AtlasUtils'
 
 const emit = defineEmits<{
   (e: 'update', value: { Op: string; Value: number; Extent?: number }): void
@@ -17,16 +18,6 @@ const emit = defineEmits<{
 const numRangeModel = ref<string>('lt')
 const numValueModel = ref<number>(0)
 const numExtentModel = ref<number>(0)
-
-const numericRangeOptions = [
-  { label: 'Less Than', value: 'lt' },
-  { label: 'Less or Equal To', value: 'lte' },
-  { label: 'Equal To', value: 'eq' },
-  { label: 'Greater Than', value: 'gt' },
-  { label: 'Greater or Equal To', value: 'gte' },
-  { label: 'Between', value: 'btw' },
-  { label: 'Not Between', value: '!btw' },
-]
 
 const isDualNumRange = computed(() => {
   return numRangeModel.value === 'btw' || numRangeModel.value === '!btw'
@@ -61,7 +52,7 @@ watch(
 
     <div v-if="isDualNumRange">and</div>
     <div v-if="isDualNumRange" class="input-container">
-      <input type="number" name="startOffset" class="number-input" v-model="numExtentModel" />
+      <input type="number" name="numExtent" class="number-input" v-model="numExtentModel" />
     </div>
   </div>
 </template>

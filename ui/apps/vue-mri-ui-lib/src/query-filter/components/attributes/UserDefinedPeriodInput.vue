@@ -17,7 +17,6 @@ const emit = defineEmits<{
 const startDateModel = ref<string | Date>('')
 const endDateModel = ref<string | Date>('')
 
-// Watch for changes and emit formatted state
 watch(
   [startDateModel, endDateModel],
   ([startDate, endDate]) => {

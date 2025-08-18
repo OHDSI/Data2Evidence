@@ -9,6 +9,7 @@ export default {
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
 import { ref, watch } from 'vue'
+import { stringOptions } from '../../utils/AtlasUtils'
 
 const emit = defineEmits<{
   (e: 'update', value: { Op: string; Text: string }): void
@@ -16,15 +17,6 @@ const emit = defineEmits<{
 
 const stringOptionsModel = ref<string>('startsWith')
 const textModel = ref<string>('')
-
-const stringOptions = [
-  { label: 'Starting With', value: 'startsWith' },
-  { label: 'Containing', value: 'contains' },
-  { label: 'Ending With', value: 'endsWith' },
-  { label: 'Not Starting With', value: '!startsWith' },
-  { label: 'Not Containing', value: '!contains' },
-  { label: 'Not Ending With', value: '!endsWith' },
-]
 
 watch(
   [stringOptionsModel, textModel],

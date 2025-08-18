@@ -9,6 +9,7 @@ export default {
 <script setup lang="ts">
 import AppDate from '@/lib/ui/app-date.vue'
 import SelectMaterial from '../SelectMaterial.vue'
+import { dateRangeOptions } from '../../utils/AtlasUtils'
 import { computed, ref, watch } from 'vue'
 
 const emit = defineEmits<{
@@ -19,21 +20,10 @@ const dateRangeModel = ref<string>('lt')
 const dateValueModel = ref<string | Date>('')
 const dateExtentModel = ref<string | Date>('')
 
-const dateRangeOptions = [
-  { label: 'Before', value: 'lt' },
-  { label: 'On or Before', value: 'lte' },
-  { label: 'On', value: 'eq' },
-  { label: 'After', value: 'gt' },
-  { label: 'On or After', value: 'gte' },
-  { label: 'Between', value: 'btw' },
-  { label: 'Not Between', value: '!btw' },
-]
-
 const isDualDateRange = computed(() => {
   return dateRangeModel.value === 'btw' || dateRangeModel.value === '!btw'
 })
 
-// Watch for changes and emit formatted state
 watch(
   [dateRangeModel, dateValueModel, dateExtentModel, isDualDateRange],
   ([range, value, extent, dual]) => {

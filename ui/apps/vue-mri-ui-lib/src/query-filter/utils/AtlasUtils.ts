@@ -65,3 +65,31 @@ export function getAtlasAttributeKey(attributeId: string, eventType: string): st
   return attributeMap[eventType]?.[attributeId] || attributeId
 }
 
+export const dateRangeOptions = [
+  { label: 'Before', value: 'lt' },
+  { label: 'On or Before', value: 'lte' },
+  { label: 'On', value: 'eq' },
+  { label: 'After', value: 'gt' },
+  { label: 'On or After', value: 'gte' },
+  { label: 'Between', value: 'btw' },
+  { label: 'Not Between', value: '!btw' },
+]
+
+export const stringOptions = [
+  { label: 'Starting With', value: 'startsWith' },
+  { label: 'Containing', value: 'contains' },
+  { label: 'Ending With', value: 'endsWith' },
+  { label: 'Not Starting With', value: '!startsWith' },
+  { label: 'Not Containing', value: '!contains' },
+  { label: 'Not Ending With', value: '!endsWith' },
+]
+
+export const numericRangeOptions = [
+  { label: 'Less Than', value: 'lt' },
+  { label: 'Less or Equal To', value: 'lte' },
+  { label: 'Equal To', value: 'eq' },
+  { label: 'Greater Than', value: 'gt' },
+  { label: 'Greater or Equal To', value: 'gte' },
+  { label: 'Between', value: 'btw' },
+  { label: 'Not Between', value: '!btw' },
+]

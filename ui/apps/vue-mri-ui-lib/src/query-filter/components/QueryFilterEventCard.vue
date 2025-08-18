@@ -240,9 +240,7 @@ const handleAttributeRemoved = (attributeId: string) => {
 }
 
 // Update a specific attribute's value by id
-const updateAttribute = (attributeId: string, value: any) => {
-  console.log('Update attribute:', attributeId, value);
-  
+const updateAttribute = (attributeId: string, value: any) => {  
   const currentAttributes = eventData.value.attributes || [];
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId) {

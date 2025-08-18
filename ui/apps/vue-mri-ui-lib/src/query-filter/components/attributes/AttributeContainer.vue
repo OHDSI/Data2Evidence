@@ -7,7 +7,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { computed, defineProps } from 'vue'
 import TrashIcon from '../icons/TrashIcon.vue'
 import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
 import DateInput from './DateInput.vue';
@@ -16,6 +16,13 @@ import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue';
 import NumericRangeInput from './NumericRangeInput.vue';
 import StringInput from './StringInput.vue';
 
+const componentMap = {
+  dateRange: DateInput,
+  dateAdjustment: DateAdjustmentInput,
+  userDefinedPeriod: UserDefinedPeriodInput,
+  numericRange: NumericRangeInput,
+  text: StringInput,
+}
 const props = defineProps<{
   attribute: QueryFilterAttribute
   onRemoveAttribute?: () => void
@@ -25,8 +32,6 @@ const emit = defineEmits<{
   (e: 'update-attribute', attributeId: string, value: any): void
 }>()
 
-console.log('AttributeContainer props:', props.attribute)
-
 const isBooleanAttribute = (attribute: QueryFilterAttribute) => {
   return 'configType' in attribute && attribute.configType === 'boolean'
 }
@@ -35,12 +40,13 @@ const getDescription = (attribute: QueryFilterAttribute) => {
   return ('description' in attribute && attribute.description) || 'No description available'
 }
 
-const getUpdate = (payload) => {
-  console.log('Update attribute:', payload);
-  console.log('Attribute ID:', props.attribute);
-  
+const getUpdate = (payload) => {  
   emit('update-attribute', props.attribute.id, payload)
 }
+
+const attributeType = computed(() => {
+  return 'configType' in props.attribute ? props.attribute.configType : 'text'  
+})
 
 </script>
 
@@ -48,11 +54,7 @@ const getUpdate = (payload) => {
   <div class="attribute-container">
     <div class="attribute-title" :class="{ 'attribute-title__max-width': !isBooleanAttribute(attribute) }">{{ getDescription(props.attribute) }}</div>
     <div v-if="!isBooleanAttribute(props.attribute)" class="attribute-input">
-        <DateInput v-if="props.attribute.configType === 'dateRange'" @update="getUpdate"/>
-        <DateAdjustmentInput v-else-if="props.attribute.configType === 'dateAdjustment'" @update="getUpdate"/>
-        <UserDefinedPeriodInput v-else-if="props.attribute.configType === 'userDefinedPeriod'" @update="getUpdate"/>
-        <NumericRangeInput v-else-if="props.attribute.configType === 'numericRange'" @update="getUpdate"/>
-        <StringInput v-else-if="props.attribute.configType === 'text'" @update="getUpdate"/>
+        <component :is="componentMap[attributeType]" @update="getUpdate" />
     </div>
     <div class="attribute-btn-container">
       <button
@@ -68,7 +70,6 @@ const getUpdate = (payload) => {
 
 <style scoped lang="scss">
 .attribute-container {
-  //   padding: 10px;
   display: flex;
   border-radius: 6px;
   border: 1px solid #000080;
