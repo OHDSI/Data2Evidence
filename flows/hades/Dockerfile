@@ -137,4 +137,4 @@ RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-USER docker
+# USER docker

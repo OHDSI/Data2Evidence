@@ -17,7 +17,7 @@ from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
 
 os.environ['plugin_name'] = 'dqd_plugin'
 
-@flow(log_prints=True, timeout_seconds=3600)
+@flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
     schema_name = options.schemaName

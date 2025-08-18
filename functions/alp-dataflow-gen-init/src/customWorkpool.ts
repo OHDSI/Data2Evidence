@@ -61,7 +61,7 @@ export const customDockerWorkpool = Object.keys(CUSTOM_WORK_POOL_CONFIGURATION).
       privileged: {
         type: "boolean",
         title: "Privileged",
-        default: true,
+        default: false,
         description: "Give extended privileges to created container.",
       },
       auto_remove: {
