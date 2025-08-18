@@ -154,15 +154,26 @@ export interface CriteriaConfig {
  */
 export class CriteriaConfigLoader {
   private config: CriteriaConfig
-  public criteriaTypes: Record<string, CriteriaType>
-  public sections: Record<string, ConfigSection>
-  public attributes: Record<string, AttributeCategory>
+  private criteriaTypes: Record<string, CriteriaType>
+  private sections: Record<string, ConfigSection>
+  private attributes: Record<string, AttributeCategory>
+  private criteriaAttributes: Record<string, CriteriaAttributeConfig[]>
+  private temporalWindows: {
+    types: TemporalWindow[]
+  }
+  private occurrenceCount: {
+    operators: OccurrenceOperator[]
+  }
 
-  constructor() {
-    this.config = criteriaConfigData as CriteriaConfig
+  constructor(config: CriteriaConfig) {
+    this.config = config
+    // Destructure all config properties
     this.criteriaTypes = this.config.criteriaTypes
     this.sections = this.config.sections
     this.attributes = this.config.attributes
+    this.criteriaAttributes = this.config.criteriaAttributes || {}
+    this.temporalWindows = this.config.temporalWindows
+    this.occurrenceCount = this.config.occurrenceCount
   }
 
   /**
@@ -346,8 +357,8 @@ export class CriteriaConfigLoader {
    */
   getCriteriaAttributeOptions(criteriaTypeId: string): AttributeOption[] {
     // First check for criteria-specific attributes (like nested, stop reason, etc.)
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      return this.criteriaAttributes[criteriaTypeId].map(attr => {
         const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
         const result: AttributeOption = {
@@ -372,9 +383,7 @@ export class CriteriaConfigLoader {
     }
 
     // Fall back to domain-based attributes (like age, gender, etc.)
-    const attributeCategory = Object.values(this.config.attributes).find(category =>
-      category.domains.includes(criteriaTypeId)
-    )
+    const attributeCategory = Object.values(this.attributes).find(category => category.domains.includes(criteriaTypeId))
 
     if (!attributeCategory || !attributeCategory.attributes) {
       return []
@@ -448,8 +457,8 @@ export class CriteriaConfigLoader {
    * Get specific attribute configuration for a criteria type and attribute ID
    */
   getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      const attribute = this.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
       return attribute || null
     }
     return null
@@ -462,8 +471,8 @@ export class CriteriaConfigLoader {
   getAtlasJsonToAttributeMapping(criteriaTypeId: string): Record<string, string> {
     const mapping: Record<string, string> = {}
 
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      this.config.criteriaAttributes[criteriaTypeId].forEach(attr => {
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      this.criteriaAttributes[criteriaTypeId].forEach(attr => {
         // For concept-type attributes, we need to map from Atlas JSON property names
         // to internal attribute IDs. The Atlas JSON uses PascalCase property names
         // that correspond to the attribute names, not the atlasKey values.
@@ -495,8 +504,8 @@ export class CriteriaConfigLoader {
   getAllAtlasJsonToAttributeMappings(): Record<string, string> {
     const allMappings: Record<string, string> = {}
 
-    if (this.config.criteriaAttributes) {
-      Object.keys(this.config.criteriaAttributes).forEach(criteriaTypeId => {
+    if (this.criteriaAttributes) {
+      Object.keys(this.criteriaAttributes).forEach(criteriaTypeId => {
         const typeMappings = this.getAtlasJsonToAttributeMapping(criteriaTypeId)
         Object.assign(allMappings, typeMappings)
       })
@@ -522,7 +531,7 @@ export class CriteriaConfigLoader {
    * @returns Array of temporal window types
    */
   getTemporalWindowOptions(): TemporalWindow[] {
-    return this.config.temporalWindows.types
+    return this.temporalWindows.types
   }
 
   /**
@@ -530,7 +539,7 @@ export class CriteriaConfigLoader {
    * @returns Array of occurrence count operators
    */
   getOccurrenceCountOperators(): OccurrenceOperator[] {
-    return this.config.occurrenceCount.operators
+    return this.occurrenceCount.operators
   }
 
   /**
@@ -545,6 +554,6 @@ export class CriteriaConfigLoader {
 }
 
 // Create and export singleton instance
-const criteriaConfigLoader = new CriteriaConfigLoader()
+const criteriaConfigLoader = new CriteriaConfigLoader(criteriaConfigData as CriteriaConfig)
 export { criteriaConfigLoader }
 export default criteriaConfigLoader
