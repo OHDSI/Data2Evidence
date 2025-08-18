@@ -7,8 +7,16 @@ import { ConfigTypes } from "../../../constant";
 import Divider from "@mui/material/Divider";
 import { useDisclaimer, useTranslation } from "../../../contexts";
 import { config } from "../../../config";
-import "./DisclaimerDialog.scss";
 import { i18nKeys } from "../../../contexts/app-context/states";
+import env from "../../../env";
+import "./DisclaimerDialog.scss";
+
+const logUserResponse = (message = ""): void => {
+  if (typeof env.REACT_APP_LOG_DISCLAIMER === "string" && env.REACT_APP_LOG_DISCLAIMER.toLowerCase() === "true") {
+    console.log(`[AUDITLOG][${Date()}]: ${message}`);
+  }
+  return;
+};
 
 export const DisclaimerDialog: FC = () => {
   const navigate = useNavigate();
@@ -23,9 +31,11 @@ export const DisclaimerDialog: FC = () => {
   const handleAccept = useCallback(() => {
     setFeedback({});
     setIsDisclaimerAccepted(true);
+    logUserResponse("Accepted Disclaimer");
   }, [setIsDisclaimerAccepted]);
 
   const handleLogout = useCallback(() => {
+    logUserResponse("Rejected Disclaimer");
     navigate(config.ROUTES.logout);
   }, [navigate]);
 
