@@ -545,7 +545,11 @@
           "strategus.analysis.read",
           "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "jupyter"
+          "jupyter",
+          "jobplugins.dqd.researcher.execute",
+          "jobplugins.cohortDqd.researcher.execute",
+          "jobplugins.analysisUi.researcher.execute",
+          "portal.dataset.read"
         ]
       },
       "scopes": [
@@ -640,6 +644,36 @@
             "jobplugins.dqd.execute"
           ],
           "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/cohort-dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.cohortDqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/analysis-ui/flow-run(.*)",
+          "scopes": [
+            "jobplugins.analysisUi.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
             "POST"
           ]
         },
