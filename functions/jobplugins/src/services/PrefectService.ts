@@ -1,13 +1,13 @@
-import { TransformationService } from "./DataTransformationService.ts";
-import { AnalysisService } from "./AnalysisService.ts";
-import {
-  PrefectParamsTransformer,
-  PrefectAnalysisParamsTransformer,
-} from "../utils/DataflowParser.ts";
-import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
-import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
+import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { StrategusAnalysisApi } from "../api/StrategusAnalysis.ts";
+import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
+import {
+  PrefectAnalysisParamsTransformer,
+  PrefectParamsTransformer,
+} from "../utils/DataflowParser.ts";
+import { AnalysisService } from "./AnalysisService.ts";
+import { TransformationService } from "./DataTransformationService.ts";
 
 export class PrefectService {
   private dataflowService;
@@ -42,10 +42,15 @@ export class PrefectService {
     return flowrunId;
   }
 
-  public async createAnalysisFlowRun(id: string, token) {
+  public async createAnalysisFlowRun(
+    id: string,
+    datasetId: string,
+    token: string
+  ) {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
       id
     );
+
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );
@@ -58,7 +63,13 @@ export class PrefectService {
       revision.canvas.name,
       prefectDeploymentName,
       prefectFlowName,
-      prefectParams
+      {
+        ...prefectParams,
+        options: {
+          ...prefectParams.options,
+          datasetId,
+        },
+      }
     );
     await this.analysisflowService.createAnalysisflowRun(id, flowRunId);
     return flowRunId;
@@ -72,12 +83,14 @@ export class PrefectService {
     const portalServerApi = new PortalServerAPI(token);
 
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
-      options['datasetId']
+      options["datasetId"]
     );
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
-      options['study_id'], options['notebookName'], json_graph['analysisSpecification']
+      options["study_id"],
+      options["notebookName"],
+      json_graph["analysisSpecification"]
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(
@@ -86,10 +99,14 @@ export class PrefectService {
       prefectFlowName,
       {
         json_graph,
-        options: Object.assign(options, {
-          schemaName,
-          databaseCode
-        }, {})
+        options: Object.assign(
+          options,
+          {
+            schemaName,
+            databaseCode,
+          },
+          {}
+        ),
       }
     );
     return flowRunId;
@@ -111,7 +128,10 @@ export class PrefectService {
     return await this.prefectApi.cancelFlowRun(id);
   }
 
-  public async removeAnalysisResultsSchema(token: string, { studyId, datasetId }: { studyId: string; datasetId: string }) {
+  public async removeAnalysisResultsSchema(
+    token: string,
+    { studyId, datasetId }: { studyId: string; datasetId: string }
+  ) {
     this.prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
@@ -125,12 +145,15 @@ export class PrefectService {
       prefectFlowName,
       {
         json_graph: {},
-        options: Object.assign({}, {
-          mode: 'drop-results',
-          databaseCode,
-          studyId,
-          datasetId
-        })
+        options: Object.assign(
+          {},
+          {
+            mode: "drop-results",
+            databaseCode,
+            studyId,
+            datasetId,
+          }
+        ),
       }
     );
     return flowRunId;
