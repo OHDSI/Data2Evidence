@@ -54,7 +54,6 @@ describe('ConfigLoader', () => {
 
       expectedTypes.forEach(type => {
         // Test that criteria types exist by checking they can be used in public methods
-        expect(() => loader.getAtlasKey(type)).not.toThrow()
         expect(() => loader.getDisplayTitle(type)).not.toThrow()
       })
     })
@@ -87,8 +86,6 @@ describe('ConfigLoader', () => {
           class: expect.any(String),
           special: expect.any(Boolean),
         })
-        // atlasKey should be defined but might be undefined for some types
-        expect(option).toHaveProperty('atlasKey')
       })
 
       // Should not include group-only criteria
@@ -209,29 +206,6 @@ describe('ConfigLoader', () => {
     })
   })
 
-  describe('getAtlasKey', () => {
-    test('should return atlasKey for existing criteria type', () => {
-      const atlasKey = loader.getAtlasKey('conditionOccurrence')
-      expect(atlasKey).toBe('addConditionOccurrence')
-    })
-
-    test('should return criteria type id if no atlasKey exists', () => {
-      // Create test loader with modified config - test with a criteria type that gets generated atlasKey
-      // Since the expansion logic auto-generates atlasKey, this tests the fallback behavior
-      const atlasKey = loader.getAtlasKey('conditionOccurrence')
-      expect(atlasKey).toBe('addConditionOccurrence')
-
-      // Test with non-existent type
-      const nonExistentKey = loader.getAtlasKey('nonExistent')
-      expect(nonExistentKey).toBe('nonExistent')
-    })
-
-    test('should return id for non-existent criteria type', () => {
-      const atlasKey = loader.getAtlasKey('nonExistent')
-      expect(atlasKey).toBe('nonExistent')
-    })
-  })
-
   describe('getDisplayTitle', () => {
     test('should add "Add" prefix for initial context', () => {
       const title = loader.getDisplayTitle('conditionOccurrence', 'initial')
@@ -290,8 +264,6 @@ describe('ConfigLoader', () => {
           selected: false,
           action: expect.any(Function),
         })
-        // atlasKey should be defined but might be undefined for some types
-        expect(option).toHaveProperty('atlasKey')
       })
     })
 
@@ -370,7 +342,6 @@ describe('ConfigLoader', () => {
             description: expect.any(String),
             defaultDescription: expect.any(String),
             type: expect.any(String),
-            atlasKey: expect.any(String),
             special: expect.any(Boolean),
             action: expect.any(Function),
           })
@@ -404,7 +375,6 @@ describe('ConfigLoader', () => {
         description: 'Add nested criteria group',
         type: 'nested',
         special: true,
-        atlasKey: 'addNested',
       }
 
       const actionFn = loader.createAttributeActionFunction(nestedAttr)
@@ -423,7 +393,6 @@ describe('ConfigLoader', () => {
           name: `Test ${type}`,
           description: `Test ${type} attribute`,
           type,
-          atlasKey: `add${type}`,
         }
 
         const actionFn = loader.createAttributeActionFunction(attr)
@@ -442,7 +411,6 @@ describe('ConfigLoader', () => {
           id: expect.any(String),
           name: expect.any(String),
           description: expect.any(String),
-          atlasKey: expect.any(String),
         })
       } else {
         expect(config).toBeNull()

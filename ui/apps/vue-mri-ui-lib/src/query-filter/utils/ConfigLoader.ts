@@ -12,7 +12,6 @@ export interface CriteriaType {
   id: string
   name: string
   class: string
-  atlasKey: string
   groupOnly?: boolean
   special?: boolean
   descriptions: {
@@ -31,7 +30,6 @@ export interface AttributeConfig {
   name: string
   description?: string
   type?: string
-  atlasKey?: string
   special?: boolean
   required?: boolean
 }
@@ -81,7 +79,6 @@ export interface CriteriaOption {
   defaultDescription: string
   icon: string
   class: string
-  atlasKey: string
   special: boolean
   selected?: boolean
   action?: () => CriteriaItem | void
@@ -118,7 +115,6 @@ export interface CriteriaAttributeConfig {
   description: string
   type: string
   domainFilter?: string
-  atlasKey: string
   special?: boolean
 }
 
@@ -130,7 +126,6 @@ export interface AttributeOption {
   defaultDescription: string
   type: string
   domainFilter?: string
-  atlasKey: string
   special: boolean
   action: () => CriteriaItem | void
 }
@@ -225,7 +220,6 @@ export class ConfigLoader {
         id,
         name: configType.name,
         class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
-        atlasKey: `add${this.capitalizeFirst(id)}`, // e.g., addConditionOccurrence
         groupOnly: configType.groupOnly,
         special: configType.special,
         descriptions: {
@@ -272,7 +266,6 @@ export class ConfigLoader {
               description: attr.description,
               type: attr.type,
               domainFilter: attr.domainFilter,
-              atlasKey: `add${this.capitalizeFirst(attrId)}`,
               special: attr.special,
             })
           })
@@ -286,7 +279,6 @@ export class ConfigLoader {
               name: typeAttr.name.replace('{type}', typeValue),
               description: typeAttr.description.replace('{type}', typeValue),
               type: typeAttr.type,
-              atlasKey: `add${this.capitalizeFirst(baseType)}`,
               special: typeAttr.special,
             })
           }
@@ -301,7 +293,6 @@ export class ConfigLoader {
                 description: attr.description,
                 type: attr.type,
                 domainFilter: attr.domainFilter,
-                atlasKey: `add${this.capitalizeFirst(attrId)}`,
                 special: attr.special,
               })
             })
@@ -365,7 +356,6 @@ export class ConfigLoader {
           description: this.getI18nText(`cohortbuilder.criteria.${criteriaType.id}.${descriptionType}`, description),
           defaultDescription: description,
           class: criteriaType.class,
-          atlasKey: criteriaType.atlasKey,
           special: criteriaType.special || false,
         }
       })
@@ -430,16 +420,6 @@ export class ConfigLoader {
 
       return criteria
     }
-  }
-
-  /**
-   * Get the Atlas internal key for a criteria type
-   * @param criteriaTypeId - The criteria type identifier
-   * @returns The Atlas internal key (e.g., "addConditionEra")
-   */
-  getAtlasKey(criteriaTypeId: string): string {
-    const criteriaType = this.criteriaTypes[criteriaTypeId]
-    return criteriaType ? criteriaType.atlasKey || criteriaTypeId : criteriaTypeId
   }
 
   /**
@@ -523,7 +503,6 @@ export class ConfigLoader {
           description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
           defaultDescription: attr.description || '',
           type: attr.type || 'text',
-          atlasKey: attr.atlasKey || '',
           special: attr.special || false,
           action: this.createAttributeActionFunction(attr),
         }
@@ -554,7 +533,6 @@ export class ConfigLoader {
         description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
         defaultDescription: attr.description || '',
         type: attr.type || 'text',
-        atlasKey: attr.atlasKey || '',
         special: attr.special || false,
         action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig),
       }
@@ -628,14 +606,9 @@ export class ConfigLoader {
 
     if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
       this.criteriaAttributes[criteriaTypeId].forEach(attr => {
-        // For concept-type attributes, we need to map from Atlas JSON property names
-        // to internal attribute IDs. The Atlas JSON uses PascalCase property names
-        // that correspond to the attribute names, not the atlasKey values.
-
         // Convert internal attributeId to Atlas JSON property name format
         // e.g., 'gender' -> 'Gender', 'conditionType' -> 'ConditionType'
         const atlasJsonKey = attr.id.charAt(0).toUpperCase() + attr.id.slice(1)
-
         mapping[atlasJsonKey] = attr.id
       })
     }
