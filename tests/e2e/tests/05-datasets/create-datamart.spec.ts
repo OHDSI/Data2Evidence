@@ -72,8 +72,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'person' }).click()
   await expect(page.locator('form')).toContainText('person_id')
   await page.getByRole('button', { name: 'Create' }).click()
-  // Check if datamart was created successfully
+  // Check if datamart dataset was created successfully
   await expect(page.getByRole('cell', { name: 'datamart-test' })).toBeVisible()
+
+  // Wait for 90 seconds for the datamart schema to be created in the database
+  await page.waitForTimeout(90000)
 
   // Add user permission to newly created datamart dataset
   await page.getByRole('cell', { name: 'datamart-test' }).locator('..').getByRole('button').nth(2).click()
