@@ -84,7 +84,6 @@ describe('ConfigLoader', () => {
           defaultTitle: expect.any(String),
           description: expect.any(String),
           defaultDescription: expect.any(String),
-          icon: expect.any(String),
           class: expect.any(String),
           special: expect.any(Boolean),
         })
@@ -97,7 +96,6 @@ describe('ConfigLoader', () => {
         // Add a group-only criteria to test filtering
         config.criteriaTypes.testGroupOnly = {
           name: 'Test Group Only',
-          icon: 'test-icon',
           groupOnly: true,
           descriptions: { group: 'Test group only description' },
         }
@@ -123,7 +121,6 @@ describe('ConfigLoader', () => {
         // Add a group-only criteria to test filtering
         config.criteriaTypes.testGroupOnly = {
           name: 'Test Group Only',
-          icon: 'test-icon',
           groupOnly: true,
           descriptions: { group: 'Test group only description' },
         }
@@ -149,7 +146,6 @@ describe('ConfigLoader', () => {
         // Add a group-only criteria to test inclusion
         config.criteriaTypes.testGroupOnly = {
           name: 'Test Group Only',
-          icon: 'test-icon',
           groupOnly: true,
           descriptions: { group: 'Test group only description' },
         }
@@ -289,7 +285,6 @@ describe('ConfigLoader', () => {
           defaultTitle: expect.any(String),
           description: expect.any(String),
           defaultDescription: expect.any(String),
-          icon: expect.any(String),
           class: expect.any(String),
           special: expect.any(Boolean),
           selected: false,
