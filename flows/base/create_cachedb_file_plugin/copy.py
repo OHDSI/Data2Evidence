@@ -5,7 +5,7 @@ from prefect.logging import get_run_logger
 from .fts import create_fts_index
 from .utils import execute_statement
 
-from _shared_flow_utils.types import SupportedDatabaseDialects
+from _shared_flow_utils.types import SupportedDatabaseDialects, DBCredentialsType
 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_{read_conn.database_code}")
@@ -156,7 +156,7 @@ def create_schema_query(schema_name: str) -> str:
 
 def create_or_replace_table_query(source_schema: str,
                                   source_table: str,
-                                  source_credentials: dict,
+                                  source_credentials: DBCredentialsType,
                                   limit_statement: str) -> str:    
     project_name = source_credentials.host
     select_statement = None
@@ -166,7 +166,7 @@ def create_or_replace_table_query(source_schema: str,
         case SupportedDatabaseDialects.BIGQUERY.value:
             select_statement = f"SELECT * FROM bigquery_arrow_scan('{project_name}.{source_schema}.{source_table}')"
         case _:
-            raise ValueError(f"Unsupported dialect: {source_credentials.get('dialect')}")
+            raise ValueError(f"Unsupported dialect: {source_credentials.dialect}")
 
     return f'CREATE OR REPLACE TABLE "{source_schema}"."{source_table}" AS FROM ({select_statement}) {limit_statement};'
 
