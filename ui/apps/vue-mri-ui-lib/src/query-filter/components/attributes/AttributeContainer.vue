@@ -11,6 +11,7 @@ import { defineProps } from 'vue'
 import TrashIcon from '../icons/TrashIcon.vue'
 import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
 import DateInput from './DateInput.vue';
+import DateAdjustmentInput from './DateAdjustmentInput.vue';
 
 const props = defineProps<{
   attribute: QueryFilterAttribute
@@ -45,6 +46,7 @@ const getUpdate = (payload) => {
     <div class="attribute-title" :class="{ 'attribute-title__max-width': !isBooleanAttribute(attribute) }">{{ getDescription(props.attribute) }}</div>
     <div v-if="!isBooleanAttribute(props.attribute)" class="attribute-input">
         <DateInput v-if="props.attribute.configType === 'dateRange'" @update="getUpdate"/>
+        <DateAdjustmentInput v-else-if="props.attribute.configType === 'dateAdjustment'" @update="getUpdate"/>
     </div>
     <div class="attribute-btn-container">
       <button
