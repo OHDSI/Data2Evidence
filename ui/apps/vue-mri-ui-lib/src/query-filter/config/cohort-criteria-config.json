@@ -758,7 +758,8 @@
         {
           "id": "firstDiagnosis",
           "name": "First Diagnosis",
-          "description": "Limit to first diagnosis in history"
+          "description": "Limit to first diagnosis in history",
+          "type": "boolean"
         },
         {
           "id": "age",
@@ -948,7 +949,8 @@
         {
           "id": "abnormal",
           "name": "Abnormal",
-          "description": "Filter for abnormal results"
+          "description": "With an abnormal result",
+          "type": "boolean"
         },
         {
           "id": "visitOccurrence",

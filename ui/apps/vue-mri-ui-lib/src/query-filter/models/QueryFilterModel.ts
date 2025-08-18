@@ -319,7 +319,10 @@ export class QueryFilterCriteriaManager {
     this.inclusionCriteria.criteria.forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
       const allGroupEvents = this.collectAllEvents(group.events)
+
       allGroupEvents.forEach(event => {
+        console.log(event)
+
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
           if (!usedConceptSetIds.has(systemConceptSetId)) {
@@ -470,6 +473,8 @@ export class QueryFilterCriteriaManager {
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType !== 'group' && e.eventType) // Exclude demographic and group events
                 .map(event => {
+                  console.log('event to process:', event)
+
                   const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
                   const criteria: CriteriaGroup = {
                     Criteria: {
@@ -542,6 +547,8 @@ export class QueryFilterCriteriaManager {
 
                   // Handle concept-type attributes on the main event
                   if (event.attributes) {
+                    console.log('Processing concept attributes for event:', event.id)
+
                     const conceptAttributes = event.attributes.filter(
                       attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
                     )
@@ -563,6 +570,24 @@ export class QueryFilterCriteriaManager {
 
                         const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                         criteria.Criteria[atlasEventType][fieldName] = conceptData
+                      }
+                    })
+
+                    event.attributes.forEach(attr => {
+                      if (hasAttributeId(attr)) {
+                        console.log('Processing attribute:', attr)
+
+                        // Map boolean attributes to Atlas format
+                        if ('configType' in attr && attr.configType === 'boolean') {
+                          if (attr.attributeId.includes('first')) {
+                            criteria.Criteria[atlasEventType]['First'] = true
+                          }
+                          if (attr.attributeId.includes('abnormal')) {
+                            criteria.Criteria[atlasEventType]['Abnormal'] = true
+                          }
+                        }
+
+                        // Add more mappings as needed for other boolean/flag attributes
                       }
                     })
                   }
@@ -1214,6 +1239,10 @@ export class QueryFilterCriteriaManager {
       entryEvents: this.entryEvents,
       exitEvents: this.exitEvents,
     }
+  }
+
+  mapAttributesToAtlas(attributes) {
+    const result = []
   }
 
   // Helper method to collect concept sets from nested events that were missed in initial collection
