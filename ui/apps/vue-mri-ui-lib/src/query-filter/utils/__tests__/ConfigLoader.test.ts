@@ -84,7 +84,6 @@ describe('ConfigLoader', () => {
           description: expect.any(String),
           defaultDescription: expect.any(String),
           class: expect.any(String),
-          special: expect.any(Boolean),
         })
       })
 
@@ -260,7 +259,6 @@ describe('ConfigLoader', () => {
           description: expect.any(String),
           defaultDescription: expect.any(String),
           class: expect.any(String),
-          special: expect.any(Boolean),
           selected: false,
           action: expect.any(Function),
         })
@@ -342,7 +340,6 @@ describe('ConfigLoader', () => {
             description: expect.any(String),
             defaultDescription: expect.any(String),
             type: expect.any(String),
-            special: expect.any(Boolean),
             action: expect.any(Function),
           })
         })
@@ -374,7 +371,6 @@ describe('ConfigLoader', () => {
         name: 'Nested Criteria',
         description: 'Add nested criteria group',
         type: 'nested',
-        special: true,
       }
 
       const actionFn = loader.createAttributeActionFunction(nestedAttr)

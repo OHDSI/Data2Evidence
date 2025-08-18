@@ -13,7 +13,6 @@ export interface CriteriaType {
   name: string
   class: string
   groupOnly?: boolean
-  special?: boolean
   descriptions: {
     initial?: string
     censoring?: string
@@ -30,7 +29,6 @@ export interface AttributeConfig {
   name: string
   description?: string
   type?: string
-  special?: boolean
   required?: boolean
 }
 
@@ -79,7 +77,6 @@ export interface CriteriaOption {
   defaultDescription: string
   icon: string
   class: string
-  special: boolean
   selected?: boolean
   action?: () => CriteriaItem | void
 }
@@ -115,7 +112,6 @@ export interface CriteriaAttributeConfig {
   description: string
   type: string
   domainFilter?: string
-  special?: boolean
 }
 
 export interface AttributeOption {
@@ -126,7 +122,6 @@ export interface AttributeOption {
   defaultDescription: string
   type: string
   domainFilter?: string
-  special: boolean
   action: () => CriteriaItem | void
 }
 
@@ -147,7 +142,6 @@ export interface CriteriaConfig {
 export interface ConfigCriteriaType {
   name: string
   groupOnly?: boolean
-  special?: boolean
   descriptions: {
     initial?: string
     censoring?: string
@@ -168,7 +162,6 @@ export interface AttributeDefinition {
   description: string
   type: string
   domainFilter?: string
-  special?: boolean
 }
 
 export interface Config {
@@ -221,7 +214,6 @@ export class ConfigLoader {
         name: configType.name,
         class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
         groupOnly: configType.groupOnly,
-        special: configType.special,
         descriptions: {
           initial: configType.descriptions.initial || configType.descriptions.all || '',
           censoring: configType.descriptions.censoring || configType.descriptions.all || '',
@@ -257,19 +249,7 @@ export class ConfigLoader {
       const attrs: CriteriaAttributeConfig[] = []
 
       mappings.forEach(mapping => {
-        if (mapping === 'common') {
-          // Add common attributes
-          Object.entries(config.attributeDefinitions.common).forEach(([attrId, attr]) => {
-            attrs.push({
-              id: attrId,
-              name: attr.name,
-              description: attr.description,
-              type: attr.type,
-              domainFilter: attr.domainFilter,
-              special: attr.special,
-            })
-          })
-        } else if (mapping.includes(':')) {
+        if (mapping.includes(':')) {
           // Handle type attributes like "firstOccurrence:Diagnosis"
           const [baseType, typeValue] = mapping.split(':')
           if (config.attributeDefinitions.typeAttributes[baseType]) {
@@ -279,22 +259,32 @@ export class ConfigLoader {
               name: typeAttr.name.replace('{type}', typeValue),
               description: typeAttr.description.replace('{type}', typeValue),
               type: typeAttr.type,
-              special: typeAttr.special,
             })
           }
         } else {
-          // Handle category-specific attributes
-          const categoryAttrs = config.attributeDefinitions.categorySpecific[mapping]
-          if (categoryAttrs) {
-            Object.entries(categoryAttrs).forEach(([attrId, attr]) => {
-              attrs.push({
-                id: attrId,
-                name: attr.name,
-                description: attr.description,
-                type: attr.type,
-                domainFilter: attr.domainFilter,
-                special: attr.special,
-              })
+          // Handle direct attribute IDs - look up in all definition sections
+          let attr: AttributeDefinition | undefined
+
+          // First check common attributes
+          if (config.attributeDefinitions.common[mapping]) {
+            attr = config.attributeDefinitions.common[mapping]
+          } else {
+            // Then check all category-specific attributes
+            for (const categoryAttrs of Object.values(config.attributeDefinitions.categorySpecific)) {
+              if (categoryAttrs[mapping]) {
+                attr = categoryAttrs[mapping]
+                break
+              }
+            }
+          }
+
+          if (attr) {
+            attrs.push({
+              id: mapping,
+              name: attr.name,
+              description: attr.description,
+              type: attr.type,
+              domainFilter: attr.domainFilter,
             })
           }
         }
@@ -356,7 +346,6 @@ export class ConfigLoader {
           description: this.getI18nText(`cohortbuilder.criteria.${criteriaType.id}.${descriptionType}`, description),
           defaultDescription: description,
           class: criteriaType.class,
-          special: criteriaType.special || false,
         }
       })
       .filter((option): option is CriteriaOption => option !== null)
@@ -380,7 +369,7 @@ export class ConfigLoader {
     }
 
     // Special handling for reusable criteria
-    if (criteriaType.special && criteriaTypeId === 'fromReusable') {
+    if (criteriaTypeId === 'fromReusable') {
       return () => {
         // This would trigger the reusable selection modal
         // Implementation depends on existing reusable functionality
@@ -503,7 +492,6 @@ export class ConfigLoader {
           description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
           defaultDescription: attr.description || '',
           type: attr.type || 'text',
-          special: attr.special || false,
           action: this.createAttributeActionFunction(attr),
         }
 
@@ -533,7 +521,6 @@ export class ConfigLoader {
         description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
         defaultDescription: attr.description || '',
         type: attr.type || 'text',
-        special: attr.special || false,
         action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig),
       }
     })
@@ -544,7 +531,7 @@ export class ConfigLoader {
    */
   createAttributeActionFunction(attribute: CriteriaAttributeConfig): () => CriteriaItem | void {
     return function () {
-      if (attribute.special && attribute.id === 'nested') {
+      if (attribute.id === 'nested') {
         // Add nested criteria group
         console.log('Adding nested criteria group...')
         // This would create a new nested criteria group
