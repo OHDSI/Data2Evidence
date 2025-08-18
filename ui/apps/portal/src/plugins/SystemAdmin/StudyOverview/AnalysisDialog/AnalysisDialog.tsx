@@ -64,7 +64,10 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       }
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [String(runType), String(study?.studyDetail?.name)]),
+        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [
+          String(runType),
+          study?.studyDetail?.name || "Untitled dataset",
+        ]),
       });
       setTimeout(() => handleClose("success"), 6000);
     } catch (err: any) {
@@ -100,7 +103,10 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
   return (
     <Dialog
       className="analysis-dialog"
-      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [getRunName(runType), String(study?.studyDetail?.name)])}
+      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [
+        getRunName(runType),
+        study?.studyDetail?.name || "Untitled dataset",
+      ])}
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
