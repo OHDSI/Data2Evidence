@@ -574,21 +574,16 @@ export class QueryFilterCriteriaManager {
                       }
                     })
 
+                    // Handle all other attributes
                     event.attributes.forEach(attr => {
                       if (hasAttributeId(attr) && 'configType' in attr) {
-                        console.log('Processing attribute:', attr, atlasEventType, criteria.Criteria)
-
                         const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
-
-                        // Map boolean attributes to Atlas format
                         if (attr.configType === 'boolean') {
                           criteria.Criteria[atlasEventType][attributeKey] = true
                         }
                         if (attr.value) {
                           criteria.Criteria[atlasEventType][attributeKey] = attr.value
                         }
-
-                        // Add more mappings as needed for other boolean/flag attributes
                       }
                     })
                   }
@@ -640,7 +635,7 @@ export class QueryFilterCriteriaManager {
       }),
       EndStrategy: this.buildEndStrategy(),
       CensoringCriteria: (this.exitEvents?.censoringCriteria || [])
-        .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
+        .filter(event => event.eventType)
         .map(event => {
           const eventType = this.mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
@@ -701,6 +696,18 @@ export class QueryFilterCriteriaManager {
                 criteria[eventType][fieldName] = conceptData
               }
             })
+            // Handle all other attributes
+            event.attributes.forEach(attr => {
+              if (hasAttributeId(attr) && 'configType' in attr) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                if (attr.configType === 'boolean') {
+                  criteria[eventType][attributeKey] = true
+                }
+                if (attr.value) {
+                  criteria[eventType][attributeKey] = attr.value
+                }
+              }
+            })
           }
 
           return criteria
@@ -715,7 +722,7 @@ export class QueryFilterCriteriaManager {
     // Convert entryEvents to PrimaryCriteria.CriteriaList
     if (this.entryEvents?.events && this.entryEvents.events.length > 0) {
       atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events
-        .filter(event => event.eventType && event.conceptSetId) // Only events with eventType and conceptSetId
+        .filter(event => event.eventType)
         .map(event => {
           const eventType = this.mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
@@ -782,6 +789,19 @@ export class QueryFilterCriteriaManager {
 
                 const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                 criteria[eventType][fieldName] = conceptData
+              }
+            })
+
+            // Handle all other attributes
+            event.attributes.forEach(attr => {
+              if (hasAttributeId(attr) && 'configType' in attr) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                if (attr.configType === 'boolean') {
+                  criteria[eventType][attributeKey] = true
+                }
+                if (attr.value) {
+                  criteria[eventType][attributeKey] = attr.value
+                }
               }
             })
           }
