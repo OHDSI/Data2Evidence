@@ -10,6 +10,7 @@ import { DataTransformationController } from "./src/controllers/DataTransformati
 import { DbSvcController } from "./src/controllers/DbSvcController.ts";
 import { DqdController } from "./src/controllers/DqdController.ts";
 import { PerseusController } from "./src/controllers/PerseusController.ts";
+import { PhenotypeController } from "./src/controllers/PhenotypeController.ts";
 import { PrefectController } from "./src/controllers/PrefectController.ts";
 import { ResearcherController } from "./src/controllers/ResearcherController.ts";
 import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
@@ -41,6 +42,7 @@ app.use("/jobplugins/cachedb", new CachedbController().router);
 app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
 app.use("/jobplugins/perseus", new PerseusController().router);
 app.use("/jobplugins/researcher", new ResearcherController().router);
+app.use("/jobplugins/phenotype", new PhenotypeController().router);
 
 let ssl = JSON.parse(env.PG__SSL.toLowerCase());
 if (env.PG__CA_ROOT_CERT) {

@@ -9,13 +9,12 @@ class SupabaseStorageAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("supabaseStorage")
-        self.headers = self.get_options()
 
     
     def get_options(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {Secret.load("supabase-storage-jwt-token").get()}"}
+        return {"Authorization": f'Bearer {Secret.load("supabase-storage-jwt-token").get()}'}
 
-    
+
     def get_csv_file(self, node_id: str, filename: str) -> str:
         csv_node_bucket = Variable.get("data_transformation_bucket")
 

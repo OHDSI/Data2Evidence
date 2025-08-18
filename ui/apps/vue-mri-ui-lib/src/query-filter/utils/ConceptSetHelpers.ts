@@ -1,7 +1,7 @@
 /**
  * Helper utilities for concept set operations
  */
-import type { ConceptSetItem, ApiConfig, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { ConceptSetItemDisplay, ApiConfig, ConceptSetDomainValues } from '../types/ConceptSetTypes'
 
 interface StoreGetters {
   getMriConfig: {
@@ -43,7 +43,10 @@ export const getApiConfig = (store: { getters: StoreGetters }): ApiConfig | null
 /**
  * Filter concept sets based on search query
  */
-export const filterConceptSets = (allConceptSets: ConceptSetItem[], searchQuery: string): ConceptSetDomainValues => {
+export const filterConceptSets = (
+  allConceptSets: ConceptSetItemDisplay[],
+  searchQuery: string
+): ConceptSetDomainValues => {
   if (!searchQuery || searchQuery.trim() === '') {
     return {
       values: allConceptSets,
@@ -54,7 +57,7 @@ export const filterConceptSets = (allConceptSets: ConceptSetItem[], searchQuery:
 
   const searchLower = searchQuery.toLowerCase()
   const filteredResults = allConceptSets.filter(
-    (cs: ConceptSetItem) =>
+    (cs: ConceptSetItemDisplay) =>
       (cs.text && cs.text.toLowerCase().includes(searchLower)) ||
       (cs.display_value && cs.display_value.toLowerCase().includes(searchLower)) ||
       (cs.value && cs.value.toLowerCase().includes(searchLower))
@@ -89,7 +92,7 @@ export const createTagInputModel = (
   id: string
   props: {
     type: string
-    value: ConceptSetItem[]
+    value: ConceptSetItemDisplay[]
     attributePath: string
     domainFilter: string
     standardConceptCodeFilter: string

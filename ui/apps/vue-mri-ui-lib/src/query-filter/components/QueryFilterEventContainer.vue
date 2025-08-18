@@ -12,15 +12,20 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup, SelectedConceptSet } from '../models/QueryFilterModel'
-import type { ConceptSetItem, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
+import type {
+  ConceptSetItemDisplay,
+  ConceptSetDomainValues,
+  ConceptSetAction,
+  SelectedConceptSet,
+} from '../types/ConceptSetTypes'
 import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]
   eventType?: 'ENTRY' | 'EXIT' | 'CRITERIA'
   parentGroup?: QueryFilterGroup
-  conceptSets?: ConceptSetItem[]
+  conceptSets?: ConceptSetItemDisplay[]
   conceptSetDomainValues?: ConceptSetDomainValues
   conceptSetTexts?: Record<string, string>
   datasetId?: string | null
@@ -37,6 +42,7 @@ const emit = defineEmits<{
   'update-events': [events: QueryFilterEvent[]]
   'event-updated': [eventIndex: number, event: QueryFilterEvent]
   'event-removed': [eventIndex: number]
+  'concept-set-action': [action: ConceptSetAction]
 }>()
 
 // Work directly with props.events for reactivity
@@ -131,7 +137,7 @@ const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   console.log('Attribute removed:', eventId, attributeId)
 }
 
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | null) => {
+const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
     const currentEvent = eventsData.value[eventIndex]
@@ -156,7 +162,7 @@ const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItem | 
       conceptIds: conceptSet.conceptIds || [],
       concepts:
         conceptSet.concepts?.map(c => ({
-          id: c.id || c.concept_id || c.CONCEPT_ID || 0,
+          id: c.id || c.concept_id || 0,
           useMapped: c.useMapped || false,
           isExcluded: c.isExcluded || false,
           useDescendants: c.useDescendants || false,
@@ -219,9 +225,10 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :dataset-id="datasetId || null"
           :readonly="readonly"
           :hide-header="false"
-          @update:nested-criteria="(criteria) => updateEventNestedCriteria(event.id, criteria)"
+          @update:nested-criteria="criteria => updateEventNestedCriteria(event.id, criteria)"
+          @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
-        
+
         <!-- Use QueryFilterEventCard for regular events -->
         <QueryFilterEventCard
           v-else
@@ -246,6 +253,7 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           @concept-set-selected="handleConceptSetSelected(event.id, $event)"
           @attribute-selected="handleAttributeSelected(event.id, $event)"
           @attribute-removed="handleAttributeRemoved(event.id, $event)"
+          @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
       </template>
     </div>

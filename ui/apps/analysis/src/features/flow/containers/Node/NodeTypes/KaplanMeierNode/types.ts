@@ -1,51 +1,80 @@
-export interface KaplanMeierArgs {
-  // Study Population Configuration (from createStudyPopulation)
-  outcomeId: number;
-  firstExposureOnly: boolean;
-  restrictToCommonPeriod: boolean;
-  washoutPeriod: number;
-  removeDuplicateSubjects: "keep all" | "keep first" | "remove all";
-  removeSubjectsWithPriorOutcome: boolean;
-  minDaysAtRisk: number;
-
-  // Risk Window Definition
+// Time At Risk Configuration
+export interface TimeAtRiskConfig {
+  label: string;
   riskWindowStart: number;
   startAnchor: "cohort start" | "cohort end";
   riskWindowEnd: number;
   endAnchor: "cohort start" | "cohort end";
+}
 
-  // Kaplan-Meier Plot Settings
-  includeZero: boolean;
-  stratified: boolean;
+// DB Cohort Method Data Args
+export interface DbCohortMethodDataArgs {
+  studyStartDate?: string;
+  studyEndDate?: string;
+}
 
-  // Optional Advanced Settings
-  censorAtNewRiskWindow?: boolean;
-  minDaysToOutcome?: number;
+// Create Study Population Args
+export interface CreateStudyPopArgs {
+  firstExposureOnly: boolean;
+  removeDuplicateSubjects: "keep all" | "keep first" | "remove all";
+  removeSubjectsWithPriorOutcome: boolean;
+  priorOutcomeLookback: number;
+  requireTimeAtRisk: boolean;
+  riskWindowStart: number;
+  startAnchor: "cohort start" | "cohort end";
+  riskWindowEnd: number;
+  endAnchor: "cohort start" | "cohort end";
+}
+
+export interface KaplanMeierArgs {
+  // CM Analysis Configuration
+  analysisId: number;
+  description: string;
+
+  // DB Cohort Method Data Args
+  getDbCohortMethodDataArgs: DbCohortMethodDataArgs;
+
+  // Create Study Population Args
+  createStudyPopArgs: CreateStudyPopArgs;
+
+  // Time At Risk Configurations
+  timeAtRisks: TimeAtRiskConfig[];
 }
 
 export const EMPTY_KAPLAN_MEIER_ARGS: KaplanMeierArgs = {
-  // Study Population defaults
-  outcomeId: 1,
-  firstExposureOnly: false,
-  restrictToCommonPeriod: false,
-  washoutPeriod: 0,
-  removeDuplicateSubjects: "keep all",
-  removeSubjectsWithPriorOutcome: true,
-  minDaysAtRisk: 1,
+  // CM Analysis Configuration
+  analysisId: 1,
+  description: "Kaplan-Meier survival analysis",
 
-  // Risk Window defaults
-  riskWindowStart: 0,
-  startAnchor: "cohort start",
-  riskWindowEnd: 30,
-  endAnchor: "cohort end",
+  // DB Cohort Method Data Args
+  getDbCohortMethodDataArgs: {
+    studyStartDate: undefined,
+    studyEndDate: undefined,
+  },
 
-  // Plot defaults
-  includeZero: false,
-  stratified: true,
+  // Create Study Population Args
+  createStudyPopArgs: {
+    firstExposureOnly: true,
+    removeDuplicateSubjects: "keep first",
+    removeSubjectsWithPriorOutcome: false,
+    priorOutcomeLookback: 0,
+    requireTimeAtRisk: false,
+    riskWindowStart: 1,
+    startAnchor: "cohort start",
+    riskWindowEnd: 0,
+    endAnchor: "cohort end",
+  },
 
-  // Advanced defaults
-  censorAtNewRiskWindow: false,
-  minDaysToOutcome: 0,
+  // Time At Risk Configurations
+  timeAtRisks: [
+    {
+      label: "KM Analysis",
+      riskWindowStart: 1,
+      startAnchor: "cohort start",
+      riskWindowEnd: 0,
+      endAnchor: "cohort end",
+    },
+  ],
 };
 
 export const DUPLICATE_SUBJECTS_OPTIONS = [
