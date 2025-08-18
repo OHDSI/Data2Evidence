@@ -81,8 +81,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('tab', { name: 'Access' }).click()
   await page.getByTestId('dialog').getByTestId('button').click()
   await page.getByRole('menuitem', { name: 'admin', exact: true }).click({ timeout: 30000 })
-  await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Researcher' })).toBeVisible()
+  await expect(page.getByTestId('snackbar')).toContainText("You've added access for admin")
   await page.getByTestId('dialog-close').click()
 
   // Check if datamart dataset details are correct
