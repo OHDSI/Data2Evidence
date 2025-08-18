@@ -13,6 +13,7 @@ import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
 import DateInput from './DateInput.vue';
 import DateAdjustmentInput from './DateAdjustmentInput.vue';
 import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue';
+import NumericRangeInput from './NumericRangeInput.vue';
 
 const props = defineProps<{
   attribute: QueryFilterAttribute
@@ -49,6 +50,7 @@ const getUpdate = (payload) => {
         <DateInput v-if="props.attribute.configType === 'dateRange'" @update="getUpdate"/>
         <DateAdjustmentInput v-else-if="props.attribute.configType === 'dateAdjustment'" @update="getUpdate"/>
         <UserDefinedPeriodInput v-else-if="props.attribute.configType === 'userDefinedPeriod'" @update="getUpdate"/>
+        <NumericRangeInput v-else-if="props.attribute.configType === 'numericRange'" @update="getUpdate"/>
     </div>
     <div class="attribute-btn-container">
       <button

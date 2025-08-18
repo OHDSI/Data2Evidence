@@ -764,7 +764,8 @@
         {
           "id": "age",
           "name": "Age at Occurrence",
-          "description": "Filter by age at time of diagnosis"
+          "description": "Filter by age at time of diagnosis",
+          "type": "numericRange"
         },
         {
           "id": "gender",
