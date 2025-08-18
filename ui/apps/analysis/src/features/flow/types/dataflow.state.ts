@@ -13,12 +13,19 @@ export interface DataflowDto {
 export interface DataflowItemDto {
   id: string;
   name: string;
+  canvas: CanvasDto;
   revisions: DataflowRevisionDto[];
+}
+
+interface CanvasDto {
+  id: string;
+  name: string;
+  lastFlowRunId: string | undefined;
 }
 
 export interface LatestDataflowItemDto {
   id: string;
-  name: string;
+  canvas: CanvasDto;
   lastFlowRunId: string | undefined;
   flow: ReactFlowDto;
 }
@@ -29,6 +36,7 @@ export interface DataflowRevisionDto {
   createdDate: string;
   flow: ReactFlowDto;
   comment: string;
+  canvas: CanvasDto;
   version: number;
 }
 
