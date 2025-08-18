@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
+import { PrefectAPI } from "../api/PrefectAPI.ts";
 import dataSource from "../db/datasource.ts";
 import { Canvas } from "../entities/canvas.ts";
 import { Graph } from "../entities/graph.ts";
@@ -9,6 +10,7 @@ export class AnalysisService {
   private readonly logger = console;
   private canvasRepo;
   private graphRepo;
+  private prefectApi: PrefectAPI;
 
   constructor() {
     this.canvasRepo = dataSource.getRepository(Canvas);
@@ -31,9 +33,6 @@ export class AnalysisService {
       return null;
     }
 
-    console.log(`Canvas found:`, JSON.stringify(canvas, null, 2));
-
-    // Then get the latest revision for this canvas
     const revision = await this.graphRepo
       .createQueryBuilder("revision")
       .select([
@@ -52,8 +51,6 @@ export class AnalysisService {
       console.log(`No revisions found for canvas id: ${id}`);
       return null;
     }
-
-    console.log(`Latest revision found:`, JSON.stringify(revision, null, 2));
 
     return {
       id: canvas.id,
@@ -116,6 +113,55 @@ export class AnalysisService {
   async deleteAnalysisflow(id: string) {
     await this.canvasRepo.delete(id);
     return { id };
+  }
+
+  async getResultsByCanvasId(dataflowId: string, token: string) {
+    const dataflow = await this.canvasRepo
+      .createQueryBuilder("dataflow")
+      .select("dataflow.lastFlowRunId")
+      .where("dataflow.id = :dataflowId", { dataflowId })
+      .andWhere("dataflow.type = :type", { type: "analysis-flow" })
+      .getOne();
+
+    const lastFlowRunId = dataflow?.lastFlowRunId;
+    if (!lastFlowRunId) {
+      console.log("No last flowRun found for dataflowId:", dataflowId);
+      return [];
+    }
+
+    this.prefectApi = new PrefectAPI(token);
+    try {
+      const res = await this.prefectApi.getFlowRunsArtifactsByFlowRunId(
+        lastFlowRunId
+      );
+
+      // Transform the results to match the expected format
+      const transformedRes = res
+        .map((artifact) => {
+          const parsedData = JSON.parse(artifact.data);
+
+          return Object.entries(parsedData).map(([nodeName, nodeData]) => {
+            const data = nodeData as any;
+            return {
+              nodeName,
+              taskRunResult: {
+                result: data,
+              },
+              error: data.error || false,
+              errorMessage: data.error ? data.errorMessage : null,
+            };
+          });
+        })
+        .flat();
+
+      console.log(
+        `Retrieved ${transformedRes.length} results for analysis flow ${dataflowId}`
+      );
+      return transformedRes;
+    } catch (error) {
+      console.log(`Analysis flow result not found: ${error.message}`);
+      throw new Error("Analysis flow result not found");
+    }
   }
 
   async createAnalysisflowRun(id, prefectflowRunId) {
