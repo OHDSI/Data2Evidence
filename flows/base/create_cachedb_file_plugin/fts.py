@@ -18,10 +18,10 @@ def create_fts_index(write_conn: any,
     logger = get_run_logger()
     logger.info(f"Starting FTS index creation for schema '{schema}'.")
 
-    # Fetch tables in schema
-    logger.debug(f"Fetching tables from schema '{schema}' using catalog '{read_conn.database_code}'.")
-    execute_statement(write_conn, f"SELECT distinct table_name from information_schema.tables WHERE table_schema = '{schema}' AND table_catalog = '{read_conn.database_code}'") 
-    copied_tables = [table[0] for table in write_conn.fetchall()]
+    # Todo: Use copied tables from cache catalog
+    logger.debug(f"Fetching tables from schema '{schema}' in '{read_conn.database_code}'.")
+    copied_tables = read_conn.get_table_names(schema)
+
     logger.info(f"Found {len(copied_tables)} tables in schema '{schema}'.")
 
     tables_for_fts = get_tables_for_fts(fts_tables_input, copied_tables)

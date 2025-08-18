@@ -166,7 +166,7 @@ def create_or_replace_table_query(source_schema: str,
         case SupportedDatabaseDialects.BIGQUERY.value:
             select_statement = f"SELECT * FROM bigquery_arrow_scan('{project_name}.{source_schema}.{source_table}')"
         case _:
-            raise ValueError(f"Unsupported dialect: {source_credentials.dialect}")
+            raise ValueError(f"Unsupported dialect: {source_credentials.get('dialect')}")
 
     return f'CREATE OR REPLACE TABLE "{source_schema}"."{source_table}" AS FROM ({select_statement}) {limit_statement};'
 
