@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test('Concepts', async ({ page }) => {
   await page.goto('https://localhost:443/portal')
-  await page.locator('input[name="identifier"]').dblclick()
+  await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
@@ -26,22 +26,36 @@ test('Concepts', async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
+  // Add a filter card
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await page.locator('[id="__BVID__157__BV_toggle_"]').click()
-  await page.getByRole('menu', { name: '' }).press('Escape')
+  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  // Select the "Condition concept set" filter
+  await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
+  const conceptSet = page.locator('.bs-checkbox:has-text("Condition concept set")')
+  const conceptChecked = await conceptSet.locator('input[type="checkbox"]').isChecked()
+  if (!conceptChecked) {
+    await conceptSet.click()
+  }
+  await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
+  // Select the concept set we just created
   await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).click()
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('Concept Set Test1')
+  await page.waitForTimeout(2000)
   await page.getByRole('textbox', { name: 'Enter search term' }).press('Enter')
-  await page.getByText('Concept Set Test1').click()
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await page.getByRole('row', { name: '81893 64766004 Ulcerative' }).locator('path').click()
+  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
+  // Only try to click the row if "81893 64766004 Ulcerative" is not already selected
+  const selectedCount = await page.getByRole('tab', { name: /Selected concepts/ }).count()
+  if (selectedCount < 2) {
+    await page.getByRole('row', { name: '81893 64766004 Ulcerative' }).locator('path').click()
+  }
+
   await page.getByRole('button', { name: 'Update' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.locator('.swdrag')).toBeVisible()
+  await expect(page.getByText('413 / 2694')).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 })
