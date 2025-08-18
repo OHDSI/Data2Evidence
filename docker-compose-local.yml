@@ -162,4 +162,4 @@ services:
     ports:
       - 8080:8080
     environment:
-      - DOZZLE_ENABLE_SHELL=true
+      - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}

@@ -1500,7 +1500,7 @@ services:
     networks:
       alp:
     environment:
-      - DOZZLE_FILTER=name=alp
+      - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
       - DOZZLE_BASE=/logs
       - DOZZLE_ENABLE_ACTIONS=true
       - DOZZLE_NO_ANALYTICS=true
