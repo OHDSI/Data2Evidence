@@ -23,13 +23,20 @@ def check_supported_dialects(dialect: str):
             f"Input dialect '{dialect}' is not supported. Supported dialects: {', '.join(supported_dialects)}"
         )
 
+def time_execution(func):
+    def wrapper(*args, **kwargs):
+        time_start = process_time()
+        func(*args, **kwargs)
+        time_end = process_time()
+        time_duration = time_end - time_start
+        return f"{time_duration:.3f}"
+    return wrapper
 
-def execute_statement(conn: any, statement: str) -> str:
-    time_start = process_time()
+
+@time_execution
+def execute_statement(conn: any, statement: str):
     conn.execute(statement)
-    time_end = process_time()
-    time_duration = time_end - time_start
-    return f"{time_duration:.3f}"
+
 
 def get_document_identifier(table_name: str) -> str:
     """
