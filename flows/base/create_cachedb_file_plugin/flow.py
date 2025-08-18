@@ -188,7 +188,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
             load_extensions(write_conn=pg_cursor, 
                             dialect=dbdao.dialect,
-                            trex_sql=False)
+                            trex_sql=True)
 
             logger.info(f"Updating schema '{schema_to_copy}' from '{duckdb_database_name}' through Trex Sql Interface...")
             create_schema_tables(write_conn=pg_cursor,
