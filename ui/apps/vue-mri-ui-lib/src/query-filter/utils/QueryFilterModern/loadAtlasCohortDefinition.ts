@@ -17,7 +17,7 @@ import {
   loadConceptSetDetails as apiLoadConceptSetDetails,
 } from '../../services/ConceptSetApiService'
 import { QueryFilterCriteriaManager } from '@/query-filter/models/QueryFilterModel'
-import { criteriaConfigLoader } from '../CriteriaConfigLoader'
+import { configLoader } from '../ConfigLoader'
 import { convertAtlasToFilters, hasCodesetId } from '../AtlasConverter'
 import { QueryFilterEvent } from '@/query-filter/types/QueryFilterTypes'
 
@@ -502,7 +502,6 @@ export const loadAtlasCohortDefinition = async (
       'Atlas ConceptSets for conversion:',
       atlasExpression.ConceptSets?.map(cs => `${cs.name} (ID: ${cs.id})`)
     )
-    const configLoader = criteriaConfigLoader
 
     const tempManager = convertAtlasToFilters(atlasExpression, allConceptSets.value, configLoader)
 

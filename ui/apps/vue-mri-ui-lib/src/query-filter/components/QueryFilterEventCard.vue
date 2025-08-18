@@ -19,7 +19,7 @@ import type {
   ConceptSetAction,
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
-import type { AttributeOption } from '../utils/CriteriaConfigLoader'
+import type { AttributeOption } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'

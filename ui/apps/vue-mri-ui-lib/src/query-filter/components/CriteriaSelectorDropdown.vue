@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import criteriaConfigLoader, { type CriteriaOption } from '../utils/CriteriaConfigLoader'
+import configLoader, { type CriteriaOption } from '../utils/ConfigLoader'
 import ButtonMaterial from './ButtonMaterial.vue'
 import AddIcon from './icons/AddIcon.vue'
 
@@ -34,7 +34,7 @@ const criteriaOptions = computed(() => {
     props.sectionId === 'initialEvents' ? 'initial' : props.sectionId === 'censoringEvents' ? 'censoring' : 'group'
 
   try {
-    const options = criteriaConfigLoader.getCriteriaOptions(props.sectionId, descriptionType)
+    const options = configLoader.getCriteriaOptions(props.sectionId, descriptionType)
     return options
   } catch (error) {
     console.error(`Failed to load criteria for section ${props.sectionId}:`, error)

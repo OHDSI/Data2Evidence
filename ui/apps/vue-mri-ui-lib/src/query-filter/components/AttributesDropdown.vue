@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import criteriaConfigLoader, { type AttributeOption } from '../utils/CriteriaConfigLoader'
+import configLoader, { type AttributeOption } from '../utils/ConfigLoader'
 import type { QueryFilterEvent } from '../types/QueryFilterTypes'
 import MenuIcon from './icons/MenuIcon.vue'
 
@@ -38,7 +38,7 @@ const constrainHeight = ref(false)
 const availableAttributes = computed<AttributeOption[]>(() => {
   try {
     // Get criteria-specific attributes (like nested, stop reason, etc.)
-    return criteriaConfigLoader.getCriteriaAttributeOptions(props.criteriaType)
+    return configLoader.getCriteriaAttributeOptions(props.criteriaType)
   } catch (error) {
     console.warn(`Failed to load attributes for criteria ${props.criteriaType}:`, error)
     return []

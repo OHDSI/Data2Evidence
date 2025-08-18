@@ -1,6 +1,6 @@
 import { ConfigLoader } from '../ConfigLoader'
 import type { CohortExpression, Config } from '../ConfigLoader'
-import criteriaConfigData from '../../config/cohort-criteria-config-2.json'
+import criteriaConfigData from '../../config/atlas-config.json'
 
 describe('ConfigLoader', () => {
   let loader: ConfigLoader

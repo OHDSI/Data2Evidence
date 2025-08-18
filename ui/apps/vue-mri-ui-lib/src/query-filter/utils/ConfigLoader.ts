@@ -3,7 +3,7 @@
  */
 
 // Import JSON configuration
-import configData from '../config/cohort-criteria-config-2.json'
+import configData from '../config/atlas-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
 import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
 
@@ -713,6 +713,6 @@ export class ConfigLoader {
 }
 
 // Create and export singleton instance
-const criteriaConfigLoader = new ConfigLoader(configData as Config)
-export { criteriaConfigLoader }
-export default criteriaConfigLoader
+const configLoader = new ConfigLoader(configData as Config)
+export { configLoader }
+export default configLoader
