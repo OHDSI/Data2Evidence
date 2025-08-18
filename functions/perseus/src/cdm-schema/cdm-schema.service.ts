@@ -4,8 +4,6 @@ import { parse } from "jsr:@std/csv";
 import { CDM_VERSION_LIST } from "../utils/constants.ts";
 import { TableSchema, ColumnInfo } from "../types.ts";
 
-declare const Deno: any;
-
 @Service()
 export class CDMSchemaService {
   private readonly logger = console;
@@ -32,7 +30,10 @@ export class CDMSchemaService {
     if (functionRoot && baseDir.startsWith(TREX_PREFIX)) {
       const functionName = path.basename(functionRoot);
       const afterPrefix = baseDir.slice(TREX_PREFIX.length);
-      const rest = afterPrefix.replace(new RegExp(`^/${functionName}`), "");
+      const prefix = `/${functionName}`;
+      const rest = afterPrefix.startsWith(prefix)
+        ? afterPrefix.slice(prefix.length)
+        : afterPrefix;
       baseDir = path.join(functionRoot, rest);
     }
 

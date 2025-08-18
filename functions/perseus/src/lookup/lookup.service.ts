@@ -69,7 +69,10 @@ export class LookupService {
     if (functionRoot && baseDir.startsWith(TREX_PREFIX)) {
       const functionName = path.basename(functionRoot);
       const afterPrefix = baseDir.slice(TREX_PREFIX.length);
-      const rest = afterPrefix.replace(new RegExp(`^/${functionName}`), "");
+      const prefix = `/${functionName}`;
+      const rest = afterPrefix.startsWith(prefix)
+        ? afterPrefix.slice(prefix.length)
+        : afterPrefix;
       baseDir = path.join(functionRoot, rest);
     }
 
