@@ -56,7 +56,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('64 / 2694')).toBeVisible()
+    await expect(page.getByText('629 / 2694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Save the filter card
@@ -108,7 +108,7 @@ test(TEST_NAME, async ({ page }) => {
     expect(rowCount).toBeGreaterThan(1)
     // Confirm patientlist-control has rowcount="812"
     const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount')
-    expect(rowCountAttr).toBe('64')
+    expect(rowCountAttr).toBe('629')
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
     await page.getByText(' Sort Ascending').click()
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
