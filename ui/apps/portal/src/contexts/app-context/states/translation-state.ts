@@ -408,6 +408,9 @@ export const i18nDefault = {
     DELETE_USER_DIALOG__YES: "Yes, delete",
     DISCLAIMER__TITLE: "Disclaimer",
     DISCLAIMER_DIALOG__ACCEPT: "Accept",
+    DISCLAIMER_DIALOG_DIALOG__DESCRIPTION:
+      "Please try again. To report the error, please send an email to help@data4life.care.",
+    DISCLAIMER_DIALOG_DIALOG__ERROR: "An error has occurred.",
     DISCLAIMER_DIALOG__TITLE: "Disclaimer",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",
