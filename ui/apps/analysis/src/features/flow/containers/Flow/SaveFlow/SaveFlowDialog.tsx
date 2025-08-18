@@ -82,7 +82,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       if (isNew || !dataflow) {
         onFormDataChange(EMPTY_FORM_DATA);
       } else {
-        setFormData({ name: dataflow.name, comment: "" });
+        setFormData({ name: dataflow.canvas.name, comment: "" });
       }
 
       if (isNew) {

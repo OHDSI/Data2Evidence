@@ -51,12 +51,25 @@ export const RunFlowButton: FC = () => {
   const isFlowRunError =
     !isRunning &&
     !isFetchingFlowRunState &&
-    ["FAILED", "CRASHED"].includes(flowRunState?.type);
+    ["FAILED", "CRASHED"].includes(
+      flowRunState?.type ||
+        flowRunState?.state_type ||
+        flowRunState?.state?.type
+    );
 
   const isWaitingForResult = flowRunState?.id && !isStoppedState;
   const classes = classNames("run-flow-button", {
     "run-flow-button--running": isWaitingForResult,
   });
+
+  // Helper function to get the error message from the flow run state
+  const getErrorMessage = () => {
+    return (
+      flowRunState?.message ||
+      flowRunState?.state?.message ||
+      "Unknown error occurred"
+    );
+  };
 
   const fetchFlowRunState = useCallback(async () => {
     if (!flowRunId) return;
@@ -119,7 +132,7 @@ export const RunFlowButton: FC = () => {
           isWaitingForResult
             ? "Running"
             : isFlowRunError
-            ? flowRunState.message
+            ? getErrorMessage()
             : "Run flow"
         }
       >
