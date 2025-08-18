@@ -322,8 +322,6 @@ export class QueryFilterCriteriaManager {
       const allGroupEvents = this.collectAllEvents(group.events)
 
       allGroupEvents.forEach(event => {
-        console.log(event)
-
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
           if (!usedConceptSetIds.has(systemConceptSetId)) {
@@ -474,8 +472,6 @@ export class QueryFilterCriteriaManager {
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType !== 'group' && e.eventType) // Exclude demographic and group events
                 .map(event => {
-                  console.log('event to process:', event)
-
                   const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
                   const criteria: CriteriaGroup = {
                     Criteria: {
