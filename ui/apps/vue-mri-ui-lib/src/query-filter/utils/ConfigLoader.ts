@@ -12,7 +12,6 @@ export interface CriteriaType {
   id: string
   name: string
   class: string
-  icon: string
   atlasKey: string
   groupOnly?: boolean
   special?: boolean
@@ -152,7 +151,6 @@ export interface CriteriaConfig {
 // Config interfaces
 export interface ConfigCriteriaType {
   name: string
-  icon: string
   groupOnly?: boolean
   special?: boolean
   descriptions: {
@@ -227,7 +225,6 @@ export class ConfigLoader {
         id,
         name: configType.name,
         class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
-        icon: configType.icon,
         atlasKey: `add${this.capitalizeFirst(id)}`, // e.g., addConditionOccurrence
         groupOnly: configType.groupOnly,
         special: configType.special,
@@ -367,7 +364,6 @@ export class ConfigLoader {
           defaultTitle: displayTitle,
           description: this.getI18nText(`cohortbuilder.criteria.${criteriaType.id}.${descriptionType}`, description),
           defaultDescription: description,
-          icon: criteriaType.icon,
           class: criteriaType.class,
           atlasKey: criteriaType.atlasKey,
           special: criteriaType.special || false,

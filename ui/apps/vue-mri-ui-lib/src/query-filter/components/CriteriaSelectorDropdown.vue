@@ -106,7 +106,6 @@ onUnmounted(() => {
           :title="option.description"
         >
           <div class="criteria-selector-dropdown__option-content">
-            <i class="criteria-selector-dropdown__option-icon" :class="option.icon || 'fa-plus-circle'"></i>
             <div class="criteria-selector-dropdown__option-text">
               <span class="criteria-selector-dropdown__option-title">{{ option.title }}</span>
               <span class="criteria-selector-dropdown__option-description">{{ option.description }}</span>

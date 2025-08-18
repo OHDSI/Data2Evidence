@@ -2,7 +2,6 @@
   "criteriaTypes": {
     "conditionEra": {
       "name": "Condition Era",
-      "icon": "fa-heartbeat",
       "descriptions": {
         "initial": "Find patients with specific diagnosis era.",
         "censoring": "Exit cohort based on diagnosis era.",
@@ -11,7 +10,6 @@
     },
     "conditionOccurrence": {
       "name": "Condition Occurrence",
-      "icon": "fa-stethoscope",
       "descriptions": {
         "initial": "Find patients with specific diagnoses.",
         "censoring": "Exit cohort based on diagnoses.",
@@ -20,28 +18,24 @@
     },
     "death": {
       "name": "Death",
-      "icon": "fa-times-circle",
       "descriptions": {
         "all": "Find patients based on death."
       }
     },
     "deviceExposure": {
       "name": "Device Exposure",
-      "icon": "fa-medkit",
       "descriptions": {
         "all": "Find patients based on device exposure."
       }
     },
     "doseEra": {
       "name": "Dose Era",
-      "icon": "fa-prescription",
       "descriptions": {
         "all": "Find patients with dose eras."
       }
     },
     "drugEra": {
       "name": "Drug Era",
-      "icon": "fa-pills",
       "descriptions": {
         "initial": "Find patients with exposure to drugs over time.",
         "censoring": "Exit cohort based on drugs over time.",
@@ -50,14 +44,12 @@
     },
     "drugExposure": {
       "name": "Drug Exposure",
-      "icon": "fa-capsules",
       "descriptions": {
         "all": "Find patients with exposure to specific drugs or drug classes."
       }
     },
     "measurement": {
       "name": "Measurement",
-      "icon": "fa-thermometer",
       "descriptions": {
         "initial": "Find patients based on measurement.",
         "censoring": "Exit cohort based on measurement.",
@@ -66,7 +58,6 @@
     },
     "observation": {
       "name": "Observation",
-      "icon": "fa-eye",
       "descriptions": {
         "initial": "Find patients based on observation.",
         "censoring": "Exit cohort based on lab tests or other observations.",
@@ -75,21 +66,18 @@
     },
     "observationPeriod": {
       "name": "Observation Period",
-      "icon": "fa-calendar",
       "descriptions": {
         "all": "Find patients based on observation period."
       }
     },
     "payerPlanPeriod": {
       "name": "Payer Plan Period",
-      "icon": "fa-id-card",
       "descriptions": {
         "all": "Find patients based on payer plan period."
       }
     },
     "procedureOccurrence": {
       "name": "Procedure Occurrence",
-      "icon": "fa-procedures",
       "descriptions": {
         "initial": "Find patients that experienced a specific procedure.",
         "censoring": "Exit cohort based on procedure.",
@@ -98,28 +86,24 @@
     },
     "specimen": {
       "name": "Specimen",
-      "icon": "fa-vial",
       "descriptions": {
         "all": "Find patients based on specimen."
       }
     },
     "visit": {
       "name": "Visit Occurrence",
-      "icon": "fa-hospital",
       "descriptions": {
         "all": "Find patients based on visit information."
       }
     },
     "visitDetail": {
       "name": "Visit Detail",
-      "icon": "fa-clipboard",
       "descriptions": {
         "all": "Find patients based on visit detail information."
       }
     },
     "demographic": {
       "name": "Demographic",
-      "icon": "fa-user",
       "descriptions": {
         "initial": "Find patients based on demographic criteria.",
         "censoring": "Exit cohort based on demographic criteria.",
@@ -128,7 +112,6 @@
     },
     "locationRegion": {
       "name": "Location Region",
-      "icon": "fa-map-marker",
       "groupOnly": true,
       "descriptions": {
         "group": "Find patients within geographical area."
@@ -136,7 +119,6 @@
     },
     "group": {
       "name": "Group",
-      "icon": "fa-object-group",
       "groupOnly": true,
       "descriptions": {
         "group": "Add a nested group to combine criteria using and/or relationships."
@@ -144,7 +126,6 @@
     },
     "fromReusable": {
       "name": "From Reusable",
-      "icon": "fa-recycle",
       "special": true,
       "descriptions": {
         "all": "Add criteria from list of reusables."
@@ -155,12 +136,19 @@
     "initialEvents": {
       "name": "Cohort Entry Events",
       "buttonText": "Add Initial Event",
-      "excludeTypes": ["locationRegion", "group"]
+      "excludeTypes": [
+        "locationRegion",
+        "group"
+      ]
     },
     "censoringEvents": {
       "name": "Cohort Exit",
       "buttonText": "Add Censoring Event",
-      "excludeTypes": ["locationRegion", "group", "demographic"]
+      "excludeTypes": [
+        "locationRegion",
+        "group",
+        "demographic"
+      ]
     },
     "criteriaGroup": {
       "name": "Criteria Group",
@@ -482,22 +470,83 @@
     }
   },
   "attributeMapping": {
-    "conditionOccurrence": ["common", "condition", "firstOccurrence:Diagnosis"],
-    "conditionEra": ["common", "condition", "firstOccurrence:Diagnosis"],
-    "drugExposure": ["common", "drug", "firstOccurrence:Exposure"],
-    "drugEra": ["common", "drug", "firstOccurrence:Exposure"],
-    "doseEra": ["common", "drug", "firstOccurrence:Exposure"],
-    "deviceExposure": ["common", "device", "firstOccurrence:Exposure"],
-    "measurement": ["common", "clinical", "firstOccurrence:Measurement"],
-    "observation": ["common", "clinical", "firstOccurrence:Observation"],
-    "procedureOccurrence": ["common", "procedure", "firstOccurrence:Procedure"],
-    "specimen": ["common", "clinical", "firstOccurrence:Occurrence"],
-    "visit": ["common", "visit", "firstOccurrence:Visit"],
-    "visitDetail": ["common", "visit", "firstOccurrence:Visit"],
-    "observationPeriod": ["common", "period", "firstOccurrence:Period"],
-    "payerPlanPeriod": ["common", "period", "firstOccurrence:Period"],
-    "death": ["common", "event"],
-    "demographic": ["common"]
+    "conditionOccurrence": [
+      "common",
+      "condition",
+      "firstOccurrence:Diagnosis"
+    ],
+    "conditionEra": [
+      "common",
+      "condition",
+      "firstOccurrence:Diagnosis"
+    ],
+    "drugExposure": [
+      "common",
+      "drug",
+      "firstOccurrence:Exposure"
+    ],
+    "drugEra": [
+      "common",
+      "drug",
+      "firstOccurrence:Exposure"
+    ],
+    "doseEra": [
+      "common",
+      "drug",
+      "firstOccurrence:Exposure"
+    ],
+    "deviceExposure": [
+      "common",
+      "device",
+      "firstOccurrence:Exposure"
+    ],
+    "measurement": [
+      "common",
+      "clinical",
+      "firstOccurrence:Measurement"
+    ],
+    "observation": [
+      "common",
+      "clinical",
+      "firstOccurrence:Observation"
+    ],
+    "procedureOccurrence": [
+      "common",
+      "procedure",
+      "firstOccurrence:Procedure"
+    ],
+    "specimen": [
+      "common",
+      "clinical",
+      "firstOccurrence:Occurrence"
+    ],
+    "visit": [
+      "common",
+      "visit",
+      "firstOccurrence:Visit"
+    ],
+    "visitDetail": [
+      "common",
+      "visit",
+      "firstOccurrence:Visit"
+    ],
+    "observationPeriod": [
+      "common",
+      "period",
+      "firstOccurrence:Period"
+    ],
+    "payerPlanPeriod": [
+      "common",
+      "period",
+      "firstOccurrence:Period"
+    ],
+    "death": [
+      "common",
+      "event"
+    ],
+    "demographic": [
+      "common"
+    ]
   },
   "temporalWindows": [
     {
