@@ -1,0 +1,90 @@
+name: Manual D2E Testing Env
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to checkout and test'
+        required: false
+        default: 'develop'
+        type: string
+
+
+jobs:
+  manual-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 135  # Max tunnel time + buffer
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch }}
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install root dependencies
+        run: npm install
+        
+      - name: Make CLI executable
+        run: chmod +x ./scripts/cli.sh
+        
+      - name: Verify Docker installation
+        run: |
+          docker --version
+          docker-compose --version
+          
+      - name: Initialize D2E environment
+        run: ./scripts/cli.sh -v develop init
+        
+      - name: Pull D2E images
+        run: ./scripts/cli.sh -v develop -e pull
+        
+      - name: Start D2E services
+        run: ./scripts/cli.sh -v develop -e start
+        
+          
+      - name: Setup demo dataset
+        run: ./scripts/cli.sh -v develop setupdemo
+        
+          
+          
+      - name: Display service status
+        run: |
+          echo "Docker container status:"
+          docker ps
+          echo ""
+          echo "Port bindings:"
+          docker ps --format "table {{.Names}}\t{{.Ports}}"
+          
+      - name: Expose tunnel
+        uses: codetalkio/expose-tunnel@v1.5.0
+        id: expose-tunnel
+        with:
+          service: localhost.run
+          port: 443
+          blocking: false
+          
+      - name: Display connection info
+        run: |
+          echo "🚀 D2E is now accessible at: ${{ steps.expose-tunnel.outputs.tunnel-url }}"
+          echo "Testing branch: ${{ inputs.branch }}"
+          
+      - name: Keep tunnel alive
+        run: |
+          echo "Keeping tunnel alive for 30 minutes..."
+          sleep 1800  # 30 minutes = 1800 seconds
+          
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up D2E services..."
+          ./scripts/cli.sh -v develop stop || true
+          docker system prune -f || true

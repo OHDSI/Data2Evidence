@@ -89,7 +89,11 @@
         <div class="bookmark-content__header-title">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
-          <Button v-if="useAtlasLite || usePaAtlas" :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
+          <Button
+            v-if="useAtlasLite || usePaAtlas"
+            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :onClick="openAtlasLink"
+          >
           </Button>
 
           <!-- <Button v-if="usePaAtlas" :text="getText('MRI_PA_CREATE_PA_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
@@ -267,7 +271,7 @@ export default {
     useAtlasLite() {
       return this.enableAtlasCohortDefinition && !this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
     },
-    usePaAtlas() {      
+    usePaAtlas() {
       return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
     },
     bookmarksDisplay() {
@@ -295,7 +299,7 @@ export default {
       'fireDeleteAtlasCohortDefinitionQuery',
       'fetchDataQualityFlowRun',
       'generateDataQualityFlowRun',
-      'resetChart'
+      'resetChart',
     ]),
     ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
@@ -396,6 +400,7 @@ export default {
         params: request,
         bookmarkId: bookmarkDisplay.bookmark.id,
       }).then(() => {
+        this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
         this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.closeRenameBookmark()
       })
@@ -601,13 +606,13 @@ export default {
         isAtlas: true,
         isNew: true,
       }
-      
+
       // Set as active bookmark
       this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
-      
+
       // Pass null Atlas data to initialize empty QueryFilter
       this.$emit('loadAtlasCohortDefinition', null)
-      
+
       // Switch to Patient Analytics view
       this.$emit('unloadBookmarkEv', false, true)
     },
