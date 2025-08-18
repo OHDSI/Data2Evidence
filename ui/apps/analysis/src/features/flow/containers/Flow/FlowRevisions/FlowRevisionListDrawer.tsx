@@ -46,7 +46,7 @@ export const FlowRevisionListDrawer: FC<FlowRevisionListDrawerProps> = ({
       {...drawerProps}
     >
       <div className="flow-revision-list-drawer__header">
-        <Box flexGrow={1}>Version history of "{dataflow.canvas.name}"</Box>
+        <Box flexGrow={1}>Version history of "{dataflow?.canvas?.name}"</Box>
         <Box>
           <IconButton
             startIcon={<CloseIcon />}
