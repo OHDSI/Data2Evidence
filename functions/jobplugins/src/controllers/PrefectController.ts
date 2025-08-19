@@ -26,9 +26,18 @@ export class PrefectController {
   private async createAnalysisRun(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const { datasetId } = req.body;
       const token = this.getToken(req);
+
+      if (!datasetId) {
+        return res
+          .status(400)
+          .send({ message: "Missing required field: datasetId" });
+      }
+
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
+        datasetId,
         token
       );
       return res.status(200).send(flowrunId);
@@ -76,39 +85,55 @@ export class PrefectController {
     }
   }
 
-  private async createAnalaysisRunByJupyterKernel(req, res){
+  private async createAnalaysisRunByJupyterKernel(req, res) {
     try {
       const { json_graph, options } = req.body;
-      const token = req.headers["Authorization"] || req.headers["authorization"];
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
 
       if (!json_graph || !options) {
-        return res.status(400).send({ message: "Missing required fields: json_graph or options" });
+        return res
+          .status(400)
+          .send({ message: "Missing required fields: json_graph or options" });
       }
-      if(options['study_id'] === undefined) {
-        return res.status(400).send({ message: "Missing required field: study_id in options" });
+      if (options["study_id"] === undefined) {
+        return res
+          .status(400)
+          .send({ message: "Missing required field: study_id in options" });
       }
       // uncomment this line when notebookName is available in jupyter kernel
       // if(options['notebookName'] === undefined) {
       //   return res.status(400).send({ message: "Missing required field: notebookName in options" });
       // }
 
-      const flowrunId = await this.prefectService.createAnalaysisRunByJupyterKernel(
-        token,
-        { json_graph, options }
-      )
-      return res.status(200).send({ flowrunId, status: "Successfully created a flow run" })
+      const flowrunId =
+        await this.prefectService.createAnalaysisRunByJupyterKernel(token, {
+          json_graph,
+          options,
+        });
+      return res
+        .status(200)
+        .send({ flowrunId, status: "Successfully created a flow run" });
     } catch (error) {
       console.log(error);
-      return res.status(500).send({ message: "Failed to start network analaysis flow run" });
+      return res
+        .status(500)
+        .send({ message: "Failed to start network analaysis flow run" });
     }
   }
 
   private async removeAnalysisResultsSchema(req: Request, res: Response) {
     try {
       const { id: studyId, datasetid: datasetId } = req.params;
-      const token = req.headers["Authorization"] || req.headers["authorization"];
-      const flowrunId = await this.prefectService.removeAnalysisResultsSchema(token, { studyId, datasetId } );
-      return res.status(200).send({ flowrunId, status: "Successfully created a flow run" })
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+      const flowrunId = await this.prefectService.removeAnalysisResultsSchema(
+        token,
+        { studyId, datasetId }
+      );
+      return res
+        .status(200)
+        .send({ flowrunId, status: "Successfully created a flow run" });
     } catch (error) {
       console.log(`removeResultsSchema: ${error}`);
       return res.status(500).send({ message: "Internal error occurred" });
@@ -123,8 +148,14 @@ export class PrefectController {
       this.cancelFlowrun.bind(this)
     );
     this.router.post("/test-run", this.createTestRun.bind(this));
-    this.router.post("/jupyter-kernel/flow-run/strategus", this.createAnalaysisRunByJupyterKernel.bind(this));
-    this.router.delete("/flow-run/strategus/remove-results-schema/:id/:datasetid", this.removeAnalysisResultsSchema.bind(this));
+    this.router.post(
+      "/jupyter-kernel/flow-run/strategus",
+      this.createAnalaysisRunByJupyterKernel.bind(this)
+    );
+    this.router.delete(
+      "/flow-run/strategus/remove-results-schema/:id/:datasetid",
+      this.removeAnalysisResultsSchema.bind(this)
+    );
 
     this.router.get("/flow-run/:id/logs", this.getFlowrunLogs.bind(this));
     this.router.get("/flow-run/:id/state", this.getFlowrunState.bind(this));
