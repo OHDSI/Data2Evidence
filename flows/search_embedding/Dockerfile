@@ -33,8 +33,13 @@ ARG USER=docker
 ENV USER=${USER}
 ARG UID=1000
 ARG GID=1000
-RUN groupadd -g $GID ${USER}
-RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER}
+
+RUN groupadd -g $GID ${USER} \
+    && useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
+    # align with create_cachedb_plugin
+    && groupadd alp \
+    && adduser docker alp
+
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
