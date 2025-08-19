@@ -81,6 +81,9 @@ def generateETLWordDocument(inputFile: str = "data.json", outputFile: str = "rep
 
     outputPath = Path(outputFile).resolve()
 
+    if not os.path.exists(outputPath):
+        raise FileNotFoundError(f"file {outputPath} does not exist.")
+
     try:
         with open(outputPath, 'rb') as file:
             file_content = file.read()
