@@ -16,6 +16,13 @@ fi
 
 IFS=',' read -ra EXT_ARR <<< "$EXTENSIONS"
 for ext in "${EXT_ARR[@]}"; do
-  wget "https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${ext}.duckdb_extension.gz"
-  gzip -d "${ext}.duckdb_extension.gz"
+  url="https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${ext}.duckdb_extension.gz"
+  if ! wget "$url"; then
+    echo "Error: Failed to download $url"
+    exit 2
+  fi
+  if ! gzip -d "${ext}.duckdb_extension.gz"; then
+    echo "Error: Failed to decompress ${ext}.duckdb_extension.gz"
+    exit 3
+  fi
 done
