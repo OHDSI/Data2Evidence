@@ -59,6 +59,7 @@ export interface CreateDqdFlowRun {
 
 export interface CreateDcFlowRun {
   datasetId: string | undefined;
+  resultsSchema?: string;
   comment?: string;
   releaseId?: string;
   excludeAnalysisIds?: string;

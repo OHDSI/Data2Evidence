@@ -3,6 +3,7 @@ import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react"
 import { api } from "../../../../axios/api";
 import { NotebookTemplateDto } from "../../../../axios/study-notebook";
 import { useFeedback, useTranslation } from "../../../../contexts";
+import { StarboardNotebook } from "../../utils/notebook";
 import "./NotebookTemplateDialog.scss";
 
 interface NotebookTemplateDialogProps {
@@ -11,6 +12,7 @@ interface NotebookTemplateDialogProps {
   onCreateBlank: (name: string) => void;
   onCreateFromTemplate: (templateId: string, name: string) => void;
   activeDatasetId: string;
+  notebooks: StarboardNotebook[] | undefined;
 }
 
 interface FormData {
@@ -29,12 +31,14 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
   onCreateBlank,
   onCreateFromTemplate,
   activeDatasetId,
+  notebooks,
 }) => {
   const { setFeedback } = useFeedback();
   const { getText, i18nKeys } = useTranslation();
   const [templates, setTemplates] = useState<NotebookTemplateDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -59,12 +63,23 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const isDuplicateName = useCallback(
+    (name: string): boolean => {
+      return notebooks?.some((nb) => nb.name.toUpperCase() === name.toUpperCase()) ?? false;
+    },
+    [notebooks]
+  );
+
   const handleCreate = useCallback(() => {
     if (!formData.name.trim()) {
       setFeedback({
         type: "error",
         message: getText(i18nKeys.STARBOARD__ERROR_NOTEBOOK_NAME_REQUIRED),
       });
+      return;
+    }
+    if (isDuplicateName(formData.name)) {
+      setShowErrorMessage(true);
       return;
     }
 
@@ -75,7 +90,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       onCreateBlank(formData.name.trim());
     }
     onClose();
-  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback]);
+  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback, isDuplicateName]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -100,6 +115,11 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             onChange={(e: ChangeEvent<HTMLInputElement>) => onFormDataChange({ name: e.target.value })}
             placeholder={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER)}
           />
+          {showErrorMessage && (
+            <div className="notebook-template-dialog__content__error">
+              {getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME__ALREADY_EXISTS)}
+            </div>
+          )}
         </Box>
         <Box mb={4}>
           <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL)}</InputLabel>
