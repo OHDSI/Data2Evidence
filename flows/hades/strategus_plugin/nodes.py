@@ -307,7 +307,6 @@ class CharacterizationModuleSpecNode(Node):
                     covariateSettings = rCovariateSettings[0], 
                     dechallengeStopInterval = self.dechallengeStopInterval, 
                     dechallengeEvaluationWindow = self.dechallengeEvaluationWindow, 
-                    # timeAtRisk = convert_py_to_R(pd.DataFrame(self.timeAtRisk)), # no longer a parameter in the R package
                     minPriorObservation = self.minPriorObservation
                 )
                 return Result(False,  rCharacterizationSpec, self, task_run_context)
@@ -401,7 +400,7 @@ class NegativeControlOutcomeCohortSharedResource(Node):
 class CohortGeneratorSpecNode(Node):
     def __init__(self, _node):
         super().__init__(_node)
-        self.incremental = _node["incremental"] # No longer a parameter in the R library
+        # self.incremental = _node["incremental"] # No longer a parameter in the R library
         self.generate_stats = _node["generateStats"] # Ensure boolean
 
     def task(self, task_run_context):
@@ -448,8 +447,7 @@ class CohortDiagnosticsModuleSpecNode(Node):
                     runBreakdownIndexEvents = convert_py_to_R(self.runBreakdownIndexEvents),
                     runIncidenceRate = convert_py_to_R(self.runIncidenceRate),
                     runCohortRelationship = convert_py_to_R(self.runCohortRelationship),
-                    runTemporalCohortCharacterization = convert_py_to_R(self.runTemporalCohortCharacterization),
-                    # incremental = convert_py_to_R(self.incremental) # No longer a parameter in the R library
+                    runTemporalCohortCharacterization = convert_py_to_R(self.runTemporalCohortCharacterization)
                 )
                 return Result(False,  rCohortDiagnosticsSpec, self, task_run_context)
             except Exception as e:
@@ -800,7 +798,6 @@ class SCCSAnalysis(Node):
                     studyStartDate = convert_py_to_R(self.dbSccsDataArgs['studyStartDate']) if not self.dbSccsDataArgs['studyStartDate'] == "" else ro.StrVector(""),
                     studyEndDate = convert_py_to_R(self.dbSccsDataArgs['studyEndDate']) if not self.dbSccsDataArgs['studyEndDate'] == "" else ro.StrVector(""),
                     maxCasesPerOutcome = convert_py_to_R(self.dbSccsDataArgs['maxCasesPerOutcome']),
-                    # useNestingCohort = convert_py_to_R(self.dbSccsDataArgs['useNestingCohort']), # no longer a parameter in the R package
                     nestingCohortId = convert_py_to_R(self.dbSccsDataArgs['nestingCohortId']),
                     deleteCovariatesSmallCount = convert_py_to_R(self.dbSccsDataArgs['deleteCovariateSmallCount'])
                 )
@@ -1104,7 +1101,7 @@ class StrategusNode(Node):
                 )
 
                 rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-                return Result(False, rSpec, self, task_run_context)
+                return Result(False, rSpec.r_repr(), self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
                 return Result(True, tb.format_exc(), self, task_run_context)
