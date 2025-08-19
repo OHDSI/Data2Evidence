@@ -176,6 +176,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = StrategusNode(node)
         case "treatment_patterns_node":
             nodeobj = TreatmentPatterns(node)
+        case "kaplan_meier_node":
+            nodeobj = KaplanMeierCMAnalysis(node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
@@ -346,7 +348,7 @@ class CohortDefinitionSharedResource(Node):
                 rCirce = ro.packages.importr('CirceR')
                 rbind = ro.r['rbind']
                 rCohortDefinitionSet = rCohortGenerator.createEmptyCohortDefinitionSet()
-                datasetId = self.flowOptions.get("datasetId", "")
+                datasetId = self.flowOptions.get("datasetId", "") # TODO: throw error if not found
                 for c in self.cohortIds:
                     cohort_definition = webapi.get_cohort_definition(c, datasetId)
                     cohortDefStr = json.dumps(cohort_definition["expression"])
@@ -468,12 +470,12 @@ class CMOutcomes(Node):
         with ro.default_converter.context():
             try:
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
-                self.cohortIds = [cohortDefNode.cohortIds for cohortDefNode in cohortDefNodes]
+                self.cohortIds = [cohortDefNode.cohortIds[0] for cohortDefNode in cohortDefNodes]
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}
                 rOutcome = rlapply(
-                    X = convert_py_to_R(self.cohortIds),
+                    X = convert_py_to_R(self.cohortIds[0]),
                     FUN = rCohortMethod.createOutcome,
                     **kwargs
                 )
@@ -512,12 +514,12 @@ class TargetComparatorOutcomes(Node):
                 rOutcomes = get_results_by_class_type(_input, CMOutcomes)
                 cmOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, CMOutcomes)
                 for node in cmOutcomesNodes:
-                    self.outComesCohortIds.extend(node.cohortIds)
+                    self.outComesCohortIds.append(node.cohortIds[0])
 
                 rCreateTargetComparatorOutcomes = rCohortMethod.createTargetComparatorOutcomes(
                     targetId = convert_py_to_R(self.targetId),
                     comparatorId = convert_py_to_R(self.comparatorId),
-                    outcomes = rappend(*rOutcomes), # append all outcomes as one list
+                    outcomes = rappend(*rOutcomes) if len(rOutcomes) > 1 else rOutcomes[0], # append all outcomes as one list
                     excludedCovariateConceptIds = convert_py_to_R(self.excludedCovariateConceptIds if len(self.excludedCovariateConceptIds) else None), # if excludedCovariateConceptIds is empty list, use None
                     includedCovariateConceptIds = convert_py_to_R(self.includedCovariateConceptIds if len(self.includedCovariateConceptIds) else None) # if includedCovariateConceptIds is empty list, use None
                 )
@@ -542,7 +544,7 @@ class CohortMethodAnalysis(Node):
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
-                covarSettingsNode = DefaultCovariateSettingsNode(None)
+                covarSettingsNode = DefaultCovariateSettingsNode({ "id": uuid.uuid4(), "type": "default_covariate_settings_node", "flowOptions": self.flowOptions })
                 covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
                     washoutPeriod = convert_py_to_R(self.dbCohortMethodDataArgs["washoutPeriod"]),
@@ -587,25 +589,34 @@ class CohortMethodModuleSpecNode(Node):
         self.cohortIds = []
         self.trueEffectSize = _node["trueEffectSize"]
         self.priorOutcomeLookback = _node["priorOutcomeLookback"]
-        self.analysesToExclude = _node["cohortMethodConfigs"]
+        df_analysesToExclude = pd.DataFrame(_node["cohortMethodConfigs"])
+        self.analysesToExclude = None if df_analysesToExclude.empty else df_analysesToExclude
 
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
+                rCmAnalysisList = []
                 rStrategus = ro.packages.importr('Strategus')
                 rCohortMethodModule = rStrategus.CohortMethodModule['new']()
                 rCreateCohortMethodModuleSpecifications = rCohortMethodModule['createModuleSpecifications']
-                rCmAnalysisList = get_results_by_class_type(_input, CohortMethodAnalysis)
+                try:
+                    rCmAnalysisList = get_results_by_class_type(_input, CohortMethodAnalysis)
+                except Exception as e:
+                    rCmAnalysisList = [] # empty list if no results found
+                try:
+                    rCmAnalysisList.extend(get_results_by_class_type(_input, KaplanMeierCMAnalysis))
+                except Exception as e:
+                    rCmAnalysisList = [] # empty list if no results found
                 rTargetComparatorOutcomesList = get_results_by_class_type(_input, TargetComparatorOutcomes)
                 targetComparatorOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, TargetComparatorOutcomes)
                 for node in targetComparatorOutcomesNodes:
-                    self.cohortIds.extend(node.targetId)
-                    self.cohortIds.extend(node.comparatorId)
+                    self.cohortIds.append(node.targetId)
+                    self.cohortIds.append(node.comparatorId)
                     self.cohortIds.extend(node.outComesCohortIds)
                 rCohortMethodSpec = rCreateCohortMethodModuleSpecifications(
                     cmAnalysisList = rCmAnalysisList,
                     targetComparatorOutcomesList = rTargetComparatorOutcomesList,
-                    analysesToExclude = convert_py_to_R(pd.DataFrame(self.analysesToExclude))
+                    analysesToExclude = convert_py_to_R(self.analysesToExclude)
                 )
                 return Result(False,  rCohortMethodSpec, self, task_run_context)
             except Exception as e:
@@ -999,11 +1010,12 @@ class TreatmentPatterns(Node):
 
 class KaplanMeierCMAnalysis(Node):
     def __init__(self, node):
+        super().__init__(node)
         self.analysisId = int(node["analysisId"])
-        self.dbCohortMethodDataArgs = node["dbCohortMethodDataArgs"] # required
+        self.dbCohortMethodDataArgs = node["getDbCohortMethodDataArgs"] # required
         self.studyPopArgs = node['createStudyPopArgs'] # required
-        self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
-        self.psArgs = getattr(node, "psArgs", None)
+        # self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
+        # self.psArgs = getattr(node, "psArgs", None)
 
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
@@ -1011,17 +1023,13 @@ class KaplanMeierCMAnalysis(Node):
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
-                covarSettingsNode = DefaultCovariateSettingsNode(None)
+                covarSettingsNode = DefaultCovariateSettingsNode({ "type": "default_covariate_settings_node", "id": str(uuid.uuid4()), "flowOptions": self.flowOptions })
                 covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
-                    washoutPeriod = convert_py_to_R(self.dbCohortMethodDataArgs["washoutPeriod"]),
-                    firstExposureOnly = convert_py_to_R(self.dbCohortMethodDataArgs["firstExposureOnly"]),
-                    removeDuplicateSubjects = convert_py_to_R(self.dbCohortMethodDataArgs["removeDuplicateSubjects"]),
-                    maxCohortSize = convert_py_to_R(self.dbCohortMethodDataArgs["maxCohortSize"]),
+                    studyStartDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyStartDate"]),
+                    studyEndDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyEndDate"]),
                     covariateSettings = covarSettingsResult.data
                 )
-                if self.fitOutcomeModelArgs:
-                    rFitOutcomeModelArgs = rCohortMethod.createFitOutcomeModelArgs(modelType = convert_py_to_R(self.fitOutcomeModelArgs["modelType"]))
                 rCreateCreateStudyPopulationArgs = rCohortMethod.createCreateStudyPopulationArgs
                 rCreateStudyPopArgs = rCreateCreateStudyPopulationArgs(
                     riskWindowStart = convert_py_to_R(self.studyPopArgs["riskWindowStart"]),
@@ -1029,21 +1037,15 @@ class KaplanMeierCMAnalysis(Node):
                     riskWindowEnd = convert_py_to_R(self.studyPopArgs["riskWindowEnd"]),
                     endAnchor = convert_py_to_R(self.studyPopArgs["endAnchor"]),
                     firstExposureOnly = convert_py_to_R(self.studyPopArgs["firstExposureOnly"]),
-                    requireTimeAtRisk = convert_py_to_R(self.studyPopArgs["requireTimeAtRisk"]),
                     priorOutcomeLookback = convert_py_to_R(self.studyPopArgs["priorOutcomeLookback"]),
                     removeDuplicateSubjects = convert_py_to_R(self.studyPopArgs["removeDuplicateSubjects"]),
                     removeSubjectsWithPriorOutcome = convert_py_to_R(self.studyPopArgs["removeSubjectsWithPriorOutcome"])
                 )
-                # matchOnPsArgs = matchOnPsArgs,
-                # computeSharedCovariateBalanceArgs = computeSharedCovBalArgs,
-                # computeCovariateBalanceArgs = computeCovBalArgs,
-                # UI does not support above configs, therefore backend also cannot suppor them for now
                 rCmAnalysis = rCreateCmAnalysis(
                     analysisId = convert_py_to_R(self.analysisId),
                     description = "cohort method analysis",
                     getDbCohortMethodDataArgs = rGetDbCmDataArgs,
                     createStudyPopArgs = rCreateStudyPopArgs,
-                    fitOutcomeModelArgs = rFitOutcomeModelArgs
                 )
                 return Result(False,  rCmAnalysis, self, task_run_context)
             except Exception as e:
