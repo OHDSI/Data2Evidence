@@ -2,6 +2,7 @@ from prefect import task, runtime
 from prefect_shell import ShellOperation
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
+from pathlib import Path
 import configparser
 import base64
 import json
@@ -67,14 +68,18 @@ def generateDataJson(data, outputPath: str = "data.json"):
 
 
 @task(log_prints=True)
-def generateETLWordDocument(inputPath: str = "../../data.json", outputPath: str = "report.docx") -> None:
+def generateETLWordDocument(inputFile: str = "data.json", outputFile: str = "report.docx") -> None:
     logger = get_run_logger()
+
+    inputPath = Path(inputFile).resolve()
 
     if not os.path.exists(inputPath):
         raise FileNotFoundError(f"file {inputPath} does not exist.")
 
     ShellOperation(commands=[
-                   f"./dist/bin/rabbitInAHat --generateWordReport {inputPath} {outputPath}"]).run()
+                   f"./dist/bin/rabbitInAHat --generateWordReport {str(inputPath)} {outputFile}"]).run()
+
+    outputPath = Path(outputFile).resolve()
 
     try:
         with open(outputPath, 'rb') as file:
