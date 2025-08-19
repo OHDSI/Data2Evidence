@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import {
     DBConnectionUtil as dbConnectionUtil,
     getUser,
-    Logger,
     QueryObject,
     EnvVarUtils,
     healthCheckMiddleware,
@@ -15,14 +14,12 @@ import {
 import * as pathx from "https://deno.land/std@0.188.0/path/mod.ts";
 
 import express from "express";
-import https from "https";
 import helmet from "helmet";
 import path from "path";
 import yaml from "npm:yaml";
 import { access, constants } from "node:fs/promises";
 import * as mri2 from "./mri/endpoint/analytics";
 import * as xsenv from "@sap/xsenv";
-import { AuditLogger } from "./utils/AuditLogger";
 import { Settings } from "./qe/settings/Settings";
 //import * as swagger from "@alp/swagger-node-runner";
 import MRIEndpointErrorHandler from "./utils/MRIEndpointErrorHandler";
@@ -30,11 +27,15 @@ import noCacheMiddleware from "./middleware/NoCache";
 import timerMiddleware from "./middleware/Timer";
 import studyDbCredentialMiddleware from "./middleware/StudyDbCredential";
 import { MriConfigConnection } from "@alp/alp-config-utils";
-import { StudiesDbMetadata, StudyDbMetadata, IMRIRequest } from "./types";
+import {
+    StudiesDbMetadata,
+    StudyDbMetadata,
+    IMRIRequest,
+    ANALYTICS_DB_DIALECTS,
+} from "./types";
 import PortalServerAPI from "./api/PortalServerAPI";
 import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
 import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
-import { DB } from "./utils/DBSvcConfig";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 dotenv.config();
@@ -192,7 +193,7 @@ const initRoutes = async (app: express.Application) => {
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
-                    credentials.dialect != DB.HANA
+                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = getTrexDbConnection({
                         analyticsCredentials: credentials,
@@ -201,7 +202,7 @@ const initRoutes = async (app: express.Application) => {
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
                 else if (
                     env.USE_CACHEDB === "true" &&
-                    credentials.dialect != DB.HANA
+                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = await getCachedbDbConnections({
                         analyticsCredentials: credentials,
@@ -545,8 +546,15 @@ const initRoutes = async (app: express.Application) => {
 const initSwaggerRoutes = async (app: express.Application) => {
     const swaggerFile = yaml.parse(
         await Deno.readTextFile(
-            path.dirname(pathx.fromFileUrl(import.meta.url)).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH").replace(/\/[^\/]*\/?$/, '')).slice(0, -3) +
-                "api/swagger/swagger.yaml"
+            path
+                .dirname(pathx.fromFileUrl(import.meta.url))
+                .replace(
+                    /\/var\/tmp\/sb-compile-trex/,
+                    Deno.env
+                        .get("TREX_FUNCTION_PATH")
+                        .replace(/\/[^\/]*\/?$/, "")
+                )
+                .slice(0, -3) + "api/swagger/swagger.yaml"
         )
     );
     const basePath = swaggerFile["basePath"];
@@ -628,7 +636,22 @@ const getTrexDbConnection = ({
         const trex_publication = dbm.getFirstPublication(
             analyticsCredentials.code
         );
-        const trex_pg_direct_connection_alias = `${trex_publication}_trexpg`;
+        let direct_connection_suffix;
+        switch (analyticsCredentials.dialect) {
+            case ANALYTICS_DB_DIALECTS.POSTGRES:
+                direct_connection_suffix = "_trexpg";
+                break;
+            case ANALYTICS_DB_DIALECTS.BIGQUERY:
+                // For bigquery, do not execute any queries on sourcedb
+                direct_connection_suffix = "";
+                break;
+
+            default:
+                throw new Error(
+                    `Dialect:${analyticsCredentials.dialect} is not supported for Trex Sql Connection`
+                );
+        }
+        const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
 
         const parseSql = (
             temp: string,
@@ -636,11 +659,11 @@ const getTrexDbConnection = ({
             vocabSchemaNames: string,
             parameters: any
         ): string => {
-            // Specifically for trex db connection, direct pg connection alias is different from cachedb.
+            // Specifically for trex db connection, direct connection alias is different from cachedb.
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
-                `${trex_pg_direct_connection_alias}.$$$$SCHEMA$$$$.`
+                `${trex_direct_connection_alias}.$$$$SCHEMA$$$$.`
             );
             return translateHanaToDuckdb(
                 temp,
@@ -671,7 +694,10 @@ const getDBConnections = async ({
 }> => {
     // Define defaults for both analytics & Vocab connections
     let analyticsConnectionPromise;
-    if (env.USE_DUCKDB === "true" && analyticsCredentials.dialect !== DB.HANA) {
+    if (
+        env.USE_DUCKDB === "true" &&
+        analyticsCredentials.dialect !== ANALYTICS_DB_DIALECTS.HANA
+    ) {
         // Use duckdb as analyticsConnection if USE_DUCKDB flag is set to true
         const duckdbSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.schema}`;
         const duckdbVocabSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.vocabSchema}`;
@@ -736,7 +762,7 @@ const getDBConnections = async ({
         }
 
         if (
-            analyticsCredentials.dialect === DB.HANA &&
+            analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA &&
             analyticsCredentials.authentication_mode === "JWT"
         ) {
             delete analyticsCredentials.user;
