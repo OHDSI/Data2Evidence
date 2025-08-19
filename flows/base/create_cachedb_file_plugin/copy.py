@@ -100,7 +100,8 @@ def create_schema_tables(write_conn: any,
 
             row_count_query = f"SELECT COUNT(*) FROM {schema}.{table};"
             logger.debug(f"Row count query for '{table}': {row_count_query}")
-            rows_copied = write_conn.execute(row_count_query).fetchall()[0][0]
+            write_conn.execute(row_count_query)
+            rows_copied = write_conn.fetchall()[0][0]
 
             logger.info(
                 f"Table '{table}' in schema '{schema}' created with {rows_copied} rows. Execution took {table_creation_time} seconds."
