@@ -12,7 +12,8 @@ export default defineConfig({
     navigationTimeout: 60000, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+    screenshot: 'only-on-failure' // Take screenshot of page if test fails
   },
   retries: process.env.CI ? 3 : 0, // retry failed tests once
   reporter: [
