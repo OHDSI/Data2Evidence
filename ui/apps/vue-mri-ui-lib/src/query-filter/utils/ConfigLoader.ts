@@ -158,6 +158,7 @@ export interface ConfigSection2 {
 }
 
 export interface AttributeDefinition {
+  id: string
   name: string
   description: string
   type: string
@@ -167,12 +168,7 @@ export interface AttributeDefinition {
 export interface Config {
   criteriaTypes: Record<string, ConfigCriteriaType>
   sections: Record<string, ConfigSection2>
-  attributeDefinitions: {
-    common: Record<string, AttributeDefinition>
-    typeAttributes: Record<string, AttributeDefinition>
-    categorySpecific: Record<string, Record<string, AttributeDefinition>>
-  }
-  attributeMapping: Record<string, string[]>
+  attributeMapping: Record<string, AttributeDefinition[]>
   temporalWindows: TemporalWindow[]
   occurrenceOperators: OccurrenceOperator[]
 }
@@ -249,45 +245,14 @@ export class ConfigLoader {
       const attrs: CriteriaAttributeConfig[] = []
 
       mappings.forEach(mapping => {
-        if (mapping.includes(':')) {
-          // Handle type attributes like "firstOccurrence:Diagnosis"
-          const [baseType, typeValue] = mapping.split(':')
-          if (config.attributeDefinitions.typeAttributes[baseType]) {
-            const typeAttr = config.attributeDefinitions.typeAttributes[baseType]
-            attrs.push({
-              id: baseType,
-              name: typeAttr.name.replace('{type}', typeValue),
-              description: typeAttr.description.replace('{type}', typeValue),
-              type: typeAttr.type,
-            })
-          }
-        } else {
-          // Handle direct attribute IDs - look up in all definition sections
-          let attr: AttributeDefinition | undefined
-
-          // First check common attributes
-          if (config.attributeDefinitions.common[mapping]) {
-            attr = config.attributeDefinitions.common[mapping]
-          } else {
-            // Then check all category-specific attributes
-            for (const categoryAttrs of Object.values(config.attributeDefinitions.categorySpecific)) {
-              if (categoryAttrs[mapping]) {
-                attr = categoryAttrs[mapping]
-                break
-              }
-            }
-          }
-
-          if (attr) {
-            attrs.push({
-              id: mapping,
-              name: attr.name,
-              description: attr.description,
-              type: attr.type,
-              domainFilter: attr.domainFilter,
-            })
-          }
-        }
+        // All mappings are now inline attribute objects
+        attrs.push({
+          id: mapping.id,
+          name: mapping.name,
+          description: mapping.description,
+          type: mapping.type,
+          domainFilter: mapping.domainFilter,
+        })
       })
 
       if (attrs.length > 0) {
