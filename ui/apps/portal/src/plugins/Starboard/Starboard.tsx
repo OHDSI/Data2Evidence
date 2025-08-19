@@ -262,6 +262,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
             onCreateBlank={(name: string) => createNotebook(name)}
             onCreateFromTemplate={createNotebookFromTemplate}
             activeDatasetId={activeDatasetId}
+            notebooks={notebooks}
           />
         )}
       </>
@@ -299,6 +300,7 @@ export const Starboard: FC<StarboardProps> = ({ metadata }) => {
           onCreateBlank={(name: string) => createNotebook(name)}
           onCreateFromTemplate={createNotebookFromTemplate}
           activeDatasetId={activeDatasetId}
+          notebooks={notebooks}
         />
       )}
     </div>
