@@ -112,6 +112,7 @@ export class DataCharacterizationService {
     const portalServerApi = new PortalServerAPI(token);
     const datasetId = dataCharacterizationFlowRunDto.datasetId;
     const comment = dataCharacterizationFlowRunDto.comment;
+    const overrideResultsSchema = dataCharacterizationFlowRunDto.resultsSchema;
     const releaseId = dataCharacterizationFlowRunDto.releaseId;
     const excludeAnalysisIds =
       dataCharacterizationFlowRunDto.excludeAnalysisIds ?? "";
@@ -119,14 +120,19 @@ export class DataCharacterizationService {
     const { dialect, databaseCode, schemaName, vocabSchemaName } =
       await portalServerApi.getDataset(datasetId);
 
-    let dataCharacterizationResultsSchema = `${schemaName}_DC_${Date.now()}`;
+    let resultsSchema =
+      overrideResultsSchema || `${schemaName}_DC_${Date.now()}`;
 
     if (dialect === "hana") {
-      dataCharacterizationResultsSchema =
-        dataCharacterizationResultsSchema.toUpperCase();
+      resultsSchema = resultsSchema.toUpperCase();
     } else if (dialect === "postgres") {
-      dataCharacterizationResultsSchema =
-        dataCharacterizationResultsSchema.toLowerCase();
+      resultsSchema = resultsSchema.toLowerCase();
+
+      if (resultsSchema.length > 63) {
+        throw new Error(
+          `Results schema name cannot exceed 63 characters for PostgreSQL dialect. Current length: ${resultsSchema.length}`
+        );
+      }
     }
 
     const releaseDate = (await this.getReleaseDate(releaseId, token)).split(
@@ -144,7 +150,7 @@ export class DataCharacterizationService {
         cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName,
         comment,
-        resultsSchema: dataCharacterizationResultsSchema,
+        resultsSchema,
         excludeAnalysisIds,
         releaseId,
         releaseDate,

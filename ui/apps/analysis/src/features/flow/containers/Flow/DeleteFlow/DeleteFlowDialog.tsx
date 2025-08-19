@@ -55,11 +55,11 @@ export const DeleteFlowDialog: FC<DeleteFlowDialogProps> = ({
     >
       <div className="delete-flow-dialog__content">
         <Box mb={4}>
-          Are you sure you want to delete "{dataflow?.name}" flow?
+          Are you sure you want to delete "{dataflow?.canvas?.name}" flow?
         </Box>
         <Box mb={4}>
           <InputLabel sx={{ fontSize: 13 }}>
-            Type "{dataflow?.name}" to confirm:
+            Type "{dataflow?.canvas?.name}" to confirm:
           </InputLabel>
           <TextField
             InputLabelProps={{ shrink: false }}
@@ -83,7 +83,7 @@ export const DeleteFlowDialog: FC<DeleteFlowDialogProps> = ({
             text="Delete"
             onClick={handleDelete}
             loading={isLoading}
-            disabled={confirmText !== dataflow?.name}
+            disabled={confirmText !== dataflow?.canvas?.name}
           />
         </Box>
       </div>

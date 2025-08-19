@@ -186,6 +186,7 @@ export function getLogger() {
 export enum DB {
     HANA = "hana",
     POSTGRES = "postgres",
+    BIGQUERY = "bigquery"
 }
 
 export enum OHDSI {
