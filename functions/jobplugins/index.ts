@@ -12,6 +12,7 @@ import { DqdController } from "./src/controllers/DqdController.ts";
 import { PerseusController } from "./src/controllers/PerseusController.ts";
 import { PhenotypeController } from "./src/controllers/PhenotypeController.ts";
 import { PrefectController } from "./src/controllers/PrefectController.ts";
+import { ResearcherController } from "./src/controllers/ResearcherController.ts";
 import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
 import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
 import { initialiseDataSource } from "./src/db/data-migration.ts";
@@ -40,6 +41,7 @@ app.use("/jobplugins/analysisflow", new AnalysisController().router);
 app.use("/jobplugins/cachedb", new CachedbController().router);
 app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
 app.use("/jobplugins/perseus", new PerseusController().router);
+app.use("/jobplugins/researcher", new ResearcherController().router);
 app.use("/jobplugins/phenotype", new PhenotypeController().router);
 
 let ssl = JSON.parse(env.PG__SSL.toLowerCase());
