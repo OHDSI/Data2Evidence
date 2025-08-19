@@ -80,6 +80,7 @@ const updateEndDateModel = (payload: { date: string | Date; isEmpty: boolean }) 
   align-items: center;
   gap: 16px;
   height: 100%;
+  min-height: 40px;
   max-height: 40px;
 
   .select-container {
