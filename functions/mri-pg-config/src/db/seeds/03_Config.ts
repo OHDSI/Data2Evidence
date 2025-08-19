@@ -18282,9 +18282,24 @@ export const cdwConfigDuckdb = {
                 "defaultPlaceholder": "@PROC",
                 "order": 2,
                 "parentInteraction": [
-                    "patient.interactions.episode"
+                    "patient.interactions.episode",
+					"patient.interactions.visit"
                 ],
-                "parentInteractionLabel": "Episode parent",
+				"parentInteractionsMapping": [
+                    {
+                        "currentMappingInteractionId": "@EPISODEEVENT.episode_id",
+						"parentInteraction": "patient.interactions.episode",
+                        "parentMappingInteraction": "@EPISODE",
+                        "parentMappingInteractionLabel": "Episode parent"
+                    },
+					{
+                        "currentMappingInteractionId": "@PROC.visit_occurrence_id",
+						"parentInteraction": "patient.interactions.visit",
+                        "parentMappingInteraction": "@VISIT",
+                        "parentMappingInteractionLabel": "Visit parent"
+                    }
+                ],
+                "parentInteractionLabel": "Episode/Visit parent",
                 "cohortDefinitionKey": "ProcedureOccurrence",
                 "conceptIdentifierType": "",
                 "attributes": {
