@@ -185,13 +185,13 @@
       },
       {
         "id": "startDate",
-        "name": "Start Date",
+        "name": "Condition Start Date",
         "description": "Filter by start date",
         "type": "dateRange"
       },
       {
         "id": "endDate",
-        "name": "End Date",
+        "name": "Condition End Date",
         "description": "Filter by end date",
         "type": "dateRange"
       },
@@ -243,12 +243,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -272,6 +266,12 @@
         "name": "End Date",
         "description": "Filter by end date",
         "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "nested",
@@ -288,12 +288,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -319,6 +313,19 @@
         "type": "dateRange"
       },
       {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "drugType",
+        "name": "Drug Type",
+        "description": "Filter by drug type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
         "id": "visit",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
@@ -332,21 +339,15 @@
         "type": "text"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "refills",
+        "name": "Refills",
+        "description": "Filter by number of refills",
+        "type": "numericRange"
       },
       {
         "id": "quantity",
         "name": "Quantity",
         "description": "Filter by quantity",
-        "type": "numericRange"
-      },
-      {
-        "id": "refills",
-        "name": "Refills",
-        "description": "Filter by number of refills",
         "type": "numericRange"
       },
       {
@@ -369,17 +370,30 @@
         "type": "numericRange"
       },
       {
+        "id": "doseUnit",
+        "name": "Dose Unit",
+        "description": "Filter by dose unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
         "id": "lotNumber",
         "name": "Lot Number",
         "description": "Filter by lot number",
         "type": "text"
       },
       {
-        "id": "drugType",
-        "name": "Drug Type",
-        "description": "Filter by drug type",
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
+        "type": "text"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
         "type": "concept",
-        "domainFilter": "Type Concept"
+        "domainFilter": "Provider"
       },
       {
         "id": "nested",
@@ -396,12 +410,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -425,6 +433,12 @@
         "name": "End Date",
         "description": "Filter by end date",
         "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "nested",
@@ -441,12 +455,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -472,10 +480,17 @@
         "type": "dateRange"
       },
       {
-        "id": "effective",
-        "name": "Effective Drug Dose",
-        "description": "Filter by effective drug dose",
-        "type": "numericRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "doseUnit",
+        "name": "Dose Unit",
+        "description": "Filter by dose unit",
+        "type": "concept",
+        "domainFilter": "Unit"
       },
       {
         "id": "nested",
@@ -492,12 +507,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -523,6 +532,19 @@
         "type": "dateRange"
       },
       {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "deviceType",
+        "name": "Device Type",
+        "description": "Filter by device type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
         "id": "visit",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
@@ -530,9 +552,9 @@
         "domainFilter": "Visit"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
+        "id": "uniqueDeviceId",
+        "name": "Unique Device ID",
+        "description": "Filter by unique device identifier",
         "type": "text"
       },
       {
@@ -542,17 +564,17 @@
         "type": "numericRange"
       },
       {
-        "id": "uniqueDeviceId",
-        "name": "Unique Device ID",
-        "description": "Filter by unique device identifier",
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
         "type": "text"
       },
       {
-        "id": "deviceType",
-        "name": "Device Type",
-        "description": "Filter by device type",
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
         "type": "concept",
-        "domainFilter": "Type Concept"
+        "domainFilter": "Provider"
       },
       {
         "id": "nested",
@@ -569,12 +591,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -588,16 +604,10 @@
         "domainFilter": "Gender"
       },
       {
-        "id": "startDate",
-        "name": "Start Date",
-        "description": "Filter by start date",
-        "type": "dateRange"
-      },
-      {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "visit",
@@ -605,25 +615,6 @@
         "description": "Filter based on visit occurrence",
         "type": "concept",
         "domainFilter": "Visit"
-      },
-      {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
-      },
-      {
-        "id": "quantity",
-        "name": "Quantity",
-        "description": "Filter by quantity",
-        "type": "numericRange"
-      },
-      {
-        "id": "unit",
-        "name": "Unit",
-        "description": "Filter by unit",
-        "type": "concept",
-        "domainFilter": "Unit"
       },
       {
         "id": "valueAsNumber",
@@ -638,10 +629,17 @@
         "type": "concept"
       },
       {
-        "id": "valueAsString",
-        "name": "Value as String",
-        "description": "Filter by text value",
-        "type": "text"
+        "id": "unit",
+        "name": "Unit",
+        "description": "Filter by unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "abnormal",
+        "name": "Abnormal",
+        "description": "Filter for abnormal results",
+        "type": "boolean"
       },
       {
         "id": "rangeLow",
@@ -656,10 +654,17 @@
         "type": "numericRange"
       },
       {
-        "id": "abnormal",
-        "name": "Abnormal",
-        "description": "Filter for abnormal results",
-        "type": "boolean"
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
+        "type": "text"
       },
       {
         "id": "nested",
@@ -676,12 +681,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -695,16 +694,10 @@
         "domainFilter": "Gender"
       },
       {
-        "id": "startDate",
-        "name": "Start Date",
-        "description": "Filter by start date",
-        "type": "dateRange"
-      },
-      {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "visit",
@@ -714,16 +707,16 @@
         "domainFilter": "Visit"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
-      },
-      {
         "id": "valueAsNumber",
         "name": "Value as Number",
         "description": "Filter by numeric value",
         "type": "numericRange"
+      },
+      {
+        "id": "valueAsString",
+        "name": "Value as String",
+        "description": "Filter by text value",
+        "type": "text"
       },
       {
         "id": "valueAsConcept",
@@ -732,10 +725,17 @@
         "type": "concept"
       },
       {
-        "id": "valueAsString",
-        "name": "Value as String",
-        "description": "Filter by text value",
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
         "type": "text"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
       },
       {
         "id": "nested",
@@ -752,12 +752,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -777,10 +771,17 @@
         "type": "dateRange"
       },
       {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "procedureType",
+        "name": "Procedure Type",
+        "description": "Filter by procedure type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
       },
       {
         "id": "visit",
@@ -790,10 +791,10 @@
         "domainFilter": "Visit"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "modifier",
+        "name": "Modifier",
+        "description": "Filter by procedure modifier",
+        "type": "concept"
       },
       {
         "id": "quantity",
@@ -802,17 +803,17 @@
         "type": "numericRange"
       },
       {
-        "id": "modifier",
-        "name": "Modifier",
-        "description": "Filter by procedure modifier",
-        "type": "concept"
+        "id": "source",
+        "name": "Source Value",
+        "description": "Filter by source value",
+        "type": "text"
       },
       {
-        "id": "procedureType",
-        "name": "Procedure Type",
-        "description": "Filter by procedure type",
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
         "type": "concept",
-        "domainFilter": "Type Concept"
+        "domainFilter": "Provider"
       },
       {
         "id": "nested",
@@ -829,12 +830,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -848,29 +843,10 @@
         "domainFilter": "Gender"
       },
       {
-        "id": "startDate",
-        "name": "Start Date",
-        "description": "Filter by start date",
-        "type": "dateRange"
-      },
-      {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
-      },
-      {
-        "id": "visit",
-        "name": "Visit",
-        "description": "Filter based on visit occurrence",
-        "type": "concept",
-        "domainFilter": "Visit"
-      },
-      {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "quantity",
@@ -900,12 +876,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -931,10 +901,10 @@
         "type": "dateRange"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "visitType",
@@ -950,15 +920,16 @@
         "type": "numericRange"
       },
       {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
         "id": "placeOfService",
         "name": "Place of Service",
         "description": "Filter by place of service",
-        "type": "concept"
-      },
-      {
-        "id": "caresite",
-        "name": "Care Site",
-        "description": "Filter by care site",
         "type": "concept"
       },
       {
@@ -976,12 +947,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -1007,34 +972,41 @@
         "type": "dateRange"
       },
       {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "visitDetailType",
+        "name": "Visit Detail Type",
+        "description": "Filter by visit type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visitDetailLength",
+        "name": "Visit Detail Length",
+        "description": "Filter by length of visit",
+        "type": "numericRange"
+      },
+      {
         "id": "source",
         "name": "Source Value",
         "description": "Filter by source value",
         "type": "text"
       },
       {
-        "id": "visitType",
-        "name": "Visit Type",
-        "description": "Filter by visit type",
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
         "type": "concept",
-        "domainFilter": "Type Concept"
-      },
-      {
-        "id": "visitLength",
-        "name": "Visit Length",
-        "description": "Filter by length of visit",
-        "type": "numericRange"
+        "domainFilter": "Provider"
       },
       {
         "id": "placeOfService",
         "name": "Place of Service",
         "description": "Filter by place of service",
-        "type": "concept"
-      },
-      {
-        "id": "caresite",
-        "name": "Care Site",
-        "description": "Filter by care site",
         "type": "concept"
       },
       {
@@ -1052,43 +1024,6 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
-        "id": "age",
-        "name": "Age",
-        "description": "Filter by age at time of event",
-        "type": "numericRange"
-      },
-      {
-        "id": "gender",
-        "name": "Gender",
-        "description": "Filter by patient gender",
-        "type": "concept",
-        "domainFilter": "Gender"
-      },
-      {
-        "id": "startDate",
-        "name": "Start Date",
-        "description": "Filter by start date",
-        "type": "dateRange"
-      },
-      {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
-      },
-      {
-        "id": "periodLength",
-        "name": "Period Length",
-        "description": "Filter by length of period",
-        "type": "numericRange"
-      },
-      {
         "id": "ageAtStart",
         "name": "Age at Start",
         "description": "Filter by age at period start",
@@ -1098,6 +1033,30 @@
         "id": "ageAtEnd",
         "name": "Age at End",
         "description": "Filter by age at period end",
+        "type": "numericRange"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "periodLength",
+        "name": "Period Length",
+        "description": "Filter by length of period",
         "type": "numericRange"
       },
       {
@@ -1115,23 +1074,16 @@
         "type": "boolean"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
-        "id": "age",
-        "name": "Age",
-        "description": "Filter by age at time of event",
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at period start",
         "type": "numericRange"
       },
       {
-        "id": "gender",
-        "name": "Gender",
-        "description": "Filter by patient gender",
-        "type": "concept",
-        "domainFilter": "Gender"
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at period end",
+        "type": "numericRange"
       },
       {
         "id": "startDate",
@@ -1146,10 +1098,23 @@
         "type": "dateRange"
       },
       {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
         "id": "periodLength",
         "name": "Period Length",
         "description": "Filter by length of period",
         "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
       },
       {
         "id": "payerConcept",
@@ -1178,12 +1143,6 @@
     ],
     "death": [
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -1197,16 +1156,10 @@
         "domainFilter": "Gender"
       },
       {
-        "id": "startDate",
-        "name": "Start Date",
-        "description": "Filter by start date",
-        "type": "dateRange"
-      },
-      {
-        "id": "endDate",
-        "name": "End Date",
-        "description": "Filter by end date",
-        "type": "dateRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "deathType",
