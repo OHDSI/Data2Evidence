@@ -5,7 +5,7 @@ from prefect.logging import get_run_logger
 from .fts import create_fts_index
 from .utils import execute_statement
 
-from _shared_flow_utils.types import SupportedDatabaseDialects, DBCredentialsType
+from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_{read_conn.database_code}")
@@ -79,7 +79,8 @@ def create_schema_tables(write_conn: any,
 
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         logger.debug("Setting BigQuery-specific DuckDB connection settings.")
-        execute_statement(write_conn, set_bigquery_global_settings())
+        # Todo: For duckdb upgrade >= 1.3.2
+        # execute_statement(write_conn, set_bigquery_global_settings())
 
     logger.info(f"Beginning table copy for schema '{schema}'.")
 
@@ -92,6 +93,7 @@ def create_schema_tables(write_conn: any,
                 source_credentials=read_conn.tenant_configs,
                 limit_statement=limit_statement
             )
+            
             logger.debug(f"Create/replace table query for '{table}': {query}")
 
             table_creation_time = execute_statement(write_conn, query)
@@ -156,7 +158,7 @@ def create_schema_query(schema_name: str) -> str:
 
 def create_or_replace_table_query(source_schema: str,
                                   source_table: str,
-                                  source_credentials: DBCredentialsType,
+                                  source_credentials: dict,
                                   limit_statement: str) -> str:    
     project_name = source_credentials.host
     select_statement = None
@@ -164,7 +166,8 @@ def create_or_replace_table_query(source_schema: str,
         case SupportedDatabaseDialects.POSTGRES.value:
             select_statement = f'SELECT * FROM postgres_scan("host={source_credentials.host} port={source_credentials.port} dbname={source_credentials.databaseName} user={source_credentials.readUser} password={source_credentials.readPassword.get_secret_value()}", "{source_schema}", "{source_table}")'
         case SupportedDatabaseDialects.BIGQUERY.value:
-            select_statement = f"SELECT * FROM bigquery_arrow_scan('{project_name}.{source_schema}.{source_table}')"
+            # Todo: Change to use `bigquery_arrow_scan` when duckdb upgrade >= 1.3.2
+            select_statement = f"SELECT * FROM bigquery_scan('{project_name}.{source_schema}.{source_table}')"
         case _:
             raise ValueError(f"Unsupported dialect: {source_credentials.get('dialect')}")
 

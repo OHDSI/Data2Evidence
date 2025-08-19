@@ -1,8 +1,7 @@
 import os
 from typing import Set
-from shutil import copy
 from pathlib import Path
-from time import process_time
+from time import time
 
 from prefect.blocks.system import Secret
 
@@ -23,11 +22,12 @@ def check_supported_dialects(dialect: str):
             f"Input dialect '{dialect}' is not supported. Supported dialects: {', '.join(supported_dialects)}"
         )
 
+
 def time_execution(func):
     def wrapper(*args, **kwargs):
-        time_start = process_time()
+        time_start = time()
         func(*args, **kwargs)
-        time_end = process_time()
+        time_end = time()
         time_duration = time_end - time_start
         return f"{time_duration:.3f}"
     return wrapper
@@ -77,26 +77,3 @@ def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str
     Returns the full path to the DuckDB database file
     """
     return str(Path(folder_path) / f"{duckdb_database_name}.db")
-
-
-def copy_file(existing_file_path: str) -> bool:
-    """
-    Copies the specified file to a new location and returns the copied filepath
-    """
-    folder = str(Path(existing_file_path).parent)
-    filename = Path(existing_file_path).stem + "_copy" + Path(existing_file_path).suffix
-    copied_filepath = str(Path(folder) / filename)
-    copy(existing_file_path, copied_filepath)
-    return copied_filepath
-
-
-def clean_up_files(file_to_remove: str, file_to_rename: str = None):
-    """
-    Remove file if exists and rename copy if provided.
-    """
-
-    if file_to_rename:
-        Path(file_to_remove).unlink()
-        Path(file_to_rename).rename(file_to_remove)
-    else:
-        Path(file_to_remove).unlink()

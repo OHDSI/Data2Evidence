@@ -1,15 +1,11 @@
 import os
 import duckdb
-from pathlib import Path
 from psycopg2 import connect
-
 
 from .utils import *
 from .fts import create_fts_index
-from .bigquery_copy import copy_bigquery_schema_to_cache
 from .copy import copy_all_schemas, create_schema_tables
 from .config import CreateDuckdbDatabaseFileType, CreateCDWValidationConfig
-
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -29,9 +25,6 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     duckdb_database_name = options.databaseCode
     schema_to_copy = options.schemaName
     use_cache_db = options.use_cache_db
-
-    batch_size = options.batch_size
-
     tables_to_create_duckdb_fts_index = options.tablesToCreateDuckdbFtsIndex
 
     dbdao = DBDao(use_cache_db=use_cache_db,
@@ -40,77 +33,17 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
     # Check if dialect is supported by duckdb
     check_supported_dialects(dbdao.dialect)
 
+    # Load Google service account credentials for BigQuery access.
     if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-        # Load Google service account credentials for BigQuery access.
         load_service_account_credentials()
-     
 
-        # Direct connection to cache
-        duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, Variable.get("duckdb_data_folder"))
-
-        duckdb_file_exists = check_if_file_exists(duckdb_file_path)
-        
-        write_to_path = None
-        
-        if duckdb_file_exists:
-            # If the file exists, make a copy of existing duckdb file to get around conflicting lock
-            write_to_path = copy_file(duckdb_file_path)
-            logger.info(f"Copied existing Cache file to '{write_to_path}'")
-        else:
-            write_to_path = duckdb_file_path
-
-        try:
-            logger.debug(f"Connecting to Cache file at '{write_to_path}'...")
-            # Creates file if it does not exist
-            with duckdb.connect(write_to_path) as file_conn:
-
-                load_extensions(write_conn=file_conn, 
-                                dialect=dbdao.dialect,
-                                trex_sql=False)
-
-                if not duckdb_file_exists:
-                    # If the file doesn't exist do a one time copy of all schemas in database
-                    logger.info(f"Cache file does not exist. Copying all schemas from '{duckdb_database_name}' to file.")
-                    copy_all_schemas(file_conn, dbdao, tables_to_create_duckdb_fts_index)
-
-                else:
-                    # If the file exists, only update the schema passed into flow params
-                    logger.info(f"Cache file exists. Updating tables from '{duckdb_database_name}.{schema_to_copy}' schema to file.")
-                    create_schema_tables(write_conn=file_conn, 
-                                        read_conn=dbdao, 
-                                        schema=schema_to_copy,
-                                        create_cdw_config=False)
-                    
-                    create_fts_index(write_conn=file_conn, 
-                                    read_conn=dbdao, 
-                                    schema=schema_to_copy, 
-                                    fts_tables_input=tables_to_create_duckdb_fts_index)
-
-        except Exception as e:
-            logger.error(f"Error while creating/updating cache file '{duckdb_database_name}': {e}")
-            
-            # Remove copy if file was unsuccessful
-            if duckdb_file_exists and write_to_path != duckdb_file_path:
-                logger.info(f"Removing copied cache file at '{write_to_path}' due to error.")
-                clean_up_files(file_to_remove=write_to_path)
-        
-        else:
-            # If the file already exists, replace the original with the updated copy
-            if duckdb_file_exists and write_to_path != duckdb_file_path:
-            
-                logger.debug(f"Replacing original cache file '{duckdb_file_path}' with updated file from '{write_to_path}'")
-                clean_up_files(file_to_remove=duckdb_file_path, file_to_rename=write_to_path)
-
-
-    else:
+    if options.trex_connection:
         # Connect to cache through Trex Sql Interface assuming duckdb file already exists
-        trex_conn = connect(
-            host= Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_port"),
-            user=Variable.get("trex_sql_user"),
-            password=Secret.load("trex-sql-password").get(),
-            dbname=duckdb_database_name 
-        )
+        trex_conn = connect(host= Variable.get("trex_sql_host"),
+                            port=Variable.get("trex_sql_port"),
+                            user=Variable.get("trex_sql_user"),
+                            password=Secret.load("trex-sql-password").get(),
+                            dbname=duckdb_database_name)
 
         # Turn off transactions
         trex_conn.autocommit = True
@@ -124,39 +57,60 @@ def create_cachedb_file_plugin(options: CreateDuckdbDatabaseFileType):
                             trex_sql=True)
         
             logger.info(f"Creating schema tables for '{schema_to_copy}' schema in '{duckdb_database_name}' through Trex Sql Interface...")
-            if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-                # If the dialect is bigquery and through trex conn
-                copy_bigquery_schema_to_cache(write_conn=pg_cursor,
-                                              read_conn=dbdao, 
-                                              schema=schema_to_copy,
-                                              batch_size=batch_size)
-            else:
-                # For common implementation across all dialects and connections
-                
-                create_schema_tables(write_conn=pg_cursor,
-                                     read_conn=dbdao, 
-                                     schema=schema_to_copy,
-                                     create_cdw_config=False)
+            create_schema_tables(write_conn=pg_cursor,
+                                 read_conn=dbdao, 
+                                 schema=schema_to_copy,
+                                 create_cdw_config=False)
 
             logger.info(f"Creating FTS index for '{schema_to_copy}' schema in '{duckdb_database_name}' through Trex Sql Interface...")
             create_fts_index(write_conn=pg_cursor,
                              read_conn=dbdao, 
                              schema=schema_to_copy, 
                              fts_tables_input=tables_to_create_duckdb_fts_index)
-
         except Exception as e:
             logger.error(f"Error while creating updating schema '{schema_to_copy}' from '{duckdb_database_name}': {e}")
             # trex_conn.rollback()
-            raise e
-        
+            raise
         else:
             trex_conn.commit()
             logger.info(f"Cached schema '{schema_to_copy}' successfully updated from '{duckdb_database_name}'.")
-        
         finally:
             if pg_cursor:
                 pg_cursor.close()
             trex_conn.close()
+
+
+    else:
+        # Direct connection to cache
+        duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, Variable.get("duckdb_data_folder"))
+
+        duckdb_file_exists = check_if_file_exists(duckdb_file_path)
+
+        logger.info(f"Connecting to Cache file at '{duckdb_file_path}'...")
+        # Creates file if it does not exist
+        with duckdb.connect(duckdb_file_path) as file_conn:
+
+            load_extensions(write_conn=file_conn, 
+                            dialect=dbdao.dialect,
+                            trex_sql=False)
+
+            if not duckdb_file_exists:
+                # If the file doesn't exist do a one time copy of all schemas in database
+                logger.info(f"Cache file does not exist. Copying all schemas from '{duckdb_database_name}' to file.")
+                copy_all_schemas(file_conn, dbdao, tables_to_create_duckdb_fts_index)
+
+            else:
+                # If the file exists, only update the schema passed into flow params
+                logger.info(f"Cache file exists. Updating tables from '{duckdb_database_name}.{schema_to_copy}' schema to file.")
+                create_schema_tables(write_conn=file_conn, 
+                                     read_conn=dbdao, 
+                                     schema=schema_to_copy,
+                                     create_cdw_config=False)
+                
+                create_fts_index(write_conn=file_conn, 
+                                 read_conn=dbdao, 
+                                 schema=schema_to_copy, 
+                                 fts_tables_input=tables_to_create_duckdb_fts_index)
 
 
 @flow(log_prints=True)
@@ -178,22 +132,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         # Load Google service account credentials for BigQuery access.
         load_service_account_credentials()
 
-        # Direct connection to cache
-        duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, Variable.get("duckdb_data_folder"))
-
-        # Creates file at duckdb_file_path if the file does not exist
-        with duckdb.connect(duckdb_file_path) as file_conn:
-
-            load_extensions(write_conn=file_conn, 
-                            dialect=dbdao.dialect,
-                            trex_sql=False)
-            
-            create_schema_tables(write_conn=file_conn,
-                                 read_conn=dbdao, 
-                                 schema=schema_to_copy,
-                                 create_cdw_config=True)
-
-    else:
+    if options.trex_connection:
         # Connect to cache through Trex Sql Interface assuming duckdb file already exists
         trex_conn = connect(
             host= Variable.get("trex_sql_host"),
@@ -212,29 +151,41 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
             load_extensions(write_conn=pg_cursor, 
                             dialect=dbdao.dialect,
-                            trex_sql=False)
+                            trex_sql=True)
 
             logger.info(f"Updating schema '{schema_to_copy}' from '{duckdb_database_name}' through Trex Sql Interface...")
             create_schema_tables(write_conn=cursor,
                                  read_conn=dbdao, 
                                  schema=schema_to_copy,
                                  create_cdw_config=True)
-
         except Exception as e:
             logger.error(f"Error while updating cached schema '{schema_to_copy}' from '{duckdb_database_name}': {e}")
             # trex_conn.rollback()
             raise
-        
         else:
             trex_conn.commit()
             logger.info(f"Cached schema '{schema_to_copy}' successfully updated from '{duckdb_database_name}'.")
-        
         finally:
             if cursor:
                 cursor.close()
             trex_conn.close()
 
 
+    else:
+        # Direct connection to cache
+        duckdb_file_path = resolve_duckdb_file_path(duckdb_database_name, Variable.get("duckdb_data_folder"))
+
+        # Creates file at duckdb_file_path if the file does not exist
+        with duckdb.connect(duckdb_file_path) as file_conn:
+
+            load_extensions(write_conn=file_conn, 
+                            dialect=dbdao.dialect,
+                            trex_sql=False)
+            
+            create_schema_tables(write_conn=file_conn,
+                                 read_conn=dbdao, 
+                                 schema=schema_to_copy,
+                                 create_cdw_config=True)
 
 
 @task(log_prints=True, task_run_name="load_extensions_{dialect}")
@@ -255,7 +206,8 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
 
             case SupportedDatabaseDialects.BIGQUERY.value:
                 logger.debug("Installing and loading BigQuery extensions for Trex SQL.")
-                execute_statement(write_conn, "INSTALL bigquery FROM community; LOAD bigquery;")
+                execute_statement(write_conn, "INSTALL bigquery FROM community;")
+                execute_statement(write_conn, "LOAD bigquery;")
                 logger.debug("BigQuery extensions loaded successfully.")
             case _:
                 raise ValueError(f"Scan extension not supported for dialect: {dialect}")
@@ -281,7 +233,8 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
     # Load FTS extension
     logger.debug(f"Loading FTS extension {'for Trex SQL' if trex_sql else ''}.")
     if trex_sql:
-        execute_statement(write_conn, "INSTALL fts; LOAD fts;")
+        execute_statement(write_conn, "INSTALL fts;")
+        execute_statement(write_conn, "LOAD fts;")
     else:
         fts_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/fts.duckdb_extension'
         write_conn.load_extension(fts_extension_path)

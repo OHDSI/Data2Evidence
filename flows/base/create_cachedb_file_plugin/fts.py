@@ -1,5 +1,3 @@
-from typing import Union
-
 from prefect import task
 from prefect.logging import get_run_logger
 
@@ -18,10 +16,9 @@ def create_fts_index(write_conn: any,
     logger = get_run_logger()
     logger.info(f"Starting FTS index creation for schema '{schema}'.")
 
-    # Todo: Use copied tables from cache catalog
+    # Fetch tables in schema
     logger.debug(f"Fetching tables from schema '{schema}' in '{read_conn.database_code}'.")
     copied_tables = read_conn.get_table_names(schema)
-
     logger.info(f"Found {len(copied_tables)} tables in schema '{schema}'.")
 
     tables_for_fts = get_tables_for_fts(fts_tables_input, copied_tables)
@@ -68,7 +65,7 @@ def create_fts_index(write_conn: any,
 
 def get_duckdb_fts_creation_sql(schema_name: str, 
                                 table_name: str, 
-                                document_identifier: Union[str | int], 
+                                document_identifier: str | int, 
                                 columns: list[str]) -> str:
     # Todo: Add single quotes to ignore regex after upgrading to a duckdb version which has the fix
     return f""" PRAGMA
