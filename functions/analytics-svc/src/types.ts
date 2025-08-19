@@ -382,6 +382,8 @@ export interface StudyDbMetadata {
     schemaName: string;
     databaseName: string;
     vocabSchemaName: string;
+    dialect: string;
+    databaseCode: string;
 }
 
 export interface StudiesDbMetadata {
@@ -472,4 +474,10 @@ export interface IDatasetSchemaFilterResultDto {
 export interface IMaterializedBookmarkCohortDefinition {
     datasetId: string;
     cohortDefinitionId: number;
+}
+
+export enum ANALYTICS_DB_DIALECTS {
+    HANA = "hana",
+    POSTGRES = "postgresql",
+    BIGQUERY = "bigquery",
 }
