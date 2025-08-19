@@ -104,7 +104,7 @@ export class SystemPortalAPI {
       const options = await this.createOptions();
       options.params = { datasetId: datasetId };
       const url = `${this.url}/user-artifact/concept_sets/${id}`;
-      const result = await axios.get<ConceptSet[]>(url, options);
+      const result = await axios.get<ConceptSet>(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
