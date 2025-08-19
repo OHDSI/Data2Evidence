@@ -68,28 +68,27 @@ def get_duckdb_fts_creation_sql(schema_name: str,
                                 document_identifier: str | int, 
                                 columns: list[str]) -> str:
     # Todo: Add single quotes to ignore regex after upgrading to a duckdb version which has the fix
-    return f""" PRAGMA
-        create_fts_index({schema_name}.{table_name},
+    return f''' PRAGMA
+        create_fts_index("{schema_name}"."{table_name}",
             {document_identifier},
             {", ".join(columns)},
             stemmer='english', 
-            stopwords='english', 
-            ignore='(\\.|[^a-z0-9])+',
+            stopwords='english',
             ignore='(\\.|[^a-z0-9!@#$%^&*()\-`.+,\\\/"])+', 
             strip_accents=1, 
             lower=1, 
             overwrite=1)
-        """
+        '''
 
 def create_sequence_query(schema_name: str, sequence_name: str) -> str:
     """
     Create a SQL query to create a sequence if it does not exist.
     """
-    return f"CREATE OR REPLACE SEQUENCE {schema_name}.{sequence_name} START 1;"
+    return f'CREATE OR REPLACE SEQUENCE "{schema_name}"."{sequence_name}" START 1;'
 
 
 def add_autoincrement_col_query(schema_name: str, table_name: str, column_name: str, sequence_name: str) -> str:
     """
     Create a SQL query to add an auto-increment column to a table.
     """
-    return f"ALTER TABLE {schema_name}.{table_name} ADD COLUMN {column_name} INTEGER DEFAULT NEXTVAL('{schema_name}.{sequence_name}');"
+    return f'ALTER TABLE "{schema_name}"."{table_name}" ADD COLUMN "{column_name}" INTEGER DEFAULT NEXTVAL("{schema_name}"."{sequence_name}");'
