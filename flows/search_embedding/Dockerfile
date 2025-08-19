@@ -48,14 +48,12 @@ COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 
 RUN \
     # Create output directory and set ownership
-    mkdir -p /output \
-    && chown -R docker:docker /output \
-    # Create directory for DuckDB extensions
-    && mkdir -p /app/duckdb_extensions \
+    mkdir -p /output /app/duckdb_extensions /app/duckdb_data \
+    && chown -R docker:docker /output /app/duckdb_extensions \
+    && chown -R docker:alp /app/duckdb_data \
     && chmod -R 755 /app/duckdb_extensions \
-    # Make the download script executable
+    # Install DuckDB extensions
     && chmod +x /app/download_duckdb_extensions.sh \
-    # Install DuckDB extensions in the duckdb_extensions directory
     && cd /app/duckdb_extensions \
     && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
     && rm -f /app/download_duckdb_extensions.sh
