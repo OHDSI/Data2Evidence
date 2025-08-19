@@ -7,7 +7,7 @@ export const AppContext = createContext<AppState>(initialState);
 export const AppDispatchContext = createContext<Dispatch<DispatchType>>(() => undefined);
 
 const storageKey = "d2e_app";
-const whitelist: (keyof AppState)[] = ["activeDataset", "postLoginRedirectUri", "disclaimer"];
+const whitelist: (keyof AppState)[] = ["activeDataset", "postLoginRedirectUri"];
 
 interface AppProviderProps {
   children?: React.ReactNode;

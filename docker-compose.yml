@@ -467,6 +467,9 @@ services:
             "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
             "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
             "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
+            "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
+            "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
+            "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
             "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json"
           },
           "jupyter-gateway": {},
@@ -515,6 +518,7 @@ services:
       PG_MANAGE_USER: ${PG_ADMIN_USER:-alp_pg_admin_user}
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
+      PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
       PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
@@ -1243,6 +1247,7 @@ services:
         [
           "CMD",
           "wget",
+          "--proxy=off",
           "--no-verbose",
           "--tries=1",
           "--spider",

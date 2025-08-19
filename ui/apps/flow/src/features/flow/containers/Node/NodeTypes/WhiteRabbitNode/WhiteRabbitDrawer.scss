@@ -1,0 +1,40 @@
+@import "../../../../../../theme/variables.scss";
+
+.white-rabbit-drawer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  
+  .action-container {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .button-group {
+      width: 70%;
+      .MuiButtonBase-root {
+        margin-top: 1em;
+        background-color: $primary-color;
+      }
+    }
+  }
+
+  .handle-container {
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .handle-container:hover,
+    .handle-container:focus {
+      overflow-y: auto;
+    }
+}

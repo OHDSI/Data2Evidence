@@ -66,12 +66,15 @@ export class UserGroupRouter {
         Object.keys(req.query || {}).map((k: string) => {
           const field = camelToSnakeCase(k) as keyof UserGroupExtCriteria
           if (UserGroupExtCriteriaKeys.includes(field)) {
-            const value = req.query[k] as string
-            if (value?.includes(',')) {
-              criteria[field] = value.split(',')
-            } else {
-              criteria[field] = value
+            const value = req.query[k]
+            if (typeof value === 'string') {
+              if (value.includes(',')) {
+                criteria[field] = value.split(',')
+              } else {
+                criteria[field] = value
+              }
             }
+            // else: ignore non-string values for security
           }
         })
 
