@@ -131,12 +131,16 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                 nodes[nodename] = node_task_execution_wo(
                     nodename, node["type"], node["nodeobj"], _input, test)
     except Exception as e:
-        get_run_logger().error(traceback.format_exc())
+        raise Exception("Error executing nodes")
     return nodes
 
-
-@task(task_run_name="execute-nodes-taskrun-{nodename}")
+@task(task_run_name="execute-nodes-taskrun-{nodename}", log_prints=True)
 def execute_node_task(nodename, node_type, node, input, test):
+    print(f"{nodename} task started, type: {node_type}")
+    for k in input.keys():
+        # print(f"Input key: {k}, type: {type(input[k])}, value: {serialize_result_to_json(input[k].data) if isinstance(input[k], Result) else None}")
+        print(f"Input key: {k}, type: {type(input[k])}")
+
     # Get task run context
     task_run_context = TaskRunContext.get().task_run.dict()
 
@@ -153,6 +157,7 @@ def execute_node_task(nodename, node_type, node, input, test):
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
+    print(f"Result: {result.serialize_result()}")
     return result
 
 
