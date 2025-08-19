@@ -229,7 +229,7 @@ export class QueryFilterCriteriaManager {
         event.attributes.forEach(attr => {
           // Normalize attributeType from either attributeType or type field
           const attributeType = attr.attributeType
-
+          const configType = 'configType' in attr ? attr.configType : 'conceptSet'
           if (attributeType === 'nested' && attr.nestedCriteria) {
             // Keep nested criteria in the attributes format, just process the events
             const processedAttr: QueryFilterAttribute = {
@@ -242,7 +242,12 @@ export class QueryFilterCriteriaManager {
             }
             remainingAttributes.push(processedAttr)
             processedAttributes.push(attr)
-          } else if (hasAttributeId(attr) && attributeType && attributeType !== 'nested') {
+          } else if (
+            hasAttributeId(attr) &&
+            attributeType &&
+            attributeType !== 'nested' &&
+            (configType === 'conceptSet' || configType === 'concept')
+          ) {
             if (!mainEvent.selectedAttributes) {
               mainEvent.selectedAttributes = []
             }

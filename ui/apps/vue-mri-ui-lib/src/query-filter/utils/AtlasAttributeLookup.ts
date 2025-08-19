@@ -17,6 +17,7 @@ export const attributeMap = {
     first: 'First',
     age: 'Age',
     dateAdjustment: 'DateAdjustment',
+    stopReason: 'StopReason',
   },
   Death: {
     startDate: 'OccurrenceStartDate',
@@ -208,6 +209,7 @@ export const atlasToCriteriaAttrMap = {
   VisitTypeExclude: 'exclude',
   VisitLength: 'length',
 }
+
 
 
 

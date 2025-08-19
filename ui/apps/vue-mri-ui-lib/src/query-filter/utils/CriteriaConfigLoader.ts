@@ -451,7 +451,18 @@ export class CriteriaConfigLoader {
   getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
     if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
       const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
-      return attribute || null
+      if (attribute) return attribute
+    }
+    // Fallback: search in domain-based attributes (like getCriteriaAttributeOptions)
+    const attributeCategory = Object.values(this.config.attributes).find(category =>
+      category.domains.includes(criteriaTypeId)
+    )
+    if (attributeCategory && attributeCategory.attributes) {
+      const attribute = attributeCategory.attributes.find(attr => attr.id === attributeId)
+      if (attribute) {
+        // Cast to CriteriaAttributeConfig for compatibility
+        return attribute as CriteriaAttributeConfig
+      }
     }
     return null
   }

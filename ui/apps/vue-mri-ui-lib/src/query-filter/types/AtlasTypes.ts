@@ -193,6 +193,13 @@ export interface CriteriaListItem {
   Measurement?: Measurement
   Death?: Death
   ObservationPeriod?: ObservationPeriod
+  ConditionEra?: AtlasEvent
+  DemographicCriteria?: AtlasEvent
+  DoseEra?: AtlasEvent
+  LocationRegion?: AtlasEvent
+  PayerPlanPeriod?: AtlasEvent
+  Specimen?: AtlasEvent
+  VisitDetail?: AtlasEvent
 }
 
 export interface DateRange {
