@@ -81,7 +81,8 @@ export async function getAllCohorts(req: IMRIRequest, res: Response) {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
         const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         const offset = req.query.offset;
@@ -116,7 +117,8 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
         const datasetId = req.query.datasetId;
         let cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         let result = await cohortEndpoint.queryCohorts(
@@ -152,7 +154,8 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const token = req.headers.authorization;
         const { bookmarkId } = JSON.parse(req.body.syntax);
         const analyticsConnection = await getCohortAnalyticsConnection(req);
-        const { schemaName, databaseCode, vocabSchemaName } = req.selectedstudyDbMetadata;
+        const { schemaName, databaseCode, vocabSchemaName } =
+            req.selectedstudyDbMetadata;
         const language = getUser(req).lang;
         const requestQuery: string[] | undefined = req.body?.query?.split(",");
         // Remap mriquery for use in createEndpointFromRequest
@@ -254,7 +257,8 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const cohort = await getCohortFromMriQuery(req, bookmark.bookmark_name);
         const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         if (bookmarkCohortDefinitionId) {
@@ -364,7 +368,8 @@ export async function getCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         const result = await cohortEndpoint.getCohortDefinition(
@@ -384,7 +389,8 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
 
         let cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         const cohortDefiniton = <CohortDefinitionTableType>{
@@ -424,7 +430,8 @@ export async function updateCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         // Get existing cohort definition via cohort definition id
@@ -468,7 +475,8 @@ export async function deleteCohort(req: IMRIRequest, res: Response) {
 
         let cohortEndpoint = new CohortEndpoint(
             analyticsConnection,
-            analyticsConnection.schemaName
+            analyticsConnection.schemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect
         );
 
         // Delete cohort definition from database
