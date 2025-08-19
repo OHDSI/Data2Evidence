@@ -25,13 +25,15 @@ def strategus_plugin(json_graph, options):
         return
 
     # Grab root flow id
-    root_flow_run_context = FlowRunContext.get().flow_run.dict()
-    root_flow_run_id = str(root_flow_run_context.get("id"))
+    # root_flow_run_context = FlowRunContext.get().flow_run.dict()
+    # root_flow_run_id = str(root_flow_run_context.get("id"))
 
     _options = options
     graph = json_graph
+    graph["options"] = _options
     sorted_nodes = get_node_list(graph)  # array of nodes that is sorted
-    get_run_logger().debug(f"Total number of nodes: {len(sorted_nodes)}")
+    # get_run_logger().debug(f"Total number of nodes: {len(sorted_nodes)}")
+    print(f"Total number of nodes: {len(sorted_nodes)}")
     nodes_out = {}
     testmode = _options["test_mode"]
     trace_config = _options["trace_config"]
@@ -44,9 +46,11 @@ def strategus_plugin(json_graph, options):
             partial(generate_nodes_flow_hook, **dict(graph=graph, sorted_nodes=sorted_nodes))]
     )
 
+    # generated_nodes { edges: {e1: {source: "", target: ""} }, nodes: { nodename: { id: "", type: "", ... } } }
     generated_nodes = generate_nodes_flow_wo(graph, sorted_nodes)  # flow
 
-    get_run_logger().debug(f"Graph with nodes: {generated_nodes}")
+    # get_run_logger().debug(f"Graph with nodes: {generated_nodes}")
+    print(f"Graph with nodes: {generated_nodes}")
 
     # Execute nodes
     execute_nodes_flow_wo = execute_nodes_flow.with_options(
@@ -57,7 +61,8 @@ def strategus_plugin(json_graph, options):
     )
 
     n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
-    execute_strategus_node(generated_nodes, n)
+    print(n.keys())
+    execute_strategus_node(generated_nodes, n, options)
 
     if _options["trace_config"]["trace_mode"]:
         for k in n.keys():
@@ -70,10 +75,10 @@ def strategus_plugin(json_graph, options):
     # )
 
 @task(name="execute-strategus-task")
-def execute_strategus_node(generated_nodes, results):
+def execute_strategus_node(generated_nodes, results, options):
     task_run_context = TaskRunContext.get().task_run.dict()
-    strategus_node = get_strategus_node()
-    strategus_node.task(generated_nodes, results, task_run_context)
+    strategus_node = get_strategus_node(options)
+    strategus_result = strategus_node.task(generated_nodes, results, task_run_context)
 
 @flow(name="execute-nodes",
       flow_run_name="execute-nodes-flowrun",
@@ -82,6 +87,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
     nodes = {}
     try:
         for nodename in sorted_nodes:
+            options = graph["options"]
             node = graph["nodes"][nodename]
             _input = get_incoming_edges(graph, nodes, nodename)
             if node["type"] not in [
@@ -108,9 +114,11 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                 "self_controlled_case_series_node",
                 "patient_level_prediction_node",
                 "exposure_node",
-                "strategus_node"
+                "treatment_patterns_node",
+                # "strategus_node"
             ]:
-                get_run_logger().error(f"gen.py: execute_nodes: {node['type']} Node Type not known")
+                # get_run_logger().error(f"gen.py: execute_nodes: {node['type']} Node Type not known")
+                print(f"gen.py: execute_nodes: {node['type']} Node Type not known")
             else: 
                 node_task_execution_wo = execute_node_task.with_options(
                     on_completion=[

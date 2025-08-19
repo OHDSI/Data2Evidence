@@ -1,12 +1,12 @@
 import os
 import logging
 import json
+import uuid
 import pandas as pd
 
 from typing import Any
 from pandas.api.types import is_list_like, is_dict_like
 
-from flows.hades.strategus_plugin.types import CohortNodeType
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
 import traceback as tb
@@ -20,6 +20,7 @@ from prefect import task, flow
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
+from .types import CohortNodeType
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, serialize_to_json
 
@@ -33,6 +34,7 @@ class Node:
     def __init__(self, node):
         self.id = node["id"]
         self.type = node["type"]
+        self.flowOptions = node["flowOptions"]
 
 
 class Flow(Node):
@@ -100,8 +102,10 @@ class Result:
       flow_run_name="generate-nodes-flowrun",
       log_prints=True)
 def generate_nodes_flow(graph, sorted_nodes):
+    options = graph["options"]
     for nodename in sorted_nodes:
         node = graph["nodes"][nodename]
+        node["flowOptions"] = options
         nodetype = node["type"]
 
         node_task_generation_wo = generate_node_task.with_options(
@@ -170,6 +174,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = ExposuresOutcome(node)
         case "strategus_node":
             nodeobj = StrategusNode(node)
+        case "treatment_patterns_node":
+            nodeobj = TreatmentPatterns(node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
@@ -329,7 +335,7 @@ class CohortDefinitionSharedResource(Node):
     def __init__(self, node):
         super().__init__(node)
         self.cohortIds = node.get("cohorts", [])
-        self.type = node.get("type", CohortNodeType.EVENT)
+        self.type = node.get("cohortType", CohortNodeType.EVENT)
 
     def task(self, task_run_context):
         webapi = WebAPI()
@@ -338,20 +344,23 @@ class CohortDefinitionSharedResource(Node):
             try:
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
                 rCirce = ro.packages.importr('CirceR')
-                rDplyr = ro.packages.importr('dplyr')
-                rCohortDefinitionSet <- rCohortGenerator.createEmptyCohortDefinitionSet()
+                rbind = ro.r['rbind']
+                rCohortDefinitionSet = rCohortGenerator.createEmptyCohortDefinitionSet()
+                datasetId = self.flowOptions.get("datasetId", "")
                 for c in self.cohortIds:
-                    cohort_definition = webapi.get_cohort_definition(c)
+                    cohort_definition = webapi.get_cohort_definition(c, datasetId)
                     cohortDefStr = json.dumps(cohort_definition["expression"])
                     rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
-                    rOptions = rCirce.createGenerateOptions(convert_py_to_R(False))
+                    rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
                     rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
-                    rCohortDefinitionSet = rDplyr.bind(rCohortDefinitionSet, rDplyr.tibble(
+                    new_row = ro.r['data.frame'](
                         cohortId = convert_py_to_R(c),
                         cohortName = convert_py_to_R(cohort_definition["name"]),
                         sql = rCohortSql,
-                        json = rcohortExpr,
-                    ))
+                        json = convert_py_to_R(cohortDefStr)
+                    )
+                    rCohortDefinitionSet = rbind(rCohortDefinitionSet, new_row)
+
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
                 rCreateCohortSharedResourceSpecifications = rcgm['createCohortSharedResourceSpecifications']
@@ -936,8 +945,8 @@ class TreatmentPatterns(Node):
     def __init__(self, node):
         super().__init__(node)
         self.cohortIds = []
-        self.name = node["name"]
-        self.description = node["description"]
+        # self.name = node["name"]
+        # self.description = node["description"]
         self.ageWindow = int(node.get("ageWindow", 5))  # default 5
         self.splitTime = int(node.get("splitTime", None))  # default 0
         self.censorType = node.get("censorType", "minCellCount")  # default "minCellCount"
@@ -963,7 +972,7 @@ class TreatmentPatterns(Node):
                 rCreateTreatmentPatternsModuleSpec = rTreatmentPatternsModule['createModuleSpecifications']
                 cohorts_df = pd.DataFrame.from_records([{
                     'cohortId': cohortDefinitionNode.cohortIds[0],
-                    'cohortName': cohortDefinitionNode.name,
+                    'cohortName': "xyz", # TODO: change the cohort name
                     "type": cohortDefinitionNode.type
                 } for cohortDefinitionNode in cohortDefinitionNodes])
 
@@ -1048,11 +1057,12 @@ class StrategusNode(Node):
         self.moduleSpecTypes = [CohortGeneratorSpecNode, CohortDiagnosticsModuleSpecNode, CohortIncidenceModuleSpec, CharacterizationModuleSpecNode, CohortMethodModuleSpecNode, TreatmentPatterns]
 
     def find_cohort_definition_nodes(self, results: List[Result]):
-        return [r.data for r in results if isinstance(r.node, CohortDefinitionSharedResource)]
+        return [results[nodename].data for nodename in results if isinstance(results[nodename].node, CohortDefinitionSharedResource)]
 
     def task(self, nodes, results, task_run_context):
         with ro.default_converter.context():
             try:
+                print('Executing Strategus')
                 rStrategus = ro.packages.importr('Strategus')
                 rSpec = rStrategus.createEmptyAnalysisSpecificiations()
 
@@ -1062,27 +1072,31 @@ class StrategusNode(Node):
                     rSpec = rStrategus.addSharedResources(rSpec, rSharedResource)
 
                 for moduleSpecType in self.moduleSpecTypes:
-                    moduleSpecResults = get_results_by_class_type(results, moduleSpecType)
-                    for moduleSpec in moduleSpecResults:
-                        rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpec)
-                    # rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpecResults[0])
+                    try:
+                        moduleSpecResults = get_results_by_class_type(results, moduleSpecType)
+                        for moduleSpec in moduleSpecResults:
+                            rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpec)
+                    except Exception as e:
+                        continue # exception can be ignored
                 print(rSpec.r_repr())
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                db_credentials = DBDao(use_cache_db=self.use_cache_db,
-                                       database_code=self.database).tenant_configs
+                dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
+                dbdao = DBDao(use_cache_db=False,
+                  database_code=dbSettings['database_code'])
+                db_credentials = dbdao.tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
                 rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                     dbms='postgresql', 
-                    connectionString=f'jdbc:{db_credentials.dialect}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}',
+                    connectionString=construct_jdbc_url(db_credentials),
                     user=db_credentials.adminUser,
                     password=db_credentials.adminPassword.get_secret_value(),
                     pathToDriver = databaseConnectorJarFolder
                 )
                 rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                    workDatabaseSchema = "cdmdefault",
-                    cdmDatabaseSchema = "cdmdefault",
+                    workDatabaseSchema = dbSettings['schema_name'],
+                    cdmDatabaseSchema = dbSettings['schema_name'],
                     workFolder = '/tmp/work_folder',
                     resultsFolder = '/tmp/results_folder'
                 )
@@ -1090,10 +1104,11 @@ class StrategusNode(Node):
                 rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
                 return Result(False, rSpec, self, task_run_context)
             except Exception as e:
+                print('Error: ', tb.format_exc())
                 return Result(True, tb.format_exc(), self, task_run_context)
 
-def get_strategus_node():
-    return StrategusNode(None)
+def get_strategus_node(options):
+    return StrategusNode({"id": str(uuid.uuid4()), "type": "strategus_node", "flowOptions": options})
 
 @flow(name="execute-r-strategus",
       log_prints=True)

@@ -9,8 +9,9 @@ class WebAPI(BaseAPI):
         self.url = f"{self.get_service_route("d2e-webapi")}"
         self.headers = self.get_options()
 
-    def get_cohort_definition(self, cohortDefinitionId: int) -> dict:
-        url = f"{self.url}/cohortdefinition/{cohortDefinitionId}"
+    def get_cohort_definition(self, cohortDefinitionId: int, datasetId: str) -> dict:
+        url = f"{self.url}cohortdefinition/{cohortDefinitionId}"
+        self.headers["datasetId"] = datasetId
         result = requests.get(
             url,
             headers=self.headers,
@@ -20,4 +21,5 @@ class WebAPI(BaseAPI):
             raise Exception(
                 f"WebAPI Failed to get get_cohort_definition, {result.content}")
         else:
-            return json.loads(result.content)['data']
+            c = json.loads(result.content)
+            return c
