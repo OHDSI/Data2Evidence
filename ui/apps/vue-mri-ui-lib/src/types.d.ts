@@ -272,13 +272,13 @@ type CohortDefinition = {
   description?: string
 }
 
-type AtlasCohortDefinition = FormattedAtlasCohortDefinition
+type IAtlasCohortDefinition = FormattedAtlasCohortDefinition
 
 type BookmarkDisplay = {
   displayName: string
   bookmark?: null | Bookmark
   cohortDefinition?: null | CohortDefinition
-  atlasCohortDefinition?: null | AtlasCohortDefinition
+  atlasCohortDefinition?: null | IAtlasCohortDefinition
 }
 
 type BookmarkType = 'A' | 'D' | 'M' | 'A+M' | 'D+M'

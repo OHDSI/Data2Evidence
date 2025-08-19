@@ -1,3 +1,4 @@
+import { Box, Button } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -6,19 +7,19 @@ import React, {
   useMemo,
 } from "react";
 import { useSelector } from "react-redux";
-import { Box, Button } from "@portal/components";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
 import { dispatch, RootState } from "../../../store";
+import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
+import { selectFlowNodes } from "../selectors/select-flow-nodes";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
-import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
-import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
-import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
+import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
+import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { FlowListSelect } from "./Flow/FlowList/FlowListSelect";
 import { FlowPanel } from "./Flow/FlowPanel/FlowPanel";
 import { FlowRevisionsButton } from "./Flow/FlowRevisions/FlowRevisionsButton";
-import { EmptyFlow } from "./Flow/EmptyFlow/EmptyFlow";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
-import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
+import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
+import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
+import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import "./FlowLayout.scss";
 
 interface FlowLayoutProps {
@@ -32,6 +33,7 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
     skip: !dataflowId,
   });
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
+  const nodes = useSelector(selectFlowNodes);
 
   const containerStyles: CSSProperties = useMemo(
     () =>
@@ -57,8 +59,9 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
   }, [dataflow, revisionId]);
 
   const handleAddNode = useCallback(() => {
+    dispatch(replaceNodes(nodes.map((node) => ({ ...node, selected: false }))));
     dispatch(setAddNodeTypeDialog({ visible: true }));
-  }, []);
+  }, [nodes]);
 
   if (!dataflows || isLoading) return null;
 

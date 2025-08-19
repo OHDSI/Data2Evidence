@@ -13,7 +13,7 @@
       <span v-if="!noCaret" class="bs-dropdown__caret"></span>
     </button>
 
-    <div v-if="isOpen" class="bs-dropdown__menu" role="menu" :style="menuStyles">
+    <div v-if="isOpen" class="bs-dropdown__menu" role="menu" :style="menuStyles" @click="onMenuClick">
       <slot></slot>
     </div>
   </div>
@@ -130,10 +130,21 @@ const open = async () => {
   checkFlipNeeded()
 }
 
+
 const close = () => {
   isOpen.value = false
   shouldFlipUp.value = false
   emit('hide')
+}
+
+const onMenuClick = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (
+    target.closest('.bs-dropdown-item') ||
+    target.closest('.bs-dropdown-item-button')
+  ) {
+    close()
+  }
 }
 
 const onKeydown = (event: KeyboardEvent) => {

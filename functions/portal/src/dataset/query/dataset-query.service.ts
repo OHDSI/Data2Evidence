@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, SCOPE } from '@danet/core'
+import { HttpException, Injectable, SCOPE } from '@danet/core'
 import { Brackets } from 'npm:typeorm'
 import { createLogger } from '../../logger.ts'
 import { TenantService } from '../../tenant/tenant.service.ts'
@@ -51,9 +51,9 @@ export class DatasetQueryService {
       .getOne()
 
     if (!dataset) {
-      throw new BadRequestException(`Dataset with id ${id} not found`)
+      throw new HttpException(404, `Dataset with id ${id} not found`)
     } else if (!dataset.datasetDetail) {
-      throw new BadRequestException(`Dataset detail with dataset id ${id} not found`)
+      throw new HttpException(404, `Dataset detail with dataset id ${id} not found`)
     }
 
     const tenant = this.tenantService.getTenant()
@@ -68,7 +68,7 @@ export class DatasetQueryService {
     const hasFilterParams = Object.keys(filterParams).length > 0
     if (!isResearcher && hasFilterParams) {
       this.logger.error(`Non-researcher dataset query with filter params provided: ${JSON.stringify(filterParams)}`)
-      throw new BadRequestException('Invalid request')
+      throw new HttpException(400, 'Invalid request')
     }
 
     const query = this.datasetRepo

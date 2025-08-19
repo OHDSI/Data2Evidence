@@ -112,12 +112,27 @@ export default class PGDBRouter {
     schemaName: string,
     extensionName: string
   ) => {
-    await client.query(
-      `ALTER EXTENSION ${extensionName} SET SCHEMA ${schemaName};`
+
+
+
+    // check if the extension exists
+    const result = await client.query(
+      `SELECT extname FROM pg_extension WHERE extname = '${extensionName}'`
     );
-    this.logger.info(
+    if (result.rows.length === 0) {
+      // Install the extension if it does not exist
+      await client.query(`CREATE EXTENSION ${extensionName} SCHEMA ${schemaName};`);
+      this.logger.info(
+        `Extension ${extensionName} created with schema ${schemaName} successfully.`
+      );
+    } else {
+      await client.query(
+        `ALTER EXTENSION ${extensionName} SET SCHEMA ${schemaName};`
+      );
+      this.logger.info(
       `Extension ${extensionName} schema altered to ${schemaName} successfully.`
     );
+    }
   };
 
   openConnection = async (config: any) => {

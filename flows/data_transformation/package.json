@@ -3,7 +3,7 @@
   "version": "0.0.99",
   "description": "",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e/flow-data-transformation:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-data-transformation:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
     "type": "git",
@@ -650,7 +650,71 @@
               }
           },
           "type": "white_rabbit"
+        },
+        {
+          "name": "ner_extract_plugin",
+          "entrypoint": "flows.ner_extract_plugin.flow.ner_extract_plugin",
+          "parameter_openapi_schema": {
+              "title": "Parameters",
+              "type": "object",
+              "properties": {
+                  "options": {
+                      "$ref": "#/definitions/NerExtractOptions",
+                      "position": 0,
+                      "title": "options"
+                  }
+              },
+              "required": [
+                  "options"
+              ],
+              "definitions": {
+                  "NerExtractOptions": {
+                      "properties": {
+                          "database_code": {
+                              "title": "Database Code",
+                              "type": "string"
+                          },
+                          "schema_name": {
+                              "title": "Schema Name",
+                              "type": "string"
+                          },
+                          "note_table": {
+                              "anyOf": [
+                                  {
+                                      "type": "string"
+                                  },
+                                  {
+                                      "type": "null"
+                                  }
+                              ],
+                              "default": "note",
+                              "title": "Note Table"
+                          },
+                          "note_nlp_table": {
+                              "anyOf": [
+                                  {
+                                      "type": "string"
+                                  },
+                                  {
+                                      "type": "null"
+                                  }
+                              ],
+                              "default": "note_nlp",
+                              "title": "Note Nlp Table"
+                          }
+                      },
+                      "required": [
+                          "database_code",
+                          "schema_name"
+                      ],
+                      "title": "NerExtractOptions",
+                      "type": "object"
+                  }
+              }
+          },
+          "type": "NLP"
         }
+        
       ]
     }
   }

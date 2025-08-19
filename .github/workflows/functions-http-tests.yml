@@ -8,10 +8,6 @@ on:
       - develop
   workflow_dispatch:
 
-# Run only one job per branch
-concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-http-tests # Run the latest push
-  cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
 
 jobs:
   check_file_changes:
@@ -45,19 +41,24 @@ jobs:
   run-http-tests:
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on:
-      ["${{ vars.ENVIRONMENT_NAME_HTTP_TESTS }}", self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      HANASERVER: ${{ secrets.HN_SG_FQDN }} # az-hn-db/SG_FQDN
-      HDIPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
-      HDIPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
-      HDIUSER: ${{ vars.HN_SG_ADMIN_USERNAME }} # az-hn-db/Admin user
-      TESTPORT: ${{ vars.HN_SG_PORT }} # az-hn-db/DB Port
-      TESTSYSTEMPW: ${{ secrets.HN_SG_ADMIN_PASSWORD }} # az-hn-db/Admin password
+      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HANASERVER_INT: hana
+      HDIPORT: 39041 # az-hn-db/DB Port
+      HDIPW: TestPW1234 # az-hn-db/Admin password
+      HDIUSER: SYSTEM # az-hn-db/Admin user
+      TESTPORT: 39041 # az-hn-db/DB Port
+      TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
+      PROJECT_NAME: alp
+      CADDY__CONFIG: ./deploy/caddy-config
+      ENV_TYPE: local
+      DOTENV_FILE: .env.local
+      D2E_RESOURCE_LIMIT: 1.0
 
     steps:
       - uses: actions/checkout@v4
@@ -79,41 +80,36 @@ jobs:
         with:
           node-version: "18.20.4"
 
-      - name: create .env.local for docker-compose in system services
-        env:
-          DOTENV_FILE: .env.local
-          DOTENV_LOCAL_YML: ${{ secrets.DOTENV_LOCAL_YML }}
+      - name: npm install
+        if: success() || failure()
         run: |
-          echo "${DOTENV_LOCAL_YML}" | yq -o sh > $DOTENV_FILE
+          npm install 
 
-          source scripts/lib.sh
-          gen-logto-values
-          gen-tls-internal
+      - name: Initialise d2e
+        if: success() || failure()
+        id: init
+        run: |
+          ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
-          echo D2E_MEMORY_LIMIT=5G >> $DOTENV_FILE
-          sed -i "s/CDMDEFAULT/${TESTSCHEMA}/g" $DOTENV_FILE
-          grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
-
-          # HTTP tests use HANA db, hence the following envs must be false
-          # due to logic in analytics service getDBConnections
-          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-          echo "USE_DUCKDB=false" >> $DOTENV_FILE
-          echo "USE_CACHEDB=false" >> $DOTENV_FILE
-          echo "NODE_ENV=production" >> $DOTENV_FILE
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
           sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
           sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
+          grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
+          echo "USE_DUCKDB=false" >> $DOTENV_FILE
+          echo "USE_CACHEDB=false" >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
 
       - name: Build system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 build
+          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -127,13 +123,18 @@ jobs:
 
       - name: Start system services
         run: |
-          PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -v develop -e -n .env.local -f -j -m -d ./functions -p 41100 start
+          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
       - name: Check status of docker containers
         run: |
           docker ps -a
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb
 
       - name: Login to logto and get Bearer token and sub
         run: |
@@ -265,16 +266,20 @@ jobs:
           echo "USER_MGMT_ID:"
           echo $USER_MGMT_ID
 
+
       - name: Seed db credentials
         run: |
           echo "Seed db credentials"
-
+          export ENCSALT=salt
+          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
+          echo $ENCRYPTED_CREDS
+          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
           curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/trex/db/' \
               --header 'Referer: https://localhost:41100/sign-in' \
               --header 'accept: application/json, text/plain, */*' \
               --header 'Content-Type: application/json' \
               --header "authorization: Bearer $BEARER_TOKEN" \
-              --data "{\"host\":\"${HANASERVER}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"ALPDEV\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"TENANT_ADMIN_USER\",\"password\":\"CK7RHxmDUBl8uWOuIg6w+kkXQAXmUzdsHu5d51Hg150YfEWgKtwxJF2WphkuEWiILtnORNGAzQ58yyDRX2mxYSALsrZghtqcylGQpHMt1B6HFivUcEj0rRIktokdP7N6lUnWrY68AGwfDcGV6lr5Hbxm6uvUQjoY5XP34R0+0Ofxl2DsISXjsFKqkRWdxJh5WihTujTNRkceOUueijKJIaiagi5lRt2WWGpxfOzhdciNsfafNqmkqeNczt4QIwXrmdkd5MoFLSjPe6tNgAPa5uWje1Y1JGxOFCKarUDf+jW6IGxAgsHZxcriehFbOJlyITcPbvkGlbgUvw3WPJxGWZdIyYDTNCaHKnrPVcH87Sujzj5EFdNPQw0+joTjdekErl/hpucHigb7gzDa7Ok9UNmbdSmF6NA/sqHKLLsOhZ4a6n4ev73z0ChUpyw/b+uqjNjwTY4jv8jrLriW9DoyFPPxr01NIjovLlfdY+nMCCX6GG2t80q9bqdAxOH0p/8uaHVEC66z1sIJcNf85kUl3VN0lOzkYjz7xPNHvnEPPF9WrtDuUnlwzvQmboBOwC3gr9CmCfHwFObjVnBMma00xPnu06dC5RlDJO9ONIJxpxdEwo3euDqtsMSN9Q7x5QHxj7+O7MXRpJ4NvQtEn24u9j01BgJIB5L9QBoB0ivsYuY=\",\"salt\":\"ZmXxd2D1gntIEEpI/7Ud2A==\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"TENANT_READ_USER\",\"password\":\"ZjajeZeJM6pqriIVULv7G9fsDY9UTmxquKeuToTynkkKXwDUsWZ+dRuUrToVa072FcUpdAtLJ0ii9nbCaHBBS6CsRMOzo1TNQxW0Bj8RzqO881jwekL8HpWDRANODP0QRJjojI2BVW87U6dTRmFRLNV+jmWVtSj/H+Dp6yzTZzGBHRnaHm04CaVguolMkPftXjSEx37PAQSE9L956mJgtawpqrkQO8Kc+u86kw9880X3V/2IOfd+vcOi2cjqAkCWp9g2kBEGWHBZN1TKAVrDriZIV6mh1c22xF4QDHkztvLjRweDxhpz7RFErKe7bMfKisEJMydw2sCLz75IMR+JptPl6c3N90ROZgnf1rzKLK3EtgZK911Jg5TvPP2RrqBqU4Bn3KMgIKOyMWbCYbEtBvPydk77NZktDQp/a5GpHldYHCjZC1FmECGnaYQO/HtIklZczMKpE/hBRbiAGprATwn5m9dFdXfg5sJIRQSSIuqc/j6/gFR5zu5CuBZiBLFcLmHT5MmEC6jhMRtl9wJoXoN/SD3JELz+3XpMPosVG3CnlqQXWM58bMEqnX8//Fcvadw1yjzGI2u8OHyqm0kec4E/B6MB4xwdou0aiFcPtir1wYPrfsp+ffkpO6rItDC0hgUA8pXH30twTe9+L0j8txkBy4i1p9nuJea9FtgQC+A=\",\"salt\":\"SI3nEVdc5cyOvQ0j7IvQVw==\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
+              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
       # Restart is required for alp-trex container after seeding database credentials into the db table
       - name: Restart alp-trex service
@@ -344,10 +349,10 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
-      - name: print logs for fhir-server
+      - name: print logs for hana
         if: ${{ always() || cancelled() || failure() }}
         run: |
-          docker logs alp-minerva-fhir-server-1 -t
+          docker logs hana -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}

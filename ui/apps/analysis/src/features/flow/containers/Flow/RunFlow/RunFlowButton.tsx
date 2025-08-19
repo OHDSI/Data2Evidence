@@ -1,10 +1,16 @@
-import React, { FC, useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import classNames from "classnames";
-import { Box, IconButton, Tooltip } from "@portal/components";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import ReplayIcon from "@mui/icons-material/Replay";
-import { RootState, dispatch } from "~/store";
+import { Box, IconButton, Tooltip } from "@portal/components";
+import classNames from "classnames";
+import React, { FC, useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { useFlowRunState, usePollingEffect } from "~/features/flow/hooks";
+import {
+  selectEdges,
+  setFlowRunState,
+  setSaveFlowDialog,
+} from "~/features/flow/reducers";
+import { selectFlowNodes } from "~/features/flow/selectors";
 import {
   useCancelFlowRunMutation,
   useGetLatestDataflowByIdQuery,
@@ -12,14 +18,9 @@ import {
   useRunDataflowMutation,
   useRunTestDataflowMutation,
 } from "~/features/flow/slices";
-import { selectFlowNodes } from "~/features/flow/selectors";
-import {
-  selectEdges,
-  setFlowRunState,
-  setSaveFlowDialog,
-} from "~/features/flow/reducers";
 import { FlowRunState } from "~/features/flow/types";
-import { useFlowRunState, usePollingEffect } from "~/features/flow/hooks";
+import { pluginMetadata } from "~/FlowApp";
+import { RootState, dispatch } from "~/store";
 
 export const RunFlowButton: FC = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
@@ -50,12 +51,25 @@ export const RunFlowButton: FC = () => {
   const isFlowRunError =
     !isRunning &&
     !isFetchingFlowRunState &&
-    ["FAILED", "CRASHED"].includes(flowRunState?.type);
+    ["FAILED", "CRASHED"].includes(
+      flowRunState?.type ||
+        flowRunState?.state_type ||
+        flowRunState?.state?.type
+    );
 
   const isWaitingForResult = flowRunState?.id && !isStoppedState;
   const classes = classNames("run-flow-button", {
     "run-flow-button--running": isWaitingForResult,
   });
+
+  // Helper function to get the error message from the flow run state
+  const getErrorMessage = () => {
+    return (
+      flowRunState?.message ||
+      flowRunState?.state?.message ||
+      "Unknown error occurred"
+    );
+  };
 
   const fetchFlowRunState = useCallback(async () => {
     if (!flowRunId) return;
@@ -75,7 +89,12 @@ export const RunFlowButton: FC = () => {
       const body = { dataflow: { nodes, edges } };
       await runTestDataflow(body);
     } else {
-      await runDataflow(dataflowId);
+      const datasetId = pluginMetadata?.studyId;
+      if (!datasetId) {
+        console.error("No datasetId available from plugin metadata");
+        return;
+      }
+      await runDataflow({ id: dataflowId, datasetId });
     }
   }, [dataflowId, isTestMode, nodes, edges]);
 
@@ -113,7 +132,7 @@ export const RunFlowButton: FC = () => {
           isWaitingForResult
             ? "Running"
             : isFlowRunError
-            ? flowRunState.message
+            ? getErrorMessage()
             : "Run flow"
         }
       >

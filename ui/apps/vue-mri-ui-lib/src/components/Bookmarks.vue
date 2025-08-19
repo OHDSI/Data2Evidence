@@ -89,7 +89,11 @@
         <div class="bookmark-content__header-title">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
-          <Button v-if="useAtlasLite" :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
+          <Button
+            v-if="useAtlasLite || usePaAtlas"
+            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :onClick="openAtlasLink"
+          >
           </Button>
 
           <!-- <Button v-if="usePaAtlas" :text="getText('MRI_PA_CREATE_PA_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
@@ -267,7 +271,7 @@ export default {
     useAtlasLite() {
       return this.enableAtlasCohortDefinition && !this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
     },
-    usePaAtlas() {      
+    usePaAtlas() {
       return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
     },
     bookmarksDisplay() {
@@ -290,12 +294,12 @@ export default {
     ...mapActions([
       'fireBookmarkQuery',
       'loadbookmarkToState',
-      'resetChartProperties',
       'fireRenameMaterializedCohortQuery',
       'fireDeleteMaterializedCohortQuery',
       'fireDeleteAtlasCohortDefinitionQuery',
       'fetchDataQualityFlowRun',
       'generateDataQualityFlowRun',
+      'resetChart',
     ]),
     ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
@@ -396,6 +400,7 @@ export default {
         params: request,
         bookmarkId: bookmarkDisplay.bookmark.id,
       }).then(() => {
+        this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
         this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.closeRenameBookmark()
       })
@@ -509,11 +514,7 @@ export default {
       return uniqueName
     },
     reset() {
-      this[types.CONFIG_SET_HAS_ASSIGNED](false)
-      this.$nextTick(() => {
-        this.resetChartProperties()
-        this[types.CONFIG_SET_HAS_ASSIGNED](true)
-      })
+      this.resetChart()
     },
     isMScohort(bookmarkDisplay) {
       // MS cohort only contains a cohort definition
@@ -589,7 +590,31 @@ export default {
       }
     },
     openAtlasLink() {
-      getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
+      if (this.useAtlasLite) {
+        // Existing behavior: open atlas-lite
+        getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
+      } else if (this.usePaAtlas) {
+        // New behavior: create empty Atlas bookmark for pa-atlas
+        this.openNewAtlasBookmark()
+      }
+    },
+    openNewAtlasBookmark() {
+      // Create a new Atlas bookmark object
+      const atlasBookmark = {
+        bookmarkname: 'New Atlas Cohort',
+        bmkId: null, // No ID yet as it's new
+        isAtlas: true,
+        isNew: true,
+      }
+
+      // Set as active bookmark
+      this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+
+      // Pass null Atlas data to initialize empty QueryFilter
+      this.$emit('loadAtlasCohortDefinition', null)
+
+      // Switch to Patient Analytics view
+      this.$emit('unloadBookmarkEv', false, true)
     },
     openImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = true

@@ -6,16 +6,18 @@ import { GroupService } from '../group/group.service.ts'
 @Injectable()
 export class PermissionsMiddleware implements DanetMiddleware {
   private readonly permissions = {
-    [ServiceName.DATAFLOW]: '777',
-    [ServiceName.DATAFLOW_REVISION]: '777',
-    [ServiceName.DATAFLOW_RUN]: '777',
+    // [ServiceName.DATAFLOW]: '777',
+    // [ServiceName.DATAFLOW_REVISION]: '777',
+    // [ServiceName.DATAFLOW_RUN]: '777',
     [ServiceName.ANALYSIS_FLOW]: '777',
-    [ServiceName.ANALYSIS_FLOW_REVISION]: '777',
-    [ServiceName.ANALYSIS_FLOW_RUN]: '777',
+    // [ServiceName.ANALYSIS_FLOW_REVISION]: '777',
+    // [ServiceName.ANALYSIS_FLOW_RUN]: '777',
     [ServiceName.NOTEBOOKS]: '777',
-    [ServiceName.PA_CONFIG]: '777',
-    [ServiceName.CDW_CONFIG]: '777',
-    [ServiceName.BOOKMARKS]: '777'
+    // [ServiceName.PA_CONFIG]: '777',
+    // [ServiceName.CDW_CONFIG]: '777',
+    [ServiceName.BOOKMARKS]: '777',
+    [ServiceName.CONCEPT_SETS]: '777',
+    [ServiceName.ATLAS_COHORT_DEFINITIONS]: '777'
   }
 
   constructor(private readonly groupsService: GroupService) { }

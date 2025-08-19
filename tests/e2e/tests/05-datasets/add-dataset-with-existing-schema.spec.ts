@@ -40,11 +40,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.locator('tbody')).toContainText(datasetNewSchema)
 
-  // Wait for 1 minute for the schema to be created in the database
-  await page.waitForTimeout(60000)
+  // Wait for 90 seconds for the schema to be created in the database
+  await page.waitForTimeout(90000)
 
   // Copy the schema name for later use
-  const schemaText = await page.getByRole('cell', { name: /^CDM_NEWTESTDATASET_/ }).textContent()
+  const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).textContent()
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset

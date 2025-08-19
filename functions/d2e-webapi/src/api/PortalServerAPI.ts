@@ -170,19 +170,13 @@ export class PortalServerAPI {
       }/${encodeURIComponent(atlasCohortDefinitionId)}`;
       const result = await axios.get(url, { params, ...options });
 
-      if (result.data.length === 0) {
+      if (!result.data) {
         throw new Error(
           `No atlas cohort definition user artifact found for id: ${atlasCohortDefinitionId}`
         );
       }
 
-      if (result.data.length !== 1) {
-        throw new Error(
-          `Multiple atlas cohort definition user artifact found for id: ${atlasCohortDefinitionId}`
-        );
-      }
-
-      return result.data[0];
+      return result.data;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting atlas cohort definition`);

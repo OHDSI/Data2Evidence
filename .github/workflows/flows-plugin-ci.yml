@@ -82,7 +82,6 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./base/
-          - PKGPATH: ./nlp/
           - PKGPATH: ./cohort_survival/
           - PKGPATH: ./i2b2/
           - PKGPATH: ./search_embedding/
