@@ -6,6 +6,7 @@
 import configData from '../config/atlas-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
 import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
+import { atlasToCriteriaAttrMap } from './AtlasAttributeLookup'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -530,6 +531,9 @@ export class ConfigLoader {
           // Would toggle boolean flag
           console.log(`Toggling boolean: ${attribute.id}`)
           break
+        case 'userDefinedPeriod':
+          console.log(`Adding user defined period: ${attribute.id}`)
+          break
         default:
           console.log(`Unknown attribute type: ${attribute.type}`)
       }
@@ -544,7 +548,16 @@ export class ConfigLoader {
   getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
     if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
       const attribute = this.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
-      return attribute || null
+      if (attribute) return attribute
+    }
+    // Fallback: search in domain-based attributes (like getCriteriaAttributeOptions)
+    const attributeCategory = Object.values(this.attributes).find(category => category.domains.includes(criteriaTypeId))
+    if (attributeCategory && attributeCategory.attributes) {
+      const attribute = attributeCategory.attributes.find(attr => attr.id === attributeId)
+      if (attribute) {
+        // Cast to CriteriaAttributeConfig for compatibility
+        return attribute as CriteriaAttributeConfig
+      }
     }
     return null
   }
@@ -574,6 +587,7 @@ export class ConfigLoader {
     }
 
     Object.assign(mapping, commonMappings)
+    Object.assign(mapping, atlasToCriteriaAttrMap)
 
     return mapping
   }

@@ -78,6 +78,7 @@ export type QueryFilterAttribute =
           operator?: string
           value?: string
           conceptItems?: StoredConceptItem[]
+          description?: string // Optional description for the attribute
         }
     ) & {
       name?: string
