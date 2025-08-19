@@ -8,8 +8,11 @@ export default {
 
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
+const props = defineProps<{
+  value?: { StartWith: string; StartOffset: number; EndWith: string; EndOffset: number }
+}>()
 const emit = defineEmits<{
   (e: 'update', value: { StartWith: string; StartOffset: number; EndWith: string; EndOffset: number }): void
 }>()
@@ -23,6 +26,24 @@ const startEndDateOptions = [
   { label: 'start date', value: 'START_DATE' },
   { label: 'end date', value: 'END_DATE' },
 ]
+
+onMounted(() => {
+  if (props.value) {
+    startWithModel.value = props.value.StartWith || 'START_DATE'
+    endWithModel.value = props.value.EndWith || 'END_DATE'
+    startOffsetModel.value = props.value.StartOffset || 0
+    endOffsetModel.value = props.value.EndOffset || 0
+  }
+})
+
+watch(props.value, (newValue) => {
+  if (newValue) {
+    startWithModel.value = newValue.StartWith || 'START_DATE'
+    endWithModel.value = newValue.EndWith || 'END_DATE'
+    startOffsetModel.value = newValue.StartOffset || 0
+    endOffsetModel.value = newValue.EndOffset || 0
+  }
+}, { immediate: true })
 
 watch(
   [startWithModel, endWithModel, startOffsetModel, endOffsetModel],

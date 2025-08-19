@@ -273,8 +273,19 @@ export class QueryFilterCriteriaManager {
           }
         })
       }
-
       mainEvent.attributes = remainingAttributes
+
+      // Populate selectedAttributes with attributeId for each processed attribute
+      if (remainingAttributes.length > 0) {
+        if (!mainEvent.selectedAttributes) {
+          mainEvent.selectedAttributes = []
+        }
+        remainingAttributes.forEach(attr => {
+          if ('attributeId' in attr && attr.attributeId && !mainEvent.selectedAttributes.includes(attr.attributeId)) {
+            mainEvent.selectedAttributes.push(attr.attributeId)
+          }
+        })
+      }
     })
 
     return transformedEvents

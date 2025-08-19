@@ -8,8 +8,12 @@ export default {
 
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { stringOptions } from '../../utils/AtlasUtils'
+
+const props = defineProps<{
+  value?: { Op: string; Text: string }
+}>()
 
 const emit = defineEmits<{
   (e: 'update', value: { Op: string; Text: string }): void
@@ -17,6 +21,24 @@ const emit = defineEmits<{
 
 const stringOptionsModel = ref<string>('startsWith')
 const textModel = ref<string>('')
+
+onMounted(() => {
+  if (props.value) {
+    stringOptionsModel.value = props.value.Op || 'startsWith'
+    textModel.value = props.value.Text || ''
+  }
+})
+
+watch(
+  props.value,
+  (newValue) => {
+    if (newValue) {
+      stringOptionsModel.value = newValue.Op || 'startsWith'
+      textModel.value = newValue.Text || ''
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   [stringOptionsModel, textModel],

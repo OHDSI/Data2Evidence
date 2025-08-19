@@ -8,7 +8,12 @@ export default {
 
 <script setup lang="ts">
 import AppDate from '@/lib/ui/app-date.vue'
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
+
+const props = defineProps<{
+  value?: { StartDate: string; EndDate: string }
+}>()
 
 const emit = defineEmits<{
   (e: 'update', value: { StartDate: string; EndDate: string }): void
@@ -16,6 +21,24 @@ const emit = defineEmits<{
 
 const startDateModel = ref<string | Date>('')
 const endDateModel = ref<string | Date>('')
+
+onMounted(() => {
+  if (props.value) {
+    startDateModel.value = parseDate(props.value.StartDate) || ''
+    endDateModel.value = parseDate(props.value.EndDate) || ''
+  }
+})
+
+watch(
+  props.value,
+  newValue => {
+    if (newValue) {
+      startDateModel.value = parseDate(newValue.StartDate) || ''
+      endDateModel.value = parseDate(newValue.EndDate) || ''
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   [startDateModel, endDateModel],
@@ -28,16 +51,6 @@ watch(
   },
   { immediate: true }
 )
-
-function formatDateToYMD(date: string | Date): string {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
-  if (isNaN(d.getTime())) return ''
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 const updateStartDateModel = (payload: { date: string | Date; isEmpty: boolean }) => {
   startDateModel.value = formatDateToYMD(payload.date)

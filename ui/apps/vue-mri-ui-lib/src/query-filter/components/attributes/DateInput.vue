@@ -10,8 +10,12 @@ export default {
 import AppDate from '@/lib/ui/app-date.vue'
 import SelectMaterial from '../SelectMaterial.vue'
 import { dateRangeOptions } from '../../utils/AtlasUtils'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
 
+const props = defineProps<{
+  value?: { Op: string; Value: string; Extent?: string }
+}>()
 const emit = defineEmits<{
   (e: 'update', value: { Op: string; Value: string; Extent?: string }): void
 }>()
@@ -23,6 +27,26 @@ const dateExtentModel = ref<string | Date>('')
 const isDualDateRange = computed(() => {
   return dateRangeModel.value === 'btw' || dateRangeModel.value === '!btw'
 })
+
+onMounted(() => {
+  console.log(props.value);
+  
+  if (props.value) {
+    dateRangeModel.value = props.value.Op || 'lt'
+    dateValueModel.value = parseDate(props.value.Value) || ''
+    dateExtentModel.value = parseDate(props.value.Extent) || ''
+  }
+})
+
+watch(props.value, (newValue) => {
+  console.log('watching value', newValue);
+  
+  if (newValue) {
+    dateRangeModel.value = newValue.Op || 'lt'
+    dateValueModel.value = parseDate(newValue.Value) || ''
+    dateExtentModel.value = parseDate(newValue.Extent) || ''
+  }
+}, { immediate: true })
 
 watch(
   [dateRangeModel, dateValueModel, dateExtentModel, isDualDateRange],
@@ -40,18 +64,7 @@ watch(
   },
   { immediate: true }
 )
-
-function formatDateToYMD(date: string | Date): string {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
-  if (isNaN(d.getTime())) return ''
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const updateDateValueModel = (payload: { date: string | Date; isEmpty: boolean }) => {
+const updateDateValueModel = (payload: { date: string | Date; isEmpty: boolean }) => {  
   dateValueModel.value = formatDateToYMD(payload.date)
 }
 

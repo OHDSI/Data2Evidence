@@ -28,6 +28,8 @@ const props = defineProps<{
   onRemoveAttribute?: () => void
 }>()
 
+console.log('value', props.attribute.value);
+
 const emit = defineEmits<{
   (e: 'update-attribute', attributeId: string, value: any): void
 }>()
@@ -54,7 +56,11 @@ const attributeType = computed(() => {
   <div class="attribute-container">
     <div class="attribute-title" :class="{ 'attribute-title__max-width': !isBooleanAttribute(attribute) }">{{ getDescription(props.attribute) }}</div>
     <div v-if="!isBooleanAttribute(props.attribute)" class="attribute-input">
-        <component :is="componentMap[attributeType]" @update="getUpdate" />
+        <component
+          :is="componentMap[attributeType]"
+          @update="getUpdate"
+          :value="props.attribute && 'value' in props.attribute && props.attribute.value"
+        />
     </div>
     <div class="attribute-btn-container">
       <button

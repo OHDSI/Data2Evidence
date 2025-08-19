@@ -8,9 +8,12 @@ export default {
 
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { numericRangeOptions } from '../../utils/AtlasUtils'
 
+const props = defineProps<{
+  value?: { Op: string; Value: number; Extent?: number }
+}>()
 const emit = defineEmits<{
   (e: 'update', value: { Op: string; Value: number; Extent?: number }): void
 }>()
@@ -22,6 +25,22 @@ const numExtentModel = ref<number>(0)
 const isDualNumRange = computed(() => {
   return numRangeModel.value === 'btw' || numRangeModel.value === '!btw'
 })
+
+onMounted(() => {
+  if (props.value) {
+    numRangeModel.value = props.value.Op || 'lt'
+    numValueModel.value = props.value.Value || 0
+    numExtentModel.value = props.value.Extent || 0
+  }
+})
+
+watch(props.value, (newValue) => {
+  if (newValue) {
+    numRangeModel.value = newValue.Op || 'lt'
+    numValueModel.value = newValue.Value || 0
+    numExtentModel.value = newValue.Extent || 0
+  }
+}, { immediate: true })
 
 watch(
   [numRangeModel, numValueModel, numExtentModel, isDualNumRange],

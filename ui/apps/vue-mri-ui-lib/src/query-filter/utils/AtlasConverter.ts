@@ -392,7 +392,6 @@ export const convertAtlasToFilters = (
               event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, eventType, configLoader))
             } else {
               const attributeConfig = configLoader.getAttributeConfig(eventType, atlasKeyToAttributeIdMap[atlasKey])
-
               if (attributeConfig) {
                 event.attributes.push({
                   id: `attribute_${Math.random().toString(36).substring(2)}`,
