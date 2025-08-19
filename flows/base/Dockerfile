@@ -135,10 +135,10 @@ COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 RUN \
     # Create output for dc, duckdb extension dir, and cache data dir
     mkdir -p /output /app/duckdb_extensions /app/duckdb_data /app/cdw-config/duckdb_data \
-    && chown -R docker:docker /output /app/duckdb_extensions /app/duckdb_data \
+    && chown -R docker:docker /output /app/duckdb_extensions \
     && chown -R docker:alp /app/duckdb_data /app/cdw-config/duckdb_data \
     && chmod -R 755 /app/duckdb_extensions \
-    # Make the download script executable and install DuckDB extensions
+    # Install DuckDB extensions
     && chmod +x /app/download_duckdb_extensions.sh \
     && cd /app/duckdb_extensions \
     && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
