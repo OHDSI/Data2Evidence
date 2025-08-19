@@ -331,7 +331,7 @@ test('test', async ({ page }) => {
   await page
     .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
     .filter({ hasText: 'TestConfig101' })
-    .getByText('TestConfig101')
+    .locator('[class*="sapFfhCDMonfigLargeText"]')
     .click()
   await page.getByText('Active', { exact: true }).click()
   await page.getByRole('link', { name: 'Defined Interactions (1)' }).dblclick()
@@ -358,14 +358,14 @@ test('test', async ({ page }) => {
     .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
     .getByTestId('button')
     .click()
-  await page.locator('[id*="dataModelConfigurationsCombo-arrow"]').click()
-  await page.waitForTimeout(1000)
-  await page.getByRole('option', { name: 'TestConfig101' }).click()
-  await page.waitForTimeout(1000)
-  await page.getByText('CDM-Test101-PA', { exact: true }).click()
   await page.reload()
+  await page.locator('[id*="dataModelConfigurationsCombo-arrow"]').click()
+  await page.getByRole('option', { name: 'TestConfig101' }).click()
+  await page.getByText('CDM-Test101-PA', { exact: true }).click()
+
   await page.locator('[id="__filter0-icon"]').click()
   await page.locator('[id*="dataModelVersionCombo-arrow"]').click()
+  await page.waitForTimeout(1000)
   await page.getByRole('option', { name: '- Active Version' }).click()
   await page.getByRole('button', { name: 'Keep Current Settings' }).click()
   await page.locator('[id="__filter2-icon"]').click()
@@ -414,13 +414,14 @@ test('test', async ({ page }) => {
     .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
     .getByTestId('button')
     .click()
-  await page.getByText('CDM-Test101-PA').click()
-  await page.locator('[id="__filter0-icon"]').click()
   await page.reload()
+  await page.locator('[id*="dataModelConfigurationsCombo-arrow"]').click()
+  await page.getByRole('option', { name: 'TestConfig101' }).click()
+  await page.getByText('CDM-Test101-PA', { exact: true }).click()
   await page.locator('[id="__filter0-icon"]').click()
   await page.locator('[id*="dataModelVersionCombo-arrow"]').click()
   await page.getByRole('option', { name: '- Active Version' }).click()
-  await page.getByRole('button', { name: 'Keep Current Settings' }).click()
+  // await page.getByRole('button', { name: 'Keep Current Settings' }).click();
   await page.getByRole('button', { name: 'Save' }).click()
 
   // CDM configure ducplication
@@ -450,10 +451,17 @@ test('test', async ({ page }) => {
   await page.waitForTimeout(1000)
   await page.locator('[class*="sapFfhCDMonfigLargeText"]').filter({ hasText: 'TestConfig102' }).click()
   await expect(page.getByText('Autosave')).toBeVisible()
-
-  await page.getByText('TestConfig101', { exact: true }).click()
+  await page
+    .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
+    .filter({ hasText: 'TestConfig101' })
+    .locator('[class*="sapFfhCDMonfigLargeText"]')
+    .click()
   const download2Promise = page.waitForEvent('download')
-  await page.locator('[id="__button9-__xmlview1--configOverview--configVersionListing-3"]').click()
+  await page
+    .locator('[id*="--configOverview--configVersionListing-3"]')
+    .filter({ hasText: 'Active' })
+    .getByText('Export')
+    .click()
   const download2 = await download2Promise
   await page.getByRole('button', { name: 'Import Configuration' }).click()
   await page.getByRole('textbox', { name: 'Configuration Content to' }).click()
