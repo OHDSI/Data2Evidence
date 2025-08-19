@@ -42,22 +42,32 @@ type CriteriaObject =
   | ObservationPeriod
   | Record<string, never>
 
+const CRITERIA_KEYS = [
+  'ConditionOccurrence',
+  'DrugExposure',
+  'DrugEra',
+  'ProcedureOccurrence',
+  'Observation',
+  'VisitOccurrence',
+  'DeviceExposure',
+  'Measurement',
+  'Death',
+  'ObservationPeriod',
+  'ConditionEra',
+  'DemographicCriteria',
+  'DoseEra',
+  'LocationRegion',
+  'PayerPlanPeriod',
+  'Specimen',
+  'VisitDetail',
+]
+
 const isCriteriaGroup = (item: CriteriaListItem | CriteriaGroup): item is CriteriaGroup => {
   return 'Criteria' in item
 }
 
 const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is CriteriaListItem => {
-  return (
-    'ConditionOccurrence' in item ||
-    'DrugExposure' in item ||
-    'ProcedureOccurrence' in item ||
-    'Observation' in item ||
-    'Measurement' in item ||
-    'VisitOccurrence' in item ||
-    'DeviceExposure' in item ||
-    'Death' in item ||
-    'ObservationPeriod' in item
-  )
+  return CRITERIA_KEYS.some(key => key in item)
 }
 
 export const hasCodesetId = (
@@ -249,31 +259,19 @@ export const convertAtlasToFilters = (
       }
     }
 
-    // TODO: these mappings could just be Pascal to camel case instead of being hardcoded
-    const getCriteriaType = (criteria: CriteriaListItem) => {
-      if (criteria.ConditionOccurrence) return 'conditionOccurrence'
-      if (criteria.DrugExposure) return 'drugExposure'
-      if (criteria.ProcedureOccurrence) return 'procedureOccurrence'
-      if (criteria.Observation) return 'observation'
-      if (criteria.Measurement) return 'measurement'
-      if (criteria.VisitOccurrence) return 'visitOccurrence'
-      if (criteria.DeviceExposure) return 'deviceExposure'
-      if (criteria.Death) return 'death'
-      if (criteria.ObservationPeriod) return 'observationPeriod'
-      return
+    const getCriteriaType = (criteria: CriteriaListItem): string | undefined => {
+      for (const key of CRITERIA_KEYS) {
+        if ((criteria as any)[key]) {
+          return key.charAt(0).toLowerCase() + key.slice(1)
+        }
+      }
+      return undefined
     }
 
-    // TODO: these mappings could come from the config instead of being hardcoded
     const getCriteriaObject = (criteria: CriteriaListItem): CriteriaObject => {
-      if (criteria.ConditionOccurrence) return criteria.ConditionOccurrence
-      if (criteria.DrugExposure) return criteria.DrugExposure
-      if (criteria.ProcedureOccurrence) return criteria.ProcedureOccurrence
-      if (criteria.Observation) return criteria.Observation
-      if (criteria.Measurement) return criteria.Measurement
-      if (criteria.VisitOccurrence) return criteria.VisitOccurrence
-      if (criteria.DeviceExposure) return criteria.DeviceExposure
-      if (criteria.Death) return criteria.Death
-      if (criteria.ObservationPeriod) return criteria.ObservationPeriod
+      for (const key of CRITERIA_KEYS) {
+        if ((criteria as any)[key]) return (criteria as any)[key]
+      }
       return {}
     }
 
@@ -384,12 +382,26 @@ export const convertAtlasToFilters = (
 
           Object.keys(criteriaObj).forEach(atlasKey => {
             const value = criteriaObj[atlasKey]
+            // Check if it is concept type attribute
             if (Array.isArray(value) && value.length > 0 && atlasKeyToAttributeIdMap[atlasKey]) {
               const attributeId = atlasKeyToAttributeIdMap[atlasKey]
+
               if (!event.attributes) {
                 event.attributes = []
               }
               event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, eventType, configLoader))
+            } else {
+              const attributeConfig = configLoader.getAttributeConfig(eventType, atlasKeyToAttributeIdMap[atlasKey])
+              if (attributeConfig) {
+                event.attributes.push({
+                  id: `attribute_${Math.random().toString(36).substring(2)}`,
+                  attributeId: atlasKeyToAttributeIdMap[atlasKey],
+                  attributeType: 'standard' as const,
+                  configType: attributeConfig.type,
+                  description: attributeConfig.description || '',
+                  value: value,
+                })
+              }
             }
           })
         }
