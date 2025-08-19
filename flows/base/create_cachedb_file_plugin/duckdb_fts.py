@@ -3,7 +3,7 @@ from typing import Union
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG, DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
+from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG #,DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
 
 
 def get_duckdb_fts_creation_sql(schema_name: str, table_name: str, document_identifier: Union[str | int], columns: list[str]):
@@ -23,7 +23,7 @@ def get_duckdb_fts_creation_sql(schema_name: str, table_name: str, document_iden
 
 
 @task(log_prints=True)
-def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_duckdb_fts_index: list[DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM]):
+def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_duckdb_fts_index: list[str]):
     '''
     Create duckdb full text search indexes based on columns specified in DUCKDB_FULLTEXT_SEARCH_CONFIG
     '''
@@ -62,8 +62,12 @@ def create_duckdb_fts_index(con, dbdao: any, schema_name: str, tables_to_create_
                 logger.info(
                     f"Colum successfully addded")
 
+            con.execute("INSTALL fts;")
+            con.execute("LOAD fts;")
             con.execute(fts_creation_sql)
+
             logger.info(
                 f"Fulltext search index created successfully")
-    logger.info(
-        f"""Duckdb fulltext search indexes successfully created.""")
+        else:
+            logger.info(
+            f"Table '{vocab_table_name}' not found in schema '{schema_name}'. Skipping fulltext search index creation.")

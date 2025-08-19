@@ -55,6 +55,12 @@ export async function checkIfSchemaExists(req, res, next) {
     const tenant: string = req.params.tenant;
     const schema: string = req.params.schemaName;
 
+    // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
+    // Always send true if dialect is bigquery
+    if (dialect === config.DB.BIGQUERY) {
+        return res.status(200).send(true);
+    }
+
     try {
         const dbDao = new DBDAO(dialect, tenant);
         const dbConnection = await dbDao.getDBConnectionByTenantPromise(

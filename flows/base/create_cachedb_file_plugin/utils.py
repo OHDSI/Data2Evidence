@@ -30,7 +30,8 @@ def remove_existing_file_if_exists(duckdb_database_name: str, create_for_cdw_con
 @task(log_prints=True)
 def check_supported_duckdb_dialects(dialect, logger):
     SUPPORTED_DUCKDB_DIALECTS = [
-        SupportedDatabaseDialects.POSTGRES.value
+        SupportedDatabaseDialects.POSTGRES.value,
+        SupportedDatabaseDialects.BIGQUERY.value,
     ]
     if dialect not in SUPPORTED_DUCKDB_DIALECTS:
         error_message = f"""Input dialect: {dialect} is not supported, supported dialects are: {SUPPORTED_DUCKDB_DIALECTS}"""

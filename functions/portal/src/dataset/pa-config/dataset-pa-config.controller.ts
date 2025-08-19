@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Middleware, Query } from "@danet/core";
+import { HttpException, Controller, Get, Middleware, Query } from "@danet/core";
 import { DatasetPaConfigService } from "./dataset-pa-config.service.ts";
 import { RequestContextMiddleware } from '../../common/request-context.middleware.ts';
 
@@ -14,7 +14,7 @@ export class DatasetPaConfigController {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      throw new BadRequestException("Invalid datasetId");
+      throw new HttpException(400, "Invalid datasetId");
     }
     const timestamp = (new Date()).valueOf();
     console.time(`time-portal-pa-getDatasetBackendPaConfig-${timestamp}`)
@@ -29,7 +29,7 @@ export class DatasetPaConfigController {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      throw new BadRequestException("Invalid datasetId");
+      throw new HttpException(400, "Invalid datasetId");
     }
     const timestamp = (new Date()).valueOf();
     console.time(`time-portal-pa-getMyDatasetPaConfig-${timestamp}`)

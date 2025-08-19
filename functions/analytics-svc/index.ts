@@ -32,6 +32,8 @@ function createDbCredentialsStr(databaseCredentials: Object[]) {
 function getType(dialect: string) {
     if (dialect === "postgres") {
         return "POSTGRES";
+    } else if (dialect === "bigquery") {
+        return "BIGQUERY";
     } else {
         return "HANA";
     }
@@ -41,12 +43,12 @@ function getDialect(dialect: string) {
     if (dialect === "postgres") {
         return "postgresql";
     } else {
-        return "hana";
+        return dialect;
     }
 }
 
 function getDbName(dialect: string, databaseName: string) {
-    if (dialect === "postgres") {
+    if (dialect === "postgres" || dialect === "bigquery") {
         return {
             database: databaseName,
             databaseName: databaseName,

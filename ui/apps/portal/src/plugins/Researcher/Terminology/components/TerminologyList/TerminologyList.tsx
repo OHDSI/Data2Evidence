@@ -16,7 +16,6 @@ interface TerminologyListProps {
   selectedConceptId: number | null;
   onSelectConceptId?: (conceptData: FhirValueSetExpansionContainsWithExt) => void;
   initialInput: string;
-  isConceptSet?: boolean;
   selectedConcepts: FhirValueSetExpansionContainsWithExt[];
   tab: TabName;
   toggleDescendantsAndMapped?: (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => void;
@@ -29,6 +28,7 @@ interface TerminologyListProps {
     id: string;
     value: string[];
   }[];
+  mode?: "CONCEPT_MAPPING" | "CONCEPT_SET" | "CONCEPT_SEARCH" | "CONCEPT_MULTI_SELECT";
 }
 
 const mapFilterOptions = (options: { [key: string]: number }): { text: string; value: string }[] => {
@@ -48,7 +48,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
   selectedConceptId,
   onSelectConceptId,
   initialInput,
-  isConceptSet = false,
   selectedConcepts,
   tab,
   toggleDescendantsAndMapped,
@@ -58,6 +57,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   datasetId,
   isDrawer,
   defaultFilters,
+  mode = "CONCEPT_SEARCH",
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -286,7 +286,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     getAllFilterOptions();
   }, [datasetId]);
 
-  const handleChangePage = useCallback((event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
+  const handleChangePage = useCallback((_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
     setPage(page);
   }, []);
 
@@ -424,81 +424,90 @@ const TerminologyList: FC<TerminologyListProps> = ({
       },
     ];
     if (tab === "SELECTED") {
-      const descendantsAndMapped: MRT_ColumnDef<FhirValueSetExpansionContainsWithExt>[] = [
-        {
-          accessorKey: "useDescendants",
-          header: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANTS),
-          Cell: ({ row }: { row: any }) => {
-            const terminology = row.original as FhirValueSetExpansionContainsWithExt;
-            return (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <Checkbox
-                  checked={!!terminology.useDescendants}
-                  onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "DESCENDANTS")}
-                  sx={{ padding: 0 }}
-                />
-              </div>
-            );
+      if (mode === "CONCEPT_MULTI_SELECT") {
+        // Simplified selected concepts - only show add/remove button and basic columns
+        return {
+          columns: [...addButton, ...basicColumns],
+          columnOrder: ["addButton", ...basicColumnOrder],
+        };
+      } else {
+        // Full concept set mode with descendants/mapped/exclude options
+        const descendantsAndMapped: MRT_ColumnDef<FhirValueSetExpansionContainsWithExt>[] = [
+          {
+            accessorKey: "useDescendants",
+            header: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANTS),
+            Cell: ({ row }: { row: any }) => {
+              const terminology = row.original as FhirValueSetExpansionContainsWithExt;
+              return (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <Checkbox
+                    checked={!!terminology.useDescendants}
+                    onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "DESCENDANTS")}
+                    sx={{ padding: 0 }}
+                  />
+                </div>
+              );
+            },
+            grow: false,
+            size: 120,
+            muiTableBodyCellProps: {
+              sx: { justifyContent: "center", border: "none" },
+            },
           },
-          grow: false,
-          size: 120,
-          muiTableBodyCellProps: {
-            sx: { justifyContent: "center", border: "none" },
+          {
+            accessorKey: "useMapped",
+            header: getText(i18nKeys.TERMINOLOGY_LIST__MAPPED),
+            Cell: ({ row }: { row: any }) => {
+              const terminology = row.original as FhirValueSetExpansionContainsWithExt;
+              return (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <Checkbox
+                    checked={terminology?.useMapped}
+                    onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "MAPPED")}
+                    sx={{ padding: 0 }}
+                  />
+                </div>
+              );
+            },
+            grow: false,
+            size: 80,
+            muiTableBodyCellProps: {
+              sx: { justifyContent: "center", border: "none" },
+            },
           },
-        },
-        {
-          accessorKey: "useMapped",
-          header: getText(i18nKeys.TERMINOLOGY_LIST__MAPPED),
-          Cell: ({ row }: { row: any }) => {
-            const terminology = row.original as FhirValueSetExpansionContainsWithExt;
-            return (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <Checkbox
-                  checked={terminology?.useMapped}
-                  onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "MAPPED")}
-                  sx={{ padding: 0 }}
-                />
-              </div>
-            );
+          {
+            accessorKey: "isExcluded",
+            header: getText(i18nKeys.TERMINOLOGY_LIST__EXCLUDE),
+            Cell: ({ row }: { row: any }) => {
+              const terminology = row.original as FhirValueSetExpansionContainsWithExt;
+              return (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <Checkbox
+                    checked={terminology?.isExcluded}
+                    onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "EXCLUDE")}
+                    sx={{ padding: 0 }}
+                  />
+                </div>
+              );
+            },
+            grow: false,
+            size: 80,
+            muiTableBodyCellProps: {
+              sx: { justifyContent: "center", border: "none" },
+            },
           },
-          grow: false,
-          size: 80,
-          muiTableBodyCellProps: {
-            sx: { justifyContent: "center", border: "none" },
-          },
-        },
-        {
-          accessorKey: "isExcluded",
-          header: getText(i18nKeys.TERMINOLOGY_LIST__EXCLUDE),
-          Cell: ({ row }: { row: any }) => {
-            const terminology = row.original as FhirValueSetExpansionContainsWithExt;
-            return (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <Checkbox
-                  checked={terminology?.isExcluded}
-                  onClick={() => toggleDescendantsAndMapped?.(terminology.conceptId, "EXCLUDE")}
-                  sx={{ padding: 0 }}
-                />
-              </div>
-            );
-          },
-          grow: false,
-          size: 80,
-          muiTableBodyCellProps: {
-            sx: { justifyContent: "center", border: "none" },
-          },
-        },
-      ];
-      return {
-        columns: [...addButton, ...descendantsAndMapped, ...basicColumns],
-        columnOrder: ["addButton", "useDescendants", "useMapped", "isExcluded", ...basicColumnOrder],
-      };
+        ];
+        return {
+          columns: [...addButton, ...descendantsAndMapped, ...basicColumns],
+          columnOrder: ["addButton", "useDescendants", "useMapped", "isExcluded", ...basicColumnOrder],
+        };
+      }
     }
     if (showAddIcon && onSelectConceptId) {
       return { columns: [...addButton, ...basicColumns], columnOrder: ["addButton", ...basicColumnOrder] };
     }
     return { columns: basicColumns, columnOrder: basicColumnOrder };
-  }, [filterOptions, tab, JSON.stringify(listData), selectedConcepts, getText]);
+  }, [filterOptions, tab, JSON.stringify(listData), selectedConcepts, getText, mode]);
   const table = useMaterialReactTable({
     layoutMode: "grid",
     columns,

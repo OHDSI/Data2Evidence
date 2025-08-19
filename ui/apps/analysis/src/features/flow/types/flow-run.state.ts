@@ -24,6 +24,13 @@ export interface FlowRunState {
   id: string;
   type: string;
   message: string;
+  // Add the actual Prefect API response structure
+  state_type: string;
+  state: {
+    type: string;
+    name: string;
+    message: string;
+  };
 }
 
 export interface FlowRunStateDto extends FlowRunState {}

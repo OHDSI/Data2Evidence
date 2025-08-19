@@ -1,5 +1,5 @@
-import { JwtPayload, decode } from "jsonwebtoken";
 import { Request, Response, Router } from "express";
+import { JwtPayload, decode } from "jsonwebtoken";
 import { AnalysisService } from "../services/AnalysisService.ts";
 
 export class AnalysisController {
@@ -128,7 +128,7 @@ export class AnalysisController {
     this.router.get("/:id/latest", this.getGraph.bind(this));
     this.router.delete("/:id", this.deleteCanvas.bind(this));
     this.router.post(
-      "duplicate/:id/:revisionId",
+      "/duplicate/:id/:revisionId",
       this.duplicateCanvas.bind(this)
     );
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));

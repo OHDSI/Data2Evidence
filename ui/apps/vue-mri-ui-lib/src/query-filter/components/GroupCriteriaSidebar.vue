@@ -10,7 +10,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import GroupCriteriaMenu from './GroupCriteriaMenu.vue'
-import type { QueryFilterGroup } from '../models/QueryFilterModel'
+import type { QueryFilterGroup } from '../types/QueryFilterTypes'
 
 interface Props {
   group: QueryFilterGroup
@@ -40,7 +40,7 @@ const getCurrentGroupCriteria = () => {
 const getGroupCriteriaDisplay = () => {
   const criteriaType = props.group.criteriaType || 'ALL'
   const criteriaCount = props.group.criteriaCount
-  
+
   if (criteriaType === 'AT_LEAST' && criteriaCount) {
     return `At least ${criteriaCount}`
   } else if (criteriaType === 'AT_MOST' && criteriaCount) {
@@ -110,15 +110,15 @@ const getSidebarClass = computed(() => {
   }
 
   &--any {
-    background: #E75248;
+    background: #e75248;
   }
 
   &--at_least {
-    background: #2686EB;
+    background: #2686eb;
   }
 
   &--at_most {
-    background: #FA9087;
+    background: #fa9087;
   }
 
   &:hover:not(.readonly) {

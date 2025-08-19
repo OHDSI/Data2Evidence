@@ -1,10 +1,11 @@
-import { ConflictException, Injectable, NotFoundException, BadRequestException, SCOPE } from '@danet/core'
+import { Injectable, HttpException, SCOPE } from '@danet/core'
 import { RequestContextService } from '../common/request-context.service.ts'
 import { CreateArtifactDto, UpdateArtifactDto } from './dto/index.ts'
-import { UserArtifact } from './entity/user-artifact.entity.ts'
+import { UserArtifact as UserArtifactEntity } from './entity/user-artifact.entity.ts'
 import { ServiceName } from './enums/index.ts'
 import { UserArtifactRepository } from './repository/user-artifact.repository.ts'
 import { userArtifactValidator } from './validator/user-artifact.validator.ts';
+import { IUserArtifact } from '../../../_shared/user-artifacts/types.ts'
 
 export const ArtifactSequenceMapping = {
   [ServiceName.CONCEPT_SETS]: "concept_set_id_seq",
@@ -21,224 +22,154 @@ export class UserArtifactService {
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub
   }
-  private readonly sharedConditionMap = {
-    [ServiceName.NOTEBOOKS]: "isShared",
-    [ServiceName.CONCEPT_SETS]: "shared"
-  }
 
-  async getUserServiceArtifact(userId: string, serviceName: ServiceName): Promise<any> {
-    const artifact = await this.userArtifactRepository.findOne(userId, serviceName)
-    const result = artifact?.artifacts
-    if (!result) {
-      throw new NotFoundException(`Artifact for userId ${userId} not found in ${serviceName}`)
+  async getUserServiceArtifact(userId: string, serviceName: ServiceName): Promise<IUserArtifact[]> {
+    const artifacts = await this.userArtifactRepository.findUserServiceArtifactsForService(userId, serviceName)
+    if (artifacts.length === 0) {
+      throw new HttpException(400, `Artifact for userId ${userId} not found in ${serviceName}`)
     }
+    const result = artifacts.map((e) =>
+      this.convertUserArtifactEntityToUserArtifact(e)
+    );
     return result
   }
 
-  async getUserServiceArtifactById(userId: string, serviceName: ServiceName, id: string): Promise<any> {
-    const artifact = await this.userArtifactRepository.findOne(userId, serviceName)
-    const result = artifact?.artifacts?.find(art => art.id === this.parseUserArtifactId(id))
-    if (!result) {
-      throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`)
-    }
-    return result
-  }
-
-  async getServiceArtifactById(serviceName: ServiceName, id: string): Promise<UserArtifact[]> {
+  async getUserServiceArtifactById(userId: string, serviceName: ServiceName, id: string): Promise<IUserArtifact> {
     const parsedId = this.parseUserArtifactId(id);
-
-    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId);
-
-    for (const artifact of userArtifact.artifacts) {
-      if (artifact.id === parsedId) {
-        return [artifact];
-      }
+    const userArtifact = await this.userArtifactRepository.findUserServiceArtifactByServiceArtifactId(userId, serviceName, parsedId)
+    if (!userArtifact) {
+      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName} for user ${this.userId}`)
     }
-
-    throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`);
+    return this.convertUserArtifactEntityToUserArtifact(userArtifact)
   }
 
-  async createServiceArtifact<T>(serviceName: ServiceName, createArtifactDto: CreateArtifactDto<T>): Promise<UserArtifact | null> {
-    const serviceArtifact = await userArtifactValidator(serviceName, createArtifactDto.serviceArtifact);
-    let artifact = await this.userArtifactRepository.findOne(this.userId, serviceName)
+  async getServiceArtifactById(serviceName: ServiceName, id: string): Promise<IUserArtifact> {
+    const parsedId = this.parseUserArtifactId(id);
+    const artifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId);
 
-    if (artifact) {
-      const artifactArray = artifact.artifacts
-
-      if (artifactArray) {
-        if (this.isArtifactExists(artifactArray, serviceArtifact)) {
-          throw new ConflictException(`Artifact for ${serviceName} already exists`)
-        }
-        artifactArray.push(serviceArtifact)
-      } else {
-        artifact.artifacts = [serviceArtifact]
-      }
-    } else {
-      artifact = await this.userArtifactRepository.create(
-        this.addOwner(
-          {
-            userId: this.userId,
-            serviceName: serviceName,
-            artifacts: [serviceArtifact]
-          },
-          true
-        )
-      )
+    if (!artifact) {
+      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
     }
+    return this.convertUserArtifactEntityToUserArtifact(artifact)
+  }
+
+  async createServiceArtifact<T>(serviceName: ServiceName, createArtifactDto: CreateArtifactDto<T>): Promise<IUserArtifact | null> {
+    const serviceArtifact = await userArtifactValidator(serviceName, createArtifactDto.serviceArtifact);
+    const userArtifact = await this.userArtifactRepository.create({
+      id: serviceArtifact.id,
+      serviceName: serviceName,
+      userId: this.userId,
+      artifact: this.removeIdFromUserArtifact(serviceArtifact),
+    });
 
     try {
-      return this.userArtifactRepository.save(this.addOwner(artifact, true))
+      return this.userArtifactRepository.save(this.addOwner(userArtifact, true))
     } catch (error) {
       console.error('Error creating user artifact:', error)
-      throw new ConflictException('Failed to create user artifact')
+      throw new HttpException(500, 'Failed to create user artifact')
     }
   }
 
   async updateUserServiceArtifactEntity<T>(
     serviceName: ServiceName,
     updateArtifactDto: UpdateArtifactDto<T>
-  ): Promise<UserArtifact> {
+  ): Promise<IUserArtifact> {
     const { id } = updateArtifactDto
-    const artifact = await this.userArtifactRepository.findOne(this.userId, serviceName)
-
-    if (artifact?.artifacts) {
-      const index = artifact.artifacts.findIndex(item => item.id === this.parseUserArtifactId(id))
-      if (index === -1) {
-        throw new NotFoundException(`Artifact with id ${id} not found in ${serviceName}`)
-      }
-
-      const updatedServiceArtifact = await userArtifactValidator(serviceName, {
-        ...artifact.artifacts[index],
-        ...updateArtifactDto.serviceArtifact,
-      });
-      artifact.artifacts[index] = updatedServiceArtifact;
-
-      const updatedEntity = this.addOwner(artifact)
-      return this.userArtifactRepository.save(updatedEntity)
+    const userArtifact = await this.userArtifactRepository.findUserServiceArtifactByServiceArtifactId(this.userId, serviceName, id)
+    
+    if (!userArtifact) {
+      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName} for user ${this.userId}`)
     }
 
-    throw new NotFoundException(`Service ${serviceName} not found for user ${updateArtifactDto.userId}`)
+    const updatedServiceArtifact = await userArtifactValidator(serviceName, {
+      id,
+      ...userArtifact.artifact,
+      ...updateArtifactDto.serviceArtifact,
+    });
+
+    const updatedServiceArtifactColumn = this.removeIdFromUserArtifact(updatedServiceArtifact);
+    const updatedUserArtifact = await this.userArtifactRepository.create({
+      id,
+      serviceName,
+      userId: this.userId,
+      artifact: updatedServiceArtifactColumn,
+    });
+    return this.userArtifactRepository.update(updatedUserArtifact);
+
   }
 
-  async updateServiceArtifactEntity(serviceName: ServiceName, updatedEntity: Record<string, any>): Promise<UserArtifact> {
-    const userArtifacts = await this.userArtifactRepository.find(serviceName)
+  async updateServiceArtifactEntity(serviceName: ServiceName, updatedEntity: Record<string, any>): Promise<IUserArtifact> {
+    const { id } = updatedEntity
+    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, id)
 
-    if (!userArtifacts || userArtifacts.length === 0) {
-      throw new NotFoundException('No user artifacts found')
+    if (!userArtifact) {
+      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
     }
 
-    for (const userArtifact of userArtifacts) {
-      const artifacts = userArtifact.artifacts
+    const updatedServiceArtifact = await userArtifactValidator(serviceName, {
+      id,
+      ...userArtifact.artifact,
+      ...updatedEntity.serviceArtifact,
+    });
 
-      if (artifacts) {
-        const artifactIndex = artifacts.findIndex(artifact => artifact.id === updatedEntity.id)
-
-        if (artifactIndex !== -1) {
-          const updatedServiceArtifact = await userArtifactValidator(serviceName, {
-            ...artifacts[artifactIndex],
-            ...updatedEntity.serviceArtifact,
-          });
-          artifacts[artifactIndex] = updatedServiceArtifact;
-
-          console.log('Updated artifact:', JSON.stringify(artifacts[artifactIndex], null, 2));
-
-          userArtifact.artifacts = artifacts;
-
-          // TODO: Only return artifact that was updated, instead of all artifacts
-          const savedArtifact = await this.userArtifactRepository.save(userArtifact)
-
-          return savedArtifact
-        }
-      }
-    }
-
-    throw new NotFoundException('Service artifact not found');
+    const updatedServiceArtifactColumn = this.removeIdFromUserArtifact(updatedServiceArtifact);
+    const updatedUserArtifact = await this.userArtifactRepository.create({
+      id,
+      serviceName,
+      userId: this.userId,
+      artifact: updatedServiceArtifactColumn,
+    });
+    return this.userArtifactRepository.update(updatedUserArtifact);
   }
 
-  async getAllServiceArtifacts(serviceName: ServiceName): Promise<any[]> {
-    return await this.userArtifactRepository.getAllServiceArtifacts(serviceName)
+  async getAllServiceArtifacts(serviceName: ServiceName): Promise<IUserArtifact[]> {
+    const artifacts = await this.userArtifactRepository.getAllServiceArtifacts(serviceName)
+    return artifacts.map((e) =>
+      this.convertUserArtifactEntityToUserArtifact(e)
+    );
   }
 
-  async getAllUserServiceArtifacts(serviceName: ServiceName, userId: string): Promise<any[]> {
-    const userArtifacts = await this.userArtifactRepository.findOne(userId, serviceName)
-    const sharedArtifacts = await this.getAllSharedServiceArtifacts(serviceName, userId)
+  async getAllUserServiceArtifacts(serviceName: ServiceName, userId: string): Promise<IUserArtifact[]> {
+    const userArtifacts = await this.userArtifactRepository.findUserServiceArtifactsForService(userId, serviceName)
+    const sharedArtifacts = await this.userArtifactRepository.findSharedArtifacts(userId, serviceName)
 
-
-    const userArtifactsList = userArtifacts?.artifacts || []
-    return [...userArtifactsList, ...sharedArtifacts]
+    const userArtifactsList = [...userArtifacts, ...sharedArtifacts]
+    return userArtifactsList.map((e) =>
+      this.convertUserArtifactEntityToUserArtifact(e)
+    );
   }
 
   async deleteUserServiceArtifact(userId: string, serviceName: ServiceName, id: string): Promise<void> {
-    const artifact = await this.userArtifactRepository.findOne(userId, serviceName)
+    const userArtifact = await this.userArtifactRepository.findUserServiceArtifactByServiceArtifactId(userId, serviceName, id)
 
-    if (artifact?.artifacts) {
-      artifact.artifacts = artifact.artifacts.filter(
-        item => item.id !== this.parseUserArtifactId(id))
-      await this.userArtifactRepository.update(artifact)
-    } else {
-      throw new NotFoundException(`Artifact with id ${id} for user ${userId} not found in ${serviceName}`)
+    if (!userArtifact) {
+      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
     }
+
+    await this.userArtifactRepository.deleteServiceArtifact(id, serviceName)
   }
 
-  async deleteServiceArtifactEntity(serviceName: ServiceName, entityId: string): Promise<UserArtifact | null> {
-    const userArtifacts = await this.userArtifactRepository.find(serviceName);
+  async deleteServiceArtifactEntity(serviceName: ServiceName, entityId: string): Promise<IUserArtifact | null> {
+    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, entityId)
 
-    if (!userArtifacts || userArtifacts.length === 0) {
-      throw new NotFoundException('No user artifacts found');
+    if (!userArtifact) {
+      throw new HttpException(400, `Artifact with id ${entityId} not found in ${serviceName}`)
     }
 
-    for (const userArtifact of userArtifacts) {
-      const artifacts = userArtifact.artifacts;
-
-      if (artifacts) {
-        const artifactIndex = artifacts.findIndex(artifact => artifact.id === this.parseUserArtifactId(entityId));
-
-        if (artifactIndex !== -1) {
-          artifacts.splice(artifactIndex, 1);
-          userArtifact.artifacts = [...artifacts];
-          await this.userArtifactRepository.save(userArtifact)
-          return userArtifact
-        }
-      }
-    }
-
-    throw new NotFoundException('Service artifact not found');
+    await this.userArtifactRepository.deleteServiceArtifact(entityId, serviceName)
   }
 
-  async getServiceArtifactSequenceNextval(
+  getServiceArtifactSequenceNextval(
     serviceName: ServiceName
   ): Promise<number> {
 
     if (!Object.keys(ArtifactSequenceMapping).includes(serviceName)) {
-      throw new BadRequestException(
+      throw new HttpException(400,
         `Service name:${serviceName} does not have a sequence`
       );
     }
 
     return this.userArtifactRepository.getUserArtifactSequenceNextval(serviceName);
-  }
-
-  private async getAllSharedServiceArtifacts(serviceName: ServiceName, userId: string): Promise<any[]> {
-    const sharedArtifacts = await this.userArtifactRepository.findSharedArtifacts(userId, serviceName)
-
-    if (!sharedArtifacts.length) {
-      return []
-    }
-
-    const sharedConditionKey = this.sharedConditionMap[serviceName]
-    // If block is required to catch cases where serviceName is not in this.sharedConditionMap as it does not fully implement the ServiceName enum
-    if (sharedConditionKey === undefined) {
-      const errorMsg = `this.sharedConditionMap does not implement serviceName:${serviceName}`
-      console.error(errorMsg)
-      throw new Error(errorMsg)
-    }
-    return sharedArtifacts
-      .flatMap(artifact => artifact.artifacts || [])
-      .filter(artifact => artifact[sharedConditionKey] === true)
-  }
-
-  private isArtifactExists<T extends { id: string }>(artifactArray: T[], serviceArtifact: T) {
-    return artifactArray?.some(entity => entity.id === serviceArtifact.id) || false
   }
 
   private addOwner<T>(object: T, isNewEntity = false) {
@@ -255,9 +186,27 @@ export class UserArtifactService {
     }
   }
 
-  private parseUserArtifactId(id: string): number | string {
+  private parseUserArtifactId(id: string | number): number | string {
     // Try to parse id as number.
-    // This is required because concept_sets and atlas_cohort_definitions ids are stored as int, but other artifact ids are stored as UUID.
+    // This is required because concept_sets and atlas_cohort_definitions ids are stored as int, but other artifact ids are stored as UUID|string.
     return Number.isNaN(Number(id)) ? id : Number(id);
+  }
+
+  private convertUserArtifactEntityToUserArtifact(
+    userArtifactEntity: UserArtifactEntity
+  ): IUserArtifact {
+    // Combine user artifact entity column and id column together into one object
+    return {
+      ...userArtifactEntity.artifact,
+      id: this.parseUserArtifactId(userArtifactEntity.id),
+    };
+  }
+
+  private removeIdFromUserArtifact(
+    userArtifact: IUserArtifact
+  ): UserArtifactEntity {
+    // Remove id from user artifact
+    const { id: _id, ...userArtifactEntity } = userArtifact;
+    return userArtifactEntity;
   }
 }

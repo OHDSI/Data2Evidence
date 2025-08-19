@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, SCOPE } from '@danet/core'
+import { HttpException, Injectable, SCOPE } from '@danet/core'
 import { EntityManager } from 'npm:typeorm'
 import { TransactionRunner } from '../common/data-source/transaction-runner.ts'
 import { RequestContextService } from '../common/request-context.service.ts'
@@ -122,7 +122,7 @@ export class FeatureService {
       const result: { id: number }[] = []
       for (const feat of featureUpdateDto.features) {
         if (!this.validFeatures.includes(feat.feature)) {
-          throw new BadRequestException(`Invalid feature flag: ${feat.feature}`)
+          throw new HttpException(400, `Invalid feature flag: ${feat.feature}`)
         }
 
         const entity = await this.featureRepo.getFeature(feat.feature)
