@@ -50,9 +50,8 @@ const isAttributeSelected = (attributeId: string) => {
   // Find the current event by eventId
   const currentEvent = props.allEvents.find((event: QueryFilterEvent) => event.id === props.eventId)
   if (!currentEvent) return false
-
   // Check if the attribute is in the attributes array
-  return currentEvent.attributes?.some(attr => attr.id === attributeId) || false
+  return currentEvent.attributes?.some(attr => 'attributeId' in attr && attr.attributeId === attributeId) || false
 }
 
 // Get currently selected attributes for the button label
