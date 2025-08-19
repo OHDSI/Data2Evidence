@@ -197,7 +197,7 @@ export const atlasToCriteriaAttrMap = {
   ValueAsString: 'valueAsString',
   PeriodStartDate: 'startDate',
   PeriodEndDate: 'endDate',
-  UserDefinedPeriod: 'userDefiniedPeriod',
+  UserDefinedPeriod: 'userDefinedPeriod',
   PeriodLength: 'length',
   ProcedureTypeExclude: 'exclude',
   SpecimenTypeExclude: 'exclude',
@@ -209,7 +209,4 @@ export const atlasToCriteriaAttrMap = {
   VisitTypeExclude: 'exclude',
   VisitLength: 'length',
 }
-
-
-
 
