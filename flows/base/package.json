@@ -42,9 +42,21 @@
                     "title": "Databasecode",
                     "type": "string"
                   },
-                    "schemaName": {
+                  "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
+                  },
+                  "trex_connection": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": true,
+                    "title": "Trex Connection"
                   },
                   "tablesToCreateDuckdbFtsIndex": {
                     "default": [
@@ -91,6 +103,18 @@
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
+                  },
+                  "trex_connection": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": true,
+                    "title": "Trex Connection"
                   }
                 },
                 "required": [
@@ -316,8 +340,7 @@
                     "title": "Patientstobecopied"
                   }
                 },
-                "required": [
-                ],
+                "required": [],
                 "title": "DatamartCopyConfig",
                 "type": "object"
               },
@@ -575,7 +598,9 @@
           "parameter_openapi_schema": {
             "type": "object",
             "title": "Parameters",
-            "required": ["options"],
+            "required": [
+              "options"
+            ],
             "properties": {
               "options": {
                 "$ref": "#/definitions/PhenotypeOptionsType",
@@ -584,59 +609,61 @@
               }
             },
             "definitions": {
-                "PhenotypeOptionsType": {
-                    "type": "object",
-                    "title": "PhenotypeOptionsType",
-                    "required": ["cohorts_id"],
-                    "properties": {
-                        "cohorts_id": {
-                            "type": "string", 
-                            "title": "Cohorts Id",
-                            "description": "Comma-separated string of cohort IDs or 'default'"
-                        },
-                        "materialize": {
-                            "type": "boolean",
-                            "title": "Materialize",
-                            "default": false
-                        },
-                        "user_name": {
-                            "type": "string",
-                            "title": "User Name",
-                            "default": null,
-                            "description": "Required when materialize=false."
-                        },
-                        "dataset_id": {
-                            "type": "string",
-                            "title": "Dataset Id",
-                            "default": null,
-                            "description": "Required when materialize=false."
-                        },
-                        "database_code": {
-                            "type": "string",
-                            "title": "Database Code",
-                            "default": null,
-                            "description": "Required when materialize=true."
-                        },
-                        "cdmschema_name": {
-                            "type": "string",
-                            "title": "CDM Schema Name",
-                            "default": null,
-                            "description": "Required when materialize=true."
-                        },
-                        "vocabschema_name": {
-                            "type": "string",
-                            "title": "Vocabulary Schema Name",
-                            "default": null,
-                            "description": "Required when materialize=true."
-                        },
-                        "cohortschema_name": {
-                            "type": "string",
-                            "title": "Cohort Schema Name",
-                            "default": null,
-                            "description": "Required when materialize=true."
-                        }
-                    }
+              "PhenotypeOptionsType": {
+                "type": "object",
+                "title": "PhenotypeOptionsType",
+                "required": [
+                  "cohorts_id"
+                ],
+                "properties": {
+                  "cohorts_id": {
+                    "type": "string",
+                    "title": "Cohorts Id",
+                    "description": "Comma-separated string of cohort IDs or 'default'"
+                  },
+                  "materialize": {
+                    "type": "boolean",
+                    "title": "Materialize",
+                    "default": false
+                  },
+                  "user_name": {
+                    "type": "string",
+                    "title": "User Name",
+                    "default": null,
+                    "description": "Required when materialize=false."
+                  },
+                  "dataset_id": {
+                    "type": "string",
+                    "title": "Dataset Id",
+                    "default": null,
+                    "description": "Required when materialize=false."
+                  },
+                  "database_code": {
+                    "type": "string",
+                    "title": "Database Code",
+                    "default": null,
+                    "description": "Required when materialize=true."
+                  },
+                  "cdmschema_name": {
+                    "type": "string",
+                    "title": "CDM Schema Name",
+                    "default": null,
+                    "description": "Required when materialize=true."
+                  },
+                  "vocabschema_name": {
+                    "type": "string",
+                    "title": "Vocabulary Schema Name",
+                    "default": null,
+                    "description": "Required when materialize=true."
+                  },
+                  "cohortschema_name": {
+                    "type": "string",
+                    "title": "Cohort Schema Name",
+                    "default": null,
+                    "description": "Required when materialize=true."
+                  }
                 }
+              }
             }
           },
           "type": "phenotype"
