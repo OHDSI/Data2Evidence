@@ -79,7 +79,6 @@ export type QueryFilterAttribute =
           value?: string
           conceptItems?: StoredConceptItem[]
           description?: string // Optional description for the attribute
-          atlasKey?: string // Optional key for Atlas integration
         }
     ) & {
       name?: string

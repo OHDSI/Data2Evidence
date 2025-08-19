@@ -543,8 +543,6 @@ export class QueryFilterCriteriaManager {
 
                   // Handle concept-type attributes on the main event
                   if (event.attributes) {
-                    console.log('Processing concept attributes for event:', event.id)
-
                     const conceptAttributes = event.attributes.filter(
                       attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
                     )
