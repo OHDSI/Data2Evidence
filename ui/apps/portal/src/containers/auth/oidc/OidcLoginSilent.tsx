@@ -4,6 +4,7 @@ import { useOidcIdToken } from "@axa-fr/react-oidc";
 import { api } from "../../../axios/api";
 import { config } from "../../../config";
 import { useToken, useUser } from "../../../contexts";
+import { useDisclaimerHook } from "../../../hooks/useDisclaimer";
 import env from "../../../env";
 
 const subProp = env.REACT_APP_IDP_SUBJECT_PROP;
@@ -14,6 +15,7 @@ export const OidcLoginSilent: FC = () => {
   const { idToken, idTokenPayload } = useOidcIdToken();
   const { setIdToken, setIdTokenClaim } = useToken();
   const { setUserGroup, clearUser } = useUser();
+  useDisclaimerHook();
 
   const loggedIn = useCallback(
     async (idpUserId: string | undefined) => {
