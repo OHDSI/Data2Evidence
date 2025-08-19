@@ -437,6 +437,9 @@ export class CriteriaConfigLoader {
           // Would toggle boolean flag
           console.log(`Toggling boolean: ${attribute.id}`)
           break
+        case 'userDefinedPeriod':
+          console.log(`Adding user defined period: ${attribute.id}`)
+          break
         default:
           console.log(`Unknown attribute type: ${attribute.type}`)
       }
