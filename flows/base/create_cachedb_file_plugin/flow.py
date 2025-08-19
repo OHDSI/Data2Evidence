@@ -147,14 +147,14 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         pg_cursor = None
 
         try:
-            cursor = trex_conn.cursor()
+            pg_cursor = trex_conn.cursor()
 
             load_extensions(write_conn=pg_cursor, 
                             dialect=dbdao.dialect,
                             trex_sql=True)
 
             logger.info(f"Updating schema '{schema_to_copy}' from '{duckdb_database_name}' through Trex Sql Interface...")
-            create_schema_tables(write_conn=cursor,
+            create_schema_tables(write_conn=pg_cursor,
                                  read_conn=dbdao, 
                                  schema=schema_to_copy,
                                  create_cdw_config=True)
@@ -166,8 +166,8 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
             trex_conn.commit()
             logger.info(f"Cached schema '{schema_to_copy}' successfully updated from '{duckdb_database_name}'.")
         finally:
-            if cursor:
-                cursor.close()
+            if pg_cursor:
+                pg_cursor.close()
             trex_conn.close()
 
 
