@@ -67,17 +67,7 @@ const isCriteriaGroup = (item: CriteriaListItem | CriteriaGroup): item is Criter
 }
 
 const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is CriteriaListItem => {
-  return (
-    'ConditionOccurrence' in item ||
-    'DrugExposure' in item ||
-    'ProcedureOccurrence' in item ||
-    'Observation' in item ||
-    'Measurement' in item ||
-    'VisitOccurrence' in item ||
-    'DeviceExposure' in item ||
-    'Death' in item ||
-    'ObservationPeriod' in item
-  )
+  return CRITERIA_KEYS.some(key => key in item)
 }
 
 export const hasCodesetId = (
