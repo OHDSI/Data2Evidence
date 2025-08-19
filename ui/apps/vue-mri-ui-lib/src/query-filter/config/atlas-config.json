@@ -158,7 +158,7 @@
   "attributeMapping": {
     "conditionOccurrence": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Diagnosis",
         "description": "Limit to first diagnosis in history",
         "type": "boolean"
@@ -237,7 +237,7 @@
     ],
     "conditionEra": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Diagnosis",
         "description": "Limit to first diagnosis in history",
         "type": "boolean"
@@ -282,7 +282,7 @@
     ],
     "drugExposure": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
         "type": "boolean"
@@ -404,7 +404,7 @@
     ],
     "drugEra": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
         "type": "boolean"
@@ -449,7 +449,7 @@
     ],
     "doseEra": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
         "type": "boolean"
@@ -501,7 +501,7 @@
     ],
     "deviceExposure": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
         "type": "boolean"
@@ -585,7 +585,7 @@
     ],
     "measurement": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Measurement",
         "description": "Limit to first measurement in history",
         "type": "boolean"
@@ -675,7 +675,7 @@
     ],
     "observation": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Observation",
         "description": "Limit to first observation in history",
         "type": "boolean"
@@ -746,7 +746,7 @@
     ],
     "procedureOccurrence": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Procedure",
         "description": "Limit to first procedure in history",
         "type": "boolean"
@@ -824,7 +824,7 @@
     ],
     "specimen": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Occurrence",
         "description": "Limit to first occurrence in history",
         "type": "boolean"
@@ -870,7 +870,7 @@
     ],
     "visit": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Visit",
         "description": "Limit to first visit in history",
         "type": "boolean"
@@ -941,7 +941,7 @@
     ],
     "visitDetail": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Visit",
         "description": "Limit to first visit in history",
         "type": "boolean"
@@ -1018,7 +1018,7 @@
     ],
     "observationPeriod": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Period",
         "description": "Limit to first period in history",
         "type": "boolean"
@@ -1068,7 +1068,7 @@
     ],
     "payerPlanPeriod": [
       {
-        "id": "firstOccurrence",
+        "id": "first",
         "name": "First Period",
         "description": "Limit to first period in history",
         "type": "boolean"
