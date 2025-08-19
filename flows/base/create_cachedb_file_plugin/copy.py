@@ -100,8 +100,7 @@ def create_schema_tables(write_conn: any,
 
             row_count_query = f"SELECT COUNT(*) FROM {schema}.{table};"
             logger.debug(f"Row count query for '{table}': {row_count_query}")
-            execute_statement(write_conn, row_count_query)
-            rows_copied = write_conn.fetchall()[0][0]
+            rows_copied = write_conn.execute(row_count_query).fetchall()[0][0]
 
             logger.info(
                 f"Table '{table}' in schema '{schema}' created with {rows_copied} rows. Execution took {table_creation_time} seconds."
@@ -169,7 +168,7 @@ def create_or_replace_table_query(source_schema: str,
             # Todo: Change to use `bigquery_arrow_scan` when duckdb upgrade >= 1.3.2
             select_statement = f"SELECT * FROM bigquery_scan('{project_name}.{source_schema}.{source_table}')"
         case _:
-            raise ValueError(f"Unsupported dialect: {source_credentials.get('dialect')}")
+            raise ValueError(f"Unsupported dialect: {source_credentials.dialect}")
 
     return f'CREATE OR REPLACE TABLE "{source_schema}"."{source_table}" AS FROM ({select_statement}) {limit_statement};'
 
