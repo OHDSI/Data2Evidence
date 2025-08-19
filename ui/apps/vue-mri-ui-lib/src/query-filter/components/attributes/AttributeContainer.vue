@@ -28,8 +28,6 @@ const props = defineProps<{
   onRemoveAttribute?: () => void
 }>()
 
-console.log('value', props.attribute.value);
-
 const emit = defineEmits<{
   (e: 'update-attribute', attributeId: string, value: any): void
 }>()
@@ -105,6 +103,7 @@ const attributeType = computed(() => {
     border-right: 1px solid #000080;
     display: flex;
     align-items: center;
+    color: #000080;
   }
 
   .attribute-btn-container {

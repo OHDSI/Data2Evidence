@@ -29,8 +29,6 @@ const isDualDateRange = computed(() => {
 })
 
 onMounted(() => {
-  console.log(props.value);
-  
   if (props.value) {
     dateRangeModel.value = props.value.Op || 'lt'
     dateValueModel.value = parseDate(props.value.Value) || ''
@@ -38,15 +36,17 @@ onMounted(() => {
   }
 })
 
-watch(props.value, (newValue) => {
-  console.log('watching value', newValue);
-  
-  if (newValue) {
-    dateRangeModel.value = newValue.Op || 'lt'
-    dateValueModel.value = parseDate(newValue.Value) || ''
-    dateExtentModel.value = parseDate(newValue.Extent) || ''
-  }
-}, { immediate: true })
+watch(
+  props.value,
+  newValue => {
+    if (newValue) {
+      dateRangeModel.value = newValue.Op || 'lt'
+      dateValueModel.value = parseDate(newValue.Value) || ''
+      dateExtentModel.value = parseDate(newValue.Extent) || ''
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   [dateRangeModel, dateValueModel, dateExtentModel, isDualDateRange],
@@ -64,7 +64,7 @@ watch(
   },
   { immediate: true }
 )
-const updateDateValueModel = (payload: { date: string | Date; isEmpty: boolean }) => {  
+const updateDateValueModel = (payload: { date: string | Date; isEmpty: boolean }) => {
   dateValueModel.value = formatDateToYMD(payload.date)
 }
 
