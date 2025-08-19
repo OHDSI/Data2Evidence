@@ -6,6 +6,7 @@
 import criteriaConfigData from '../config/cohort-criteria-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
 import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
+import { atlasToCriteriaAttrMap } from './AtlasAttributeLookup'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -485,6 +486,7 @@ export class CriteriaConfigLoader {
     }
 
     Object.assign(mapping, commonMappings)
+    Object.assign(mapping, atlasToCriteriaAttrMap)
 
     return mapping
   }
