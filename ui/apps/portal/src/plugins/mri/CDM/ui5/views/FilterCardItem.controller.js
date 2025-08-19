@@ -555,6 +555,69 @@ sap.ui.define([
         this._oldID = this.getView().byId("interactionIDName").getProperty("value");
     };
 
+    FilterCardItemController.prototype._parentInteractionMappingChanged = function (sChannelId, sEventId, oEventData) {
+        var model = this.getView().getModel("configEditorModel");
+        var path = this.getView().getBindingContext("configEditorModel").getPath()+"/parentInteractionsMapping";
+        var interactions = sChannelId.oSource.mProperties.selectedKeys;
+        var value = model.getProperty(path).value;
+        if(!value || value === "" || value === []) {
+            value = []
+        } else {
+            value = JSON.parse(value);
+            if (!interactions || interactions.length == 0) {
+                value = [];
+            } else {
+                 //interaction exist, value dont exist -> add value
+                interactions.forEach((interaction) => {
+                    var index = 0;
+                    var valueExist = value.some((mapping) => {
+                        if (mapping.parentInteraction === interaction) {
+                            return true;
+                        }
+                    })
+                    
+                    if (!valueExist) {
+                        value.push({
+                            "currentMappingInteractionId":"",
+                            "parentInteraction": interaction,
+                            "parentMappingInteraction":"",
+                            "parentMappingInteractionLabel":""
+                        })
+                    }
+                })
+
+                //interaction doesnt exist, value exist -> remove value
+                if (value.length > interactions.length) {
+                    var toBeRemovedInteractions = []
+                    value.forEach((mapping) => {
+                        var interactionsExist = interactions.some((interaction) => {
+                            if (interaction === mapping.parentInteraction) {
+                                return true;
+                            }
+                        })
+                        if (!interactionsExist) {
+                            toBeRemovedInteractions.push(mapping.parentInteraction)
+                        }
+                    })
+
+                    //Prune values
+                    value = value.filter((mapping) => {
+                        return ((mapping.parentInteraction).indexOf(toBeRemovedInteractions) < 0)
+                    })
+                }
+            }
+        }
+        var frontValue = {
+            value: JSON.stringify(value),
+            validity: {
+                message: "",
+                status: "valid"
+            }
+        };
+        model.setProperty(path, frontValue);
+        this._updateParentInteraction();
+    };
+
     FilterCardItemController.prototype._onAddAttributePressed = function () {
 
         var path = this.getView().getObjectBinding(

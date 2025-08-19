@@ -154,6 +154,7 @@
 						enabled="{editableModel>/editable}" 
 						class="sapTriggerSave sapMxConfigProp" 
 						selectedKeys="{configEditorModel>parentInteraction}" 
+						selectionChange="_parentInteractionMappingChanged"
 						items="{
 								path: 'configEditorModel>/parentInteractions'
 							}">
@@ -173,8 +174,8 @@
 						valueLiveUpdate="true"></Input>
 
 					<Label class="sapMxConfigPropLabel" 
-					    value="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPING_LABEL}" 
-						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPING_LABEL}" 
+							text="Parent Interaction Mappings:" 
+							tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPINGS_LABEL}" 
 						id="pInteractionMappingLabelId"></Label>
 
 					<Input id="pInteractionMappingLabel" 
