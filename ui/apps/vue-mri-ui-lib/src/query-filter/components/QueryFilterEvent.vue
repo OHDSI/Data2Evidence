@@ -8,7 +8,7 @@ export default {
 import { defineProps, defineEmits } from 'vue'
 import { QueryFilterEvent } from '../types/QueryFilterTypes'
 import AttributesDropdown from './AttributesDropdown.vue'
-import { type AttributeOption } from '../utils/CriteriaConfigLoader'
+import { type AttributeOption } from '../utils/ConfigLoader'
 
 const props = defineProps<{
   condition: QueryFilterEvent

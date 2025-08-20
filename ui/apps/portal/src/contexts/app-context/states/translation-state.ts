@@ -950,6 +950,7 @@ export const i18nDefault = {
     STARBOARD__NEW_NOTEBOOK_DIALOG_TITLE: "New notebook",
     STARBOARD__NEW_NOTEBOOK_NAME_LABEL: "Name",
     STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER: "Enter notebook name",
+    STARBOARD__NEW_NOTEBOOK_NAME__ALREADY_EXISTS: "The notebook title already exists. Please enter a different title.",
     STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL: "Template (Optional)",
     STARBOARD__NEW_NOTEBOOK_NO_TEMPLATE: "No template",
     STARBOARD__NEW_NOTEBOOK_CANCEL: "Cancel",
