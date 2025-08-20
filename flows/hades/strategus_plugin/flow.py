@@ -16,10 +16,7 @@ from _shared_flow_utils.logger.logger import Logger
 
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
-    try:
-        logger = get_run_logger()
-    except Exception:
-        logger = Logger()
+    logger = Logger()
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
@@ -86,10 +83,7 @@ def execute_strategus_node(generated_nodes, results, options):
       log_prints=True)
 def execute_nodes_flow(graph, sorted_nodes, test):
     nodes = {}
-    try:
-        logger = get_run_logger()
-    except Exception:
-        logger = Logger()
+    logger = Logger()
 
     try:
         for nodename in sorted_nodes:
@@ -143,10 +137,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
 
 @task(task_run_name="execute-nodes-taskrun-{nodename}", log_prints=True)
 def execute_node_task(nodename, node_type, node, input, test):
-    try:
-        logger = get_run_logger()
-    except Exception:
-        logger = Logger()
+    logger = Logger()
 
     logger.debug(f"{nodename} task started, type: {node_type}")
     for k in input.keys():
