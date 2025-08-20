@@ -131,10 +131,11 @@ export default {
                     {
                       Criteria: {
                         ConditionOccurrence: {
-                          Age: {
-                            Value: 5,
-                            Op: 'gt',
-                          },
+                          // Uncomment when implemented
+                          // Age: {
+                          //   Value: 5,
+                          //   Op: 'gt',
+                          // },
                         },
                       },
                       StartWindow: {
@@ -184,12 +185,13 @@ export default {
         Type: 'ALL' as const,
         CriteriaList: [],
         DemographicCriteriaList: [
-          {
-            Age: {
-              Value: 7,
-              Op: 'gt',
-            },
-          },
+          // Uncomment when implemented
+          // {
+          //   Age: {
+          //     Value: 7,
+          //     Op: 'gt',
+          //   },
+          // },
         ],
         Groups: [],
       },
@@ -202,4 +204,5 @@ export default {
     EraPad: 0,
   },
   CensorWindow: {},
+  cdmVersionRange: '>=5.0.0',
 }

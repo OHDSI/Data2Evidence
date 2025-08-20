@@ -135,6 +135,8 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
           <MenuItem value={CohortType.Target}>Target</MenuItem>
           <MenuItem value={CohortType.Event}>Event</MenuItem>
           <MenuItem value={CohortType.Exit}>Exit</MenuItem>
+          <MenuItem value={CohortType.Outcome}>Outcome</MenuItem>
+          <MenuItem value={CohortType.Comparator}>Comparator</MenuItem>
         </Select>
       </Box>
       <Box mb={4}>

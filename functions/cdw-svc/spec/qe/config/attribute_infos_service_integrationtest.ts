@@ -92,6 +92,7 @@ const request = {
     },
   },
 };
+
 describe("Attributes infos service integration test", () => {
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 600000;
   beforeAll(async () => {
@@ -104,9 +105,9 @@ describe("Attributes infos service integration test", () => {
         new User("TEST_USER")
       );
       testedLib = new CDWServicesFacade(analyticsConnection, ffhQeConfig);
-    })
     });
   });
+
   afterAll(function () {
     connection.close();
     analyticsConnection.close();

@@ -30,8 +30,8 @@ run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, 
     options <- create_options()
   }
 
-  if(options$study_id == '') {
-    stop("Error: study_id must be set in options")
+  if(options$studyId == '' || is.null(options$studyId)) {
+    stop("Error: studyId must be set in options")
   }
 
   parameters <- list(
@@ -98,6 +98,6 @@ create_options <- function(study_id = '', upload_results = FALSE) {
       mode = 'kernel',
       datasetId = dataset_id,
       uploadResults = upload_results,
-      study_id = study_id
+      studyId = study_id
   ))
 }

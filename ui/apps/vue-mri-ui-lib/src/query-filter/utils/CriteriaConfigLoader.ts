@@ -5,7 +5,8 @@
 // Import JSON configuration
 import criteriaConfigData from '../config/cohort-criteria-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
-import type { ConceptSet, ConceptSetExpression, OccurrenceSettings } from '../models/AtlasCohortDefinition'
+import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
+import { atlasToCriteriaAttrMap } from './AtlasAttributeLookup'
 
 // Type definitions for the configuration structure
 export interface CriteriaType {
@@ -118,6 +119,7 @@ export interface CriteriaAttributeConfig {
   name: string
   description: string
   type: string
+  domainFilter?: string
   atlasKey: string
   special?: boolean
 }
@@ -129,9 +131,10 @@ export interface AttributeOption {
   description: string
   defaultDescription: string
   type: string
+  domainFilter?: string
   atlasKey: string
   special: boolean
-  action: (criteriaInstance: CriteriaItem) => CriteriaItem | void
+  action: () => CriteriaItem | void
 }
 
 export interface CriteriaConfig {
@@ -348,7 +351,7 @@ export class CriteriaConfigLoader {
       return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
         const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
-        return {
+        const result: AttributeOption = {
           id: attr.id,
           title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
           defaultTitle: displayTitle,
@@ -357,8 +360,15 @@ export class CriteriaConfigLoader {
           type: attr.type || 'text',
           atlasKey: attr.atlasKey || '',
           special: attr.special || false,
-          action: this.createAttributeActionFunction(attr, criteriaTypeId),
+          action: this.createAttributeActionFunction(attr),
         }
+
+        // Only add domainFilter if it exists
+        if (attr.domainFilter) {
+          result.domainFilter = attr.domainFilter
+        }
+
+        return result
       })
     }
 
@@ -383,7 +393,7 @@ export class CriteriaConfigLoader {
         type: attr.type || 'text',
         atlasKey: attr.atlasKey || '',
         special: attr.special || false,
-        action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig, criteriaTypeId),
+        action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig),
       }
     })
   }
@@ -391,11 +401,8 @@ export class CriteriaConfigLoader {
   /**
    * Create action function for attribute-level options
    */
-  createAttributeActionFunction(
-    attribute: CriteriaAttributeConfig,
-    _criteriaTypeId: string
-  ): (criteriaInstance: CriteriaItem) => CriteriaItem | void {
-    return function (_criteriaInstance: CriteriaItem) {
+  createAttributeActionFunction(attribute: CriteriaAttributeConfig): () => CriteriaItem | void {
+    return function () {
       if (attribute.special && attribute.id === 'nested') {
         // Add nested criteria group
         console.log('Adding nested criteria group...')
@@ -430,10 +437,88 @@ export class CriteriaConfigLoader {
           // Would toggle boolean flag
           console.log(`Toggling boolean: ${attribute.id}`)
           break
+        case 'userDefinedPeriod':
+          console.log(`Adding user defined period: ${attribute.id}`)
+          break
         default:
           console.log(`Unknown attribute type: ${attribute.type}`)
       }
+      // Return undefined for cases that don't create new criteria items
+      return undefined
     }
+  }
+
+  /**
+   * Get specific attribute configuration for a criteria type and attribute ID
+   */
+  getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
+    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
+      const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
+      if (attribute) return attribute
+    }
+    // Fallback: search in domain-based attributes (like getCriteriaAttributeOptions)
+    const attributeCategory = Object.values(this.config.attributes).find(category =>
+      category.domains.includes(criteriaTypeId)
+    )
+    if (attributeCategory && attributeCategory.attributes) {
+      const attribute = attributeCategory.attributes.find(attr => attr.id === attributeId)
+      if (attribute) {
+        // Cast to CriteriaAttributeConfig for compatibility
+        return attribute as CriteriaAttributeConfig
+      }
+    }
+    return null
+  }
+
+  /**
+   * Generate mapping from Atlas JSON property names to internal attribute IDs
+   * This builds the mapping dynamically from the configuration instead of hardcoding it
+   */
+  getAtlasJsonToAttributeMapping(criteriaTypeId: string): Record<string, string> {
+    const mapping: Record<string, string> = {}
+
+    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
+      this.config.criteriaAttributes[criteriaTypeId].forEach(attr => {
+        // For concept-type attributes, we need to map from Atlas JSON property names
+        // to internal attribute IDs. The Atlas JSON uses PascalCase property names
+        // that correspond to the attribute names, not the atlasKey values.
+
+        // Convert internal attributeId to Atlas JSON property name format
+        // e.g., 'gender' -> 'Gender', 'conditionType' -> 'ConditionType'
+        const atlasJsonKey = attr.id.charAt(0).toUpperCase() + attr.id.slice(1)
+
+        mapping[atlasJsonKey] = attr.id
+      })
+    }
+
+    // Add some additional common mappings that don't follow the standard pattern
+    const commonMappings = {
+      ValueAsConcept: 'valueAsConcept',
+      RouteConcept: 'routeConcept',
+      DoseUnit: 'doseUnit',
+      DeathSourceConcept: 'deathSourceConcept',
+    }
+
+    Object.assign(mapping, commonMappings)
+    Object.assign(mapping, atlasToCriteriaAttrMap)
+
+    return mapping
+  }
+
+  /**
+   * Get all possible Atlas JSON to attribute mappings across all criteria types
+   */
+  getAllAtlasJsonToAttributeMappings(): Record<string, string> {
+    const allMappings: Record<string, string> = {}
+
+    if (this.config.criteriaAttributes) {
+      Object.keys(this.config.criteriaAttributes).forEach(criteriaTypeId => {
+        const typeMappings = this.getAtlasJsonToAttributeMapping(criteriaTypeId)
+        Object.assign(allMappings, typeMappings)
+      })
+    }
+
+    return allMappings
   }
 
   /**

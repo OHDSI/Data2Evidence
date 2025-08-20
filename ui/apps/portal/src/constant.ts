@@ -22,6 +22,8 @@ export enum ConfigTypes {
   HYBRID_SEARCH = "hybrid-search",
   DATAFLOW_GIT_CONFIG = "dataflow-git-config",
   NOTEBOOK_GIT_CONFIG = "notebook-git-config",
+  DISCLAIMER = "disclaimer",
+  DISCLAIMER_DISPLAY = "disclaimer-display",
 }
 
 export const PUB_SLOT_NAME = "data2evidence";

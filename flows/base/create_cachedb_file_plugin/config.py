@@ -1,7 +1,5 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
-from enum import Enum
-
 
 DUCKDB_FULLTEXT_SEARCH_CONFIG = {
     "concept": {
@@ -37,37 +35,18 @@ DUCKDB_FULLTEXT_SEARCH_CONFIG = {
     },
     "note": {
         "document_identifier": "note_id",
-    },
+    }
 }
-
-# Create enum based on keys in DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM
-DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM = Enum(
-    "DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM",
-    ((table_name, table_name)
-     for table_name in DUCKDB_FULLTEXT_SEARCH_CONFIG.keys()),
-    type=str,
-)
-
 
 class CreateDuckdbDatabaseFileType(BaseModel):
     databaseCode: str
+    schemaName: str
+    trex_connection: Optional[bool] = True
+    
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
-    tablesToCreateDuckdbFtsIndex: List[DUCKDB_FULLTEXT_SEARCH_CONFIG_ENUM] = [
-        "concept"]
-    create_duckdb_file: Optional[bool] = None
-    batch_size: Optional[int] = None
-
-    def get_create_duckdb_file(self) -> bool:
-        if self.create_duckdb_file is not None:
-            return self.create_duckdb_file
-        return False
-
-    def get_batch_size(self) -> int:
-        if self.batch_size is not None:
-            return self.batch_size
-        return 100000
+    tablesToCreateDuckdbFtsIndex: list[str] = ["concept"]    
 
     @property
     def use_cache_db(self) -> str:
@@ -77,12 +56,7 @@ class CreateDuckdbDatabaseFileType(BaseModel):
 class CreateCDWValidationConfig(BaseModel):
     databaseCode: str
     schemaName: str
-    create_duckdb_file: Optional[bool] = None
-
-    def get_create_duckdb_file(self) -> bool:
-        if self.create_duckdb_file is not None:
-            return self.create_duckdb_file
-        return True
+    trex_connection: Optional[bool] = True
 
     @property
     def use_cache_db(self) -> str:
