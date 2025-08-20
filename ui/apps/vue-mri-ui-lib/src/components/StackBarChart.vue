@@ -77,10 +77,10 @@ export default {
     getFireRequest() {
       // Check if the chart has been reset
       const chartSortProperty = this.getChartProperty(Constants.MRIChartProperties.Sort)
-      // TESTING
-      // if (chartSortProperty?.props?.active === false) {
-      //   this.setupAxes()
-      // }
+      
+      if (chartSortProperty?.props?.active === false) {
+        this.setupAxes()
+      }
 
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
@@ -275,6 +275,7 @@ export default {
 
         this.chartData = this.dataToTraces(data)
         this.layout.xaxis.type = this.chartData.axisType
+        this.layout.xaxis.visible = false // FOR TESTING: Hide x-axis for testing
         Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
       }
     },
