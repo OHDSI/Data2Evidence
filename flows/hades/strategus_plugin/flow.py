@@ -61,13 +61,26 @@ def strategus_plugin(json_graph, options):
         for k in n.keys():
             nodes_out[k] = n[k].serialize_result()
 
-    study_analysis_result = execute_strategus_node(generated_nodes, n, options)
-    logger.debug(f"Study analysis result: {study_analysis_result}")
-    # Create an artifact to store the nodes output
-    create_markdown_artifact(
-        key="strategus-plugin-nodes-output",
-        markdown=study_analysis_result.data
-    )
+    try:
+        study_analysis_result = execute_strategus_node(generated_nodes, n, options)
+        logger.debug(f"Study analysis result: {study_analysis_result}")
+        root_flow_run_context = FlowRunContext.get().flow_run.dict()
+        flow_run_id = str(root_flow_run_context.get("id"))
+        log_file_path = f"/tmp/{flow_run_id}/results/strategus-log.txt"
+
+        # Create an artifact to store the nodes output
+        create_markdown_artifact(
+            key="strategus-analysis-specification",
+            markdown=study_analysis_result.data
+        )
+        with open(log_file_path, "r") as f:
+            file_contents = f.read()
+            create_markdown_artifact(
+                key="strategus-analysis-logs",
+                markdown=file_contents
+            )
+    except Exception as e:
+        logger.error(f"Error executing Strategus analysis: {e}")
 
 @task(name="execute-strategus-task")
 def execute_strategus_node(generated_nodes, results, options):

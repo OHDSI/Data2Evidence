@@ -17,14 +17,12 @@ from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
-from prefect.variables import Variable
-from prefect.blocks.system import Secret
+from prefect.context import TaskRunContext
 
 from .types import CohortNodeType
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
 
-from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WebAPI import WebAPI
@@ -1064,6 +1062,7 @@ class StrategusNode(Node):
             try:
                 print('Executing Strategus')
                 rStrategus = ro.packages.importr('Strategus')
+                rParallelLogger = importr('ParallelLogger')
                 rSpec = rStrategus.createEmptyAnalysisSpecificiations()
 
                 sharedResourceResults = self.find_cohort_definition_nodes(results)
@@ -1093,12 +1092,19 @@ class StrategusNode(Node):
                     password=db_credentials.adminPassword.get_secret_value(),
                     pathToDriver = databaseConnectorJarFolder
                 )
-                rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                    workDatabaseSchema = dbSettings['schema_name'],
-                    cdmDatabaseSchema = dbSettings['schema_name'],
-                    workFolder = '/tmp/work_folder',
-                    resultsFolder = '/tmp/results_folder'
-                )
+
+                task_run = TaskRunContext.get().task_run.dict()
+                flow_run_id = str(task_run.get("flow_run_id"))
+                base_path = f'/tmp/{flow_run_id}'
+                work_folder = f'{base_path}/work'
+                path_to_results = f'{base_path}/results'
+
+                executionSettings = getRCdmExecutionSettings({
+                    "schemaName": dbSettings['schema_name'],
+                    "workFolder": work_folder,
+                    "resultsFolder": path_to_results
+                })
+                rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
 
                 rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
                 return Result(False, rSpec.r_repr(), self, task_run_context)
