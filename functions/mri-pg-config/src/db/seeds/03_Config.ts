@@ -23247,7 +23247,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 7
                     },
@@ -23397,12 +23397,12 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 7
                     },
                     "patientlist": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "linkColumn": false
                     },
@@ -23567,12 +23567,12 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 4
                     },
                     "patientlist": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "linkColumn": false
                     },
@@ -24147,7 +24147,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 10
                     },
@@ -24417,7 +24417,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 9
                     },
@@ -24707,7 +24707,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 14
                     },
@@ -24897,7 +24897,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 7
                     },
@@ -25197,7 +25197,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 7
                     },
@@ -25537,7 +25537,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 9
                     },
@@ -25687,7 +25687,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 6
                     },
