@@ -11,4 +11,4 @@ export { default as QueryFilterEventCard } from './components/QueryFilterEventCa
 
 export * from './models/QueryFilterModel'
 
-export * from './utils/CriteriaConfigLoader'
+export * from './utils/ConfigLoader'
