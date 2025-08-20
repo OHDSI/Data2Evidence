@@ -164,7 +164,7 @@ def create_or_replace_table_query(source_schema: str,
     select_statement = None
     match source_credentials.dialect:
         case SupportedDatabaseDialects.POSTGRES.value:
-            select_statement = f'SELECT * FROM postgres_scan("host={source_credentials.host} port={source_credentials.port} dbname={source_credentials.databaseCode} user={source_credentials.readUser} password={source_credentials.readPassword.get_secret_value()}", "{source_schema}", "{source_table}")'
+            select_statement = f'SELECT * FROM postgres_scan("host={source_credentials.host} port={source_credentials.port} dbname={source_credentials.databaseName} user={source_credentials.readUser} password={source_credentials.readPassword.get_secret_value()}", "{source_schema}", "{source_table}")'
         case SupportedDatabaseDialects.BIGQUERY.value:
             # Todo: Change to use `bigquery_arrow_scan` when duckdb upgrade >= 1.3.2
             select_statement = f"SELECT * FROM bigquery_scan('{project_name}.{source_schema}.{source_table}')"
