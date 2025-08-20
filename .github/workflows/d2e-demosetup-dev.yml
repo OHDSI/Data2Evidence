@@ -31,7 +31,7 @@ jobs:
           large-packages: false
           docker-images: true
           swap-storage: true
-          
+
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -67,7 +67,7 @@ jobs:
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
       
-      - name: Use Node.js - OSS
+      - name: UI Use Node.js - OSS
         uses: actions/setup-node@v4
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         with:
@@ -75,16 +75,16 @@ jobs:
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
           scope: "@data2evidence"
       
-      - name: Setup yarn
+      - name: UI Setup yarn
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
         run: npm install -g yarn
-      - name: Setup Python
+      - name: UI Setup Python
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Install Homebrew
+      - name: UI Install Homebrew
         working-directory: ./ui
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
@@ -95,24 +95,24 @@ jobs:
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
           echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-      - name: Build
+      - name: UI Build
         working-directory: ./ui
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: yarn
         env:
           CI: false
-      - name: Patch Package
+      - name: UI Patch Package
         working-directory: ./ui
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
 
-      - name: Update version
+      - name: UI Update version
         working-directory: ./ui
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
           jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json          
       
-      - name: Pack
+      - name: UI Pack
         working-directory: ./ui
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         env:
