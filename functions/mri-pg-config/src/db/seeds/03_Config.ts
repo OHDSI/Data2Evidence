@@ -23017,7 +23017,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 12
                     },
@@ -23097,7 +23097,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": true,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 16
                     },
