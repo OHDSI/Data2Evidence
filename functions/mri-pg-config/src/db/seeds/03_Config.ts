@@ -23110,7 +23110,7 @@ const paConfigDuckdb = {
                 }
             ],
             "initialPatientlistColumn": true,
-            "modelName": "Basic Data"
+            "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
         },
         {
             "source": "patient.interactions.visit",
