@@ -19,7 +19,8 @@ class WebAPI(BaseAPI):
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(
-                f"WebAPI Failed to get get_cohort_definition, {result.content}")
+                f"WebAPI Failed to get get_cohort_definition, {result.content}"
+            )
         else:
             c = json.loads(result.content)
             return c

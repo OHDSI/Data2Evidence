@@ -532,8 +532,8 @@ class CohortMethodAnalysis(Node):
         self.analysisId = int(node["analysisId"])
         self.dbCohortMethodDataArgs = node["dbCohortMethodDataArgs"] # required
         self.studyPopArgs = node['createStudyPopArgs'] # required
-        self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
-        self.psArgs = getattr(node, "psArgs", None)
+        self.fitOutcomeModelArgs = node.get("fitOutcomeModelArgs", None)
+        self.psArgs = node.get("psArgs", None)
 
 
     def task(self, input: Dict[str, Result], task_run_context):
@@ -542,7 +542,8 @@ class CohortMethodAnalysis(Node):
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
-                covarSettingsNode = DefaultCovariateSettingsNode({ "id": uuid.uuid4(), "type": "default_covariate_settings_node", "flowOptions": self.flowOptions })
+                covarSettings = { "id": uuid.uuid4(), "type": "default_covariate_settings_node", "flowOptions": self.flowOptions }
+                covarSettingsNode = DefaultCovariateSettingsNode(covarSettings)
                 covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
                     washoutPeriod = convert_py_to_R(self.dbCohortMethodDataArgs["washoutPeriod"]),
