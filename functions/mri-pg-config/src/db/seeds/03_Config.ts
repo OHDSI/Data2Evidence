@@ -13913,7 +13913,7 @@ export const cdwConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "num",
                         "expression": "@COND.\"CONDITION_OCCURRENCE_ID\"",
                         "order": 9,
                         "domainFilter": "",
@@ -18823,7 +18823,7 @@ export const cdwConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "num",
                         "expression": "@EPISODEEVENT.EPISODE_ID",
                         "defaultPlaceholder": "@EPISODEEVENT",
                         "_referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
@@ -21612,7 +21612,7 @@ export const cdwConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "num",
                         "expression": "@EPISODE.EPISODE_ID",
                         "order": 0,
                         "domainFilter": "",
