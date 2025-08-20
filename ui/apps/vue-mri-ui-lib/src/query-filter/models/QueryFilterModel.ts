@@ -248,26 +248,33 @@ export class QueryFilterCriteriaManager {
             attributeType !== 'nested' &&
             (configType === 'conceptSet' || configType === 'concept')
           ) {
+            const attributeId = attr.attributeId
+
+            // Also add to selectedAttributes for tracking
             if (!mainEvent.selectedAttributes) {
               mainEvent.selectedAttributes = []
             }
-            const attributeId = attr.attributeId
             mainEvent.selectedAttributes.push(attributeId)
+            // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
+            if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
+              remainingAttributes.push(attr)
+            } else {
+              // For other attribute types (like age)
+              mainEvent.attributeConfig = {
+                id: attributeId,
+                name: attributeId,
+                description: '',
+                type: attributeType,
+                category: 'criteria-specific',
+              }
 
-            mainEvent.attributeConfig = {
-              id: attributeId,
-              name: attributeId,
-              description: '',
-              type: attributeType || 'conceptSet',
-              category: 'criteria-specific',
+              if (attributeId === 'age' && attributeType === 'numericRange') {
+                mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
+                mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
+              }
+
+              processedAttributes.push(attr)
             }
-
-            if (attributeId === 'age' && attributeType === 'numericRange') {
-              mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
-              mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
-            }
-
-            processedAttributes.push(attr)
           } else {
             remainingAttributes.push(attr)
           }
