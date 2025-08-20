@@ -78,7 +78,9 @@ RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
-RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+#RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+# include a d2e version of Strategus - with CohortSurvival module integrated
+RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
 
 # mlflow
 RUN pip3 install --upgrade pip
