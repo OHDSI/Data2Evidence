@@ -23009,13 +23009,13 @@ const paConfigDuckdb = {
                     "modelName": "Gender concept id"
                 },
                 {
-                    "source": "patient.attributes.Gender_concept_name",
-                    "ordered": false,
+                    "source": "patient.attributes.Age",
+                    "ordered": true,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
-                    "measure": false,
+                    "measure": true,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -23026,7 +23026,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Gender"
+                    "modelName": "Age"
                 },
                 {
                     "source": "patient.attributes.raceName",
@@ -23088,14 +23088,14 @@ const paConfigDuckdb = {
                     },
                     "modelName": "Race concept id"
                 },
-                {
-                    "source": "patient.attributes.Age",
-                    "ordered": true,
+				{
+                    "source": "patient.attributes.Gender_concept_name",
+                    "ordered": false,
                     "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
+                    "useRefText": true,
+                    "useRefValue": true,
                     "category": true,
-                    "measure": true,
+                    "measure": false,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -23106,7 +23106,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Age"
+                    "modelName": "Gender"
                 }
             ],
             "initialPatientlistColumn": true,
