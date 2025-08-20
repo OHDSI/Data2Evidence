@@ -22910,12 +22910,12 @@ const paConfigDuckdb = {
                 },
                 {
                     "source": "patient.attributes.locationid",
-                    "ordered": true,
+                    "ordered": false,
                     "cached": true,
                     "useRefText": false,
                     "useRefValue": false,
                     "category": true,
-                    "measure": true,
+                    "measure": false,
                     "filtercard": {
                         "initial": false,
                         "visible": true,
@@ -26477,19 +26477,19 @@ const paConfigDuckdb = {
             "enabled": false,
             "systemName": "MRI"
         },
-        "minCohortSize": 10
+        "minCohortSize": 1
     },
     "configInformations": {
         "note": ""
     },
     "panelOptions": {
         "addToCohorts": true,
-        "domainValuesLimit": 200,
+        "domainValuesLimit": 5000,
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": false,
-        "usePaAtlas": false
+        "atlasCohortDefinition": true,
+        "usePaAtlas": true
     }
 };
 
