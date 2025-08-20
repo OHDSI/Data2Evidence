@@ -13343,7 +13343,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@CONDERA",
-                "order": 17,
+                "order": 14,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "ConditionEra",
@@ -13678,7 +13678,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@COND",
-                "order": 16,
+                "order": 13,
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
@@ -14209,7 +14209,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@DEATH",
-                "order": 15,
+                "order": 12,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "Death",
@@ -14591,7 +14591,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@DEVEXP",
-                "order": 14,
+                "order": 11,
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
@@ -14979,7 +14979,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@DOSEERA",
-                "order": 13,
+                "order": 10,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "DoseEra",
@@ -15361,7 +15361,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@DRUGERA",
-                "order": 12,
+                "order": 9,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "DrugEra",
@@ -15741,7 +15741,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@DRUGEXP",
-                "order": 11,
+                "order": 8,
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
@@ -16554,7 +16554,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@MEAS",
-                "order": 9,
+                "order": 7,
                 "parentInteraction": [
                     "patient.interactions.visit"
                 ],
@@ -17036,9 +17036,11 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@OBS",
-                "order": 8,
-                "parentInteraction": [],
-                "parentInteractionLabel": "parent",
+                "order": 6,
+                "parentInteraction": [
+                    "patient.interactions.visit"
+                ],
+                "parentInteractionLabel": "Visit Occurrence Parent",
                 "cohortDefinitionKey": "Observation",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -17755,7 +17757,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@OBSPER",
-                "order": 7,
+                "order": 5,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "ObservationPeriod",
@@ -18041,7 +18043,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@PPPER",
-                "order": 6,
+                "order": 3,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "PayerPlanPeriod",
@@ -18278,9 +18280,26 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@PROC",
-                "order": 5,
-                "parentInteraction": [],
-                "parentInteractionLabel": "parent",
+                "order": 2,
+                "parentInteraction": [
+                    "patient.interactions.episode",
+					"patient.interactions.visit"
+                ],
+				"parentInteractionsMapping": [
+                    {
+                        "currentMappingInteractionId": "@EPISODEEVENT.episode_id",
+						"parentInteraction": "patient.interactions.episode",
+                        "parentMappingInteraction": "@EPISODE",
+                        "parentMappingInteractionLabel": "Episode parent"
+                    },
+					{
+                        "currentMappingInteractionId": "@PROC.visit_occurrence_id",
+						"parentInteraction": "patient.interactions.visit",
+                        "parentMappingInteraction": "@VISIT",
+                        "parentMappingInteractionLabel": "Visit parent"
+                    }
+                ],
+                "parentInteractionLabel": "Episode/Visit parent",
                 "cohortDefinitionKey": "ProcedureOccurrence",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -18325,7 +18344,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "datetime",
                         "expression": "@PROC.\"PROCEDURE_DATETIME\"",
-                        "order": 1,
+                        "order": 2,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
@@ -18372,7 +18391,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"PROCEDURE_CONCEPT_ID\"",
-                        "order": 3,
+                        "order": 4,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
@@ -18419,7 +18438,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "time",
                         "expression": "@PROC.\"PROCEDURE_DATE\"",
-                        "order": 4,
+                        "order": 5,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
@@ -18466,7 +18485,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "num",
                         "expression": "@PROC.\"QUANTITY\"",
-                        "order": 6,
+                        "order": 7,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Quantity",
@@ -18513,7 +18532,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@PROC.person_id",
-                        "order": 9,
+                        "order": 10,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
@@ -18560,7 +18579,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"PROCEDURE_TYPE_CONCEPT_ID\"",
-                        "order": 16,
+                        "order": 17,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ProcedureType",
@@ -18609,7 +18628,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"MODIFIER_CONCEPT_ID\"",
-                        "order": 18,
+                        "order": 19,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Modifier",
@@ -18707,9 +18726,10 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@PROC.PROCEDURE_CONCEPT_ID",
+                        "defaultPlaceholder": "@EPISODEEVENT",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "CAST (@REF.CONCEPT_ID AS VARCHAR)",
-                        "order": 15,
+                        "order": 16,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
@@ -18758,11 +18778,61 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "time",
                         "expression": "@PROC.\"PROCEDURE_END_DATE\"",
-                        "order": 5,
+                        "order": 6,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
+                    },
+                    "Procedure_event_id": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Procedure Event ID"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "num",
+                        "expression": "@EPISODEEVENT.EPISODE_ID",
+                        "defaultPlaceholder": "@EPISODEEVENT",
+                        "_referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "_referenceExpression": "@REF.CONCEPT_NAME",
+                        "order": 1,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "CodesetId",
+                        "conceptIdentifierType": "id"
                     }
                 }
             },
@@ -18807,7 +18877,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@SPEC",
-                "order": 4,
+                "order": 1,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "Specimen",
@@ -20855,7 +20925,7 @@ export const cdwConfigDuckdb = {
                 ],
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@COHORT",
-                "order": 18,
+                "order": 15,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "cohortDefinitionKey": "",
@@ -21453,6 +21523,102 @@ export const cdwConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
+                    }
+                }
+            },
+            "episode": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Episode"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "defaultFilter": "1=1",
+                "defaultPlaceholder": "@EPISODE",
+                "order": 4,
+                "parentInteraction": [],
+                "parentInteractionLabel": "Episoparent",
+                "cohortDefinitionKey": "Episode",
+                "conceptIdentifierType": "",
+                "attributes": {
+                    "episode_id": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Episode ID"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "num",
+                        "expression": "@EPISODE.EPISODE_ID",
+                        "order": 0,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "Episode",
+                        "conceptIdentifierType": "name"
                     }
                 }
             }
@@ -22240,7 +22406,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@COND",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22272,7 +22438,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@DEVEXP",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22296,7 +22462,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@DRUGEXP",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22304,7 +22470,7 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@OBS",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": true,
                     "condition": false
@@ -22336,15 +22502,20 @@ export const cdwConfigDuckdb = {
                 {
                     "placeholder": "@MEAS",
                     "attributeTables": [],
-                    "hierarchy": false,
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
                 },
                 {
                     "placeholder": "@PROC",
-                    "attributeTables": [],
-                    "hierarchy": false,
+                    "attributeTables": [
+                        {
+                            "placeholder": "@EPISODEEVENT",
+                            "oneToN": true
+                        }
+                    ],
+                    "hierarchy": true,
                     "time": true,
                     "oneToN": false,
                     "condition": false
@@ -22386,6 +22557,14 @@ export const cdwConfigDuckdb = {
                     "attributeTables": [],
                     "hierarchy": false,
                     "time": true,
+                    "oneToN": false,
+                    "condition": false
+                },
+                {
+                    "placeholder": "@EPISODE",
+                    "attributeTables": [],
+                    "hierarchy": true,
+                    "time": false,
                     "oneToN": false,
                     "condition": false
                 }
@@ -22504,6 +22683,10 @@ export const cdwConfigDuckdb = {
             "@PROC.START": "\"procedure_date\"",
             "@PROC.END": "\"procedure_end_date\"",
             "@PROC.INTERACTION_TYPE": "\"procedure_type_concept_id\"",
+            "@EPISODEEVENT": "$$SCHEMA$$.\"episode_event\"",
+            "@EPISODEEVENT.INTERACTION_ID": "\"event_id\"",
+            "@EPISODEEVENT.ATTRIBUTE": "\"episode_id\"",
+            "@EPISODEEVENT.VALUE": "\"episode_id\"",
             "@CONSENT": "$$SCHEMA$$.\"VIEW::GDM.CONSENT_BASE\"",
             "@CONSENT.PATIENT_ID": "\"PERSON_ID\"",
             "@CONSENT.INTERACTION_ID": "\"CONSENT_DETAIL_ID\"",
@@ -22544,6 +22727,14 @@ export const cdwConfigDuckdb = {
             "@ITEM.START": "\"AUTHORED\"",
             "@ITEM.END": "\"AUTHORED\"",
             "@ITEM.INTERACTION_TYPE": "\"VALUE_TYPE\"",
+            "@EPISODE": "$$SCHEMA$$.\"episode\"",
+            "@EPISODE.PATIENT_ID": "\"person_id\"",
+            "@EPISODE.INTERACTION_ID": "\"episode_id\"",
+            "@EPISODE.CONDITION_ID": "\"episode_concept_id\"",
+            "@EPISODE.PARENT_INTERACT_ID": "\"episode_concept_id\"",
+            "@EPISODE.START": "\"episode_concept_id\"",
+            "@EPISODE.END": "\"episode_concept_id\"",
+            "@EPISODE.INTERACTION_TYPE": "\"episode_concept_id\"",
             "@PATIENT": "$$SCHEMA$$.\"person\"",
             "@PATIENT.PATIENT_ID": "\"person_id\"",
             "@PATIENT.DOD": "\"birth_datetime\"",
@@ -22581,7 +22772,8 @@ export const cdwConfigDuckdb = {
             "timeFormat": "HH:mm:ss",
             "otsTableMap": {
                 "@CODE": "$$VOCAB_SCHEMA$$.\"concept\""
-            }
+            },
+            "datasetId": "DEFAULT"
         },
         "shared": {},
         "schemaVersion": "3"
@@ -22817,26 +23009,6 @@ const paConfigDuckdb = {
                     "modelName": "Gender concept id"
                 },
                 {
-                    "source": "patient.attributes.raceconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Race concept id"
-                },
-                {
                     "source": "patient.attributes.Age",
                     "ordered": true,
                     "cached": true,
@@ -22847,7 +23019,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 13
+                        "order": 12
                     },
                     "patientlist": {
                         "initial": false,
@@ -22855,26 +23027,6 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Age"
-                },
-                {
-                    "source": "patient.attributes.Gender_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 14
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Gender"
                 },
                 {
                     "source": "patient.attributes.raceName",
@@ -22887,7 +23039,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 15
+                        "order": 13
                     },
                     "patientlist": {
                         "initial": false,
@@ -22907,7 +23059,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 16
+                        "order": 14
                     },
                     "patientlist": {
                         "initial": false,
@@ -22915,6 +23067,46 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Ethnicity"
+                },
+                {
+                    "source": "patient.attributes.raceconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 15
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Race concept id"
+                },
+				{
+                    "source": "patient.attributes.Gender_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Gender"
                 }
             ],
             "initialPatientlistColumn": true,
@@ -22927,6 +23119,26 @@ const paConfigDuckdb = {
             "initial": false,
             "attributes": [
                 {
+                    "source": "patient.interactions.visit.attributes.visit_occ_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit concept name"
+                },
+                {
                     "source": "patient.interactions.visit.attributes.enddate",
                     "ordered": false,
                     "cached": true,
@@ -22937,7 +23149,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -22957,7 +23169,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -22977,7 +23189,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -22997,7 +23209,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -23017,7 +23229,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -23037,7 +23249,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 6
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -23045,9 +23257,19 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Visit concept set"
-                },
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Visit"
+        },
+        {
+            "source": "patient.interactions.specimen",
+            "visible": true,
+            "order": 3,
+            "initial": false,
+            "attributes": [
                 {
-                    "source": "patient.interactions.visit.attributes.visit_occ_concept_name",
+                    "source": "patient.interactions.specimen.attributes.specimen_concept_name",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -23057,295 +23279,15 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Visit"
-        },
-        {
-            "source": "patient.interactions.questionnaire",
-            "visible": false,
-            "order": 3,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.questionnaire.attributes.linkID",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
                         "order": 1
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Link ID"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.valueCodingValue",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
                         "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
                         "linkColumn": false
                     },
-                    "modelName": "Value coding value"
+                    "modelName": "Specimen concept name"
                 },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.recordID",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Record ID"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.questionnaireLanguage",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionnaire language"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.questionnaireStatus",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionnaire status"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.questionnaireAuthored",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionnaire authored"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.text",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Text"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.valueType",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value type"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.value",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.questionnaireReference",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionnaire reference"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.questionnaireVersion",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionnaire version"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.extensionEffectiveDateUrl",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionaire extension effective date url"
-                },
-                {
-                    "source": "patient.interactions.questionnaire.attributes.extensionValuedate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 13
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Questionaire extension valuedate"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Questionnaire"
-        },
-        {
-            "source": "patient.interactions.specimen",
-            "visible": true,
-            "order": 4,
-            "initial": false,
-            "attributes": [
                 {
                     "source": "patient.interactions.specimen.attributes.pid",
                     "ordered": false,
@@ -23357,7 +23299,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -23377,7 +23319,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -23397,7 +23339,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -23417,7 +23359,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -23437,7 +23379,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -23457,10 +23399,10 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 6
+                        "order": 7
                     },
                     "patientlist": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "linkColumn": false
                     },
@@ -23477,7 +23419,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -23497,7 +23439,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 9
                     },
                     "patientlist": {
                         "initial": false,
@@ -23517,7 +23459,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 9
+                        "order": 10
                     },
                     "patientlist": {
                         "initial": false,
@@ -23537,7 +23479,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 10
+                        "order": 11
                     },
                     "patientlist": {
                         "initial": false,
@@ -23545,9 +23487,19 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Unit concept set"
-                },
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Specimen"
+        },
+        {
+            "source": "patient.interactions.proc",
+            "visible": true,
+            "order": 4,
+            "initial": false,
+            "attributes": [
                 {
-                    "source": "patient.interactions.specimen.attributes.specimen_concept_name",
+                    "source": "patient.interactions.proc.attributes.proc_occ_concept_name",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -23557,25 +23509,35 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 11
+                        "order": 1
                     },
                     "patientlist": {
                         "initial": false,
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Specimen concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Specimen"
-        },
-        {
-            "source": "patient.interactions.proc",
-            "visible": true,
-            "order": 5,
-            "initial": false,
-            "attributes": [
+                    "modelName": "Procedure concept name"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.Procedure_event_id",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Event ID"
+                },
                 {
                     "source": "patient.interactions.proc.attributes.procdatetime",
                     "ordered": false,
@@ -23587,7 +23549,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -23607,10 +23569,10 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 2
+                        "order": 4
                     },
                     "patientlist": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "linkColumn": false
                     },
@@ -23627,7 +23589,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -23635,6 +23597,26 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Procedure Date"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.Procedure_End_Date_a596fdf2_9ba8_4155_b72f_783ea85ae669",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure End Date"
                 },
                 {
                     "source": "patient.interactions.proc.attributes.qty",
@@ -23647,7 +23629,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -23667,7 +23649,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -23677,67 +23659,7 @@ const paConfigDuckdb = {
                     "modelName": "Person id"
                 },
                 {
-                    "source": "patient.interactions.proc.attributes.proctypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure type concept set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_End_Date_a596fdf2_9ba8_4155_b72f_783ea85ae669",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure End Date"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.modifierconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Modifier concept set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.proc_occ_concept_name",
+                    "source": "patient.interactions.proc.attributes.Procedure_concept_id_copy_cf2468c2_0849_4d67_8fa7_e876aef757a1",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -23754,14 +23676,14 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Procedure concept name"
+                    "modelName": "Procedure concept id"
                 },
                 {
-                    "source": "patient.interactions.proc.attributes.Procedure_concept_id_copy_cf2468c2_0849_4d67_8fa7_e876aef757a1",
+                    "source": "patient.interactions.proc.attributes.proctypeconceptset",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -23774,7 +23696,27 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Procedure concept id"
+                    "modelName": "Procedure type concept set"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.modifierconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Modifier concept set"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -23783,7 +23725,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.ppperiod",
             "visible": true,
-            "order": 6,
+            "order": 5,
             "initial": false,
             "attributes": [
                 {
@@ -23869,6 +23811,36 @@ const paConfigDuckdb = {
             ],
             "initialPatientlistColumn": false,
             "modelName": "Payer Plan Period"
+        },
+        {
+            "source": "patient.interactions.episode",
+            "visible": true,
+            "order": 6,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.episode.attributes.episode_id",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Episode ID"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Episode"
         },
         {
             "source": "patient.interactions.obsperiod",
@@ -23987,6 +23959,26 @@ const paConfigDuckdb = {
             "initial": false,
             "attributes": [
                 {
+                    "source": "patient.interactions.observation.attributes.obs_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation concept name"
+                },
+                {
                     "source": "patient.interactions.observation.attributes.obsdatetime",
                     "ordered": false,
                     "cached": true,
@@ -23997,7 +23989,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -24017,7 +24009,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -24037,7 +24029,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -24045,6 +24037,46 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Observation Date"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Start Date"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation End Date"
                 },
                 {
                     "source": "patient.interactions.observation.attributes.observationid",
@@ -24057,7 +24089,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -24077,7 +24109,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -24097,7 +24129,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 6
+                        "order": 9
                     },
                     "patientlist": {
                         "initial": false,
@@ -24117,7 +24149,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 7
+                        "order": 10
                     },
                     "patientlist": {
                         "initial": false,
@@ -24137,7 +24169,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 11
                     },
                     "patientlist": {
                         "initial": false,
@@ -24157,7 +24189,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 9
+                        "order": 12
                     },
                     "patientlist": {
                         "initial": false,
@@ -24167,67 +24199,7 @@ const paConfigDuckdb = {
                     "modelName": "Value as concept set"
                 },
                 {
-                    "source": "patient.interactions.observation.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation Start Date"
-                },
-                {
                     "source": "patient.interactions.observation.attributes.qualifierconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Qualifier concept set"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation End Date"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.unitconceptset",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -24244,14 +24216,14 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Unit concept set"
+                    "modelName": "Qualifier concept set"
                 },
                 {
-                    "source": "patient.interactions.observation.attributes.obs_concept_name",
+                    "source": "patient.interactions.observation.attributes.unitconceptset",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -24264,7 +24236,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Observation concept name"
+                    "modelName": "Unit concept set"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -24277,6 +24249,26 @@ const paConfigDuckdb = {
             "initial": false,
             "attributes": [
                 {
+                    "source": "patient.interactions.measurement.attributes.meas_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept name"
+                },
+                {
                     "source": "patient.interactions.measurement.attributes.numval",
                     "ordered": true,
                     "cached": true,
@@ -24287,7 +24279,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -24307,7 +24299,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -24327,7 +24319,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -24347,7 +24339,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -24367,7 +24359,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -24387,7 +24379,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 6
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -24407,7 +24399,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -24427,7 +24419,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 8
+                        "order": 9
                     },
                     "patientlist": {
                         "initial": false,
@@ -24435,9 +24427,19 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Measurement concept set"
-                },
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Measurement"
+        },
+        {
+            "source": "patient.interactions.drugexposure",
+            "visible": true,
+            "order": 10,
+            "initial": false,
+            "attributes": [
                 {
-                    "source": "patient.interactions.measurement.attributes.meas_concept_name",
+                    "source": "patient.interactions.drugexposure.attributes.drug_concept_name",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -24447,215 +24449,15 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Measurement"
-        },
-        {
-            "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b",
-            "visible": false,
-            "order": 10,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.consentdatetime",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
                         "order": 1
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Consent Datetime"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
                         "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
                         "linkColumn": false
                     },
-                    "modelName": "Person id"
+                    "modelName": "Drug concept name"
                 },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.parentconsentdetailid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Parent Consent Detail Id"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.status",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Status"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.textval",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.consentcategory",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Category"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.New_Attribute_1_3d0da2a3_f0de_4112_b87c_e7aff266c0d8",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Attribute"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.Attribute_copy_53f290b7_70e9_4c1e_bd6d_605bc916ce66",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Attribute Group Id"
-                },
-                {
-                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.Consent_Id_copy_60a4adeb_1e84_4f04_b7d5_8eb1c006f56d",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": false,
-                        "linkColumn": false
-                    },
-                    "modelName": "Consent Detail Id"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Consent"
-        },
-        {
-            "source": "patient.interactions.drugexposure",
-            "visible": true,
-            "order": 11,
-            "initial": false,
-            "attributes": [
                 {
                     "source": "patient.interactions.drugexposure.attributes.enddatetime",
                     "ordered": false,
@@ -24667,7 +24469,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -24687,7 +24489,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -24707,7 +24509,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -24727,7 +24529,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -24747,7 +24549,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -24767,7 +24569,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 6
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -24787,7 +24589,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -24807,7 +24609,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 9
                     },
                     "patientlist": {
                         "initial": false,
@@ -24827,7 +24629,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 9
+                        "order": 10
                     },
                     "patientlist": {
                         "initial": false,
@@ -24847,7 +24649,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 10
+                        "order": 11
                     },
                     "patientlist": {
                         "initial": false,
@@ -24867,7 +24669,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 11
+                        "order": 12
                     },
                     "patientlist": {
                         "initial": false,
@@ -24887,7 +24689,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 12
+                        "order": 13
                     },
                     "patientlist": {
                         "initial": false,
@@ -24907,7 +24709,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 13
+                        "order": 14
                     },
                     "patientlist": {
                         "initial": false,
@@ -24927,7 +24729,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 14
+                        "order": 15
                     },
                     "patientlist": {
                         "initial": false,
@@ -24947,26 +24749,6 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 15
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug type concept set"
-                },
-                {
-                    "source": "patient.interactions.drugexposure.attributes.drug_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
                         "order": 16
                     },
                     "patientlist": {
@@ -24974,7 +24756,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Drug concept name"
+                    "modelName": "Drug type concept set"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -24983,7 +24765,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.drugera",
             "visible": true,
-            "order": 12,
+            "order": 11,
             "initial": false,
             "attributes": [
                 {
@@ -25133,7 +24915,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.doseera",
             "visible": true,
-            "order": 13,
+            "order": 12,
             "initial": false,
             "attributes": [
                 {
@@ -25245,7 +25027,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": true,
+                        "initial": false,
                         "visible": true,
                         "order": 6
                     },
@@ -25283,9 +25065,29 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.deviceexposure",
             "visible": true,
-            "order": 14,
+            "order": 13,
             "initial": false,
             "attributes": [
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.device_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device concept name"
+                },
                 {
                     "source": "patient.interactions.deviceexposure.attributes.enddate",
                     "ordered": false,
@@ -25297,7 +25099,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -25317,7 +25119,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -25337,7 +25139,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -25357,7 +25159,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -25377,7 +25179,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -25397,26 +25199,6 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device concept set"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.device_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
                         "order": 7
                     },
                     "patientlist": {
@@ -25424,7 +25206,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Device concept name"
+                    "modelName": "Device concept set"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -25433,9 +25215,29 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.death",
             "visible": true,
-            "order": 15,
+            "order": 14,
             "initial": false,
             "attributes": [
+                {
+                    "source": "patient.interactions.death.attributes.death_type_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Death Type concept name"
+                },
                 {
                     "source": "patient.interactions.death.attributes.deathtypeconceptset",
                     "ordered": false,
@@ -25445,9 +25247,9 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": true,
+                        "initial": false,
                         "visible": true,
-                        "order": 1
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -25467,7 +25269,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -25487,7 +25289,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -25507,26 +25309,6 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Death Date"
-                },
-                {
-                    "source": "patient.interactions.death.attributes.death_type_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
                         "order": 5
                     },
                     "patientlist": {
@@ -25534,7 +25316,7 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Death Type concept name"
+                    "modelName": "Death Date"
                 },
                 {
                     "source": "patient.interactions.death.attributes.startdate",
@@ -25583,29 +25365,9 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.conditionoccurrence",
             "visible": true,
-            "order": 16,
+            "order": 15,
             "initial": false,
             "attributes": [
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition concept Name"
-                },
                 {
                     "source": "patient.interactions.conditionoccurrence.attributes.visitoccurrenceid",
                     "ordered": false,
@@ -25617,7 +25379,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 1
                     },
                     "patientlist": {
                         "initial": false,
@@ -25637,7 +25399,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -25657,7 +25419,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -25677,7 +25439,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -25697,7 +25459,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 6
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -25717,7 +25479,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -25737,7 +25499,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 7
                     },
                     "patientlist": {
                         "initial": false,
@@ -25757,7 +25519,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 9
+                        "order": 8
                     },
                     "patientlist": {
                         "initial": false,
@@ -25777,7 +25539,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": true,
                         "visible": true,
-                        "order": 10
+                        "order": 9
                     },
                     "patientlist": {
                         "initial": false,
@@ -25785,6 +25547,26 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Condition concept set"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition concept Name"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -25793,7 +25575,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.conditionera",
             "visible": true,
-            "order": 17,
+            "order": 16,
             "initial": false,
             "attributes": [
                 {
@@ -25923,7 +25705,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.cohort",
             "visible": true,
-            "order": 18,
+            "order": 17,
             "initial": false,
             "attributes": [
                 {
@@ -25935,7 +25717,7 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": true,
                     "filtercard": {
-                        "initial": true,
+                        "initial": false,
                         "visible": true,
                         "order": 1
                     },
@@ -26011,6 +25793,276 @@ const paConfigDuckdb = {
             "modelName": "Cohort"
         },
         {
+            "source": "patient.interactions.questionnaire",
+            "visible": false,
+            "order": 18,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.questionnaire.attributes.linkID",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Link ID"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.valueCodingValue",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value coding value"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.recordID",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Record ID"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.questionnaireLanguage",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionnaire language"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.questionnaireStatus",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionnaire status"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.questionnaireAuthored",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionnaire authored"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.text",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Text"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.valueType",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value type"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.value",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.questionnaireReference",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionnaire reference"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.questionnaireVersion",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionnaire version"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.extensionEffectiveDateUrl",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionaire extension effective date url"
+                },
+                {
+                    "source": "patient.interactions.questionnaire.attributes.extensionValuedate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 13
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Questionaire extension valuedate"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Questionnaire"
+        },
+        {
             "source": "patient.interactions.item",
             "visible": false,
             "order": 19,
@@ -26031,7 +26083,7 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Link ID"
@@ -26051,7 +26103,7 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Item ID"
@@ -26071,14 +26123,14 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Text"
                 }
             ],
-            "modelName": "Item",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Item"
         },
         {
             "source": "patient.interactions.answer",
@@ -26101,7 +26153,7 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Link ID"
@@ -26121,7 +26173,7 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Value coding value"
@@ -26141,7 +26193,7 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Value type"
@@ -26161,14 +26213,204 @@ const paConfigDuckdb = {
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": false,
+                        "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Value"
                 }
             ],
-            "modelName": "Answer",
-            "initialPatientlistColumn": false
+            "initialPatientlistColumn": false,
+            "modelName": "Answer"
+        },
+        {
+            "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b",
+            "visible": false,
+            "order": 21,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.consentdatetime",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Consent Datetime"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Person id"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.parentconsentdetailid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Parent Consent Detail Id"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.status",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Status"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.textval",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.consentcategory",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Category"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.New_Attribute_1_3d0da2a3_f0de_4112_b87c_e7aff266c0d8",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Attribute"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.Attribute_copy_53f290b7_70e9_4c1e_bd6d_605bc916ce66",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Attribute Group Id"
+                },
+                {
+                    "source": "patient.interactions.Consent_74db26d2_bb75_489a_a841_051c85dc897b.attributes.Consent_Id_copy_60a4adeb_1e84_4f04_b7d5_8eb1c006f56d",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Consent Detail Id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Consent"
         }
     ],
     "chartOptions": {
@@ -26247,7 +26489,7 @@ const paConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-		'usePaAtlas': true,
+        "usePaAtlas": true
     }
 };
 

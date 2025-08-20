@@ -305,6 +305,7 @@ sap.ui.define([
 				order: 0,
 				from: {},
 				parentInteraction: [],
+				parentInteractionsMapping: "[]",
 				parentInteractionLabel: "",
 				allowSameInteraction: "false",
 				cohortDefinitionKey: "",
@@ -745,7 +746,12 @@ sap.ui.define([
 
 			destination.parentInteraction = frontValue;
 		},
-
+		parentInteractionsMapping: function (frontValue, originalContainer, destination) {
+			if (frontValue.value && frontValue.value.toString() === "") {
+				return;
+			}
+			destination.parentInteractionsMapping = JSON.parse(frontValue.value)
+		},
 		parentInteractionLabel: function (frontValue, originalContainer, destination) {
 			if (frontValue.value === "") {
 				return;
@@ -1239,6 +1245,16 @@ sap.ui.define([
 			}
 
 			destination.parentInteraction = backValue;
+		},
+		parentInteractionsMapping: function (backValue, destination) {
+			var frontValue = {
+				value: JSON.stringify(backValue),
+				validity: {
+					message: "",
+					status: "valid"
+				}
+			};
+			destination.parentInteractionsMapping = frontValue;
 		},
 
 		parentInteractionLabel: function (backValue, destination) {
