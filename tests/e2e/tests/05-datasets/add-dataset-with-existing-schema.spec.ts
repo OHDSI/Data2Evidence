@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -41,7 +41,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('tbody')).toContainText(datasetNewSchema)
 
   // Wait for 90 seconds for the schema to be created in the database
-  await page.waitForTimeout(90000)
+  await page.waitForTimeout(30000)
 
   // Copy the schema name for later use
   const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).textContent()
@@ -63,12 +63,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Schema name', exact: true }).fill(schemaName)
   await page.getByRole('textbox', { name: 'Vocab Schema Name' }).fill('demo_cdm')
   await page.locator('#mui-component-select-dataModelOption').click()
+  await page.waitForTimeout(1000)
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset_2')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.locator('tbody')).toContainText(datasetExistingSchema)
+  await page.waitForTimeout(1000)
+  await expect(page.locator('tbody').getByText(datasetExistingSchema)).toBeVisible()
 
   // Clean up
   await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
