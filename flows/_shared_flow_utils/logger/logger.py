@@ -1,12 +1,14 @@
 import logging
+from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
 class Logger:
     def __init__(self):
-        self.debug_enabled = False # TODO: change to env variable
-        self.logger: logging.Logger = self.get_logger()
+        debug_enabled = Variable.get("logs_debug_enable")
+        self.debug_enabled = debug_enabled if debug_enabled else False
+        self.logger = self.get_logger()
 
-    def get_logger(self) -> logging.Logger:
+    def get_logger(self):
         try:
             return get_run_logger()
         except Exception:
@@ -18,7 +20,7 @@ class Logger:
 
     def debug(self, message: str):
         if self.debug_enabled:
-            self.logger.debug(message)
+            self.logger.info(message)
 
     def warning(self, message: str):
         self.logger.warning(message)

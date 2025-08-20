@@ -471,7 +471,9 @@ services:
             "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
             "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
             "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json"
+            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json",
+            "IS_DEV_ENV": ${IS_DEV_ENV:-false},
+            "LOGS_DEBUG_ENABLED": "${LOGS_DEBUG_ENABLED:-false}"
           },
           "jupyter-gateway": {},
           "mlflow": {},

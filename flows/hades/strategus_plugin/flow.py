@@ -25,10 +25,6 @@ def strategus_plugin(json_graph, options):
         drop_strategus_results(options)
         return
 
-    # Grab root flow id
-    # root_flow_run_context = FlowRunContext.get().flow_run.dict()
-    # root_flow_run_id = str(root_flow_run_context.get("id"))
-
     _options = options
     graph = json_graph
     graph["options"] = _options
@@ -66,6 +62,7 @@ def strategus_plugin(json_graph, options):
             nodes_out[k] = n[k].serialize_result()
 
     study_analysis_result = execute_strategus_node(generated_nodes, n, options)
+    logger.debug(f"Study analysis result: {study_analysis_result}")
     # Create an artifact to store the nodes output
     create_markdown_artifact(
         key="strategus-plugin-nodes-output",
@@ -74,7 +71,7 @@ def strategus_plugin(json_graph, options):
 
 @task(name="execute-strategus-task")
 def execute_strategus_node(generated_nodes, results, options):
-    task_run_context = TaskRunContext.get().task_run.dict()
+    task_run_context = TaskRunContext.get().task_run.model_dump()
     strategus_node = get_strategus_node(options)
     return strategus_node.task(generated_nodes, results, task_run_context)
 

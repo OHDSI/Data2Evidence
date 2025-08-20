@@ -980,7 +980,7 @@ class TreatmentPatterns(Node):
                 rCreateTreatmentPatternsModuleSpec = rTreatmentPatternsModule['createModuleSpecifications']
                 cohorts_df = pd.DataFrame.from_records([{
                     'cohortId': cohortDefinitionNode.cohortIds[0],
-                    'cohortName': "xyz", # TODO: change the cohort name
+                    'cohortName': "", # TODO: change the cohort name
                     "type": cohortDefinitionNode.type
                 } for cohortDefinitionNode in cohortDefinitionNodes])
 
@@ -1077,7 +1077,6 @@ class StrategusNode(Node):
                             rSpec = rStrategus.addModuleSpecifications(rSpec, moduleSpec)
                     except Exception as e:
                         continue # exception can be ignored
-                print(rSpec.r_repr())
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
