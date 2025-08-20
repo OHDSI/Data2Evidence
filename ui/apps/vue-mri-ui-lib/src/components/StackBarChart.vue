@@ -77,9 +77,10 @@ export default {
     getFireRequest() {
       // Check if the chart has been reset
       const chartSortProperty = this.getChartProperty(Constants.MRIChartProperties.Sort)
-      if (chartSortProperty?.props?.active === false) {
-        this.setupAxes()
-      }
+      // TESTING
+      // if (chartSortProperty?.props?.active === false) {
+      //   this.setupAxes()
+      // }
 
       this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData

@@ -17,6 +17,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            flowbase:
+              - "flows/base/**"
+            ui:
+              - "ui/**"
 
       - name: npm install
         if: success() || failure()
@@ -29,12 +38,25 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
 
+      - name: Build flow/base image
+        if: ${{ steps.file_changes.outputs.flowbase == 'true' }}
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+          
       - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Build UI
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          npm install -g yarn
+          yarn
+        env:
+          CI: false
 
       - name: Start services
         if: success() || failure()
