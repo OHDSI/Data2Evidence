@@ -74,7 +74,7 @@ def generateETLWordDocument(inputFile: str = "data.json", outputFile: str = "rep
 
     inputPath = Path(inputFile).resolve()
 
-    if not os.path.exists(inputPath):
+    if not inputPath.exists():
         raise FileNotFoundError(f"file {inputPath} does not exist.")
 
     ShellOperation(commands=[
@@ -82,7 +82,7 @@ def generateETLWordDocument(inputFile: str = "data.json", outputFile: str = "rep
 
     outputPath = Path(outputFile).resolve()
 
-    if not os.path.exists(outputPath):
+    if not outputPath.exists():
         raise FileNotFoundError(f"file {outputPath} does not exist.")
 
     try:
