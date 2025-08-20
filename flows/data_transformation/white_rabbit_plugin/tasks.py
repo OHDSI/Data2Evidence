@@ -53,6 +53,7 @@ def start_awt_display():
     logger.info("start display")
     ShellOperation(
         commands=["Xvfb :1"]).trigger()
+    os.environ['DISPLAY'] = ":1"
 
 
 @task(log_prints=True)
