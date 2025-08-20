@@ -101,7 +101,6 @@ jobs:
         env:
           CI: false # For portal build to ignore warnings and not treat them as errors
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Ensuring Homebrew environment is available..."
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
