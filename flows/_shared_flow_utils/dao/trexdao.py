@@ -34,7 +34,7 @@ class TrexDao(IbisDao):
     def check_schema_exists(self, schema: str) -> bool:
         print(f"Checking if schema '{schema}' exists in database '{self.database_code}'")
         with self.connect() as con:
-            sql = "SELECT schema_name FROM information_schema.schemata;" # Todo: faliling because trex attaches to a dataset?
+            sql = "SELECT schema_name FROM information_schema.schemata;"
             with con.cursor() as cur:
                 cur.execute(sql)
                 schemas = [row[0] for row in cur.fetchall()]
@@ -44,6 +44,7 @@ class TrexDao(IbisDao):
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
         with self.connect() as con:
+            con.autocommit = True
             sql = f"CREATE SCHEMA IF NOT EXISTS {schema};"
             with con.cursor() as cur:
                 cur.execute(sql)
