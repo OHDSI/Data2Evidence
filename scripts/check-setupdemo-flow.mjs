@@ -119,7 +119,7 @@ try {
         var success_count = lines.filter(line => line === 'COMPLETED' ).length;
         var cancelled_count = lines.filter(line => line === 'CANCELLED' || line === 'CANCELLING').length;
         var running_count = lines.filter(line => line === 'RUNNING').length;
-        var scheduled_count = lines.filter(line => line === 'SCHEDULED' || line == 'PENDING').length;
+        var scheduled_count = lines.filter(line => line === 'SCHEDULED' || line === 'PENDING').length;
         var inprogress_count = num_of_jobs - failed_count - success_count - cancelled_count;
         console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Scheduled:${scheduled_count}, Cancelled:${cancelled_count}, Running:${running_count}`);
         await $`sleep 15` 
