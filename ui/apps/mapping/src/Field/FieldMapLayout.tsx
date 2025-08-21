@@ -70,6 +70,9 @@ export const FieldMapLayout = () => {
             const reportBlob = await api.whiteRabbit.getEtlReportFromArtifacts(flowRunId);
             saveBlobAs(reportBlob, "etl-mapping.docx");
             setLoading(false);
+          } else if (status.state_name === "Failed" || status.state_name === "Crashed") {
+            setLoading(false);
+            clearInterval(intervalId);
           }
         } catch (error) {
           console.error("Failed to check ETL report status", error);

@@ -3,7 +3,7 @@
  */
 
 // Import JSON configuration
-import criteriaConfigData from '../config/cohort-criteria-config.json'
+import configData from '../config/atlas-config.json'
 // Import types from AtlasCohortDefinition to avoid duplication
 import type { ConceptSet, OccurrenceSettings } from '../types/AtlasTypes'
 import { atlasToCriteriaAttrMap } from './AtlasAttributeLookup'
@@ -13,10 +13,7 @@ export interface CriteriaType {
   id: string
   name: string
   class: string
-  icon: string
-  atlasKey: string
   groupOnly?: boolean
-  special?: boolean
   descriptions: {
     initial?: string
     censoring?: string
@@ -33,8 +30,6 @@ export interface AttributeConfig {
   name: string
   description?: string
   type?: string
-  atlasKey?: string
-  special?: boolean
   required?: boolean
 }
 
@@ -83,8 +78,6 @@ export interface CriteriaOption {
   defaultDescription: string
   icon: string
   class: string
-  atlasKey: string
-  special: boolean
   selected?: boolean
   action?: () => CriteriaItem | void
 }
@@ -120,8 +113,6 @@ export interface CriteriaAttributeConfig {
   description: string
   type: string
   domainFilter?: string
-  atlasKey: string
-  special?: boolean
 }
 
 export interface AttributeOption {
@@ -132,8 +123,6 @@ export interface AttributeOption {
   defaultDescription: string
   type: string
   domainFilter?: string
-  atlasKey: string
-  special: boolean
   action: () => CriteriaItem | void
 }
 
@@ -150,20 +139,144 @@ export interface CriteriaConfig {
   }
 }
 
+// Config interfaces
+export interface ConfigCriteriaType {
+  name: string
+  groupOnly?: boolean
+  descriptions: {
+    initial?: string
+    censoring?: string
+    group?: string
+    all?: string
+  }
+}
+
+export interface ConfigSection2 {
+  name: string
+  buttonText: string
+  excludeTypes?: string[]
+  includeAll?: boolean
+}
+
+export interface AttributeDefinition {
+  id: string
+  name: string
+  description: string
+  type: string
+  domainFilter?: string
+}
+
+export interface Config {
+  criteriaTypes: Record<string, ConfigCriteriaType>
+  sections: Record<string, ConfigSection2>
+  attributeMapping: Record<string, AttributeDefinition[]>
+  temporalWindows: TemporalWindow[]
+  occurrenceOperators: OccurrenceOperator[]
+}
+
 /**
  * Configuration loader class for cohort criteria
  */
-export class CriteriaConfigLoader {
+export class ConfigLoader {
   private config: CriteriaConfig
-  public criteriaTypes: Record<string, CriteriaType>
-  public sections: Record<string, ConfigSection>
-  public attributes: Record<string, AttributeCategory>
+  private criteriaTypes: Record<string, CriteriaType>
+  private sections: Record<string, ConfigSection>
+  private attributes: Record<string, AttributeCategory>
+  private criteriaAttributes: Record<string, CriteriaAttributeConfig[]>
+  private temporalWindows: {
+    types: TemporalWindow[]
+  }
+  private occurrenceCount: {
+    operators: OccurrenceOperator[]
+  }
 
-  constructor() {
-    this.config = criteriaConfigData as CriteriaConfig
+  constructor(config: Config) {
+    // Always expand the config
+    this.config = this.expandConfig(config)
+    // Destructure all config properties
     this.criteriaTypes = this.config.criteriaTypes
     this.sections = this.config.sections
     this.attributes = this.config.attributes
+    this.criteriaAttributes = this.config.criteriaAttributes || {}
+    this.temporalWindows = this.config.temporalWindows
+    this.occurrenceCount = this.config.occurrenceCount
+  }
+
+  private expandConfig(config: Config): CriteriaConfig {
+    // Expand criteria types with derived properties
+    const criteriaTypes: Record<string, CriteriaType> = {}
+    Object.entries(config.criteriaTypes).forEach(([id, configType]) => {
+      criteriaTypes[id] = {
+        id,
+        name: configType.name,
+        class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
+        groupOnly: configType.groupOnly,
+        descriptions: {
+          initial: configType.descriptions.initial || configType.descriptions.all || '',
+          censoring: configType.descriptions.censoring || configType.descriptions.all || '',
+          group: configType.descriptions.group || configType.descriptions.all || '',
+        },
+      }
+    })
+
+    // Expand sections with criteriaTypes arrays
+    const sections: Record<string, ConfigSection> = {}
+    const allCriteriaTypeIds = Object.keys(criteriaTypes)
+    Object.entries(config.sections).forEach(([sectionId, configSection]) => {
+      if (configSection.includeAll) {
+        sections[sectionId] = {
+          criteriaTypes: allCriteriaTypeIds,
+        }
+      } else if (configSection.excludeTypes) {
+        sections[sectionId] = {
+          criteriaTypes: allCriteriaTypeIds.filter(id => !configSection.excludeTypes!.includes(id)),
+        }
+      } else {
+        sections[sectionId] = {
+          criteriaTypes: [],
+        }
+      }
+    })
+
+    // Expand attributes and criteriaAttributes from attributeMapping
+    const attributes: Record<string, AttributeCategory> = {}
+    const criteriaAttributes: Record<string, CriteriaAttributeConfig[]> = {}
+
+    Object.entries(config.attributeMapping).forEach(([criteriaTypeId, mappings]) => {
+      const attrs: CriteriaAttributeConfig[] = []
+
+      mappings.forEach(mapping => {
+        // All mappings are now inline attribute objects
+        attrs.push({
+          id: mapping.id,
+          name: mapping.name,
+          description: mapping.description,
+          type: mapping.type,
+          domainFilter: mapping.domainFilter,
+        })
+      })
+
+      if (attrs.length > 0) {
+        criteriaAttributes[criteriaTypeId] = attrs
+      }
+    })
+
+    return {
+      criteriaTypes,
+      sections,
+      attributes,
+      criteriaAttributes,
+      temporalWindows: {
+        types: config.temporalWindows,
+      },
+      occurrenceCount: {
+        operators: config.occurrenceOperators,
+      },
+    }
+  }
+
+  private capitalizeFirst(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1)
   }
 
   /**
@@ -198,10 +311,7 @@ export class CriteriaConfigLoader {
           defaultTitle: displayTitle,
           description: this.getI18nText(`cohortbuilder.criteria.${criteriaType.id}.${descriptionType}`, description),
           defaultDescription: description,
-          icon: criteriaType.icon,
           class: criteriaType.class,
-          atlasKey: criteriaType.atlasKey,
-          special: criteriaType.special || false,
         }
       })
       .filter((option): option is CriteriaOption => option !== null)
@@ -225,7 +335,7 @@ export class CriteriaConfigLoader {
     }
 
     // Special handling for reusable criteria
-    if (criteriaType.special && criteriaTypeId === 'fromReusable') {
+    if (criteriaTypeId === 'fromReusable') {
       return () => {
         // This would trigger the reusable selection modal
         // Implementation depends on existing reusable functionality
@@ -265,16 +375,6 @@ export class CriteriaConfigLoader {
 
       return criteria
     }
-  }
-
-  /**
-   * Get the Atlas internal key for a criteria type
-   * @param criteriaTypeId - The criteria type identifier
-   * @returns The Atlas internal key (e.g., "addConditionEra")
-   */
-  getAtlasKey(criteriaTypeId: string): string {
-    const criteriaType = this.criteriaTypes[criteriaTypeId]
-    return criteriaType ? criteriaType.atlasKey || criteriaTypeId : criteriaTypeId
   }
 
   /**
@@ -347,8 +447,8 @@ export class CriteriaConfigLoader {
    */
   getCriteriaAttributeOptions(criteriaTypeId: string): AttributeOption[] {
     // First check for criteria-specific attributes (like nested, stop reason, etc.)
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      return this.config.criteriaAttributes[criteriaTypeId].map(attr => {
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      return this.criteriaAttributes[criteriaTypeId].map(attr => {
         const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
         const result: AttributeOption = {
@@ -358,8 +458,6 @@ export class CriteriaConfigLoader {
           description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
           defaultDescription: attr.description || '',
           type: attr.type || 'text',
-          atlasKey: attr.atlasKey || '',
-          special: attr.special || false,
           action: this.createAttributeActionFunction(attr),
         }
 
@@ -373,9 +471,7 @@ export class CriteriaConfigLoader {
     }
 
     // Fall back to domain-based attributes (like age, gender, etc.)
-    const attributeCategory = Object.values(this.config.attributes).find(category =>
-      category.domains.includes(criteriaTypeId)
-    )
+    const attributeCategory = Object.values(this.attributes).find(category => category.domains.includes(criteriaTypeId))
 
     if (!attributeCategory || !attributeCategory.attributes) {
       return []
@@ -391,8 +487,6 @@ export class CriteriaConfigLoader {
         description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
         defaultDescription: attr.description || '',
         type: attr.type || 'text',
-        atlasKey: attr.atlasKey || '',
-        special: attr.special || false,
         action: this.createAttributeActionFunction(attr as CriteriaAttributeConfig),
       }
     })
@@ -403,7 +497,7 @@ export class CriteriaConfigLoader {
    */
   createAttributeActionFunction(attribute: CriteriaAttributeConfig): () => CriteriaItem | void {
     return function () {
-      if (attribute.special && attribute.id === 'nested') {
+      if (attribute.id === 'nested') {
         // Add nested criteria group
         console.log('Adding nested criteria group...')
         // This would create a new nested criteria group
@@ -452,14 +546,12 @@ export class CriteriaConfigLoader {
    * Get specific attribute configuration for a criteria type and attribute ID
    */
   getAttributeConfig(criteriaTypeId: string, attributeId: string): CriteriaAttributeConfig | null {
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      const attribute = this.config.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      const attribute = this.criteriaAttributes[criteriaTypeId].find(attr => attr.id === attributeId)
       if (attribute) return attribute
     }
     // Fallback: search in domain-based attributes (like getCriteriaAttributeOptions)
-    const attributeCategory = Object.values(this.config.attributes).find(category =>
-      category.domains.includes(criteriaTypeId)
-    )
+    const attributeCategory = Object.values(this.attributes).find(category => category.domains.includes(criteriaTypeId))
     if (attributeCategory && attributeCategory.attributes) {
       const attribute = attributeCategory.attributes.find(attr => attr.id === attributeId)
       if (attribute) {
@@ -477,16 +569,11 @@ export class CriteriaConfigLoader {
   getAtlasJsonToAttributeMapping(criteriaTypeId: string): Record<string, string> {
     const mapping: Record<string, string> = {}
 
-    if (this.config.criteriaAttributes && this.config.criteriaAttributes[criteriaTypeId]) {
-      this.config.criteriaAttributes[criteriaTypeId].forEach(attr => {
-        // For concept-type attributes, we need to map from Atlas JSON property names
-        // to internal attribute IDs. The Atlas JSON uses PascalCase property names
-        // that correspond to the attribute names, not the atlasKey values.
-
+    if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
+      this.criteriaAttributes[criteriaTypeId].forEach(attr => {
         // Convert internal attributeId to Atlas JSON property name format
         // e.g., 'gender' -> 'Gender', 'conditionType' -> 'ConditionType'
         const atlasJsonKey = attr.id.charAt(0).toUpperCase() + attr.id.slice(1)
-
         mapping[atlasJsonKey] = attr.id
       })
     }
@@ -511,8 +598,8 @@ export class CriteriaConfigLoader {
   getAllAtlasJsonToAttributeMappings(): Record<string, string> {
     const allMappings: Record<string, string> = {}
 
-    if (this.config.criteriaAttributes) {
-      Object.keys(this.config.criteriaAttributes).forEach(criteriaTypeId => {
+    if (this.criteriaAttributes) {
+      Object.keys(this.criteriaAttributes).forEach(criteriaTypeId => {
         const typeMappings = this.getAtlasJsonToAttributeMapping(criteriaTypeId)
         Object.assign(allMappings, typeMappings)
       })
@@ -538,7 +625,7 @@ export class CriteriaConfigLoader {
    * @returns Array of temporal window types
    */
   getTemporalWindowOptions(): TemporalWindow[] {
-    return this.config.temporalWindows.types
+    return this.temporalWindows.types
   }
 
   /**
@@ -546,7 +633,7 @@ export class CriteriaConfigLoader {
    * @returns Array of occurrence count operators
    */
   getOccurrenceCountOperators(): OccurrenceOperator[] {
-    return this.config.occurrenceCount.operators
+    return this.occurrenceCount.operators
   }
 
   /**
@@ -561,6 +648,6 @@ export class CriteriaConfigLoader {
 }
 
 // Create and export singleton instance
-const criteriaConfigLoader = new CriteriaConfigLoader()
-export { criteriaConfigLoader }
-export default criteriaConfigLoader
+const configLoader = new ConfigLoader(configData as Config)
+export { configLoader }
+export default configLoader
