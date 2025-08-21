@@ -22,7 +22,7 @@ import {
 } from '../types/AtlasTypes'
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
-import type CriteriaConfigLoader from './CriteriaConfigLoader'
+import type ConfigLoader from './ConfigLoader'
 
 export interface ConceptSetMapping {
   name: string
@@ -121,7 +121,7 @@ const convertConceptSetArrayToAttribute = (
   attributeId: string,
   conceptArray: Concept[],
   eventType: string,
-  configLoader?: typeof CriteriaConfigLoader
+  configLoader?: typeof ConfigLoader
 ): QueryFilterAttribute => {
   const conceptItems = convertAtlasConceptsToInternal(conceptArray)
 
@@ -199,7 +199,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItemDisplay[] = [],
-  configLoader?: typeof CriteriaConfigLoader
+  configLoader?: typeof ConfigLoader
 ): QueryFilterCriteriaManager => {
   try {
     if (!atlasJson) {
