@@ -140,6 +140,8 @@ jobs:
       - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
+        env:
+          CI: false
         run: | 
           yarn
           yarn build-all      
