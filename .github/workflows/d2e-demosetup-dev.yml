@@ -142,8 +142,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: UI Install Homebrew
+      - name: UI Install Homebrew and Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        working-directory: ./ui
+        env:
+          CI: false
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl file git
@@ -152,15 +155,8 @@ jobs:
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
           echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-      - name: UI Build
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        working-directory: ./ui
-        env:
-          CI: false
-        run: | 
           yarn
-          yarn build-all      
+          yarn build-all   
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
