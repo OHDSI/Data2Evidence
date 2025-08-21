@@ -47,6 +47,7 @@ class SupportedDatabaseDialects(str, Enum):
     POSTGRES = "postgres"
     DUCKDB = "duckdb"
     BIGQUERY = "bigquery"
+    TREX_DUCKDB = "trex_duckdb"
 
 
 class RequestType(str, Enum):

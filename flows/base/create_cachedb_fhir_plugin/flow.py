@@ -30,7 +30,7 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
             port=Variable.get("trex_sql_port"),
             user=Variable.get("trex_sql_user"),
             password=Secret.load("trex-sql-password").get(),
-            dbname=Variable.get("trex_sql_dbname")
+            dbname=duckdb_database_name
         )
     cur1 = None
     try:

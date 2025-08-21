@@ -8,15 +8,18 @@ from functools import partial
 from sqlalchemy import text
 
 from prefect import flow, task
-from prefect.variables import Variable
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
+
+
+from time import sleep
 
 from .types import *
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType
+from pathlib import Path
 os.environ['plugin_name'] = 'data_characterization_plugin'
 
 @flow(log_prints=True)
@@ -41,32 +44,58 @@ def data_characterization_plugin(options: DCOptionsType):
 
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
+    
+    # Todo: Afreen's changes
+    if dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        dbdao = DBDao(dialect=SupportedDatabaseDialects.TREX_DUCKDB.value,
+                      use_cache_db=True,
+                      database_code=database_code)
+        set_admin_connection_string = ""
+        set_read_connection_string = ""
 
     match dbdao.dialect:
-        case SupportedDatabaseDialects.POSTGRES:
+        case SupportedDatabaseDialects.TREX_DUCKDB | SupportedDatabaseDialects.POSTGRES:
+            os.environ['trex_connection'] = "true"
             results_schema = results_schema.lower()
             vocab_schema = vocab_schema.lower()
             schema_name = schema_name.lower()
+            set_admin_connection_string = dbdao.get_trex_connection_string()
+            set_read_connection_string = set_admin_connection_string
         case SupportedDatabaseDialects.HANA:
+            os.environ['trex_connection'] = "false"
             results_schema = results_schema.upper()
             vocab_schema = vocab_schema.upper()
             schema_name = schema_name.upper()
+            set_admin_connection_string = dbdao.get_database_connector_connection_string(
+                user_type=admin_user,
+                release_date=release_date)
+            set_read_connection_string = dbdao.get_database_connector_connection_string(
+                user_type=read_user,
+                release_date=release_date
+            )
 
     dc_schema = create_data_characterization_schema(results_schema,
                                                     vocab_schema,
                                                     dbdao,
                                                     logger)
+    
+    # Todo: Remove
+    if dbdao.dialect == SupportedDatabaseDialects.HANA.value:
+        cdm_version_number = "5.4"
+    else:
+        cdm_version_number = "5.3"
+
+    logger.info(f"Using cdm_version_number: {cdm_version_number}")
 
     if dc_schema:
-        set_admin_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=admin_user,
-            release_date=release_date)
+        # set_admin_connection_string = dbdao.get_database_connector_connection_string(
+        #     user_type=admin_user,
+        #     release_date=release_date)
 
-        set_read_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=read_user,
-            release_date=release_date
-        )
-
+        # set_read_connection_string = dbdao.get_database_connector_connection_string(
+        #     user_type=read_user,
+        #     release_date=release_date
+        # )
         dc_status = execute_data_characterization(schema_name=schema_name,
                                                   results_schema=results_schema,
                                                   vocab_schema=vocab_schema,
@@ -77,17 +106,33 @@ def data_characterization_plugin(options: DCOptionsType):
                                                   flow_run_id=flow_run_id
                                                   )
 
-        if dc_status:
-            msg = dc_status.get("error_message")
-            raise Exception(
-                f"An error occurred while executing data characterization: {msg}")
+        # if there is an errorReportSql.txt file, then there was an error in the data characterization
+        # error_report_path = Path("/app/errorReportSql.txt")
+        # if error_report_path.exists():
+        #     error_message = error_report_path.read_text()
+        #     raise Exception(f"Data characterization failed: {error_message}")
+        
+        # # if there is an error in the analysis, then there is an error in the data characterization
+        # error_report_r_dir = Path(f"/output/{flow_run_id}")
+        # achilles_error_files = list(error_report_r_dir.glob("achillesError*.txt"))
+        # if achilles_error_files:
+        #     error_messages = []
+        #     for file_path in achilles_error_files:
+        #         error_messages.append(file_path.read_text())
+        #         raise Exception(f"Data characterization failed: {'; '.join(error_messages)}")
 
-        execute_export_to_ares(schema_name=schema_name,
-                               vocab_schema=vocab_schema,
-                               results_schema=results_schema,
-                               dbdao=dbdao,
-                               output_folder=output_folder,
-                               set_connection_string=set_read_connection_string)
+        # if dc_status:
+        #     msg = dc_status.get("error_message")
+        #     raise Exception(
+        #         f"An error occurred while executing data characterization: {msg}")
+
+        # execute_export_to_ares(schema_name=schema_name,
+        #                        vocab_schema=vocab_schema,
+        #                        results_schema=results_schema,
+        #                        dbdao=dbdao,
+        #                        output_folder=output_folder,
+        #                        # set_connection_string=set_read_connection_string)
+        #                        set_connection_string=set_admin_connection_string)
 
 
 def create_data_characterization_schema(results_schema: str,
@@ -107,8 +152,9 @@ def create_data_characterization_schema(results_schema: str,
         for k, v in schema_params.items():
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
-
-        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
+            
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/trex_duckdb/concept_hierarchy.sql"
+        # migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
 
         with open(migration_script_filepath, 'r') as f:
             sql_template = Template(f.read())
@@ -129,13 +175,14 @@ def create_data_characterization_schema(results_schema: str,
         enable_audit_policies_wo(dbdao, results_schema)
 
         # task
-        create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
+        if dbdao.dialect == SupportedDatabaseDialects.HANA:
+            create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
+                on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
 
-        create_and_assign_roles_wo(dbdao, results_schema)
+            create_and_assign_roles_wo(dbdao, results_schema)
 
-        logger.info(
-            f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
+            logger.info(
+                f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
 
     except Exception as e:
         logger.error(e)
@@ -145,11 +192,18 @@ def create_data_characterization_schema(results_schema: str,
 
 @task(log_prints=True)
 def create_results_tables(sql_script, dbdao):
-    with dbdao.engine.begin() as conn:
-        for statement in sql_script.strip().split(";"):
-            if statement.strip():
-                conn.execute(text(statement))
-
+    if dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        with dbdao.connect() as conn:
+            with conn.cursor() as cursor:
+                for statement in sql_script.strip().split(";"):
+                    if statement.strip():
+                        cursor.execute(statement)
+            conn.commit()
+    else:
+        with dbdao.engine.begin() as conn:
+            for statement in sql_script.strip().split(";"):
+                if statement.strip():
+                    conn.execute(text(statement))
 
   
 @task(log_prints=True)
@@ -163,10 +217,9 @@ def execute_data_characterization(schema_name: str,
                                   flow_run_id: str):
     try:
         logger = get_run_logger()
-
         # Set these in .env
-        threads = int(Variable.get("achilles_thread_count"))
-        exclude_analysis_ids = Variable.get("exclude_analysis_ids") # comma separated values in a string
+        threads = 1 #int(Variable.get("achilles_thread_count"))
+        exclude_analysis_ids  = "" # Variable.get("exclude_analysis_ids") # comma separated values in a string
 
         logger.info(f'Running achilles on thread count: {threads}')
         with robjects.conversion.localconverter(robjects.default_converter):
@@ -182,15 +235,20 @@ def execute_data_characterization(schema_name: str,
                     numThreads <- {threads}
                     createTable <- TRUE
                     sqlOnly <- FALSE
+                    verboseMode <- TRUE
+                    createIndices <- FALSE
                     excludeAnalysisIds <- c({exclude_analysis_ids})
-                    Achilles::achilles( connectionDetails = connectionDetails, cdmVersion = cdmVersion, cdmDatabaseSchema = cdmDatabaseSchema, createTable = createTable, resultsDatabaseSchema = resultsDatabaseSchema, outputFolder = outputFolder, sqlOnly=sqlOnly, numThreads=numThreads, excludeAnalysisIds=excludeAnalysisIds)''')
+
+                    Achilles::achilles( connectionDetails = connectionDetails, cdmVersion = cdmVersion, cdmDatabaseSchema = cdmDatabaseSchema, createTable = createTable, resultsDatabaseSchema = resultsDatabaseSchema, outputFolder = outputFolder, sqlOnly=sqlOnly, numThreads=numThreads, verboseMode=verboseMode, excludeAnalysisIds=excludeAnalysisIds, createIndices=createIndices)
+                    ''')
+                    # outputPath <- '{output_folder}'
+                    # Achilles::exportToAres(connectionDetails = connectionDetails, cdmDatabaseSchema = cdmDatabaseSchema, resultsDatabaseSchema = resultsDatabaseSchema, vocabDatabaseSchema = vocabDatabaseSchema, outputPath = outputPath, reports = c())
     except Exception as e:
         logger.error(f"execute_data_characterization task failed")
         result_json = {}
         with open(f'{output_folder}/errorReportR.txt', 'rt') as f:
             error_message = f.read()
         logger.error(error_message)
-
         # drop schema
         logger.info(f"Dropping schema")
         dbdao.drop_schema(results_schema, cascade=True)
@@ -228,7 +286,7 @@ def execute_export_to_ares(schema_name: str,
     if output_folder is None or cdm_source_abbreviation is None:
         raise ValueError("output_folder and cdm_source_abbreviation must not be None")
     
-    # Get name of folder created by at {outputFolder/cdm_source_abbreviation}
+    # Get name of folder created by at {output_folder/cdm_source_abbreviation}
     ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25 \
                              else cdm_source_abbreviation)
 
@@ -253,7 +311,6 @@ def execute_export_to_ares(schema_name: str,
             ''')
     except Exception as e:
         logger.error(f"Execute_export_to_ares task failed")
-
         cdm_release_date = os.listdir(ares_path)[0]
         error_report_path = os.path.join(ares_path, cdm_release_date, "errorReportSql.txt")
 

@@ -49,12 +49,16 @@ def dqd_plugin(options: DqdOptionsType):
         # If cohortDefinitionId exists, DQD is run on materialized cohorts (CQD)
         # check hana and dialect
         dbdao = DBDao(use_cache_db=use_cache_db,
-                database_code=database_code)
+                      database_code=database_code)
+        
         database_credentials = dbdao.tenant_configs
+
+
         # If Hana and Jwt Mode, get db owner schema name where materialized cohorts are stored
         if options.cohortDefinitionId and database_credentials.dialect == SupportedDatabaseDialects.HANA and database_credentials.authMode == AuthMode.JWT:
             analytics_svc_api = AnalyticsSvcAPI()
             cohort_database_schema = analytics_svc_api.get_db_owner_schema(dataset_id)
+            
             if not cohort_database_schema:
                 error_message = "Unable to fetch cohort_database_schema from analytics api for Hana Jwt mode!"
                 logger.error(error_message)
@@ -107,8 +111,15 @@ def execute_dqd(
                   database_code=database_code)
 
     set_db_driver_env = dbdao.set_db_driver_env()
-    set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
-                                                                              release_date=release_date)
+
+    if dbdao.dialect == SupportedDatabaseDialects.HANA:
+        logger.info("Running DQD on HANA database")
+        set_read_user_connection = dbdao.get_database_connector_connection_string(user_type=read_user,
+                                                                                  release_date=release_date)
+        
+    else:
+        logger.info("Running DQD on TREX DuckDB database")
+        set_read_user_connection = dbdao.get_trex_connection_string()
 
     logger.info(f'''Running DQD with input parameters:
                     schemaName: {schema_name},

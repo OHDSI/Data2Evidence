@@ -57,7 +57,6 @@ class DaoBase(ABC):
                  use_cache_db: bool,
                  database_code: str,
                  user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb: bool = False,
                  is_study_results_db: bool = False):
 
         secret_block = Secret.load("database-credentials").get()
@@ -67,10 +66,9 @@ class DaoBase(ABC):
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
-        self.connect_to_duckdb = connect_to_duckdb
         self.is_study_results_db = is_study_results_db
-    # --- Property methods ---
 
+    # --- Property methods ---
     @property
     def dialect(self):
         return self.tenant_configs.dialect
@@ -89,7 +87,7 @@ class DaoBase(ABC):
         
     def cachedb_tenant_configs(self,schema_name: str, vocab_schema_name: str) -> DBCredentialsType | CacheDBCredentialsType:
         database_credentials = self.__extract_database_credentials()
-        if self.connect_to_duckdb == True:
+        if self.use_cache_db == True:
             database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
             database_credentials.databaseName = self.__create_cachedb_db_name(database_credentials, 
                                                                               schema_name, 
@@ -282,15 +280,35 @@ class DaoBase(ABC):
     def create_cachedb_connection_url(self,
                                       database_name: str = None,
                                       user: str = None,
+                                      password: str = None,
                                       host: str = None,
                                       port: int = None) -> str:
-        # postgresql used for all cachedb connections
-        base_url = f"postgresql://{user.get_secret_value()}@{host}:{port}/{database_name}"
+        # postgresql used for all trex connections
+        base_url = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
         return base_url
+
+
+    def get_trex_connection_string(self, is_jdbc_url: bool = False) -> str: 
+        """
+        Used for Database Connector package
+        """
+        database_connector_dialect = getattr(DialectDrivers.database_connector, "postgres")
+        trex_host = Variable.get("trex_sql_host")
+        trex_port = Variable.get("trex_sql_port")
+        trex_dbname = self.database_code
+        user = Variable.get("trex_sql_user")
+        password = Secret.load("trex-sql-password").get()
+
+        conn_url = f"{getattr(DialectDrivers.jdbc, "postgres")}://{trex_host}:{trex_port}/{trex_dbname}?preferQueryMode=simple&autocommit=true"
+        if is_jdbc_url:
+            return conn_url
+        else:
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{DaoBase.path_to_driver}')"""
+
 
     def get_database_connector_connection_string(
         self,
-        user_type: UserType,
+        user_type: UserType = UserType.READ_USER,
         release_date: str = None,
     ):
         """
@@ -307,7 +325,8 @@ class DaoBase(ABC):
 
         match dialect:
             case SupportedDatabaseDialects.POSTGRES:
-                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
+                # conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://alp-trex:5432/alpdev_pg"
             case SupportedDatabaseDialects.HANA:
                 encrypt = database_credentials.encrypt or "TRUE"
                 validateCertificate = database_credentials.validateCertificate or "FALSE"
@@ -390,6 +409,30 @@ class DaoBase(ABC):
             raise ValueError(f"Database code '{self.database_code}' not found in 'study_results_db_credentials'")
 
         return DBCredentialsType(**study_results_db_credentials)
+
+    # Todo: Seems to be unused
+    # def __extract_trex_database_credentials(self) -> DBCredentialsType:
+    #     """
+    #     Extracts trex database credentials from the secret block.
+    #     """
+    #     trex_host = Variable.get("trex_sql_host")
+    #     trex_port = Variable.get("trex_sql_port")
+    #     trex_dbname = self.database_code
+    #     user = Variable.get("trex_sql_user")
+    #     password = Secret.load("trex-sql-password").get()
+    #     trex_database_credentials = DBCredentialsType(
+    #         host=trex_host,
+    #         port=trex_port,
+    #         databaseName=trex_dbname,
+    #         readUser=user,
+    #         readPassword=password,
+    #         adminUser=user,
+    #         adminPassword=password,
+    #         dialect=SupportedDatabaseDialects.POSTGRES.value,
+    #         databaseCode="trex_sql_cache",
+    #         authMode=AuthMode.PASSWORD
+    #     )
+    #     return trex_database_credentials
 
     def __create_cachedb_db_name(self, database_credentials: DBCredentialsType, 
                                  schema_name: str, vocab_schema_name: str) -> str:
