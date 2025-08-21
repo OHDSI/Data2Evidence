@@ -8,7 +8,7 @@ class BaseAPI:
         self.python_verify_ssl = Variable.get("python_verify_ssl")
         self.tls_internal_ca_cert = Secret.load("tls-internal-ca-cert")
         is_dev_env = Variable.get("is_dev_env")
-        self.is_dev_env = is_dev_env if is_dev_env else True # change to True for local development
+        self.is_dev_env = is_dev_env if is_dev_env else False # change to True for local development
         
         if self.python_verify_ssl == 'true' and self.tls_internal_ca_cert is None:
             raise ValueError("'tls-internal-ca-cert' prefect secret is undefined")
