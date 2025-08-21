@@ -12,6 +12,7 @@ export interface Concept {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
 }
 
 export interface TerminologyDetailsList {
@@ -181,4 +182,28 @@ export interface StandardConcepts {
   conceptId: number;
   conceptName: string;
   domainId: string;
+}
+
+export interface IWebapiConcept {
+  CONCEPT_CLASS_ID: string;
+  CONCEPT_CODE: string;
+  CONCEPT_ID: number;
+  CONCEPT_NAME: string;
+  DOMAIN_ID: string;
+  INVALID_REASON: string | null;
+  INVALID_REASON_CAPTION: string;
+  STANDARD_CONCEPT: string | null;
+  STANDARD_CONCEPT_CAPTION: string;
+  VOCABULARY_ID: string;
+  VALID_START_DATE: string | number;
+  VALID_END_DATE: string | number;
+  SCORE?: number;
+}
+
+export interface IWebapiConceptRelated extends IWebapiConcept {
+  RELATIONSHIPS: {
+    RELATIONSHIP_NAME: string;
+    RELATIONSHIP_DISTANCE: number;
+  }[];
+  RELATIONSHIP_CAPTION: string;
 }

@@ -10,6 +10,7 @@ import { Trex } from "./trex";
 import { Demo } from "./demo";
 import { StrategusResults } from "./strategus-results";
 import { StrategusAnalysis } from "./strategus-analysis";
+import { D2eWebapi } from "./d2e-webapi";
 
 export const api = {
   userMgmt: new UserMgmt(),
@@ -24,4 +25,5 @@ export const api = {
   demo: new Demo(),
   strategusResults: new StrategusResults(),
   strategusAnalysis: new StrategusAnalysis(),
+  d2eWebapi: new D2eWebapi(),
 };
