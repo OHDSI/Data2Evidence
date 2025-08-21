@@ -54,6 +54,10 @@ export class PrefectService {
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );
+    const portalServerApi = new PortalServerAPI(token);
+    const { schemaName, databaseCode } = await portalServerApi.getDataset(
+      datasetId
+    );
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
@@ -68,6 +72,8 @@ export class PrefectService {
         options: {
           ...prefectParams.options,
           datasetId,
+          schemaName,
+          databaseCode,
         },
       }
     );
