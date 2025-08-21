@@ -115,11 +115,11 @@ try {
         job_runs = jobs.map(job => `${job.name.replace(/ /g, "_")}\t${job.state_type}`).join('\n');
         const flow_status = jobs.map(job => job.state_type);
         let lines = flow_status;
-        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED' || line === 'PAUSED' || line == 'PENDING').length;
+        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED' || line === 'PAUSED' ).length;
         var success_count = lines.filter(line => line === 'COMPLETED' ).length;
         var cancelled_count = lines.filter(line => line === 'CANCELLED' || line === 'CANCELLING').length;
         var running_count = lines.filter(line => line === 'RUNNING').length;
-        var scheduled_count = lines.filter(line => line === 'SCHEDULED').length;
+        var scheduled_count = lines.filter(line => line === 'SCHEDULED' || line == 'PENDING').length;
         var inprogress_count = num_of_jobs - failed_count - success_count - cancelled_count;
         console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Scheduled:${scheduled_count}, Cancelled:${cancelled_count}, Running:${running_count}`);
         await $`sleep 15` 
