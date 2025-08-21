@@ -77,7 +77,7 @@ export class AnalysisService {
         analysisflowDto.id
       );
       // set version default to 0 if undefined
-      const lastVersion = lastDataflowRevision?.version || 0;
+      const lastVersion = lastDataflowRevision?.version ?? 0;
       version += lastVersion;
       await this.canvasRepo.update(
         analysisflowDto.id,
