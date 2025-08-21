@@ -9887,173 +9887,13 @@ const paConfig = {
             "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
         },
         {
-            "source": "patient.interactions.visit",
+            "source": "patient.interactions.conditionoccurrence",
             "visible": true,
-            "order": 8,
+            "order": 2,
             "initial": false,
             "attributes": [
                 {
-                    "source": "patient.interactions.visit.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "End Date"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Start Date"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.visitid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit occurrence Id"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.visittypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit type concept set"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.visitconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit concept Id"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.visitconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit concept set"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.visittypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit type concept id"
-                },
-                {
-                    "source": "patient.interactions.visit.attributes.Visit_concept_name_14b5ab89_4df5_4c60_acc8_888f36ba999b",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -10070,120 +9910,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Visit concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Visit"
-        },
-        {
-            "source": "patient.interactions.specimen",
-            "visible": true,
-            "order": 11,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.specimen.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
+                    "modelName": "Condition concept name"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.specimenid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Specimen Id"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.quantity",
-                    "ordered": true,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": true,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Quantity"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.specimendatetime",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Specimen Date/Time"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.specimendate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Specimen Date"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.specimenconceptid",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -10200,10 +9930,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Specimen concept id"
+                    "modelName": "Condition concept id"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.specimenconceptset",
+                    "source": "patient.interactions.conditionoccurrence.attributes.visitoccurrenceid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -10220,14 +9950,114 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Specimen concept set"
+                    "modelName": "Visit Occurrence Id"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.specimentypeconceptid",
+                    "source": "patient.interactions.conditionoccurrence.attributes.enddate",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "End Date"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Start Date"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsource",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition Source"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionoccurrenceid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition Occurrence Id"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditiontypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -10240,10 +10070,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Specimen type concept id"
+                    "modelName": "Condition Type concept set"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.specimentypeconceptset",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsourceconceptset",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -10260,14 +10090,14 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Specimen type concept set"
+                    "modelName": "Condition Source concept set"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.anatomicsiteconceptid",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatusconceptset",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -10280,10 +10110,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Anatomic site concept id"
+                    "modelName": "Condition Status concept set"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.anatomicsiteconceptset",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptset",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -10291,7 +10121,7 @@ const paConfig = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 12
                     },
@@ -10300,14 +10130,14 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Anatomic site concept set"
+                    "modelName": "Condition concept set"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.diseasestatusconceptid",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditiontypeconceptid",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -10320,10 +10150,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Disease status concept id"
+                    "modelName": "Condition Type concept id"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.diseasestatusconceptset",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsourceconceptid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -10340,830 +10170,10 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Disease status concept set"
+                    "modelName": "Condition Source concept id"
                 },
                 {
-                    "source": "patient.interactions.specimen.attributes.unitconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 15
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Unit concept id"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.unitconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 16
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Unit concept set"
-                },
-                {
-                    "source": "patient.interactions.specimen.attributes.Specimen_concept_name_8803ce15_4c34_7777_5555_0b57022385e5",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Specimen concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Specimen"
-        },
-        {
-            "source": "patient.interactions.proc",
-            "visible": true,
-            "order": 7,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.proc.attributes.procdatetime",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Date/Time"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.procconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Occurrence Id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.procconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Concept Set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.procdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Date"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.qty",
-                    "ordered": true,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": true,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Quantity"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.proctypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure type concept id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.proctypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure type concept set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.modifierconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Modifier concept id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.modifierconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Modifier concept set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_Occurrence_Concept_id_1f37e5fe_6ff5_8888_7777_e2eea48e9999",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Concept Id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_Concept_name_2be4d659_3434_1212_67bf_5a5eaf6797f2",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Procedure Occurrence"
-        },
-        {
-            "source": "patient.interactions.ppperiod",
-            "visible": true,
-            "order": 15,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.ppperiod.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "End Date"
-                },
-                {
-                    "source": "patient.interactions.ppperiod.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Start Date"
-                },
-                {
-                    "source": "patient.interactions.ppperiod.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.ppperiod.attributes.ppperiodid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Payer Plan Period Id"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Payer Plan Period"
-        },
-        {
-            "source": "patient.interactions.obsperiod",
-            "visible": true,
-            "order": 10,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.obsperiod.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "End Date"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Start Date"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.periodtype",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Period type name"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.obsperiodid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation period Id"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptcode",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation period type concept code"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Period type concept id"
-                },
-                {
-                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Period type concept set"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Observation Period"
-        },
-        {
-            "source": "patient.interactions.observation",
-            "visible": true,
-            "order": 9,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.observation.attributes.obsdatetime",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation Date/Time"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.obsdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation Date"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.observationid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation Id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.verbatimtext",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value (verbatim)"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.numval",
-                    "ordered": true,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": true,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value (numeric)"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.obsconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation concept set"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.observationtypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation type concept id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.observationtypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation type concept set"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.valueasconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value as concept id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.valueasconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 13
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value as concept set"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.qualifierconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 14
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Qualifier concept id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.qualifierconceptset",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatusconceptid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -11180,14 +10190,14 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Qualifier concept set"
+                    "modelName": "Condition Status concept id"
                 },
                 {
-                    "source": "patient.interactions.observation.attributes.unitconceptid",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatussource",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
+                    "useRefText": false,
+                    "useRefValue": false,
                     "category": true,
                     "measure": false,
                     "filtercard": {
@@ -11200,341 +10210,11 @@ const paConfig = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Unit concept id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.unitconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 17
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Unit concept set"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.obsconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation concept id"
-                },
-                {
-                    "source": "patient.interactions.observation.attributes.obsconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Observation concept name"
+                    "modelName": "Condition status source"
                 }
             ],
             "initialPatientlistColumn": false,
-            "modelName": "Observation"
-        },
-        {
-            "source": "patient.interactions.measurement",
-            "visible": true,
-            "order": 6,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.measurement.attributes.numval",
-                    "ordered": true,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": true,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value (numeric)"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement date"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement Id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementtypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement type concept set"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.valueasconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value as concept set"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.unitconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Unit concept set"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement concept id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement concept set"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementtypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement type concept id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.valueasconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Value as concept id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.unitconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 13
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Unit concept id"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Measurement"
+            "modelName": "Condition Occurrence"
         },
         {
             "source": "patient.interactions.drugexposure",
@@ -11542,6 +10222,46 @@ const paConfig = {
             "order": 3,
             "initial": false,
             "attributes": [
+                {
+                    "source": "patient.interactions.drugexposure.attributes.drugconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Drug concept name"
+                },
+                {
+                    "source": "patient.interactions.drugexposure.attributes.drugconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Drug concept id"
+                },
                 {
                     "source": "patient.interactions.drugexposure.attributes.enddatetime",
                     "ordered": false,
@@ -11783,26 +10503,6 @@ const paConfig = {
                     "modelName": "Days of supply"
                 },
                 {
-                    "source": "patient.interactions.drugexposure.attributes.drugconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug concept id"
-                },
-                {
                     "source": "patient.interactions.drugexposure.attributes.drugconceptset",
                     "ordered": false,
                     "cached": true,
@@ -11811,7 +10511,7 @@ const paConfig = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 15
                     },
@@ -11901,9 +10601,1879 @@ const paConfig = {
                         "linkColumn": false
                     },
                     "modelName": "Drug type concept set"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Drug Exposure"
+        },
+        {
+            "source": "patient.interactions.deviceexposure",
+            "visible": true,
+            "order": 4,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device concept name"
                 },
                 {
-                    "source": "patient.interactions.drugexposure.attributes.drugconceptname",
+                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device concept id"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "End Date"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Start Date"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.deviceexposureid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device Exposure Id"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.devicetypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device Type concept set"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device concept set"
+                },
+                {
+                    "source": "patient.interactions.deviceexposure.attributes.devicetypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device Type concept id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Device Exposure"
+        },
+        {
+            "source": "patient.interactions.death",
+            "visible": true,
+            "order": 5,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.death.attributes.deathtypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Death Type concept set"
+                },
+                {
+                    "source": "patient.interactions.death.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.death.attributes.deathdatetime",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Death Date/Time"
+                },
+                {
+                    "source": "patient.interactions.death.attributes.deathdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Death Date"
+                },
+                {
+                    "source": "patient.interactions.death.attributes.deathtypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Death Type concept id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Death"
+        },
+        {
+            "source": "patient.interactions.measurement",
+            "visible": true,
+            "order": 6,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept name"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept id"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.numval",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value (numeric)"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement date"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement Id"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementtypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement type concept set"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.valueasconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value as concept set"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.unitconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept set"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept set"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.measurementtypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement type concept id"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.valueasconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value as concept id"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.unitconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 13
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Measurement"
+        },
+        {
+            "source": "patient.interactions.proc",
+            "visible": true,
+            "order": 7,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.proc.attributes.Procedure_Concept_name_2be4d659_3434_1212_67bf_5a5eaf6797f2",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure concept name"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.Procedure_Occurrence_Concept_id_1f37e5fe_6ff5_8888_7777_e2eea48e9999",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Concept Id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.proctypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure type concept id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procdatetime",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Date/Time"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Occurrence Id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Concept Set"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Date"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.qty",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Quantity"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.proctypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure type concept set"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.modifierconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Modifier concept id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.modifierconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Modifier concept set"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Procedure Occurrence"
+        },
+        {
+            "source": "patient.interactions.visit",
+            "visible": true,
+            "order": 8,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.visit.attributes.Visit_concept_name_14b5ab89_4df5_4c60_acc8_888f36ba999b",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit concept name"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.visitconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit concept Id"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "End Date"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Start Date"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.visitconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit concept set"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.visitid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit occurrence Id"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.visittypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit type concept set"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.visittypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Visit type concept id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Visit"
+        },
+        {
+            "source": "patient.interactions.observation",
+            "visible": true,
+            "order": 9,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.observation.attributes.obsconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation concept name"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.obsconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation concept id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.obsdatetime",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Date/Time"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.obsdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Date"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.observationid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.verbatimtext",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value (verbatim)"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.numval",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value (numeric)"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.obsconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation concept set"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.observationtypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation type concept id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.observationtypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation type concept set"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.valueasconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value as concept id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.valueasconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 13
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value as concept set"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.qualifierconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Qualifier concept id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.qualifierconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 15
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Qualifier concept set"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.unitconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.unitconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 17
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept set"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Observation"
+        },
+        {
+            "source": "patient.interactions.obsperiod",
+            "visible": true,
+            "order": 10,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.obsperiod.attributes.periodtype",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Period type name"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Period type concept id"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "End Date"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Start Date"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Period type concept set"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.obsperiodid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation period Id"
+                },
+                {
+                    "source": "patient.interactions.obsperiod.attributes.periodtypeconceptcode",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation period type concept code"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Observation Period"
+        },
+        {
+            "source": "patient.interactions.specimen",
+            "visible": true,
+            "order": 11,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.specimen.attributes.Specimen_concept_name_8803ce15_4c34_7777_5555_0b57022385e5",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen concept name"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimenconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen concept id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimenconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen concept set"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimenid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen Id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.quantity",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Quantity"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimendatetime",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen Date/Time"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimendate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen Date"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimentypeconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen type concept id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.specimentypeconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen type concept set"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.anatomicsiteconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Anatomic site concept id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.anatomicsiteconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Anatomic site concept set"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.diseasestatusconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 13
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Disease status concept id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.diseasestatusconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Disease status concept set"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.unitconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 15
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept id"
+                },
+                {
+                    "source": "patient.interactions.specimen.attributes.unitconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Unit concept set"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Specimen"
+        },
+        {
+            "source": "patient.interactions.drugera",
+            "visible": true,
+            "order": 12,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.drugera.attributes.drugconceptname",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -11921,17 +12491,27 @@ const paConfig = {
                         "linkColumn": false
                     },
                     "modelName": "Drug concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Drug Exposure"
-        },
-        {
-            "source": "patient.interactions.drugera",
-            "visible": true,
-            "order": 12,
-            "initial": false,
-            "attributes": [
+                },
+                {
+                    "source": "patient.interactions.drugera.attributes.drugconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Drug concept id"
+                },
                 {
                     "source": "patient.interactions.drugera.attributes.enddate",
                     "ordered": false,
@@ -12061,7 +12641,7 @@ const paConfig = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 9
                     },
@@ -12071,9 +12651,39 @@ const paConfig = {
                         "linkColumn": false
                     },
                     "modelName": "Drug concept set"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Drug Era"
+        },
+        {
+            "source": "patient.interactions.doseera",
+            "visible": true,
+            "order": 13,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.doseera.attributes.drugdoseconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Drug concept name"
                 },
                 {
-                    "source": "patient.interactions.drugera.attributes.drugconceptid",
+                    "source": "patient.interactions.doseera.attributes.drugconceptid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -12092,36 +12702,6 @@ const paConfig = {
                     },
                     "modelName": "Drug concept id"
                 },
-                {
-                    "source": "patient.interactions.drugera.attributes.drugconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Drug Era"
-        },
-        {
-            "source": "patient.interactions.doseera",
-            "visible": true,
-            "order": 13,
-            "initial": false,
-            "attributes": [
                 {
                     "source": "patient.interactions.doseera.attributes.pid",
                     "ordered": false,
@@ -12183,6 +12763,26 @@ const paConfig = {
                     "modelName": "Start Date"
                 },
                 {
+                    "source": "patient.interactions.doseera.attributes.drugconceptset",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Drug concept set"
+                },
+                {
                     "source": "patient.interactions.doseera.attributes.dosevalue",
                     "ordered": true,
                     "cached": true,
@@ -12223,26 +12823,6 @@ const paConfig = {
                     "modelName": "Dose Era Id"
                 },
                 {
-                    "source": "patient.interactions.doseera.attributes.drugconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug concept set"
-                },
-                {
                     "source": "patient.interactions.doseera.attributes.unitconceptset",
                     "ordered": false,
                     "cached": true,
@@ -12263,26 +12843,6 @@ const paConfig = {
                     "modelName": "Unit concept set"
                 },
                 {
-                    "source": "patient.interactions.doseera.attributes.drugconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug concept id"
-                },
-                {
                     "source": "patient.interactions.doseera.attributes.unitconceptid",
                     "ordered": false,
                     "cached": true,
@@ -12301,660 +12861,10 @@ const paConfig = {
                         "linkColumn": false
                     },
                     "modelName": "Unit concept id"
-                },
-                {
-                    "source": "patient.interactions.doseera.attributes.drugdoseconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Drug concept name"
                 }
             ],
             "initialPatientlistColumn": false,
             "modelName": "Dose Era"
-        },
-        {
-            "source": "patient.interactions.deviceexposure",
-            "visible": true,
-            "order": 4,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "End Date"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Start Date"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.deviceexposureid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device Exposure Id"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.devicetypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device Type concept set"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device concept id"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device concept set"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.devicetypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device Type concept id"
-                },
-                {
-                    "source": "patient.interactions.deviceexposure.attributes.deviceconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Device concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Device Exposure"
-        },
-        {
-            "source": "patient.interactions.death",
-            "visible": true,
-            "order": 5,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.death.attributes.deathtypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Death Type concept set"
-                },
-                {
-                    "source": "patient.interactions.death.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.death.attributes.deathdatetime",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Death Date/Time"
-                },
-                {
-                    "source": "patient.interactions.death.attributes.deathdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Death Date"
-                },
-                {
-                    "source": "patient.interactions.death.attributes.deathtypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Death Type concept id"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Death"
-        },
-        {
-            "source": "patient.interactions.conditionoccurrence",
-            "visible": true,
-            "order": 2,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.visitoccurrenceid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Visit Occurrence Id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.enddate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "End Date"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.startdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Start Date"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsource",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 7
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Source"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionoccurrenceid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Occurrence Id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditiontypeconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Type concept set"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsourceconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 10
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Source concept set"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatusconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 11
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Status concept set"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition concept id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptset",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 12
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition concept set"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditiontypeconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 13
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Type concept id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionsourceconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 14
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Source concept id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatusconceptid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 15
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition Status concept id"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionstatussource",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 16
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition status source"
-                },
-                {
-                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Condition concept name"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Condition Occurrence"
         },
         {
             "source": "patient.interactions.conditionera",
@@ -13127,6 +13037,96 @@ const paConfig = {
             "modelName": "Condition Era"
         },
         {
+            "source": "patient.interactions.ppperiod",
+            "visible": true,
+            "order": 15,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.ppperiod.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "End Date"
+                },
+                {
+                    "source": "patient.interactions.ppperiod.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Start Date"
+                },
+                {
+                    "source": "patient.interactions.ppperiod.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.ppperiod.attributes.ppperiodid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Payer Plan Period Id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Payer Plan Period"
+        },
+        {
             "source": "patient.interactions.cohort",
             "visible": true,
             "order": 16,
@@ -13295,7 +13295,7 @@ const paConfig = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-		'usePaAtlas': false,
+        "usePaAtlas": false
     }
 };
 
