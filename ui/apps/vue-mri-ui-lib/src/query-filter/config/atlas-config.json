@@ -222,12 +222,6 @@
         "type": "text"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
-      },
-      {
         "id": "providerSpecialty",
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
@@ -261,12 +255,6 @@
         "type": "numericRange"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "gender",
         "name": "Gender",
         "description": "Filter by patient gender",
@@ -284,6 +272,12 @@
         "name": "End Date",
         "description": "Filter by end date",
         "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "count",
@@ -305,12 +299,6 @@
       }
     ],
     "drugExposure": [
-      {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -341,6 +329,12 @@
         "name": "End Date",
         "description": "Filter by end date",
         "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "drugType",
@@ -388,7 +382,7 @@
         "domainFilter": "Route"
       },
       {
-        "id": "effective",
+        "id": "effectiveDrugDose",
         "name": "Effective Drug Dose",
         "description": "Filter by effective drug dose",
         "type": "numericRange"
@@ -404,12 +398,6 @@
         "id": "lotNumber",
         "name": "Lot Number",
         "description": "Filter by lot number",
-        "type": "text"
-      },
-      {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
         "type": "text"
       },
       {
@@ -446,12 +434,6 @@
         "type": "numericRange"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "gender",
         "name": "Gender",
         "description": "Filter by patient gender",
@@ -471,15 +453,21 @@
         "type": "dateRange"
       },
       {
-        "id": "count",
-        "name": "Condition Count",
-        "description": "Filter by condition count",
-        "type": "numericRange"
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "length",
         "name": "Era Length",
         "description": "Filter by era duration",
+        "type": "numericRange"
+      },
+      {
+        "id": "count",
+        "name": "Exposure Count",
+        "description": "Filter by exposure count",
         "type": "numericRange"
       },
       {
@@ -509,12 +497,6 @@
         "type": "numericRange"
       },
       {
-        "id": "dateAdjustment",
-        "name": "Date Adjustment",
-        "description": "Adjust event dates",
-        "type": "dateAdjustment"
-      },
-      {
         "id": "gender",
         "name": "Gender",
         "description": "Filter by patient gender",
@@ -532,6 +514,12 @@
         "name": "End Date",
         "description": "Filter by end date",
         "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
       },
       {
         "id": "doseUnit",
@@ -612,7 +600,7 @@
         "domainFilter": "Visit"
       },
       {
-        "id": "uniqueDeviceId",
+        "id": "deviceId",
         "name": "Unique Device ID",
         "description": "Filter by unique device identifier",
         "type": "text"
@@ -624,10 +612,10 @@
         "type": "numericRange"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "deviceSourceConcept",
+        "name": "Device Source Concept",
+        "description": "Filter by device source concept",
+        "type": "concept"
       },
       {
         "id": "providerSpecialty",
@@ -739,10 +727,10 @@
         "domainFilter": "Provider"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "measurementSourceConcept",
+        "name": "Measurement Source Concept",
+        "description": "Filter by measurement source concept",
+        "type": "concept"
       },
       {
         "id": "nested",
@@ -773,7 +761,7 @@
       },
       {
         "id": "startDate",
-        "name": "Observation Date Criteria",
+        "name": "Observation Date",
         "description": "Filter by date",
         "type": "dateRange"
       },
@@ -829,10 +817,10 @@
         "domainFilter": "Unit"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "observationSourceConcept",
+        "name": "Observation Source Concept",
+        "description": "Filter by source concept",
+        "type": "concept"
       },
       {
         "id": "providerSpecialty",
@@ -907,10 +895,10 @@
         "type": "numericRange"
       },
       {
-        "id": "source",
-        "name": "Source Value",
-        "description": "Filter by source value",
-        "type": "text"
+        "id": "procedureSourceConcept",
+        "name": "Procedure Source Concept",
+        "description": "Filter by source concept",
+        "type": "concept"
       },
       {
         "id": "providerSpecialty",
@@ -1301,12 +1289,6 @@
         "type": "concept"
       },
       {
-        "id": "stopReasonSourceConcept",
-        "name": "Stop Reason Source",
-        "description": "Filter by stop reason source concept",
-        "type": "concept"
-      },
-      {
         "id": "payerSourceConcept",
         "name": "Payer Source",
         "description": "Filter by payer source concept",
@@ -1316,6 +1298,18 @@
         "id": "planSourceConcept",
         "name": "Plan Source",
         "description": "Filter by plan source concept",
+        "type": "concept"
+      },
+      {
+        "id": "sponsorSourceConcept",
+        "name": "Sponsor Source",
+        "description": "Filter by sponsor source concept",
+        "type": "concept"
+      },
+      {
+        "id": "stopReasonSourceConcept",
+        "name": "Stop Reason Source",
+        "description": "Filter by stop reason source concept",
         "type": "concept"
       },
       {
