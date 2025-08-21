@@ -330,12 +330,19 @@ class DefaultCovariateSettingsNode(Node):
                 return Result(True, tb.format_exc(), self, task_run_context)
 
 
+# Cohort Shared Resource Specification of Strategus
+# cohortIds - list of cohort IDs
+# cohortType - type of the cohort (e.g., event, target, outcome)
 class CohortDefinitionSharedResource(Node):
     def __init__(self, node):
         super().__init__(node)
         self.cohortIds = node.get("cohorts", [])
         self.type = node.get("cohortType", CohortNodeType.EVENT)
 
+    # create cohortdefinition shared resource
+    # uses R package CohortGeneratorModule in Strategus 
+    # calls the R method createCohortSharedResourceSpecifications. 
+    # It also builds cohortdefinition using CirceR module.
     def task(self, task_run_context):
         webapi = WebAPI()
 
