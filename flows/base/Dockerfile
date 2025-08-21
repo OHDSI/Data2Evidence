@@ -91,7 +91,7 @@ RUN java -version && R CMD javareconf
 # Install Dependencies
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
+# RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.3.3", upgrade="never")'
@@ -107,12 +107,12 @@ RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' |
 
 
 # Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
-                installed <- rownames(installed.packages()); \
-                missing <- setdiff(required, installed); \
-                if (length(missing) > 0) { \
-                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
-                }"
+# RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
+#                 installed <- rownames(installed.packages()); \
+#                 missing <- setdiff(required, installed); \
+#                 if (length(missing) > 0) { \
+#                     stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+#                 }"
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -147,7 +147,7 @@ RUN chown -R docker:docker /output
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
+ENV duckdb_version=1.2.1
 RUN mkdir -p /app/duckdb_extensions
 WORKDIR /app/duckdb_extensions
 RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
@@ -172,6 +172,22 @@ RUN pip install -r requirements_base.txt
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base flows
+
+
+RUN mkdir -p /localachilles
+COPY --chown=docker:docker ./Achilles-1.7.2 /localachilles/Achilles
+
+RUN Rscript -e 'install.packages("/localachilles/Achilles", repos = NULL, type = "source")' # install Achilles from local folder
+# # goes into ‘/usr/local/lib/R/site-library’
+
+# Verify installation and fail if any are missing
+RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
+                installed <- rownames(installed.packages()); \
+                missing <- setdiff(required, installed); \
+                if (length(missing) > 0) { \
+                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+                }"
+
 
 # Grant docker user read/write access
 RUN chmod -R 755 /app
