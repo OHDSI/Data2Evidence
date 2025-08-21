@@ -171,8 +171,8 @@ jobs:
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
-          docker exec -it alp-trex sh -c "rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
-          docker exec -it alp-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
+          docker exec -it d2e-trex sh -c "rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
+          docker exec -it d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
 
       - name: e2e tests setup
         run: |
