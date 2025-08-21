@@ -140,7 +140,9 @@ jobs:
       - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
-        run: yarn build-all      
+        run: | 
+          yarn
+          yarn build-all      
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
