@@ -116,6 +116,7 @@ const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean 
     }
     .app-date.form-group {
       margin: 0px;
+      height: 100%;
     }
   }
 }
