@@ -276,6 +276,7 @@ export const searchConcept = async (
       CONCEPT_CLASS_ID: concept.conceptClassId,
       VALID_START_DATE: Date.parse(concept.validStartDate),
       VALID_END_DATE: Date.parse(concept.validEndDate),
+      SCORE: concept.score,
     };
   });
   return mappedResults;

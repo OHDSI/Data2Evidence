@@ -116,6 +116,7 @@ export interface ITerminologyFhirConcept {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
 }
 export interface ITerminologyFhirResource {
   resourceType: string;

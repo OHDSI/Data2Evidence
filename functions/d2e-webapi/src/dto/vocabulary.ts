@@ -10,7 +10,6 @@ export const VocabularySourceInfo = z.object({
   version: z.string(),
   dialect: z.string(),
 });
-
 export type IVocabularySourceInfo = z.infer<typeof VocabularySourceInfo>;
 
 export const ConceptSetExpressionDto = z.object({
@@ -28,7 +27,11 @@ export const ConceptListDto = z.object({
 });
 export type IConceptListDto = z.infer<typeof ConceptListDto>;
 
-export const ConceptListResponseDto = z.array(Concept);
+export const ConceptListResponseDto = z.array(
+  Concept.extend({
+    SCORE: z.number().optional(),
+  })
+);
 export type IConceptListResponseDto = z.infer<typeof ConceptListResponseDto>;
 
 export const ConceptResponseDto = Concept;
