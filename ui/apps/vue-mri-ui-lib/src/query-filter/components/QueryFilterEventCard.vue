@@ -19,11 +19,12 @@ import type {
   ConceptSetAction,
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
-import type { AttributeOption } from '../utils/CriteriaConfigLoader'
+import type { AttributeOption } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
+import AttributeContainer from './attributes/AttributeContainer.vue'
 
 interface Props {
   event: QueryFilterEvent
@@ -207,6 +208,7 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
       attributeId: attribute.id,
       attributeType: 'standard' as const,
       configType: attribute.type,
+      description: attribute.description || attribute.defaultDescription,
       ...(attribute.domainFilter ? { domainFilter: attribute.domainFilter } : {}),
     }
   }
@@ -233,6 +235,22 @@ const handleAttributeRemoved = (attributeId: string) => {
   }
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
+}
+
+// Update a specific attribute's value by id
+const updateAttribute = (attributeId: string, value: any) => {
+  const currentAttributes = eventData.value.attributes || []
+  const updatedAttributes = currentAttributes.map(attr => {
+    if (attr.id === attributeId) {
+      return { ...attr, value }
+    }
+    return attr
+  })
+  const updatedEvent: QueryFilterEvent = {
+    ...eventData.value,
+    attributes: updatedAttributes,
+  }
+  eventData.value = updatedEvent
 }
 
 // Handle event removal
@@ -405,6 +423,17 @@ const isExpanded = ref(true)
 const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value
 }
+
+// Check attribute type
+const isConceptOrNestedAttribute = (attribute: QueryFilterAttribute) => {
+  return isConceptAttribute(attribute) || isNestedAttribute(attribute)
+}
+const isNestedAttribute = (attribute: QueryFilterAttribute) => {
+  return 'isNested' in attribute && attribute.isNested
+}
+const isConceptAttribute = (attribute: QueryFilterAttribute) => {
+  return 'configType' in attribute && (attribute.configType === 'concept' || attribute.configType === 'conceptSet')
+}
 </script>
 
 <template>
@@ -490,7 +519,7 @@ const toggleExpanded = () => {
             <div v-if="eventData.attributes?.length" class="selected-attributes">
               <div v-for="attribute in eventData.attributes" :key="attribute.id" class="attribute-component">
                 <!-- Attribute Header -->
-                <div class="attribute-header">
+                <div v-if="isConceptOrNestedAttribute(attribute)" class="attribute-header">
                   <span class="attribute-title">{{
                     'title' in attribute
                       ? attribute.title
@@ -523,61 +552,71 @@ const toggleExpanded = () => {
                 </div>
 
                 <!-- Regular Attribute with Concept Set -->
-                <div v-else class="attribute-concept-set">
-                  <label class="attribute-concept-set-label">
-                    {{
-                      'description' in attribute
-                        ? attribute.description
-                        : `Select ${'name' in attribute ? attribute.name : attribute.id} concepts:`
-                    }}
-                  </label>
-                  <QueryFilterTagInputAdapter
-                    v-if="!readonly"
-                    :model="createAttributeModel(attribute)"
-                    :external-value="
-                      'conceptItems' in attribute && attribute.conceptItems
-                        ? attribute.conceptItems
-                        : 'conceptSet' in attribute && attribute.conceptSet
-                        ? [attribute.conceptSet]
-                        : []
-                    "
-                    :external-domain-values="
-                      // Using empty values so dropdown doesn't show for concepts type
-                      ('configType' in attribute &&
-                        attribute.configType === 'conceptSet' &&
-                        conceptSetDomainValues) || {
-                        values: [],
-                        isLoading: false,
-                        loadedStatus: 'NO_RESULTS',
-                      }
-                    "
-                    :external-texts="conceptSetTexts || {}"
-                    :is-catalog-attribute="false"
-                    @update:value="
-                      values => {
-                        if ('configType' in attribute && attribute.configType === 'concept') {
-                          return
-                        } else {
-                          // For concept sets, use the existing handler
-                          values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
+                <template v-else>
+                  <div v-if="isConceptAttribute(attribute)" class="attribute-concept-set">
+                    <label class="attribute-concept-set-label">
+                      {{
+                        'description' in attribute
+                          ? attribute.description
+                          : `Select ${'name' in attribute ? attribute.name : attribute.id} concepts:`
+                      }}
+                    </label>
+                    <QueryFilterTagInputAdapter
+                      v-if="!readonly"
+                      :model="createAttributeModel(attribute)"
+                      :external-value="
+                        'conceptItems' in attribute && attribute.conceptItems
+                          ? attribute.conceptItems
+                          : 'conceptSet' in attribute && attribute.conceptSet
+                          ? [attribute.conceptSet]
+                          : []
+                      "
+                      :external-domain-values="
+                        // Using empty values so dropdown doesn't show for concepts type
+                        ('configType' in attribute &&
+                          attribute.configType === 'conceptSet' &&
+                          conceptSetDomainValues) || {
+                          values: [],
+                          isLoading: false,
+                          loadedStatus: 'NO_RESULTS',
                         }
-                      }
-                    "
-                    @concept-set-action="(action: ConceptSetAction) => {
+                      "
+                      :external-texts="conceptSetTexts || {}"
+                      :is-catalog-attribute="false"
+                      @update:value="
+                        values => {
+                          if ('configType' in attribute && attribute.configType === 'concept') {
+                            return
+                          } else {
+                            // For concept sets, use the existing handler
+                            values[0] && handleAttributeConceptSetSelected(attribute.id, values[0])
+                          }
+                        }
+                      "
+                      @concept-set-action="(action: ConceptSetAction) => {
                     $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
                   }"
-                  />
-                  <div v-else class="attribute-concept-set-readonly">
-                    {{
-                      ('conceptSet' in attribute &&
-                      attribute.conceptSet &&
-                      typeof attribute.conceptSet === 'object' &&
-                      'text' in attribute.conceptSet
-                        ? attribute.conceptSet.text
-                        : undefined) || 'No concept set selected'
-                    }}
+                    />
+                    <div v-else class="attribute-concept-set-readonly">
+                      {{
+                        ('conceptSet' in attribute &&
+                        attribute.conceptSet &&
+                        typeof attribute.conceptSet === 'object' &&
+                        'text' in attribute.conceptSet
+                          ? attribute.conceptSet.text
+                          : undefined) || 'No concept set selected'
+                      }}
+                    </div>
                   </div>
-                </div>
+
+                  <div v-else>
+                    <AttributeContainer
+                      :on-remove-attribute="() => handleAttributeRemoved(attribute.id)"
+                      :attribute="attribute"
+                      @update-attribute="updateAttribute"
+                    />
+                  </div>
+                </template>
               </div>
             </div>
           </div>
