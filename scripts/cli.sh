@@ -323,7 +323,7 @@ case $cmd in
         ;;
     checkflow) 
         setup_zx_cmd
-        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs"
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     getnoproxy)
         setup_zx_cmd
