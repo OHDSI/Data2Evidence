@@ -53,6 +53,7 @@ RUN apt-get update && \
     sqlite3 \
     vim-tiny \
     wget \
+    libglpk40 \
     && apt-get clean
 
 # Python Library Setup
