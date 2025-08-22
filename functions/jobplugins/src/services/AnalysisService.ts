@@ -16,23 +16,6 @@ export class AnalysisService {
     this.graphRepo = dataSource.getRepository(Graph);
   }
 
-  public async getAnalysisflowCanvasByRevision(revisionId: string) {
-    console.log(`getAnalysisflowCanvas called with id: ${revisionId}`);
-
-    // get the canvas using the graphRepo and join
-    const graph = await this.graphRepo
-      .createQueryBuilder("graph")
-      .where("graph.id = :id", { id: revisionId })
-      .getOne();
-
-    if (!graph) {
-      console.log(`No graph found for id: ${revisionId}`);
-      return null;
-    }
-
-    return this.getAnalysisflow(graph.canvasId);
-  }
-
   public async getLastAnalysisflowRevision(id: string) {
     console.log(`getLastAnalysisflowRevision called with id: ${id}`);
 

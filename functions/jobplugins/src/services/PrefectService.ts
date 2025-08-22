@@ -51,9 +51,8 @@ export class PrefectService {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
       id
     );
-    const canvas: Canvas = await this.analysisflowService.getAnalysisflowCanvasByRevision(id);
-    const studyName = canvas.name;
-    const studyId = canvas.id;
+    const studyName = revision.canvas.name;
+    const studyId = revision.canvas.id;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );

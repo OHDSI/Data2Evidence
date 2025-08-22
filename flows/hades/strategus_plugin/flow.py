@@ -74,12 +74,6 @@ def strategus_plugin(json_graph, options):
             key="strategus-analysis-specification",
             markdown=study_analysis_result.data
         )
-        # import StrategusAnalysisAPI and call update_study_analysis
-        strategus_api = StrategusAnalysisAPI()
-        study_name = options.get("studyName", "")
-        study_id = options.get("studyId", "")
-        strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
-
         with open(log_file_path, "r") as f:
             file_contents = f.read()
             create_markdown_artifact(
@@ -88,6 +82,11 @@ def strategus_plugin(json_graph, options):
             )
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {e}")
+    finally:
+        strategus_api = StrategusAnalysisAPI()
+        study_name = options.get("studyName", "")
+        study_id = options.get("studyId", "")
+        strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
 
 @task(name="execute-strategus-task")
 def execute_strategus_node(generated_nodes, results, options):

@@ -7,7 +7,7 @@ class StrategusAnalysisAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("strategus-analysis")
-        self.strategus_analysis_url = self.url + '/strategus/analysis'
+        self.strategus_analysis_url = self.url + 'strategus/analysis'
         self.headers = self.get_options()
 
     def update_study_analysis(self, study_id: str, study_name: str, analysis_spec):
