@@ -24,12 +24,15 @@ const TrexPluginUninstallDialog: FC<TrexPluginUninstallDialogProps> = ({ plugin,
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setDialogFeedback({});
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.TREX_PLUGIN_UNINSTALL_DIALOG__SUCCESS, [String(plugin?.name)]),
-        autoClose: 6000,
-      });
+      if (type === "success") {
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.TREX_PLUGIN_UNINSTALL_DIALOG__SUCCESS, [String(plugin?.name)]),
+          autoClose: 6000,
+        });
+      }
       setConfirmationText("");
+      setConfirmationError(false);
       typeof onClose === "function" && onClose(type);
     },
     [onClose]

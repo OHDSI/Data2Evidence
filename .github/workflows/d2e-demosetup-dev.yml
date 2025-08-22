@@ -29,6 +29,20 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
 
+      - uses: dorny/paths-filter@v3
+        id: flow_file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/base/**"
+
+      - name: Build Flow base docker image
+        if: steps.flow_file_changes.outputs.src == 'true'
+        id: build_flow_base_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+
       - name: Build docker images
         if: success() || failure()
         id: pull
