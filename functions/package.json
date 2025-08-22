@@ -678,12 +678,6 @@
           ]
         },
         {
-          "path": "^/jobplugins(.*)",
-          "scopes": [
-            "jobplugins"
-          ]
-        },
-        {
           "path": "^/prefect(.*)",
           "scopes": [
             "prefect.read",
@@ -2037,6 +2031,12 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
           ]
         },
         {
