@@ -209,7 +209,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{matrix.build_disable != 'true' }}
+        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' }}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
