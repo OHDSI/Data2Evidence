@@ -225,15 +225,6 @@ export class CohortEndpoint {
         }
     }
 
-    private async createCohortTablesIfnotAvailable(){
-        if (
-            analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA &&
-            analyticsCredentials.authentication_mode === "JWT"
-        ) {
-
-        }
-    }
-
     // Get count of cohort definitions
     public async queryCohortDefinitionCount(queryParams: Object) {
         let selectQueryString = `SELECT COUNT(*) as count FROM $$SCHEMA$$.COHORT_DEFINITION
