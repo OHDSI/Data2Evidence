@@ -12,6 +12,7 @@ from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_
 from .flowutils import get_node_list, get_incoming_edges
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings
 from _shared_flow_utils.logger.logger import Logger
+from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 
 
 @flow(log_prints=True)
@@ -73,6 +74,12 @@ def strategus_plugin(json_graph, options):
             key="strategus-analysis-specification",
             markdown=study_analysis_result.data
         )
+        # import StrategusAnalysisAPI and call update_study_analysis
+        strategus_api = StrategusAnalysisAPI()
+        study_name = options.get("studyName", "")
+        study_id = options.get("studyId", "")
+        strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
+
         with open(log_file_path, "r") as f:
             file_contents = f.read()
             create_markdown_artifact(
