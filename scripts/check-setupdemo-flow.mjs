@@ -101,12 +101,12 @@ var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | s
 
 
 const start = Date.now();
-const duration = 900000; // 15mins
+const duration = 600000; // 10mins
 let job_runs = '';
 let num_of_jobs = 0; 
 try {
-    var running_count=1;
-    while (running_count>0 && Date.now() < duration + start) { 
+    var inprogress_count=1;
+    while (inprogress_count>0 && Date.now() < duration + start) { 
         var resp = await $`curl -ks --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/prefect/api/flow_runs/filter' \
             --header 'Content-Type: application/x-www-form-urlencoded' \
             --header 'Authorization: Bearer ${BEARER_TOKEN}'`
@@ -115,11 +115,13 @@ try {
         job_runs = jobs.map(job => `${job.name.replace(/ /g, "_")}\t${job.state_type}`).join('\n');
         const flow_status = jobs.map(job => job.state_type);
         let lines = flow_status;
-        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED').length;
-        var success_count = lines.filter(line => line === 'COMPLETED'|| line === 'SCHEDULED' || line === 'PAUSED').length;
+        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED' || line === 'PAUSED' ).length;
+        var success_count = lines.filter(line => line === 'COMPLETED' ).length;
         var cancelled_count = lines.filter(line => line === 'CANCELLED' || line === 'CANCELLING').length;
-        var running_count = num_of_jobs-failed_count-success_count-cancelled_count;
-        console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Running:${running_count}, Cancelled:${cancelled_count}.`);
+        var running_count = lines.filter(line => line === 'RUNNING').length;
+        var scheduled_count = lines.filter(line => line === 'SCHEDULED' || line === 'PENDING').length;
+        var inprogress_count = num_of_jobs - failed_count - success_count - cancelled_count;
+        console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Scheduled:${scheduled_count}, Cancelled:${cancelled_count}, Running:${running_count}`);
         await $`sleep 15` 
     }
 } catch (error) { 
