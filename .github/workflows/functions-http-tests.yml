@@ -99,8 +99,8 @@ jobs:
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
-          sed -i -r '/^\s*$/d' internal/build/httptest-ddl.sql
-          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' internal/build/httptest-ddl.sql
+          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
           echo "USE_DUCKDB=false" >> $DOTENV_FILE

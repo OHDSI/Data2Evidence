@@ -3,7 +3,7 @@ const hdb = require("hdb");
 const csv = require("fast-csv");
 const path = require("path");
 
-const { functionsAndProcedures } = require("./db-functions-procedures.js");
+const { functionsAndProcedures } = require("./sql/db-functions-procedures.js");
 const user = process.env.HDIUSER;
 const dbCredentials = {
   host: process.env.HANASERVER,
@@ -30,7 +30,7 @@ async function initNWConnection() {
 
 async function loadDDLScript() {
   // console.log(`loadDDLScript...`);
-  const sqlScript = fs.readFileSync(`${__dirname}/httptest-ddl.sql`).toString();
+  const sqlScript = fs.readFileSync(`${__dirname}/sql/httptest-ddl.sql`).toString();
 
   const tmp = sqlScript.split(";");
   const tmp2 = tmp.slice(0, tmp.length - 1);
@@ -109,17 +109,13 @@ async function createTestSchema() {
   return null;
 }
 
-async function insertDataToTable(csvFile, query, dirName, delimiter) {
+async function insertDataToTable(csvFile, query, delimiter) {
   let loadCSV = new Promise((resolve, reject) => {
     let data = [];
     let filePath = path.resolve(
       __dirname,
-      "..",
-      "..",
-      "services",
-      "mri-db",
-      "src",
-      dirName,
+      ".",
+      "data",
       csvFile
     );
     fs.createReadStream(filePath)
@@ -178,73 +174,61 @@ async function loadTestData() {
     [
       "PATIENT_KEY.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Patient_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "INTERACTIONS_KEY.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Interactions_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "OBSERVATIONS_KEY.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Observations_Key" VALUES (HEXTOBIN(?), ?, ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "PATIENT_ATTR.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Patient_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, TO_DATE(?), TO_DATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TO_SECONDDATE(?), ?, TO_SECONDDATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "OBSERVATIONS_ATTR.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Observations_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, HEXTOBIN(?), ?, ?, TO_DECIMAL(?), ?, TO_TIMESTAMP(?), ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "INTERACTION_MEASURES.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Measures" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, TO_DECIMAL(?))`,
-      "data/cdw",
       ",",
     ],
     [
       "INTERACTION_DETAILS.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Details" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "INTERACTIONS_ATTR.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.cdw.db.models::DWEntities.Interactions_Attr" VALUES (TO_TIMESTAMP(?), HEXTOBIN(?), TO_TIMESTAMP(?), ?, HEXTOBIN(?), HEXTOBIN(?), HEXTOBIN(?), ?, ?, ?, ?, ?, TO_TIMESTAMP(?), TO_TIMESTAMP(?), ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "CONCEPT_TERMS.csv",
       `INSERT INTO HTTPTEST_SCHEMA."legacy.ots.internal::Entities.ConceptTerms" VALUES (?, ?, ?, ?, ?, ?, ?, ?, TO_BOOLEAN(?), ?, ?)`,
-      "data/cdw",
       ",",
     ],
     [
       "AssignmentHeader.csv",
       `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_AssignmentHeader" VALUES(?, ?, ?, ?, ?, TO_TIMESTAMP(?), ?, TO_TIMESTAMP(?));`,
-      "config_data",
       ",",
     ],
     [
       "AssignmentDetail.csv",
       `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_AssignmentDetail" VALUES(?, ?, ?, ?);`,
-      "config_data",
       ",",
     ],
     [
       "Config.csv",
       `INSERT INTO HTTPTEST_SCHEMA."ConfigDbModels_Config" VALUES(?, ?, ?, ?, ?, TO_NCLOB(?), ?, ?, ?, TO_TIMESTAMP(?), ?, TO_TIMESTAMP(?));`,
-      "config_data",
       "!",
     ],
   ];
@@ -253,8 +237,7 @@ async function loadTestData() {
     let affectedRows = await insertDataToTable(
       csvFileSQLArray[i][0],
       csvFileSQLArray[i][1],
-      csvFileSQLArray[i][2],
-      csvFileSQLArray[i][3]
+      csvFileSQLArray[i][2]
     );
     console.log(
       `Inserted ${affectedRows} records from ${csvFileSQLArray[i][0]} ...`
