@@ -11,7 +11,6 @@ import type {
   AtlasCohortDefinition,
   CriteriaListItem,
   GroupCriteria,
-  CorrelatedCriteria,
 } from '../types/AtlasTypes'
 import type {
   QueryFilterEvent,
@@ -907,11 +906,8 @@ export class QueryFilterCriteriaManager {
   }
 
   // Helper method to recursively process nested groups
-  private processNestedGroups(
-    events: QueryFilterEvent[],
-    systemIdToAtlasId: Map<string, number>
-  ): CorrelatedCriteria[] {
-    const results: CorrelatedCriteria[] = []
+  private processNestedGroups(events: QueryFilterEvent[], systemIdToAtlasId: Map<string, number>): GroupCriteria[] {
+    const results: GroupCriteria[] = []
 
     // Process group events that contain sibling events
     events
@@ -973,7 +969,7 @@ export class QueryFilterCriteriaManager {
               }
 
               // Create a group to contain this event
-              const eventGroup: CorrelatedCriteria = {
+              const eventGroup: GroupCriteria = {
                 Type: 'ALL',
                 CriteriaList: [criteria],
                 DemographicCriteriaList: [],
