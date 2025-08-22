@@ -20,10 +20,10 @@ export class CohortEndpoint {
     ) {}
 
     public static async createCohortEndpoint(
-        public connection: ConnectionInterface,
-        public schemaName: string,
-        public dialect: string,
-        public authMode: string,
+        connection: ConnectionInterface,
+        schemaName: string,
+        dialect: string,
+        authMode: string,
     ) : CohortEndpoint {
 
         if (dialect === ANALYTICS_DB_DIALECTS.HANA && authMode === "JWT") {
