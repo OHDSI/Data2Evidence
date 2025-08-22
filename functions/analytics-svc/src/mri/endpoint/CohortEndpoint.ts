@@ -13,11 +13,54 @@ import ConnectionInterface = connLib.ConnectionInterface;
 const logger = CreateLogger("analytics-log");
 
 export class CohortEndpoint {
-    constructor(
+    private constructor(
         public connection: ConnectionInterface,
         public schemaName: string,
-        public dialect: string
+        public dialect: string,
     ) {}
+
+    public static async createCohortEndpoint(
+        connection: ConnectionInterface,
+        schemaName: string,
+        dialect: string,
+        authMode: string,
+    ) : CohortEndpoint {
+
+        if (dialect === ANALYTICS_DB_DIALECTS.HANA && authMode === "JWT") {
+            const checkCohortTablesExist = QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
+                                                    SCHEMA_NAME='${connection.cohortSchemaName}' AND 
+                                                    TABLE_NAME IN ('COHORT','COHORT_DEFINITION');`);
+            const tables = await checkCohortTablesExist.executeQuery(connection);
+            
+            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT")) {
+                const createCohortQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT  (
+                                            cohort_definition_id integer NOT NULL,
+                                            subject_id integer NOT NULL,
+                                            cohort_start_date date NOT NULL,
+                                            cohort_end_date date NOT NULL );`);
+                await createCohortQuery.executeUpdate(connection);
+            }
+
+            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT_DEFINITION")) {
+                const createCohortDefinitionQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT_DEFINITION (
+                            cohort_definition_id                INTEGER            NOT NULL,
+                            cohort_definition_name            VARCHAR(255)    NOT NULL,
+                            cohort_definition_description        TEXT    NULL,
+                            definition_type_concept_id        INTEGER            NOT NULL,
+                            cohort_definition_syntax            TEXT    NULL,
+                            subject_concept_id                INTEGER            NOT NULL,
+                            cohort_initiation_date            DATE            NULL
+                            );`);
+                await createCohortDefinitionQuery.executeUpdate(connection);
+            }
+        }
+
+        return new CohortEndpoint(
+            connection,
+            schemaName,
+            dialect,
+        )
+    }
 
     private getInsertSyntaxQuery(): string {
         return `JOIN
