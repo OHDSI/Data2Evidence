@@ -1,5 +1,5 @@
 *                                                   @csafreen @SantanM @satish-a0 @suwarnoong @p-hoffmann
-.github/workflows                                   @brandantck @brian-cornally @mwaiyee @SantanM @satish-a0 @p-hoffmann
+.github/workflows                                   @brandantck @mwaiyee @SantanM @satish-a0 @p-hoffmann
 fhir_functions/                                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 functions/_shared                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
 functions/alp-usermgmt                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
@@ -23,7 +23,7 @@ functions/terminology-svc                           @brandantck @jerome-ng @LSri
 functions/alp-dataflow-gen-init                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 flows/*                                             @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 flows/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann     
-scripts                                             @brandantck @brian-cornally @mwaiyee @SantanM @satish-a0 @p-hoffmann
+scripts                                             @brandantck @mwaiyee @SantanM @satish-a0 @p-hoffmann
 services/alp-dataflow-gen                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 services/alp-fhir                                   @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 services/alp-logto                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
@@ -31,7 +31,9 @@ services/alp-db-management                          @alicia-koh @csafreen @Zhimi
 services/cachedb                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
 services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
 services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+services/trex                                       @p-hoffmann
 tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+tests/e2e                                           @csafreen @SantanM @satish-a0 @suwarnoong @p-hoffmann
 ui/*                                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
 ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann

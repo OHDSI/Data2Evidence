@@ -31,7 +31,9 @@ services/alp-db-management                          @data2evidence/data
 services/cachedb                                    @data2evidence/analyze
 services/envConverter                               @data2evidence/analyze
 services/mri-db                                     @data2evidence/analyze
+services/trex                                       @data2evidence/trex
 tests                                               @data2evidence/analyze
+tests/e2e                                           @data2evidence/core
 ui/*                                                @data2evidence/integrate
 ui/alp-libs                                         @data2evidence/analyze
 ui/apps/mri-pa-ui                                   @data2evidence/analyze
