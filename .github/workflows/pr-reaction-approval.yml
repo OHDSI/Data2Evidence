@@ -14,14 +14,14 @@ env:
   APPROVAL_THRESHOLD: '0.6'
   
   # Required approvers
-  REQUIRED_APPROVERS: 'p-hoffmann:2,satish-a0,suwarnoong,SantanM,csafreen'
+  REQUIRED_APPROVERS: 'p-hoffmann:3,satish-a0,suwarnoong,SantanM,csafreen'
 
   # Reaction emoji to check for
   THUMBS_UP_EMOJI: '+1'
   THUMBS_DOWN_EMOJI: '-1'
 
 jobs:
-  check-reactions:
+  check-vote:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
