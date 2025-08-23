@@ -161,5 +161,8 @@ services:
   logging:
     ports:
       - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
+      - DOZZLE_ENABLE_ACTIONS=true
