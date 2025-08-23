@@ -150,8 +150,8 @@ jobs:
               
               console.log(`\n=== 📊 Results ===`);
               console.log(`PR: "${pr.title}"`);
-              console.log(`Approvers who gave 👍: ${approversWhoGaveThumbsUp.map(u => powerUsers[u] ? `${u}(x${powerUsers[u]})` : u).join(', ') || 'None'}`);
-              console.log(`Approvers who gave 👎: ${approversWhoGaveThumbsDown.map(u => powerUsers[u] ? `${u}(x${powerUsers[u]})` : u).join(', ') || 'None'}`);
+              console.log(`Approvers who gave 👍: ${approversWhoGaveThumbsUp.map(u => powerUsers[u] ? `${u}` : u).join(', ') || 'None'}`);
+              console.log(`Approvers who gave 👎: ${approversWhoGaveThumbsDown.map(u => powerUsers[u] ? `${u}` : u).join(', ') || 'None'}`);
               console.log(`Weighted 👍 votes: ${weightedThumbsUpCount}`);
               console.log(`Weighted 👎 votes: ${weightedThumbsDownCount}`);
               console.log(`Net weighted votes: ${netApprovalCount}/${totalRequired}`);
