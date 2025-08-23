@@ -1500,13 +1500,13 @@ services:
     profiles: [hana]
 
   logging:
-    image: amir20/dozzle:latest
+    image: amir20/dozzle:v8.13.9
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
     networks:
       alp:
     environment:
       - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
       - DOZZLE_BASE=/logs
-      - DOZZLE_ENABLE_ACTIONS=true
       - DOZZLE_NO_ANALYTICS=true
