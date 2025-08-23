@@ -73,7 +73,7 @@ Uncomment
 # docker-compose-local.yml
 - ./ui/resources:/usr/src/local-resources # For local ui development only
 
-yarn start:minerva
+yarn start
 ```
 
 Attach shell to trex container

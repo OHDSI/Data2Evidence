@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
         -d|--function-path) function_path="$2"; shift ;;
         -e|--demo) demo=--profile="demodb" ;;
         -f|--fhir) fhir=--profile="fhir" ;;
-        -g|--minio) minio=--profile="minio" ;;
+        --minio) minio=--profile="minio" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
