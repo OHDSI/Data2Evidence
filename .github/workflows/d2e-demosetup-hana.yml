@@ -4,6 +4,7 @@ on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
