@@ -1,5 +1,10 @@
 name: PR Approval Check
 
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
