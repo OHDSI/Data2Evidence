@@ -70,7 +70,7 @@ GH_USERNAME=$GH_USERNAME GH_TOKEN=$GH_TOKEN yarn gen:dotenv
 - Standard build
 
 ```bash
-yarn build:minerva
+yarn build
 ```
 
 ## (Re)Start App
@@ -80,14 +80,14 @@ yarn build:minerva
 ### ENV_TYPE=remote
 
 ```bash
-yarn remote:minerva pull
-yarn remote:minerva up --wait
+yarn remote pull
+yarn remote up --wait
 ```
 
 ### ENV_TYPE=local
 
 ```bash
-yarn start:minerva
+yarn start
 ```
 
 ## Wait 1 minute
@@ -99,7 +99,7 @@ sleep 60
 ## View Logs
 
 ```bash
-yarn logs:minerva
+yarn logs
 ```
 
 ## Data Load
@@ -115,7 +115,7 @@ yarn logs:minerva
 - Stop all containers
 
 ```bash
-yarn stop:minerva
+yarn stop
 ```
 
 ## Clean-up
@@ -123,7 +123,7 @@ yarn stop:minerva
 - **extreme caution**: removes all containers & volumes
 
 ```bash
-yarn clean:minerva
+yarn clean
 ```
 
 ## Extra information
