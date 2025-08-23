@@ -2,7 +2,7 @@ name: d2e/demosetup-release
 
 on:
   schedule:
-    - cron: "0 22 * * *" # UTC timing
+    - cron: "0 22 * * 0" # UTC timing
   workflow_dispatch:
     inputs:
       version:
