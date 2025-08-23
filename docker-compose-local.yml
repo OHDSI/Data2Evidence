@@ -157,3 +157,12 @@ services:
     volumes:
       - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
+  
+  logging:
+    ports:
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
+      - DOZZLE_ENABLE_ACTIONS=true
