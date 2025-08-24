@@ -139,7 +139,7 @@ jobs:
           cd ${{ matrix.PKGPATH }}
           ${{ matrix.NPM || 'npm' }} install
         env:
-          CI: false
+          CI: ${{ matrix.NPM != 'yarn' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Patch Package
         if: ${{ matrix.NPM }}
@@ -179,7 +179,7 @@ jobs:
           scope: "@data2evidence"
       - name: Publish
         env:
-          CI: false
+          CI: ${{ matrix.NPM != 'yarn' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
