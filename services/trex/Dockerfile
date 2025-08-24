@@ -125,14 +125,7 @@ COPY --chown=root:root ./functions/cdw-svc/src/duckdb/cdw_config_svc_validation_
 
 WORKDIR /usr/src
 
-# Allows usage of npx
-RUN if [ "$(uname -m)" = "aarch64" ]; then \
-    npm install @oven/bun-linux-aarch64; \
-    ln -sf /usr/src/node_modules/bun-linux-aarch64/bin/bun /usr/src/node_modules/.bin/bun; \
-    else \
-    npm install @oven/bun-linux-x64-baseline; \
-    ln -sf /usr/src/node_modules/bun-linux-x64-baseline/bin/bun /usr/src/node_modules/.bin/bun; \
-    fi
+
 
 # Build main function
 COPY ./services/trex/core /usr/src/core
@@ -148,6 +141,15 @@ COPY ./services/trex/deno.json /usr/src
 
 RUN npm install
 RUN npm install -g deno@2.1
+
+# Allows usage of npx
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+    npm install @oven/bun-linux-aarch64; \
+    ln -sf /usr/src/node_modules/bun-linux-aarch64/bin/bun /usr/src/node_modules/.bin/bun; \
+    else \
+    npm install @oven/bun-linux-x64-baseline; \
+    ln -sf /usr/src/node_modules/bun-linux-x64-baseline/bin/bun /usr/src/node_modules/.bin/bun; \
+    fi
 
 WORKDIR /usr/src/core
 RUN deno install --allow-scripts
