@@ -153,9 +153,9 @@ jobs:
       - name: DEST
         if:  ${{ matrix.DESTPATH }}
         run: |
-          cp -a . ${{ matrix.DESTPATH }}
           sudo mkdir -p ${{ matrix.DESTPATH }}
           sudo chown runner:docker ${{ matrix.DESTPATH }}
+          cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
           export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
           echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
