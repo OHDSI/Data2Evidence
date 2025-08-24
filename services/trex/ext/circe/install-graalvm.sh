@@ -22,6 +22,10 @@ fi
 
 rm /tmp/graal.tar.gz
 
+# Set up environment variables
+export JAVA_HOME=${GRAAL_HOME}
+export PATH=${GRAAL_HOME}/bin:$PATH
+
 echo "GraalVM installation contents:"
 ls -al "${GRAAL_HOME}/bin"
 
