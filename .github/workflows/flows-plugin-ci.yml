@@ -145,7 +145,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ matrix.PKGPATH }}
-          ${{ matrix.NPM || npm }} install
+          ${{ matrix.NPM || 'npm' }} install
         env:
           CI: false
 
@@ -167,9 +167,9 @@ jobs:
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
-             ${{ matrix.NPM || npm }} publish
+             ${{ matrix.NPM || 'npm' }} publish
           else
-             ${{ matrix.NPM || npm }} pack
+             ${{ matrix.NPM || 'npm' }} pack
           fi
 
   success:
