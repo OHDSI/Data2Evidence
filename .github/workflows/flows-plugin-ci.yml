@@ -135,6 +135,7 @@ jobs:
           ${{ matrix.NPM || 'npm' }} install
         env:
           CI: false
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: DEST
         working-directory: ${{ matrix.PKGPATH }}
