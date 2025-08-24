@@ -137,7 +137,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ matrix.PKGPATH }}
-          ${{ matrix.NPM || 'npm' }} install ${{ matrix.NPM != 'yarn' && '--ignore-scripts' }}
+          ${{ matrix.NPM == 'yarn' && 'yarn install' ||'npm install --ignore-scripts' }}
         env:
           CI: ${{ matrix.NPM != 'yarn' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
