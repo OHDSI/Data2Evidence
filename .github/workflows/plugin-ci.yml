@@ -58,6 +58,8 @@ jobs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -76,7 +78,7 @@ jobs:
               - ".github/workflows/flows-plugin-ci.yml"
 
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
 
@@ -148,13 +150,14 @@ jobs:
       - name: DEST
         working-directory: ${{ matrix.PKGPATH }}
         if:  ${{ matrix.DESTPATH }}
-        run: |
+        run: | 
           cp package.json package.org.json
           sudo mkdir -p ${{ matrix.DESTPATH }}
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
-          export TREX_DOCKER_TAG=$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
+          export TREX_DOCKER_TAG=sha256:468f1fa411b288f8ebac842dc0982bb7b8cb2d5eeb8dc25a494b734fcacfac42
+          #$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
           echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
           npm run build
       - name: Use Node.js - OSS Develop
