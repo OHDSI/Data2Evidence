@@ -72,6 +72,7 @@ jobs:
               - "functions/**"
               - "fhir_functions/**"
               - ".github/workflows/plugin-ci.yml"
+              - ".github/workflows/flows-plugin-ci.yml"
 
   build:
     runs-on: ubuntu-latest
