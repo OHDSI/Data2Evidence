@@ -48,7 +48,7 @@ WORKDIR /usr/src/trex
 RUN --mount=type=cache,target=/usr/local/cargo/registry,id=${TARGETPLATFORM} \
     --mount=type=cache,target=/usr/src/trex/target,id=${TARGETPLATFORM} \
     #(cargo build --profile ${PROFILE} --workspace || true) && \
-    GIT_V_TAG=${GIT_V_VERSION} cargo build --profile ${PROFILE} --features "${FEATURES}" && \
+    CARGO_BUILD_JOBS=2 GIT_V_TAG=${GIT_V_VERSION} cargo build --profile ${PROFILE} --features "${FEATURES}" && \
     #cargo strip && \
     mv /usr/src/trex/target/${PROFILE}/trex /root #&& \
     #cp /usr/src/trex/target/${PROFILE}/build/circe-rust-wrapper-*/out/libcirce-native.so /root/ || true && \

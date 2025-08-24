@@ -3,7 +3,7 @@
     "version": "0.5.0",
     "description": "llama",
     "scripts": {
-      "prepack": "sudo apt-get install -y build-essential cmake python3 python3-pip pkg-config libssl-dev libcurl4-openssl-dev libvulkan1 libvulkan-dev vulkan-tools glslc libshaderc1 spirv-tools vulkan-validationlayers mesa-vulkan-drivers && make release && mv build/release/extension/*/*_extension ."
+      "prepack": "export DUCKDB_VERSION=v1.3.2 && sudo apt-get install -y build-essential cmake python3 python3-pip pkg-config libssl-dev libcurl4-openssl-dev libvulkan1 libvulkan-dev vulkan-tools glslc libshaderc1 spirv-tools vulkan-validationlayers mesa-vulkan-drivers && make release -j8 && mv build/release/extension/*/*_extension ."
     },
     "author": "",
     "license": "Apache-2.0",
