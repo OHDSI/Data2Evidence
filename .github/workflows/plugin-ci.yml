@@ -141,7 +141,9 @@ jobs:
         env:
           CI: false
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
       - name: DEST
         working-directory: ${{ matrix.PKGPATH }}
         if:  ${{ matrix.DESTPATH }}
