@@ -3,7 +3,7 @@
     "version": "0.5.0",
     "description": "circe",
     "scripts": {
-      "prepack": "export DUCKDB_VERSION=v1.3.2 GRAAL_HOME=/opt/graalvm JAVA_HOME=/opt/graalvm PATH=/opt/graalvm/bin:$PATH && sudo -E bash ./install-graalvm.sh && sudo apt-get install -y --no-install-recommends curl ca-certificates bash build-essential cmake make git python3 maven pkg-config libssl-dev xxd unzip zlib1g-dev file && make release -j8 && mv build/release/extension/*/*_extension ."
+      "prepack": "export DUCKDB_VERSION=v1.3.2 GRAAL_HOME=/opt/graalvm JAVA_HOME=/opt/graalvm PATH=/opt/graalvm/bin:$PATH && sudo -E bash ./install-graalvm.sh && sudo apt-get install -y --no-install-recommends curl ca-certificates bash build-essential cmake make git python3 maven pkg-config libssl-dev xxd unzip zlib1g-dev file && make release -j2 && mv build/release/extension/*/*_extension ."
     },
     "author": "",
     "license": "Apache-2.0",
