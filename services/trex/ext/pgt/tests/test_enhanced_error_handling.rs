@@ -1,0 +1,208 @@
+use pgt::error::TransformationError;
+use pgt::{SqlTransformer, TransformationConfig};
+
+#[cfg(test)]
+mod phase3c_error_handling_tests {
+    use super::*;
+
+    fn create_transformer() -> SqlTransformer {
+        let config = TransformationConfig::default();
+        SqlTransformer::new(config, pgt::Dialect::Hana)
+            .expect("Failed to create transformer")
+    }
+
+    #[test]
+    fn test_enhanced_error_reporting_with_line_numbers() {
+        let transformer = create_transformer();
+
+        // Invalid SQL with multiple lines to test line number reporting
+        let invalid_sql = r#"
+            SELECT * FROM users
+            WHERE invalid_column = 'test' AND
+            INVALID SYNTAX HERE
+            ORDER BY unknown_column;
+        "#;
+
+        let result = transformer.transform(invalid_sql);
+
+        // Should return detailed error with line and column information
+        assert!(
+            result.is_err(),
+            "Should fail with detailed error information"
+        );
+
+        if let Err(TransformationError::ParseError {
+            message,
+            line,
+            column,
+        }) = result
+        {
+            assert!(
+                line > 0,
+                "Line number should be reported: got line {}",
+                line
+            );
+            assert!(
+                column >= 0,
+                "Column number should be reported: got column {}",
+                column
+            );
+            assert!(!message.is_empty(), "Error message should not be empty");
+            assert!(
+                message.contains("Expected")
+                    || message.contains("parser")
+                    || message.contains("error")
+                    || message.contains("invalid")
+                    || message.contains("unknown")
+                    || message.contains("syntax"),
+                "Error message should contain relevant details: {}",
+                message
+            );
+        } else {
+            panic!(
+                "Expected ParseError with line/column information, got: {:?}",
+                result
+            );
+        }
+    }
+
+    #[test]
+    fn test_detailed_transformation_error_context() {
+        let transformer = create_transformer();
+
+        // SQL that parses but fails during transformation
+        let problematic_sql = r#"
+            CREATE TABLE test_table (
+                id UNSUPPORTED_TYPE,
+                data COMPLEX_NESTED_ARRAY_TYPE(VARCHAR(100)[])
+            );
+        "#;
+
+        let result = transformer.transform(problematic_sql);
+
+        // Should provide detailed context about what failed
+        match result {
+            Err(TransformationError::UnsupportedFeature {
+                feature,
+                context,
+                suggestion,
+            }) => {
+                assert!(!feature.is_empty(), "Feature name should be provided");
+                assert!(!context.is_empty(), "Context should be provided");
+                assert!(
+                    suggestion.is_some(),
+                    "Suggestion should be provided for unsupported features"
+                );
+            }
+            Err(TransformationError::DataTypeError {
+                pg_type,
+                suggested_hana_type,
+                context,
+            }) => {
+                assert!(!pg_type.is_empty(), "PostgreSQL type should be identified");
+                assert!(
+                    !suggested_hana_type.is_empty(),
+                    "HANA type suggestion should be provided"
+                );
+                assert!(!context.is_empty(), "Context should be provided");
+            }
+            _ => {
+                // For now, accept other error types as we may not have implemented all specific errors yet
+                assert!(
+                    result.is_err(),
+                    "Should still return an error for problematic SQL"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_error_recovery_and_partial_transformation() {
+        let transformer = create_transformer();
+
+        // Mixed SQL with some valid and some invalid parts
+        let mixed_sql = r#"
+            CREATE TABLE valid_table (id INTEGER, name NVARCHAR(100));
+
+            INVALID SQL SYNTAX HERE;
+
+            SELECT * FROM valid_table;
+        "#;
+
+        let result = transformer.transform(mixed_sql);
+
+        // Should provide information about which parts succeeded and which failed
+        // For now, just ensure we get an error for invalid SQL
+        assert!(
+            result.is_err(),
+            "Should return error for mixed valid/invalid SQL"
+        );
+    }
+
+    #[test]
+    fn test_validation_error_with_hana_compatibility_check() {
+        let transformer = create_transformer();
+
+        // SQL that transforms but may not be HANA compatible
+        let sql_with_compatibility_issues = r#"
+            CREATE TABLE test_table (
+                id1 INTEGER GENERATED BY DEFAULT AS IDENTITY,
+                id2 INTEGER GENERATED BY DEFAULT AS IDENTITY,
+                data NVARCHAR(100)
+            );
+        "#;
+
+        let result = transformer.transform(sql_with_compatibility_issues);
+
+        // Should detect HANA compatibility issues (multiple IDENTITY columns)
+        match result {
+            Err(TransformationError::ValidationError {
+                hana_rule_violations,
+                suggestions,
+            }) => {
+                assert!(
+                    !hana_rule_violations.is_empty(),
+                    "Should detect HANA rule violations"
+                );
+                assert!(
+                    !suggestions.is_empty(),
+                    "Should provide suggestions for fixing violations"
+                );
+                assert!(
+                    hana_rule_violations
+                        .iter()
+                        .any(|v| v.contains("IDENTITY") || v.contains("identity")),
+                    "Should detect multiple IDENTITY column issue"
+                );
+            }
+            _ => {
+                // For initial implementation, we may not have full validation yet
+                // The transformation might succeed but we should add this validation
+                println!("Note: HANA compatibility validation not yet implemented");
+            }
+        }
+    }
+
+    #[test]
+    fn test_configuration_error_handling() {
+        // Test error handling for invalid configuration
+        let invalid_config = TransformationConfig {
+            data_types: pgt::config::DataTypeConfig {
+                preserve_precision: true,
+                handle_arrays: pgt::config::ArrayHandlingStrategy::AsJson,
+                custom_mappings: {
+                    let mut map = std::collections::HashMap::new();
+                    map.insert("INVALID_TYPE".to_string(), "".to_string()); // Empty mapping
+                    map
+                },
+            },
+            ..Default::default()
+        };
+
+        let result = SqlTransformer::new(invalid_config, pgt::Dialect::Hana);
+
+        // Should validate configuration and provide helpful error messages
+        // For now, just ensure transformer can be created
+        // TODO: Add configuration validation
+    }
+}

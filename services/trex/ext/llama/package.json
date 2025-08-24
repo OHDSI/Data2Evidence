@@ -1,0 +1,16 @@
+{
+    "name": "@data2evidence/trex-llama",
+    "version": "0.5.0",
+    "description": "llama",
+    "scripts": {
+      "prepack": "make release && mv build/release/extension/*/*_extension ."
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "trex": {
+        "core": {
+            "name": "llama"
+        }
+      }
+  }
+  

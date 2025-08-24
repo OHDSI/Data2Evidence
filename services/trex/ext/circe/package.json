@@ -1,0 +1,16 @@
+{
+    "name": "@data2evidence/trex-circe",
+    "version": "0.5.0",
+    "description": "circe",
+    "scripts": {
+      "prepack": "make release && mv build/release/extension/*/*_extension ."
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "trex": {
+        "core": {
+            "name": "circe"
+        }
+      }
+  }
+  
