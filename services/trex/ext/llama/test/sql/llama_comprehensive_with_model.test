@@ -1,0 +1,100 @@
+# name: test/sql/llama_comprehensive_with_model.test
+# description: Comprehensive test of all llama extension functions using a small downloaded model
+# group: [sql]
+
+require llama
+
+# Test 1: Basic extension loading and info functions
+statement ok
+SELECT 'Extension loaded successfully';
+
+# Test 2: GPU info function (should work without model)
+query I
+SELECT llama_gpu_info() LIKE '%gpu_support%';
+----
+true
+
+# Test 3: Status function (should work without model)
+query I
+SELECT llama_status() LIKE '%Extension Status%';
+----
+true
+
+# Test 4: List models function (should work without model)
+query I
+SELECT llama_list_models() LIKE '%Models%';
+----
+true
+
+# Test 5: Download a small GGUF model (TinyLLama-v0 Q8_0 - ~5MB)
+# This is a proper GGUF format model for testing
+statement ok
+SELECT llama_download_model('https://huggingface.co/aladar/TinyLLama-v0-GGUF/resolve/main/TinyLLama-v0.Q8_0.gguf', 'tiny-stories-test.gguf');
+
+# Wait for download to complete and verify
+query I
+SELECT llama_list_models() LIKE '%tiny-stories-test%';
+----
+true
+
+# Test 6: Load the downloaded model with minimal configuration
+statement ok
+SELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/tiny-stories-test.gguf', '{"n_ctx": 256, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 7: List loaded models (should show our model)
+query I
+SELECT llama_list_loaded() LIKE '%tiny-stories-test%';
+----
+true
+
+# Test 8: Get model info
+query I
+SELECT llama_model_info('tiny-stories-test') LIKE '%Model Information%';
+----
+true
+
+# Test 9: Basic text generation
+query I
+SELECT LENGTH(llama_generate('tiny-stories-test', 'Once upon a time', '{"max_tokens": 3}')) > 0;
+----
+true
+
+# Test 10: Chat function with simple conversation
+statement ok
+SELECT llama_chat('tiny-stories-test', '[{"role": "user", "content": "Hi"}]', '{"max_tokens": 3}');
+
+# Test 11: Load model for embeddings  
+statement ok
+SELECT llama_load_model_for_embeddings('tiny-stories-test', '{"n_ctx": 128}');
+
+# Test 12: Generate embeddings
+query I
+SELECT llama_embed('tiny-stories-test', 'test') LIKE '%embedding%' OR llama_embed('tiny-stories-test', 'test') LIKE '%vector%';
+----
+true
+
+# Test 13: Batch processing function
+query I
+SELECT llama_batch_process('{"model": "tiny-stories-test", "requests": [{"id": 1, "prompt": "Hi", "max_tokens": 2}]}') IS NOT NULL;
+----
+true
+
+# Test 14: Unload model
+statement ok
+SELECT llama_unload_model('tiny-stories-test');
+
+# Test 15: Verify model is unloaded
+query I
+SELECT llama_list_loaded() NOT LIKE '%tiny-stories-test%';
+----
+true
+
+# Test 16: Try to generate with unloaded model (should fail gracefully)
+query I
+SELECT llama_generate('tiny-stories-test', 'test') LIKE '%Error%' OR llama_generate('tiny-stories-test', 'test') LIKE '%not loaded%' OR llama_generate('tiny-stories-test', 'test') LIKE '%not found%';
+----
+true
+
+# Cleanup: Remove the test model file
+statement ok
+SELECT 'Test completed successfully';

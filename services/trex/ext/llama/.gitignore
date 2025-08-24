@@ -1,0 +1,36 @@
+build
+.idea
+cmake-build-debug
+duckdb_unittest_tempdir/
+.DS_Store
+testext
+test/python/__pycache__/
+.Rhistory
+
+# LLaMA extension specific ignores
+# Build artifacts
+build/
+debug/
+release/
+.cache/
+
+# Models and data
+models/
+*.gguf
+*.ggml
+*.bin
+
+# Temporary files
+*.tmp
+*.log
+
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

@@ -71,6 +71,7 @@ jobs:
               - "ui/**"
               - "functions/**"
               - "fhir_functions/**"
+              - "services/trex/ext/**"
               - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
 
@@ -97,6 +98,10 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+          - PKGPATH: ./services/trex/ext/circe
+          - PKGPATH: ./services/trex/ext/hana
+          - PKGPATH: ./services/trex/ext/llama
+          - PKGPATH: ./services/trex/ext/pgwire
 
 
     steps:
@@ -134,9 +139,11 @@ jobs:
           cd ${{ matrix.PKGPATH }}
           ${{ matrix.NPM || 'npm' }} install
         env:
-          CI: false
+          CI: ${{ matrix.NPM != 'yarn' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
       - name: DEST
         working-directory: ${{ matrix.PKGPATH }}
         if:  ${{ matrix.DESTPATH }}
@@ -172,7 +179,7 @@ jobs:
           scope: "@data2evidence"
       - name: Publish
         env:
-          CI: false
+          CI: ${{ matrix.NPM != 'yarn' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
@@ -181,15 +188,6 @@ jobs:
              ${{ matrix.NPM || 'npm' }} publish
           else
              ${{ matrix.NPM || 'npm' }} pack
-             
-             for archive in *.tgz; do
-               if [[ -f "$archive" ]]; then
-                 echo "Contents of $archive:"
-                 tar -tvf "$archive"
-                 echo "END $archive"
-                 echo ""
-               fi
-             done
           fi
 
   success:
