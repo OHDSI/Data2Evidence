@@ -186,15 +186,6 @@ jobs:
              ${{ matrix.NPM || 'npm' }} publish
           else
              ${{ matrix.NPM || 'npm' }} pack
-             
-             for archive in *.tgz; do
-               if [[ -f "$archive" ]]; then
-                 echo "Contents of $archive:"
-                 tar -tvf "$archive"
-                 echo "END $archive"
-                 echo ""
-               fi
-             done
           fi
 
   success:
