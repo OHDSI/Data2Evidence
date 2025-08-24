@@ -71,6 +71,7 @@ jobs:
               - "ui/**"
               - "functions/**"
               - "fhir_functions/**"
+              - "services/trex/ext/**"
               - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
 
@@ -97,6 +98,10 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+          - PKGPATH: ./services/trex/ext/circe
+          - PKGPATH: ./services/trex/ext/hana
+          - PKGPATH: ./services/trex/ext/llama
+          - PKGPATH: ./services/trex/ext/pgwire
 
 
     steps:
