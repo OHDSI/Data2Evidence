@@ -18,6 +18,8 @@ jobs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: dorny/paths-filter@v3
         id: file_changes
