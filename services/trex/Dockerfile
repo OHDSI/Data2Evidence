@@ -1,4 +1,4 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:b2bfefc3bfd693c54dacda16dc358e2bb5dbdbc8aea155a981b94d4e6a0c02c3 AS base
+FROM ghcr.io/data2evidence/d2e-trex-base@sha256:468f1fa411b288f8ebac842dc0982bb7b8cb2d5eeb8dc25a494b734fcacfac42 AS base
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -6,7 +6,7 @@ RUN useradd docker -u 1001 \
     && adduser docker alp
 
 # Create folder to store duckdb extensions for offline plugins
-ENV duckdb_version=1.2.1
+ENV duckdb_version=1.3.2
 RUN mkdir -p /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
 WORKDIR /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
 RUN apt-get update && apt-get install -y wget 
