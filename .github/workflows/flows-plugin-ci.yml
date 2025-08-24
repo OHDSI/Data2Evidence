@@ -151,6 +151,7 @@ jobs:
           CI: false
 
       - name: DEST
+        working-directory: ${{ matrix.PKGPATH }}
         if:  ${{ matrix.DESTPATH }}
         run: |
           sudo mkdir -p ${{ matrix.DESTPATH }}
