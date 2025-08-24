@@ -69,6 +69,8 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "ui/**"
+              - "functions/**"
+              - "fhir_functions/**"
               - ".github/workflows/plugin-ci.yml"
 
   build:
