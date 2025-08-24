@@ -126,12 +126,12 @@ jobs:
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/ms/npm/registry/"
           scope: "@data2evidence"
       - name: Setup NPM
-        if: env.NPM != 'npm'
-        run: npm install -g $NPM
+        if: matrix.NPM != 'npm'
+        run: npm install -g ${{ matrix.NPM }}
       - name: Build
         run: |
           cd ${{ matrix.PKGPATH }}
-          $NPM install
+          ${{ matrix.NPM }} install
         env:
           CI: false
       - name: Update version
@@ -151,9 +151,9 @@ jobs:
         run: |
           cd ${{ matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then 
-             $NPM publish
+             ${{ matrix.NPM }} publish
           else 
-             $NPM pack
+             ${{ matrix.NPM }} pack
           fi
 
   success:
