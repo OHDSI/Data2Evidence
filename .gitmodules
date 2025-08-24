@@ -22,3 +22,6 @@
 [submodule "services/trex/ext/llama/llama.cpp"]
 	path = services/trex/ext/llama/llama.cpp
 	url = https://github.com/ggml-org/llama.cpp.git
+[submodule "services/trex/Trex"]
+	path = services/trex/trex
+	url = https://github.com/OHDSI/Trex.git
