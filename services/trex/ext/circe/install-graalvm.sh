@@ -1,7 +1,12 @@
 #!/bin/bash
 
 GRAAL_VERSION=21
-GRAAL_HOME=/opt/graalvm
+
+# Validate that GRAAL_HOME is provided from environment
+if [[ -z "${GRAAL_HOME:-}" ]]; then
+    echo "Error: GRAAL_HOME environment variable is required"
+    exit 1
+fi
 
 echo "Installing GraalVM ${GRAAL_VERSION} to ${GRAAL_HOME}"
 
@@ -21,10 +26,6 @@ else
 fi
 
 rm /tmp/graal.tar.gz
-
-# Set up environment variables
-export JAVA_HOME=${GRAAL_HOME}
-export PATH=${GRAAL_HOME}/bin:$PATH
 
 echo "GraalVM installation contents:"
 ls -al "${GRAAL_HOME}/bin"
