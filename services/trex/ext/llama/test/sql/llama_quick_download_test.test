@@ -1,0 +1,59 @@
+# name: test/sql/llama_quick_download_test.test
+# description: Quick test using a very small downloadable model for CI/testing
+# group: [sql]
+
+require llama
+
+# Test with a minimal downloadable model (GPT-2 style, very small)
+# Using a tiny quantized model for faster download in CI environment
+
+# Test 1: Quick download and load
+statement ok
+SELECT llama_download_model('https://huggingface.co/aladar/TinyLLama-v0-GGUF/resolve/main/TinyLLama-v0.Q8_0.gguf', 'tiny-test-model.gguf');
+
+# Verify download completed
+query I  
+SELECT llama_list_models() LIKE '%tiny-test-model%';
+----
+true
+
+# Test 2: Load model for generation
+statement ok
+SELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/tiny-test-model.gguf', '{"n_ctx": 512, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 3: Quick generation test
+query I
+SELECT LENGTH(llama_generate('tiny-test-model', 'Hi', '{"max_tokens": 2}')) > 0;
+----
+true
+
+# Test 4: Embeddings test
+statement ok  
+SELECT llama_load_model_for_embeddings('tiny-test-model', '{"n_ctx": 512}');
+
+query I
+SELECT llama_embed('tiny-test-model', 'test') LIKE '%[%' OR LENGTH(llama_embed('tiny-test-model', 'test')) > 10;
+----
+true
+
+# Test 5: Chat format test
+query I
+SELECT LENGTH(llama_chat('tiny-test-model', '[{"role":"user","content":"Hi"}]', '{"max_tokens":2}')) > 0;
+----
+true
+
+# Test 6: All status functions work with loaded model
+query I
+SELECT llama_gpu_info() LIKE '%gpu_support%' AND 
+       llama_status() LIKE '%Extension Status%' AND
+       llama_model_info('tiny-test-model') LIKE '%Model Information%' AND
+       llama_list_loaded() LIKE '%tiny-test-model%';
+----
+true
+
+# Cleanup
+statement ok
+SELECT llama_unload_model('tiny-test-model');
+
+statement ok
+SELECT 'All quick tests passed';

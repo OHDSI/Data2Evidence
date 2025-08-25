@@ -1,0 +1,43 @@
+# name: test/sql/llama_tiny_download.test
+# description: Test with smallest possible downloadable model (~6MB)
+# group: [sql]
+
+require llama
+
+# Test 1: Extension loading
+statement ok
+SELECT 'Starting tiny model test';
+
+# Test 2: Download a very small GGUF model (TinyLLama-v0 Q8_0)
+statement ok
+SELECT llama_download_model('https://huggingface.co/aladar/TinyLLama-v0-GGUF/resolve/main/TinyLLama-v0.Q8_0.gguf', 'tiny-test.gguf');
+
+# Test 3: Verify download completed
+query I
+SELECT llama_list_models() LIKE '%tiny-test%';
+----
+true
+
+# Test 4: Load with minimal settings (very conservative)
+statement ok
+SELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/tiny-test.gguf', '{"n_ctx": 512, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 5: Test basic functionality
+query I
+SELECT LENGTH(llama_generate('tiny-test', 'Once', '{"max_tokens": 1, "temperature": 0.1}')) > 0;
+----
+true
+
+# Test 6: Test model info
+query I  
+SELECT llama_model_info('tiny-test') IS NOT NULL;
+----
+true
+
+# Test 7: Clean up
+statement ok
+SELECT llama_unload_model('tiny-stories.gguf');
+
+# Test completed
+statement ok
+SELECT 'Tiny model test completed';

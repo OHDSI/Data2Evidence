@@ -1,0 +1,107 @@
+# name: test/sql/circe_sql_validation.test
+# description: Validate exact SQL structure patterns against expected OHDSI cohort SQL format
+# group: [sql]
+
+require circe
+
+# Test complex cohort expression with concept sets
+# This base64 encodes a JSON with a condition concept set
+statement ok
+CREATE TABLE test_circe_results AS 
+SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"test_cdm","resultSchema":"test_results","targetTable":"test_cohort","cohortId":12345,"generateStats":true}') AS generated_sql;
+
+# Verify SQL contains standard OHDSI cohort table structure
+query III
+SELECT 
+  -- Check for temp table creation patterns
+  (position('CREATE TABLE #Codesets' IN generated_sql) > 0)::INTEGER as has_codesets_table,
+  -- Check for primary event selection
+  (position('INTO #qualified_events' IN generated_sql) > 0)::INTEGER as has_qualified_events,
+  -- Check for final cohort generation (case insensitive)
+  (position('into #final_cohort' IN generated_sql) > 0)::INTEGER as has_final_cohort
+FROM test_circe_results;
+----
+1	1	1
+
+# Verify parameter substitution works correctly 
+query III
+SELECT 
+  -- Check cdmSchema substitution
+  (position('test_cdm.observation_period' IN generated_sql) > 0)::INTEGER as has_correct_cdm_schema,
+  -- Check cohortId substitution
+  (position('cohort_definition_id = 12345' IN generated_sql) > 0)::INTEGER as has_correct_cohort_id,
+  -- Check targetTable usage
+  (position('test_cohort' IN generated_sql) > 0)::INTEGER as has_correct_target_table
+FROM test_circe_results;
+----
+1	1	1
+
+# Verify statistics generation when enabled
+query III
+SELECT 
+  -- Check for inclusion analysis tables
+  (position('test_results.cohort_inclusion_result' IN generated_sql) > 0)::INTEGER as has_inclusion_result,
+  -- Check for summary statistics
+  (position('test_results.cohort_summary_stats' IN generated_sql) > 0)::INTEGER as has_summary_stats,
+  -- Check for inclusion statistics
+  (position('test_results.cohort_inclusion_stats' IN generated_sql) > 0)::INTEGER as has_inclusion_stats
+FROM test_circe_results;
+----
+1	1	1
+
+# Verify SQL structure follows expected OHDSI patterns
+query III
+SELECT 
+  -- Check for standard person/event columns
+  (position('person_id, start_date, end_date' IN generated_sql) > 0)::INTEGER as has_standard_columns,
+  -- Check for observation period joins
+  (position('JOIN test_cdm.observation_period' IN generated_sql) > 0)::INTEGER as has_obs_period_join,
+  -- Check for row number windowing (common in OHDSI SQL)
+  (position('row_number() over' IN lower(generated_sql)) > 0)::INTEGER as has_windowing
+FROM test_circe_results;
+----
+1	1	1
+
+# Test SQL length indicates realistic complexity
+query I
+SELECT (length(generated_sql) > 8000)::INTEGER as has_realistic_length
+FROM test_circe_results;
+----
+1
+
+# Test with generateStats disabled
+statement ok 
+DROP TABLE test_circe_results;
+
+statement ok
+CREATE TABLE test_circe_no_stats AS 
+SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"test_cdm","resultSchema":"test_results","targetTable":"test_cohort","cohortId":67890,"generateStats":false}') AS generated_sql;
+
+# Verify basic SQL structure regardless of generateStats setting
+query III
+SELECT 
+  -- Should have inclusion result tables (always present)
+  (position('test_results.cohort_inclusion_result' IN generated_sql) > 0)::INTEGER as has_inclusion_result,
+  -- Should have summary statistics (always present)
+  (position('test_results.cohort_summary_stats' IN generated_sql) > 0)::INTEGER as has_summary_stats,
+  -- Should still have basic cohort insertion
+  (position('INSERT INTO test_cohort' IN generated_sql) > 0)::INTEGER as has_basic_insertion
+FROM test_circe_no_stats;
+----
+1	1	1
+
+# Test invalid JSON input handling
+statement error
+SELECT circe_json_to_sql('invalid_base64', '{"cdmSchema":"cdm"}');
+----
+circe_json_to_sql: base64 decode failed
+
+# Test invalid options JSON - should return error message rather than throw
+query I
+SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7fQp9', 'invalid_json') LIKE '/* circe error:%';
+----
+true
+
+# Clean up
+statement ok
+DROP TABLE test_circe_no_stats;

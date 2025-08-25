@@ -1,0 +1,77 @@
+# name: test/sql/circe_sqlrender.test
+# description: Test SQL rendering and translation functions
+# group: [circe]
+
+require circe
+
+# Test circe_sql_render - basic template rendering with parameters
+query I
+SELECT circe_sql_render('SELECT * FROM @schema.patients WHERE age = @age;', '{"schema": "cdm", "age": "25"}')
+----
+SELECT * FROM cdm.patients WHERE age = 25;
+
+# Test circe_sql_render - empty parameters
+query I
+SELECT circe_sql_render('SELECT * FROM patients;', '{}')
+----
+SELECT * FROM patients;
+
+# Test circe_sql_render - missing parameters (should leave as-is)
+query I
+SELECT circe_sql_render('SELECT @missing FROM table;', '{"other": "value"}')
+----
+SELECT @missing FROM table;
+
+# Test circe_sql_render - invalid JSON (should render without parameters)
+query I
+SELECT circe_sql_render('SELECT @param FROM table;', 'invalid-json')
+----
+SELECT @param FROM table;
+
+# Test circe_sql_translate - SQL Server TOP to PostgreSQL LIMIT
+query I
+SELECT circe_sql_translate('SELECT TOP 10 * FROM patients;', 'postgresql')
+----
+SELECT  * FROM patients LIMIT 10;
+
+# Test circe_sql_translate - SQL Server date functions to PostgreSQL
+query I
+SELECT circe_sql_translate('SELECT DATEADD(month, 1, GETDATE());', 'postgresql')
+----
+SELECT (CURRENT_DATE + 1*INTERVAL'1 month');
+
+# Test circe_sql_translate - no translation needed
+query I
+SELECT circe_sql_translate('SELECT * FROM patients;', 'postgresql')
+----
+SELECT * FROM patients;
+
+# Test circe_sql_translate - SQL Server ISNULL to PostgreSQL COALESCE
+query I
+SELECT circe_sql_translate('SELECT ISNULL(patient_name, ''Unknown'') FROM patients;', 'postgresql')
+----
+SELECT COALESCE(patient_name,'Unknown') FROM patients;
+
+# Test circe_sql_render_translate - combined rendering and translation
+query I
+SELECT circe_sql_render_translate('SELECT TOP @limit * FROM @schema.patients WHERE age >= @min_age;', 'postgresql', '{"limit": "5", "schema": "cdm", "min_age": "18"}')
+----
+SELECT  * FROM cdm.patients WHERE age >= 18 LIMIT 5;
+
+# Test circe_sql_render_translate - with complex SQL
+query I
+SELECT circe_sql_render_translate('SELECT TOP @n patient_id, DATEADD(day, @days, admission_date) FROM @cdm_schema.visits;', 'postgresql', '{"n": "100", "days": "30", "cdm_schema": "omop"}')
+----
+SELECT  patient_id, (admission_date + 30*INTERVAL'1 day') FROM omop.visits LIMIT 100;
+
+# Test circe_sql_render_translate - empty parameters with translation
+query I
+SELECT circe_sql_render_translate('SELECT TOP 3 * FROM patients;', 'postgresql', '{}')
+----
+SELECT  * FROM patients LIMIT 3;
+
+# Test error handling - invalid dialect (should still work, may just pass through)
+query I
+SELECT LENGTH(circe_sql_translate('SELECT * FROM patients;', 'invalid_dialect')) > 0
+----
+true
