@@ -1,0 +1,16 @@
+{
+    "name": "@data2evidence/trex-pgwire",
+    "version": "0.5.0",
+    "description": "pgwire",
+    "scripts": {
+      "prepack": "make configure && make release && mv build/release/extension/*/*_extension ."
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "trex": {
+        "core": {
+            "name": "pgwire"
+        }
+      }
+  }
+  
