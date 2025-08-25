@@ -98,7 +98,7 @@ export class PrefectService {
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
-      options["study_id"],
+      options["studyId"],
       options["notebookName"],
       json_graph["analysisSpecification"]
     );
