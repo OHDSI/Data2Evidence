@@ -16,8 +16,6 @@ jobs:
         working-directory: ./ui
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: check if vue files has changed
       shell: bash
