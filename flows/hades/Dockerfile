@@ -53,6 +53,7 @@ RUN apt-get update && \
     sqlite3 \
     vim-tiny \
     wget \
+    libglpk40 \
     && apt-get clean
 
 # Python Library Setup
@@ -95,18 +96,20 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.1.1", upgrade="never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
-RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+#RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
+# include a d2e version of Strategus - with CohortSurvival module integrated
+RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 # Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortIncidence', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
-                installed <- rownames(installed.packages()); \
-                missing <- setdiff(required, installed); \
-                if (length(missing) > 0) { \
-                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
-                }"
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+    installed <- rownames(installed.packages()); \
+    missing <- setdiff(required, installed); \
+    if (length(missing) > 0) { \
+    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
+    }"
 
 RUN useradd docker -u 1001 \
     && groupadd alp \

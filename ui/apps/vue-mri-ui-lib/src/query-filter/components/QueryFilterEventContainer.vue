@@ -19,7 +19,7 @@ import type {
   ConceptSetAction,
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
-import type { CriteriaOption } from '../utils/CriteriaConfigLoader'
+import type { CriteriaOption } from '../utils/ConfigLoader'
 
 interface Props {
   events: QueryFilterEvent[]

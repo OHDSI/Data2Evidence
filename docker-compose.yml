@@ -135,6 +135,7 @@ services:
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
       # GOOGLE_APPLICATION_CREDENTIALS can be set in your .env file
       # If not present, the credentials volume/secret will not be mounted
+      # Ensure that 'BigQuery Read Session User' role is assigned to the service account
       - ${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:/run/secrets/google-credentials.json:ro
     healthcheck:
       interval: 60s
@@ -197,6 +198,7 @@ services:
               "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
               "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
+              "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
               "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
               "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
               "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
@@ -470,7 +472,9 @@ services:
             "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
             "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
             "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json"
+            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json",
+            "PREFECT__LOCAL_DEBUG": ${PREFECT__LOCAL_DEBUG:-false},
+            "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}"
           },
           "jupyter-gateway": {},
           "mlflow": {},
@@ -490,6 +494,7 @@ services:
         "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
         "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
+        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
         "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
         "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",

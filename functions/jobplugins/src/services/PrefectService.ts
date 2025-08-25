@@ -2,6 +2,7 @@ import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { StrategusAnalysisApi } from "../api/StrategusAnalysis.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
+import { Canvas } from "../entities/canvas.ts";
 import {
   PrefectAnalysisParamsTransformer,
   PrefectParamsTransformer,
@@ -50,9 +51,14 @@ export class PrefectService {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
       id
     );
-
+    const studyName = revision.canvas.name;
+    const studyId = revision.canvas.id;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
+    );
+    const portalServerApi = new PortalServerAPI(token);
+    const { schemaName, databaseCode } = await portalServerApi.getDataset(
+      datasetId
     );
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
@@ -68,6 +74,10 @@ export class PrefectService {
         options: {
           ...prefectParams.options,
           datasetId,
+          schemaName,
+          databaseCode,
+          studyName,
+          studyId
         },
       }
     );
