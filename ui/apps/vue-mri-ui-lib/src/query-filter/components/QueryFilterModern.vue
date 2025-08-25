@@ -8,10 +8,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
-import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { loadConceptSets } from '../utils/QueryFilterModern/loadConceptSets'
 import type {
@@ -22,8 +20,6 @@ import type {
   StoredConceptItem,
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
-
-import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
 import { useConceptSets } from '../composables/useConceptSets'
 import { useDatasetId } from '../composables/useDatasetId'
@@ -36,6 +32,7 @@ import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
 import * as types from '../../store/mutation-types'
+import { useCriteriaManager } from '../composables/useCriteriaManager'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -61,8 +58,6 @@ interface TerminologyEventProps {
   onMultiConceptSelect?: (concepts: SelectedConcept[]) => void
 }
 
-// Use the hierarchical criteria manager
-const criteriaManager = reactive(new QueryFilterCriteriaManager())
 const instance = getCurrentInstance()
 const store = instance?.appContext.config.globalProperties['$store']
 
@@ -108,38 +103,6 @@ const tagInputModel = computed<TagInputModel>(() => {
   }
 })
 
-const conceptSetsFromCriteria = computed(() => {
-  const conceptSets: ConceptSetItemDisplay[] = []
-  const seenIds = new Set<string>()
-
-  const criteria = criteriaManager.getCriteria()
-  criteria.criteria.forEach(group => {
-    group.events.forEach(event => {
-      if (event.conceptSetId && !seenIds.has(event.conceptSetId)) {
-        const foundConceptSet = allConceptSets.value.find(cs => cs.value.toString() === event.conceptSetId!.toString())
-        if (foundConceptSet) {
-          conceptSets.push(foundConceptSet)
-          seenIds.add(event.conceptSetId)
-        } else if (event.selectedConceptSet) {
-          console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
-          // Convert SelectedConceptSet to ConceptSetItem
-          const convertedConceptSet: ConceptSetItemDisplay = {
-            value: event.selectedConceptSet.value?.toString() || event.conceptSetId,
-            text: event.selectedConceptSet.text,
-            display_value: event.selectedConceptSet.display_value,
-            conceptIds: event.selectedConceptSet.conceptIds,
-            concepts: event.selectedConceptSet.concepts,
-          }
-          conceptSets.push(convertedConceptSet)
-          seenIds.add(event.conceptSetId)
-        }
-      }
-    })
-  })
-
-  return conceptSets
-})
-
 const tagInputTexts = getTagInputTexts()
 
 // Initialize dataset ID composable
@@ -179,10 +142,33 @@ const hasExceededLength = computed(() => {
   return cohortName.value.length >= maxLength
 })
 
-const initializeComponent = () => {
-  criteriaManager.clearAllCriteria()
-  clearConceptSets()
-}
+// Initialize criteria manager composable
+const {
+  criteriaManager,
+  primaryEventsData,
+  criteriaData,
+  exitCriteriaData,
+  conceptSetsFromCriteria,
+  handleCriteriaUpdated,
+  handleUpdateQualifyingLimit,
+  handleUpdatePrimaryCriteriaLimit,
+  handleUpdateExitStrategy,
+  handleUpdateEntryDays,
+  handleUpdateFixedDuration,
+  handleUpdateContDrugSettings,
+  handleUpdatePrimaryEvents,
+  handleUpdateExitEvents,
+  handleAddCriteriaGroup,
+  handleUpdateCriteriaGroup,
+  handleRemoveCriteriaGroup,
+  getAllFilters,
+  convertToAtlasFormat,
+  clearFilters,
+  initializeComponent,
+  findEventById,
+  loadConceptSetDetailsForEvent,
+  updateEventConceptSet,
+} = useCriteriaManager(getDatasetId, allConceptSets, clearConceptSets)
 
 watch(
   selectedConceptSets,
@@ -209,85 +195,6 @@ onMounted(() => {
   initializeComponent()
 })
 
-// Handle criteria updates from the new component hierarchy
-const handleCriteriaUpdated = (updatedCriteriaManager: QueryFilterCriteriaManager) => {
-  // The criteria manager is reactive, so updates are automatic
-  console.log('Criteria updated:', updatedCriteriaManager.toJSON())
-}
-
-// Handle qualifying events limit updates
-const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
-  criteriaManager.updateQualifyingEventsLimit(limit)
-  console.log('Qualifying limit updated:', limit)
-}
-
-// Handle primary criteria limit updates
-const handleUpdatePrimaryCriteriaLimit = (
-  limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
-) => {
-  // Only handle the limits that are valid for primary criteria
-  if (limit === 'ALL' || limit === 'EARLIEST' || limit === 'LATEST') {
-    criteriaManager.updatePrimaryCriteriaLimit(limit)
-    console.log('Primary criteria limit updated:', limit)
-  }
-}
-
-// Handle exit strategy updates
-const handleUpdateExitStrategy = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
-  // Only handle the limits that are valid for exit strategy
-  if (limit === 'CONT_OBS' || limit === 'FIXED' || limit === 'CONT_DRUG') {
-    criteriaManager.updateEndStrategy(limit)
-    console.log('Exit strategy updated:', limit)
-  }
-}
-
-// Handle entry days updates
-const handleUpdateEntryDays = (type: 'PRIOR' | 'POST', days: number) => {
-  criteriaManager.updateEntryDays(type, days)
-  console.log('Entry days updated:', days, 'Type:', type)
-}
-
-const handleUpdateFixedDuration = (eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number) => {
-  criteriaManager.updateFixedDuration(eventDateOffset, daysOffset)
-  console.log('Fixed duration updated:', eventDateOffset, daysOffset)
-}
-
-const handleUpdateContDrugSettings = (
-  conceptSetId: string,
-  gapDays: number,
-  offset: number,
-  daysSupplyOverride: number
-) => {
-  criteriaManager.updateContDrugSettings(conceptSetId, gapDays, offset, daysSupplyOverride)
-  console.log('CONT_DRUG settings updated:', conceptSetId, gapDays, offset, daysSupplyOverride)
-}
-
-// Handle primary events updates
-const handleUpdatePrimaryEvents = (events: QueryFilterEvent[]) => {
-  criteriaManager.updatePrimaryEvents(events)
-}
-
-// Handle exit events updates
-const handleUpdateExitEvents = (events: QueryFilterEvent[]) => {
-  criteriaManager.updateCensoringCriteria(events)
-}
-
-// Handle adding new criteria group
-const handleAddCriteriaGroup = (groupData: Partial<QueryFilterGroup>) => {
-  criteriaManager.addCriteriaGroup(groupData)
-}
-
-// Handle updating criteria group
-const handleUpdateCriteriaGroup = (index: number, groupData: QueryFilterGroup) => {
-  criteriaManager.updateCriteriaGroup(index, groupData)
-}
-
-// Handle removing criteria group
-const handleRemoveCriteriaGroup = (index: number) => {
-  criteriaManager.removeCriteriaGroup(index)
-  console.log('Criteria group removed:', index)
-}
-
 const applyFilters = () => {
   try {
     console.log('Applying filters:', getAllFilters())
@@ -303,22 +210,6 @@ const applyFilters = () => {
   }
 }
 
-const clearFilters = () => {
-  try {
-    if (confirm('Are you sure you want to clear all filters?')) {
-      criteriaManager.clearAllCriteria()
-      clearConceptSets()
-    }
-  } catch (error: unknown) {
-    console.error('Error in clearFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-  }
-}
-
 const exportFilters = () => {
   try {
     const config = JSON.stringify(getAllFilters(), null, 2)
@@ -330,34 +221,6 @@ const exportFilters = () => {
       error instanceof Error ? error.message : String(error),
       error instanceof Error ? error.stack : undefined
     )
-  }
-}
-
-const getAllFilters = () => {
-  try {
-    return criteriaManager.toJSON()
-  } catch (error: unknown) {
-    console.error('Error in getAllFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    return { inclusionCriteria: { criteria: [] }, entryEvents: {} }
-  }
-}
-
-const convertToAtlasFormat = () => {
-  try {
-    return criteriaManager.convertToAtlasFormat()
-  } catch (error: unknown) {
-    console.error('Error in convertToAtlasFormat:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    return { ConceptSets: [], PrimaryCriteria: { CriteriaList: [] }, InclusionRules: [] }
   }
 }
 
@@ -393,62 +256,6 @@ watch(
   },
   { immediate: true }
 )
-
-// Function to find an event by ID across all sections of criteria manager
-const findEventById = (eventId: string): QueryFilterEvent | undefined => {
-  // Search in entry events
-  const entryEvents = criteriaManager.getPrimaryEvents()
-  let foundEvent = entryEvents.events.find(e => e.id === eventId)
-  if (foundEvent) {
-    return foundEvent
-  }
-
-  // Also search nested events within primary events attributes
-  for (const event of entryEvents.events) {
-    if (event.attributes) {
-      for (const attribute of event.attributes) {
-        if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-          const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
-          if (nestedEvent) {
-            return nestedEvent
-          }
-        }
-      }
-    }
-  }
-
-  // Search in exit events (censoring criteria)
-  const exitEvents = criteriaManager.getCensoringCriteria()
-  foundEvent = exitEvents.censoringCriteria.find(e => e.id === eventId)
-  if (foundEvent) {
-    return foundEvent
-  }
-
-  // Search in inclusion criteria groups
-  const criteria = criteriaManager.getCriteria()
-  for (const group of criteria.criteria) {
-    for (const event of group.events) {
-      // Now that we've fixed the types, group.events only contains QueryFilterEvent objects
-      if (event.id === eventId) {
-        return event
-      }
-
-      // Also search nested events within attributes
-      if (event.attributes) {
-        for (const attribute of event.attributes) {
-          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
-            if (nestedEvent) {
-              return nestedEvent
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return undefined
-}
 
 // Function to get existing concepts from an attribute for pre-populating the modal
 const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeId: string): SelectedConcept[] => {
@@ -564,221 +371,6 @@ const updateAttributeWithConcepts = (
     // Clear any existing conceptSet property since these are individual concepts, not concept sets
     if ('conceptSet' in targetAttribute) {
       delete targetAttribute.conceptSet
-    }
-  }
-}
-
-// Helper function to load concept set details for Atlas conversion
-const loadConceptSetDetailsForEvent = async (event: QueryFilterEvent, conceptSet: ConceptSetItemDisplay) => {
-  try {
-    const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetId())
-
-    // Update the event with concept set details
-    event.conceptSetDetails = conceptSetDetails
-    event.conceptSetLoading = false
-
-    // Try to update the event in primary events (for regular events)
-    const primaryEvents = criteriaManager.getPrimaryEvents()
-    const primaryEvent = primaryEvents?.events?.find(e => e.id === event.id)
-    if (primaryEvent) {
-      primaryEvent.conceptSetDetails = conceptSetDetails
-      primaryEvent.conceptSetLoading = false
-      primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-    } else {
-      // Also check nested events within primary events
-      let foundInPrimary = false
-      if (primaryEvents?.events) {
-        for (const primaryEvent of primaryEvents.events) {
-          if (primaryEvent.attributes) {
-            for (const attribute of primaryEvent.attributes) {
-              if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-                const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === event.id)
-                if (nestedEvent) {
-                  nestedEvent.conceptSetDetails = conceptSetDetails
-                  nestedEvent.conceptSetLoading = false
-                  // Only update conceptSet name if the event actually has a conceptSetId
-                  if (nestedEvent.conceptSetId) {
-                    nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-                  }
-                  foundInPrimary = true
-                  break
-                }
-              }
-            }
-            if (foundInPrimary) break
-          }
-        }
-      }
-
-      if (!foundInPrimary) {
-        // Try to find the event in inclusion criteria groups (including nested)
-        const criteria = criteriaManager.getCriteria()
-        let found = false
-
-        for (const group of criteria.criteria) {
-          // Check regular events in this group
-          const regularEvent = group.events.find(e => e.id === event.id)
-          if (regularEvent) {
-            regularEvent.conceptSetDetails = conceptSetDetails
-            regularEvent.conceptSetLoading = false
-            regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-            found = true
-            break
-          }
-
-          // Check nested events in this group
-          for (const groupEvent of group.events) {
-            if (groupEvent.attributes) {
-              for (const attribute of groupEvent.attributes) {
-                if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-                  const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === event.id)
-                  if (nestedEvent) {
-                    nestedEvent.conceptSetDetails = conceptSetDetails
-                    nestedEvent.conceptSetLoading = false
-                    nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
-                    found = true
-                    break
-                  }
-                }
-              }
-              if (found) break
-            }
-          }
-          if (found) break
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load concept set details:', error)
-    event.conceptSetLoading = false
-  }
-}
-
-const primaryEventsData = computed(() => {
-  return criteriaManager.getPrimaryEvents()
-})
-
-// Reactive criteria data for nested attribute reactivity
-const criteriaData = computed(() => {
-  return criteriaManager.getCriteria()
-})
-
-// Reactive exit criteria data for exit event reactivity
-const exitCriteriaData = computed(() => {
-  return criteriaManager.getCensoringCriteria()
-})
-
-const updateEventConceptSet = (eventId: string, conceptSet: ConceptSetItemDisplay) => {
-  const criteria = criteriaManager.getCriteria()
-  // Check primary entry events first
-  const primaryEvents = criteriaManager.getPrimaryEvents()
-  if (primaryEvents?.events) {
-    const event = primaryEvents.events.find(event => event.id === eventId)
-    if (event) {
-      // For events, use Vue's reactive assignment to ensure updates are detected
-      Object.assign(event, {
-        ...event,
-        conceptSetId: conceptSet.value.toString(),
-        selectedConceptSet: {
-          value: Number(conceptSet.value),
-          text: conceptSet.text || '',
-          display_value: conceptSet.display_value || '',
-          conceptIds: conceptSet.conceptIds || [],
-          concepts: [], // Start with empty concepts array
-          shared: false,
-          userName: '',
-          createdDate: new Date().toISOString(),
-          modifiedDate: new Date().toISOString(),
-        },
-      })
-      // Load concept set details for Atlas conversion
-      loadConceptSetDetailsForEvent(event, conceptSet)
-      return
-    }
-
-    // Also check nested events within primary events attributes
-    for (const event of primaryEvents.events) {
-      if (event.attributes) {
-        for (const attribute of event.attributes) {
-          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
-            if (nestedEvent) {
-              // Direct assignment since nestedEvent is already reactive
-              nestedEvent.conceptSetId = conceptSet.value.toString()
-              nestedEvent.selectedConceptSet = {
-                value: Number(conceptSet.value),
-                text: conceptSet.text || '',
-                display_value: conceptSet.display_value || '',
-                conceptIds: conceptSet.conceptIds || [],
-                concepts: [], // Start with empty concepts array
-                shared: false,
-                userName: '',
-                createdDate: new Date().toISOString(),
-                modifiedDate: new Date().toISOString(),
-              }
-              nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || ''
-
-              // Load concept set details for Atlas conversion
-              loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
-              return
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Check inclusion criteria groups
-  for (const group of criteria.criteria) {
-    const event = group.events.find(event => event.id === eventId)
-    if (event) {
-      // For events, store the concept set ID as a string
-      event.conceptSetId = conceptSet.value.toString()
-      // Store a minimal concept set reference
-      event.selectedConceptSet = {
-        value: Number(conceptSet.value),
-        text: conceptSet.text || '',
-        display_value: conceptSet.display_value || '',
-        conceptIds: conceptSet.conceptIds || [],
-        concepts: [], // Start with empty concepts array
-        shared: false,
-        userName: '',
-        createdDate: new Date().toISOString(),
-        modifiedDate: new Date().toISOString(),
-      }
-      // Load concept set details for Atlas conversion
-      loadConceptSetDetailsForEvent(event, conceptSet)
-      return
-    }
-
-    // Check nested criteria within attributes
-    for (const event of group.events) {
-      if (event.attributes) {
-        for (const attribute of event.attributes) {
-          if (attribute.attributeType === 'nested' && attribute.nestedCriteria?.events) {
-            const nestedEvent = attribute.nestedCriteria.events.find(ne => ne.id === eventId)
-            if (nestedEvent) {
-              // For nested events, store the concept set ID as a string
-              nestedEvent.conceptSetId = conceptSet.value.toString()
-              // Store a minimal concept set reference
-              nestedEvent.selectedConceptSet = {
-                value: Number(conceptSet.value),
-                text: conceptSet.text || '',
-                display_value: conceptSet.display_value || '',
-                conceptIds: conceptSet.conceptIds || [],
-                concepts: [], // Start with empty concepts array
-                shared: false,
-                userName: '',
-                createdDate: new Date().toISOString(),
-                modifiedDate: new Date().toISOString(),
-              }
-              // Load concept set details for Atlas conversion
-              loadConceptSetDetailsForEvent(nestedEvent, conceptSet)
-              return
-            }
-          }
-        }
-      }
     }
   }
 }
