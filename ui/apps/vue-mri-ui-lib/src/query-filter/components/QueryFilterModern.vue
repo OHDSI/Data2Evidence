@@ -16,7 +16,6 @@ import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.
 import { loadConceptSets } from '../utils/QueryFilterModern/loadConceptSets'
 import type {
   ConceptSetItemDisplay,
-  ConceptSetDomainValues,
   TagInputModel,
   ConceptSetAction,
   SelectedConcept,
@@ -27,6 +26,7 @@ import type { AtlasBookmark } from '../types/AtlasTypes'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
 import { useConceptSets } from '../composables/useConceptSets'
+import { useDatasetId } from '../composables/useDatasetId'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
@@ -142,33 +142,16 @@ const conceptSetsFromCriteria = computed(() => {
 
 const tagInputTexts = getTagInputTexts()
 
-const datasetId = computed(() => {
-  const storeDatasetId = store?.state?.selectedDataset?.id
-  if (storeDatasetId) {
-    return storeDatasetId
-  }
-
-  const portalAPI = getPortalAPI()
-  if (portalAPI?.studyId) {
-    return portalAPI.studyId
-  }
-
-  return null
-})
-
-const getDatasetId = (): string | null => {
-  return datasetId.value
-}
+// Initialize dataset ID composable
+const { datasetId, getDatasetId } = useDatasetId(store)
 
 // Initialize concept sets composable
 const {
   selectedConceptSets,
   allConceptSets,
   conceptSetDomainValues,
-  loadingConceptDetails,
   selectedConceptSetValues,
   loadConceptSetDetails,
-  filterConceptSetsLocal,
   handleConceptSetUpdate,
   handleSearchChange,
   clearConceptSets,
