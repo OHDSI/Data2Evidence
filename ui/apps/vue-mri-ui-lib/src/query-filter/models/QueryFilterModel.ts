@@ -24,31 +24,14 @@ import type {
   QueryFilterNestedCriteria,
 } from '../types/QueryFilterTypes'
 import { getAtlasAttributeKey } from '../utils/AtlasUtils'
-
-// Type guards for QueryFilterAttribute discriminated union
-const isNestedAttribute = (
-  attr: QueryFilterAttribute
-): attr is QueryFilterAttribute & {
-  attributeType: 'nested'
-  nestedCriteria: QueryFilterNestedCriteria
-} => {
-  return attr.attributeType === 'nested'
-}
-
-const isNumericRangeAttribute = (
-  attr: QueryFilterAttribute
-): attr is QueryFilterAttribute & {
-  attributeId: string
-  attributeType: 'numericRange'
-  operator: string
-  value: string
-} => {
-  return attr.attributeType === 'numericRange'
-}
-
-const hasAttributeId = (attr: QueryFilterAttribute): attr is Extract<QueryFilterAttribute, { attributeId: string }> => {
-  return 'attributeId' in attr
-}
+import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId } from './modules/type-guards'
+import {
+  mapCriteriaTypeToAtlas,
+  mapCardinalityTypeToAtlas,
+  mapEventTypeToAtlas,
+  mapOperatorToAtlas,
+  mapCardinalityExtras,
+} from './modules/atlas-mappers'
 
 export class QueryFilterCriteriaManager {
   private entryEvents: EntryEvent
@@ -475,14 +458,14 @@ export class QueryFilterCriteriaManager {
           PostDays: this.entryEvents.postDays || 0,
         },
         PrimaryCriteriaLimit: {
-          Type: this.mapCriteriaTypeToAtlas(this.entryEvents.primaryCriteriaLimit || 'ALL'),
+          Type: mapCriteriaTypeToAtlas(this.entryEvents.primaryCriteriaLimit || 'ALL'),
         },
       },
       QualifiedLimit: {
-        Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
+        Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
       },
       ExpressionLimit: {
-        Type: this.mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
+        Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
       },
       InclusionRules: (this.inclusionCriteria.criteria || []).map((group: QueryFilterGroup) => {
         return {
@@ -495,7 +478,7 @@ export class QueryFilterCriteriaManager {
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType !== 'group' && e.eventType) // Exclude demographic and group events
                 .map(event => {
-                  const atlasEventType = this.mapEventTypeToAtlas(event.eventType!)
+                  const atlasEventType = mapEventTypeToAtlas(event.eventType!)
                   const criteria: CriteriaGroup = {
                     Criteria: {
                       [atlasEventType]: {
@@ -513,9 +496,9 @@ export class QueryFilterCriteriaManager {
                       UseEventEnd: false,
                     },
                     Occurrence: {
-                      Type: this.mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
+                      Type: mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
                       Count: event.cardinality?.count || 1, // Maps cardinality.count → Atlas Occurrence.Count
-                      ...this.mapCardinalityExtras(event.cardinality?.using ?? 'ALL'),
+                      ...mapCardinalityExtras(event.cardinality?.using ?? 'ALL'),
                     },
                   }
 
@@ -636,7 +619,7 @@ export class QueryFilterCriteriaManager {
 
                         // Map operator and value if available
                         if (attr.operator) {
-                          ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
+                          ageConfig.Op = mapOperatorToAtlas(attr.operator)
                         }
 
                         if (attr.value !== undefined) {
@@ -664,7 +647,7 @@ export class QueryFilterCriteriaManager {
       CensoringCriteria: (this.exitEvents?.censoringCriteria || [])
         .filter(event => event.eventType)
         .map(event => {
-          const eventType = this.mapEventTypeToAtlas(event.eventType!)
+          const eventType = mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
             [eventType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!), // Use Atlas sequential ID
@@ -756,7 +739,7 @@ export class QueryFilterCriteriaManager {
       atlasDef.PrimaryCriteria.CriteriaList = this.entryEvents.events
         .filter(event => event.eventType)
         .map(event => {
-          const eventType = this.mapEventTypeToAtlas(event.eventType!)
+          const eventType = mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
             [eventType]: {
               CodesetId: systemIdToAtlasId.get(event.conceptSetId!),
@@ -862,7 +845,7 @@ export class QueryFilterCriteriaManager {
         if (correspondingGroup && correspondingGroup.events[criteriaIndex]) {
           const event = correspondingGroup.events[criteriaIndex]
           if (event && event.conceptSetId && event.eventType) {
-            const eventType = this.mapEventTypeToAtlas(event.eventType)
+            const eventType = mapEventTypeToAtlas(event.eventType)
             if (criteriaItem.Criteria[eventType]) {
               const atlasId = systemIdToAtlasId.get(event.conceptSetId)
               if (atlasId !== undefined) {
@@ -923,7 +906,7 @@ export class QueryFilterCriteriaManager {
           groupEvent.nestedCriteria.events.forEach(nestedEvent => {
             if (nestedEvent.eventType !== 'demographic' && nestedEvent.eventType !== 'group') {
               // Handle non-group events normally
-              const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
+              const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType!)
 
               const criteria: CriteriaGroup = {
                 Criteria: {
@@ -941,7 +924,7 @@ export class QueryFilterCriteriaManager {
                   UseEventEnd: false,
                 },
                 Occurrence: {
-                  Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+                  Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
                   Count: nestedEvent.cardinality?.count || 1,
                 },
               }
@@ -996,7 +979,7 @@ export class QueryFilterCriteriaManager {
                 if (nestedGroup.nestedCriteria?.events) {
                   nestedGroup.nestedCriteria.events.forEach(groupedEvent => {
                     if (groupedEvent.eventType !== 'demographic' && groupedEvent.eventType !== 'group') {
-                      const groupedAtlasEventType = this.mapEventTypeToAtlas(groupedEvent.eventType!)
+                      const groupedAtlasEventType = mapEventTypeToAtlas(groupedEvent.eventType!)
 
                       eventGroup.Groups.push({
                         Type: 'ALL',
@@ -1015,7 +998,7 @@ export class QueryFilterCriteriaManager {
                               UseEventEnd: false,
                             },
                             Occurrence: {
-                              Type: this.mapCardinalityTypeToAtlas(groupedEvent.cardinality?.type || 'AT_LEAST'),
+                              Type: mapCardinalityTypeToAtlas(groupedEvent.cardinality?.type || 'AT_LEAST'),
                               Count: groupedEvent.cardinality?.count || 1,
                             },
                           },
@@ -1066,102 +1049,6 @@ export class QueryFilterCriteriaManager {
     return allEvents
   }
 
-  // Helper methods for mapping values to Atlas format
-  private mapCriteriaTypeToAtlas(type: string) {
-    switch (type) {
-      case 'EARLIEST':
-        return 'First'
-      case 'LATEST':
-        return 'Last'
-      case 'ALL':
-      default:
-        return 'All'
-    }
-  }
-
-  private mapCardinalityTypeToAtlas(type: string): number {
-    switch (type) {
-      case 'EXACTLY':
-        return 0 // Atlas Type 0 = exactly
-      case 'AT_MOST':
-        return 1 // Atlas Type 1 = at most
-      case 'AT_LEAST':
-      default:
-        return 2 // Atlas Type 2 = at least
-    }
-  }
-
-  private mapEventTypeToAtlas(eventType: string): string {
-    switch (eventType) {
-      case 'conditionOccurrence':
-        return 'ConditionOccurrence'
-      case 'drugExposure':
-        return 'DrugExposure'
-      case 'procedureOccurrence':
-        return 'ProcedureOccurrence'
-      case 'measurement':
-        return 'Measurement'
-      case 'observation':
-        return 'Observation'
-      case 'visitOccurrence':
-        return 'VisitOccurrence'
-      case 'death':
-        return 'Death'
-      case 'deviceExposure':
-        return 'DeviceExposure'
-      case 'drugEra':
-        return 'DrugEra'
-      case 'locationRegion':
-        return 'LocationRegion'
-      default:
-        // Convert camelCase to PascalCase for unknown event types
-        return this.toPascalCase(eventType)
-    }
-  }
-
-  // Helper method to convert camelCase to PascalCase
-  private toPascalCase(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1)
-  }
-
-  private mapOperatorToAtlas(operator: string): NumericRange['Op'] {
-    // TODO: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
-    // These mappings are educated guesses based on common patterns
-    switch (operator) {
-      case 'GREATER_THAN':
-        return 'gt'
-      case 'LESS_THAN':
-        return 'lt'
-      case 'GREATER_THAN_OR_EQUAL':
-        return 'gte'
-      case 'LESS_THAN_OR_EQUAL':
-        return 'lte'
-      case 'EQUAL':
-        return 'eq'
-      case 'BETWEEN':
-        return 'bt' // Common abbreviation for "between"
-      case 'NOT_BETWEEN':
-        return 'nbt' // Not between - may need verification
-      default:
-        return 'gt'
-    }
-  }
-
-  private mapCardinalityExtras(using: string) {
-    switch (using) {
-      case 'ALL':
-        return { CountColumn: 'START_DATE' }
-      case 'DISTINCT_CONCEPT':
-        return { CountColumn: 'DOMAIN_CONCEPT', IsDistinct: true }
-      case 'DISTINCT_START_DATE':
-        return { CountColumn: 'START_DATE', IsDistinct: true }
-      case 'DISTINCT_VISIT':
-        return { CountColumn: 'VISIT_ID', IsDistinct: true }
-      default:
-        return {}
-    }
-  }
-
   // Serialization
   toJSON(): QueryFilterCriteriaManageData {
     return {
@@ -1195,7 +1082,7 @@ export class QueryFilterCriteriaManager {
         groupEvent.nestedCriteria.events
           .filter(event => event.eventType !== 'group' && event.eventType !== 'demographic')
           .forEach(nestedEvent => {
-            const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType!)
+            const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType!)
             const criteria: CriteriaGroup = {
               Criteria: {
                 [atlasEventType]: {
@@ -1210,7 +1097,7 @@ export class QueryFilterCriteriaManager {
                 UseEventEnd: false,
               },
               Occurrence: {
-                Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+                Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
                 Count: nestedEvent.cardinality?.count || 1,
               },
             }
@@ -1278,7 +1165,7 @@ export class QueryFilterCriteriaManager {
               event.attributes.forEach((attr: QueryFilterAttribute) => {
                 if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
                   const ageConfig: NumericRange = {
-                    Op: attr.operator ? this.mapOperatorToAtlas(attr.operator) : 'gt',
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
                     Value: attr.value !== undefined ? parseInt(attr.value) : 0,
                   }
                   demographicCriteriaList.push({ Age: ageConfig })
@@ -1344,7 +1231,7 @@ export class QueryFilterCriteriaManager {
 
             // Map operator and value if available
             if (attr.operator) {
-              ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
+              ageConfig.Op = mapOperatorToAtlas(attr.operator)
             }
 
             if (attr.value !== undefined) {
@@ -1360,7 +1247,7 @@ export class QueryFilterCriteriaManager {
     })
 
     nonGroupEvents.forEach(nestedEvent => {
-      const atlasEventType = this.mapEventTypeToAtlas(nestedEvent.eventType)
+      const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType)
       const criteria: CriteriaGroup = {
         Criteria: {
           [atlasEventType]: {},
@@ -1375,7 +1262,7 @@ export class QueryFilterCriteriaManager {
           UseEventEnd: false,
         },
         Occurrence: {
-          Type: this.mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
+          Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
           Count: nestedEvent.cardinality?.count || 1,
         },
       }
@@ -1428,7 +1315,7 @@ export class QueryFilterCriteriaManager {
                 Op: 'gt', // Default operator
               }
               if (attr.operator) {
-                ageConfig.Op = this.mapOperatorToAtlas(attr.operator)
+                ageConfig.Op = mapOperatorToAtlas(attr.operator)
               }
               if (attr.value !== undefined) {
                 ageConfig.Value = parseInt(attr.value)
