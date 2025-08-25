@@ -7,3 +7,6 @@ class CohortNodeType(Enum):
 	EXIT = "exit"
 	OUTCOME = "outcome"
 	COMPARATOR = "comparator"
+
+
+USE_TREX_CONNECTION = True

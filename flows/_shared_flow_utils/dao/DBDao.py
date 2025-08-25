@@ -1,27 +1,54 @@
 from __future__ import annotations
 
 from _shared_flow_utils.dao.ibisdao import IbisDao
-from _shared_flow_utils.dao.sqlalchemydao import SqlAlchemyDao
 from _shared_flow_utils.dao.trexdao import TrexDao
+from _shared_flow_utils.dao.sqlalchemydao import SqlAlchemyDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
 
 
-# Factory to return the correct dao implementation        
+# Registry mapping dialects to their DAO classes
+_DAO_REGISTRY = {
+    SupportedDatabaseDialects.POSTGRES: IbisDao,
+    SupportedDatabaseDialects.HANA: SqlAlchemyDao,
+    SupportedDatabaseDialects.DUCKDB: SqlAlchemyDao,
+    SupportedDatabaseDialects.BIGQUERY: SqlAlchemyDao,
+    SupportedDatabaseDialects.TREX: TrexDao,
+}
+
+
 def DBDao(dialect=None, **kwargs) -> DaoBase:
-    testinstance = SqlAlchemyDao(**kwargs)
-    selected_dialect = dialect if dialect is not None else testinstance.dialect
-    match selected_dialect:
-        case SupportedDatabaseDialects.POSTGRES:
-            return IbisDao(**vars(testinstance))
-        case SupportedDatabaseDialects.HANA | SupportedDatabaseDialects.DUCKDB | SupportedDatabaseDialects.BIGQUERY:
-            return SqlAlchemyDao(**vars(testinstance))
-        case SupportedDatabaseDialects.TREX_DUCKDB:
-            return TrexDao(**vars(testinstance))
-        case _:
-            supported_dialects = [dialect.value for dialect in SupportedDatabaseDialects]
-            if testinstance.dialect not in supported_dialects:
-                raise ValueError(f"Database dialect '{testinstance.dialect}' not supported, only '{supported_dialects}'.")
+    """
+    Factory function to create the appropriate DAO implementation.
+
+    Args:
+        dialect: Database dialect to use. If None, inferred from connection.
+        **kwargs: Additional arguments passed to the DAO constructor.
+
+    Returns:
+        DaoBase: Appropriate DAO implementation for the given dialect.
+
+    Raises:
+        ValueError: If the dialect is not supported.
+    """
+    # Create a test instance to infer dialect if not provided
+    test_instance = SqlAlchemyDao(**kwargs)
+    selected_dialect = dialect or test_instance.dialect
+    # Get the DAO class from registry
+    dao_class = _DAO_REGISTRY.get(selected_dialect)
+    if not dao_class:
+        supported_dialects = [d.value for d in SupportedDatabaseDialects]
+        raise ValueError(
+            f"Database dialect '{selected_dialect}' not supported. "
+            f"Supported dialects: {supported_dialects}"
+        )
+
+    # For non-SqlAlchemy DAOs, pass the test instance's attributes
+    if dao_class != SqlAlchemyDao:
+        return dao_class(**vars(test_instance))
+
+    return test_instance
