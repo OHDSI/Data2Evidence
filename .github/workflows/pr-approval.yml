@@ -12,6 +12,8 @@ on:
     types: [submitted, dismissed]
   issue_comment:
     types: [created, edited, deleted]
+  merge_group:
+  
 
 # ==== WORKFLOW CONFIGURATION ====
 env:
@@ -26,9 +28,17 @@ env:
   THUMBS_DOWN_EMOJI: '-1'
 
 jobs:
+  merge-group-approval:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'merge_group'
+    steps:
+      - name: Auto-approve for merge group
+        run: |
+          echo "✅ Auto-approving for merge group event"
+
   check-vote:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'merge_group' && github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
