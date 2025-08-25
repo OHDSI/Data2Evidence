@@ -4,6 +4,7 @@ on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
@@ -16,7 +17,25 @@ jobs:
   demosetup:
     runs-on: ubuntu-24.04
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+      
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: npm install
         if: success() || failure()
@@ -29,12 +48,25 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
 
+      - uses: dorny/paths-filter@v3
+        id: flow_file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/base/**"
+
+      - name: Build Flow base docker image
+        if: steps.flow_file_changes.outputs.src == 'true'
+        id: build_flow_base_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+
       - name: Build docker images
         if: success() || failure()
         id: pull
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -44,7 +76,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 1
+          max_attempts: 2
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions start

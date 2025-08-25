@@ -1,0 +1,23 @@
+# name: test/sql/circe_intro.test
+# description: test circe extension basic functions
+# group: [sql]
+
+# Before we load the extension, this will fail
+statement error
+SELECT circe_hello('Sam');
+----
+Catalog Error: Scalar Function with name circe_hello does not exist!
+
+# Require statement will ensure this test is run with this extension loaded
+require circe
+
+# Confirm the extension works
+query I
+SELECT circe_hello('Sam');
+----
+Circe Sam
+
+query I
+SELECT circe_openssl_version('Michael') ILIKE 'Circe Michael, my linked OpenSSL version is OpenSSL%';
+----
+true

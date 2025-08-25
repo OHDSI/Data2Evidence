@@ -1,0 +1,29 @@
+# name: test/sql/circe_embedded_load.test
+# description: Smoke test that the circe extension loads and its native functionality works (embedded native lib)
+# group: [embed]
+
+require circe
+
+# Simple render should return the same SQL (non-empty)
+query I
+SELECT (circe_sql_render('SELECT 1;', '{}') LIKE 'SELECT 1%')::INTEGER;
+----
+1
+
+# Simple translate to another dialect should still be non-empty (pattern keeps SELECT 1)
+query I
+SELECT (circe_sql_translate('SELECT 1;', 'sql server') LIKE 'SELECT 1%')::INTEGER;
+----
+1
+
+# Combined render+translate path
+query I
+SELECT (circe_sql_render_translate('SELECT 1;', 'sql server', '{}') LIKE 'SELECT 1%')::INTEGER;
+----
+1
+
+# circe_json_to_sql should yield a sizable OHDSI cohort SQL script (> 500 chars) for a minimal expression
+query I
+SELECT (length(circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdHNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"x","resultSchema":"y","targetTable":"z","cohortId":1,"generateStats":false}')) > 500)::INTEGER;
+----
+1

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  duckdb-llama:
+    build: .
+    image: duckdb-llama:latest
+    container_name: duckdb-llama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./models:/workspace/models
+      - ./test:/workspace/test
+    stdin_open: true
+    tty: true
+    command: /usr/local/bin/duckdb
