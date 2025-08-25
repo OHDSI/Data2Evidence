@@ -36,7 +36,5 @@ make release -j8
 
 echo "Moving extension binary..."
 mv build/release/extension/*/circe*_extension .
-strings *_extension | grep -B 1 "v1.3.2"
-strings *_extension | grep -B 1 "v0.0.1"
 
 echo "Build complete."
