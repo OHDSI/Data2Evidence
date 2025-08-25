@@ -630,17 +630,6 @@ services:
           }
          }
         }
-      POSTGRES_PUBLICATION_CONFIG: |-
-        {
-         "databases": {
-          "+${PG__FHIR_DB_NAME:-alp}": {
-           "+fhir_publication": {
-             "schema": "fhir",
-             "publication": "fhir_publication"
-           }
-          }
-         }
-        }
       POSTGRES_ALTER_EXTENSION_CONFIG: |-
         {
          "databases": {
