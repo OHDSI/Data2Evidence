@@ -2,6 +2,11 @@
   .notebook-template-dialog__content {
     padding: 24px;
     min-width: 400px;
+
+    &__error {
+      text-align: left;
+      color: var(--color-feedback-alarm);
+    }
   }
 
   .notebook-template-dialog__footer {
@@ -130,4 +135,4 @@
     justify-content: flex-end;
     margin-top: 1rem;
   }
-} 
+}

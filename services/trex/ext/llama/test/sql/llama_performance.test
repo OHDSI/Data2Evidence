@@ -1,0 +1,90 @@
+# name: test/sql/llama_performance.test
+# description: Performance tests for LLaMA extension functions
+# group: [sql]
+
+require llama
+
+# Test 1: Rapid Status Function Calls
+statement ok
+SELECT llama_status() FROM range(100);
+
+statement ok
+SELECT llama_gpu_info() FROM range(50);
+
+statement ok  
+SELECT llama_list_loaded() FROM range(100);
+
+# Test 2: Concurrent Function Calls
+query I
+SELECT COUNT(*) FROM (
+    SELECT llama_status() AS status,
+           llama_gpu_info() AS gpu_info,
+           llama_list_loaded() AS loaded
+    FROM range(10)
+) WHERE status IS NOT NULL AND gpu_info IS NOT NULL AND loaded IS NOT NULL;
+----
+10
+
+# Test 3: Memory Usage with Large String Inputs
+statement ok
+SELECT llama(repeat('test_', 10000));
+
+# Test 4: Function Call Latency (Basic Timing)
+statement ok
+SELECT 
+    llama_status(),
+    llama_gpu_info(),
+    llama_list_loaded()
+FROM range(20);
+
+# Test 5: Error Handling Performance
+# Test that error cases don't cause performance degradation
+statement ok
+SELECT COUNT(*) FROM range(50) WHERE 
+    (SELECT llama_unload_model('non_existent_model_' || i) FROM range(1) t(i)) IS NULL;
+
+# Test 6: Basic Performance Test
+# Test function calls in a loop
+query I
+SELECT COUNT(*) FROM range(10) WHERE llama_status() IS NOT NULL;
+----
+10
+
+# Test 7: String Processing Performance
+# Test with various string lengths
+statement ok
+SELECT llama(repeat('x', i * 100)) FROM range(1, 11) t(i);
+
+# Test 8: Batch Operations
+# Simulate processing multiple requests
+statement ok
+SELECT 
+    COUNT(*) as call_count,
+    COUNT(DISTINCT llama_status()) as distinct_statuses
+FROM range(100);
+
+# Test 9: Resource Cleanup Validation
+# Ensure repeated calls don't accumulate resources
+statement ok  
+WITH RECURSIVE resource_test(i) AS (
+    SELECT 1
+    UNION ALL
+    SELECT i + 1 FROM resource_test 
+    WHERE i < 50
+)
+SELECT COUNT(*) FROM resource_test WHERE llama_status() IS NOT NULL;
+
+# Test 10: Stress Test - Mixed Function Calls
+query I
+SELECT COUNT(*) FROM (
+    SELECT 
+        CASE (i % 4)
+            WHEN 0 THEN llama_status()
+            WHEN 1 THEN llama_gpu_info()  
+            WHEN 2 THEN llama_list_loaded()
+            ELSE llama('stress_test_' || i)
+        END as result
+    FROM range(200) t(i)
+) WHERE result IS NOT NULL;
+----
+200

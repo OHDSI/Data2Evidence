@@ -1,0 +1,14 @@
+{
+  "name": "duckdb-llama-extension",
+  "version": "0.1.0",
+  "dependencies": [
+    "openssl",
+    "curl"
+  ],
+  "description": "DuckDB extension for LLaMA.cpp integration with SQL-based LLM functionality",
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "./extension-ci-tools/vcpkg_ports"
+    ]
+  }
+}

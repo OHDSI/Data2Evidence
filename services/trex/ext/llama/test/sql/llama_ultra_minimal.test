@@ -1,0 +1,71 @@
+# name: test/sql/llamaSELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/ultra-tiny.gguf', '{"n_ctx": 512, "n_gpu_layers": 0, "num_threads": 1}');ultra_minimal.test
+# description: Ultra minimal test using the tiniest possible model (~8MB)
+# group: [sql]
+
+require llama
+
+# Test 1: Basic extension loading
+statement ok
+SELECT 'Extension loaded successfully';
+
+# Test 1: Download tiny model for testing
+statement ok
+SELECT llama_download_model('https://huggingface.co/aladar/TinyLLama-v0-GGUF/resolve/main/TinyLLama-v0.Q8_0.gguf', 'ultra-tiny.gguf');
+
+# Test 3: Verify download
+query I
+SELECT llama_list_models() LIKE '%ultra-tiny%';
+----
+true
+
+# Test 4: Load model with ultra-minimal config
+statement ok
+SELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/ultra-tiny.gguf', '{"n_ctx": 128, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 5: Basic generation test
+query I
+SELECT LENGTH(llama_generate('ultra-tiny', 'Hi', '{"max_tokens": 1}')) > 0;
+----
+true
+
+# Test 3: Verify download
+query I
+SELECT llama_list_models() LIKE '%ultra-tiny%';
+----
+true
+
+# Test 4: Load with absolute minimal configuration
+statement ok
+SELECT llama_load_model('ultra-tiny.gguf', '{"n_ctx": 128, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 5: Verify model is loaded
+query I
+SELECT llama_list_loaded() LIKE '%ultra-tiny%';
+----
+true
+
+# Test 6: Basic generation test (minimal tokens)
+query I
+SELECT LENGTH(llama_generate('ultra-tiny.gguf', 'Once', '{"max_tokens": 1}')) > 0;
+----
+true
+
+# Test 7: Model info
+query I
+SELECT llama_model_info('ultra-tiny.gguf') IS NOT NULL;
+----
+true
+
+# Test 8: Unload model
+statement ok
+SELECT llama_unload_model('ultra-tiny.gguf');
+
+# Test 9: Verify unloaded
+query I
+SELECT llama_list_loaded() LIKE '%Currently Loaded Models%';
+----
+true
+
+# Cleanup
+statement ok
+SELECT 'Ultra minimal test completed';

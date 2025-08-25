@@ -1,0 +1,25 @@
+# name: test/sql/circe.test
+# description: test circe json to sql function requires native library (fails if fallback)
+# group: [sql]
+
+require circe
+
+# Simple JSON cohort expression & options must yield real SQL (no fallback)
+# Input must be base64-encoded JSON
+query I
+WITH t AS (
+  SELECT circe_json_to_sql('eyJkdW1teSI6ImV4cHJlc3Npb24ifQ==', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":123,"generateStats":false}') AS sql
+)
+SELECT (t.sql NOT LIKE 'CIRCE_NATIVE_LIBRARY_NOT_FOUND%')::INTEGER FROM t;
+----
+1
+
+# Complex cohort expression JSON: must not fallback
+# Base64 for original JSON expression
+query I
+WITH t AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbCiAgICB7CiAgICAgICJpZCI6IDEsCiAgICAgICJuYW1lIjogIkNvbmRpdGlvbiBDb25jZXB0cyIsCiAgICAgICJleHByZXNzaW9uIjogewogICAgICAgICJpdGVtcyI6IFsKICAgICAgICAgIHsKICAgICAgICAgICAgImNvbmNlcHQiOiB7CiAgICAgICAgICAgICAgIkNPTkNFUFRfSUQiOiAxMTEsCiAgICAgICAgICAgICAgIkNPTkNFUFRfTkFNRSI6ICJUZXN0IiwKICAgICAgICAgICAgICAiRE9NQUlOX0lEIjogIkNvbmRpdGlvbiIsCiAgICAgICAgICAgICAgIlZPQ0FCVUxBUllfSUQiOiAiU05PTUVEIiwKICAgICAgICAgICAgICAiQ09OQ0VQVF9DT0RGIjogIjEyMyIsCiAgICAgICAgICAgICAgIklOVkFMSURfUkVBU09OIjogIlYiLAogICAgICAgICAgICAgICJTVEFOREFSRF9DT05DRVBUIjogIlMiCiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICBdCiAgICAgIH0KICAgIH0KICBdLAogICJRdWFsaWZpZWRMaW1pdCI6IHsiVHlwZSI6ICJGaXJzdCJ9LAogICJFeHByZXNzaW9uTGltaXQiOiB7IlR5cGUiOiAiQWxsIn0sCiAgIkluY2x1c2lvblJ1bGVzIjogW10sCiAgIkNvbGxhcHNlU2V0dGluZ3MiOiB7IkNvbGxhcHNlVHlwZSI6ICJFUkEiLCAiRXJhUGFkIjogMzB9Cn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":999,"generateStats":true}') AS sql
+)
+SELECT (t.sql NOT LIKE 'CIRCE_NATIVE_LIBRARY_NOT_FOUND%')::INTEGER FROM t;
+----
+1

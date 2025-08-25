@@ -1,0 +1,15 @@
+[submodule "services/trex/ext/circe/circe-be"]
+	path = services/trex/ext/circe/circe-be
+	url = https://github.com/p-hoffmann/circe-be.git
+[submodule "services/trex/ext/llama/llama.cpp"]
+	path = services/trex/ext/llama/llama.cpp
+	url = https://github.com/ggml-org/llama.cpp.git
+[submodule "services/trex/Trex"]
+	path = services/trex/trex
+	url = https://github.com/OHDSI/Trex.git
+[submodule "services/trex/ext/duckdb"]
+	path = services/trex/ext/duckdb
+	url = https://github.com/duckdb/duckdb
+[submodule "services/trex/ext/extension-ci-tools"]
+	path = services/trex/ext/extension-ci-tools
+	url = https://github.com/duckdb/extension-ci-tools

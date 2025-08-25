@@ -678,12 +678,6 @@
           ]
         },
         {
-          "path": "^/jobplugins(.*)",
-          "scopes": [
-            "jobplugins"
-          ]
-        },
-        {
           "path": "^/prefect(.*)",
           "scopes": [
             "prefect.read",
@@ -1941,6 +1935,24 @@
           ]
         },
         {
+          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.cancel"
@@ -2019,6 +2031,12 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
           ]
         },
         {
