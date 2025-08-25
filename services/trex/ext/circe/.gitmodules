@@ -1,0 +1,11 @@
+[submodule "duckdb"]
+	path = duckdb
+	url = https://github.com/duckdb/duckdb
+	branch = main
+[submodule "extension-ci-tools"]
+	path = extension-ci-tools
+	url = https://github.com/duckdb/extension-ci-tools
+	branch = main
+[submodule "circe-be"]
+	path = circe-be
+	url = https://github.com/p-hoffmann/circe-be.git
