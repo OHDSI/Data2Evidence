@@ -12,10 +12,16 @@ Server runs on `http://localhost:3001`
 
 ## Update Mock Data
 
+**For Analytics/Static Assets:**
+
 1. Export new HAR file from Chrome DevTools Network tab
-2. Export .har from chrome devtools
-3. Copy the entries from exported .har and append it to the entries section in `localhost1.har`
-4. Run: `npm run parse-har`
+2. Copy the entries from exported .har and append to `localhost1.har`
+3. Run: `npm run parse-har`
+
+**For WebAPI Endpoints:**
+
+1. Add webapi network calls to `webapi.har`
+2. Run: `npm run parse-har`
 
 ## Scripts
 
@@ -27,15 +33,22 @@ npm run parse-har  # Regenerate from HAR file
 ## Files
 
 - `server.js` - Express mock server (auto-generated)
-- `mock-data.json` - Response data (auto-generated)
+- `mock-data.json` - Response data for mock endpoints (auto-generated)
 - `parse-har.js` - HAR file processor
-- `localhost1.har` - Network capture from Chrome
+- `localhost1.har` - Network capture for analytics/static assets
+- `webapi.har` - Network capture for WebAPI endpoints
 - `extracted-endpoints.json` - Debug/analysis data (optional)
 
 ## Endpoints
+
+**Mock Endpoints** (with real data):
 
 - Analytics APIs: `/analytics-svc/api/*`
 - Auth: `/oidc/auth`
 - Static assets: `/ui/*`, `/js/*`, `/sap/*`
 
-Mock server returns exact responses captured from your browser network traffic.
+**WebAPI Placeholders** (logs requests, returns 501):
+
+- WebAPI: `/d2e-webapi/*`
+
+Mock server returns exact responses for analytics endpoints. WebAPI endpoints log requests and return placeholders until connected to real WebAPI server.

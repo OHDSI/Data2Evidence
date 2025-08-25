@@ -1,12 +1,16 @@
 const fs = require('fs')
 const path = require('path')
 
-// Read the HAR file. File should be located in the mock-server folder
+// Read both HAR files
 const harPath = path.join(__dirname, 'localhost1.har')
+const webapiHarPath = path.join(__dirname, 'webapi.har')
+
 const harContent = JSON.parse(fs.readFileSync(harPath, 'utf8'))
+const webapiHarContent = JSON.parse(fs.readFileSync(webapiHarPath, 'utf8'))
 
 // Extract API endpoints and their responses
 const apiEndpoints = []
+const webapiEndpoints = []
 
 harContent.log.entries.forEach(entry => {
   const request = entry.request
@@ -70,7 +74,41 @@ harContent.log.entries.forEach(entry => {
   }
 })
 
-console.log(`Found ${apiEndpoints.length} API endpoints`)
+// Process webapi HAR file for placeholder endpoints
+webapiHarContent.log.entries.forEach(entry => {
+  const request = entry.request
+  const response = entry.response
+
+  // Filter for webapi endpoints
+  if (request.url.includes('d2e-webapi') || request.url.includes('webapi')) {
+    const url = new URL(request.url)
+    const endpoint = {
+      method: request.method,
+      path: url.pathname + url.search,
+      pathOnly: url.pathname,
+      query: Object.fromEntries(url.searchParams),
+      headers: request.headers.reduce((acc, h) => {
+        acc[h.name.toLowerCase()] = h.value
+        return acc
+      }, {}),
+      requestBody: null,
+    }
+
+    // Extract request body if present
+    if (request.postData && request.postData.text) {
+      try {
+        endpoint.requestBody = JSON.parse(request.postData.text)
+      } catch (e) {
+        endpoint.requestBody = request.postData.text
+      }
+    }
+
+    webapiEndpoints.push(endpoint)
+  }
+})
+
+console.log(`Found ${apiEndpoints.length} mock API endpoints`)
+console.log(`Found ${webapiEndpoints.length} webapi placeholder endpoints`)
 
 // Group endpoints by path for better organization
 const groupedEndpoints = {}
@@ -80,6 +118,16 @@ apiEndpoints.forEach(endpoint => {
     groupedEndpoints[key] = []
   }
   groupedEndpoints[key].push(endpoint)
+})
+
+// Group webapi endpoints separately for placeholder routes
+const groupedWebapiEndpoints = {}
+webapiEndpoints.forEach(endpoint => {
+  const key = `${endpoint.method} ${endpoint.pathOnly}`
+  if (!groupedWebapiEndpoints[key]) {
+    groupedWebapiEndpoints[key] = []
+  }
+  groupedWebapiEndpoints[key].push(endpoint)
 })
 
 // Write endpoints to JSON file for review
@@ -166,13 +214,44 @@ app.${method.toLowerCase()}('${cleanPath}', (req, res) => {
   }
 })
 
+// Generate webapi placeholder routes
+Object.entries(groupedWebapiEndpoints).forEach(([key, endpoints]) => {
+  const [method, pathOnly] = key.split(' ', 2)
+  const cleanPath = pathOnly.replace(/\/$/, '') || '/'
+
+  const templateEndpoint = endpoints[0]
+
+  expressRoutes += `
+// ${key} (WebAPI Placeholder)
+app.${method.toLowerCase()}('${cleanPath}', (req, res) => {
+  console.log('🔄 WebAPI Request:', '${method} ${cleanPath}')
+  console.log('  Query:', req.query)
+  console.log('  Body:', req.body)
+  console.log('  Headers:', req.headers)
+  
+  // TODO: Forward to actual WebAPI server
+  res.status(501).json({
+    error: 'WebAPI endpoint not implemented yet',
+    message: 'This endpoint will be forwarded to the actual WebAPI server',
+    method: '${method}',
+    path: '${cleanPath}',
+    timestamp: new Date().toISOString()
+  })
+})
+`
+})
+
 expressRoutes += `
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(\`Mock server running on port \${PORT}\`)
-  console.log(\`Available endpoints:\`)
+  console.log(\`Available mock endpoints:\`)
 ${Object.keys(groupedEndpoints)
-  .map(key => `  console.log('  ${key}')`)
+  .map(key => `  console.log('  ✅ ${key}')`)
+  .join('\n')}
+  console.log(\`\\nWebAPI placeholder endpoints:\`)
+${Object.keys(groupedWebapiEndpoints)
+  .map(key => `  console.log('  🔄 ${key} (placeholder)')`)
   .join('\n')}
 })
 `
