@@ -1,5 +1,6 @@
 
 import {addPlugin as addFlowPlugin} from "./flow.ts"
+import {addPlugin as addCorePlugin} from "./core.ts"
 import {env, logger} from "../env.ts"
 import {addPlugin as addFunctionPlugin} from "./function.ts"
 import {addPlugin as addUIPlugin} from "./ui.ts"
@@ -132,7 +133,10 @@ export class Plugins {
 						break;
 					case "flow":
 						addFlowPlugin(value);
-						break;		  
+						break;
+					case "core":
+						addCorePlugin(value, dir);
+						break;
 					default:
 						logger.log(`Unknown type: ${key}`);
 				}
