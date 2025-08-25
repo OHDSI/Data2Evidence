@@ -1,3 +1,4 @@
+const USE_MOCK_SERVER = false
 const REDIRECT_URL = 'https://localhost:8081'
 
 const config = {
@@ -29,7 +30,7 @@ const signinRedirect = async () => {
 const getUser = () => {
   return userManager.getUser()
 }
-
+if (!USE_MOCK_SERVER) {
 if (!authToken) {
   signinRedirect()
 }
@@ -51,4 +52,5 @@ const logoutfn = () => {
   userManager.signoutRedirect({
     id_token_hint: userManager.getUser()?.access_token,
   })
+  }
 }

@@ -12,11 +12,12 @@ module.exports = {
     // add your proxies here. See https://cli.vuejs.org/config/#devserver-proxy
     proxy: {
       '/': {
-        target: 'https://localhost:41100',
-        ws: false, // This disables proxying of ws so the hot reloader can communicate directly with vue dev server
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        ws: false,
       },
     },
-    server: 'https'
+    server: 'https',
   },
   publicPath: '',
   chainWebpack: config => {
