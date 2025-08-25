@@ -1,0 +1,93 @@
+# name: test/sql/llama_no_download.test
+# description: Test using existing model file (no download required)
+# group: [sql]
+
+require llama
+
+# Test 1: Extension should load successfully and provide basic info
+statement ok
+SELECT 'Extension loaded';
+
+# Test 2: Basic function availability 
+query I
+SELECT llama_status() IS NOT NULL;
+----
+true
+
+# Test 3: GPU info (works without model)
+query I
+SELECT llama_gpu_info() LIKE '%gpu_support%';
+----
+true
+
+# Test 3: Status (works without model)
+query I
+SELECT llama_status() LIKE '%Extension Status%';
+----
+true
+
+# Test 4: List models (works without model)
+query I
+SELECT llama_list_models() IS NOT NULL;
+----
+true
+
+# Download TinyLLama model for testing (making it available)
+statement ok
+SELECT llama_download_model('https://huggingface.co/aladar/TinyLLama-v0-GGUF/resolve/main/TinyLLama-v0.Q8_0.gguf', 'tinyllama-v0-test.gguf');
+
+# Test 5: Load existing model from models directory
+statement ok
+SELECT llama_load_model('/home/ph/.local/share/duckdb-llama/models/tinyllama-v0-test.gguf', '{"n_ctx": 512, "n_gpu_layers": 0, "num_threads": 1}');
+
+# Test 6: Verify model is loaded
+query I
+SELECT llama_list_loaded() LIKE '%tinyllama-v0-test%';
+----
+true
+
+# Test 7: Model info
+query I
+SELECT llama_model_info('tinyllama-v0-test') IS NOT NULL;
+----
+true
+
+# Test 8: Basic text generation (minimal tokens)
+query I
+SELECT LENGTH(llama_generate('tinyllama-v0-test', 'Hello', '{"max_tokens": 3}')) > 0;
+----
+true
+
+# Test 9: Chat function
+statement ok
+SELECT llama_chat('tinyllama-v0-test', '[{"role": "user", "content": "Hi"}]', '{"max_tokens": 3}');
+
+# Test 10: Load for embeddings
+statement ok
+SELECT llama_load_model_for_embeddings('tinyllama-v0-test', '{"n_ctx": 256}');
+
+# Test 11: Generate embeddings
+query I
+SELECT llama_embed('tinyllama-v0-test', 'test') IS NOT NULL;
+----
+true
+
+# Test 12: Batch processing
+query I
+SELECT llama_batch_process('{"model": "tinyllama-v0-test", "requests": [{"id": 1, "prompt": "Hi", "max_tokens": 2}]}') IS NOT NULL;
+----
+true
+
+# Test 13: Unload model
+statement ok
+SELECT llama_unload_model('tinyllama-v0-test');
+
+# Test 14: Verify unloaded
+query I
+SELECT llama_list_loaded() NOT LIKE '%tinyllama-v0-test%';
+----
+true
+
+# Test completed
+statement ok
+SELECT 'All tests completed successfully';

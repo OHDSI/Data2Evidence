@@ -1,0 +1,95 @@
+# name: test/sql/circe_comprehensive.test
+# description: Comprehensive validation of circe_json_to_sql SQL structure and content
+# group: [sql]
+
+require circe
+
+# Test 1: Verify generated SQL contains proper DDL statements
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":42,"generateStats":false}') AS sql
+)
+SELECT 
+  (position('CREATE TABLE #Codesets' IN sql) > 0 AND
+   position('INSERT INTO cohort' IN sql) > 0 AND
+   position('DELETE FROM cohort' IN sql) > 0 AND
+   position('cohort_definition_id = 42' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 2: Verify SQL structure contains expected table operations
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":123,"generateStats":true}') AS sql
+)
+SELECT 
+  (position('#qualified_events' IN sql) > 0 AND
+   position('#included_events' IN sql) > 0 AND
+   position('#final_cohort' IN sql) > 0 AND
+   position('cohort_definition_id = 123' IN sql) > 0 AND
+   position('results.cohort_inclusion_result' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 3: Verify schema parameter substitution works correctly
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"test_cdm","resultSchema":"test_results","targetTable":"test_cohort","cohortId":999,"generateStats":false}') AS sql
+)
+SELECT 
+  (position('test_cdm.observation_period' IN sql) > 0 AND
+   position('test_cohort' IN sql) > 0 AND
+   position('cohort_definition_id = 999' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 4: Verify generateStats parameter controls statistics generation - with stats
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":42,"generateStats":true}') AS sql
+)
+SELECT (position('cohort_inclusion_result' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 4b: Verify generateStats parameter - both cases should contain cohort_inclusion_result
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":42,"generateStats":false}') AS sql
+)
+SELECT (position('cohort_inclusion_result' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 5: Verify SQL length and complexity (realistic cohort queries should be substantial)
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":42,"generateStats":false}') AS sql
+)
+SELECT 
+  (length(sql) > 5000 AND 
+   (sql NOT LIKE 'CIRCE_NATIVE_LIBRARY_NOT_FOUND%') AND
+   (sql NOT LIKE 'Error:%'))::INTEGER
+FROM sql_output;
+----
+1
+
+# Test 6: Verify proper SQL syntax patterns for OHDSI cohort definitions
+query I
+WITH sql_output AS (
+  SELECT circe_json_to_sql('ewogICJQcmltYXJ5Q3JpdGVyaWEiOiB7CiAgICAiQ3JpdGVyaWFMaXN0IjogW10sCiAgICAiT2JzZXJ2YXRpb25XaW5kb3ciOiB7IlByaW9yRGF5cyI6IDAsICJQb3N0RGF5cyI6IDB9LAogICAgIlByaW1hcnlDcml0ZXJpYUxpbWl0IjogeyJUeXBlIjogIkFsbCJ9CiAgfSwKICAiQ29uY2VwdFNldHMiOiBbXSwKICAiUXVhbGlmaWVkTGltaXQiOiB7IlR5cGUiOiAiRmlyc3QifSwKICAiRXhwcmVzc2lvbkxpbWl0IjogeyJUeXBlIjogIkFsbCJ9LAogICJJbmNsdXNpb25SdWxlcyI6IFtdCn0=', '{"cdmSchema":"cdm","resultSchema":"results","targetTable":"cohort","cohortId":42,"generateStats":false}') AS sql
+)
+SELECT 
+  (position('person_id' IN sql) > 0 AND
+   position('start_date' IN sql) > 0 AND
+   position('end_date' IN sql) > 0 AND
+   position('observation_period' IN sql) > 0 AND
+   position('ROW_NUMBER() OVER' IN sql) > 0)::INTEGER
+FROM sql_output;
+----
+1

@@ -1,0 +1,15 @@
+.git
+build
+circe-be/target
+circe-be2
+duckdb2
+extension-ci-tools2
+*.o
+*.a
+*.so
+**/CMakeFiles
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+!Makefile
+duckdb_unittest_tempdir
