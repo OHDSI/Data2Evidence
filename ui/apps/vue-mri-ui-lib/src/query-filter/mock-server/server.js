@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const mockData = require('./mock-data.json')
+const setupWebapiRoutes = require('./webapi-routes')
 const app = express()
 
 app.use(cors())
@@ -11,6 +12,9 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`)
   next()
 })
+
+// Setup WebAPI routes from external file (customizable)
+setupWebapiRoutes(app)
 
 // GET /oidc/auth (API)
 app.get('/oidc/auth', (req, res) => {
@@ -220,40 +224,6 @@ app.get('/analytics-svc/api/services/values', (req, res) => {
 
   const mockResponse = mockData.GET__analytics_svc_api_services_values
   res.status(mockResponse.status).json(mockResponse.body)
-})
-
-// GET /d2e-webapi/cohortdefinition/23 (WebAPI Placeholder)
-app.get('/d2e-webapi/cohortdefinition/23', (req, res) => {
-  console.log('🔄 WebAPI Request:', 'GET /d2e-webapi/cohortdefinition/23')
-  console.log('  Query:', req.query)
-  console.log('  Body:', req.body)
-  console.log('  Headers:', req.headers)
-
-  // TODO: Forward to actual WebAPI server
-  res.status(501).json({
-    error: 'WebAPI endpoint not implemented yet',
-    message: 'This endpoint will be forwarded to the actual WebAPI server',
-    method: 'GET',
-    path: '/d2e-webapi/cohortdefinition/23',
-    timestamp: new Date().toISOString(),
-  })
-})
-
-// POST /d2e-webapi/cohortdefinition (WebAPI Placeholder)
-app.post('/d2e-webapi/cohortdefinition', (req, res) => {
-  console.log('🔄 WebAPI Request:', 'POST /d2e-webapi/cohortdefinition')
-  console.log('  Query:', req.query)
-  console.log('  Body:', req.body)
-  console.log('  Headers:', req.headers)
-
-  // TODO: Forward to actual WebAPI server
-  res.status(501).json({
-    error: 'WebAPI endpoint not implemented yet',
-    message: 'This endpoint will be forwarded to the actual WebAPI server',
-    method: 'POST',
-    path: '/d2e-webapi/cohortdefinition',
-    timestamp: new Date().toISOString(),
-  })
 })
 
 const PORT = process.env.PORT || 3001

@@ -137,6 +137,7 @@ fs.writeFileSync(path.join(__dirname, 'extracted-endpoints.json'), JSON.stringif
 let expressRoutes = `const express = require('express')
 const cors = require('cors')
 const mockData = require('./mock-data.json')
+const setupWebapiRoutes = require('./webapi-routes')
 const app = express()
 
 app.use(cors())
@@ -147,6 +148,9 @@ app.use((req, res, next) => {
   console.log(\`\${new Date().toISOString()} - \${req.method} \${req.url}\`)
   next()
 })
+
+// Setup WebAPI routes from external file (customizable)
+setupWebapiRoutes(app)
 `
 
 // Generate mock data object
@@ -214,32 +218,82 @@ app.${method.toLowerCase()}('${cleanPath}', (req, res) => {
   }
 })
 
-// Generate webapi placeholder routes
+// Update webapi-routes.js with new endpoints (if not already present)
+const webapiRoutesPath = path.join(__dirname, 'webapi-routes.js')
+
+// Create webapi-routes.js if it doesn't exist
+if (!fs.existsSync(webapiRoutesPath)) {
+  const initialContent = `// WebAPI Routes - Customize these endpoints as needed
+// This file is NOT auto-generated and won't be overwritten by parse-har.js
+
+const setupWebapiRoutes = (app) => {
+  // Add more webapi routes here as needed
+  // Example:
+  // app.get('/d2e-webapi/vocabulary/search', (req, res) => {
+  //   // Custom logic here
+  // })
+}
+
+module.exports = setupWebapiRoutes`
+  fs.writeFileSync(webapiRoutesPath, initialContent)
+  console.log('Created webapi-routes.js')
+}
+
+let webapiRoutesContent = fs.readFileSync(webapiRoutesPath, 'utf8')
+
 Object.entries(groupedWebapiEndpoints).forEach(([key, endpoints]) => {
   const [method, pathOnly] = key.split(' ', 2)
   const cleanPath = pathOnly.replace(/\/$/, '') || '/'
 
-  const templateEndpoint = endpoints[0]
+  // Check if this route already exists in webapi-routes.js
+  const routePattern = new RegExp(
+    `app\\.${method.toLowerCase()}\\('${cleanPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`
+  )
 
-  expressRoutes += `
-// ${key} (WebAPI Placeholder)
-app.${method.toLowerCase()}('${cleanPath}', (req, res) => {
-  console.log('🔄 WebAPI Request:', '${method} ${cleanPath}')
-  console.log('  Query:', req.query)
-  console.log('  Body:', req.body)
-  console.log('  Headers:', req.headers)
-  
-  // TODO: Forward to actual WebAPI server
-  res.status(501).json({
-    error: 'WebAPI endpoint not implemented yet',
-    message: 'This endpoint will be forwarded to the actual WebAPI server',
-    method: '${method}',
-    path: '${cleanPath}',
-    timestamp: new Date().toISOString()
+  if (!routePattern.test(webapiRoutesContent)) {
+    console.log(`Adding new WebAPI route: ${key}`)
+
+    // Add new route before the closing comment
+    const newRoute = `
+  // ${key}
+  app.${method.toLowerCase()}('${cleanPath}', (req, res) => {
+    console.log('🔄 WebAPI Request:', '${method} ${cleanPath}')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+    
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: '${method}',
+      path: '${cleanPath}',
+      timestamp: new Date().toISOString()
+    })
   })
-})
 `
+
+    // Insert before the closing comment
+    const insertPoint = webapiRoutesContent.lastIndexOf('  // Add more webapi routes here')
+    if (insertPoint !== -1) {
+      webapiRoutesContent =
+        webapiRoutesContent.slice(0, insertPoint) + newRoute + '\n' + webapiRoutesContent.slice(insertPoint)
+    } else {
+      // Fallback: insert before module.exports
+      const moduleExportIndex = webapiRoutesContent.lastIndexOf('module.exports')
+      webapiRoutesContent =
+        webapiRoutesContent.slice(0, moduleExportIndex) +
+        newRoute +
+        '\n}\n\n' +
+        webapiRoutesContent.slice(moduleExportIndex)
+    }
+  } else {
+    console.log(`WebAPI route already exists: ${key} (keeping existing implementation)`)
+  }
 })
+
+// Write updated webapi-routes.js
+fs.writeFileSync(webapiRoutesPath, webapiRoutesContent)
 
 expressRoutes += `
 const PORT = process.env.PORT || 3001

@@ -21,7 +21,8 @@ Server runs on `http://localhost:3001`
 **For WebAPI Endpoints:**
 
 1. Add webapi network calls to `webapi.har`
-2. Run: `npm run parse-har`
+2. Run: `npm run parse-har` (new endpoints auto-added to `webapi-routes.js`)
+3. Customize endpoints in `webapi-routes.js` as needed
 
 ## Scripts
 
@@ -37,6 +38,7 @@ npm run parse-har  # Regenerate from HAR file
 - `parse-har.js` - HAR file processor
 - `localhost1.har` - Network capture for analytics/static assets
 - `webapi.har` - Network capture for WebAPI endpoints
+- `webapi-routes.js` - Custom WebAPI endpoint handlers (customizable)
 - `extracted-endpoints.json` - Debug/analysis data (optional)
 
 ## Endpoints
