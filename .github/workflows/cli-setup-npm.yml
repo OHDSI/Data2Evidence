@@ -32,6 +32,7 @@ on:
         required: true
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop

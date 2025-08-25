@@ -66,7 +66,11 @@ async function buildPyodidePyqe() {
   );
 
   runCommand(`${pythonBin} -m pip install --upgrade pip setuptools wheel`);
-  runCommand("brew install md5sha1sum");
+  
+  // Only install md5sha1sum on macOS via Homebrew
+  if (process.platform === "darwin") {
+    runCommand("brew install md5sha1sum");
+  }
 
   runCommand(`${pythonBin} setup.py sdist bdist_wheel`);
   const wheelFile = path.join(

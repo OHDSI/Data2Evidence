@@ -1,0 +1,10 @@
+{
+  "resources": [
+    {"pattern": ".*application.*\\.properties$"},
+    {"pattern": ".*\\.properties$"},
+    {"pattern": ".*\\.json$"},
+    {"pattern": ".*\\.sql$"},
+    {"pattern": ".*\\.ftl$"},
+    {"pattern": ".*\\.csv$"}
+  ]
+}
