@@ -11,7 +11,7 @@ export async function addPlugin(value: any, dir: any) {
             let r = await conn.execute(`LOAD '${ext}'`, []);
             logger.info(`Loaded plugin ${value.name}: ${r}`);
             if(value.name == 'pgwire') {
-                r = await conn.execute(`SELECT start_pgwire_server('0.0.0.0', 15432, '${process.env.TREX__SQL__PASSWORD}')`, []);
+                r = await conn.execute(`SELECT start_pgwire_server('0.0.0.0', 5432, '${process.env.TREX__SQL__PASSWORD}')`, []);
                 logger.info(`Started pgwire server: ${r}`);
             }
         } else {
