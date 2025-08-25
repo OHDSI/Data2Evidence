@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'cohort-generation'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-
 
 test('cohort-generation', async ({ page }) => {
   // Generate unique cohort name to avoid conflicts with other tests

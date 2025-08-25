@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'dataset-overview-chart'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Update dataset metadata' }).click()
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeEnabled()
-  await page.waitForTimeout(2 * 60 * 1000)
+  // await page.waitForTimeout(2 * 60 * 1000)
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
 
