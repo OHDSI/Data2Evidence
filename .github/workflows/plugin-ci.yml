@@ -186,7 +186,6 @@ jobs:
           CI: ${{ matrix.NPM != 'yarn' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-          DUCKDB_VERSION: 1.3.2
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
