@@ -24,11 +24,9 @@ import type {
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
 
-import {
-  loadConceptSetDetails as apiLoadConceptSetDetails,
-  loadSingleConceptSetDetails,
-} from '../services/ConceptSetApiService'
-import { filterConceptSets, getTagInputTexts, createDefaultConceptSetDomainValues } from '../utils/ConceptSetHelpers'
+import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
+import { getTagInputTexts } from '../utils/ConceptSetHelpers'
+import { useConceptSets } from '../composables/useConceptSets'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
@@ -110,8 +108,6 @@ const tagInputModel = computed<TagInputModel>(() => {
   }
 })
 
-const selectedConceptSets = ref<ConceptSetItemDisplay[]>([])
-
 const conceptSetsFromCriteria = computed(() => {
   const conceptSets: ConceptSetItemDisplay[] = []
   const seenIds = new Set<string>()
@@ -144,12 +140,7 @@ const conceptSetsFromCriteria = computed(() => {
   return conceptSets
 })
 
-const loadingConceptDetails = ref(false)
-
 const tagInputTexts = getTagInputTexts()
-
-const allConceptSets = ref<ConceptSetItemDisplay[]>([])
-const conceptSetDomainValues = ref<ConceptSetDomainValues>(createDefaultConceptSetDomainValues())
 
 const datasetId = computed(() => {
   const storeDatasetId = store?.state?.selectedDataset?.id
@@ -169,31 +160,19 @@ const getDatasetId = (): string | null => {
   return datasetId.value
 }
 
-const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[]) => {
-  if (selectedConceptSets.length === 0) {
-    return
-  }
-
-  const currentDatasetId = getDatasetId()
-  if (!currentDatasetId) {
-    console.warn('Cannot load concept set details: Dataset ID not available from store or portalAPI')
-    return
-  }
-
-  loadingConceptDetails.value = true
-
-  try {
-    const result = await apiLoadConceptSetDetails(selectedConceptSets, currentDatasetId)
-  } catch (error) {
-    console.error('Error loading concept set details:', error)
-  } finally {
-    loadingConceptDetails.value = false
-  }
-}
-
-const filterConceptSetsLocal = (searchQuery: string) => {
-  conceptSetDomainValues.value = filterConceptSets(allConceptSets.value, searchQuery)
-}
+// Initialize concept sets composable
+const {
+  selectedConceptSets,
+  allConceptSets,
+  conceptSetDomainValues,
+  loadingConceptDetails,
+  selectedConceptSetValues,
+  loadConceptSetDetails,
+  filterConceptSetsLocal,
+  handleConceptSetUpdate,
+  handleSearchChange,
+  clearConceptSets,
+} = useConceptSets(getDatasetId)
 
 const tagInputDomainValues = computed(() => {
   try {
@@ -209,20 +188,6 @@ const tagInputDomainValues = computed(() => {
   }
 })
 
-const selectedConceptSetValues = computed(() => {
-  try {
-    return selectedConceptSets.value
-  } catch (error: unknown) {
-    console.error('Error in selectedConceptSetValues computed:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    return []
-  }
-})
-
 const getText = (key: string, ...args: (string | number)[]) => {
   return store?.getters?.getText?.(key, ...args) || key
 }
@@ -233,7 +198,7 @@ const hasExceededLength = computed(() => {
 
 const initializeComponent = () => {
   criteriaManager.clearAllCriteria()
-  selectedConceptSets.value = []
+  clearConceptSets()
 }
 
 watch(
@@ -340,7 +305,6 @@ const handleRemoveCriteriaGroup = (index: number) => {
   console.log('Criteria group removed:', index)
 }
 
-
 const applyFilters = () => {
   try {
     console.log('Applying filters:', getAllFilters())
@@ -360,7 +324,7 @@ const clearFilters = () => {
   try {
     if (confirm('Are you sure you want to clear all filters?')) {
       criteriaManager.clearAllCriteria()
-      selectedConceptSets.value = []
+      clearConceptSets()
     }
   } catch (error: unknown) {
     console.error('Error in clearFilters:', error)
@@ -446,42 +410,6 @@ watch(
   },
   { immediate: true }
 )
-
-const handleConceptSetUpdate = (value: ConceptSetItemDisplay[]) => {
-  try {
-    console.log('handleConceptSetUpdate called with:', value)
-    if (Array.isArray(value) && selectedConceptSets) {
-      selectedConceptSets.value = [...value]
-      console.log('Concept set updated (stored locally):', value)
-    } else {
-      console.warn('Invalid value passed to handleConceptSetUpdate:', value)
-    }
-  } catch (error: unknown) {
-    console.error('Error in handleConceptSetUpdate:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    if (selectedConceptSets && Array.isArray(value)) {
-      selectedConceptSets.value = value
-    }
-  }
-}
-
-const handleSearchChange = (searchQuery: string) => {
-  try {
-    console.log('handleSearchChange called with:', searchQuery)
-    filterConceptSetsLocal(searchQuery)
-  } catch (error: unknown) {
-    console.error('Error in handleSearchChange:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-  }
-}
 
 // Function to find an event by ID across all sections of criteria manager
 const findEventById = (eventId: string): QueryFilterEvent | undefined => {
