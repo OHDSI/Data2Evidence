@@ -21,7 +21,6 @@ import type {
   ExitEvent,
   InclusionCriteria,
   QueryFilterCriteriaManageData,
-  QueryFilterNestedCriteria,
 } from '../types/QueryFilterTypes'
 import { getAtlasAttributeKey } from '../utils/AtlasUtils'
 import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId } from './modules/type-guards'
@@ -32,6 +31,13 @@ import {
   mapOperatorToAtlas,
   mapCardinalityExtras,
 } from './modules/atlas-mappers'
+import { transformEvents } from './modules/event-transformer'
+import {
+  collectAllEvents,
+  processNestedGroups,
+  buildNestedCriteriaFromAttributes,
+} from './modules/nested-criteria-processor'
+import { collectNestedConceptSets, collectNestedConceptSetsFromEvents } from './modules/concept-set-collector'
 
 export class QueryFilterCriteriaManager {
   private entryEvents: EntryEvent
@@ -43,7 +49,7 @@ export class QueryFilterCriteriaManager {
       if (data.entryEvents) {
         this.entryEvents = {
           primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'ALL',
-          events: this.transformEvents(data.entryEvents.events || []),
+          events: transformEvents(data.entryEvents.events || []),
           priorDays: data.entryEvents.priorDays || 0,
           postDays: data.entryEvents.postDays || 0,
         }
@@ -77,7 +83,7 @@ export class QueryFilterCriteriaManager {
               title: criteria.title,
               description: criteria.description,
               criteriaType: criteria.criteriaType,
-              events: this.transformEvents(criteria.events || []),
+              events: transformEvents(criteria.events || []),
             })) || [],
         }
       } else {
@@ -183,142 +189,6 @@ export class QueryFilterCriteriaManager {
     return this.removeEventFromGroup(groupId, filterId)
   }
 
-  // Transform events from new structure to internal structure
-  private transformEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
-    const transformedEvents: QueryFilterEvent[] = []
-
-    events.forEach(event => {
-      const processedAttributes: QueryFilterAttribute[] = []
-      const remainingAttributes: QueryFilterAttribute[] = []
-
-      // Main event
-      const mainEvent: QueryFilterEvent = {
-        id: event.id,
-        conceptSet: event.conceptSet || '',
-        conceptSetId: event.conceptSetId,
-        conceptSetDetails: event.conceptSetDetails,
-        selectedConceptSet: event.selectedConceptSet,
-        conceptSetLoading: event.conceptSetLoading,
-        criteriaType: event.criteriaType,
-        eventType: event.eventType,
-        isExpanded: event.isExpanded,
-        cardinality: event.cardinality,
-        attributes: [], // Will be populated with remaining attributes
-      }
-      transformedEvents.push(mainEvent)
-
-      // Process attributes - keep original attributes format
-      if (event.attributes && event.attributes.length > 0) {
-        event.attributes.forEach(attr => {
-          // Normalize attributeType from either attributeType or type field
-          const attributeType = attr.attributeType
-          const configType = 'configType' in attr ? attr.configType : 'conceptSet'
-          if (attributeType === 'nested' && attr.nestedCriteria) {
-            // Keep nested criteria in the attributes format, just process the events
-            const processedAttr: QueryFilterAttribute = {
-              id: attr.id,
-              attributeType: 'nested',
-              nestedCriteria: {
-                ...attr.nestedCriteria,
-                events: this.transformNestedEvents(attr.nestedCriteria.events || [], mainEvent.id),
-              },
-            }
-            remainingAttributes.push(processedAttr)
-            processedAttributes.push(attr)
-          } else if (
-            hasAttributeId(attr) &&
-            attributeType &&
-            attributeType !== 'nested' &&
-            (configType === 'conceptSet' || configType === 'concept')
-          ) {
-            const attributeId = attr.attributeId
-
-            // Also add to selectedAttributes for tracking
-            if (!mainEvent.selectedAttributes) {
-              mainEvent.selectedAttributes = []
-            }
-            mainEvent.selectedAttributes.push(attributeId)
-            // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
-            if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
-              remainingAttributes.push(attr)
-            } else {
-              // For other attribute types (like age)
-              mainEvent.attributeConfig = {
-                id: attributeId,
-                name: attributeId,
-                description: '',
-                type: attributeType,
-                category: 'criteria-specific',
-              }
-
-              if (attributeId === 'age' && attributeType === 'numericRange') {
-                mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
-                mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
-              }
-
-              processedAttributes.push(attr)
-            }
-          } else {
-            remainingAttributes.push(attr)
-          }
-        })
-      }
-      mainEvent.attributes = remainingAttributes
-
-      // Populate selectedAttributes with attributeId for each processed attribute
-      if (remainingAttributes.length > 0) {
-        if (!mainEvent.selectedAttributes) {
-          mainEvent.selectedAttributes = []
-        }
-        remainingAttributes.forEach(attr => {
-          if ('attributeId' in attr && attr.attributeId && !mainEvent.selectedAttributes.includes(attr.attributeId)) {
-            mainEvent.selectedAttributes.push(attr.attributeId)
-          }
-        })
-      }
-    })
-
-    return transformedEvents
-  }
-
-  private transformNestedEvents(events: QueryFilterEvent[], parentId: string): QueryFilterEvent[] {
-    return events.map(event => {
-      const nestedChildEvent: QueryFilterEvent = {
-        id: event.id,
-        conceptSet: event.conceptSet || '',
-        conceptSetId: event.conceptSetId,
-        conceptSetDetails: event.conceptSetDetails,
-        selectedConceptSet: event.selectedConceptSet,
-        conceptSetLoading: event.conceptSetLoading,
-        criteriaType: event.criteriaType,
-        eventType: event.eventType,
-        isExpanded: event.isExpanded,
-        cardinality: event.cardinality,
-        parentEventId: parentId,
-      }
-
-      if (event.attributes && event.attributes.length > 0) {
-        nestedChildEvent.attributes = event.attributes.map(attr => {
-          const attributeType = attr.attributeType
-
-          if (attributeType === 'nested' && attr.nestedCriteria) {
-            return {
-              id: attr.id,
-              attributeType: 'nested',
-              nestedCriteria: {
-                ...attr.nestedCriteria,
-                events: this.transformNestedEvents(attr.nestedCriteria.events || [], nestedChildEvent.id),
-              },
-            }
-          }
-          return attr
-        })
-      }
-
-      return nestedChildEvent
-    })
-  }
-
   convertToAtlasFormat(): AtlasCohortDefinition {
     const conceptSets: ConceptSet[] = []
     const usedConceptSetIds = new Set<string>()
@@ -326,7 +196,7 @@ export class QueryFilterCriteriaManager {
 
     this.inclusionCriteria.criteria.forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
-      const allGroupEvents = this.collectAllEvents(group.events)
+      const allGroupEvents = collectAllEvents(group.events)
       allGroupEvents.forEach(event => {
         if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
           const systemConceptSetId = event.conceptSetId
@@ -425,22 +295,12 @@ export class QueryFilterCriteriaManager {
 
     // SECOND PASS: Collect concept sets from nested events that were missed in initial collection
     // This addresses timing issues where nested events are added after initial collection
-    this.collectNestedConceptSets(
-      this.inclusionCriteria.criteria || [],
-      systemIdToAtlasId,
-      usedConceptSetIds,
-      conceptSets
-    )
+    collectNestedConceptSets(this.inclusionCriteria.criteria || [], systemIdToAtlasId, usedConceptSetIds, conceptSets)
     if (this.entryEvents?.events) {
-      this.collectNestedConceptSetsFromEvents(
-        this.entryEvents.events,
-        systemIdToAtlasId,
-        usedConceptSetIds,
-        conceptSets
-      )
+      collectNestedConceptSetsFromEvents(this.entryEvents.events, systemIdToAtlasId, usedConceptSetIds, conceptSets)
     }
     if (this.exitEvents?.censoringCriteria) {
-      this.collectNestedConceptSetsFromEvents(
+      collectNestedConceptSetsFromEvents(
         this.exitEvents.censoringCriteria,
         systemIdToAtlasId,
         usedConceptSetIds,
@@ -530,10 +390,7 @@ export class QueryFilterCriteriaManager {
                     // Process nested criteria from attributes
                     attributesNestedCriteria.forEach(attr => {
                       if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
-                        const result = this.buildNestedCriteriaFromAttributes(
-                          attr.nestedCriteria.events,
-                          systemIdToAtlasId
-                        )
+                        const result = buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
                         criteriaList = criteriaList.concat(result.criteriaList)
                         demographicCriteriaList = demographicCriteriaList.concat(result.demographicCriteriaList)
                         groupsList = groupsList.concat(result.groupsList || [])
@@ -636,7 +493,7 @@ export class QueryFilterCriteriaManager {
 
                 return demographicCriteria
               }),
-            Groups: this.processNestedGroups(group.events, systemIdToAtlasId).filter(
+            Groups: processNestedGroups(group.events, systemIdToAtlasId).filter(
               group =>
                 group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
             ),
@@ -668,7 +525,7 @@ export class QueryFilterCriteriaManager {
             // Process nested criteria from attributes
             attributesNestedCriteria.forEach(attr => {
               if (isNestedAttribute(attr) && attr.nestedCriteria?.events) {
-                const result = this.buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
+                const result = buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
                 criteriaList = criteriaList.concat(result.criteriaList)
                 demographicCriteriaList = demographicCriteriaList.concat(result.demographicCriteriaList)
                 groupsList = groupsList.concat(result.groupsList || [])
@@ -760,7 +617,7 @@ export class QueryFilterCriteriaManager {
             // Process nested criteria from attributes
             attributesNestedCriteria.forEach(attr => {
               if (isNestedAttribute(attr) && attr.nestedCriteria?.events) {
-                const result = this.buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
+                const result = buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
                 criteriaList = criteriaList.concat(result.criteriaList)
                 demographicCriteriaList = demographicCriteriaList.concat(result.demographicCriteriaList)
                 groupsList = groupsList.concat(result.groupsList || [])
@@ -888,167 +745,6 @@ export class QueryFilterCriteriaManager {
     return {}
   }
 
-  // Helper method to recursively process nested groups
-  private processNestedGroups(events: QueryFilterEvent[], systemIdToAtlasId: Map<string, number>): GroupCriteria[] {
-    const results: GroupCriteria[] = []
-
-    // Process group events that contain sibling events
-    events
-      .filter(event => event.eventType === 'group' && event.nestedCriteria)
-      .forEach(groupEvent => {
-        if (groupEvent.nestedCriteria?.events) {
-          // Collect all nested group events that contain actual events (not further groups)
-          const nestedGroupsWithEvents = groupEvent.nestedCriteria.events.filter(
-            event => event.eventType === 'group' && event.nestedCriteria?.events
-          )
-
-          // Process each non-group event in the group's nested criteria
-          groupEvent.nestedCriteria.events.forEach(nestedEvent => {
-            if (nestedEvent.eventType !== 'demographic' && nestedEvent.eventType !== 'group') {
-              // Handle non-group events normally
-              const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType!)
-
-              const criteria: CriteriaGroup = {
-                Criteria: {
-                  [atlasEventType]: {
-                    ...(nestedEvent.conceptSetId && { CodesetId: systemIdToAtlasId.get(nestedEvent.conceptSetId) }),
-                  },
-                },
-                StartWindow: {
-                  Start: {
-                    Coeff: -1,
-                  },
-                  End: {
-                    Coeff: 1,
-                  },
-                  UseEventEnd: false,
-                },
-                Occurrence: {
-                  Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-                  Count: nestedEvent.cardinality?.count || 1,
-                },
-              }
-
-              // Check for nested criteria in attributes format for this event
-              const attributesNestedCriteria: QueryFilterAttribute[] =
-                nestedEvent.attributes?.filter(attr => {
-                  return attr.attributeType === 'nested' && attr.nestedCriteria?.events
-                }) || []
-
-              let criteriaList: CriteriaGroup[] = []
-              let demographicCriteriaList: DemographicCriteria[] = []
-              let groupsList: GroupCriteria[] = []
-
-              // Process nested criteria from attributes
-              if (attributesNestedCriteria.length > 0) {
-                attributesNestedCriteria.forEach(attr => {
-                  if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
-                    const result = this.buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
-                    criteriaList = criteriaList.concat(result.criteriaList)
-                    demographicCriteriaList = demographicCriteriaList.concat(result.demographicCriteriaList)
-                    groupsList = groupsList.concat(result.groupsList || [])
-                  }
-                })
-              }
-
-              // Create a group to contain this event
-              const eventGroup: GroupCriteria = {
-                Type: 'ALL',
-                CriteriaList: [criteria],
-                DemographicCriteriaList: [],
-                Groups: [],
-              }
-
-              // Add CorrelatedCriteria if we have nested content from attributes
-              if (criteriaList.length > 0 || demographicCriteriaList.length > 0 || groupsList.length > 0) {
-                criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-                  Type: 'ALL',
-                  CriteriaList: criteriaList,
-                  DemographicCriteriaList: demographicCriteriaList,
-                  Groups: groupsList.filter(
-                    group =>
-                      group.CriteriaList.length > 0 ||
-                      group.DemographicCriteriaList.length > 0 ||
-                      group.Groups.length > 0
-                  ),
-                }
-              }
-
-              // Process any sibling nested groups as additional groups within this event group
-              nestedGroupsWithEvents.forEach(nestedGroup => {
-                if (nestedGroup.nestedCriteria?.events) {
-                  nestedGroup.nestedCriteria.events.forEach(groupedEvent => {
-                    if (groupedEvent.eventType !== 'demographic' && groupedEvent.eventType !== 'group') {
-                      const groupedAtlasEventType = mapEventTypeToAtlas(groupedEvent.eventType!)
-
-                      eventGroup.Groups.push({
-                        Type: 'ALL',
-                        CriteriaList: [
-                          {
-                            Criteria: {
-                              [groupedAtlasEventType]: {
-                                ...(groupedEvent.conceptSetId && {
-                                  CodesetId: systemIdToAtlasId.get(groupedEvent.conceptSetId),
-                                }),
-                              },
-                            },
-                            StartWindow: {
-                              Start: { Coeff: -1 },
-                              End: { Coeff: 1 },
-                              UseEventEnd: false,
-                            },
-                            Occurrence: {
-                              Type: mapCardinalityTypeToAtlas(groupedEvent.cardinality?.type || 'AT_LEAST'),
-                              Count: groupedEvent.cardinality?.count || 1,
-                            },
-                          },
-                        ],
-                        DemographicCriteriaList: [],
-                        Groups: [],
-                      })
-                    }
-                  })
-                }
-              })
-
-              results.push(eventGroup)
-            }
-          })
-        }
-      })
-
-    return results
-  }
-
-  // Helper method to recursively collect all events including nested ones
-  private collectAllEvents(events: QueryFilterEvent[]): QueryFilterEvent[] {
-    const allEvents: QueryFilterEvent[] = []
-
-    const collectRecursively = (eventList: QueryFilterEvent[]) => {
-      eventList.forEach(event => {
-        allEvents.push(event)
-
-        // Collect from attributes.nestedCriteria structure
-        if (event.attributes) {
-          event.attributes.forEach(attr => {
-            const attributeType = attr.attributeType
-            if (attributeType === 'nested' && attr.nestedCriteria?.events) {
-              collectRecursively(attr.nestedCriteria.events)
-            }
-          })
-        }
-
-        // Collect from event.nestedCriteria structure (for group events)
-        if (event.nestedCriteria?.events) {
-          collectRecursively(event.nestedCriteria.events)
-        }
-      })
-    }
-
-    collectRecursively(events)
-    return allEvents
-  }
-
   // Serialization
   toJSON(): QueryFilterCriteriaManageData {
     return {
@@ -1060,310 +756,6 @@ export class QueryFilterCriteriaManager {
 
   static fromJSON(data: QueryFilterCriteriaManageData): QueryFilterCriteriaManager {
     return new QueryFilterCriteriaManager(data)
-  }
-
-  // Helper method to recursively process nested Groups structure with unlimited depth
-  private processNestedGroupsRecursively(
-    events: QueryFilterEvent[],
-    systemIdToAtlasId: Map<string, number>
-  ): GroupCriteria[] {
-    const groupsList: GroupCriteria[] = []
-
-    // Find all group events at this level
-    const groupEvents = events.filter(event => event.eventType === 'group' && event.nestedCriteria?.events)
-
-    groupEvents.forEach(groupEvent => {
-      if (groupEvent.nestedCriteria?.events) {
-        const criteriaList: CriteriaGroup[] = []
-        const demographicCriteriaList: DemographicCriteria[] = []
-        const nestedGroups: GroupCriteria[] = []
-
-        // Process non-group events for CriteriaList
-        groupEvent.nestedCriteria.events
-          .filter(event => event.eventType !== 'group' && event.eventType !== 'demographic')
-          .forEach(nestedEvent => {
-            const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType!)
-            const criteria: CriteriaGroup = {
-              Criteria: {
-                [atlasEventType]: {
-                  ...(nestedEvent.conceptSetId && {
-                    CodesetId: systemIdToAtlasId.get(nestedEvent.conceptSetId),
-                  }),
-                },
-              },
-              StartWindow: {
-                Start: { Coeff: -1 },
-                End: { Coeff: 1 },
-                UseEventEnd: false,
-              },
-              Occurrence: {
-                Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-                Count: nestedEvent.cardinality?.count || 1,
-              },
-            }
-
-            // Process nested criteria from attributes if they exist
-            if (nestedEvent.attributes && Array.isArray(nestedEvent.attributes)) {
-              const attributesNestedCriteria = nestedEvent.attributes.filter(
-                (
-                  attr
-                ): attr is QueryFilterAttribute & {
-                  attributeType: 'nested'
-                  nestedCriteria: QueryFilterNestedCriteria
-                } => isNestedAttribute(attr)
-              )
-
-              if (attributesNestedCriteria.length > 0) {
-                let nestedCriteriaList: CriteriaGroup[] = []
-                let nestedDemographicCriteriaList: DemographicCriteria[] = []
-                let nestedGroupsList: GroupCriteria[] = []
-
-                attributesNestedCriteria.forEach(attr => {
-                  if (attr.nestedCriteria?.events) {
-                    const result = this.buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
-                    nestedCriteriaList = nestedCriteriaList.concat(result.criteriaList)
-                    nestedDemographicCriteriaList = nestedDemographicCriteriaList.concat(result.demographicCriteriaList)
-
-                    // RECURSIVE CALL: Process deeper nested groups
-                    const deeperGroups = this.processNestedGroupsRecursively(
-                      attr.nestedCriteria.events,
-                      systemIdToAtlasId
-                    )
-                    nestedGroupsList = nestedGroupsList.concat(deeperGroups)
-                  }
-                })
-
-                // Add CorrelatedCriteria if we have nested content
-                if (
-                  nestedCriteriaList.length > 0 ||
-                  nestedDemographicCriteriaList.length > 0 ||
-                  nestedGroupsList.length > 0
-                ) {
-                  criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-                    Type: 'ALL',
-                    CriteriaList: nestedCriteriaList,
-                    DemographicCriteriaList: nestedDemographicCriteriaList,
-                    Groups: nestedGroupsList.filter(
-                      group =>
-                        group.CriteriaList.length > 0 ||
-                        group.DemographicCriteriaList.length > 0 ||
-                        group.Groups.length > 0
-                    ),
-                  }
-                }
-              }
-            }
-
-            criteriaList.push(criteria)
-          })
-
-        // Process demographic events for DemographicCriteriaList
-        groupEvent.nestedCriteria.events
-          .filter(event => event.eventType === 'demographic')
-          .forEach(event => {
-            if (event.attributes && Array.isArray(event.attributes)) {
-              event.attributes.forEach((attr: QueryFilterAttribute) => {
-                if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
-                  const ageConfig: NumericRange = {
-                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
-                    Value: attr.value !== undefined ? parseInt(attr.value) : 0,
-                  }
-                  demographicCriteriaList.push({ Age: ageConfig })
-                }
-              })
-            }
-          })
-
-        // RECURSIVE CALL: Process deeper nested groups
-        const deeperNestedGroups = this.processNestedGroupsRecursively(
-          groupEvent.nestedCriteria.events,
-          systemIdToAtlasId
-        )
-        nestedGroups.push(...deeperNestedGroups)
-
-        // Create the group criteria
-        groupsList.push({
-          Type: 'ALL',
-          CriteriaList: criteriaList,
-          DemographicCriteriaList: demographicCriteriaList,
-          Groups: nestedGroups.filter(
-            group =>
-              group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
-          ),
-        })
-      }
-    })
-
-    return groupsList
-  }
-
-  // Helper method to build nested criteria from attributes.nestedCriteria format
-  private buildNestedCriteriaFromAttributes(
-    nestedCriteriaEvents: QueryFilterEvent[],
-    systemIdToAtlasId: Map<string, number>
-  ): { criteriaList: CriteriaGroup[]; demographicCriteriaList: DemographicCriteria[]; groupsList: GroupCriteria[] } {
-    const criteriaList: CriteriaGroup[] = []
-    const demographicCriteriaList: DemographicCriteria[] = []
-    const groupsList: GroupCriteria[] = []
-
-    // Filter out group events - they should be handled separately in Groups, not CriteriaList
-    // Also filter out demographic events as they go in DemographicCriteriaList
-    const nonGroupEvents = nestedCriteriaEvents.filter(
-      event => event.eventType !== 'group' && event.eventType !== 'demographic'
-    )
-
-    // Use recursive processing for Group events
-    const recursiveGroups = this.processNestedGroupsRecursively(nestedCriteriaEvents, systemIdToAtlasId)
-    groupsList.push(...recursiveGroups)
-
-    // Handle demographic events separately
-    const demographicEvents = nestedCriteriaEvents.filter(event => event.eventType === 'demographic')
-
-    demographicEvents.forEach(event => {
-      // Process demographic events and their age attributes
-      if (event.attributes && Array.isArray(event.attributes)) {
-        event.attributes.forEach((attr: QueryFilterAttribute) => {
-          if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
-            const ageConfig: NumericRange = {
-              Op: 'gt', // Default operator
-              Value: 0, // Default value
-            }
-
-            // Map operator and value if available
-            if (attr.operator) {
-              ageConfig.Op = mapOperatorToAtlas(attr.operator)
-            }
-
-            if (attr.value !== undefined) {
-              ageConfig.Value = parseInt(attr.value)
-            }
-
-            demographicCriteriaList.push({
-              Age: ageConfig,
-            })
-          }
-        })
-      }
-    })
-
-    nonGroupEvents.forEach(nestedEvent => {
-      const atlasEventType = mapEventTypeToAtlas(nestedEvent.eventType)
-      const criteria: CriteriaGroup = {
-        Criteria: {
-          [atlasEventType]: {},
-        },
-        StartWindow: {
-          Start: {
-            Coeff: -1,
-          },
-          End: {
-            Coeff: 1,
-          },
-          UseEventEnd: false,
-        },
-        Occurrence: {
-          Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-          Count: nestedEvent.cardinality?.count || 1,
-        },
-      }
-
-      // Add concept set reference using systemIdToAtlasId mapping
-      if (nestedEvent.conceptSetId) {
-        const atlasConceptSetId = systemIdToAtlasId.get(nestedEvent.conceptSetId)
-        if (atlasConceptSetId !== undefined) {
-          criteria.Criteria[atlasEventType].CodesetId = atlasConceptSetId
-        }
-      }
-
-      // Handle further nested criteria recursively - Check attributes format
-      if (nestedEvent.attributes) {
-        const furtherNestedCriteria = nestedEvent.attributes.filter(attr => {
-          const attributeType = attr.attributeType
-          return attributeType === 'nested' && attr.nestedCriteria?.events
-        })
-
-        // Handle attributes - both demographic and concept-type attributes
-        const allAttributes = nestedEvent.attributes.filter(
-          attr => 'configType' in attr && attr.configType === 'concept'
-        )
-
-        // Add attributes to the criteria
-        allAttributes.forEach(attr => {
-          if (hasAttributeId(attr)) {
-            if ('configType' in attr && attr.configType === 'concept') {
-              // Convert conceptItems to Atlas concept format for any concept-type attribute
-              if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
-                const conceptData = attr.conceptItems.map(item => ({
-                  CONCEPT_CODE: item.code,
-                  CONCEPT_ID: item.conceptId,
-                  CONCEPT_NAME: item.conceptName,
-                  DOMAIN_ID: item.domainId,
-                  VOCABULARY_ID: item.system,
-                }))
-
-                // Set the appropriate field based on attribute type - use dynamic event type
-                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria.Criteria[atlasEventType][fieldName] = conceptData
-              } else {
-                // Initialize empty array for concept-type attributes
-                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria.Criteria[atlasEventType][fieldName] = []
-              }
-            } else if (attr.attributeId === 'age' && isNumericRangeAttribute(attr)) {
-              const ageConfig: NumericRange = {
-                Value: 0,
-                Op: 'gt', // Default operator
-              }
-              if (attr.operator) {
-                ageConfig.Op = mapOperatorToAtlas(attr.operator)
-              }
-              if (attr.value !== undefined) {
-                ageConfig.Value = parseInt(attr.value)
-              }
-              criteria.Criteria[atlasEventType].Age = ageConfig
-            }
-          }
-        })
-
-        if (furtherNestedCriteria.length > 0) {
-          let nestedCriteriaList: CriteriaGroup[] = []
-          let nestedDemographicCriteriaList: DemographicCriteria[] = []
-          let nestedGroupsList: GroupCriteria[] = []
-
-          furtherNestedCriteria.forEach(attrObj => {
-            if (isNestedAttribute(attrObj) && attrObj.nestedCriteria?.events) {
-              const result = this.buildNestedCriteriaFromAttributes(attrObj.nestedCriteria.events, systemIdToAtlasId)
-              nestedCriteriaList = nestedCriteriaList.concat(result.criteriaList)
-              nestedDemographicCriteriaList = nestedDemographicCriteriaList.concat(result.demographicCriteriaList)
-
-              // Add recursive processing for deeper Groups
-              const deeperGroups = this.processNestedGroupsRecursively(attrObj.nestedCriteria.events, systemIdToAtlasId)
-              nestedGroupsList = nestedGroupsList.concat(deeperGroups)
-            }
-          })
-
-          if (
-            nestedCriteriaList.length > 0 ||
-            nestedDemographicCriteriaList.length > 0 ||
-            nestedGroupsList.length > 0
-          ) {
-            criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-              Type: 'ALL',
-              CriteriaList: nestedCriteriaList,
-              DemographicCriteriaList: nestedDemographicCriteriaList,
-              Groups: nestedGroupsList.filter(
-                group =>
-                  group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
-              ),
-            }
-          }
-        }
-      }
-
-      criteriaList.push(criteria)
-    })
-
-    return { criteriaList, demographicCriteriaList, groupsList }
   }
 
   // Update qualifying events limit
@@ -1456,108 +848,5 @@ export class QueryFilterCriteriaManager {
       entryEvents: this.entryEvents,
       exitEvents: this.exitEvents,
     }
-  }
-
-  // Helper method to collect concept sets from nested events that were missed in initial collection
-  private collectNestedConceptSets(
-    groups: QueryFilterGroup[],
-    systemIdToAtlasId: Map<string, number>,
-    usedConceptSetIds: Set<string>,
-    conceptSets: ConceptSet[]
-  ): void {
-    groups.forEach(group => {
-      if (group.events) {
-        this.collectNestedConceptSetsFromEvents(group.events, systemIdToAtlasId, usedConceptSetIds, conceptSets)
-      }
-    })
-  }
-
-  // Helper method to collect concept sets from events and their nested attributes
-  private collectNestedConceptSetsFromEvents(
-    events: QueryFilterEvent[],
-    systemIdToAtlasId: Map<string, number>,
-    usedConceptSetIds: Set<string>,
-    conceptSets: ConceptSet[]
-  ): void {
-    events.forEach(event => {
-      // Check if this event has attributes with nested events
-      if (event.attributes) {
-        event.attributes.forEach(attr => {
-          // Look for nested criteria with events that have concept sets
-          if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
-            attr.nestedCriteria.events.forEach(nestedEvent => {
-              // This is the key check - nested events with concept sets that weren't collected initially
-              if (
-                nestedEvent.conceptSetDetails &&
-                nestedEvent.conceptSetDetails.length > 0 &&
-                nestedEvent.conceptSetId
-              ) {
-                const systemConceptSetId = nestedEvent.conceptSetId
-                if (!usedConceptSetIds.has(systemConceptSetId)) {
-                  usedConceptSetIds.add(systemConceptSetId)
-                  const atlasSequentialId = conceptSets.length
-                  systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
-
-                  const conceptSetDef: ConceptSet = {
-                    id: atlasSequentialId,
-                    name: nestedEvent.conceptSet || `Concept Set ${systemConceptSetId}`,
-                    expression: {
-                      items: nestedEvent.conceptSetDetails,
-                    },
-                  }
-
-                  // Add conceptSetId field with system database ID
-                  conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
-                  conceptSets.push(conceptSetDef)
-                }
-              }
-            })
-
-            // Recursively process further nested levels
-            this.collectNestedConceptSetsFromEvents(
-              attr.nestedCriteria.events,
-              systemIdToAtlasId,
-              usedConceptSetIds,
-              conceptSets
-            )
-          }
-        })
-      }
-
-      // Check if this event has nestedCriteria (for group events)
-      if (event.nestedCriteria?.events) {
-        event.nestedCriteria.events.forEach(nestedEvent => {
-          // Collect concept sets from group events
-          if (nestedEvent.conceptSetDetails && nestedEvent.conceptSetDetails.length > 0 && nestedEvent.conceptSetId) {
-            const systemConceptSetId = nestedEvent.conceptSetId
-            if (!usedConceptSetIds.has(systemConceptSetId)) {
-              usedConceptSetIds.add(systemConceptSetId)
-              const atlasSequentialId = conceptSets.length
-              systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
-
-              const conceptSetDef: ConceptSet = {
-                id: atlasSequentialId,
-                name: nestedEvent.conceptSet || `Concept Set ${systemConceptSetId}`,
-                expression: {
-                  items: nestedEvent.conceptSetDetails,
-                },
-              }
-
-              // Add conceptSetId field with system database ID
-              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
-              conceptSets.push(conceptSetDef)
-            }
-          }
-        })
-
-        // Recursively process further nested levels in group events
-        this.collectNestedConceptSetsFromEvents(
-          event.nestedCriteria.events,
-          systemIdToAtlasId,
-          usedConceptSetIds,
-          conceptSets
-        )
-      }
-    })
   }
 }
