@@ -124,7 +124,7 @@ def drop_schema_hook(task, task_run, state, dbdao: DaoBase, schema: str):
     try:
         dbdao.drop_schema(schema, cascade=True)
     except Exception as e:
-        logger.error(f"Failed to drop schema {dbdao.database_code}.{schema}: {e}"))
+        logger.error(f"Failed to drop schema {dbdao.database_code}.{schema}: {e}")
         raise
     else:
         logger.info(f"Successfully dropped schema '{dbdao.database_code}.{schema}'")
