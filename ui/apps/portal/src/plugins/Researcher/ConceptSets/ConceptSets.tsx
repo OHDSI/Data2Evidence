@@ -17,12 +17,13 @@ import {
 import { Tabs, Tab } from "@mui/material";
 import { api } from "../../../axios/api";
 import Terminology from "../../Researcher/Terminology/Terminology";
-import { ConceptSetWithConceptDetails } from "../../Researcher/Terminology/utils/types";
+import { ConceptSet } from "../../Researcher/Terminology/utils/types";
 import { TerminologyProps } from "../../Researcher/Terminology/Terminology";
 import SearchBar from "../../../components/SearchBar/SearchBar";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
 import "./ConceptSets.scss";
+import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
 
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
@@ -41,7 +42,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const { setFeedback } = useFeedback();
-  const [data, setData] = useState<ConceptSetWithConceptDetails[]>([]);
+  const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
 
   const handleTabSelectionChange = async (event: React.SyntheticEvent, value: ConceptSetTab) => {
@@ -63,8 +64,8 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     try {
       setIsLoading(true);
 
-      const response = await api.terminology.getConceptSets(activeDatasetId);
-      const sortFn = (a: ConceptSetWithConceptDetails, b: ConceptSetWithConceptDetails) => {
+      const response = (await api.d2eWebapi.getConceptSets(activeDatasetId)).map(mapd2eWebapiConceptSet);
+      const sortFn = (a: ConceptSet, b: ConceptSet) => {
         if (a.name < b.name) {
           return -1;
         }

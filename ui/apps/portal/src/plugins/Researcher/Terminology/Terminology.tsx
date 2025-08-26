@@ -5,12 +5,20 @@ import TerminologyList from "./components/TerminologyList/TerminologyList";
 import TerminologyDetail from "./components/TerminologyDetail/TerminologyDetail";
 import "./Terminology.scss";
 import { Box, Drawer, Tab, Tabs, TextField, Typography } from "@mui/material";
-import { OnCloseReturnValues, FhirValueSetExpansionContainsWithExt, TerminologyResult } from "./utils/types";
+import {
+  OnCloseReturnValues,
+  FhirValueSetExpansionContainsWithExt,
+  TerminologyResult,
+  ConceptSetWithConceptDetails,
+  ConceptSetConcept,
+} from "./utils/types";
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
 import { terminologyApi } from "../../../axios/terminology";
 import { useActiveDataset, useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
+import { d2eWebapiApi } from "../../../axios/d2e-webapi";
+import { mapd2eWebapiConcept, mapd2eWebapiConceptSet } from "./utils/d2eWebapiMappers";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
@@ -366,6 +374,32 @@ export const Terminology: FC<TerminologyProps> = ({
     }
   }, [selectedConcepts, conceptSetName, conceptSetId, conceptSetShared, activeDatasetId]);
 
+  const getConceptSetWithConceptDetails = async (
+    conceptSetId: number,
+    activeDatasetId: string
+  ): Promise<ConceptSetWithConceptDetails> => {
+    const [conceptSet, conceptSetExpression] = await Promise.all([
+      d2eWebapiApi.getConceptSet(conceptSetId, activeDatasetId),
+      d2eWebapiApi.getConceptSetExpression(conceptSetId, activeDatasetId),
+    ]);
+
+    const concepts = conceptSetExpression.items.map((conceptSet) => {
+      return {
+        ...mapd2eWebapiConcept(conceptSet.concept),
+        id: conceptSet.concept.CONCEPT_ID,
+        useMapped: conceptSet.includeMapped,
+        isExcluded: conceptSet.isExcluded,
+        useDescendants: conceptSet.includeDescendants,
+      } as ConceptSetConcept & FhirValueSetExpansionContainsWithExt;
+    });
+    const conceptSetWithConceptDetails: ConceptSetWithConceptDetails = {
+      ...mapd2eWebapiConceptSet(conceptSet),
+      concepts,
+    };
+
+    return conceptSetWithConceptDetails;
+  };
+
   const getConceptSet = useCallback(
     async (conceptSetId: number) => {
       if (!activeDatasetId) {
@@ -373,7 +407,7 @@ export const Terminology: FC<TerminologyProps> = ({
       }
       setIsConceptSetLoading(true);
       try {
-        const conceptSet = await terminologyApi.getConceptSet(conceptSetId, activeDatasetId);
+        const conceptSet = await getConceptSetWithConceptDetails(conceptSetId, activeDatasetId);
         setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);

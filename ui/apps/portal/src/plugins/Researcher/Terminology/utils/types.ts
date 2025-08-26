@@ -13,6 +13,9 @@ export interface Concept {
   validEndDate: string;
   validity: string;
   score?: number;
+  vocabularyId: string;
+  conceptName: string;
+  conceptCode: string;
 }
 
 export interface TerminologyDetailsList {
@@ -206,4 +209,36 @@ export interface IWebapiConceptRelated extends IWebapiConcept {
     RELATIONSHIP_DISTANCE: number;
   }[];
   RELATIONSHIP_CAPTION: string;
+}
+
+export interface IWebapiConceptSet {
+  createdDate: number;
+  name: string;
+  id: number;
+  modifiedDate: number;
+  hasWriteAccess: boolean;
+  hasReadAccess: boolean;
+  shared: boolean;
+  createdBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  modifiedBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  description?: string | undefined;
+  tags?: unknown;
+}
+[];
+
+export interface IWebapiConceptSetExpression {
+  items: {
+    concept: IWebapiConcept;
+    isExcluded: boolean;
+    includeDescendants: boolean;
+    includeMapped: boolean;
+  }[];
 }

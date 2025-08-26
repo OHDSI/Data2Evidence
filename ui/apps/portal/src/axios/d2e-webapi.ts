@@ -1,33 +1,9 @@
 import { request } from "./request";
 import {
-  ConceptSet,
-  ConceptSetWithConceptDetails,
-  FhirConceptMap,
-  FhirValueSet,
-  FilterOptions,
-  Concept,
-  ConceptHierarchyResponse,
-  StandardConcepts,
   IWebapiConcept,
-  IWebapiConceptRelated,
+  IWebapiConceptSet,
+  IWebapiConceptSetExpression,
 } from "../plugins/Researcher/Terminology/utils/types";
-
-import { RowObject } from "../plugins/SystemAdmin/ConceptMapping/types";
-
-type IConcept = {
-  CONCEPT_CLASS_ID?: string;
-  CONCEPT_CODE?: string;
-  CONCEPT_ID?: number;
-  CONCEPT_NAME?: string;
-  DOMAIN_ID?: string;
-  INVALID_REASON?: string;
-  INVALID_REASON_CAPTION?: string;
-  STANDARD_CONCEPT?: string;
-  STANDARD_CONCEPT_CAPTION?: string;
-  VOCABULARY_ID?: string;
-  VALID_START_DATE?: string | number;
-  VALID_END_DATE?: string | number;
-};
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
 
@@ -87,35 +63,48 @@ export class D2eWebapi {
 
   // CONCEPT SETS
 
-  // public getConceptSets(datasetId: string) {
-  //   return request<ConceptSetWithConceptDetails[]>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/concept-set?datasetId=${datasetId}`,
-  //     method: "GET",
-  //   });
-  // }
+  public getConceptSets(datasetId: string) {
+    return request<IWebapiConceptSet[]>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
+  }
 
-  // public getConceptSet(conceptSetId: number, datasetId: string) {
-  //   return request<ConceptSetWithConceptDetails>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
-  //     method: "GET",
-  //   });
-  // }
+  public getConceptSet(conceptSetId: number, datasetId: string) {
+    return request<IWebapiConceptSet>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
+  }
+
+  public getConceptSetExpression(conceptSetId: number, datasetId: string) {
+    return request<IWebapiConceptSetExpression>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
+  }
 
   // public removeConceptSet(conceptSetId: number, datasetId: string) {
   //   return request<number>({
   //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
+  //     url: `/conceptset/${conceptSetId}`,
   //     method: "DELETE",
+  // headers: { datasetid: datasetId },
   //   });
   // }
 
   // public createConceptSet(conceptSet: Omit<ConceptSet, "id">, datasetId: string) {
   //   return request<number>({
   //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/concept-set?datasetId=${datasetId}`,
+  //     url: `/conceptset`,
   //     method: "POST",
+  // headers: { datasetid: datasetId },
   //     data: conceptSet,
   //   });
   // }
@@ -123,8 +112,9 @@ export class D2eWebapi {
   // public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>, datasetId: string) {
   //   return request<number | { statusCode: number }>({
   //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/concept-set/${conceptSetId}?datasetId=${datasetId}`,
+  //     url: `/conceptset/${conceptSetId}`,
   //     method: "PUT",
+  // headers: { datasetid: datasetId },
   //     data: conceptSet,
   //   });
   // }

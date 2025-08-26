@@ -10,7 +10,7 @@ import { api } from "../../../../../axios/api";
 import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../../../components/SearchBar/SearchBar";
 import "./TerminologyList.scss";
-import { mapd2eWebapiConcepts } from "../../utils/d2eWebapiMappers";
+import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
 
 interface TerminologyListProps {
   userId?: string;
@@ -130,7 +130,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 standardConceptFilters,
                 validityFilters
               )
-            ).map(mapd2eWebapiConcepts);
+            ).map(mapd2eWebapiConcept);
             const response = {
               count: 9999, // TODO: Update to get count from backend
               data: concepts,

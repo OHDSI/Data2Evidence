@@ -1,15 +1,25 @@
-import { IWebapiConcept, Concept, FhirConceptMapElementTarget, IWebapiConceptRelated } from "./types";
+import {
+  IWebapiConcept,
+  Concept,
+  FhirConceptMapElementTarget,
+  IWebapiConceptRelated,
+  IWebapiConceptSet,
+  ConceptSet,
+} from "./types";
 
-export const mapd2eWebapiConcepts = (concept: IWebapiConcept): Concept => {
+export const mapd2eWebapiConcept = (concept: IWebapiConcept): Concept => {
   return {
     conceptId: concept.CONCEPT_ID,
     display: concept.CONCEPT_NAME,
+    conceptName: concept.CONCEPT_NAME,
     domainId: concept.DOMAIN_ID,
     system: concept.VOCABULARY_ID,
+    vocabularyId: concept.VOCABULARY_ID,
     conceptClassId: concept.CONCEPT_CLASS_ID,
     standardConcept: concept.STANDARD_CONCEPT as string,
     concept: concept.STANDARD_CONCEPT_CAPTION,
     code: concept.CONCEPT_CODE,
+    conceptCode: concept.CONCEPT_CODE,
     validStartDate: new Date(concept.VALID_START_DATE).toLocaleDateString(),
     validEndDate: new Date(concept.VALID_END_DATE).toLocaleDateString(),
     validity: concept.INVALID_REASON_CAPTION,
@@ -38,4 +48,18 @@ const _reduceConceptRelated = (conceptRelated: IWebapiConceptRelated): FhirConce
     }
     return acc;
   }, [] as FhirConceptMapElementTarget[]);
+};
+
+export const mapd2eWebapiConceptSet = (conceptSet: IWebapiConceptSet): ConceptSet => {
+  return {
+    concepts: [],
+    name: conceptSet.name,
+    id: conceptSet.id,
+    shared: conceptSet.shared,
+    createdBy: conceptSet.createdBy.name,
+    createdDate: new Date(conceptSet.createdDate).toLocaleDateString(),
+    modifiedBy: conceptSet.modifiedBy.name,
+    modifiedDate: new Date(conceptSet.modifiedDate).toLocaleDateString(),
+    userName: conceptSet.createdBy.name,
+  };
 };
