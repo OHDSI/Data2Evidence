@@ -234,4 +234,6 @@ app.listen(PORT, () => {
   console.log('  🔄 POST /d2e-webapi/cohortdefinition (placeholder)')
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
   console.log('  🔄 GET /analytics-svc/api/services/values (placeholder)')
+  console.log('  🔄 GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e (placeholder)')
+  console.log('  🔄 DELETE /d2e-webapi/cohortdefinition/1 (placeholder)')
 })
