@@ -3,7 +3,8 @@
 
 const { default: axios } = require('axios')
 
-const MAX_COHORT_DEFINITIONS = 10
+// server has 20,000
+const MAX_COHORT_DEFINITIONS = 1000
 
 const setupWebapiRoutes = app => {
   // GET /d2e-webapi/cohortdefinition/23
@@ -81,6 +82,49 @@ const setupWebapiRoutes = app => {
       error: 'WebAPI endpoint not implemented yet',
       message: 'This endpoint will be forwarded to the actual WebAPI server',
       method: 'POST',
+      path: '/d2e-webapi/cohortdefinition',
+      timestamp: new Date().toISOString(),
+    })
+  })
+
+  // PUT /d2e-webapi/cohortdefinition
+  app.put('/d2e-webapi/cohortdefinition', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'PUT /d2e-webapi/cohortdefinition')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    const samplePayload = {
+      id: 23,
+      name: 'test12',
+      description: 'Atlas cohort definition created from QueryFilter',
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: 'expression as json not string',
+      tags: [],
+      createdBy: 'admin',
+      createdDate: 1756177832414,
+      modifiedBy: 'admin',
+      modifiedDate: 1756177832414,
+      hasWriteAccess: true,
+      hasReadAccess: true,
+    }
+
+    const sampleResponseFromD2E = {
+      id: 23,
+      name: 'test12',
+      description: 'Atlas cohort definition created from QueryFilter',
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: 'expression as a json already, not string',
+      createdDate: 1756177832414,
+      hasWriteAccess: true,
+      hasReadAccess: true,
+    }
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'PUT',
       path: '/d2e-webapi/cohortdefinition',
       timestamp: new Date().toISOString(),
     })
