@@ -67,6 +67,32 @@ const setupWebapiRoutes = app => {
     })
   })
 
+  // GET /analytics-svc/api/services/values
+  app.get('/analytics-svc/api/services/values', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'GET /analytics-svc/api/services/values')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    return res.send({
+      data: [
+        {
+          value: 13,
+          text: 'A concept set',
+        },
+      ],
+    })
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'GET',
+      path: '/analytics-svc/api/services/values',
+      timestamp: new Date().toISOString(),
+    })
+  })
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {

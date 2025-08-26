@@ -83,7 +83,8 @@ webapiHarContent.log.entries.forEach(entry => {
   if (
     request.url.includes('d2e-webapi') ||
     request.url.includes('webapi') ||
-    request.url.includes('/analytics-svc/api/services/bookmark')
+    request.url.includes('/analytics-svc/api/services/bookmark') ||
+    request.url.includes('analytics-svc/api/services/values')
   ) {
     const url = new URL(request.url)
     const endpoint = {
