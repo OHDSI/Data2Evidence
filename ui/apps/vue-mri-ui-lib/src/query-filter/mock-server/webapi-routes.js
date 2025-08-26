@@ -7,13 +7,59 @@ const MAX_COHORT_DEFINITIONS = 10
 
 const setupWebapiRoutes = app => {
   // GET /d2e-webapi/cohortdefinition/23
-  app.get('/d2e-webapi/cohortdefinition/23', (req, res) => {
+  app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
     console.log('🔄 WebAPI Request:', 'GET /d2e-webapi/cohortdefinition/23')
     console.log('  Query:', req.query)
     console.log('  Body:', req.body)
     console.log('  Headers:', req.headers)
+    console.log('Params:', req.params)
 
-    // TODO: Forward to actual WebAPI server
+    const { cohortDefinitionId } = req.params
+
+    const response = await axios.get(`https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/${cohortDefinitionId}`, {
+      headers: {
+        'sec-ch-ua-platform': '"macOS"',
+        Authorization: 'null',
+        Referer: 'https://atlas-demo.ohdsi.org/',
+        'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+        'sec-ch-ua-mobile': '?0',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+        Accept: '*/*',
+        'Action-Location': 'https://atlas-demo.ohdsi.org/#/cohortdefinitions',
+      },
+    })
+
+    const { data } = response
+
+    const sample = {
+      id: 1794148,
+      name: 'New Cohort Definitionㄹㄹㄹㄹ',
+      createdDate: 1756173259342,
+      modifiedDate: 1756175185802,
+      hasWriteAccess: false,
+      hasReadAccess: false,
+      tags: [],
+      expressionType: 'SIMPLE_EXPRESSION',
+    }
+
+    const mapped = {
+      id: data.id,
+      name: data.name,
+      description: '',
+      expressionType: data.expressionType,
+      expression: JSON.parse(data.expression),
+      createdBy: 'admin',
+      createdDate: data.createdDate,
+      modifiedBy: 'admin',
+      modifiedDate: data.modifiedDate,
+      tags: data.tags,
+      hasWriteAccess: data.hasWriteAccess,
+      hasReadAccess: data.hasReadAccess,
+    }
+
+    return res.send(mapped)
     res.status(501).json({
       error: 'WebAPI endpoint not implemented yet',
       message: 'This endpoint will be forwarded to the actual WebAPI server',
