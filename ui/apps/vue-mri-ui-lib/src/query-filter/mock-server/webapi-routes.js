@@ -5,6 +5,8 @@ const { default: axios } = require('axios')
 
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 1000
+const USE_CACHE = true
+const cache = {}
 
 const setupWebapiRoutes = app => {
   // GET /d2e-webapi/cohortdefinition/23
@@ -132,27 +134,32 @@ const setupWebapiRoutes = app => {
 
   // GET /analytics-svc/api/services/bookmark
   app.get('/analytics-svc/api/services/bookmark', async (req, res) => {
+    const cacheKey = 'get_/WebAPI/cohortdefinition/'
     console.log('🔄 WebAPI Request:', 'GET /analytics-svc/api/services/bookmark')
     console.log('  Query:', req.query)
     console.log('  Body:', req.body)
     console.log('  Headers:', req.headers)
 
-    const response = await axios.get('https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/', {
-      headers: {
-        'sec-ch-ua-platform': '"macOS"',
-        Authorization: 'null',
-        Referer: 'https://atlas-demo.ohdsi.org/',
-        'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-        'sec-ch-ua-mobile': '?0',
-        'X-Requested-With': 'XMLHttpRequest',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-        Accept: '*/*',
-        'Action-Location': 'https://atlas-demo.ohdsi.org/#/cohortdefinitions',
-      },
-    })
+    let data = cache[cacheKey]
+    if (!data || !USE_CACHE) {
+      const response = await axios.get('https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/', {
+        headers: {
+          'sec-ch-ua-platform': '"macOS"',
+          Authorization: 'null',
+          Referer: 'https://atlas-demo.ohdsi.org/',
+          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+          'sec-ch-ua-mobile': '?0',
+          'X-Requested-With': 'XMLHttpRequest',
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+          Accept: '*/*',
+          'Action-Location': 'https://atlas-demo.ohdsi.org/#/cohortdefinitions',
+        },
+      })
 
-    const { data } = response
+      data = response.data
+      cache[cacheKey] = data
+    }
 
     const mappedData = []
     for (let i = 0; i < MAX_COHORT_DEFINITIONS; i += 1) {
@@ -175,6 +182,20 @@ const setupWebapiRoutes = app => {
       tags: [],
     }
 
+    const resData = {
+      atlasCohortDefinitions: [
+        {
+          id: 1,
+          name: 'Atlas Cohort',
+          username: 'current_user',
+          createdOn: '2025-06-19T21:08:09.028Z',
+          updatedOn: '2025-06-19T21:08:09.028Z',
+        },
+        ...mappedData,
+      ],
+      bookmarks: [],
+      materializedCohorts: [],
+    }
     return res.send({
       atlasCohortDefinitions: [
         {
