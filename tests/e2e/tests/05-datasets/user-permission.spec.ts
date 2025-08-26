@@ -59,4 +59,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(
     page.getByTestId('snackbar').locator('div').filter({ hasText: "You've revoked access for" }).first()
   ).toBeVisible()
+
+  // Cleanup: Delete the user created for testing
+  await test.step('Delete test user', async () => {
+    const userRow = page.getByRole('row', { name: /testuserC/ })
+    await userRow.getByRole('button', { name: 'Delete' }).click()
+    // await page.getByRole('button', { name: 'Delete' }).nth(2).click({ timeout: 30000 });
+    await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+    // Wait for the user row to be removed from the table, not just any text
+    await expect(page.getByRole('row', { name: /testuserC/ })).not.toBeVisible({ timeout: 20000 }) // Verify user is deleted
+  })
 })
