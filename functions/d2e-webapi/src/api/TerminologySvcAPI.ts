@@ -29,6 +29,28 @@ export class TerminologySvcAPI {
     }
   }
 
+  async getConceptSet(
+    conceptSetId: number,
+    datasetId: string
+  ): Promise<ITerminologyConceptSet> {
+    try {
+      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
+        conceptSetId
+      )}`;
+      console.log(`Calling ${url} to get concept sets`);
+      const options = this.getRequestConfig();
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+      const result = await axios.get(url, { params, ...options });
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while getting concept set with conceptSetId ${conceptSetId}: ${error}`
+      );
+      throw error;
+    }
+  }
+
   async getConceptSets(datasetId: string): Promise<ITerminologyConceptSet[]> {
     try {
       const url = `${this.baseURL}/concept-set`;

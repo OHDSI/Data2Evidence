@@ -9,9 +9,30 @@ import {
 import {
   ITerminologyCreateConceptSet,
   ITerminologyConceptSetConcept,
+  ITerminologyConceptSet,
 } from "../api/types.ts";
 import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
 import { _getInvalidReasonFromCaption } from "./vocabulary.service.ts";
+
+export const getConceptSet = async (
+  token: string,
+  datasetId: string,
+  conceptSetId: number
+): Promise<IConceptSetResponseDto> => {
+  // Get all concept sets from terminology-svc
+  const terminologySvcApi = new TerminologySvcAPI(token);
+  const terminologyConceptSet = await terminologySvcApi.getConceptSet(
+    conceptSetId,
+    datasetId
+  );
+
+  // Map terminologyConceptSets to webapi format
+  const webapiConceptSet = _mapTerminologyConceptSetToWebapiConceptSet(
+    terminologyConceptSet
+  );
+
+  return webapiConceptSet;
+};
 
 export const getConceptSets = async (
   token: string,
@@ -24,18 +45,9 @@ export const getConceptSets = async (
   );
 
   // Map terminologyConceptSets to webapi format
-  const webapiConceptSets: IConceptSetListResponseDto =
-    terminologyConceptSets.map((terminologyConceptSet) => {
-      return {
-        createdDate: Date.parse(terminologyConceptSet.createdDate),
-        modifiedDate: Date.parse(terminologyConceptSet.modifiedDate),
-        tags: [],
-        hasWriteAccess: true,
-        hasReadAccess: true,
-        id: terminologyConceptSet.id,
-        name: terminologyConceptSet.name,
-      };
-    });
+  const webapiConceptSets = terminologyConceptSets.map(
+    _mapTerminologyConceptSetToWebapiConceptSet
+  );
 
   return webapiConceptSets;
 };
@@ -171,4 +183,25 @@ export const checkIfConceptSetExists = async (
   );
 
   return result === undefined ? 0 : 1;
+};
+
+const _mapTerminologyConceptSetToWebapiConceptSet = (
+  conceptSet: ITerminologyConceptSet
+): IConceptSetResponseDto => {
+  return {
+    createdDate: Date.parse(conceptSet.createdDate),
+    createdBy: {
+      name: conceptSet.createdBy,
+    },
+    modifiedDate: Date.parse(conceptSet.modifiedDate),
+    modifiedBy: {
+      name: conceptSet.modifiedBy,
+    },
+    tags: [],
+    hasWriteAccess: true,
+    hasReadAccess: true,
+    id: conceptSet.id,
+    name: conceptSet.name,
+    shared: conceptSet.shared,
+  };
 };

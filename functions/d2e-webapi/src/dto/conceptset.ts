@@ -79,13 +79,24 @@ export const ConceptSetTag = z.object({
 
 export const ConceptSetResponseDto = z.object({
   createdDate: z.number(),
+  createdBy: z.object({
+    name: z.string(),
+    id: z.number().optional(),
+    login: z.string().optional(),
+  }),
   modifiedDate: z.number(),
+  modifiedBy: z.object({
+    name: z.string(),
+    id: z.number().optional(),
+    login: z.string().optional(),
+  }),
   hasWriteAccess: z.boolean(),
   hasReadAccess: z.boolean(),
   tags: z.array(ConceptSetTag).optional(),
   description: z.string().optional(),
   id: z.number(),
   name: z.string(),
+  shared: z.boolean(),
 });
 export type IConceptSetResponseDto = z.infer<typeof ConceptSetResponseDto>;
 

@@ -11,6 +11,7 @@ import {
 } from "../dto/conceptset.ts";
 
 import {
+  getConceptSet,
   getConceptSets,
   checkIfConceptSetExists,
   createConceptSet,
@@ -88,6 +89,29 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       // TODO: ADD LOGIC
       const dummyresponse = { warnings: [] };
       res.send(dummyresponse);
+    }
+  );
+
+  app.get(
+    "/:id",
+    {
+      schema: {
+        description: "Get the concept set based in the identifier",
+        tags: ["conceptset"],
+        params: z.object({ id: z.coerce.number() }),
+        response: { 200: ConceptSetResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const { id } = req.params;
+      const results = await getConceptSet(req.token, req.datasetId, id);
+      res.send(results);
     }
   );
 
