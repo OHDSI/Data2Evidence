@@ -341,6 +341,52 @@ const setupWebapiRoutes = app => {
     })
   })
 
+  app.put('/terminology/concept-set', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'PUT /terminology/concept-set')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    const samplePayload = {
+      concepts: [
+        {
+          id: 756039,
+          useDescendants: false,
+          useMapped: false,
+          isExcluded: false,
+        },
+      ],
+      name: 'test',
+      shared: false,
+      userName: 'admin',
+    }
+
+    return res.json(123)
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'GET',
+      path: '/terminology/concept-set',
+      timestamp: new Date().toISOString(),
+    })
+  })
+
+  app.get(
+    '/terminology/fhir/4_0_0/valueset/$expand?datasetId=4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e&offset=0&count=25&code=&filter=%7B%22conceptClassId%22%3A%5B%5D%2C%22domainId%22%3A%5B%22Condition%22%5D%2C%22vocabularyId%22%3A%5B%5D%2C%22standardConcept%22%3A%5B%22S%22%5D%2C%22validity%22%3A%5B%5D%7D',
+    (req, res) => {
+      // TODO: Forward to actual WebAPI server
+      res.status(501).json({
+        error: 'WebAPI endpoint not implemented yet',
+        message: 'This endpoint will be changed in another PR, putting it here for visibility only',
+        method: 'GET',
+        path: '/terminology/concept-set',
+        timestamp: new Date().toISOString(),
+      })
+    }
+  )
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {
