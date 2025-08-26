@@ -1,3 +1,4 @@
+import express from "npm:express";
 import { Request, Response, Router } from "express";
 import { JwtPayload, decode } from "jsonwebtoken";
 import { PrefectService } from "../services/PrefectService.ts";
@@ -150,6 +151,7 @@ export class PrefectController {
     this.router.post("/test-run", this.createTestRun.bind(this));
     this.router.post(
       "/jupyter-kernel/flow-run/strategus",
+      express.json({ limit: "50mb" }),
       this.createAnalaysisRunByJupyterKernel.bind(this)
     );
     this.router.delete(
