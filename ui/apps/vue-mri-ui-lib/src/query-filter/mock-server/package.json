@@ -9,13 +9,19 @@
     "parse-har": "node parse-har.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["mock", "server", "api", "testing"],
+  "keywords": [
+    "mock",
+    "server",
+    "api",
+    "testing"
+  ],
   "author": "jerome",
   "license": "MIT"
 }
