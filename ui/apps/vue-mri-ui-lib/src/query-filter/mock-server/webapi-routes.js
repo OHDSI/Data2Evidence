@@ -36,6 +36,37 @@ const setupWebapiRoutes = app => {
     })
   })
 
+  // GET /analytics-svc/api/services/bookmark
+  app.get('/analytics-svc/api/services/bookmark', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'GET /analytics-svc/api/services/bookmark')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    return res.send({
+      atlasCohortDefinitions: [
+        {
+          id: 1,
+          name: 'Atlas Cohort',
+          username: 'current_user',
+          createdOn: '2025-06-19T21:08:09.028Z',
+          updatedOn: '2025-06-19T21:08:09.028Z',
+        },
+      ],
+      bookmarks: [],
+      materializedCohorts: [],
+    })
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'GET',
+      path: '/analytics-svc/api/services/bookmark',
+      timestamp: new Date().toISOString(),
+    })
+  })
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {

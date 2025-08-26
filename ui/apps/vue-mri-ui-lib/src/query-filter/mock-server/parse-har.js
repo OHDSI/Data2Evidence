@@ -80,7 +80,11 @@ webapiHarContent.log.entries.forEach(entry => {
   const response = entry.response
 
   // Filter for webapi endpoints
-  if (request.url.includes('d2e-webapi') || request.url.includes('webapi')) {
+  if (
+    request.url.includes('d2e-webapi') ||
+    request.url.includes('webapi') ||
+    request.url.includes('/analytics-svc/api/services/bookmark')
+  ) {
     const url = new URL(request.url)
     const endpoint = {
       method: request.method,

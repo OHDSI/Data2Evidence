@@ -190,15 +190,6 @@ app.get('/js/node_modules_d4l_web-components-library_dist_esm_d4l-button_2_entry
   res.status(mockResponse.status).send(mockResponse.body)
 })
 
-// GET /analytics-svc/api/services/bookmark (API)
-app.get('/analytics-svc/api/services/bookmark', (req, res) => {
-  console.log('Request query:', req.query)
-  console.log('Request body:', req.body)
-
-  const mockResponse = mockData.GET__analytics_svc_api_services_bookmark
-  res.status(mockResponse.status).json(mockResponse.body)
-})
-
 // GET /analytics-svc/api/services/population/json/barchart (API)
 app.get('/analytics-svc/api/services/population/json/barchart', (req, res) => {
   console.log('Request query:', req.query)
@@ -245,12 +236,12 @@ app.listen(PORT, () => {
   console.log('  ✅ GET /ui/sap/m/themes/sap_belize/library.css')
   console.log('  ✅ GET /analytics-svc/pa/services/analytics.xsjs')
   console.log('  ✅ GET /js/node_modules_d4l_web-components-library_dist_esm_d4l-button_2_entry_js.js')
-  console.log('  ✅ GET /analytics-svc/api/services/bookmark')
   console.log('  ✅ GET /analytics-svc/api/services/population/json/barchart')
   console.log('  ✅ GET /analytics-svc/api/services/population/json/patientcount')
   console.log('  ✅ GET /analytics-svc/api/services/values')
   console.log(`\nWebAPI placeholder endpoints:`)
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/23 (placeholder)')
   console.log('  🔄 POST /d2e-webapi/cohortdefinition (placeholder)')
+  console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
 })
 
