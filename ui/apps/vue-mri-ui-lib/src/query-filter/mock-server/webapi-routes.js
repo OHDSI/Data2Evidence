@@ -219,6 +219,84 @@ const setupWebapiRoutes = app => {
     })
   })
 
+  // GET /terminology/concept-set
+  app.get('/terminology/concept-set', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'GET /terminology/concept-set')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    const sample = [
+      {
+        name: 'Hypothyroidism other than Hashimotos Disease',
+        shared: false,
+        concepts: [
+          {
+            id: 4099205,
+            useMapped: false,
+            isExcluded: false,
+            useDescendants: true,
+          },
+          {
+            id: 4030049,
+            useMapped: false,
+            isExcluded: false,
+            useDescendants: true,
+          },
+        ],
+        userName: 'system',
+        createdBy: 'evla8ah3cuir',
+        modifiedBy: 'evla8ah3cuir',
+        createdDate: '2025-06-23T02:32:05.200Z',
+        modifiedDate: '2025-06-23T02:32:05.200Z',
+        id: 13,
+      },
+    ]
+
+    return res.send(sample)
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'GET',
+      path: '/terminology/concept-set',
+      timestamp: new Date().toISOString(),
+    })
+  })
+  // GET /terminology/concept-set
+  app.post('/terminology/concept-set', (req, res) => {
+    console.log('🔄 WebAPI Request:', 'POST /terminology/concept-set')
+    console.log('  Query:', req.query)
+    console.log('  Body:', req.body)
+    console.log('  Headers:', req.headers)
+
+    const samplePayload = {
+      concepts: [
+        {
+          id: 756039,
+          useDescendants: false,
+          useMapped: false,
+          isExcluded: false,
+        },
+      ],
+      name: 'test',
+      shared: false,
+      userName: 'admin',
+    }
+
+    return res.json(123)
+
+    // TODO: Forward to actual WebAPI server
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be forwarded to the actual WebAPI server',
+      method: 'GET',
+      path: '/terminology/concept-set',
+      timestamp: new Date().toISOString(),
+    })
+  })
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {

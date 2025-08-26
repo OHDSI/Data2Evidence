@@ -231,6 +231,7 @@ app.listen(PORT, () => {
   console.log('  ✅ GET /analytics-svc/api/services/population/json/patientcount')
   console.log(`\nWebAPI placeholder endpoints:`)
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/23 (placeholder)')
+  console.log('  🔄 GET /terminology/concept-set (placeholder)')
   console.log('  🔄 POST /d2e-webapi/cohortdefinition (placeholder)')
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
   console.log('  🔄 GET /analytics-svc/api/services/values (placeholder)')
