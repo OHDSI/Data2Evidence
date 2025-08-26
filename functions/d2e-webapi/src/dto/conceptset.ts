@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ConceptSetExpression } from "../types.ts";
 
 export const ConceptSetDto = z.object({
-  id: z.number(),
+  id: z.number().optional(),
   name: z.string(),
 });
 export type IConceptSetDto = z.infer<typeof ConceptSetDto>;
@@ -23,6 +23,9 @@ export const ConceptSetCheckDto = ConceptSetDto.extend({
 export const ConceptSetCheckResponseDto = z.object({
   warnings: z.array(z.unknown()),
 });
+export type IConceptSetCheckResponseDto = z.infer<
+  typeof ConceptSetCheckResponseDto
+>;
 
 export const ConceptSetCreateDto = ConceptSetDto.extend({
   description: z.string().nullable(),
