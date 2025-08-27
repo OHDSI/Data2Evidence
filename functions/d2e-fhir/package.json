@@ -1,0 +1,20 @@
+{
+  "name": "alp-fhir-server",
+  "version": "1.0.0-dev",
+  "description": "fhir-server",
+  "private": true,
+  "scripts": {},
+  "type": "commonjs",
+  "author": "",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.20.4"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "devDependencies": {
+  },
+  "dependencies": {
+  }
+}

@@ -1,0 +1,26 @@
+FROM node:18.20.4-alpine AS final
+
+USER root
+
+RUN apk add --update --upgrade openssl zlib unzip
+RUN rm -rf /usr/local/lib/node_modules/npm
+RUN addgroup -S alp -g 3000 && adduser --uid 3000 -S docker -G alp
+
+USER docker
+
+WORKDIR /home/docker
+
+COPY --chown=docker:alp ./ui-file-server/* .
+COPY --chown=docker:alp dist.zip dist.zip
+
+RUN yarn install && cd -
+RUN unzip -o -d ui-files dist.zip
+
+# ARG 
+# GIT COMMIT Passed during docker build time
+ARG GIT_COMMIT_ARG
+# ENV
+ENV GIT_COMMIT=$GIT_COMMIT_ARG
+
+ENTRYPOINT ["yarn", "start"]
+EXPOSE 3000

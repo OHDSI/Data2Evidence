@@ -78,8 +78,8 @@ x-envs:
        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
        "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
        "minio": "",
-       "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+       "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
+       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth2/token",
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -156,6 +156,7 @@ services:
         - *x-pg
         - *x-perseus
         - *x-trex-sql
+        - *x-redis
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ENV: |-
         {
@@ -487,6 +488,17 @@ services:
             "PG_SCHEMA": "strategus",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          },
+          "d2e-fhir": {
+            "PG__DB_NAME": "alp",
+            "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
+            "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
+            "REDIS_PASSWORD": "${REDIS_PASSWORD}",
+            "DUCKDB_PATH": "/home/docker/app",
+            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
+            "FHIR_SCHEMA_PATH": "/home/docker/app/medplum/packages/definitions/dist/fhir/r4",
+            "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
+            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           }
         }
       SERVICE_ROUTES: |-
@@ -506,7 +518,7 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
+        "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
         "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
@@ -564,6 +576,13 @@ services:
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      PG__DB_NAME: alp
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      DUCKDB_PATH: /home/docker/app
+      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
+      FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
+      FHIR_SCHEMA_FILE_NAME: fhir.schema.json
+      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:

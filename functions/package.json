@@ -75,6 +75,11 @@
           "function": "/supabase/src/init",
           "imports": "/supabase/deno.json",
           "env": "supabase-storage"
+        },
+        {
+          "function": "/d2e-fhir",
+          "imports": "/d2e-fhir/deno.json",
+          "env": "d2e-fhir"
         }
       ],
       "api": [
@@ -285,6 +290,12 @@
           "source": "/mlflow",
           "service": "mlflow",
           "rmsrc": true
+        },
+        {
+          "source": "/fhir/R4",
+          "function": "/d2e-fhir",
+          "env": "d2e-fhir",
+          "imports": "/d2e-fhir/deno.json"
         }
       ],
       "roles": {

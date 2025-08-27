@@ -1,0 +1,18 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": ["ES2022", "DOM", "deno.ns", "deno.window"],
+    "strict": false
+  },
+  "tasks": {
+    "start:server": "cd medplum && deno run --allow-all --unstable-detect-cjs --unstable-node-globals --unstable-sloppy-imports --node-modules-dir=auto ./packages/server/dist/index.js"
+  },
+  "imports": {
+    "zod": "npm:zod@3.20.6",
+    "fs": "node:fs"
+  },
+  "unstable": ["byonm"]
+}

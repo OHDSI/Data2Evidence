@@ -72,6 +72,8 @@ RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux $TARGETPLATFORM /root/o
 
 FROM ghcr.io/p-hoffmann/duckdb-extension-circe:sha-265ca31 AS duckdb_circe
 
+FROM ghcr.io/data2evidence/d2e-medplum:main AS medplum-builder
+
 FROM node:20.19.4-trixie-slim AS trex-base
 
 ARG DUCKDB_VERSION=1.3.2
@@ -82,6 +84,13 @@ RUN apt-get remove -y perl && apt-get autoremove -y
 
 
 COPY --from=builder /root/trex /usr/src/trex
+#COPY medplum 
+COPY --from=medplum-builder /usr/src/medplum /usr/src/medplum
+COPY /functions/d2e-fhir/start.sh /usr/src/medplum/start.sh
+COPY /functions/d2e-fhir/config.json /usr/src/medplum/config.json
+RUN chmod +x /usr/src/medplum/start.sh
+# Install envsubst if not present
+RUN apt-get update && apt-get install -y gettext-base jq
 #COPY --from=builder /root/trex.debug /usr/src/trex.debug
 
 COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
@@ -94,8 +103,6 @@ COPY --from=duckdb_circe /extensions/circe.duckdb_extension /root/.duckdb/extens
 #    DUCKDB_CIRCE_EXTENSION=/usr/lib/duckdb/extensions/circe/circe.duckdb_extension
 
 WORKDIR /usr/src
-
-
 
 RUN useradd docker -u 1001 \
     && groupadd alp \
@@ -158,5 +165,7 @@ WORKDIR /usr/src
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
 RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
 
+ENTRYPOINT ["./medplum/start.sh"]
 CMD ["npm", "run", "start"]
+#CMD ["tail", "-f", "/dev/null"]
 EXPOSE 33000
