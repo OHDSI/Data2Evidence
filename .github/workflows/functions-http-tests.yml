@@ -3,11 +3,11 @@ name: d2e-functions/pa Run HTTP tests
 on:
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
   workflow_dispatch:
-
 
 jobs:
   check_file_changes:
@@ -17,6 +17,8 @@ jobs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -61,8 +63,25 @@ jobs:
       D2E_RESOURCE_LIMIT: 1.0
 
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
       - uses: actions/checkout@v4
         with:
+          submodules: recursive
           clean: false
 
       - name: Print env vars
@@ -361,6 +380,6 @@ jobs:
       - name: Clean Docker compose
         if: always()
         run: |
-          yarn clean:minerva
+          yarn clean
           docker container prune --force
           docker network rm combined_network -f

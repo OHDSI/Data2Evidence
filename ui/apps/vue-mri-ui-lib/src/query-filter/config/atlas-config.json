@@ -1,0 +1,1457 @@
+{
+  "criteriaTypes": {
+    "conditionEra": {
+      "name": "Condition Era",
+      "descriptions": {
+        "initial": "Find patients with specific diagnosis era.",
+        "censoring": "Exit cohort based on diagnosis era.",
+        "group": "Find patients with specific condition era."
+      }
+    },
+    "conditionOccurrence": {
+      "name": "Condition Occurrence",
+      "descriptions": {
+        "initial": "Find patients with specific diagnoses.",
+        "censoring": "Exit cohort based on diagnoses.",
+        "group": "Find patients with specific conditions."
+      }
+    },
+    "death": {
+      "name": "Death",
+      "descriptions": {
+        "all": "Find patients based on death."
+      }
+    },
+    "deviceExposure": {
+      "name": "Device Exposure",
+      "descriptions": {
+        "all": "Find patients based on device exposure."
+      }
+    },
+    "doseEra": {
+      "name": "Dose Era",
+      "descriptions": {
+        "all": "Find patients with dose eras."
+      }
+    },
+    "drugEra": {
+      "name": "Drug Era",
+      "descriptions": {
+        "initial": "Find patients with exposure to drugs over time.",
+        "censoring": "Exit cohort based on drugs over time.",
+        "group": "Find patients with drug eras."
+      }
+    },
+    "drugExposure": {
+      "name": "Drug Exposure",
+      "descriptions": {
+        "all": "Find patients with exposure to specific drugs or drug classes."
+      }
+    },
+    "measurement": {
+      "name": "Measurement",
+      "descriptions": {
+        "initial": "Find patients based on measurement.",
+        "censoring": "Exit cohort based on measurement.",
+        "group": "Find patients based on measurements."
+      }
+    },
+    "observation": {
+      "name": "Observation",
+      "descriptions": {
+        "initial": "Find patients based on observation.",
+        "censoring": "Exit cohort based on lab tests or other observations.",
+        "group": "Find patients based on observations."
+      }
+    },
+    "observationPeriod": {
+      "name": "Observation Period",
+      "descriptions": {
+        "all": "Find patients based on observation period."
+      }
+    },
+    "payerPlanPeriod": {
+      "name": "Payer Plan Period",
+      "descriptions": {
+        "all": "Find patients based on payer plan period."
+      }
+    },
+    "procedureOccurrence": {
+      "name": "Procedure Occurrence",
+      "descriptions": {
+        "initial": "Find patients that experienced a specific procedure.",
+        "censoring": "Exit cohort based on procedure.",
+        "group": "Find patients based on procedures."
+      }
+    },
+    "specimen": {
+      "name": "Specimen",
+      "descriptions": {
+        "all": "Find patients based on specimen."
+      }
+    },
+    "visit": {
+      "name": "Visit Occurrence",
+      "descriptions": {
+        "all": "Find patients based on visit information."
+      }
+    },
+    "visitDetail": {
+      "name": "Visit Detail",
+      "descriptions": {
+        "all": "Find patients based on visit detail information."
+      }
+    },
+    "demographic": {
+      "name": "Demographic",
+      "descriptions": {
+        "initial": "Find patients based on demographic criteria.",
+        "censoring": "Exit cohort based on demographic criteria.",
+        "group": "Filter events based on demographic criteria."
+      }
+    },
+    "locationRegion": {
+      "name": "Location Region",
+      "groupOnly": true,
+      "descriptions": {
+        "group": "Find patients within geographical area."
+      }
+    },
+    "group": {
+      "name": "Group",
+      "groupOnly": true,
+      "descriptions": {
+        "group": "Add a nested group to combine criteria using and/or relationships."
+      }
+    },
+    "fromReusable": {
+      "name": "From Reusable",
+      "descriptions": {
+        "all": "Add criteria from list of reusables."
+      }
+    }
+  },
+  "sections": {
+    "initialEvents": {
+      "name": "Cohort Entry Events",
+      "buttonText": "Add Initial Event",
+      "excludeTypes": [
+        "locationRegion",
+        "group"
+      ]
+    },
+    "censoringEvents": {
+      "name": "Cohort Exit",
+      "buttonText": "Add Censoring Event",
+      "excludeTypes": [
+        "locationRegion",
+        "group",
+        "demographic"
+      ]
+    },
+    "criteriaGroup": {
+      "name": "Criteria Group",
+      "buttonText": "Add criteria to group...",
+      "includeAll": true
+    }
+  },
+  "attributeMapping": {
+    "conditionOccurrence": [
+      {
+        "id": "first",
+        "name": "First Diagnosis",
+        "description": "Limit to first diagnosis in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "conditionStatus",
+        "name": "Condition Status",
+        "description": "Filter by condition status",
+        "type": "concept",
+        "domainFilter": "Condition Status"
+      },
+      {
+        "id": "startDate",
+        "name": "Condition Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "Condition End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "conditionType",
+        "name": "Condition Type",
+        "description": "Filter by condition type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "stopReason",
+        "name": "Stop Reason",
+        "description": "Filter by stop reason text",
+        "type": "text"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "conditionEra": [
+      {
+        "id": "first",
+        "name": "First Diagnosis",
+        "description": "Limit to first diagnosis in history",
+        "type": "boolean"
+      },
+      {
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at era start",
+        "type": "numericRange"
+      },
+      {
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at era end",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "count",
+        "name": "Condition Count",
+        "description": "Filter by condition count",
+        "type": "numericRange"
+      },
+      {
+        "id": "length",
+        "name": "Era Length",
+        "description": "Filter by era duration",
+        "type": "numericRange"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "drugExposure": [
+      {
+        "id": "first",
+        "name": "First Exposure",
+        "description": "Limit to first exposure in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "drugType",
+        "name": "Drug Type",
+        "description": "Filter by drug type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "stopReason",
+        "name": "Stop Reason",
+        "description": "Filter by stop reason text",
+        "type": "text"
+      },
+      {
+        "id": "refills",
+        "name": "Refills",
+        "description": "Filter by number of refills",
+        "type": "numericRange"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by quantity",
+        "type": "numericRange"
+      },
+      {
+        "id": "daysSupply",
+        "name": "Days Supply",
+        "description": "Filter by days of drug supply",
+        "type": "numericRange"
+      },
+      {
+        "id": "route",
+        "name": "Route",
+        "description": "Filter by route of administration",
+        "type": "concept",
+        "domainFilter": "Route"
+      },
+      {
+        "id": "effectiveDrugDose",
+        "name": "Effective Drug Dose",
+        "description": "Filter by effective drug dose",
+        "type": "numericRange"
+      },
+      {
+        "id": "doseUnit",
+        "name": "Dose Unit",
+        "description": "Filter by dose unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "lotNumber",
+        "name": "Lot Number",
+        "description": "Filter by lot number",
+        "type": "text"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "drugEra": [
+      {
+        "id": "first",
+        "name": "First Exposure",
+        "description": "Limit to first exposure in history",
+        "type": "boolean"
+      },
+      {
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at era start",
+        "type": "numericRange"
+      },
+      {
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at era end",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "length",
+        "name": "Era Length",
+        "description": "Filter by era duration",
+        "type": "numericRange"
+      },
+      {
+        "id": "count",
+        "name": "Exposure Count",
+        "description": "Filter by exposure count",
+        "type": "numericRange"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "doseEra": [
+      {
+        "id": "first",
+        "name": "First Exposure",
+        "description": "Limit to first exposure in history",
+        "type": "boolean"
+      },
+      {
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at era start",
+        "type": "numericRange"
+      },
+      {
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at era end",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "doseUnit",
+        "name": "Dose Unit",
+        "description": "Filter by dose unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "length",
+        "name": "Era Length",
+        "description": "Filter by era duration",
+        "type": "numericRange"
+      },
+      {
+        "id": "value",
+        "name": "Dose Value",
+        "description": "Filter by dose value",
+        "type": "numericRange"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "deviceExposure": [
+      {
+        "id": "first",
+        "name": "First Exposure",
+        "description": "Limit to first exposure in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "deviceType",
+        "name": "Device Type",
+        "description": "Filter by device type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "deviceId",
+        "name": "Unique Device ID",
+        "description": "Filter by unique device identifier",
+        "type": "text"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by quantity",
+        "type": "numericRange"
+      },
+      {
+        "id": "deviceSourceConcept",
+        "name": "Device Source Concept",
+        "description": "Filter by device source concept",
+        "type": "concept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "measurement": [
+      {
+        "id": "first",
+        "name": "First Measurement",
+        "description": "Limit to first measurement in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Measurement Date",
+        "description": "Filter by date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "measurementType",
+        "name": "Measurement Type Criteria",
+        "description": "Filter by measurement type",
+        "type": "concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "operator",
+        "name": "Operator",
+        "description": "Filter by operator",
+        "type": "concept"
+      },
+      {
+        "id": "valueAsNumber",
+        "name": "Value as Number",
+        "description": "Filter by numeric value",
+        "type": "numericRange"
+      },
+      {
+        "id": "valueAsConcept",
+        "name": "Value as Concept",
+        "description": "Filter by categorical value",
+        "type": "concept"
+      },
+      {
+        "id": "unit",
+        "name": "Unit",
+        "description": "Filter by unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "abnormal",
+        "name": "Abnormal",
+        "description": "Filter for abnormal results",
+        "type": "boolean"
+      },
+      {
+        "id": "rangeLow",
+        "name": "Range Low",
+        "description": "Filter by lower range",
+        "type": "numericRange"
+      },
+      {
+        "id": "rangeHigh",
+        "name": "Range High",
+        "description": "Filter by upper range",
+        "type": "numericRange"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "measurementSourceConcept",
+        "name": "Measurement Source Concept",
+        "description": "Filter by measurement source concept",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "observation": [
+      {
+        "id": "first",
+        "name": "First Observation",
+        "description": "Limit to first observation in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Observation Date",
+        "description": "Filter by date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "observationType",
+        "name": "Observation Date Criteria",
+        "description": "Filter by observation type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "valueAsNumber",
+        "name": "Value as Number",
+        "description": "Filter by numeric value",
+        "type": "numericRange"
+      },
+      {
+        "id": "valueAsString",
+        "name": "Value as String",
+        "description": "Filter by text value",
+        "type": "text"
+      },
+      {
+        "id": "valueAsConcept",
+        "name": "Value as Concept",
+        "description": "Filter by categorical value",
+        "type": "concept"
+      },
+      {
+        "id": "qualifier",
+        "name": "Qualifier Criteria",
+        "description": "Filter by qualifier",
+        "type": "concept"
+      },
+      {
+        "id": "unit",
+        "name": "Unit",
+        "description": "Filter by unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "observationSourceConcept",
+        "name": "Observation Source Concept",
+        "description": "Filter by source concept",
+        "type": "concept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "procedureOccurrence": [
+      {
+        "id": "first",
+        "name": "First Procedure",
+        "description": "Limit to first procedure in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "procedureType",
+        "name": "Procedure Type",
+        "description": "Filter by procedure type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visit",
+        "name": "Visit",
+        "description": "Filter based on visit occurrence",
+        "type": "concept",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "modifier",
+        "name": "Modifier",
+        "description": "Filter by procedure modifier",
+        "type": "concept"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by quantity",
+        "type": "numericRange"
+      },
+      {
+        "id": "procedureSourceConcept",
+        "name": "Procedure Source Concept",
+        "description": "Filter by source concept",
+        "type": "concept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "specimen": [
+      {
+        "id": "first",
+        "name": "First Occurrence",
+        "description": "Limit to first occurrence in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Specimen Date",
+        "description": "Filter by date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "specimenType",
+        "name": "Specimen Type",
+        "description": "Filter by specimen type",
+        "type": "concept",
+        "domainFilter": "type"
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "description": "Filter by quantity",
+        "type": "numericRange"
+      },
+      {
+        "id": "unit",
+        "name": "Unit",
+        "description": "Filter by unit",
+        "type": "concept",
+        "domainFilter": "Unit"
+      },
+      {
+        "id": "anatomicSite",
+        "name": "Anatomic Site",
+        "description": "Filter by anatomic site",
+        "type": "concept"
+      },
+      {
+        "id": "diseaseStatus",
+        "name": "Disease Status",
+        "description": "Filter by disease status",
+        "type": "concept"
+      },
+      {
+        "id": "sourceId",
+        "name": "Source ID",
+        "description": "Filter by source ID",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "visit": [
+      {
+        "id": "first",
+        "name": "First Visit",
+        "description": "Limit to first visit in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "visitType",
+        "name": "Visit Type",
+        "description": "Filter by visit type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visitLength",
+        "name": "Visit Length",
+        "description": "Filter by length of visit",
+        "type": "numericRange"
+      },
+      {
+        "id": "sourceConcept",
+        "name": "Source Concept",
+        "description": "Filter by Visit source concept",
+        "type": "concept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "placeOfService",
+        "name": "Place of Service",
+        "description": "Filter by place of service",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "visitDetail": [
+      {
+        "id": "first",
+        "name": "First Visit",
+        "description": "Limit to first visit in history",
+        "type": "boolean"
+      },
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "visitDetailType",
+        "name": "Visit Detail Type",
+        "description": "Filter by visit type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "visitDetailLength",
+        "name": "Visit Detail Length",
+        "description": "Filter by length of visit",
+        "type": "numericRange"
+      },
+      {
+        "id": "sourceConcept",
+        "name": "Source Concept",
+        "description": "Filter by source concept",
+        "type": "concept"
+      },
+      {
+        "id": "providerSpecialty",
+        "name": "Provider Specialty",
+        "description": "Filter by provider specialty",
+        "type": "concept",
+        "domainFilter": "Provider"
+      },
+      {
+        "id": "placeOfService",
+        "name": "Place of Service",
+        "description": "Filter by place of service",
+        "type": "concept"
+      },
+      {
+        "id": "placeOfServiceLocation",
+        "name": "Place of Service Location",
+        "description": "Filter by place of service location",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "observationPeriod": [
+      {
+        "id": "first",
+        "name": "First Period",
+        "description": "Limit to first period in history",
+        "type": "boolean"
+      },
+      {
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at period start",
+        "type": "numericRange"
+      },
+      {
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at period end",
+        "type": "numericRange"
+      },
+      {
+        "id": "userDefinedPeriod",
+        "name": "User Defined Period",
+        "description": "Specify Start and End Dates",
+        "type": "userDefinedPeriod"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "periodType",
+        "name": "Period Type",
+        "description": "Filter by period type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "periodLength",
+        "name": "Period Length",
+        "description": "Filter by length of period",
+        "type": "numericRange"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "payerPlanPeriod": [
+      {
+        "id": "first",
+        "name": "First Period",
+        "description": "Limit to first period in history",
+        "type": "boolean"
+      },
+      {
+        "id": "ageAtStart",
+        "name": "Age at Start",
+        "description": "Filter by age at period start",
+        "type": "numericRange"
+      },
+      {
+        "id": "ageAtEnd",
+        "name": "Age at End",
+        "description": "Filter by age at period end",
+        "type": "numericRange"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "periodLength",
+        "name": "Period Length",
+        "description": "Filter by length of period",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "payerConcept",
+        "name": "Payer",
+        "description": "Filter by payer concept",
+        "type": "concept"
+      },
+      {
+        "id": "planConcept",
+        "name": "Plan",
+        "description": "Filter by plan concept",
+        "type": "concept"
+      },
+      {
+        "id": "sponsorConcept",
+        "name": "Sponsor",
+        "description": "Filter by sponsor concept",
+        "type": "concept"
+      },
+      {
+        "id": "stopReasonConcept",
+        "name": "Stop Reason",
+        "description": "Filter by stop reason concept",
+        "type": "concept"
+      },
+      {
+        "id": "payerSourceConcept",
+        "name": "Payer Source",
+        "description": "Filter by payer source concept",
+        "type": "concept"
+      },
+      {
+        "id": "planSourceConcept",
+        "name": "Plan Source",
+        "description": "Filter by plan source concept",
+        "type": "concept"
+      },
+      {
+        "id": "sponsorSourceConcept",
+        "name": "Sponsor Source",
+        "description": "Filter by sponsor source concept",
+        "type": "concept"
+      },
+      {
+        "id": "stopReasonSourceConcept",
+        "name": "Stop Reason Source",
+        "description": "Filter by stop reason source concept",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "death": [
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Death Date",
+        "description": "Filter by date",
+        "type": "dateRange"
+      },
+      {
+        "id": "dateAdjustment",
+        "name": "Date Adjustment",
+        "description": "Adjust event dates",
+        "type": "dateAdjustment"
+      },
+      {
+        "id": "deathType",
+        "name": "Death Type",
+        "description": "Filter by death type",
+        "type": "concept",
+        "domainFilter": "Type Concept"
+      },
+      {
+        "id": "deathSourceConcept",
+        "name": "Death Source Concept",
+        "description": "Filter by death source concept",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ],
+    "demographic": [
+      {
+        "id": "age",
+        "name": "Age",
+        "description": "Filter by age at time of event",
+        "type": "numericRange"
+      },
+      {
+        "id": "gender",
+        "name": "Gender",
+        "description": "Filter by patient gender",
+        "type": "concept",
+        "domainFilter": "Gender"
+      },
+      {
+        "id": "startDate",
+        "name": "Start Date",
+        "description": "Filter by start date",
+        "type": "dateRange"
+      },
+      {
+        "id": "endDate",
+        "name": "End Date",
+        "description": "Filter by end date",
+        "type": "dateRange"
+      },
+      {
+        "id": "raceConcept",
+        "name": "Race",
+        "description": "Filter by patient race",
+        "type": "concept"
+      },
+      {
+        "id": "nested",
+        "name": "Nested Criteria",
+        "description": "Add nested criteria group",
+        "type": "nested"
+      }
+    ]
+  },
+  "temporalWindows": [
+    {
+      "id": "all",
+      "name": "All",
+      "description": "Anytime in the person's history"
+    },
+    {
+      "id": "before",
+      "name": "Before",
+      "description": "Before the index date"
+    },
+    {
+      "id": "after",
+      "name": "After",
+      "description": "After the index date"
+    },
+    {
+      "id": "between",
+      "name": "Between",
+      "description": "Between specified dates"
+    },
+    {
+      "id": "withinDays",
+      "name": "Within Days",
+      "description": "Within a specified number of days"
+    }
+  ],
+  "occurrenceOperators": [
+    {
+      "id": "exactly",
+      "name": "exactly",
+      "symbol": "="
+    },
+    {
+      "id": "atLeast",
+      "name": "at least",
+      "symbol": ">="
+    },
+    {
+      "id": "atMost",
+      "name": "at most",
+      "symbol": "<="
+    },
+    {
+      "id": "between",
+      "name": "between",
+      "symbol": "between"
+    }
+  ]
+}

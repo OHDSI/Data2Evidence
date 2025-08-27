@@ -1,0 +1,46 @@
+[package]
+name = "pgt"
+version = "0.1.0"
+edition = "2021"
+authors = [""]
+description = "Postgres Transpiler"
+license = "Apache-2.0"
+repository = "https://github.com/p-hoffmann/pgt"
+keywords = ["sql", "postgresql", "hana", "transformation", "migration"]
+categories = ["database", "command-line-utilities", "parser-implementations"]
+
+[[bin]]
+name = "pgt"
+path = "src/main.rs"
+
+[lib]
+name = "pgt"
+path = "src/lib.rs"
+
+[dependencies]
+sqlparser = "0.58"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", optional = true }
+toml = "0.8"
+clap = { version = "4.0", features = ["derive"] }
+thiserror = "1.0"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.10"
+regex = "1.10"
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+tokio-test = "0.4"
+criterion = "0.5"
+tempfile = "3.8"
+dotenv = "0.15"
+tokio = { version = "1.0", features = ["full"] }
+hdbconnect = "0.29"
+serde_json = "1.0"
+
+[features]
+default = []
+json_output = ["serde_json"]
+
+[workspace]

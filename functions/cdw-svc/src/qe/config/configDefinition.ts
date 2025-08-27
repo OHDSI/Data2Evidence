@@ -193,6 +193,34 @@ export function getDefinition(tableMapping: any) {
     ],
   };
 
+  const parentInteractionsMappingObject = {
+    name: "parentInteractionsMapping",
+    mandatory: false,
+    type: "array",
+    strict: true,
+    children: [
+      {
+        type: "object",
+        children: [
+          {
+            name: "currentMappingInteractionId",
+            mandatory: false,
+            type: "string",
+            isExpression: true,
+            regex: "@(" + sPlaceholders + ')\\.("(?:(?:"")|[^"])+"|[a-zA-Z0-9_]+)',
+          },
+          {
+            name: "parentMappingInteraction",
+            mandatory: false,
+            type: "string",
+            isExpression: false,
+            regex: "^@(" + sPlaceholders + ")$",
+          },
+        ],
+      },
+    ],
+  };
+
   const attributesObject = {
     name: "attributes",
     mandatory: true,
@@ -428,7 +456,6 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "boolean",
           },
-          ,
           {
             name: "conceptIdentifierType",
             mandatory: false,
@@ -487,6 +514,7 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "string",
           },
+          parentInteractionsMappingObject,
         ],
       },
     ],

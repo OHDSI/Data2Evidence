@@ -42,7 +42,7 @@ export const DuplicateFlowRevisionDialog: FC<
 
   useEffect(() => {
     if (dataflow) {
-      setFormData({ name: dataflow.name });
+      setFormData({ name: dataflow.canvas.name });
     } else {
       setFormData(EMPTY_FORM_DATA);
     }
