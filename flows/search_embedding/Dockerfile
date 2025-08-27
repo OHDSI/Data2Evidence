@@ -53,9 +53,9 @@ COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 
 RUN \
     # Create output directory and set ownership
-    mkdir -p /output /app/duckdb_extensions /app/duckdb_data \
+    mkdir -p /output /app/duckdb_extensions /app/duckdb_data/cache \
     && chown -R docker:docker /output /app/duckdb_extensions \
-    && chown -R docker:alp /app/duckdb_data \
+    && chown -R docker:alp /app/duckdb_data/cache \
     && chmod -R 755 /app/duckdb_extensions \
     # Install DuckDB extensions
     && chmod +x /app/download_duckdb_extensions.sh \
@@ -78,4 +78,4 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 ENV INSTALL_SQLALCHEMY_FLAG=false
 
-USER docker
+# USER docker
