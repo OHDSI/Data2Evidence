@@ -9,7 +9,6 @@ on:
       - develop
   workflow_dispatch:
 
-
 jobs:
   check_file_changes:
     runs-on: ubuntu-latest
