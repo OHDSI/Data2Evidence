@@ -118,8 +118,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
             Array.isArray(vocabularyIdFilters) &&
             Array.isArray(standardConceptFilters)
           ) {
-            const concepts = (
-              await api.d2eWebapi.getTerminologies(
+            const [concepts, conceptsCount] = await Promise.all([
+              api.d2eWebapi.getTerminologies(
                 page,
                 rowsPerPage,
                 datasetId,
@@ -129,11 +129,20 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 vocabularyIdFilters,
                 standardConceptFilters,
                 validityFilters
-              )
-            ).map(mapd2eWebapiConcept);
+              ),
+              api.terminology.getConceptsCount(
+                datasetId,
+                searchText.toLowerCase(),
+                conceptClassIdFilters,
+                domainIdFilters,
+                vocabularyIdFilters,
+                standardConceptFilters,
+                validityFilters
+              ),
+            ]);
             const response = {
-              count: 9999, // TODO: Update to get count from backend
-              data: concepts,
+              count: conceptsCount,
+              data: concepts.map(mapd2eWebapiConcept),
             };
             response.data.map((data: any) => {
               data["conceptCode"] = data["code"] as string;

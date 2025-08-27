@@ -74,6 +74,27 @@ export class CachedbHanaDAO {
     }
   }
 
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    try {
+      const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
+        this.getHanaFtsBaseQuery(searchText, filters);
+
+      const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = hanaFtsBaseQueryParams;
+      const results = await client.query<{ COUNT: string }>(
+        countSql,
+        countSqlParams
+      );
+      return results ? parseInt(results.rows[0].COUNT) : 0;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
   async getMultipleExactConcepts(
     searchTexts: number[],
     includeInvalid = true
