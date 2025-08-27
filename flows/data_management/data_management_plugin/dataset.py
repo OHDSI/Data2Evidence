@@ -94,26 +94,26 @@ def create_schema_tasks(dialect: str,
                          )
 
         # task
-        enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
+        # enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
+        #     on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
         
-        enable_audit_policies_wo(schema_dao, schema_name)
+        # enable_audit_policies_wo(schema_dao, schema_name)
 
-        # task
-        create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
+        # # task
+        # create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
+        #     on_failure=[partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))])
         
-        create_and_assign_roles_wo(schema_dao, schema_name)
+        # create_and_assign_roles_wo(schema_dao, schema_name)
 
-        if data_model in OMOP_DATA_MODELS:
-            cdm_version = DATAMODEL_CDM_VERSION.get(data_model)
-            insert_cdm_version_wo = insert_cdm_version.with_options(
-                on_completion=[partial(update_cdm_version_hook,
-                                       **dict(db=database_code, schema=schema_name))],
-                on_failure=[partial(update_cdm_version_hook,
-                                    **dict(db=database_code, schema=schema_name))])
+        # if data_model in OMOP_DATA_MODELS:
+        #     cdm_version = DATAMODEL_CDM_VERSION.get(data_model)
+        #     insert_cdm_version_wo = insert_cdm_version.with_options(
+        #         on_completion=[partial(update_cdm_version_hook,
+        #                                **dict(db=database_code, schema=schema_name))],
+        #         on_failure=[partial(update_cdm_version_hook,
+        #                             **dict(db=database_code, schema=schema_name))])
 
-            insert_cdm_version_wo(schema_dao, schema_name, cdm_version)
+        #     insert_cdm_version_wo(schema_dao, schema_name, cdm_version)
         print("Dataset schema successfully created and privileges assigned!")
         return True
     except Exception as e:
