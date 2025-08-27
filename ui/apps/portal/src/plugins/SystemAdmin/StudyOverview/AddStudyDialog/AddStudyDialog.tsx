@@ -16,24 +16,9 @@ import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
 import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
-import {
-  NewStudyInput,
-  Feedback,
-  CloseDialogType,
-  Study,
-  IDatabase,
-  NewStudyMetadataInput,
-  NewFhirProjectInput,
-} from "../../../../types";
+import { NewStudyInput, Feedback, CloseDialogType, Study, IDatabase, NewFhirProjectInput } from "../../../../types";
 import SimpleMDE from "react-simplemde-editor";
-import {
-  useDatasetAttributeConfigs,
-  usePaConfigs,
-  useTenant,
-  useDbVocabSchemas,
-  useEnabledFeatures,
-} from "../../../../hooks";
-import MetadataForm from "../UpdateStudyDialog/MetadataForm/MetadataForm";
+import { usePaConfigs, useTenant, useDbVocabSchemas, useEnabledFeatures } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
@@ -149,8 +134,6 @@ const EMPTY_FORM_DATA: FormData = {
   visibilityStatus: "DEFAULT",
 };
 
-const EMPTY_STUDY_METADATA: NewStudyMetadataInput = { attributeId: "", value: "" };
-
 /**
  * Schema Options Values
  */
@@ -209,12 +192,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [schemas, setSchemas] = useState<string[]>([]);
   const [paConfigs] = usePaConfigs();
   const [vocabSchemas] = useDbVocabSchemas(formData.databaseCode);
-  const [attributeConfigs] = useDatasetAttributeConfigs();
-  const [studyMetadata, setStudyMetadata] = useState<NewStudyMetadataInput[]>([EMPTY_STUDY_METADATA]);
-  const [studyTagsData, setStudyTagsData] = useState<Array<string>>([]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
-  const [formMetadataErrorIndex, setFormMetadataErrorIndex] = useState<Array<Number>>([]);
   const featureFlags = useEnabledFeatures();
 
   const SchemaOptions: dropdownOption[] = useMemo(() => {
@@ -282,8 +261,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       setFeedback({});
       setFormData(EMPTY_FORM_DATA);
       setFormError(EMPTY_FORM_ERROR);
-      setStudyMetadata([]);
-      setStudyTagsData([]);
       typeof onClose === "function" && onClose(type);
     },
     [onClose, setFeedback]
@@ -337,33 +314,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const handleFormDataChange = useCallback((changes: { [field: string]: any }) => {
     setFormData((formData) => ({ ...formData, ...changes }));
-  }, []);
-
-  const handleRemoveLine = useCallback(
-    <T extends {}>(index: number, state: Array<T>, setState: (value: SetStateAction<T[]>) => void) => {
-      const copyLine = [...state];
-      copyLine.splice(index, 1);
-      setState(copyLine);
-    },
-    []
-  );
-
-  const handleAddMetadataForm = useCallback(() => {
-    setStudyMetadata([...studyMetadata, EMPTY_STUDY_METADATA]);
-  }, [studyMetadata]);
-
-  const handleMetadataChange = useCallback(
-    (attributeId: string, valueNew: string, index: number) => {
-      const newMetadata = { attributeId: attributeId, value: valueNew };
-      const currentMetadata = [...studyMetadata];
-      currentMetadata[index] = newMetadata;
-      setStudyMetadata(currentMetadata);
-    },
-    [studyMetadata]
-  );
-
-  const handleTagChange = useCallback((event: any, value: string[]) => {
-    setStudyTagsData(value);
   }, []);
 
   const tokenIsValid = useCallback((token: string) => {
@@ -447,18 +397,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     return false;
   }, [formData, schemas, tokenIsValid]);
 
-  const isFormMetadataError = useCallback(() => {
-    const indexError: Number[] = [];
-    studyMetadata.forEach((metadata, index) => {
-      if (!metadata.value && metadata.attributeId) {
-        indexError.push(index);
-      }
-    });
-
-    setFormMetadataErrorIndex(indexError);
-    return indexError.length > 0;
-  }, [studyMetadata]);
-
   const parseDatamodelOption = useCallback((dataModelOption: string) => {
     const parsedOption = dataModelOption.replace(/[[\]]/g, "").split(" ");
     return {
@@ -468,7 +406,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (isFormError() || isFormMetadataError()) {
+    if (isFormError()) {
       return;
     }
 
@@ -521,8 +459,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       paConfigId,
       fhirProjectId,
       visibilityStatus,
-      attributes: studyMetadata.filter((info) => info.attributeId !== ""),
-      tags: studyTagsData?.map((tagName) => tagName),
+      attributes: [],
+      tags: [],
       dashboards: [],
     };
 
@@ -555,17 +493,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     } finally {
       setLoading(false);
     }
-  }, [
-    formData,
-    tenant,
-    studyMetadata,
-    studyTagsData,
-    isFormError,
-    isFormMetadataError,
-    setLoading,
-    handleClose,
-    parseDatamodelOption,
-  ]);
+  }, [formData, tenant, isFormError, setLoading, handleClose, parseDatamodelOption]);
 
   return (
     <Dialog
@@ -976,79 +904,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
-
-        {/* {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
-          <div>
-            <Checkbox
-              checked={formData.cleansedSchemaOption}
-              checkbox-id="isCreateCleansedSchemaOptionSelected"
-              label={getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_DATA_CLEANSING)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleFormDataChange({ cleansedSchemaOption: event.target.checked });
-              }}
-            />
-          </div>
-        )} */}
-
-        <Box mb={4}>
-          <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__METADATA)}</Box>
-          {attributeConfigs.length !== 0 &&
-            studyMetadata.map((data, index) => (
-              <MetadataForm
-                key={index}
-                studyMetadata={data}
-                index={index}
-                attributeConfigs={attributeConfigs}
-                handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
-                handleMetadataChange={handleMetadataChange}
-                error={formMetadataErrorIndex.includes(index)}
-              />
-            ))}
-          <IconButton
-            startIcon={<AddSquareIcon />}
-            title={getText(i18nKeys.ADD_STUDY_DIALOG__ADD_METADATA)}
-            onClick={handleAddMetadataForm}
-          />
-        </Box>
-
-        {/* <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</Box>
-        <Box mb={4}>
-          <Autocomplete
-            multiple
-            sx={styles}
-            id="autocomplete-tags"
-            options={tagConfigs}
-            renderTags={(value: string[], getTagProps) =>
-              value.map((option: string, index: number) => (
-                <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
-              ))
-            }
-            renderInput={(params) => <TextField {...params} variant="standard" />}
-            value={studyTagsData}
-            onChange={handleTagChange}
-          />
-        </Box> */}
-
-        {/* <Box mb={4}>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">{getText(i18nKeys.ADD_STUDY_DIALOG__DATA_VISIBILITY)}</FormLabel>
-            <RadioGroup
-              name={getText(i18nKeys.ADD_STUDY_DIALOG__VISIBILITY_STATUS_GROUP)}
-              value={formData.visibilityStatus}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleFormDataChange({ visibilityStatus: event.target.value });
-              }}
-            >
-              <FormControlLabel value="PUBLIC" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__PUBLIC)} />
-              <FormControlLabel
-                value="DEFAULT"
-                control={<Radio />}
-                label={getText(i18nKeys.ADD_STUDY_DIALOG__PRIVATE)}
-              />
-              <FormControlLabel value="HIDDEN" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__HIDDEN)} />
-            </RadioGroup>
-          </FormControl>
-        </Box> */}
       </div>
       <Divider />
       <div className="button-group-actions">
