@@ -14,10 +14,9 @@ import {
 } from "./utils/types";
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
-import { terminologyApi } from "../../../axios/terminology";
 import { useActiveDataset, useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
-import { d2eWebapiApi } from "../../../axios/d2e-webapi";
+import { api } from "../../../axios/api";
 import { mapd2eWebapiConcept, mapd2eWebapiConceptSet } from "./utils/d2eWebapiMappers";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
@@ -336,6 +335,28 @@ export const Terminology: FC<TerminologyProps> = ({
     setSelectedConcepts(selectedConceptsCopy);
   }, []);
 
+  const createConceptSet = async (conceptSet: Omit<ConceptSet, "id">, datasetId: string): Promise<number> => {
+    const conceptSetId = await api.d2eWebapi.createConceptSet(conceptSet.name, datasetId);
+
+    if (conceptSet.concepts.length !== 0) {
+      await api.d2eWebapi.updateConceptSetItems(conceptSetId, conceptSet.concepts, datasetId);
+    }
+    return conceptSetId;
+  };
+
+  const updateConceptSet = async (
+    conceptSetId: number,
+    conceptSet: Partial<ConceptSet>,
+    datasetId: string
+  ): Promise<number> => {
+    // Update concept set
+    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
+    // Update concept set items
+    const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
+    await api.d2eWebapi.updateConceptSetItems(conceptSetId, conceptSetItems, datasetId);
+    return conceptSetId;
+  };
+
   const saveConceptSet = useCallback(async () => {
     const conceptSet = {
       concepts: selectedConcepts.map((concept) => {
@@ -353,22 +374,18 @@ export const Terminology: FC<TerminologyProps> = ({
     setIsConceptSetLoading(true);
     try {
       const updatedConceptSetId = conceptSetId
-        ? await terminologyApi.updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
-        : await terminologyApi.createConceptSet(conceptSet, activeDatasetId);
-      if (typeof updatedConceptSetId !== "number") {
-        if (updatedConceptSetId?.statusCode === 500) {
-          setErrorMsg(
-            getText(i18nKeys.TERMINOLOGY__ERROR, [
-              conceptSetId ? getText(i18nKeys.TERMINOLOGY__UPDATING) : getText(i18nKeys.TERMINOLOGY__CREATING),
-            ])
-          );
-        }
-        return;
-      }
+        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
+        : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
       setConceptSetId(updatedConceptSetId);
       return;
+    } catch {
+      setErrorMsg(
+        getText(i18nKeys.TERMINOLOGY__ERROR, [
+          conceptSetId ? getText(i18nKeys.TERMINOLOGY__UPDATING) : getText(i18nKeys.TERMINOLOGY__CREATING),
+        ])
+      );
     } finally {
       setIsConceptSetLoading(false);
     }
@@ -379,8 +396,8 @@ export const Terminology: FC<TerminologyProps> = ({
     activeDatasetId: string
   ): Promise<ConceptSetWithConceptDetails> => {
     const [conceptSet, conceptSetExpression] = await Promise.all([
-      d2eWebapiApi.getConceptSet(conceptSetId, activeDatasetId),
-      d2eWebapiApi.getConceptSetExpression(conceptSetId, activeDatasetId),
+      api.d2eWebapi.getConceptSet(conceptSetId, activeDatasetId),
+      api.d2eWebapi.getConceptSetExpression(conceptSetId, activeDatasetId),
     ]);
 
     const concepts = conceptSetExpression.items.map((conceptSet) => {

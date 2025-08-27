@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ConceptSetExpression } from "../types.ts";
 
 export const ConceptSetDto = z.object({
-  id: z.number().optional(),
+  id: z.number(),
   name: z.string(),
 });
 export type IConceptSetDto = z.infer<typeof ConceptSetDto>;
@@ -27,17 +27,37 @@ export type IConceptSetCheckResponseDto = z.infer<
   typeof ConceptSetCheckResponseDto
 >;
 
-export const ConceptSetCreateDto = ConceptSetDto.extend({
-  description: z.string().nullable(),
-  expression: ConceptSetItemsResponseDto,
+export const ConceptSetCreateDto = z.object({
+  id: z.number().optional(),
+  name: z.string(),
+  shared: z.boolean().optional(),
+  description: z.string().optional(),
+  hasWriteAccess: z.boolean().optional(),
+  createdDate: z.number().optional(),
+  createdBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .optional(),
+  modifiedDate: z.number().optional(),
+  modifiedBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .optional(),
+  tags: z.array(z.unknown()).optional(),
 });
 export type IConceptSetCreateDto = z.infer<typeof ConceptSetCreateDto>;
 
 export const ConceptSetItemDto = z.object({
   conceptId: z.number(),
-  isExcluded: z.number().transform((val) => val !== 0),
-  includeDescendants: z.number().transform((val) => val !== 0),
-  includeMapped: z.number().transform((val) => val !== 0),
+  isExcluded: z.boolean(),
+  includeDescendants: z.boolean(),
+  includeMapped: z.boolean(),
 });
 
 export const ConceptSetItemListDto = z.array(ConceptSetItemDto);

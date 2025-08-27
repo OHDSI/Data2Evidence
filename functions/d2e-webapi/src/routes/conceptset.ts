@@ -8,6 +8,7 @@ import {
   ConceptSetItemListDto,
   ConceptSetItemsResponseDto,
   ConceptSetCreateDto,
+  IConceptSetCheckResponseDto,
 } from "../dto/conceptset.ts";
 
 import {
@@ -15,6 +16,7 @@ import {
   getConceptSets,
   checkIfConceptSetExists,
   createConceptSet,
+  updateConceptSet,
   updateConceptSetItems,
   getConceptSetExpression,
 } from "../services/conceptset.service.ts";
@@ -87,7 +89,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     },
     (_req, res) => {
       // TODO: ADD LOGIC
-      const dummyresponse = { warnings: [] };
+      const dummyresponse: IConceptSetCheckResponseDto = { warnings: [] };
       res.send(dummyresponse);
     }
   );
@@ -111,6 +113,35 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     async (req, res) => {
       const { id } = req.params;
       const results = await getConceptSet(req.token, req.datasetId, id);
+      res.send(results);
+    }
+  );
+
+  app.put(
+    "/:id",
+    {
+      schema: {
+        description: "Updates the concept set for the selected concept set.",
+        tags: ["conceptset"],
+        params: z.object({ id: z.coerce.number() }),
+        body: ConceptSetCreateDto,
+        response: { 200: z.boolean() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const { id } = req.params;
+      const results = await updateConceptSet(
+        req.token,
+        req.datasetId,
+        id,
+        req.body
+      );
       res.send(results);
     }
   );

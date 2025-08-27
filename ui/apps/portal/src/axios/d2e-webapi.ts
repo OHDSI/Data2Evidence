@@ -1,5 +1,7 @@
 import { request } from "./request";
 import {
+  ConceptSet,
+  ConceptSetConcept,
   IWebapiConcept,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
@@ -40,29 +42,7 @@ export class D2eWebapi {
     });
   }
 
-  // TODO: Discuss implementation
-  // public getTerminologyConnections(conceptId: number, datasetId: string): Promise<IWebapiConceptRelated[]> {
-  //   return request({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/vocabulary/${datasetId}/concept/${conceptId}/related`,
-  //     method: "GET",
-  //     headers: { datasetid: datasetId },
-  //   });
-  // }
-
-  // TODO: Discuss implementation
-  // public getRecommendedConcepts(conceptIds: number[], datasetId: string) {
-  //   return request<Concept[]>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/vocabulary/${datasetId}/lookup/recommended`,
-  //     method: "POST",
-  //     data: conceptIds,
-  //     headers: { datasetid: datasetId },
-  //   });
-  // }
-
   // CONCEPT SETS
-
   public getConceptSets(datasetId: string) {
     return request<IWebapiConceptSet[]>({
       baseURL: D2E_WEBAPI_BASE_URL,
@@ -90,34 +70,43 @@ export class D2eWebapi {
     });
   }
 
-  // public removeConceptSet(conceptSetId: number, datasetId: string) {
-  //   return request<number>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/conceptset/${conceptSetId}`,
-  //     method: "DELETE",
-  // headers: { datasetid: datasetId },
-  //   });
-  // }
+  public async createConceptSet(name: string, datasetId: string): Promise<number> {
+    const conceptSet = await request({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset`,
+      method: "POST",
+      headers: { datasetid: datasetId },
+      data: { name },
+    });
 
-  // public createConceptSet(conceptSet: Omit<ConceptSet, "id">, datasetId: string) {
-  //   return request<number>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/conceptset`,
-  //     method: "POST",
-  // headers: { datasetid: datasetId },
-  //     data: conceptSet,
-  //   });
-  // }
+    return conceptSet.id;
+  }
 
-  // public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>, datasetId: string) {
-  //   return request<number | { statusCode: number }>({
-  //     baseURL: D2E_WEBAPI_BASE_URL,
-  //     url: `/conceptset/${conceptSetId}`,
-  //     method: "PUT",
-  // headers: { datasetid: datasetId },
-  //     data: conceptSet,
-  //   });
-  // }
+  public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>, datasetId: string) {
+    return request<number | { statusCode: number }>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}`,
+      method: "PUT",
+      headers: { datasetid: datasetId },
+      data: conceptSet,
+    });
+  }
+
+  public updateConceptSetItems(conceptSetId: number, conceptSetConcepts: ConceptSetConcept[], datasetId: string) {
+    const data = conceptSetConcepts.map((concept) => ({
+      conceptId: concept.id,
+      isExcluded: concept.isExcluded,
+      includeDescendants: concept.useDescendants,
+      includeMapped: concept.useMapped,
+    }));
+    return request<number | { statusCode: number }>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}/items`,
+      method: "PUT",
+      headers: { datasetid: datasetId },
+      data,
+    });
+  }
 }
 
 export const d2eWebapiApi = new D2eWebapi();

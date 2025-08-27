@@ -65,7 +65,7 @@ export const createConceptSet = async (
   const terminologyCreateConceptSetDto: ITerminologyCreateConceptSet = {
     concepts: [],
     name: conceptSetDto.name,
-    shared: false,
+    shared: conceptSetDto.shared ?? false,
     userName: username,
   };
 
@@ -78,13 +78,48 @@ export const createConceptSet = async (
   // Construct response
   const webapiConceptSets: IConceptSetResponseDto = {
     createdDate: Date.now(),
+    createdBy: {
+      name: terminologyCreateConceptSetDto.name,
+    },
     modifiedDate: Date.now(),
+    modifiedBy: {
+      name: terminologyCreateConceptSetDto.name,
+    },
     hasWriteAccess: false,
     hasReadAccess: false,
     id: terminologyConceptSetId,
     name: terminologyCreateConceptSetDto.name,
+    shared: terminologyCreateConceptSetDto.shared,
   };
   return webapiConceptSets;
+};
+
+export const updateConceptSet = async (
+  token: string,
+  datasetId: string,
+  conceptSetId: number,
+  conceptSetDto: IConceptSetCreateDto
+): Promise<boolean> => {
+  const terminologySvcApi = new TerminologySvcAPI(token);
+
+  const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
+    datasetId,
+    conceptSetId
+  );
+
+  // Update terminologyConceptSet with concept set items from request
+  const updatedTerminologyConceptSet: ITerminologyCreateConceptSet = {
+    ...terminologyConceptSet,
+    name: conceptSetDto.name,
+    shared: conceptSetDto.shared ?? false,
+  };
+
+  await terminologySvcApi.updateConceptSet(
+    datasetId,
+    conceptSetId,
+    updatedTerminologyConceptSet
+  );
+  return true;
 };
 
 export const updateConceptSetItems = async (
