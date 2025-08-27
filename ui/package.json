@@ -312,6 +312,14 @@
             "route": "plugins"
           },
           {
+            "description": "Configure Flowise AI (opens app)",
+            "enabled": true,
+            "name": "Flowise AI",
+            "notes": "Opens the self-hosted Flowise app",
+            "pluginPath": "plugins/Setup/Flowise/module",
+            "route": "flowise"
+          },
+          {
             "description": "Setting up demo dataset",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_DEMO_DESCRIPTION",
             "enabled": true,

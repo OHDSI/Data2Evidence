@@ -31,6 +31,7 @@ const moduleNames = [
   "Setup/DemoSetup",
   "Setup/HybridSearch",
   "Setup/GitConfig",
+  "Setup/Flowise",
 ];
 
 const modulePaths = moduleNames.reduce(
