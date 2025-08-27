@@ -37,6 +37,7 @@ import MetadataForm from "../UpdateStudyDialog/MetadataForm/MetadataForm";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
+import { DatasetSourceTypes, DatasetChildTypes } from "../../../../constant";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -632,6 +633,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   vocabSchemaValue: "",
                   databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: "",
+                  type: event.target.value === SchemaTypes.FHIR ? DatasetSourceTypes.FHIR : DatasetSourceTypes.SOURCE,
                 })
               }
               inputProps={{
@@ -652,6 +654,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
+        </Box>
+
+        {/*source dataset type */}
+        <Box mb={4}>
+          <TextField
+            disabled
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
+            value={formData.type}
+          />
         </Box>
 
         {/* DB Input */}
@@ -944,25 +957,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </FormControl>
         </Box>
-        {/* <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
-            value={formData.type}
-            onChange={(event) => handleFormDataChange({ type: event.target.value })}
-          />
-        </Box> */}
-        <div>
-          <Checkbox
-            checked={formData.showRequestAccess}
-            checkbox-id="request-access"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ showRequestAccess: event.target.checked });
-            }}
-          />
-        </div>
+
         <Box mb={4}>
           <TextField
             fullWidth
@@ -981,6 +976,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
+
         {/* {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
           <div>
             <Checkbox

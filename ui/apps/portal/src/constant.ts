@@ -27,3 +27,18 @@ export enum ConfigTypes {
 }
 
 export const PUB_SLOT_NAME = "data2evidence";
+
+export enum DatasetSourceTypes {
+  SOURCE = "SOURCE",
+  FHIR = "FHIR",
+}
+
+export enum DatasetChildTypes {
+  OMOP = "OMOP", // parent: SOURCE
+  NON_OMOP = "NON_OMOP", // parent: fhir
+  STUDY = "STUDY", // parent: SOURCE
+  HANA__OMOP = "HANA_OMOP", // parent: SOURCE
+  HANA__NON_OMOP = "HANA__NON_OMOP", // parent: not confirmed
+}
+
+export type DatasetTypes = typeof DatasetSourceTypes | typeof DatasetChildTypes;
