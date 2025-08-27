@@ -167,3 +167,21 @@ services:
     environment:
       - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
       - DOZZLE_ENABLE_ACTIONS=true
+
+  flowise:
+    ports:
+      - 41160:41160  # Host mapping for direct dev access to Flowise (http://localhost:41160)
+    environment:
+      # Point Flowise to the exact origin you use in dev so cookies are scoped correctly
+      APP_URL: http://localhost:41160
+      # Not behind a proxy when using localhost:41160 → avoid setting Secure cookies
+      NUMBER_OF_PROXIES: 0
+      # Allow browser origin in CORS/iframe checks for local access
+      CORS_ORIGINS: http://localhost:41160
+      IFRAME_ORIGINS: http://localhost:41160
+      # Local secrets for JWT/session
+      JWT_AUTH_TOKEN_SECRET: change-me-local
+      JWT_REFRESH_TOKEN_SECRET: change-me-local
+      EXPRESS_SESSION_SECRET: change-me-local
+      # Verbose logging
+      DEBUG: true
