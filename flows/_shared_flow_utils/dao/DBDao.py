@@ -37,7 +37,14 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     """
     # Create a test instance to infer dialect if not provided
     test_instance = SqlAlchemyDao(**kwargs)
-    selected_dialect = dialect or test_instance.dialect
+    # Always infer dialect from test_instance if not provided
+
+    # Todo: Update implementation if Hana uses trex
+    # If flow passes TREX but test_instance infers HANA, use HANA
+    if dialect == SupportedDatabaseDialects.TREX and test_instance.dialect == SupportedDatabaseDialects.HANA:
+        selected_dialect = SupportedDatabaseDialects.HANA
+    else:
+        selected_dialect = dialect if dialect is not None else test_instance.dialect
     # Get the DAO class from registry
     dao_class = _DAO_REGISTRY.get(selected_dialect)
     if not dao_class:
