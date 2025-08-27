@@ -292,10 +292,8 @@
           "rmsrc": true
         },
         {
-          "source": "/fhir/R4",
-          "function": "/d2e-fhir",
-          "env": "d2e-fhir",
-          "imports": "/d2e-fhir/deno.json"
+          "source": "/d2e-fhir",
+          "function": "/d2e-fhir" 
         }
       ],
       "roles": {

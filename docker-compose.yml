@@ -78,8 +78,8 @@ x-envs:
        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
        "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
        "minio": "",
-       "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
-       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth2/token",
+       "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-fhir/fhir/R4",
+       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-fhir/oauth2/token",
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -213,8 +213,8 @@ services:
               "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
               "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
               "minio": "",
-              "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-              "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+              "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-fhir/fhir/R4",
+              "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-fhir/oauth2/token",
               "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
@@ -518,8 +518,8 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
-        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+        "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-fhir/fhir/R4",
+        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/d2e-fhir/oauth2/token",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
@@ -1344,53 +1344,53 @@ services:
         exit 0
       "
 
-  fhir-server:
-    container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
-    depends_on:
-      trex:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    healthcheck:
-      interval: 20s
-      retries: 5
-      start_period: 420s
-      test:
-        - CMD
-        - wget
-        - --no-proxy
-        - -O
-        - fhir.status
-        - http://localhost:8103/healthcheck
-    hostname: fhir-server-1
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c6
-    networks:
-      alp:
-        priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    volumes:
-      - fhir-binary-1:/home/docker/app/medplum/binary
-    environment:
-      <<:
-        - *x-pg
-        - *x-redis
-        - *x-fhir
-      PG__DB_NAME: alp
-      PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
-      PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      DUCKDB_PATH: /home/docker/app
-      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
-      FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
-      FHIR_SCHEMA_FILE_NAME: fhir.schema.json
-      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
-    profiles: [fhir]
+  # fhir-server:
+  #   container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
+  #   depends_on:
+  #     trex:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     alp-minerva-pg-mgmt-init:
+  #       condition: service_completed_successfully
+  #   healthcheck:
+  #     interval: 20s
+  #     retries: 5
+  #     start_period: 420s
+  #     test:
+  #       - CMD
+  #       - wget
+  #       - --no-proxy
+  #       - -O
+  #       - fhir.status
+  #       - http://localhost:8103/healthcheck
+  #   hostname: fhir-server-1
+  #   image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
+  #   platform: linux/amd64
+  #   logging:
+  #     options:
+  #       tag: *c6
+  #   networks:
+  #     alp:
+  #       priority: 20
+  #   restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+  #   volumes:
+  #     - fhir-binary-1:/home/docker/app/medplum/binary
+  #   environment:
+  #     <<:
+  #       - *x-pg
+  #       - *x-redis
+  #       - *x-fhir
+  #     PG__DB_NAME: alp
+  #     PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
+  #     PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD}
+  #     DUCKDB_PATH: /home/docker/app
+  #     FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
+  #     FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
+  #     FHIR_SCHEMA_FILE_NAME: fhir.schema.json
+  #     BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
+  #   profiles: [fhir]
 
   dicom-server:
     # uses 8042 port on the container

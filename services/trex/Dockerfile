@@ -84,13 +84,16 @@ RUN apt-get remove -y perl && apt-get autoremove -y
 
 
 COPY --from=builder /root/trex /usr/src/trex
-#COPY medplum 
+
+#Copy medplum 
 COPY --from=medplum-builder /usr/src/medplum /usr/src/medplum
+#start.sh edits config file with env vars and then starts medplum server
 COPY /functions/d2e-fhir/start.sh /usr/src/medplum/start.sh
 COPY /functions/d2e-fhir/config.json /usr/src/medplum/config.json
 RUN chmod +x /usr/src/medplum/start.sh
 # Install envsubst if not present
 RUN apt-get update && apt-get install -y gettext-base jq
+
 #COPY --from=builder /root/trex.debug /usr/src/trex.debug
 
 COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
@@ -167,5 +170,4 @@ RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr
 
 ENTRYPOINT ["./medplum/start.sh"]
 CMD ["npm", "run", "start"]
-#CMD ["tail", "-f", "/dev/null"]
 EXPOSE 33000

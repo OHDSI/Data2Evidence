@@ -1,13 +1,11 @@
-// import { execSync } from 'node:child_process';
+// Make this file a module for top-level await
+export {};
 
-// try {
-//   process.chdir('/home/docker/app/medplum');
-//   execSync('deno run --allow-all --unstable-detect-cjs --unstable-node-globals --unstable-sloppy-imports --node-modules-dir=auto ./packages/server/dist/index.js', {
-//     stdio: 'inherit',
-//     env: process.env,
-//   });
-// } catch (err) {
-//   console.error('Failed to start Deno server:', err);
-//   process.exit(1);
-// }
-console.log('D2e Fhir server started');
+// Run the Deno task 'start:server' from deno.json using Deno.Command (Deno v1.36+)
+const command = new Deno.Command("deno", {
+  args: ["task", "start:server"],
+  stdout: "inherit",
+  stderr: "inherit"
+});
+const { code } = await command.output();
+Deno.exit(code ?? 0);

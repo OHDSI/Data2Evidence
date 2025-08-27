@@ -10,12 +10,3 @@ envsubst < /usr/src/medplum/config.json | jq '.database.port |= tonumber | .redi
 cp /usr/src/medplum/temp.json /usr/src/medplum/packages/server/medplum.config.json
 
 echo "Configuration file processed and copied"
-
-# Step 3: Start the Medplum server in the background
-cd /usr/src/medplum
-echo "Run Deno"
-deno run --allow-all --unstable-detect-cjs --unstable-node-globals --unstable-sloppy-imports --node-modules-dir=auto ./packages/server/dist/index.js &
-echo "Now run cmd from dockerfile"
-cd /usr/src
-# Step 4: Run the CMD from Dockerfile as the main process
-exec "$@"
