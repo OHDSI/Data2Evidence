@@ -10,7 +10,12 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'ETL' }).click()
-  await page.getByLabel('Create new dataflow').getByRole('button').click()
+  try {
+    await expect(page.getByText('There is no dataflow to show')).toBeVisible()
+    await page.getByTestId('button').click()
+  } catch (e) {
+    await page.getByLabel('Create new dataflow').getByRole('button').click()
+  }
   await page.getByRole('textbox', { name: 'Name' }).fill('new_data_flow')
   await page.getByRole('button', { name: 'Create' }).click()
   await page.waitForTimeout(1000)
