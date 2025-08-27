@@ -545,7 +545,11 @@
           "strategus.analysis.read",
           "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "jupyter"
+          "jupyter",
+          "jobplugins.dqd.researcher.execute",
+          "jobplugins.cohortDqd.researcher.execute",
+          "jobplugins.analysisUi.researcher.execute",
+          "portal.dataset.read"
         ]
       },
       "scopes": [
@@ -644,9 +648,33 @@
           ]
         },
         {
-          "path": "^/jobplugins(.*)",
+          "path": "^/jobplugins/researcher/dqd/flow-run(.*)",
           "scopes": [
-            "jobplugins"
+            "jobplugins.dqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/cohort-dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.cohortDqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/analysis-ui/flow-run(.*)",
+          "scopes": [
+            "jobplugins.analysisUi.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
           ]
         },
         {
@@ -1907,6 +1935,24 @@
           ]
         },
         {
+          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.cancel"
@@ -1985,6 +2031,12 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
           ]
         },
         {

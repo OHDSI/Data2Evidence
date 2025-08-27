@@ -2,6 +2,7 @@ import {
     CohortType,
     CohortDefinitionTableType,
     QueryObjectType,
+    ANALYTICS_DB_DIALECTS,
 } from "../../types";
 import { Logger, QueryObject as qo } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
@@ -12,10 +13,54 @@ import ConnectionInterface = connLib.ConnectionInterface;
 const logger = CreateLogger("analytics-log");
 
 export class CohortEndpoint {
-    constructor(
+    private constructor(
         public connection: ConnectionInterface,
-        public schemaName: string
+        public schemaName: string,
+        public dialect: string,
     ) {}
+
+    public static async createCohortEndpoint(
+        connection: ConnectionInterface,
+        schemaName: string,
+        dialect: string,
+        authMode: string,
+    ) : CohortEndpoint {
+
+        if (dialect === ANALYTICS_DB_DIALECTS.HANA && authMode === "JWT") {
+            const checkCohortTablesExist = QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
+                                                    SCHEMA_NAME='${connection.cohortSchemaName}' AND 
+                                                    TABLE_NAME IN ('COHORT','COHORT_DEFINITION');`);
+            const tables = await checkCohortTablesExist.executeQuery(connection);
+            
+            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT")) {
+                const createCohortQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT  (
+                                            cohort_definition_id integer NOT NULL,
+                                            subject_id integer NOT NULL,
+                                            cohort_start_date date NOT NULL,
+                                            cohort_end_date date NOT NULL );`);
+                await createCohortQuery.executeUpdate(connection);
+            }
+
+            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT_DEFINITION")) {
+                const createCohortDefinitionQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT_DEFINITION (
+                            cohort_definition_id                INTEGER            NOT NULL,
+                            cohort_definition_name            VARCHAR(255)    NOT NULL,
+                            cohort_definition_description        TEXT    NULL,
+                            definition_type_concept_id        INTEGER            NOT NULL,
+                            cohort_definition_syntax            TEXT    NULL,
+                            subject_concept_id                INTEGER            NOT NULL,
+                            cohort_initiation_date            DATE            NULL
+                            );`);
+                await createCohortDefinitionQuery.executeUpdate(connection);
+            }
+        }
+
+        return new CohortEndpoint(
+            connection,
+            schemaName,
+            dialect,
+        )
+    }
 
     private getInsertSyntaxQuery(): string {
         return `JOIN
@@ -70,7 +115,10 @@ export class CohortEndpoint {
 
     // Helper function to execute cohort queries
     private async executeCohortQuery(query: any) {
-        if (this.connection.constructor.name === "TrexConnection") {
+        if (
+            this.connection.constructor.name === "TrexConnection" &&
+            this.dialect !== ANALYTICS_DB_DIALECTS.BIGQUERY // If bigquery, execute cohort queries on cache instead of sourcedb
+        ) {
             return await query.executeQueryOnWriteConnection(this.connection);
         } else {
             return await query.executeQuery(this.connection);
@@ -350,7 +398,9 @@ export class CohortEndpoint {
             const rowCount = await this.executeCohortQuery(insertQuery);
             return rowCount;
         } catch (err) {
-            logger.error(`Failed to insert cohort with data: ${JSON.stringify(cohort)}`);
+            logger.error(
+                `Failed to insert cohort with data: ${JSON.stringify(cohort)}`
+            );
             // Cleanup previously inserted cohort definition and cohort rows
             await this.deleteCohortDefinitionFromDb(cohortDefinitionId);
             await this.deleteCohortFromDb(cohortDefinitionId);

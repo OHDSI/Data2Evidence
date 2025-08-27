@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'patient-analytics-cohort-entry-and-exit'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto('/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -45,11 +45,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Visit' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.getByRole('button', { name: 'Entry Select a Filter Card ◢' }).click()
   await page.locator('#pane-right').getByText('Visit A').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.getByRole('button', { name: 'Exit Select a Filter Card ◢' }).click()
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Change AND to OR, CEE should be removed from filtercards

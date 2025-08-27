@@ -408,6 +408,9 @@ export const i18nDefault = {
     DELETE_USER_DIALOG__YES: "Yes, delete",
     DISCLAIMER__TITLE: "Disclaimer",
     DISCLAIMER_DIALOG__ACCEPT: "Accept",
+    DISCLAIMER_DIALOG_DIALOG__DESCRIPTION:
+      "Please try again. To report the error, please send an email to help@data4life.care.",
+    DISCLAIMER_DIALOG_DIALOG__ERROR: "An error has occurred.",
     DISCLAIMER_DIALOG__TITLE: "Disclaimer",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",
@@ -947,6 +950,7 @@ export const i18nDefault = {
     STARBOARD__NEW_NOTEBOOK_DIALOG_TITLE: "New notebook",
     STARBOARD__NEW_NOTEBOOK_NAME_LABEL: "Name",
     STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER: "Enter notebook name",
+    STARBOARD__NEW_NOTEBOOK_NAME__ALREADY_EXISTS: "The notebook title already exists. Please enter a different title.",
     STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL: "Template (Optional)",
     STARBOARD__NEW_NOTEBOOK_NO_TEMPLATE: "No template",
     STARBOARD__NEW_NOTEBOOK_CANCEL: "Cancel",

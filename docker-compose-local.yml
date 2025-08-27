@@ -7,6 +7,7 @@ services:
     ports:
       - 9229:9229
       - 25432:5432
+      - 25433:5433
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
@@ -21,7 +22,7 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
@@ -157,3 +158,12 @@ services:
     volumes:
       - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
+  
+  logging:
+    ports:
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
+      - DOZZLE_ENABLE_ACTIONS=true

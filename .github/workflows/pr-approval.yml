@@ -1,0 +1,201 @@
+name: PR Approval Check
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created, edited, deleted]
+  merge_group:
+  
+
+# ==== WORKFLOW CONFIGURATION ====
+env:
+  # Approval threshold (0.0 to 1.0)
+  APPROVAL_THRESHOLD: '0.6'
+  
+  # Required approvers
+  REQUIRED_APPROVERS: 'p-hoffmann:3,satish-a0,suwarnoong,SantanM,csafreen'
+
+  # Reaction emoji to check for
+  THUMBS_UP_EMOJI: '+1'
+  THUMBS_DOWN_EMOJI: '-1'
+
+jobs:
+  merge-group-approval:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'merge_group'
+    steps:
+      - name: Auto-approve for merge group
+        run: |
+          echo "✅ Auto-approving for merge group event"
+
+  check-vote:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'merge_group' && github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install @octokit/rest
+
+      - name: Check PR reactions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "type": "module"
+          }
+          EOF
+          
+          cat > check-reactions.js << 'EOF'
+          import { Octokit } from '@octokit/rest';
+          
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN,
+          });
+          
+          // Configuration from environment
+          const THUMBS_UP_EMOJI = process.env.THUMBS_UP_EMOJI || '+1';
+          const THUMBS_DOWN_EMOJI = process.env.THUMBS_DOWN_EMOJI || '-1';
+          const APPROVAL_THRESHOLD = parseFloat(process.env.APPROVAL_THRESHOLD || '0.8');
+          
+          async function checkReactions() {
+            try {
+              const owner = process.env.GITHUB_REPOSITORY.split('/')[0];
+              const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+              const prNumber = parseInt(process.env.PR_NUMBER);
+              
+              if (!prNumber) {
+                console.error('❌ No PR number provided');
+                process.exit(1);
+              }
+              
+              // Parse required approvers with optional multipliers
+              const requiredApproversStr = process.env.REQUIRED_APPROVERS || '';
+              const requiredApprovers = [];
+              const powerUsers = {};
+              
+              requiredApproversStr.split(',').forEach(entry => {
+                const [user, multiplier] = entry.split(':').map(s => s.trim());
+                if (user) {
+                  requiredApprovers.push(user);
+                  if (multiplier && !isNaN(multiplier)) {
+                    powerUsers[user] = parseInt(multiplier);
+                  } else {
+                    powerUsers[user] = 1; // Default multiplier
+                  }
+                }
+              });
+              
+              console.log(`🔍 Checking PR #${prNumber}`);
+              console.log(`📋 Required approvers: ${requiredApprovers.map(u => powerUsers[u] > 1 ? `${u}(x${powerUsers[u]})` : u).join(', ')}`);
+              console.log(`📊 Approval threshold: ${(APPROVAL_THRESHOLD * 100).toFixed(0)}%`);
+              console.log(`👍 Looking for: ${THUMBS_UP_EMOJI} reactions`);
+              console.log(`👎 Subtracting: ${THUMBS_DOWN_EMOJI} reactions`);
+              
+              // Get PR details
+              const { data: pr } = await octokit.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber,
+              });
+              
+              // Get reactions on the PR body (initial comment)
+              const { data: reactions } = await octokit.rest.reactions.listForIssue({
+                owner,
+                repo,
+                issue_number: prNumber,
+              });
+              
+              // Filter thumbs up reactions from required approvers
+              const thumbsUpReactions = reactions.filter(reaction => 
+                reaction.content === THUMBS_UP_EMOJI && 
+                requiredApprovers.includes(reaction.user.login)
+              );
+              
+              // Filter thumbs down reactions from required approvers
+              const thumbsDownReactions = reactions.filter(reaction => 
+                reaction.content === THUMBS_DOWN_EMOJI && 
+                requiredApprovers.includes(reaction.user.login)
+              );
+              
+              // Calculate weighted votes - each user counts once, but power users get multipliers
+              const approversWhoGaveThumbsUp = [...new Set(thumbsUpReactions.map(r => r.user.login))];
+              const approversWhoGaveThumbsDown = [...new Set(thumbsDownReactions.map(r => r.user.login))];
+              
+              // Calculate weighted thumbs up count
+              const weightedThumbsUpCount = approversWhoGaveThumbsUp.reduce((total, user) => {
+                const multiplier = powerUsers[user] || 1;
+                return total + multiplier;
+              }, 0);
+              
+              // Calculate weighted thumbs down count  
+              const weightedThumbsDownCount = approversWhoGaveThumbsDown.reduce((total, user) => {
+                const multiplier = powerUsers[user] || 1;
+                return total + multiplier;
+              }, 0);
+              
+              const netApprovalCount = Math.max(0, weightedThumbsUpCount - weightedThumbsDownCount);
+              
+              const totalRequired = requiredApprovers.length;
+              const approvalPercentage = netApprovalCount / totalRequired;
+              const missingApprovers = requiredApprovers.filter(user => 
+                !approversWhoGaveThumbsUp.includes(user) || approversWhoGaveThumbsDown.includes(user)
+              );
+              
+              console.log(`\n=== 📊 Results ===`);
+              console.log(`PR: "${pr.title}"`);
+              console.log(`Approvers who gave 👍: ${approversWhoGaveThumbsUp.map(u => powerUsers[u] ? `${u}` : u).join(', ') || 'None'}`);
+              console.log(`Approvers who gave 👎: ${approversWhoGaveThumbsDown.map(u => powerUsers[u] ? `${u}` : u).join(', ') || 'None'}`);
+              console.log(`Weighted 👍 votes: ${weightedThumbsUpCount}`);
+              console.log(`Weighted 👎 votes: ${weightedThumbsDownCount}`);
+              console.log(`Net weighted votes: ${netApprovalCount}/${totalRequired}`);
+              console.log(`Approval percentage: ${(approvalPercentage * 100).toFixed(1)}%`);
+              console.log(`Required: ${(APPROVAL_THRESHOLD * 100).toFixed(0)}%`);
+              
+              // Export results for GitHub Actions outputs
+              console.log(`\n=== 📤 GitHub Actions Outputs ===`);
+              console.log(`::set-output name=weighted_thumbs_up_count::${weightedThumbsUpCount}`);
+              console.log(`::set-output name=weighted_thumbs_down_count::${weightedThumbsDownCount}`);
+              console.log(`::set-output name=net_approval_count::${netApprovalCount}`);
+              console.log(`::set-output name=total_required::${totalRequired}`);
+              console.log(`::set-output name=approval_percentage::${(approvalPercentage * 100).toFixed(1)}`);
+              console.log(`::set-output name=approved::${approvalPercentage >= APPROVAL_THRESHOLD}`);
+              console.log(`::set-output name=approvers_thumbs_up::${approversWhoGaveThumbsUp.join(',')}`);
+              console.log(`::set-output name=approvers_thumbs_down::${approversWhoGaveThumbsDown.join(',')}`);
+              console.log(`::set-output name=missing_approvers::${missingApprovers.join(',')}`);
+              
+              if (approvalPercentage >= APPROVAL_THRESHOLD) {
+                console.log(`\n✅ SUCCESS: PR has sufficient net approvals (${(approvalPercentage * 100).toFixed(1)}% >= ${(APPROVAL_THRESHOLD * 100).toFixed(0)}%)`);
+                process.exit(0);
+              } else {
+                console.log(`\n❌ FAILURE: PR does not have sufficient net approvals (${(approvalPercentage * 100).toFixed(1)}% < ${(APPROVAL_THRESHOLD * 100).toFixed(0)}%)`);
+                if (missingApprovers.length > 0) {
+                  console.log(`Missing approvals from: ${missingApprovers.join(', ')}`);
+                }
+                process.exit(1);
+              }
+              
+            } catch (error) {
+              console.error('❌ Error checking reactions:', error.message);
+              process.exit(1);
+            }
+          }
+          
+          checkReactions();
+          EOF
+          
+          node check-reactions.js

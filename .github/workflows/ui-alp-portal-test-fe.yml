@@ -3,6 +3,7 @@ name: d2e-ui/portal tests
 on:
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
@@ -16,8 +17,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - uses: dorny/paths-filter@v3
       id: check_file_changed
