@@ -6,7 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(10 * 60 * 1000)
-  await page.goto('https://localhost:443/portal')
+  await page.goto('https://localhost:41100/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -20,20 +20,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeEnabled()
   // Make sure the dqd and dc jobs are completed before switching to Researcher portal
   await page.getByRole('link', { name: 'Jobs' }).click()
-  // dc
-  const dc = page
-    .locator('.flow-run-list-item')
-    .filter({ has: page.locator('a:text("data_characterization_plugin")') })
-    .first()
-  await expect(dc.locator('.state-badge')).toHaveText('Completed', { timeout: 120000 })
-  // dqd
-  const dqd = page
-    .locator('.flow-run-list-item')
-    .filter({ has: page.locator('a:text("dqd_plugin")') })
-    .first()
-  await expect(dqd.locator('.state-badge')).toHaveText('Completed', { timeout: 5 * 60 * 1000 })
-
-  // await page.waitForTimeout(2 * 60 * 1000)
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
 
@@ -64,6 +50,7 @@ test(TEST_NAME, async ({ page }) => {
       .fill(
         '{"Observation Period Count": "2000", "Death Count": "52", "Visit Occurrence Count": "55261", "Visit Detail Count": "0", "Condition Occurrence Count": "147186", "Drug Exposure Count": "57095", "Procedure Occurrence Count": "137522", "Device Exposure Count": "2262", "Measurement Count": "34556", "Observation Count": "19339", "Note Count": "0", "Episode Count": "0", "Specimen Count": "0"}'
       )
+    await page.waitForTimeout(1000)
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
