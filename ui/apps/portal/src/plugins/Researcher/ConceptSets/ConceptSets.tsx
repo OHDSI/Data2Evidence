@@ -21,10 +21,10 @@ import { ConceptSet } from "../../Researcher/Terminology/utils/types";
 import { TerminologyProps } from "../../Researcher/Terminology/Terminology";
 import SearchBar from "../../../components/SearchBar/SearchBar";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
+import { useActiveDataset, useFeedback, useToken, useTranslation, useUser } from "../../../contexts";
 import "./ConceptSets.scss";
 import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
-
+import env from "../../../env";
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
   ConceptSets = "ConceptSets",
@@ -44,6 +44,11 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   const { setFeedback } = useFeedback();
   const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
+
+  // Get current user's username
+  const nameProp = env.REACT_APP_IDP_NAME_PROP;
+  const { idTokenClaims } = useToken();
+  const userName = idTokenClaims[nameProp];
 
   const handleTabSelectionChange = async (event: React.SyntheticEvent, value: ConceptSetTab) => {
     setTabValue(value);
@@ -73,12 +78,12 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
       };
       const userConceptSets = response
         .filter((conceptSet) => {
-          return conceptSet.createdBy === user.idpUserId;
+          return conceptSet.createdBy === userName;
         })
         .sort(sortFn);
       const sharedConceptSets = response
         .filter((conceptSet) => {
-          return conceptSet.createdBy !== user.idpUserId && conceptSet.shared;
+          return conceptSet.createdBy !== userName && conceptSet.shared;
         })
         .sort(sortFn);
       const list = [...userConceptSets, ...sharedConceptSets];
@@ -199,7 +204,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
                           <TableCell>{row.userName}</TableCell>
                           <TableCell>
                             <IconButton
-                              startIcon={row.createdBy === user.idpUserId ? <EditIcon /> : <VisibilityOnIcon />}
+                              startIcon={row.createdBy === userName ? <EditIcon /> : <VisibilityOnIcon />}
                               onClick={() => handleAddAndEditConceptSet(row.id)}
                             />
                           </TableCell>

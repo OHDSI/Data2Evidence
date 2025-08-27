@@ -297,6 +297,8 @@ export const Terminology: FC<TerminologyProps> = ({
   const showConceptSetFeatures = isConceptSet;
   const showTabNavigation = isConceptSet || isConceptMultiSelect;
 
+  const userName = idTokenClaims[nameProp];
+
   // Get domain context from default filters for messaging
   const getDomainContextMessage = useCallback(() => {
     if (isConceptMultiSelect && defaultFilters) {
@@ -369,7 +371,7 @@ export const Terminology: FC<TerminologyProps> = ({
       }),
       name: conceptSetName,
       shared: conceptSetShared,
-      ...(!conceptSetId && { userName: idTokenClaims[nameProp] }),
+      ...(!conceptSetId && { userName }),
     };
     setIsConceptSetLoading(true);
     try {
@@ -429,7 +431,7 @@ export const Terminology: FC<TerminologyProps> = ({
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(conceptSet.createdBy === user.idpUserId);
+        setIsUserConceptSet(conceptSet.createdBy === userName);
         return;
       } finally {
         setIsConceptSetLoading(false);

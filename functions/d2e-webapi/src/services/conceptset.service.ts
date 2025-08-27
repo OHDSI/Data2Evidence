@@ -79,11 +79,11 @@ export const createConceptSet = async (
   const webapiConceptSets: IConceptSetResponseDto = {
     createdDate: Date.now(),
     createdBy: {
-      name: terminologyCreateConceptSetDto.name,
+      name: terminologyCreateConceptSetDto.userName,
     },
     modifiedDate: Date.now(),
     modifiedBy: {
-      name: terminologyCreateConceptSetDto.name,
+      name: terminologyCreateConceptSetDto.userName,
     },
     hasWriteAccess: false,
     hasReadAccess: false,
@@ -226,11 +226,11 @@ const _mapTerminologyConceptSetToWebapiConceptSet = (
   return {
     createdDate: Date.parse(conceptSet.createdDate),
     createdBy: {
-      name: conceptSet.createdBy,
+      name: conceptSet.userName,
     },
     modifiedDate: Date.parse(conceptSet.modifiedDate),
     modifiedBy: {
-      name: conceptSet.modifiedBy,
+      name: conceptSet.userName,
     },
     tags: [],
     hasWriteAccess: true,
