@@ -6,7 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(10 * 60 * 1000)
-  await page.goto('https://localhost:41100/portal')
+  await page.goto('https://localhost:443/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
