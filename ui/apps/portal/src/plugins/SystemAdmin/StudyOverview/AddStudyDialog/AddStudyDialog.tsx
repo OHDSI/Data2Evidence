@@ -132,7 +132,7 @@ const EMPTY_FORM_DATA: FormData = {
   tokenStudyCode: "",
   schemaOption: "",
   cdmSchemaValue: "", //Optional
-  isSameCdmSchemaForVocab: false,
+  isSameCdmSchemaForVocab: true,
   vocabSchemaValue: "", //Optional
   name: "",
   summary: "",
@@ -239,10 +239,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, [featureFlags]);
 
   const displayDatabases = useMemo(
-    () =>
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(
-        formData.schemaOption
-      ),
+    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
     [formData.schemaOption]
   );
 
@@ -275,9 +272,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displaySchemaNameInput = useMemo(
-    () =>
-      formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM,
+    () => formData.schemaOption === SchemaTypes.CustomCDM || formData.schemaOption === SchemaTypes.ExistingCDM,
     [formData.schemaOption]
   );
 
@@ -633,7 +628,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 handleFormDataChange({
                   schemaOption: event.target.value,
                   cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
-                  isSameCdmSchemaForVocab: false,
+                  isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
                   databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: "",
@@ -786,6 +781,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         {displaySameCdmVocabSchemaCheckbox && (
           <Box mb={4}>
             <Checkbox
+              disabled
               checked={formData.isSameCdmSchemaForVocab}
               checkbox-id="is-same-cdm-schema-for-vocab-checkbox"
               label={getText(i18nKeys.ADD_STUDY_DIALOG__USE_SAME_SCHEMA)}
@@ -844,10 +840,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           displayVocabSchemaInput && (
             <Box mb={4}>
               <TextField
+                disabled
                 fullWidth
                 variant="standard"
                 label={getText(i18nKeys.ADD_STUDY_DIALOG__VOCAB_SCHEMA_NAME)}
-                value={formData.vocabSchemaValue}
+                value={formData.cdmSchemaValue}
                 onChange={(event) => handleFormDataChange({ vocabSchemaValue: event.target.value })}
                 error={formError.vocabSchemaValue.required}
               />
