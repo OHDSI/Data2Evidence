@@ -42,13 +42,13 @@ RUN mkdir -p /usr/local/lib && \
 #RUN --mount=type=cache,target=/usr/local/cargo/registry,id=${TARGETPLATFORM} \
 #    cargo install cargo-strip
 
-COPY ./services/trex/trex /usr/src/trex
+COPY ./services/trex/Trex /usr/src/trex
 WORKDIR /usr/src/trex
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry,id=${TARGETPLATFORM} \
     --mount=type=cache,target=/usr/src/trex/target,id=${TARGETPLATFORM} \
     #(cargo build --profile ${PROFILE} --workspace || true) && \
-    CARGO_BUILD_JOBS=2 GIT_V_TAG=${GIT_V_VERSION} cargo build --profile ${PROFILE} --features "${FEATURES}" && \
+    GIT_V_TAG=${GIT_V_VERSION} cargo build --profile ${PROFILE} --features "${FEATURES}" && \
     #cargo strip && \
     mv /usr/src/trex/target/${PROFILE}/trex /root #&& \
     #cp /usr/src/trex/target/${PROFILE}/build/circe-rust-wrapper-*/out/libcirce-native.so /root/ || true && \
@@ -70,12 +70,12 @@ RUN objcopy --strip-debug \
 FROM builder as ort
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux $TARGETPLATFORM /root/onnxruntime
 
-FROM ghcr.io/p-hoffmann/duckdb-extension-circe:sha-265ca31 AS duckdb_circe
 
 FROM node:20.19.4-trixie-slim AS trex-base
 
 ARG DUCKDB_VERSION=1.3.2
 ENV DUCKDB_VERSION=${DUCKDB_VERSION}
+ENV duckdb_version=${DUCKDB_VERSION}
 
 RUN apt-get update && apt-get install -y curl libssl-dev mesa-vulkan-drivers libgomp1 libopenblas-dev && rm -rf /var/lib/apt/lists/*
 RUN apt-get remove -y perl && apt-get autoremove -y
@@ -87,8 +87,6 @@ COPY --from=builder /root/trex /usr/src/trex
 COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
 COPY --from=builder /usr/local/lib/libduckdb.so /usr/lib/
 
-RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64
-COPY --from=duckdb_circe /extensions/circe.duckdb_extension /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64/circe.duckdb_extension
 
 #ENV DUCKDB_EXTENSION_DIR=/usr/lib/duckdb/extensions \
 #    DUCKDB_CIRCE_EXTENSION=/usr/lib/duckdb/extensions/circe/circe.duckdb_extension
@@ -103,13 +101,12 @@ RUN useradd docker -u 1001 \
     && adduser docker alp
 
 # Create folder to store duckdb extensions for offline plugins
-ENV duckdb_version=1.3.2
 RUN mkdir -p /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
 WORKDIR /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
 RUN apt-get update && apt-get install -y wget 
 RUN for lib in \
-    autocomplete avro aws azure delta excel fts httpfs iceberg icu inet json \
-    mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner tpcds tpch ui vss; do \
+    autocomplete avro aws azure fts httpfs icu inet json \
+    mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
     wget http://extensions.duckdb.org/v${duckdb_version}/linux_amd64/${lib}.duckdb_extension.gz && \
     gzip -d ${lib}.duckdb_extension.gz; \
     done
