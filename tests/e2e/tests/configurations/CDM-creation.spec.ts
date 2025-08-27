@@ -48,17 +48,29 @@ test.describe(() => {
       await page.locator('[id="__input8-__list23-0-inner"]').fill('$$SCHEMA$$."person"')
       await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').click()
       await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').fill('$$SCHEMA$$."person"')
-      await page.locator('[id="__select1-__list23-0-arrow"]').click()
+      await page
+        .locator('[id*="__data"]:has-text("Base Entity Table")')
+        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
+        .locator('[class="sapMSltArrow"]')
+        .click()
       await page.getByRole('option', { name: '"person_id"' }).click()
       await page.getByTitle('Add a Join Entity Table').click()
       await page.locator('[id="__input12-__list35-0-inner"]').click()
       await page.locator('[id="__input12-__list35-0-inner"]').fill('@COND')
       await page.locator('[id="__input13-__list35-0-inner"]').click()
       await page.locator('[id="__input13-__list35-0-inner"]').fill('$$SCHEMA$$."condition_occurrence"')
-      await page.locator('[id="__select8-__list35-0-arrow"]').click()
+      await page
+        .locator('[id*="__data"]:has-text("Join Entity Tables")')
+        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
+        .locator('[class="sapMSltArrow"]')
+        .click()
       await page.getByRole('option', { name: '"person_id"' }).click()
       await page.waitForTimeout(500)
-      await page.locator('[id="__select14-__list35-0-arrow"]').click()
+      await page
+        .locator('[id*="__data"]:has-text("Join Entity Tables")')
+        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Type")')
+        .locator('[class="sapMSltArrow"]')
+        .click()
       await page.getByRole('option', { name: '"condition_type_concept_id"' }).first().click()
       // Delete unused join entity
       if (
