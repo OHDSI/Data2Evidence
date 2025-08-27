@@ -77,6 +77,9 @@ test(TEST_NAME, async ({ page }) => {
       .getByPlaceholder(' ')
       .fill('2')
     await page.getByRole('button', { name: 'Save' }).click({ timeout: 30000 })
+    await expect(
+      page.locator('tr').filter({ hasText: 'Test_dataset_update' }).getByRole('cell', { name: '1', exact: true })
+    ).toBeVisible()
     await page
       .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
