@@ -8,14 +8,18 @@ const MAX_COHORT_DEFINITIONS = 100
 const USE_CACHE = true
 const cache = {}
 
+const logRequest = req => {
+  console.log(`🔄 WebAPI Request:', '${req.method} ${req.path}`)
+  console.log('Query:', req.query)
+  console.log('Body:', req.body)
+  console.log('Headers:', req.headers)
+  console.log('Params:', req.params)
+}
+
 const setupWebapiRoutes = app => {
   // GET /d2e-webapi/cohortdefinition/23
   app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
-    console.log('🔄 WebAPI Request:', 'GET /d2e-webapi/cohortdefinition/23')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
-    console.log('Params:', req.params)
+    logRequest(req)
 
     const { cohortDefinitionId } = req.params
 
@@ -74,10 +78,7 @@ const setupWebapiRoutes = app => {
 
   // POST /d2e-webapi/cohortdefinition
   app.post('/d2e-webapi/cohortdefinition', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'POST /d2e-webapi/cohortdefinition')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
@@ -91,10 +92,7 @@ const setupWebapiRoutes = app => {
 
   // PUT /d2e-webapi/cohortdefinition
   app.put('/d2e-webapi/cohortdefinition', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'PUT /d2e-webapi/cohortdefinition')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     const samplePayload = {
       id: 23,
@@ -135,10 +133,7 @@ const setupWebapiRoutes = app => {
   // GET /analytics-svc/api/services/bookmark
   app.get('/analytics-svc/api/services/bookmark', async (req, res) => {
     const cacheKey = 'get_/WebAPI/cohortdefinition/'
-    console.log('🔄 WebAPI Request:', 'GET /analytics-svc/api/services/bookmark')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
@@ -226,10 +221,7 @@ const setupWebapiRoutes = app => {
 
   // GET /analytics-svc/api/services/values
   app.get('/analytics-svc/api/services/values', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'GET /analytics-svc/api/services/values')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     return res.send({
       data: [
@@ -252,13 +244,7 @@ const setupWebapiRoutes = app => {
 
   // GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e
   app.get('/d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e', (req, res) => {
-    console.log(
-      '🔄 WebAPI Request:',
-      'GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e'
-    )
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
@@ -272,10 +258,7 @@ const setupWebapiRoutes = app => {
 
   // DELETE /d2e-webapi/cohortdefinition/1
   app.delete('/d2e-webapi/cohortdefinition/1', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'DELETE /d2e-webapi/cohortdefinition/1')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
@@ -289,10 +272,7 @@ const setupWebapiRoutes = app => {
 
   // GET /terminology/concept-set
   app.get('/terminology/concept-set', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'GET /terminology/concept-set')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     const sample = [
       {
@@ -332,12 +312,9 @@ const setupWebapiRoutes = app => {
       timestamp: new Date().toISOString(),
     })
   })
-  // GET /terminology/concept-set
+  // POST /terminology/concept-set
   app.post('/terminology/concept-set', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'POST /terminology/concept-set')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     const samplePayload = {
       concepts: [
@@ -366,10 +343,7 @@ const setupWebapiRoutes = app => {
   })
 
   app.put('/terminology/concept-set', (req, res) => {
-    console.log('🔄 WebAPI Request:', 'PUT /terminology/concept-set')
-    console.log('  Query:', req.query)
-    console.log('  Body:', req.body)
-    console.log('  Headers:', req.headers)
+    logRequest(req)
 
     const samplePayload = {
       concepts: [
