@@ -1,4 +1,4 @@
-import { PUBLIC_WEBAPI_DATASOURCE, USE_PUBLIC_WEBAPI } from "../components/Charts/util";
+import { PUBLIC_WEBAPI_DATASOURCE } from "../components/Charts/util";
 import {
   CreateCacheFlowRun,
   CreateDcFlowRun,
@@ -12,6 +12,8 @@ import {
 } from "../types";
 import { api } from "./api";
 import { request } from "./request";
+
+import env from "../env";
 
 const JOBPLUGIN_URL = "jobplugins/";
 
@@ -145,14 +147,7 @@ export class Dataflow {
   }
 
   public async getDataCharacterizationResults(flowRunId: string, sourceKey: string, datasetId: string): Promise<any> {
-    if (USE_PUBLIC_WEBAPI) {
-      // TODO: REMOVE
-      await request({
-        baseURL: JOBPLUGIN_URL,
-        url: `dqd/data-characterization/flow-run/${flowRunId}/results/${sourceKey}`,
-        method: "GET",
-        params: { datasetId: datasetId },
-      });
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.getDataCharacterizationResults(PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K, sourceKey);
     } else {
       return request({
@@ -170,26 +165,20 @@ export class Dataflow {
     conceptId: string,
     datasetId: string
   ): Promise<any> {
-    if (USE_PUBLIC_WEBAPI) {
-      // TODO: REMOVE
-      await request({
-        baseURL: JOBPLUGIN_URL,
-        url: `dqd/data-characterization/flow-run/${flowRunId}/results/${sourceKey}/${conceptId}`,
-        method: "GET",
-        params: { datasetId: datasetId },
-      });
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.getDataCharacterizationResultsDrilldown(
         PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K,
         sourceKey,
         conceptId
       );
+    } else {
+      return request({
+        baseURL: JOBPLUGIN_URL,
+        url: `dqd/data-characterization/flow-run/${flowRunId}/results/${sourceKey}/${conceptId}`,
+        method: "GET",
+        params: { datasetId: datasetId },
+      });
     }
-    return request({
-      baseURL: JOBPLUGIN_URL,
-      url: `dqd/data-characterization/flow-run/${flowRunId}/results/${sourceKey}/${conceptId}`,
-      method: "GET",
-      params: { datasetId: datasetId },
-    });
   }
 
   public getHistoricalDataQuality(datasetId: string) {

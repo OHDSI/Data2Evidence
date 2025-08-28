@@ -56,7 +56,6 @@ export const parseBarChartData = (
   };
 };
 
-export const USE_PUBLIC_WEBAPI = true;
 export enum PUBLIC_WEBAPI_DATASOURCE {
   SYNPUF1K = "SYNPUF1K",
   SYNPUF5PCT = "SYNPUF5PCT",

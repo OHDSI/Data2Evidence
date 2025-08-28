@@ -1,17 +1,18 @@
 import axios, { AxiosRequestConfig } from "axios";
-
-const PUBLIC_WEBAPI_PROXY_URL = "https://atlas-demo.ohdsi.org/WebAPI";
+import env from "../env";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
 
   constructor() {
-    this.baseURL = PUBLIC_WEBAPI_PROXY_URL;
+    this.baseURL = env.REACT_APP_PUBLIC_WEBAPI_PROXY_URL;
+    if (!this.baseURL) {
+      throw new Error("No url is set for PublicWebapiProxyAPI");
+    }
   }
 
   private async getRequestConfig() {
     const options: AxiosRequestConfig = {};
-
     return options;
   }
 
