@@ -8,7 +8,6 @@ import { services } from "../env.ts";
 import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type.ts";
 import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
 import { PortalServerAPI } from "./api/PortalServerAPI.ts";
-
 interface IKernelModel extends Kernel.IModel {
   id: string;
   username: string;
@@ -51,7 +50,7 @@ export const startStrategusResultsViewer = async (
       )
       .replace("$DATABASE_USER", readUser)
       .replace("$DATABASE_PASSWORD", readPassword)
-      .replace("$STUDY_ID", studyId);
+      .replace("$STUDY_ID", encodeURIComponent(studyId));
 
     const future = await kernelConnection.requestExecute({
       code: r_code,
