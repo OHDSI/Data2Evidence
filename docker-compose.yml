@@ -557,6 +557,7 @@ services:
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: "${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}" #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
+      PLUGINS_INFORMATION_URL: ${PLUGINS_INFORMATION_URL:-https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
       DATAFLOW_TEMPLATE_REPO_URL: ${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-main}
@@ -1490,7 +1491,7 @@ services:
       - 1128-1129:1128-1129
       - 39013:39013
       - 39017:39017
-      - 39041-39045:39041-39045 
+      - 39041-39045:39041-39045
       - 59013-59014:59013-59014
     volumes:
       - hana-data:/hana/mounts
