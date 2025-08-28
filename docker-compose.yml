@@ -1053,6 +1053,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
       - "postgres"
