@@ -43,10 +43,14 @@ def data_characterization_plugin(options: DCOptionsType):
         database_code=options.databaseCode,
     )
 
+    # Todo: Update implementation if Hana uses trex
+    # If the actual dialect is HANA, force use_trex_connection to False
+    use_trex_connection = False if dbdao.dialect == SupportedDatabaseDialects.HANA else options.use_trex_connection
+
     cdm_source = get_cdm_source(
         dbdao,
         schema=options.schemaName,
-        use_trex_connection=options.use_trex_connection,
+        use_trex_connection=use_trex_connection,
     )
 
     r_connection_string = dbdao.get_database_connector_connection_string(
@@ -55,6 +59,7 @@ def data_characterization_plugin(options: DCOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
+    # Todo: Update implementation if Hana uses trex
     # Create Achilles parameters from DCOptions
     achilles_params = AchillesParams(
         **options.model_dump(),
@@ -63,6 +68,7 @@ def data_characterization_plugin(options: DCOptionsType):
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
+        use_trex_connection=use_trex_connection,
     )
 
     dc_schema = create_results_schema(
@@ -81,7 +87,8 @@ def data_characterization_plugin(options: DCOptionsType):
 
         execute_achilles_wo(achilles_params, flow_run_id)
 
-        if not options.use_trex_connection:
+        # Todo: Update implementation if Hana uses trex
+        if not use_trex_connection:
 
             execute_export_to_ares_wo = execute_export_to_ares.with_options(
                 on_failure=[
