@@ -4,6 +4,17 @@ const mockData = require('./mock-data.json')
 const setupWebapiRoutes = require('./webapi-routes')
 const app = express()
 
+// Global error handlers
+process.on('uncaughtException', error => {
+  console.error('Uncaught Exception:', error)
+  console.error('Stack trace:', error.stack)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise)
+  console.error('Reason:', reason)
+})
+
 app.use(cors())
 app.use(express.json())
 
