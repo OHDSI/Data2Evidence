@@ -72,6 +72,7 @@ export const env = {
     GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP,
     PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "./plugins",
     REP_PG: _env.REP_PG,
+    PORTAL__LOG_DISCLAIMER: _env.PORTAL__LOG_DISCLAIMER,
     PREFECT_DOCKER_NETWORK: _env.PREFECT_DOCKER_NETWORK || `${_env.PROJECT_NAME}_data`,
     PREFECT_POOL: "docker-pool",
     PROJECT_NAME: _env.PROJECT_NAME,
@@ -100,4 +101,5 @@ export const env = {
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
     PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop',
     PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: _env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG ? JSON.parse(_env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG) : {},
+    PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true'
 }

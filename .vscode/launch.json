@@ -37,7 +37,7 @@
       ]
     },
     {
-      "name": "alp-dataflow-gen-local",
+      "name": "hades-local",
       "type": "debugpy",
       "request": "attach",
       "connect": {
@@ -46,8 +46,8 @@
       },
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/services/alp-dataflow-gen/pysrc",
-          "remoteRoot": "./pysrc"
+          "localRoot": "${workspaceFolder}/flows",
+          "remoteRoot": "./flows"
         }
       ]
     },

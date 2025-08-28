@@ -1,0 +1,16 @@
+{
+    "name": "@data2evidence/trex-circe",
+    "version": "0.5.0",
+    "description": "circe",
+    "scripts": {
+      "prepack": "bash ./build.sh"
+    },
+    "author": "",
+    "license": "Apache-2.0",
+    "trex": {
+        "core": {
+            "name": "circe"
+        }
+      }
+  }
+  

@@ -244,6 +244,10 @@ export const Information: FC = () => {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
+                                <TableRow>
+                                  <TableCell>Dataset ID</TableCell>
+                                  <TableCell>{activeDatasetId}</TableCell>
+                                </TableRow>
                                 {attributes.map((studyAttribute: StudyAttribute) => (
                                   <TableRow key={studyAttribute.attributeId}>
                                     <TableCell>{studyAttribute.attributeConfig.name}</TableCell>

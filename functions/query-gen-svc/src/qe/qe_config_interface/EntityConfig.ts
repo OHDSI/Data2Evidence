@@ -63,7 +63,7 @@ export class EntityConfig extends ConfigEntity {
         return this.__config.defaultFilter;
     }
 
-    public getAttribute(attribute: string): ConfigEntity {
+    public getAttribute(attribute: string, parentEntity?: string): ConfigEntity {
         if (attribute.toLowerCase() === "interaction_id") {
             return new AttributeConfig(
                 {
@@ -79,14 +79,18 @@ export class EntityConfig extends ConfigEntity {
                 this.settings
             );
         } else if (attribute.toLowerCase() === "parent_interact_id") {
+
+            if(!parentEntity) throw new Error("Parent entity undefined!");
+
+            const parentInteraction = this.__config?.parentInteractionsMapping?.find((parentInt) => {
+                return (parentInt.parentMappingInteraction.indexOf(`${parentEntity}`) > -1)
+            });
+
             return new AttributeConfig(
                 {
                     name: "parent_interact_id",
                     type: "text",
-                    expression:
-                        this.baseEntity +
-                        "." +
-                        this.getColumn("PARENT_INTERACT_ID"),
+                    expression: parentInteraction?.currentMappingInteractionId || `${this.baseEntity}.${this.getColumn("PARENT_INTERACT_ID")}`,
                     attributes: [],
                 },
                 this.placeholderMap,

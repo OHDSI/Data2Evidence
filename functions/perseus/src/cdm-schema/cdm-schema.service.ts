@@ -20,14 +20,24 @@ export class CDMSchemaService {
   }
 
   private async getSchemaFromCsv(cdmVersion: string): Promise<TableSchema[]> {
-    const p = `${path
-      .dirname(path.fromFileUrl(import.meta.url).replace(/\/cdm-schema/, ""))
-      .replace(/\/usr\/src/, ".")
-      .replace(
-        /\/var\/tmp\/sb-compile-trex\/d2ef/,
-        Deno.env.get("TREX_FUNCTION_PATH")
-      )}/model/sources/CDM/CDMv${cdmVersion}.csv`;
+    const functionRoot = Deno.env.get("TREX_FUNCTION_PATH") ?? "";
+    const currentDir = path.dirname(path.fromFileUrl(import.meta.url));
+    const schemaBaseDir = path.dirname(currentDir);
 
+    const TREX_PREFIX = "/var/tmp/sb-compile-trex";
+    let baseDir = schemaBaseDir;
+
+    if (functionRoot && baseDir.startsWith(TREX_PREFIX)) {
+      const functionName = path.basename(functionRoot);
+      const afterPrefix = baseDir.slice(TREX_PREFIX.length);
+      const prefix = `/${functionName}`;
+      const rest = afterPrefix.startsWith(prefix)
+        ? afterPrefix.slice(prefix.length)
+        : afterPrefix;
+      baseDir = path.join(functionRoot, rest);
+    }
+
+    const p = path.join(baseDir, `model/sources/CDM/CDMv${cdmVersion}.csv`);
     try {
       const fileContent = await Deno.readTextFile(p);
 
