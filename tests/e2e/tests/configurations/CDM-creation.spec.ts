@@ -291,7 +291,7 @@ test.describe(() => {
       await expect(page.getByText('Success')).toBeVisible()
       await page.getByRole('button', { name: 'OK' }).click()
       await page.getByRole('button', { name: 'Preview' }).click()
-      await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
+      await expect.soft(page).toHaveScreenshot('CDM-creation-linux.png', { maxDiffPixels: 100 })
       await page.getByRole('button', { name: 'Close' }).click()
       await page.getByRole('button', { name: 'Save & Activate' }).click()
       await page.getByRole('button', { name: 'OK' }).click()
