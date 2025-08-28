@@ -10,7 +10,7 @@ test('Concepts', async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
   await expect(page.getByText('1–25 of 444')).toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-1-linux.png', { maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot('concept-sets-1.png', { maxDiffPixels: 100 })
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
   await page.getByTestId('button').click() // click on the "Add concept set" button
   await page.getByRole('textbox', { name: 'search terms' }).click()
@@ -57,5 +57,5 @@ test('Concepts', async ({ page }) => {
   await page.getByRole('button', { name: 'Update' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByText('413 / 2694')).toBeVisible({ timeout: 10000 })
-  await expect(page).toHaveScreenshot('concept-set-2-linux.png', { maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
 })
