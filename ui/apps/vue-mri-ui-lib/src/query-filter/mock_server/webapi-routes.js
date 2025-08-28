@@ -27,7 +27,7 @@ const setupWebapiRoutes = app => {
 
     const { cohortDefinitionId } = req.params
 
-    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}`)
+    const response = await api.get(`/cohortdefinition/${encodeURIComponent(cohortDefinitionId)}`)
 
     const { data } = response
 
