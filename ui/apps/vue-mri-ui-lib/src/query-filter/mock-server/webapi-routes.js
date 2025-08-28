@@ -4,7 +4,7 @@
 const { default: axios } = require('axios')
 
 // server has 20,000
-const MAX_COHORT_DEFINITIONS = 1000
+const MAX_COHORT_DEFINITIONS = 100
 const USE_CACHE = true
 const cache = {}
 
@@ -162,6 +162,9 @@ const setupWebapiRoutes = app => {
     }
 
     const mappedData = []
+
+    // data = [data.find(d => d.name === 'Kohorte 1')]
+
     for (let i = 0; i < MAX_COHORT_DEFINITIONS; i += 1) {
       const d = data[i]
       mappedData[i] = {
