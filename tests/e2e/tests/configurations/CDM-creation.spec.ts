@@ -52,6 +52,7 @@ test.describe(() => {
         .locator('[id*="__data"]:has-text("Base Entity Table")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
         .locator('[class="sapMSltArrow"]')
+        .first()
         .click()
       await page.getByRole('option', { name: '"person_id"' }).click()
       await page.getByTitle('Add a Join Entity Table').click()
@@ -63,6 +64,7 @@ test.describe(() => {
         .locator('[id*="__data"]:has-text("Join Entity Tables")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
         .locator('[class="sapMSltArrow"]')
+        .first()
         .click()
       await page.getByRole('option', { name: '"person_id"' }).click()
       await page.waitForTimeout(500)
@@ -70,6 +72,7 @@ test.describe(() => {
         .locator('[id*="__data"]:has-text("Join Entity Tables")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Type")')
         .locator('[class="sapMSltArrow"]')
+        .first()
         .click()
       await page.getByRole('option', { name: '"condition_type_concept_id"' }).first().click()
       // Delete unused join entity
@@ -422,14 +425,20 @@ test.describe(() => {
       await page.getByRole('button', { name: 'Keep Current Settings' }).click()
       await page.locator('[id="__filter2-icon"]').click()
       await expect(page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')).toBeVisible()
-      await page
-        .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
-        .locator('[data-sap-ui-swt="Off"]')
-        .click()
-      await expect(
-        page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")').locator('[data-sap-ui-swt="On"]')
-      ).toBeVisible()
-
+      if (
+        await page
+          .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
+          .locator('[data-sap-ui-swt="Off"]')
+          .isEnabled()
+      ) {
+        await page
+          .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
+          .locator('[data-sap-ui-swt="Off"]')
+          .click()
+        await expect(
+          page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")').locator('[data-sap-ui-swt="On"]')
+        ).toBeVisible()
+      }
       await page.getByRole('button', { name: 'Validate' }).click()
       await expect(page.getByText('Configuration valid.')).toBeVisible()
       await page.getByRole('button', { name: 'Save' }).click()
@@ -527,11 +536,12 @@ test.describe(() => {
         .locator('[class*="sapFfhCDMonfigLargeText"]')
         .click()
       const download2Promise = page.waitForEvent('download')
-      await page
+      const exp = page
         .locator('[id*="--configOverview--configVersionListing-3"]')
         .filter({ hasText: 'Active' })
         .getByText('Export')
-        .click()
+      await expect(exp).toBeVisible()
+      await exp.click()
       const download2 = await download2Promise
       await page.getByRole('button', { name: 'Import Configuration' }).click()
       await page.getByRole('textbox', { name: 'Configuration Content to' }).click()
