@@ -93,6 +93,7 @@ RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinyda
 RUN Rscript -e 'remotes::install_github("ohdsi/OhdsiShinyAppBuilder")'
 RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiReportGenerator", dependencies = TRUE,quiet=FALSE)'
 RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@RC-3.2.0", dependencies=TRUE,quiet=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/TreatmentPatterns@v3.1.1)'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
