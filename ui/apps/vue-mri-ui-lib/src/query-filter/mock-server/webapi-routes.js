@@ -1,7 +1,11 @@
 // WebAPI Routes - Customize these endpoints as needed
 // This file is NOT auto-generated and won't be overwritten by parse-har.js
 
-const { default: axios } = require('axios')
+const { default: axios, Axios } = require('axios')
+
+const api = axios.create({
+  baseURL: 'https://atlas-demo.ohdsi.org/WebAPI',
+})
 
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 100
@@ -23,20 +27,7 @@ const setupWebapiRoutes = app => {
 
     const { cohortDefinitionId } = req.params
 
-    const response = await axios.get(`https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/${cohortDefinitionId}`, {
-      headers: {
-        'sec-ch-ua-platform': '"macOS"',
-        Authorization: 'null',
-        Referer: 'https://atlas-demo.ohdsi.org/',
-        'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-        'sec-ch-ua-mobile': '?0',
-        'X-Requested-With': 'XMLHttpRequest',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-        Accept: '*/*',
-        'Action-Location': 'https://atlas-demo.ohdsi.org/#/cohortdefinitions',
-      },
-    })
+    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}`)
 
     const { data } = response
 
@@ -137,20 +128,7 @@ const setupWebapiRoutes = app => {
 
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
-      const response = await axios.get('https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/', {
-        headers: {
-          'sec-ch-ua-platform': '"macOS"',
-          Authorization: 'null',
-          Referer: 'https://atlas-demo.ohdsi.org/',
-          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          'sec-ch-ua-mobile': '?0',
-          'X-Requested-With': 'XMLHttpRequest',
-          'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-          Accept: '*/*',
-          'Action-Location': 'https://atlas-demo.ohdsi.org/#/cohortdefinitions',
-        },
-      })
+      const response = await api.get('/cohortdefinition/')
 
       data = response.data
       cache[cacheKey] = data
