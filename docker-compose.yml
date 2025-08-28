@@ -730,13 +730,22 @@ services:
           }
 
           # Flowise reverse proxy
+          # Normalize /flowise (no trailing slash) to /flowise/
+          @flowise_root {
+            path /flowise
+          }
+          redir @flowise_root /flowise/
+
+          # Main Flowise app under /flowise/*
           @flowise {
             path /flowise/*
           }
 
           handle @flowise {
-            uri strip_prefix /flowise
             reverse_proxy http://${PROJECT_NAME:-d2e}-flowise:41160 {
+              header_up X-Forwarded-Proto {scheme}
+              header_up X-Forwarded-Host {host}
+              header_up X-Forwarded-Prefix /flowise
               transport http {
                 read_buffer 8192
               }
@@ -853,13 +862,15 @@ services:
 
   flowise:
     container_name: &c32 ${PROJECT_NAME:-d2e}-flowise
-    image: flowiseai/flowise:latest
+    image: flowise:prefix
     restart: always
     networks:
       alp:
         priority: 20
+    user: "0"
     environment:
       PORT: 41160
+      BASE_PATH: /flowise
       # DATABASE
       DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
       DATABASE_PATH: ${DATABASE_PATH:-/root/.flowise}
@@ -908,7 +919,7 @@ services:
       DISABLED_NODES: ${DISABLED_NODES}
       MODEL_LIST_CONFIG_JSON: ${MODEL_LIST_CONFIG_JSON}
       # AUTH PARAMETERS
-      APP_URL: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/flowise
+      APP_URL: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}/flowise
       JWT_AUTH_TOKEN_SECRET: ${JWT_AUTH_TOKEN_SECRET:-change-me}
       JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET:-change-me}
       JWT_ISSUER: ${JWT_ISSUER:-d2e}
@@ -968,7 +979,7 @@ services:
     volumes:
       - flowise-data:/root/.flowise
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:41160/api/v1/ping"]
+      test: ["CMD", "curl", "-f", "http://localhost:41160/flowise/api/v1/ping"]
       interval: 10s
       timeout: 5s
       retries: 5

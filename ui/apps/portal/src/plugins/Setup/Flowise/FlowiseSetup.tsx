@@ -4,8 +4,10 @@ import env from "../../../env";
 export const FlowiseSetup: FC = () => {
   const flowiseUrl = useMemo(() => {
     const configured = (env as any).REACT_APP_FLOWWISE_URL as string | undefined;
-    // Prefer configured URL; fallback to caddy proxied path
-    return configured && configured.length > 0 ? configured : "/flowise/";
+    if (configured && configured.length > 0) return configured;
+
+    // Default: reverse-proxied path (works in local stack and production)
+    return "/flowise/";
   }, []);
 
   const openFlowise = useCallback(() => {
