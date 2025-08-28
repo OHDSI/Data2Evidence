@@ -15,27 +15,27 @@ const language = "en";
 
 export enum DC_RESULTS_SOURCE_KEYS {
     DASHBOARD = "dashboard",
-    DATA_DENSITY = "data_density",
+    DATADENSITY = "datadensity",
     PERSON = "person",
     VISIT = "visit",
     CONDITION = "condition",
-    CONDITION_ERA = "condition_era",
+    CONDITIONERA = "conditionera",
     PROCEDURE = "procedure",
     DRUG = "drug",
-    DRUG_ERA = "drug_era",
+    DRUGERA = "drugera",
     MEASUREMENT = "measurement",
     OBSERVATION = "observation",
-    OBSERVATION_PERIOD = "observation_period",
+    OBSERVATIONPERIOD = "observationPeriod",
     DEATH = "death",
 }
 
 export enum DC_RESULTS_DRILLDOWN_SOURCE_KEYS {
     VISIT = "visit",
     CONDITION = "condition",
-    CONDITION_ERA = "condition_era",
+    CONDITIONERA = "conditionera",
     PROCEDURE = "procedure",
     DRUG = "drug",
-    DRUG_ERA = "drug_era",
+    DRUGERA = "drugera",
     MEASUREMENT = "measurement",
     OBSERVATION = "observation",
 }
@@ -47,8 +47,8 @@ const getDcResultsSqlConfig = (sourceKey: string) => {
         default:
             sqlConfig = DC_RESULTS_CONFIG.DASHBOARD;
             break;
-        case DC_RESULTS_SOURCE_KEYS.DATA_DENSITY:
-            sqlConfig = DC_RESULTS_CONFIG.DATA_DENSITY;
+        case DC_RESULTS_SOURCE_KEYS.DATADENSITY:
+            sqlConfig = DC_RESULTS_CONFIG.DATADENSITY;
             break;
         case DC_RESULTS_SOURCE_KEYS.PERSON:
             sqlConfig = DC_RESULTS_CONFIG.PERSON;
@@ -59,8 +59,8 @@ const getDcResultsSqlConfig = (sourceKey: string) => {
         case DC_RESULTS_SOURCE_KEYS.CONDITION:
             sqlConfig = DC_RESULTS_CONFIG.CONDITION;
             break;
-        case DC_RESULTS_SOURCE_KEYS.CONDITION_ERA:
-            sqlConfig = DC_RESULTS_CONFIG.CONDITION_ERA;
+        case DC_RESULTS_SOURCE_KEYS.CONDITIONERA:
+            sqlConfig = DC_RESULTS_CONFIG.CONDITIONERA;
             break;
         case DC_RESULTS_SOURCE_KEYS.PROCEDURE:
             sqlConfig = DC_RESULTS_CONFIG.PROCEDURE;
@@ -68,8 +68,8 @@ const getDcResultsSqlConfig = (sourceKey: string) => {
         case DC_RESULTS_SOURCE_KEYS.DRUG:
             sqlConfig = DC_RESULTS_CONFIG.DRUG;
             break;
-        case DC_RESULTS_SOURCE_KEYS.DRUG_ERA:
-            sqlConfig = DC_RESULTS_CONFIG.DRUG_ERA;
+        case DC_RESULTS_SOURCE_KEYS.DRUGERA:
+            sqlConfig = DC_RESULTS_CONFIG.DRUGERA;
             break;
         case DC_RESULTS_SOURCE_KEYS.MEASUREMENT:
             sqlConfig = DC_RESULTS_CONFIG.MEASUREMENT;
@@ -77,8 +77,8 @@ const getDcResultsSqlConfig = (sourceKey: string) => {
         case DC_RESULTS_SOURCE_KEYS.OBSERVATION:
             sqlConfig = DC_RESULTS_CONFIG.OBSERVATION;
             break;
-        case DC_RESULTS_SOURCE_KEYS.OBSERVATION_PERIOD:
-            sqlConfig = DC_RESULTS_CONFIG.OBSERVATION_PERIOD;
+        case DC_RESULTS_SOURCE_KEYS.OBSERVATIONPERIOD:
+            sqlConfig = DC_RESULTS_CONFIG.OBSERVATIONPERIOD;
             break;
         case DC_RESULTS_SOURCE_KEYS.DEATH:
             sqlConfig = DC_RESULTS_CONFIG.DEATH;
@@ -97,8 +97,8 @@ const getDcDrilldownResultsSqlConfig = (sourceKey: string) => {
         case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.CONDITION:
             sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.CONDITION;
             break;
-        case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.CONDITION_ERA:
-            sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.CONDITION_ERA;
+        case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.CONDITIONERA:
+            sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.CONDITIONERA;
             break;
         case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.PROCEDURE:
             sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.PROCEDURE;
@@ -106,8 +106,8 @@ const getDcDrilldownResultsSqlConfig = (sourceKey: string) => {
         case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.DRUG:
             sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.DRUG;
             break;
-        case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.DRUG_ERA:
-            sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.DRUG_ERA;
+        case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.DRUGERA:
+            sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.DRUGERA;
             break;
         case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.MEASUREMENT:
             sqlConfig = DC_RESULTS_DRILLDOWN_CONFIG.MEASUREMENT;
@@ -120,10 +120,14 @@ const getDcDrilldownResultsSqlConfig = (sourceKey: string) => {
 };
 
 // Function to map key to uppercase, this is required due to differences in table name casing in databases, e.g uppercase in HANA and lowercase in POSTGRES
+// Also remove underscores from keys
 const mapDcResultKeysToUppercase = (data: unknown[]) => {
     return data.map((obj) => {
         return Object.fromEntries(
-            Object.entries(obj).map(([k, v]) => [k.toUpperCase(), v])
+            Object.entries(obj).map(([k, v]) => [
+                k.toUpperCase().replace(/_/g, ""),
+                v,
+            ])
         );
     });
 };
@@ -199,7 +203,12 @@ export async function getDataCharacterizationResult(
             ])
         );
 
-        res.status(200).send(dcResults);
+        // If results are of type treemap, return results as array instead of a json with treemap as rootlevel key
+        if (dcResults?.treemap) {
+            res.status(200).send(dcResults.treemap);
+        } else {
+            res.status(200).send(dcResults);
+        }
     } catch (err) {
         logger.error(err);
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
