@@ -126,13 +126,17 @@ export class UserArtifactRepository {
   async getUserArtifactSequenceNextval(serviceName: ServiceName): Promise<number> {
     const dataSource = await this.getDatasource();
     const queryRunner = await dataSource.createQueryRunner();
-    const result = await queryRunner.manager.query<{ id: number }[]>(
-      `SELECT nextval('portal.${ArtifactSequenceMapping[serviceName as keyof typeof ArtifactSequenceMapping]}') as id;`,
-    );
+    try {
+      const result = await queryRunner.manager.query<{ id: number }[]>(
+        `SELECT nextval('portal.${ArtifactSequenceMapping[serviceName as keyof typeof ArtifactSequenceMapping]}') as id;`,
+      );
 
-    if (result.length !== 1) {
-      throw new Error("Error getting concept_set_id_seq sequence nextval");
+      if (result.length !== 1) {
+        throw new Error("Error getting concept_set_id_seq sequence nextval");
+      }
+      return result[0].id;
+    } finally {
+      await queryRunner.release()
     }
-    return result[0].id;
   }
 }
