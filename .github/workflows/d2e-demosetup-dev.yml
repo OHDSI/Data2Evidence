@@ -139,13 +139,8 @@ jobs:
       - name: UI Setup yarn
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
-        run: npm install -g yarn
-      # - name: UI Setup Python
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: "3.9"
-      - name: UI Install Homebrew and Build
+        run: npm install -g yarn      
+      - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
         env:
@@ -153,11 +148,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl file git
-          # bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-          # echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
-          # echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
-          # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           yarn
           yarn build-all 2>/dev/null
       - name: UI docker-compose-local
