@@ -55,6 +55,36 @@ paths:
             application/json:
               schema:
                 type: string
+  /terminology/concept/count:
+    get:
+      description: Get concepts count for current search and filter
+      summary: Get concepts count for current search and filter
+      tags:
+        - Concept
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: datasetId
+          in: query
+        - schema:
+            type: string
+          required: true
+          name: code
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: filter
+          in: query
+      responses:
+        "200":
+          description: Object with concept set data.
+          content:
+            application/json:
+              schema:
+                type: number
   /terminology/concept/filter-options:
     get:
       description: Get filter options for current search
