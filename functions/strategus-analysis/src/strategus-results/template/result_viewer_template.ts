@@ -3,6 +3,7 @@ library(OhdsiShinyAppBuilder)
 library(OhdsiShinyModules)
 library(shiny)
 library(future)
+library(TreatmentPatterns)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 
@@ -17,6 +18,30 @@ resultsConnectionDetails <- DatabaseConnector::createConnectionDetails(
 
 resultsConnectionDetails$finalize <- function() {
   try(DatabaseConnector::disconnect(connection), silent = TRUE)
+}
+
+treatmentPathways <- data.frame(
+  pathway = c("Acetaminophen", "Acetaminophen-Amoxicillin+Clavulanate",
+              "Acetaminophen-Aspirin", "Amoxicillin+Clavulanate", "Aspirin"),
+  freq = c(206, 6, 14, 48, 221),
+  sex = rep("all", 5),
+  age = rep("all", 5),
+  index_year = rep("all", 5)
+)
+
+patternsModuleUI <- function(id) {
+  ns <- NS(id)  # Namespace for the module
+  fluidPage(
+    sunburstR::sunburstOutput(ns("sunburst"))  # Use the namespaced ID
+  )
+}
+
+patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) {
+  moduleServer(id, function(input, output, session) {
+    output$sunburst <- sunburstR::renderSunburst({
+      createSunburstPlot(treatmentPathways)  # Render the sunburst plot
+    })
+  })
 }
 
 # ADD OR REMOVE MODULES TAILORED TO YOUR STUDY
@@ -41,7 +66,21 @@ shinyConfig <- initializeModuleConfig() |>
   ) |>
   addModuleConfig(
     createDefaultEstimationConfig()
-  ) 
+  ) |>
+  addModuleConfig(
+    createModuleConfig(
+      moduleId = 'patterns',
+      tabName = "TreatmentPatterns",
+      shinyModulePackage = NULL,
+      shinyModulePackageVersion = NULL,
+      moduleUiFunction = patternsModuleUI,
+      moduleServerFunction = patternsModuleServer,
+      moduleInfoBoxFile = function(){},
+      moduleIcon = "info",
+      installSource = "CRAN",
+      gitHubRepo = NULL
+    )
+  )
 
 # Set options for base URL
 options(shiny.base_url = "/strategus-results/$STUDY_ID/")
@@ -55,11 +94,13 @@ tryCatch({
   cat("Database connection failed:", e$message, "\n")
 })
 
+connection <- ResultModelManager::ConnectionHandler$new(resultsConnectionDetails)
+
 # now create the shiny app based on the config file and view the results
 # based on the connection 
 app <- OhdsiShinyAppBuilder::createShinyApp(
   config = shinyConfig, 
-  connection = resultsConnectionDetails,
+  connection = connection,
   resultDatabaseSettings = createDefaultResultDatabaseSettings(schema = resultsDatabaseSchema)
 )
 
