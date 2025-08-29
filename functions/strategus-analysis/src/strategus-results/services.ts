@@ -43,8 +43,8 @@ export const startStrategusResultsViewer = async (
         "$DATABASE_CONNECTION_STRING",
         `jdbc:postgresql://${env.PG__HOST}:${env.PG__PORT}/${env.PG__RESULTS_DB_NAME}`
       )
-      .replace("$DATABASE_USER", env.PG_ADMIN_USER)
-      .replace("$DATABASE_PASSWORD", env.PG_ADMIN_PASSWORD)
+      .replace("$DATABASE_USER", env.PG__STUDY_RESULTS_READ_USER)
+      .replace("$DATABASE_PASSWORD", env.PG__STUDY_RESULTS_READ_PASSWORD)
       .replace("$STUDY_ID", encodeURIComponent(studyId));
 
     const future = await kernelConnection.requestExecute({

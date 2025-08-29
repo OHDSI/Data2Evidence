@@ -16,18 +16,19 @@ resultsConnectionDetails <- DatabaseConnector::createConnectionDetails(
   pathToDriver = "/app/inst/drivers"
 )
 
-resultsConnectionDetails$finalize <- function() {
-  try(DatabaseConnector::disconnect(connection), silent = TRUE)
-}
+# Test database connection before starting
+tryCatch({
+  conn <- DatabaseConnector::connect(resultsConnectionDetails)
+  cat("Database connection successful\n")
+  DatabaseConnector::disconnect(conn)
+}, error = function(e) {
+  cat("Database connection failed:", e$message, "\n")
+})
 
-treatmentPathways <- data.frame(
-  pathway = c("Acetaminophen", "Acetaminophen-Amoxicillin+Clavulanate",
-              "Acetaminophen-Aspirin", "Amoxicillin+Clavulanate", "Aspirin"),
-  freq = c(206, 6, 14, 48, 221),
-  sex = rep("all", 5),
-  age = rep("all", 5),
-  index_year = rep("all", 5)
-)
+conn <- DatabaseConnector::connect(resultsConnectionDetails)
+cat(paste0("SELECT * FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
+treatmentPathways = DatabaseConnector::querySql(conn, paste0("SELECT pathway, freq FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
+colnames(treatmentPathways) <- tolower(colnames(treatmentPathways))
 
 patternsModuleUI <- function(id) {
   ns <- NS(id)  # Namespace for the module
@@ -84,15 +85,6 @@ shinyConfig <- initializeModuleConfig() |>
 
 # Set options for base URL
 options(shiny.base_url = "/strategus-results/$STUDY_ID/")
-
-# Test database connection before starting
-tryCatch({
-  conn <- DatabaseConnector::connect(resultsConnectionDetails)
-  cat("Database connection successful\n")
-  DatabaseConnector::disconnect(conn)
-}, error = function(e) {
-  cat("Database connection failed:", e$message, "\n")
-})
 
 connection <- ResultModelManager::ConnectionHandler$new(resultsConnectionDetails)
 
