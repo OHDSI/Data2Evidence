@@ -33,22 +33,21 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('tab', { name: 'Access' }).click()
 
   // Check if the user is already granted researcher access
-  await page.waitForTimeout(3000)
-  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible({ timeout: 2000 })
+  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible({ timeout: 5000 })
 
   if (!isVisible) {
     const addExistingUsersButton = page.getByTestId('dialog').getByTestId('button')
     await expect(addExistingUsersButton).toBeVisible()
     await addExistingUsersButton.click()
-    //   Wait for 8 seconds to ensure the menu items are visible
-    await page.waitForTimeout(8000)
-    await expect(page.getByRole('menuitem', { name: 'admin' })).toBeVisible({ timeout: 10000 })
-    await page.getByRole('menuitem', { name: 'admin' }).click()
-    await expect(page.getByRole('cell', { name: 'admin' })).toBeVisible({ timeout: 10000 })
+    // Wait for 5 seconds to ensure the menu items are visible
+    await page.waitForTimeout(5000)
+    await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible({ timeout: 10000 })
+    await page.getByRole('menuitem', { name: /admin/ }).click()
+    await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible({ timeout: 10000 })
   }
   await page.getByTestId('dialog-close').click()
 
-  // Open jobs
+  // Open jobs page
   await page.getByRole('link', { name: 'Jobs' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
 
@@ -79,7 +78,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Show All Reports' }).click()
 
   // Verify if Dashboard results are rendered
-  await page.waitForTimeout(3000)
-  await expect(page.getByText('Number of persons: 2694')).toBeVisible({ timeout: 2000 })
-  await expect(page.getByText('Concepts Per Person')).toBeVisible({ timeout: 2000 })
+  await expect(page.getByText('Number of persons: 2694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('Concepts Per Person')).toBeVisible({ timeout: 10000 })
 })
