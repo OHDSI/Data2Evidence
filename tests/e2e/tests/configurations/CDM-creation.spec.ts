@@ -48,6 +48,13 @@ test.describe(() => {
       await page.locator('[id="__input8-__list23-0-inner"]').fill('$$SCHEMA$$."person"')
       await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').click()
       await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').fill('$$SCHEMA$$."person"')
+      await expect(
+        page
+          .locator('[id*="__data"]:has-text("Base Entity Table")')
+          .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
+          .locator('[class="sapMSltArrow"]')
+          .first()
+      ).toBeVisible({ timeout: 3000 })
       await page
         .locator('[id*="__data"]:has-text("Base Entity Table")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
