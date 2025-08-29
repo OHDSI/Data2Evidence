@@ -86,7 +86,7 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), r
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v1.0.0")' # https://github.com/OHDSI/Andromeda
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
 RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
-RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https://github.com/rstudio/reticulate
+RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
 
 # OHDSI HADES
 # private d2e repo auth - ssh key
@@ -104,7 +104,7 @@ RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", u
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 # Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'TreatmentPatterns', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
     installed <- rownames(installed.packages()); \
     missing <- setdiff(required, installed); \
     if (length(missing) > 0) { \
