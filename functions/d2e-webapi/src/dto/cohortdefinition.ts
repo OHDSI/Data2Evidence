@@ -86,6 +86,9 @@ export const CohortDefinitionIdInfoResponseDto = z.array(
     createdBy: z.string().nullable(),
   })
 );
+export type ICohortDefinitionIdInfoResponseDto = z.infer<
+  typeof CohortDefinitionIdInfoResponseDto
+>;
 
 export const CohortDefinitionCheckV2ResponseDto = z.object({
   warnings: z.array(
@@ -97,6 +100,9 @@ export const CohortDefinitionCheckV2ResponseDto = z.object({
     })
   ),
 });
+export type ICohortDefinitionCheckV2ResponseDto = z.infer<
+  typeof CohortDefinitionCheckV2ResponseDto
+>;
 
 export const GenerateCohortResponseDto = z.object({
   status: z.string(),
@@ -120,3 +126,6 @@ export const GenerateCohortResponseDto = z.object({
   }),
   ownerType: z.string().nullable(),
 });
+export type IGenerateCohortResponseDto = z.infer<
+  typeof GenerateCohortResponseDto
+>;

@@ -17,13 +17,14 @@ import {
 import { Tabs, Tab } from "@mui/material";
 import { api } from "../../../axios/api";
 import Terminology from "../../Researcher/Terminology/Terminology";
-import { ConceptSetWithConceptDetails } from "../../Researcher/Terminology/utils/types";
+import { ConceptSet } from "../../Researcher/Terminology/utils/types";
 import { TerminologyProps } from "../../Researcher/Terminology/Terminology";
 import SearchBar from "../../../components/SearchBar/SearchBar";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
+import { useActiveDataset, useFeedback, useToken, useTranslation, useUser } from "../../../contexts";
 import "./ConceptSets.scss";
-
+import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
+import env from "../../../env";
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
   ConceptSets = "ConceptSets",
@@ -41,8 +42,13 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const { setFeedback } = useFeedback();
-  const [data, setData] = useState<ConceptSetWithConceptDetails[]>([]);
+  const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
+
+  // Get current user's username
+  const nameProp = env.REACT_APP_IDP_NAME_PROP;
+  const { idTokenClaims } = useToken();
+  const userName = idTokenClaims[nameProp];
 
   const handleTabSelectionChange = async (event: React.SyntheticEvent, value: ConceptSetTab) => {
     setTabValue(value);
@@ -63,8 +69,8 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     try {
       setIsLoading(true);
 
-      const response = await api.terminology.getConceptSets(activeDatasetId);
-      const sortFn = (a: ConceptSetWithConceptDetails, b: ConceptSetWithConceptDetails) => {
+      const response = (await api.d2eWebapi.getConceptSets(activeDatasetId)).map(mapd2eWebapiConceptSet);
+      const sortFn = (a: ConceptSet, b: ConceptSet) => {
         if (a.name < b.name) {
           return -1;
         }
@@ -72,12 +78,12 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
       };
       const userConceptSets = response
         .filter((conceptSet) => {
-          return conceptSet.createdBy === user.idpUserId;
+          return conceptSet.createdBy === userName;
         })
         .sort(sortFn);
       const sharedConceptSets = response
         .filter((conceptSet) => {
-          return conceptSet.createdBy !== user.idpUserId && conceptSet.shared;
+          return conceptSet.createdBy !== userName && conceptSet.shared;
         })
         .sort(sortFn);
       const list = [...userConceptSets, ...sharedConceptSets];
@@ -198,7 +204,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
                           <TableCell>{row.userName}</TableCell>
                           <TableCell>
                             <IconButton
-                              startIcon={row.createdBy === user.idpUserId ? <EditIcon /> : <VisibilityOnIcon />}
+                              startIcon={row.createdBy === userName ? <EditIcon /> : <VisibilityOnIcon />}
                               onClick={() => handleAddAndEditConceptSet(row.id)}
                             />
                           </TableCell>
