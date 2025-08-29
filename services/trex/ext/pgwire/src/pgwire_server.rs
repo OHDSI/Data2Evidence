@@ -133,7 +133,7 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                         stream::iter(data.into_iter()),
                     )));
                 } else {
-                    let affected_rows = conn.execute(sql, params![])
+                    let affected_rows = conn.execute_batch(sql)
                         .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     responses.push(Response::Execution(Tag::new("OK").with_rows(affected_rows)));
                 }
@@ -207,7 +207,7 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                     stream::iter(data.into_iter()),
                 )))
             } else {
-                let affected_rows = conn.execute(&query, params![])
+                let affected_rows = conn.execute_batch(&query)
                     .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 Ok(Response::Execution(Tag::new("OK").with_rows(affected_rows)))
             }
