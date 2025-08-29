@@ -280,11 +280,6 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     logger = get_run_logger()
     logger.info("Running Achilles::exportToAres")
 
-    # Get name of folder created by at {output_folder/cdm_source_abbreviation}
-    ares_output_path = get_export_to_ares_output_path(
-        achilles_params.outputFolder, cdm_source
-    )
-
     set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
 
     r_script = f"""
@@ -317,6 +312,12 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     except Exception as e:
         logger.error("execute_export_to_ares task failed")
         error_file_name = "errorReportSql.txt"
+
+        # Get name of folder created by at {output_folder/cdm_source_abbreviation}
+        ares_output_path = get_export_to_ares_output_path(
+           achilles_params.outputFolder, cdm_source
+        )
+
         error_message = (
             get_error_message(error_file_name, ares_output_path)
             or get_error_message(error_file_name)
@@ -324,6 +325,10 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
         )
         logger.error(error_message)
     else:
+        ares_output_path = get_export_to_ares_output_path(
+           achilles_params.outputFolder, cdm_source
+        )
+
         # Create an artifact to store the export result
         create_markdown_artifact(
             key="export-to-ares-result",
