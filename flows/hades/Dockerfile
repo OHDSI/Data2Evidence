@@ -104,7 +104,7 @@ RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", u
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 # Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'TreatmentPatterns', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
     installed <- rownames(installed.packages()); \
     missing <- setdiff(required, installed); \
     if (length(missing) > 0) { \
