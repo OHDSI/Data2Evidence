@@ -8,6 +8,7 @@ export const env = {
   PG_USER: _env.PG_USER,
   PG_PASSWORD: _env.PG_PASSWORD,
   PG__DB_NAME: _env.PG_DATABASE,
+  PG__RESULTS_DB_NAME: _env.PG_RESULTS_DATABASE,
   PG_SCHEMA: _env.PG_SCHEMA,
   PG__SSL: _env.PG__SSL,
   PG__CA_ROOT_CERT: _env.PG__CA_ROOT_CERT,

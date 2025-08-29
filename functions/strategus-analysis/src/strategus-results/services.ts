@@ -5,9 +5,9 @@ import {
   IKernelConnection,
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
-import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type.ts";
 import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
-import { PortalServerAPI } from "./api/PortalServerAPI.ts";
+import { env } from "../env.ts";
+
 interface IKernelModel extends Kernel.IModel {
   id: string;
   username: string;
@@ -30,26 +30,21 @@ export const startStrategusResultsViewer = async (
       }),
     });
 
-    const portalServerApi = new PortalServerAPI(token);
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
-
     const kernelConnection: IKernelConnection = await getKernelConnection(
       studyId,
       manager
     );
-    const readCredentials = await getReadCredentials(databaseCode);
 
-    const { name, host, port, readUser, readPassword } = readCredentials;
     const r_code = RESULT_VIEWER_TEMPLATE.replace(
       "$DATABASE_SCHEMA",
       "results_" + studyId
     )
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${host}:${port}/${name}`
+        `jdbc:postgresql://${env.PG__HOST}:${env.PG__PORT}/${env.PG__RESULTS_DB_NAME}`
       )
-      .replace("$DATABASE_USER", readUser)
-      .replace("$DATABASE_PASSWORD", readPassword)
+      .replace("$DATABASE_USER", env.PG_ADMIN_USER)
+      .replace("$DATABASE_PASSWORD", env.PG_PASSWORD)
       .replace("$STUDY_ID", encodeURIComponent(studyId));
 
     const future = await kernelConnection.requestExecute({
@@ -73,7 +68,7 @@ export const startStrategusResultsViewer = async (
       };
 
       future.onIOPub = (msg) => {
-        console.debug(msg);
+        console.log(msg);
         if (
           msg.content &&
           msg.content.text &&
@@ -168,67 +163,4 @@ const getKernelConnection = async (
   } catch (error) {
     throw Error(`Failed to create or connect to kernel for study ${studyId}`);
   }
-};
-
-const getReadCredentials = async (
-  databaseCode: string
-): Promise<IReadCredential> => {
-  const dbm = Trex.databaseManager();
-
-  const databaseCredentials =
-    dbm.getDatabaseCredentials() as IDatabaseCredential[];
-
-  const parsedDatabaseCredentials = databaseCredentials.map((db) => {
-    const { credentials, dialect, name, port, ...rest } = db;
-
-    const decryptedCreds = credentials.reduce<{ [key: string]: string }>(
-      (acc, c) => {
-        const { username, password, userScope } = c;
-        switch (userScope) {
-          case USER_SCOPE.ADMIN:
-          case USER_SCOPE.READ:
-            acc[userScope.toLowerCase() + "User"] = username;
-            acc[userScope.toLowerCase() + "Password"] = password;
-            break;
-          default:
-            acc["user"] = username;
-            acc["password"] = password;
-            break;
-        }
-        return acc;
-      },
-      {}
-    );
-
-    return {
-      name: name,
-      code: rest.code,
-      host: rest.host.toString(),
-      port: port.toString(),
-      credentials: decryptedCreds,
-    };
-  });
-
-  const readCredentials = parsedDatabaseCredentials.find(
-    (parsedDatabaseCredential) => parsedDatabaseCredential.code === databaseCode
-  );
-
-  if (!readCredentials) {
-    throw Error("No database credentials");
-  }
-
-  if (
-    !readCredentials.credentials.readUser ||
-    !readCredentials.credentials.readPassword
-  ) {
-    throw Error("Missing read credentials");
-  }
-
-  return {
-    name: readCredentials.name,
-    host: readCredentials.host,
-    port: readCredentials.port,
-    readUser: readCredentials.credentials.readUser,
-    readPassword: readCredentials.credentials.readPassword,
-  };
 };
