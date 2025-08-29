@@ -159,7 +159,7 @@ jobs:
           # echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
           # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           yarn
-          yarn build-all   
+          yarn build-all 2>/dev/null
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
