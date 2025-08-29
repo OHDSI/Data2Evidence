@@ -8,23 +8,14 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from prefect import flow, task, get_run_logger
 
 from .types import DataloadOptions
-
-# Constants
-DATASET = "GiBleed"
-CDM_VERSION = "5.3"
-BASE_URL = f"https://github.com/OHDSI/EunomiaDatasets/raw/main/datasets/{DATASET}/{DATASET}_{CDM_VERSION}.zip"
-
-DATA_DIR = Path("flows") / "base" / "hana_ingestion" / DATASET
-ZIP_PATH = DATA_DIR / f"{DATASET}_{CDM_VERSION}.zip"
-EXTRACT_DIR = DATA_DIR / f"{DATASET}_{CDM_VERSION}"
-CREATE_SCRIPT_DIR = Path("/app/flows/hana_load_plugin/create_script")
-
-SQL_FILES_ORDER = [
-    "hana_ddl.sql",
-    "hana_primarykey.sql",
-    "hana_indices.sql"
-    # "hana_constraints.sql",
-]
+from .constants import (
+    BASE_URL,
+    DATA_DIR,
+    ZIP_PATH,
+    EXTRACT_DIR,
+    CREATE_SCRIPT_DIR,
+    SQL_FILES_ORDER
+)
 
 # flows
 @flow(log_prints=True)
