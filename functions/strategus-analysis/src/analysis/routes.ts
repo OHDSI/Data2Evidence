@@ -10,16 +10,8 @@ export default class StrategusAnalysisRouter {
   }
 
   private registerRoutes() {
-    this.router.post(
-      "/",
-      express.json({ limit: "50mb" }),
-      this.createStrategusAnalysis.bind(this)
-    );
-    this.router.put(
-      "/",
-      express.json({ limit: "50mb" }),
-      this.createStrategusAnalysis.bind(this)
-    );
+    this.router.post("/", this.createStrategusAnalysis.bind(this));
+    this.router.put("/", this.createStrategusAnalysis.bind(this));
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
     this.router.get("/", this.getAllStrategusAnalysis.bind(this));
   }
