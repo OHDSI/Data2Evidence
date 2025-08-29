@@ -44,6 +44,26 @@ export const getConcepts = z.object({
   query: getConceptsQuery,
 });
 
+export const getConceptsCountQuery = z.object({
+  datasetId: z.string().uuid(),
+  code: z.string(),
+  filter: z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (!value) return filtersSchema.parse({});
+      try {
+        const parsed = JSON.parse(value);
+        return filtersSchema.parse(parsed);
+      } catch {
+        return filtersSchema.parse({});
+      }
+    }),
+});
+export const getConceptsCount = z.object({
+  query: getConceptsCountQuery,
+});
+
 export const getConceptFilterOptionsQuery = z.object({
   datasetId: z.string().uuid(),
   searchText: z.string(),
