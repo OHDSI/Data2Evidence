@@ -73,6 +73,8 @@ def get_and_update_attributes(dataset: PortalDatasetType,
     data_model = dataset.get("dataModel").split(" ")[0]
     changelog_file = changelog_filepath_list.get(data_model)
 
+    logger.info(f"Updating attributes for dataset id '{dataset_id}' - schema '{schema_name}'")
+
     try:
         # handle case of wrong db credentials
         dataset_dao = DBDao(use_cache_db=use_cache_db, database_code=database_code)

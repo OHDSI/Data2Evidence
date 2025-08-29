@@ -16,16 +16,6 @@ export default class PGDBRouter {
     return result.rows[0].exists;
   };
 
-  verifyIfPublicationExists = async (
-    client: any,
-    publicationNameLowercase: string
-  ) => {
-    const result = await client.query(`select exists(
-				SELECT pubname FROM pg_publication WHERE lower(pubname) = '${publicationNameLowercase}'
-		   )`);
-    return result.rows[0].exists;
-  };
-
   createDatabase = async (client: any, databaseName: string) => {
     await client.query(`CREATE DATABASE ${databaseName}`);
     this.logger.info(`Database ${databaseName} successfully created.`);
@@ -39,20 +29,6 @@ export default class PGDBRouter {
     await client.query(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`);
     this.logger.info(
       `${schemaName} schema created successfully in ${databaseName} database`
-    );
-  };
-
-  createPublication = async (
-    client: any,
-    databaseName: string,
-    schemaName: string,
-    publicationName: string
-  ) => {
-    await client.query(
-      `CREATE PUBLICATION ${publicationName} FOR TABLES IN SCHEMA ${schemaName}`
-    );
-    this.logger.info(
-      `${publicationName} publication created successfully for existing and future tables in ${schemaName} schema in ${databaseName} database`
     );
   };
 
@@ -88,40 +64,20 @@ export default class PGDBRouter {
     }
   };
 
-  getTablesWithNoPK = async (client: any, schemaName: string) => {
-    const result = await client.query(`
-      select tab.table_name
-      from information_schema.tables tab
-      left join information_schema.table_constraints tco 
-        on tab.table_schema = tco.table_schema
-        and tab.table_name = tco.table_name 
-        and tco.constraint_type = 'PRIMARY KEY'
-      where tab.table_type = 'BASE TABLE'
-            and tab.table_schema = '${schemaName}'
-            and tco.constraint_name is null
-      `);
-    return result.rows.map((row: any) => row.table_name);
-  };
-
-  alterReplicaIdentity = async (client: any, tableName: string) => {
-    await client.query(`ALTER TABLE "${tableName}" REPLICA IDENTITY FULL;`);
-  };
-
   alterExtensionSchema = async (
     client: any,
     schemaName: string,
     extensionName: string
   ) => {
-
-
-
     // check if the extension exists
     const result = await client.query(
       `SELECT extname FROM pg_extension WHERE extname = '${extensionName}'`
     );
     if (result.rows.length === 0) {
       // Install the extension if it does not exist
-      await client.query(`CREATE EXTENSION ${extensionName} SCHEMA ${schemaName};`);
+      await client.query(
+        `CREATE EXTENSION ${extensionName} SCHEMA ${schemaName};`
+      );
       this.logger.info(
         `Extension ${extensionName} created with schema ${schemaName} successfully.`
       );
@@ -130,8 +86,8 @@ export default class PGDBRouter {
         `ALTER EXTENSION ${extensionName} SET SCHEMA ${schemaName};`
       );
       this.logger.info(
-      `Extension ${extensionName} schema altered to ${schemaName} successfully.`
-    );
+        `Extension ${extensionName} schema altered to ${schemaName} successfully.`
+      );
     }
   };
 

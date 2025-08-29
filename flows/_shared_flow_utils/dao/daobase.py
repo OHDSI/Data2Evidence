@@ -407,13 +407,14 @@ class DaoBase(ABC):
         database_credentials_list = Secret.load("database-credentials").get()
         if not database_credentials_list:
             raise ValueError(f"'DATABASE_CREDENTIALS' secret is empty")
-        _db = next(
-            filter(
-                lambda x: x["databaseCode"] == self.database_code,
-                database_credentials_list,
-            ),
-            None,
-        )
+
+        _db = next(filter(lambda x: x["databaseCode"] ==
+                   self.database_code, database_credentials_list), None)
+        if _db is None:
+            raise ValueError(
+                f"Database code '{self.database_code}' not found in 'DATABASE_CREDENTIALS' secret"
+            )
+
         database_credentials = DBCredentialsType(**_db)
         match database_credentials.dialect:
             case SupportedDatabaseDialects.HANA:

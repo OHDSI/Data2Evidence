@@ -24,9 +24,9 @@ db.client.validateConnection = (connection: any) => {
 
 const pool = db.client.pool
 pool.on('release', () => {
-  log.debug('Pool release')
+  // log.debug('Pool release')
   process.nextTick(() => {
-    log.debug('Pool check')
+    // log.debug('Pool check')
     pool.check()
   })
 })
