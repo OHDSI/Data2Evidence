@@ -52,13 +52,13 @@ jobs:
         with:
           initial-fetch-depth: 1
           filters: |
-            src:
+            flow_base:
               - "flows/base/**"
             ui: 
               - "ui/**"
 
       - name: Build Flow base docker image
-        if: steps.file_changes.outputs.src == 'true'
+        if: steps.file_changes.outputs.flow_base == 'true'
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
@@ -140,11 +140,11 @@ jobs:
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
         run: npm install -g yarn
-      - name: UI Setup Python
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
+      # - name: UI Setup Python
+      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: "3.9"
       - name: UI Install Homebrew and Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
@@ -153,11 +153,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl file git
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
-          echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          # echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+          # echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"' >> ~/.bashrc
+          # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           yarn
           yarn build-all   
       - name: UI docker-compose-local

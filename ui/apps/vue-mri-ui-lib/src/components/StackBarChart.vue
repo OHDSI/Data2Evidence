@@ -274,6 +274,7 @@ export default {
 
         this.chartData = this.dataToTraces(data)
         this.layout.xaxis.type = this.chartData.axisType
+        this.layout.xaxis.visible = false // FOR TESTING: Hide x-axis for testing
         Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
       }
     },
