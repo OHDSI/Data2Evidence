@@ -2,7 +2,7 @@ name: d2e/stats repo notification
 
 on:
   schedule:
-    - cron: "0 22 * * 1" # UTC timing
+    - cron: "0 1 * * 2" # UTC timing
   workflow_dispatch:
   
 jobs:

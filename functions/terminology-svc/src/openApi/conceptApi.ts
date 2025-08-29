@@ -25,6 +25,27 @@ export const registerApi = (registry: OpenAPIRegistry) => {
 
   registry.registerPath({
     method: "get",
+    path: "/terminology/concept/count",
+    description: "Get concepts count for current search and filter",
+    summary: "Get concepts count for current search and filter",
+    request: {
+      query: conceptSchemas.getConceptsCountQuery,
+    },
+    responses: {
+      200: {
+        description: "Concepts count for current search and filter.",
+        content: {
+          "application/json": {
+            schema: z.number(),
+          },
+        },
+      },
+    },
+    tags: ["Concept"],
+  });
+
+  registry.registerPath({
+    method: "get",
     path: "/terminology/concept/filter-options",
     description: "Get filter options for current search",
     summary: "Get filter options for current search",
