@@ -93,6 +93,32 @@ export class CachedbDAO {
     }
   }
 
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const client = this.getDuckdbConnection();
+    try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
+      const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+
+      const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = duckdbFtsBaseQueryParams;
+      const results = await client.query<{ count: string }>(
+        countSql,
+        countSqlParams
+      );
+
+      return results ? parseInt(results.rows[0].count) : 0;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
   async getMultipleExactConcepts(
     searchTexts: number[],
     includeInvalid = true
