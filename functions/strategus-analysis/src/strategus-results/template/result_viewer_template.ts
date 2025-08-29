@@ -27,7 +27,7 @@ tryCatch({
 
 conn <- DatabaseConnector::connect(resultsConnectionDetails)
 cat(paste0("SELECT * FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
-treatmentPathways = DatabaseConnector::querySql(conn, paste0("SELECT pathway, freq FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
+treatmentPathways = DatabaseConnector::querySql(conn, paste0("SELECT pathway, freq, index_year, age, sex FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
 colnames(treatmentPathways) <- tolower(colnames(treatmentPathways))
 
 patternsModuleUI <- function(id) {
