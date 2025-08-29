@@ -68,7 +68,7 @@ export const startStrategusResultsViewer = async (
       };
 
       future.onIOPub = (msg) => {
-        console.log(msg);
+        console.debug(msg);
         if (
           msg.content &&
           msg.content.text &&
