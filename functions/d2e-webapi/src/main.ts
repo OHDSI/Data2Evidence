@@ -12,7 +12,9 @@ const main = () => {
   const PORT = 4949;
   const routePrefix = "d2e-webapi";
 
-  const app = fastify();
+  const app = fastify({
+    bodyLimit: 10485760, // 10MiB
+  });
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
