@@ -308,6 +308,8 @@ export class QueryFilterCriteriaManager {
       )
     }
 
+    const endStrategy = this.buildEndStrategy()
+
     const atlasDef: AtlasCohortDefinition = {
       cdmVersionRange: '>=5.0.0',
       ConceptSets: conceptSets, // Now populated with all concept sets
@@ -500,7 +502,7 @@ export class QueryFilterCriteriaManager {
           },
         }
       }),
-      EndStrategy: this.buildEndStrategy(),
+      ...(Object.keys(endStrategy).length ? { EndStrategy: endStrategy } : {}),
       CensoringCriteria: (this.exitEvents?.censoringCriteria || [])
         .filter(event => event.eventType)
         .map(event => {
