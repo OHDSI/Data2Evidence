@@ -7,7 +7,6 @@
     :is-catalog-attribute="isCatalogAttribute"
     :options-limit="optionLimitSize"
     :concept-set-config="conceptSetConfig"
-    :search-on-click="searchOnClick"
     @update:value="updateValue"
     @search-change="asyncFind"
     @concept-set-action="handleConceptSet"
@@ -58,9 +57,6 @@ export default {
         standardConceptCodeFilter: this.model.props.standardConceptCodeFilter,
         selectedDatasetId: this.getSelectedDataset.id,
       }
-    },
-    searchOnClick() {
-      return this.model.props.attrKey === 'Gender_concept_name' || false
     },
   },
   mounted() {

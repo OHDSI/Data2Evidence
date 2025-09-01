@@ -145,10 +145,6 @@ export default {
       type: Number,
       default: null,
     },
-    searchOnClick: {
-      type: Boolean,
-      default: false,
-    },
   },
   emits: ['update:value', 'search-change', 'concept-set-action'],
   data() {
@@ -376,9 +372,6 @@ export default {
       }, 100)
     },
     handleSearchChange(searchQuery) {
-      if (this.searchOnClick) {
-        searchQuery = 'm'
-      }
       if (this.searchQuery !== searchQuery) {
         this.searchQuery = searchQuery
         this.$emit('search-change', searchQuery)
