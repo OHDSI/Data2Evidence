@@ -116,6 +116,7 @@ export interface ITerminologyFhirConcept {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
 }
 export interface ITerminologyFhirResource {
   resourceType: string;
@@ -146,6 +147,25 @@ export interface ITerminologyCreateConceptSet {
   shared: boolean;
   userName: string;
 }
+
+const TerminologyFiltersSchema = z
+  .object({
+    conceptClassId: z.array(z.string()).default([]),
+    domainId: z.array(z.string()).default([]),
+    standardConcept: z.array(z.string()).default([]),
+    vocabularyId: z.array(z.string()).default([]),
+    validity: z.array(z.enum(["Valid", "Invalid"])).default([]),
+  })
+  .default({
+    conceptClassId: [],
+    domainId: [],
+    standardConcept: [],
+    vocabularyId: [],
+    validity: [],
+  });
+export type ITerminologyFiltersSchema = z.infer<
+  typeof TerminologyFiltersSchema
+>;
 
 export interface PortalUserArtifacts {
   createdBy: string;
