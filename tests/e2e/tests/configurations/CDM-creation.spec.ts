@@ -4,6 +4,7 @@ test.describe(() => {
   // test.describe.configure({ retries: 2 });
   test('test', async ({ page }) => {
     test.setTimeout(300 * 1000) // Set timeout to 5 minutes
+    // TODO: replace all waitForTimeout with proper waitForSelector
     await page.goto('https://localhost:443/portal')
     await page.locator('input[name="identifier"]').click()
     await page.locator('input[name="identifier"]').fill('admin')
@@ -33,7 +34,6 @@ test.describe(() => {
       }
       await page.getByRole('button', { name: 'Create Configuration' }).click()
       await page.getByRole('textbox', { name: 'Title Enter name for' }).fill('TestConfig101')
-      await page.waitForTimeout(500)
       await page.getByRole('button', { name: 'Create', exact: true }).click()
       await page.waitForTimeout(500)
       await expect(page.locator('[id*="--pageMxConfigUI-title-inner"]')).toContainText('Clinical Data Model')
