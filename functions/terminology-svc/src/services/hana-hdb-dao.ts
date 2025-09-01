@@ -96,6 +96,24 @@ export class HanaHDBDao {
     }
   }
 
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const client = await this.getHanaHDBConnection();
+    try {
+      const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
+        this.getHanaFtsBaseQuery(searchText, filters);
+
+      const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = hanaFtsBaseQueryParams;
+      const results = await this.asyncExec(client, countSql, countSqlParams);
+      return results[0] ? parseInt(results[0].COUNT) : 0;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
   async getMultipleExactConcepts(
     searchTexts: number[],
     includeInvalid = true
@@ -741,7 +759,8 @@ export class HanaHDBDao {
           host: datasetDatabaseCredential.host,
           port: datasetDatabaseCredential.port,
           databaseName: datasetDatabaseCredential.databaseName,
-          validate_certificate: datasetDatabaseCredential.db_extra.validateCertificate,
+          validate_certificate:
+            datasetDatabaseCredential.db_extra.validateCertificate,
           pooling: datasetDatabaseCredential.db_extra.pooling,
           autoCommit: datasetDatabaseCredential.db_extra.autoCommit,
           useTLS: datasetDatabaseCredential.db_extra.useTLS,
@@ -759,8 +778,11 @@ export class HanaHDBDao {
             ];
 
             credentials["token"] = thirdPartyToken;
-            credentials['SESSIONVARIABLE:APPLICATION'] = `${env.PROJECT_NAME}-concepts`;
-            credentials['SESSIONVARIABLE:APPLICATIONUSER'] = decode(thirdPartyToken).oid;
+            credentials[
+              "SESSIONVARIABLE:APPLICATION"
+            ] = `${env.PROJECT_NAME}-concepts`;
+            credentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+              decode(thirdPartyToken).oid;
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
