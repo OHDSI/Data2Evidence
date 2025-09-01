@@ -1,5 +1,5 @@
---postgresql CDM DDL Specification for OMOP Common Data Model 5.3;
---HINT DISTRIBUTE ON KEY (person_id) 1ST;
+--HANA CDM DDL Specification for OMOP Common Data Model 5.3;
+--HINT DISTRIBUTE ON KEY (person_id);
 CREATE TABLE @cdmDatabaseSchema.person (
 			person_id integer NOT NULL,
 			gender_concept_id integer NOT NULL,

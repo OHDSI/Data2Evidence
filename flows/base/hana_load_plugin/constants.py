@@ -6,7 +6,7 @@ CDM_VERSION = "5.3"
 
 BASE_URL = f"https://github.com/OHDSI/EunomiaDatasets/raw/main/datasets/{DATASET}/{DATASET}_{CDM_VERSION}.zip"
 
-DATA_DIR = Path("flows") / "base" / "hana_ingestion" / DATASET
+DATA_DIR = Path(f"/app/flows/hana_load_plugin/{DATASET}")
 ZIP_PATH = DATA_DIR / f"{DATASET}_{CDM_VERSION}.zip"
 EXTRACT_DIR = DATA_DIR / f"{DATASET}_{CDM_VERSION}"
 

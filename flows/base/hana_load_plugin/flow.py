@@ -6,6 +6,7 @@ import requests
 from pathlib import Path
 from _shared_flow_utils.dao.DBDao import DBDao
 from prefect import flow, task, get_run_logger
+from time import sleep
 
 from .types import DataloadOptions
 from .constants import (
@@ -25,7 +26,6 @@ def hana_load_plugin(options: DataloadOptions):
     use_cache_db = options.use_cache_db
     schema = options.schema_name
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
-    dbdao.create_schema(schema)
 
     # Only create download task if zip is missing
     if not ZIP_PATH.exists():
@@ -41,6 +41,11 @@ def hana_load_plugin(options: DataloadOptions):
         logger.info("Extracted folder already exists, skipping unzip.")
         folder = EXTRACT_DIR
 
+    # create schema only when successfully unzip
+    if not dbdao.check_schema_exists(schema):
+        logger.info(f"Creating schema {schema} ...")
+        dbdao.create_schema(schema)
+
     run_create_scripts(schema, dbdao)
     load_csvs_to_hana(folder, schema, dbdao)
 
@@ -48,7 +53,7 @@ def hana_load_plugin(options: DataloadOptions):
 # tasks
 @task(log_prints=True)
 def download_eunomia():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir()
     get_run_logger().info(f"Downloading {BASE_URL} ...")
     resp = requests.get(BASE_URL)
     resp.raise_for_status()
@@ -100,7 +105,6 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
     logger = get_run_logger()
     for csv_file in folder.glob("*.csv"):
         table_name = csv_file.stem.lower()
-
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
         df.to_sql(
