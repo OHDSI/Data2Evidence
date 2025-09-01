@@ -400,6 +400,8 @@ export default {
         : ''
     },
     constraints() {
+      console.log('constraints', this.filterCardModel.props.constraints);
+      
       return this.filterCardModel.props.constraints
     },
     displayShowCohortEntryExit() {
