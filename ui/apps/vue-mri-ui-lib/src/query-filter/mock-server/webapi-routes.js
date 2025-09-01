@@ -254,8 +254,14 @@ const setupWebapiRoutes = app => {
   })
 
   // PUT /d2e-webapi/cohortdefinition
-  app.put('/d2e-webapi/cohortdefinition', (req, res) => {
+  app.put('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
     logRequest(req)
+
+    const { cohortDefinitionId } = req.params
+
+    const response = await api.put(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+    const { data } = response
+    return res.send()
 
     const samplePayload = {
       id: 23,
