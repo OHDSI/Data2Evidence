@@ -47,17 +47,18 @@ jobs:
         id: init
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
-
       - uses: dorny/paths-filter@v3
-        id: flow_file_changes
+        id: file_changes
         with:
           initial-fetch-depth: 1
           filters: |
-            src:
+            flow_base:
               - "flows/base/**"
+            ui: 
+              - "ui/**"
 
       - name: Build Flow base docker image
-        if: steps.flow_file_changes.outputs.src == 'true'
+        if: steps.file_changes.outputs.flow_base == 'true'
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
@@ -68,7 +69,7 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
-
+      
       - name: Start services
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -135,11 +136,36 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: UI Setup yarn
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        working-directory: ./ui
+        run: npm install -g yarn      
+      - name: UI Build
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        working-directory: ./ui
+        env:
+          CI: false
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl file git
+          yarn
+          yarn build-all 2>/dev/null
+      - name: UI docker-compose-local
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+      
       - name: Restart d2e services
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
+      
+      - name: UI Mounting build
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
 
       - name: e2e tests setup
         run: |

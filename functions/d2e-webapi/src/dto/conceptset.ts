@@ -23,18 +23,41 @@ export const ConceptSetCheckDto = ConceptSetDto.extend({
 export const ConceptSetCheckResponseDto = z.object({
   warnings: z.array(z.unknown()),
 });
+export type IConceptSetCheckResponseDto = z.infer<
+  typeof ConceptSetCheckResponseDto
+>;
 
-export const ConceptSetCreateDto = ConceptSetDto.extend({
-  description: z.string().nullable(),
-  expression: ConceptSetItemsResponseDto,
+export const ConceptSetCreateDto = z.object({
+  id: z.number().optional(),
+  name: z.string(),
+  shared: z.boolean().optional(),
+  description: z.string().optional(),
+  hasWriteAccess: z.boolean().optional(),
+  createdDate: z.number().optional(),
+  createdBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .optional(),
+  modifiedDate: z.number().optional(),
+  modifiedBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .optional(),
+  tags: z.array(z.unknown()).optional(),
 });
 export type IConceptSetCreateDto = z.infer<typeof ConceptSetCreateDto>;
 
 export const ConceptSetItemDto = z.object({
   conceptId: z.number(),
-  isExcluded: z.number().transform((val) => val !== 0),
-  includeDescendants: z.number().transform((val) => val !== 0),
-  includeMapped: z.number().transform((val) => val !== 0),
+  isExcluded: z.boolean(),
+  includeDescendants: z.boolean(),
+  includeMapped: z.boolean(),
 });
 
 export const ConceptSetItemListDto = z.array(ConceptSetItemDto);
@@ -79,13 +102,24 @@ export const ConceptSetTag = z.object({
 
 export const ConceptSetResponseDto = z.object({
   createdDate: z.number(),
+  createdBy: z.object({
+    name: z.string(),
+    id: z.number().optional(),
+    login: z.string().optional(),
+  }),
   modifiedDate: z.number(),
+  modifiedBy: z.object({
+    name: z.string(),
+    id: z.number().optional(),
+    login: z.string().optional(),
+  }),
   hasWriteAccess: z.boolean(),
   hasReadAccess: z.boolean(),
   tags: z.array(ConceptSetTag).optional(),
   description: z.string().optional(),
   id: z.number(),
   name: z.string(),
+  shared: z.boolean(),
 });
 export type IConceptSetResponseDto = z.infer<typeof ConceptSetResponseDto>;
 

@@ -6,9 +6,11 @@ import { TablePaginationActions, AddIcon, RemoveIcon } from "@portal/components"
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { FilterOptions, TabName, FhirValueSetExpansionContainsWithExt, TerminologyResult } from "../../utils/types";
 import { Terminology } from "../../../../../axios/terminology";
+import { api } from "../../../../../axios/api";
 import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../../../components/SearchBar/SearchBar";
 import "./TerminologyList.scss";
+import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
 
 interface TerminologyListProps {
   userId?: string;
@@ -116,20 +118,31 @@ const TerminologyList: FC<TerminologyListProps> = ({
             Array.isArray(vocabularyIdFilters) &&
             Array.isArray(standardConceptFilters)
           ) {
-            const fhirResponse = await terminologyAPI.getTerminologies(
-              page,
-              rowsPerPage,
-              datasetId,
-              searchText.toLowerCase(),
-              conceptClassIdFilters,
-              domainIdFilters,
-              vocabularyIdFilters,
-              standardConceptFilters,
-              validityFilters
-            );
+            const [concepts, conceptsCount] = await Promise.all([
+              api.d2eWebapi.getTerminologies(
+                page,
+                rowsPerPage,
+                datasetId,
+                searchText.toLowerCase(),
+                conceptClassIdFilters,
+                domainIdFilters,
+                vocabularyIdFilters,
+                standardConceptFilters,
+                validityFilters
+              ),
+              api.terminology.getConceptsCount(
+                datasetId,
+                searchText.toLowerCase(),
+                conceptClassIdFilters,
+                domainIdFilters,
+                vocabularyIdFilters,
+                standardConceptFilters,
+                validityFilters
+              ),
+            ]);
             const response = {
-              count: fhirResponse.expansion.total,
-              data: fhirResponse.expansion.contains,
+              count: conceptsCount,
+              data: concepts.map(mapd2eWebapiConcept),
             };
             response.data.map((data: any) => {
               data["conceptCode"] = data["code"] as string;
