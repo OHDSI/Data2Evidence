@@ -20,6 +20,6 @@ export default defineConfig({
     ['list'], // You can combine multiple reporters
     ['playwright-ctrf-json-reporter', {}]
   ],
-  workers: 2,
+  workers: 1,
   maxFailures: process.env.CI ? 10 : 0
 })
