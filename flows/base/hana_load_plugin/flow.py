@@ -78,7 +78,7 @@ def run_create_scripts(schema: str, dbdao: DBDao):
         logger.info(f"Running {sql_file} ...")
         sql_text = file_path.read_text()
 
-        # Replace OHDSI placeholders
+        # Replace OHDSI placeholders with schema name
         sql_text = sql_text.replace("@cdmDatabaseSchema", schema)
 
         with dbdao.engine.connect() as conn:

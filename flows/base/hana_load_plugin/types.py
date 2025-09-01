@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+# Define the data load options for HANA
 class DataloadOptions(BaseModel):
     database_code: str
     schema_name: str
