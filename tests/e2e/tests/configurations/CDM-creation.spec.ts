@@ -55,6 +55,7 @@ test.describe(() => {
           .locator('[class="sapMSltArrow"]')
           .first()
       ).toBeVisible({ timeout: 3000 })
+      await page.waitForTimeout(5000)
       await page
         .locator('[id*="__data"]:has-text("Base Entity Table")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
