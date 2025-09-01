@@ -47,6 +47,9 @@ const actions = {
     commit(types.MESSAGE_ALERT_SET, message)
     commit(types.MESSAGE_ALERT_SHOW_TOGGLE)
   },
+  clearNotifications({ commit }) {
+    commit(types.MESSAGE_RESET)
+  },
 }
 
 // mutations
@@ -75,6 +78,21 @@ const mutations = {
   [types.MESSAGE_ALERT_TITLE_SET](modulestate, title) {
     modulestate.alert.title = title
   },
+  [types.MESSAGE_RESET](modulestate) {
+    modulestate.toast = {
+      message: '',
+    }
+    modulestate.fatal = {
+      show: false,
+      message: '',
+    }
+    modulestate.alert = {
+      show: false,
+      message: '',
+      messageType: 'error',
+      title: '',
+    }
+  },
 }
 
 export default {
@@ -83,3 +101,4 @@ export default {
   actions,
   mutations,
 }
+
