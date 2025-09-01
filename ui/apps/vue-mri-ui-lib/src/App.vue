@@ -8,14 +8,12 @@
 </template>
 
 <script lang="ts">
-declare var sap
 import { mapActions, mapGetters } from 'vuex'
 import configSelection from './components/ConfigSelection.vue'
 import patientanalytics from './components/PatientAnalytics.vue'
 import ui5adaptor from './components/UI5Adaptor.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import store from './store'
-import { QueryFilter } from './query-filter'
 import NotificationStack from './components/NotificationStack.vue'
 
 export default {
