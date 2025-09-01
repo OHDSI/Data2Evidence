@@ -79,9 +79,6 @@ const mutations = {
     modulestate.alert.title = title
   },
   [types.MESSAGE_RESET](modulestate) {
-    modulestate.toast = {
-      message: '',
-    }
     modulestate.fatal = {
       show: false,
       message: '',
