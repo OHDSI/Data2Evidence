@@ -1,3 +1,4 @@
+import { Box } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -24,8 +25,8 @@ import ReactFlow, {
   XYPosition,
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
-import { Box } from "@portal/components";
 import { isCircular } from "~/utils";
+import { dispatch, RootState } from "../../../../../store";
 import {
   markStatusAsDraft,
   replaceEdges,
@@ -35,18 +36,18 @@ import {
   setEdge,
   setNode,
 } from "../../../reducers";
-import { dispatch, RootState } from "../../../../../store";
 import { selectFlowNodes, selectLastNode } from "../../../selectors";
 import { useGetLatestDataflowByIdQuery } from "../../../slices";
-import { EdgeState, NodeState, AddNodeTypeDialogState } from "../../../types";
+import { EdgeState, NodeState } from "../../../types";
 import {
   getNodeClassName,
   getNodeColors,
-  NodeType,
   NODE_TYPES,
+  NodeChoiceMap,
+  NodeType,
+  NodeTypeChoice,
   SelectNodeTypesDialog,
 } from "../../Node/NodeTypes";
-import { NodeChoiceMap, NodeTypeChoice } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
 
@@ -218,14 +219,29 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
       let nodePosition = position;
       if (!nodePosition) {
-        const x = lastNode
-          ? lastNode.position.x + defaultPosition.gapX
-          : defaultPosition.startX;
-        const y = lastNode
-          ? lastNode.position.y + defaultPosition.gapY
-          : defaultPosition.startY;
-        nodePosition = { x, y };
+        // Placing relative to the node where the add action originated
+        const baseNode = nodes.find(
+          (n) => n.id === addNodeTypeDialog.selectedNodeId
+        );
+        if (baseNode) {
+          const newX = baseNode.position.x - (450 + defaultPosition.gapX);
+          const newY = baseNode.position.y;
+          nodePosition = { x: newX, y: newY };
+        } else {
+          const x = lastNode
+            ? lastNode.position.x + defaultPosition.gapX
+            : defaultPosition.startX;
+          const y = lastNode
+            ? lastNode.position.y + defaultPosition.gapY
+            : defaultPosition.startY;
+          nodePosition = { x, y };
+        }
       }
+
+      // Deselect all existing nodes before adding the new one
+      dispatch(
+        replaceNodes(nodes.map((node) => ({ ...node, selected: false })))
+      );
 
       const newNode = createNode(type, nodePosition);
       dispatch(setNode(newNode));
@@ -255,7 +271,15 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       // reset
       connectingNodeId.current = null;
     },
-    [position, createNode, setCenter, getViewport, lastNode, addNodeTypeDialog]
+    [
+      position,
+      createNode,
+      setCenter,
+      getViewport,
+      lastNode,
+      addNodeTypeDialog,
+      nodes,
+    ]
   );
 
   const isValidConnection = useCallback(
