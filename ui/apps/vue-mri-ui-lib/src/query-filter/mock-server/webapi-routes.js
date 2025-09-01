@@ -1,7 +1,8 @@
 // WebAPI Routes - Customize these endpoints as needed
 // This file is NOT auto-generated and won't be overwritten by parse-har.js
 
-const { default: axios, Axios } = require('axios')
+const { default: axios } = require('axios')
+const _ = require('lodash')
 
 const api = axios.create({
   baseURL: 'https://atlas-demo.ohdsi.org/WebAPI',
@@ -68,8 +69,179 @@ const setupWebapiRoutes = app => {
   })
 
   // POST /d2e-webapi/cohortdefinition
-  app.post('/d2e-webapi/cohortdefinition', (req, res) => {
+  app.post('/d2e-webapi/cohortdefinition', async (req, res) => {
     logRequest(req)
+
+    const skeleton = {
+      ConceptSets: [],
+      PrimaryCriteria: {
+        CriteriaList: [],
+        ObservationWindow: {
+          PriorDays: 0,
+          PostDays: 0,
+        },
+        PrimaryCriteriaLimit: {
+          Type: 'First',
+        },
+      },
+      QualifiedLimit: {
+        Type: 'First',
+      },
+      ExpressionLimit: {
+        Type: 'First',
+      },
+      InclusionRules: [],
+      CensoringCriteria: [],
+      CollapseSettings: {
+        CollapseType: 'ERA',
+        EraPad: 0,
+      },
+      CensorWindow: {
+        StartDate: null,
+        EndDate: null,
+      },
+      cdmVersionRange: null,
+    }
+    const expression = _.merge(skeleton, req.body.expression)
+    const response = await api.post(`/cohortdefinition/`, { ...req.body, expression })
+
+    const d2eBody = {
+      name: 'New Atlas Cohort',
+      description: 'Atlas cohort definition created from QueryFilter',
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: {
+        cdmVersionRange: '>=5.0.0',
+        ConceptSets: [],
+        PrimaryCriteria: {
+          CriteriaList: [
+            {
+              ConditionOccurrence: {
+                Age: {
+                  Op: 'lt',
+                  Value: 50,
+                },
+              },
+            },
+          ],
+          ObservationWindow: {
+            PriorDays: 0,
+            PostDays: 0,
+          },
+          PrimaryCriteriaLimit: {
+            Type: 'All',
+          },
+        },
+        QualifiedLimit: {
+          Type: 'All',
+        },
+        ExpressionLimit: {
+          Type: 'All',
+        },
+        InclusionRules: [],
+        EndStrategy: {},
+        CensoringCriteria: [],
+        CollapseSettings: {
+          CollapseType: 'ERA',
+          EraPad: 0,
+        },
+        CensorWindow: {},
+      },
+      tags: [],
+      createdBy: 'admin',
+      createdDate: 1756361858821,
+      modifiedBy: 'admin',
+      modifiedDate: 1756361858821,
+      hasWriteAccess: true,
+      hasReadAccess: true,
+      id: 0,
+    }
+
+    const sampleResponse = {
+      id: 1794178,
+      name: 'd11321',
+      createdDate: 1756361687877,
+      hasWriteAccess: false,
+      hasReadAccess: false,
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: {
+        cdmVersionRange: '>=5.0.0',
+        PrimaryCriteria: {
+          CriteriaList: [],
+          ObservationWindow: {
+            PriorDays: 0,
+            PostDays: 0,
+          },
+          PrimaryCriteriaLimit: {
+            Type: 'First',
+          },
+        },
+        ConceptSets: [],
+        QualifiedLimit: {
+          Type: 'First',
+        },
+        ExpressionLimit: {
+          Type: 'First',
+        },
+        InclusionRules: [],
+        CensoringCriteria: [],
+        CollapseSettings: {
+          CollapseType: 'ERA',
+          EraPad: 0,
+        },
+        CensorWindow: {},
+      },
+    }
+
+    const d2eResponse = {
+      id: 24,
+      name: 'New Atlas Cohort',
+      description: 'Atlas cohort definition created from QueryFilter',
+      expressionType: 'SIMPLE_EXPRESSION',
+      expression: {
+        cdmVersionRange: '>=5.0.0',
+        ConceptSets: [],
+        PrimaryCriteria: {
+          CriteriaList: [
+            {
+              ConditionOccurrence: {
+                Age: {
+                  Op: 'lt',
+                  Value: 50,
+                },
+              },
+            },
+          ],
+          ObservationWindow: {
+            PriorDays: 0,
+            PostDays: 0,
+          },
+          PrimaryCriteriaLimit: {
+            Type: 'All',
+          },
+        },
+        QualifiedLimit: {
+          Type: 'All',
+        },
+        ExpressionLimit: {
+          Type: 'All',
+        },
+        InclusionRules: [],
+        EndStrategy: {},
+        CensoringCriteria: [],
+        CollapseSettings: {
+          CollapseType: 'ERA',
+          EraPad: 0,
+        },
+        CensorWindow: {},
+      },
+      createdDate: 1756361866000,
+      hasWriteAccess: true,
+      hasReadAccess: true,
+    }
+
+    const { data } = response
+
+    return res.send(data)
 
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
