@@ -365,6 +365,9 @@ const setupWebapiRoutes = app => {
         ...mappedData,
       ],
       bookmarks: [],
+      // we could loop through all the statuses to find which has completed generations with records, but it will be very slow
+      // GET https://atlas-demo.ohdsi.org/WebAPI/notifications?hide_statuses=
+
       materializedCohorts: [],
     })
 
@@ -402,9 +405,16 @@ const setupWebapiRoutes = app => {
   })
 
   // GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e
-  app.get('/d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e', (req, res) => {
+  app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId/generate/:datasetId', async (req, res) => {
     logRequest(req)
 
+    // datasetId not used for demo purpose
+    const { cohortDefinitionId, datasetId } = req.params
+
+    // using hardcoded sourceKey from GET https://atlas-demo.ohdsi.org/WebAPI/source/sources
+    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/SYNPUF1K`, req.body)
+
+    return res.send()
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
       error: 'WebAPI endpoint not implemented yet',
