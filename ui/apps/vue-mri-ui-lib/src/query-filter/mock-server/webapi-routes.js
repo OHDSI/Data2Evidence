@@ -21,6 +21,9 @@ const logRequest = req => {
   console.log('Params:', req.params)
 }
 
+/**
+ * @param {import('express').Application} app
+ */
 const setupWebapiRoutes = app => {
   // GET /d2e-webapi/cohortdefinition/23
   app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
@@ -413,9 +416,12 @@ const setupWebapiRoutes = app => {
   })
 
   // DELETE /d2e-webapi/cohortdefinition/1
-  app.delete('/d2e-webapi/cohortdefinition/1', (req, res) => {
+  app.delete('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
     logRequest(req)
+    const { cohortDefinitionId } = req.params
 
+    const response = await api.delete(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+    return res.send()
     // TODO: Forward to actual WebAPI server
     res.status(501).json({
       error: 'WebAPI endpoint not implemented yet',
