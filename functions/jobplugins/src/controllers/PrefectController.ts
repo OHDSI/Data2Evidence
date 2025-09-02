@@ -151,7 +151,6 @@ export class PrefectController {
     this.router.post("/test-run", this.createTestRun.bind(this));
     this.router.post(
       "/jupyter-kernel/flow-run/strategus",
-      express.json({ limit: "50mb" }),
       this.createAnalaysisRunByJupyterKernel.bind(this)
     );
     this.router.delete(
@@ -164,8 +163,6 @@ export class PrefectController {
   }
 
   private getToken(req: Request) {
-    return decode(
-      req.headers["authorization"].replace(/bearer /i, "")
-    ) as JwtPayload;
+    return req.headers["authorization"];
   }
 }
