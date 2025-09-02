@@ -397,11 +397,22 @@ function getDistinctValuesFromReference(
     let referenceFilter = configAttrObj.referenceFilter
         ? configAttrObj.referenceFilter
         : "";
+    const isEmptySearch = !searchQuery || searchQuery.trim() === "";
+        // Remove the JARO_SIMILARITY condition if present
+        if (isEmptySearch) {
+            // Regex to match the JARO_SIMILARITY condition (with or without leading/trailing spaces and AND)
+            referenceFilter = referenceFilter.replace(
+                /\s*AND\s*JARO_SIMILARITY\(lower\(@REF.CONCEPT_NAME\),\s*lower\('@SEARCH_QUERY'\)\)\s*>=\s*0\.65\s*/g,
+                ""
+            );
+        }
 
     let placeholderAliasMap = <PholderTableMapType>{
         "@REF": "R",
-        "@SEARCH_QUERY": searchQuery,
     };
+    if (searchQuery) {
+        placeholderAliasMap["@SEARCH_QUERY"] = searchQuery;
+    }
 
     let sQuery;
     const aliasedRefExpression = replacePlaceholderWithCustomString(
@@ -418,10 +429,13 @@ function getDistinctValuesFromReference(
         ? ` , R.${placeholderTableMap["@REF.TEXT"]} as "text" `
         : "";
 
+    // Add LIMIT only if there is no searchQuery
+    let limitClause = isEmptySearch ? `LIMIT ${10}` : "";
     sQuery = QueryObject.format(
-        `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC `,
+        `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC ${limitClause}`,
         aliasedRefExpression,
         aliasedRefFilter
     );
+
     return sQuery;
 }
