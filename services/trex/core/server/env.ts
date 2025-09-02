@@ -101,4 +101,5 @@ export const env = {
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
     PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop',
     PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: _env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG ? JSON.parse(_env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG) : {},
+    PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true'
 }

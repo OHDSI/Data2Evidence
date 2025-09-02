@@ -502,6 +502,7 @@
           "gateway.terminology.conceptSet.create",
           "gateway.terminology.conceptSet.update",
           "gateway.terminology.conceptSet.delete",
+          "gateway.terminology.concept.count.read",
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
@@ -1678,6 +1679,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/count(.*)",
+          "scopes": [
+            "gateway.terminology.concept.count.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

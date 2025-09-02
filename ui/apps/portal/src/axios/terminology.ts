@@ -42,6 +42,27 @@ export class Terminology {
     });
   }
 
+  public getConceptsCount(
+    datasetId: string,
+    searchText: string,
+    conceptClassId: string[],
+    domainId: string[],
+    vocabularyId: string[],
+    standardConcept: string[],
+    validity: string[]
+  ): Promise<number> {
+    const params = new URLSearchParams();
+    params.append("datasetId", String(datasetId));
+    params.append("code", String(searchText));
+    params.append("filter", JSON.stringify({ conceptClassId, domainId, vocabularyId, standardConcept, validity }));
+
+    return request({
+      baseURL: TERMINOLOGY_BASE_URL,
+      url: `/concept/count?${params}`,
+      method: "GET",
+    });
+  }
+
   public getStandardConcepts(data: RowObject[], datasetId: string): Promise<StandardConcepts[]> {
     return request({
       baseURL: TERMINOLOGY_BASE_URL,

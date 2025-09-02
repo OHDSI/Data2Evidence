@@ -185,32 +185,43 @@ export class App {
 
     try {
       // Create anon role
-      const anonRoleExists = await this.userDao.verifyIfUserExists(client, "anon");
+      const anonRoleExists = await this.userDao.verifyIfUserExists(
+        client,
+        "anon"
+      );
       if (!anonRoleExists) {
         await client.query(`CREATE ROLE anon NOLOGIN INHERIT;`);
         this.logger.info("Created anon role successfully");
       } else {
         this.logger.info("anon role already exists");
       }
-  
+
       // Create authenticated role
-      const authenticatedRoleExists = await this.userDao.verifyIfUserExists(client, "authenticated");
+      const authenticatedRoleExists = await this.userDao.verifyIfUserExists(
+        client,
+        "authenticated"
+      );
       if (!authenticatedRoleExists) {
         await client.query(`CREATE ROLE authenticated NOLOGIN INHERIT;`);
         this.logger.info("Created authenticated role successfully");
       } else {
         this.logger.info("authenticated role already exists");
       }
-  
+
       // Create service_role role
-      const serviceRoleExists = await this.userDao.verifyIfUserExists(client, "service_role");
+      const serviceRoleExists = await this.userDao.verifyIfUserExists(
+        client,
+        "service_role"
+      );
       if (!serviceRoleExists) {
-        await client.query(`CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`);
+        await client.query(
+          `CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`
+        );
         this.logger.info("Created service_role role successfully");
       } else {
         this.logger.info("service_role role already exists");
       }
-  
+
       // Verify roles were created
       const result = await client.query(`
         SELECT rolname FROM pg_roles
@@ -221,13 +232,13 @@ export class App {
       this.logger.info(`Found Supabase roles: ${existingRoles.join(", ")}`);
 
       // Grant roles to users
-      const pgUsers = this.getPGUsers(this.getDatabaseName(config.getProperties()["config_db_name"]));
+      const pgUsers = this.getPGUsers(
+        this.getDatabaseName(config.getProperties()["config_db_name"])
+      );
 
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
-        this.logger.info(
-          `Granted service_role to ${pgUsers.manager}`
-        );
+        this.logger.info(`Granted service_role to ${pgUsers.manager}`);
       }
 
       if (existingRoles.includes("anon")) {
@@ -363,76 +374,6 @@ export class App {
     }
   }
 
-  async alterTableReplica(databaseName: string, schemaName: string) {
-    let client;
-
-    try {
-      //Switch to super user connection only for database creation
-      const pg_owneruser_config =
-        config.getProperties()["postgres_connection_config"];
-      //Connect with existing database and itsowner user
-      let client = await this.dbDao.openConnection({
-        ...pg_owneruser_config,
-        database: databaseName,
-      });
-
-      const tablesWithNoPK = await this.dbDao.getTablesWithNoPK(
-        client,
-        schemaName
-      );
-
-      for (const table of tablesWithNoPK) {
-        await this.dbDao.alterReplicaIdentity(client, table);
-      }
-      this.logger.info(
-        `Successfully altered table replica identity to full for tables with no primary key in ${schemaName} schema!`
-      );
-    } catch (e: any) {
-      this.logger.error(e.message);
-      await this.dbDao.closeConnection(client);
-      return false;
-    }
-  }
-
-  async createPublication(
-    databaseName: string,
-    schemaName: string,
-    publicationName: string
-  ) {
-    let client;
-
-    try {
-      //Switch to super user connection only for database creation
-      const pg_owneruser_config =
-        config.getProperties()["postgres_connection_config"];
-      //Connect with existing database and itsowner user
-      let client = await this.dbDao.openConnection({
-        ...pg_owneruser_config,
-        database: databaseName,
-      });
-
-      const ifPublicationExists = await this.dbDao.verifyIfPublicationExists(
-        client,
-        publicationName
-      );
-
-      if (ifPublicationExists) {
-        this.logger.info(`${publicationName} publication already exists!`);
-      } else {
-        await this.dbDao.createPublication(
-          client,
-          databaseName,
-          schemaName,
-          publicationName
-        );
-      }
-    } catch (e: any) {
-      this.logger.error(e.message);
-      await this.dbDao.closeConnection(client);
-      return false;
-    }
-  }
-
   async grantReadWritePrivileges(databaseName: string, schemaName: string) {
     let client;
     try {
@@ -493,7 +434,6 @@ export class App {
     }
   }
 
-
   async alterExtensionSchema(databaseName: string, alterExtensionConfig: any) {
     let client;
 
@@ -503,9 +443,9 @@ export class App {
       const client = await this.dbDao.openConnection(pg_owneruser_config);
 
       await this.dbDao.alterExtensionSchema(
-          client,
-          alterExtensionConfig[databaseName].schema,
-          alterExtensionConfig[databaseName].extension
+        client,
+        alterExtensionConfig[databaseName].schema,
+        alterExtensionConfig[databaseName].extension
       );
       await this.dbDao.closeConnection(client);
       return true;
@@ -552,40 +492,20 @@ export class App {
 
         // set extension if schema and database in postgres_alter_extension_config
         const alter_extension_config =
-          config.getProperties()["postgres_alter_extension_config"]["databases"];
+          config.getProperties()["postgres_alter_extension_config"][
+            "databases"
+          ];
 
-        if (alter_extension_config && Object.prototype.hasOwnProperty.call(alter_extension_config, databaseName)) {
-          await this.alterExtensionSchema(
-            databaseName,
-            alter_extension_config
+        if (
+          alter_extension_config &&
+          Object.prototype.hasOwnProperty.call(
+            alter_extension_config,
+            databaseName
           )
+        ) {
+          await this.alterExtensionSchema(databaseName, alter_extension_config);
         }
       }
-
-
-
-      // create publication if database in POSTGRES_PUBLICATION_CONFIG
-      // const pg_publication_config =
-      //   config.getProperties()["postgres_publication_config"];
-      // const databaseName = this.getDatabaseName(database);
-      // const dbPublications =
-      //   pg_publication_config["databases"][`+${databaseName}`];
-
-      // if (dbPublications !== undefined) {
-      //   for (let publicationConig of Object.keys(dbPublications)) {
-      //     if (publicationConig.startsWith("+")) {
-      //       //+ indicating creation scenarios
-      //       const { schema, publication } = dbPublications[publicationConig];
-      //       await this.createPublication(databaseName, schema, publication);
-      //       this.logger.info("Altering table replicas...");
-      //       await this.alterTableReplica(databaseName, schema);
-      //     }
-      //   }
-      // } else {
-      //   this.logger.info(
-      //     `No publication to create for database ${databaseName}`
-      //   );
-      // }
     }
     this.logger.info("Postgres Automation tasks completed.");
     process.exit(0);
