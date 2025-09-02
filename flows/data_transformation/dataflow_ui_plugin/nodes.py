@@ -243,13 +243,14 @@ class PythonNode(Node):
         return self.task(_input, shared_variables, importlibs, task_run_context)
 
     def task(self, _input: dict[str, Result], 
-             shared_variables: dict[str, str], 
+             shared_variables: list[dict[str, str]], 
              importlibs: list[str], 
              task_run_context):
         params = {"myinput": _input, "output": {}}
         try:
             if shared_variables:
-                params.update(shared_variables)
+                for item in shared_variables:
+                    params.update({item["key"]: item["value"]})
             if importlibs:
                 exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')
