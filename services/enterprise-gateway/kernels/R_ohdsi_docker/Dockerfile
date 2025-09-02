@@ -80,7 +80,7 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 #RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 # include a d2e version of Strategus - with CohortSurvival module integrated
-RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@3.1.1", upgrade = "never", dependencies=TRUE)'
+RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@v3.1.1", upgrade = "never", dependencies=TRUE)'
 RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
 
 # mlflow
