@@ -1,13 +1,4 @@
-import React, {
-  FC,
-  useCallback,
-  useState,
-  useEffect,
-  ChangeEvent,
-  SetStateAction,
-  useMemo,
-  SyntheticEvent,
-} from "react";
+import React, { FC, useCallback, useState, useEffect, ChangeEvent, useMemo, SyntheticEvent } from "react";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
@@ -16,13 +7,20 @@ import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
 import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
-import { NewStudyInput, Feedback, CloseDialogType, Study, IDatabase, NewFhirProjectInput } from "../../../../types";
-import SimpleMDE from "react-simplemde-editor";
+import {
+  NewStudyInput,
+  Feedback,
+  CloseDialogType,
+  Study,
+  IDatabase,
+  NewFhirProjectInput,
+  CopyStudyInput,
+} from "../../../../types";
 import { usePaConfigs, useTenant, useDbVocabSchemas, useEnabledFeatures } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
-import { DatasetSourceTypes, DatasetChildTypes } from "../../../../constant";
+import { DatasetSourceTypes, DatasetChildTypes, DatasetMap } from "../../../../constant";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -62,8 +60,11 @@ interface FormData {
   plugin: string;
   databaseCode: string;
   dialect: string;
-  paConfigId: string;
   visibilityStatus: string;
+
+  cacheDatasetName: string;
+  cacheDatasetType: DatasetChildTypes;
+  paConfigId: string;
 }
 
 interface FormError {
@@ -98,6 +99,13 @@ interface FormError {
   name: {
     required: boolean;
   };
+
+  cacheDatasetName: {
+    required: boolean;
+  };
+  cacheDatasetType: {
+    required: boolean;
+  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -111,10 +119,12 @@ const EMPTY_FORM_ERROR: FormError = {
   databaseCode: { required: false },
   paConfigId: { required: false },
   name: { required: false },
+  cacheDatasetName: { required: false },
+  cacheDatasetType: { required: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
-  type: "",
+  type: DatasetSourceTypes.SOURCE,
   tokenStudyCode: "",
   schemaOption: "",
   cdmSchemaValue: "", //Optional
@@ -131,7 +141,9 @@ const EMPTY_FORM_DATA: FormData = {
   databaseCode: "", //Optional
   dialect: "",
   paConfigId: "",
-  visibilityStatus: "DEFAULT",
+  visibilityStatus: "HIDDEN",
+  cacheDatasetName: "",
+  cacheDatasetType: DatasetChildTypes.OMOP,
 };
 
 /**
@@ -333,8 +345,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dataModel,
       dataModelCustom,
       databaseCode,
-      paConfigId,
       name,
+
+      cacheDatasetName,
+      cacheDatasetType,
+      paConfigId,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -390,6 +405,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, name: { required: true } };
     }
 
+    if (!cacheDatasetName) {
+      formError = { ...formError, cacheDatasetName: { required: true } };
+    }
+
+    if (!cacheDatasetType) {
+      formError = { ...formError, cacheDatasetType: { required: true } };
+    }
+
     if (Object.keys(formError).length > 0) {
       setFormError({ ...EMPTY_FORM_ERROR, ...(formError as FormError) });
       return true;
@@ -428,8 +451,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dataModelCustom,
       databaseCode,
       dialect,
-      paConfigId,
       visibilityStatus,
+      cacheDatasetName,
+      cacheDatasetType,
+      paConfigId,
     } = formData;
 
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
@@ -466,11 +491,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      const datasetId = await api.gateway.createDataset(input);
+      const dataset = await api.gateway.createDataset(input);
       if (createFhirProject) {
         try {
           const fhirProjectInput: NewFhirProjectInput = {
-            id: datasetId.id,
+            id: dataset.id,
             description: description,
           };
           await api.gateway.createFhirStaging(fhirProjectInput);
@@ -483,6 +508,19 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           //return;
         }
       }
+
+      // create datamart
+      const datamartInput: CopyStudyInput = {
+        newStudyName: cacheDatasetName,
+        sourceStudyId: dataset.id,
+        snapshotLocation: "DB",
+        dataModel: dataset.dataModel,
+        type: cacheDatasetType,
+        paConfigId,
+      };
+
+      await api.gateway.copyDataset(datamartInput);
+      await api.dataflow.createCacheFlowRun({ datasetId: dataset.id });
       handleClose("success");
     } catch (err: any) {
       setFeedback({
@@ -524,22 +562,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </Box>
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_SUMMARY)}
-            value={formData.summary}
-            onChange={(event) => handleFormDataChange({ summary: event.target.value })}
-          />
-        </Box>
-        <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
-        <SimpleMDE
-          value={formData.description}
-          onChange={(value) => handleFormDataChange({ description: value })}
-          options={mdeOptions}
-          style={{ marginTop: "11px" }}
-        />
+
         {/* Schema Options */}
         <Box mb={4}>
           <FormControl
@@ -553,17 +576,20 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <Select
               sx={styles}
               value={formData.schemaOption}
-              onChange={(event: SelectChangeEvent<string>) =>
+              onChange={(event: SelectChangeEvent<string>) => {
+                const schemaOption = event.target.value;
+                const newType = schemaOption === SchemaTypes.FHIR ? DatasetSourceTypes.FHIR : DatasetSourceTypes.SOURCE;
                 handleFormDataChange({
-                  schemaOption: event.target.value,
-                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
+                  schemaOption,
+                  cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
                   isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
-                  databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
+                  databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: "",
-                  type: event.target.value === SchemaTypes.FHIR ? DatasetSourceTypes.FHIR : DatasetSourceTypes.SOURCE,
-                })
-              }
+                  type: newType,
+                  cacheDatasetType: DatasetMap[newType][0],
+                });
+              }}
               inputProps={{
                 name: "schemaOption",
                 id: "schema-option",
@@ -854,6 +880,75 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         )}
 
         <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.tokenStudyCode}
+            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
+        </Box>
+
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="cache dataset name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
+        <Box mb={4}>
+          <FormControl
+            sx={styles}
+            className="select"
+            variant="standard"
+            fullWidth
+            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+          >
+            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+            <Select
+              sx={styles}
+              value={formData.cacheDatasetType}
+              onChange={(event: SelectChangeEvent<string>) =>
+                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+              }
+              inputProps={{
+                name: "cacheDatasetType",
+                id: "cache-dataset-option",
+              }}
+            >
+              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+                <MenuItem sx={styles} key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            {formError.cacheDatasetType.required && (
+              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        <Box mb={4}>
           <FormControl
             sx={styles}
             className="select"
@@ -884,25 +979,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
-
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
-            value={formData.tokenStudyCode}
-            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
-            inputProps={{ maxLength: 48 }}
-            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
-          />
-          {formError.tokenStudyCode.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-          {formError.tokenStudyCode.valid && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
-          )}
-          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
       </div>
       <Divider />

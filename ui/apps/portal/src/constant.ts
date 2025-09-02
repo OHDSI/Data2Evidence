@@ -29,16 +29,26 @@ export enum ConfigTypes {
 export const PUB_SLOT_NAME = "data2evidence";
 
 export enum DatasetSourceTypes {
-  SOURCE = "SOURCE",
-  FHIR = "FHIR",
+  SOURCE = "source",
+  FHIR = "fhir",
 }
 
 export enum DatasetChildTypes {
-  OMOP = "OMOP", // parent: SOURCE
-  NON_OMOP = "NON_OMOP", // parent: fhir
-  STUDY = "STUDY", // parent: SOURCE
-  HANA__OMOP = "HANA_OMOP", // parent: SOURCE
-  HANA__NON_OMOP = "HANA__NON_OMOP", // parent: not confirmed
+  // parent: SOURCE
+  OMOP = "omop",
+  STUDY = "study",
+  HANA__OMOP = "hana__omop",
+
+  // parent: not confirmed
+  HANA__NON_OMOP = "hana__non_omop",
+
+  // parent: fhir
+  NON_OMOP = "non_omop",
 }
 
-export type DatasetTypes = typeof DatasetSourceTypes | typeof DatasetChildTypes;
+export type DatasetTypes = DatasetSourceTypes | DatasetChildTypes;
+
+export const DatasetMap: Record<DatasetSourceTypes, DatasetChildTypes[]> = {
+  [DatasetSourceTypes.SOURCE]: [DatasetChildTypes.OMOP, DatasetChildTypes.STUDY, DatasetChildTypes.HANA__OMOP],
+  [DatasetSourceTypes.FHIR]: [DatasetChildTypes.NON_OMOP],
+};

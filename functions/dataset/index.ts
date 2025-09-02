@@ -203,7 +203,7 @@ export class DatasetRouter {
           this.logger.info("Creating new dataset in Portal");
           const newDatasetInput = {
             id,
-            type,
+            type, // TODO: validate type
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
             dialect,
@@ -246,6 +246,7 @@ export class DatasetRouter {
         snapshotLocation,
         snapshotCopyConfig,
         dataModel,
+        type,
       } = req.body;
       const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
         sourceStudyId
@@ -267,6 +268,7 @@ export class DatasetRouter {
           newDatasetName: newStudyName,
           schemaName: newSchemaName,
           timestamp: new Date(),
+          type,
         };
 
         // Copy schema if it exist
