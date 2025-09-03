@@ -397,8 +397,10 @@ function getDistinctValuesFromReference(
     let referenceFilter = configAttrObj.referenceFilter
         ? configAttrObj.referenceFilter
         : "";
+
     let placeholderAliasMap = <PholderTableMapType>{
         "@REF": "R",
+        "@SEARCH_QUERY": searchQuery,
     };
 
     let sQuery;
