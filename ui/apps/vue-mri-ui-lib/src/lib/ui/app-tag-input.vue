@@ -48,16 +48,16 @@ export default {
         createConceptSet: this.getText('MRI_PA_TOOLTIP_CREATE_CONCEPT_SET'),
         loadingSuggestions: this.getText('MRI_PA_LOADING_SUGGESTIONS'),
         tooManyValues: this.getText('MRI_PA_TOO_MANY_VALUES'),
-        noSuggestions: this.getText('MRI_PA_NO_SUGGESTIONS')
+        noSuggestions: this.getText('MRI_PA_NO_SUGGESTIONS'),
       }
     },
     conceptSetConfig() {
       return {
         domainFilter: this.model.props.domainFilter,
         standardConceptCodeFilter: this.model.props.standardConceptCodeFilter,
-        selectedDatasetId: this.getSelectedDataset.id
+        selectedDatasetId: this.getSelectedDataset.id,
       }
-    }
+    },
   },
   mounted() {
     // Set option limit from config
@@ -135,3 +135,4 @@ export default {
   },
 }
 </script>
+
