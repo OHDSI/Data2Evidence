@@ -54,7 +54,7 @@ x-envs:
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp
   fhir: &x-fhir
-    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
+    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-99f29ec3-bd24-4b01-be07-c64f5176dfdd}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
   perseus: &x-perseus
     PERSEUS__FILES_MANAGER_HOST: trex
@@ -253,7 +253,7 @@ services:
           "alp-fhir-svc": {
             "FHIR__LOG_LEVEL": "debug",
             "PORT": 41112,
-            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
+            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-99f29ec3-bd24-4b01-be07-c64f5176dfdd}",
             "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
             "FHIR_SCHEMA_PATH": "/home/docker/fhir",
             "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
@@ -267,7 +267,7 @@ services:
             "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
             "FHIR__LOG_LEVEL": "debug",
             "PORT": 41112,
-            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
+            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-99f29ec3-bd24-4b01-be07-c64f5176dfdd}",
             "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
             "DUCKDB_PATH": "/home/docker/alp-data-node/app/src/duckdb",
             "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
@@ -568,6 +568,7 @@ services:
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      NODE_OPTIONS: "--max-old-space-size=8192"
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:

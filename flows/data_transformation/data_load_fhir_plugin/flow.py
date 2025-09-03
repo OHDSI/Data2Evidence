@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 def data_load_fhir_plugin(options: DataloadOptions):
     logger = get_run_logger()
     files = options.files
-    truncate_tables = options.truncateTables
+    truncate_tables = options.truncate_tables
     use_cache_db = options.use_cache_db
-    study_token = options.study_token
+    dataset_token = options.dataset_token
     try:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code="fhir")
+                  database_code="alp_fhir")
         tenantConfigs = dbdao.tenant_configs()
         fhir_tables_all = set()
         for incoming_file in files:
@@ -35,7 +35,7 @@ def data_load_fhir_plugin(options: DataloadOptions):
                     truncate_tables(tables_to_truncate, "fhir", dbdao, logger)
                 # Add only new tables to the set
                 fhir_tables_all.update(tables_to_truncate)
-            load_data(study_token, incoming_file, logger)
+            load_data(dataset_token, incoming_file, logger)
     except Exception as e:
         logger.error(f"Error connecting to trex fhir database: {e}")
         raise e
@@ -62,7 +62,7 @@ def post_fhir_resource(resource, idx, json_file, fhir_api: FhirAPI, logger, stud
     except Exception as e:
         logger.error(f"Error posting resource for index {idx}: {e}")
 
-def load_data(study_token, json_file, logger):
+def load_data(dataset_token, json_file, logger):
     fhir_api = FhirAPI()
     try:
         if json_file.endswith('.ndjson'):
@@ -72,18 +72,18 @@ def load_data(study_token, json_file, logger):
                     if not line:
                         continue
                     resource_data = json.loads(line)
-                    post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, study_token)
+                    post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, dataset_token)
         elif json_file.endswith('.json'):
             with open(json_file, "r") as f:
                 data = json.load(f)
             if isinstance(data, dict) and data.get("resourceType") == "Bundle":
-                response = fhir_api.post(studyToken=study_token, resourceType="Bundle", resource=data)
+                response = fhir_api.post(studyToken=dataset_token, resourceType="Bundle", resource=data)
                 logger.info(f"Posted Bundle: {response}")
             elif isinstance(data, list):
                 for idx, entry in enumerate(data):
-                    post_fhir_resource(entry, idx, json_file, fhir_api, logger, study_token)
+                    post_fhir_resource(entry, idx, json_file, fhir_api, logger, dataset_token)
             else:
-                post_fhir_resource(data, 0, json_file, fhir_api, logger, study_token)
+                post_fhir_resource(data, 0, json_file, fhir_api, logger, dataset_token)
         else:
             logger.error(f"Unsupported file type for '{json_file}'. Only .ndjson and .json are supported.")
             return
