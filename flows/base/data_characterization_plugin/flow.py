@@ -15,10 +15,10 @@ from prefect.artifacts import create_markdown_artifact
 from .utils import *
 from .types import DCOptionsType, AchillesParams
 
-from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 
 
 os.environ["plugin_name"] = "data_characterization_plugin"
