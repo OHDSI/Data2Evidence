@@ -1,7 +1,0 @@
-namespace legacy.ots.internal;
-
-context Types {
-
-	type DWAuditID : Integer64;
-	type Provider  : String(100);
-};
