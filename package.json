@@ -30,13 +30,14 @@
     "deploy:logs": "ENV_TYPE=remote ./scripts/cli.sh -v develop -e -n .env.remote logs",
     "logs": "npm run local -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
-    "inittestdb": "node tests/backend_integration_tests/build/initdb.js test",
-    "removetestdb": "node tests/backend_integration_tests/build/initdb.js rmonly",
+    "inittestdb": "node tests/backend_integration_tests/build/initdb-pg.js test",
+    "removetestdb": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal"
   },
   "optionalDependencies": {
-    "hdb": "0.19.12",
-    "fast-csv": "5.0.2"
+    "fast-csv": "5.0.2",
+    "pg": "^8.15.6",
+    "pg-format": "1.0.4"
   },
   "devDependencies": {
     "@types/node": "^18",
