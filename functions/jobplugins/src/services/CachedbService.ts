@@ -27,8 +27,9 @@ export class CachedbService {
   public async getFlowRunResults(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
 
-    const POLL_INTERVAL_MS = 2000;
-    const MAX_ATTEMPTS = 60; // 2 minutes max
+    // Poll every 1 min up to 5 mins
+    const POLL_INTERVAL_MS = 60000;
+    const MAX_ATTEMPTS = 5;
     let attempts = 0;
 
     let flowRun = await prefectApi.getFlowRun(flowRunId);
@@ -38,10 +39,25 @@ export class CachedbService {
       flowRun = flowRun[0];
     }
 
+    const pollingStates = [
+      FlowRunState.SCHEDULED,
+      FlowRunState.LATE,
+      FlowRunState.PENDING,
+      FlowRunState.RUNNING,
+    ];
+
+    const failureStates = [FlowRunState.FAILED, FlowRunState.CANCELLED];
+
     while (
-      flowRun.state_type === FlowRunState.RUNNING &&
+      pollingStates.includes(flowRun.state_type) &&
       attempts < MAX_ATTEMPTS
     ) {
+      // Early exit if flowRun enters a failure state
+      if (failureStates.includes(flowRun.state_type)) {
+        throw new Error(
+          `Flow run failed or was cancelled. Final state: ${flowRun.state_type}`
+        );
+      }
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       flowRun = await prefectApi.getFlowRun(flowRunId);
       if (Array.isArray(flowRun)) {
@@ -53,6 +69,8 @@ export class CachedbService {
     if (flowRun.state_type === FlowRunState.COMPLETED) {
       return flowRun.id;
     }
-    return flowRun;
+    throw new Error(
+      `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`
+    );
   }
 }
