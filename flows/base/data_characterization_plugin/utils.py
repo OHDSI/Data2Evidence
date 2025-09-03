@@ -21,7 +21,7 @@ def get_cdm_source(dbdao, schema: str, *, use_trex_connection: bool = False) -> 
     """
     if use_trex_connection:
         sql = f'SELECT cdm_source_abbreviation FROM "{schema}"."cdm_source"'
-        value = dbdao._execute_sql(
+        value = dbdao.execute_sql(
             sql,
             fetch=True,
         )

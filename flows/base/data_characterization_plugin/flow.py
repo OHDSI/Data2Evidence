@@ -169,7 +169,7 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
 @task(log_prints=True)
 def create_results_tables(sql_script: str, dbdao):
     if dbdao.dialect == SupportedDatabaseDialects.TREX:
-        dbdao._execute_sql(sql_script)
+        dbdao.execute_sql(sql_script)
     else:
         with dbdao.engine.begin() as conn:
             try:

@@ -23,7 +23,7 @@ class TrexDao(IbisDao):
 
     @property
     def dialect(self):
-        return "trex"
+        return SupportedDatabaseDialects.TREX
 
     @property
     def tenant_configs(self) -> DBCredentialsType:
@@ -73,7 +73,7 @@ class TrexDao(IbisDao):
             if con:
                 con.close()
 
-    def _execute_sql(self, sql: str, fetch: bool = False):
+    def execute_sql(self, sql: str, fetch: bool = False):
         """Execute SQL using a context manager for connection and cursor."""
         with self._get_connection() as con:
             cur = None
@@ -93,12 +93,12 @@ class TrexDao(IbisDao):
 
     def drop_schema(self, schema: str, cascade: bool = True) -> None:
         sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
-        self._execute_sql(sql)
+        self.execute_sql(sql)
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
             sql = "SELECT schema_name FROM information_schema.schemata;"
-            result = self._execute_sql(sql, fetch=True)
+            result = self.execute_sql(sql, fetch=True)
             schemas = {row[0] for row in result}
             return schema in schemas
         except psycopg2.Error as e:
@@ -107,7 +107,7 @@ class TrexDao(IbisDao):
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
         sql = f"CREATE SCHEMA IF NOT EXISTS {schema};"
-        self._execute_sql(sql)
+        self.execute_sql(sql)
 
     def get_database_connector_connection_string(
         self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None
