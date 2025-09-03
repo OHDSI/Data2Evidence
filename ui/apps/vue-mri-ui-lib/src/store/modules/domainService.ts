@@ -100,7 +100,7 @@ const actions = {
         const fuse = new Fuse(data.values, { includeScore: true, keys: ['value', { name: 'text', weight: 10 }] })
         const searchResults = fuse.search(searchQuery)
         const emptySearch = !searchQuery || searchQuery.trim() === ''
-        data.values = !emptySearch ? searchResults.map(result => result.item) : data.values
+        data.values = emptySearch ? data.values : searchResults.map(result => result.item)
       }
       commit(types.DOMAIN_SET_VALUES, { attributePath: attributePathUid, data })
       return data.values
