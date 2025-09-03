@@ -16,6 +16,7 @@ import {
   NewFhirProjectInput,
   CopyStudyInput,
 } from "../../../../types";
+import SimpleMDE from "react-simplemde-editor";
 import { usePaConfigs, useTenant, useDbVocabSchemas, useEnabledFeatures } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
@@ -466,9 +467,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       tenantId: tenant?.id || "",
       detail: {
         name,
-        summary,
-        description,
-        showRequestAccess,
+        summary: "",
+        description: "",
+        showRequestAccess: false,
       },
       type,
       tokenStudyCode,
@@ -517,6 +518,12 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         dataModel: dataset.dataModel,
         type: cacheDatasetType,
         paConfigId,
+        detail: {
+          name: cacheDatasetName,
+          summary: summary,
+          description: description,
+          showRequestAccess: showRequestAccess,
+        },
       };
 
       await api.gateway.copyDataset(datamartInput);
@@ -914,6 +921,338 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           {formError.cacheDatasetName.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.tokenStudyCode}
+            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
+        </Box>
+
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="cache dataset name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
+        <Box mb={4}>
+          <FormControl
+            sx={styles}
+            className="select"
+            variant="standard"
+            fullWidth
+            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+          >
+            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+            <Select
+              sx={styles}
+              value={formData.cacheDatasetType}
+              onChange={(event: SelectChangeEvent<string>) =>
+                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+              }
+              inputProps={{
+                name: "cacheDatasetType",
+                id: "cache-dataset-option",
+              }}
+            >
+              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+                <MenuItem sx={styles} key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            {formError.cacheDatasetType.required && (
+              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.tokenStudyCode}
+            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
+        </Box>
+
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Cache Dataset Name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Cache Dataset Summary"
+            value={formData.summary}
+            onChange={(event) => handleFormDataChange({ summary: event.target.value })}
+          />
+        </Box>
+        <div>Cache Dataset Description</div>
+        <SimpleMDE
+          value={formData.description}
+          onChange={(value) => handleFormDataChange({ description: value })}
+          options={mdeOptions}
+          style={{ marginTop: "11px" }}
+        />
+
+        <Box mb={4}>
+          <Checkbox
+            checked={formData.showRequestAccess}
+            checkbox-id="request-access"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              handleFormDataChange({ showRequestAccess: event.target.checked });
+            }}
+          />
+        </Box>
+
+        <Box mb={4}>
+          <FormControl
+            sx={styles}
+            className="select"
+            variant="standard"
+            fullWidth
+            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+          >
+            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+            <Select
+              sx={styles}
+              value={formData.cacheDatasetType}
+              onChange={(event: SelectChangeEvent<string>) =>
+                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+              }
+              inputProps={{
+                name: "cacheDatasetType",
+                id: "cache-dataset-option",
+              }}
+            >
+              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+                <MenuItem sx={styles} key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            {formError.cacheDatasetType.required && (
+              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        <Box mb={4}>
+          <FormControl
+            sx={styles}
+            className="select"
+            variant="standard"
+            fullWidth
+            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+          >
+            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+            <Select
+              sx={styles}
+              value={formData.cacheDatasetType}
+              onChange={(event: SelectChangeEvent<string>) =>
+                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+              }
+              inputProps={{
+                name: "cacheDatasetType",
+                id: "cache-dataset-option",
+              }}
+            >
+              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+                <MenuItem sx={styles} key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            {formError.cacheDatasetType.required && (
+              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.tokenStudyCode}
+            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
+        </Box>
+
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="cache dataset name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
+        <Box mb={4}>
+          <FormControl
+            sx={styles}
+            className="select"
+            variant="standard"
+            fullWidth
+            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+          >
+            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+            <Select
+              sx={styles}
+              value={formData.cacheDatasetType}
+              onChange={(event: SelectChangeEvent<string>) =>
+                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+              }
+              inputProps={{
+                name: "cacheDatasetType",
+                id: "cache-dataset-option",
+              }}
+            >
+              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+                <MenuItem sx={styles} key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+            {formError.cacheDatasetType.required && (
+              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.tokenStudyCode}
+            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
+        </Box>
+
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Cache Dataset Name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Cache Dataset Summary"
+            value={formData.summary}
+            onChange={(event) => handleFormDataChange({ summary: event.target.value })}
+          />
+        </Box>
+        <div>Cache Dataset Description</div>
+        <SimpleMDE
+          value={formData.description}
+          onChange={(value) => handleFormDataChange({ description: value })}
+          options={mdeOptions}
+          style={{ marginTop: "11px" }}
+        />
+
+        <Box mb={4}>
+          <Checkbox
+            checked={formData.showRequestAccess}
+            checkbox-id="request-access"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              handleFormDataChange({ showRequestAccess: event.target.checked });
+            }}
+          />
         </Box>
 
         <Box mb={4}>
