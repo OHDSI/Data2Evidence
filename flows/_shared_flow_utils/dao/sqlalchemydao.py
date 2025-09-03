@@ -21,36 +21,40 @@ class SqlAlchemyDao(DaoBase):
     Using SQLAlchemy for implementation
     """
 
-    def __init__(self, use_cache_db: bool, 
-                 database_code: str,
-                 user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb=False,
-                 is_study_results_db: bool = False):
-
-        super().__init__(use_cache_db, database_code, user_type, connect_to_duckdb, is_study_results_db)
+    def __init__(
+        self,
+        use_cache_db: bool,
+        database_code: str,
+        user_type: UserType = UserType.ADMIN_USER,
+        is_study_results_db: bool = False,
+    ):
+        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
 
     # --- Property methods ---
 
     @property
     def engine(self):
-        # Todo: Switch to session in future task
+        # Todo: Switch to session
         configs = self.tenant_configs
         match configs.dialect:
             case SupportedDatabaseDialects.HANA:
-                database_name = configs.databaseName + \
-                    f"?encrypt={configs.encrypt}?sslValidateCertificate={configs.validateCertificate}"
+                database_name = (
+                    configs.databaseName
+                    + f"?encrypt={configs.encrypt}?sslValidateCertificate={configs.validateCertificate}"
+                )
             case _:
                 database_name = configs.databaseName
 
         # For connecting to cachedb
-        if self.connect_to_duckdb:
-            connection_string = self.create_cachedb_connection_url(
-                user=configs.adminUser,
-                host=configs.host,
-                port=configs.port,
-                database_name=database_name
-            )
-            return sql.create_engine(connection_string)
+        # if self.use_cache_db:
+        #     connection_string = self.create_cachedb_connection_url(
+        #         user=configs.adminUser,
+        #         host=configs.host,
+        #         port=configs.port,
+        #         database_name=database_name,
+        #         password=configs.adminPassword.get_secret_value()
+        #     )
+        #     return sql.create_engine(connection_string, isolation_level="AUTOCOMMIT")
 
         connection_string, connect_args = self.create_sqlalchemy_connection_url(
             dialect=configs.dialect,
@@ -59,7 +63,7 @@ class SqlAlchemyDao(DaoBase):
             password=configs.adminPassword,
             host=configs.host,
             port=configs.port,
-            database_name=database_name
+            database_name=database_name,
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 
@@ -77,10 +81,11 @@ class SqlAlchemyDao(DaoBase):
     def create_table(self, schema: str, table: str, columns: dict):
         metadata_obj = sql.MetaData(schema=schema)
         with self.engine.connect() as connection:
-            new_table = sql.Table(table,
-                                  metadata_obj,
-                                  *(sql.Column(name, dtype) for name, dtype in columns.items())
-                                  )
+            new_table = sql.Table(
+                table,
+                metadata_obj,
+                *(sql.Column(name, dtype) for name, dtype in columns.items()),
+            )
             metadata_obj.create_all(self.engine)
             connection.commit()
 
@@ -95,7 +100,7 @@ class SqlAlchemyDao(DaoBase):
 
     def check_table_exists(self, schema: str, table: str) -> bool:
         return self.inspector.has_table(schema=schema, table_name=table)
-    
+
     def get_schema_names(self) -> list[str]:
         return self.inspector.get_schema_names()
 
@@ -117,8 +122,7 @@ class SqlAlchemyDao(DaoBase):
         return self.inspector.get_pk_constraint(schema=schema, table_name=table)
 
     def get_columns(self, schema: str, table: str) -> list[str]:
-        all_columns = self.inspector.get_columns(
-            schema=schema, table_name=table)
+        all_columns = self.inspector.get_columns(schema=schema, table_name=table)
         column_names = [col.get("name") for col in all_columns]
         return column_names
 
@@ -133,63 +137,72 @@ class SqlAlchemyDao(DaoBase):
     def get_distinct_count(self, schema: str, table: str, column: str) -> int:
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table = sql.Table(table, metadata_obj,
-                              autoload_with=connection)
-            distinct_count = connection.execute(sql.func.count(
-                sql.func.distinct(getattr(table.c, column)))).scalar()
+            table = sql.Table(table, metadata_obj, autoload_with=connection)
+            distinct_count = connection.execute(
+                sql.func.count(sql.func.distinct(getattr(table.c, column)))
+            ).scalar()
         return distinct_count
 
     def get_last_executed_changeset(self, schema: str) -> str:
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table = sql.Table("databasechangelog".casefold(), metadata_obj,
-                              autoload_with=connection)
+            table = sql.Table(
+                "databasechangelog".casefold(), metadata_obj, autoload_with=connection
+            )
             filename_col = getattr(table.c, "filename".casefold())
             dateexecuted_col = getattr(table.c, "dateexecuted".casefold())
-            select_stmt = sql.select(filename_col).order_by(
-                sql.desc(dateexecuted_col)).limit(1)
+            select_stmt = (
+                sql.select(filename_col).order_by(sql.desc(dateexecuted_col)).limit(1)
+            )
             latest_changeset = connection.execute(select_stmt).scalar()
             return latest_changeset
 
     def get_datamodel_created_date(self, schema: str) -> datetime:
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table = sql.Table("databasechangelog".casefold(), metadata_obj,
-                              autoload_with=connection)
+            table = sql.Table(
+                "databasechangelog".casefold(), metadata_obj, autoload_with=connection
+            )
             dateexecuted_col = getattr(table.c, "dateexecuted".casefold())
-            select_stmt = sql.select(dateexecuted_col).order_by(
-                sql.asc(dateexecuted_col)).limit(1)
+            select_stmt = (
+                sql.select(dateexecuted_col)
+                .order_by(sql.asc(dateexecuted_col))
+                .limit(1)
+            )
             created_date = connection.execute(select_stmt).scalar()
             return created_date
 
     def get_datamodel_updated_date(self, schema: str) -> datetime:
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table = sql.Table("databasechangelog".casefold(), metadata_obj,
-                              autoload_with=connection)
+            table = sql.Table(
+                "databasechangelog".casefold(), metadata_obj, autoload_with=connection
+            )
             dateexecuted_col = getattr(table.c, "dateexecuted".casefold())
-            select_stmt = sql.select(dateexecuted_col).order_by(
-                sql.desc(dateexecuted_col)).limit(1)
+            select_stmt = (
+                sql.select(dateexecuted_col)
+                .order_by(sql.desc(dateexecuted_col))
+                .limit(1)
+            )
             updated_date = connection.execute(select_stmt).scalar()
             return updated_date
 
     def get_value(self, schema: str, table: str, column: str) -> str:
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table_obj = sql.Table(table, metadata_obj,
-                              autoload_with=connection)
+            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
             stmt = sql.select(table_obj.c[column]).select_from(table_obj)
             value = connection.execute(stmt).scalar()
             return value
 
     def get_next_record_id(self, schema: str, table: str, id_column: int) -> int:
         metadata_obj = sql.MetaData(schema=schema)
-        table_obj = sql.Table(table, metadata_obj,
-                          autoload_with=self.engine)
+        table_obj = sql.Table(table, metadata_obj, autoload_with=self.engine)
         id_column_obj = getattr(table_obj.c, id_column.casefold())
         last_record_id_stmt = sql.select(sql.func.max(id_column_obj))
         last_record_id = self.execute_sqlalchemy_statement(
-            last_record_id_stmt, self.get_single_value)
+            last_record_id_stmt, self.get_single_value
+        )
         if last_record_id is None:
             return 1
         else:
@@ -200,32 +213,40 @@ class SqlAlchemyDao(DaoBase):
     def update_cdm_version(self, schema: str, cdm_version: str):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table = sql.Table("cdm_source".casefold(), metadata_obj,
-                              autoload_with=connection)
+            table = sql.Table(
+                "cdm_source".casefold(), metadata_obj, autoload_with=connection
+            )
             cdm_source_col = getattr(table.c, "cdm_source_name".casefold())
-            update_stmt = sql.update(table).where(
-                cdm_source_col == schema).values(cdm_version=cdm_version)
+            update_stmt = (
+                sql.update(table)
+                .where(cdm_source_col == schema)
+                .values(cdm_version=cdm_version)
+            )
             res = connection.execute(update_stmt)
             connection.commit()
 
-    def insert_values_into_table(self, schema: str, table: str, column_value_mapping: list[dict]):
+    def insert_values_into_table(
+        self, schema: str, table: str, column_value_mapping: list[dict]
+    ):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table_obj = sql.Table(table, metadata_obj,
-                              autoload_with=connection)
+            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
             res = connection.execute(table_obj.insert(), column_value_mapping)
             connection.commit()
 
     def update_data_ingestion_date(self, schema: str):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
-            table_obj = sql.Table("dataset_metadata".casefold(), metadata_obj,
-                              autoload_with=connection)
+            table_obj = sql.Table(
+                "dataset_metadata".casefold(), metadata_obj, autoload_with=connection
+            )
             condition_col = getattr(table_obj.c, "schema_name".casefold())
-            update_stmt = sql.update(table_obj).where(
-                condition_col == schema).values(data_ingestion_date=datetime.now())
-            print(
-                f"Updating data ingestion date for schema {schema}")
+            update_stmt = (
+                sql.update(table_obj)
+                .where(condition_col == schema)
+                .values(data_ingestion_date=datetime.now())
+            )
+            print(f"Updating data ingestion date for schema {schema}")
             res = connection.execute(update_stmt)
             connection.commit()
             print(f"Updated data ingestion date for {schema}")
@@ -251,18 +272,15 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             trans = connection.being()
             try:
-                truncate_sql = sql.text(
-                    f"delete from {schema}.{table}")
+                truncate_sql = sql.text(f"delete from {schema}.{table}")
                 connection.execute(truncate_sql)
                 trans.commit()
             except Exception as e:
                 trans.rollback()
-                print(
-                    f"Failed to truncate table '{schema}.{table}': {e}")
+                print(f"Failed to truncate table '{schema}.{table}': {e}")
                 raise e
             else:
-                print(
-                    f"Table '{schema}.{table}' truncated successfully!")
+                print(f"Table '{schema}.{table}' truncated successfully!")
                 self.engine.dispose()
 
     # --- Static methods ---
@@ -275,14 +293,16 @@ class SqlAlchemyDao(DaoBase):
         """
         To dispose of engine
         """
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Extract the engine from the class instance
             self = args[0]
-            engine = getattr(self, 'engine', None)
+            engine = getattr(self, "engine", None)
             if engine is None:
                 raise AttributeError(
-                    "Class instance does not have an 'engine' attached.")
+                    "Class instance does not have an 'engine' attached."
+                )
 
             try:
                 # Execute the decorated method
@@ -291,21 +311,29 @@ class SqlAlchemyDao(DaoBase):
                 engine.dispose()
                 print(f"engine disposed")
             return result
+
         return wrapper
 
-    def get_sqlalchemy_columns(self, schema: str, table: str, column_names: list[str]) -> dict[str, Column]:
-        '''
+    def get_sqlalchemy_columns(
+        self, schema: str, table: str, column_names: list[str]
+    ) -> dict[str, Column]:
+        """
         Returns a dictionary mapping column names to sqlalchemy Column objects
-        '''
+        """
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = Table(table, metadata_obj, autoload_with=connection)
-            return {column_name: getattr(table_obj.c, column_name.casefold()) for column_name in column_names}
+            return {
+                column_name: getattr(table_obj.c, column_name.casefold())
+                for column_name in column_names
+            }
 
-    def execute_sqlalchemy_statement(self, sqlalchemy_statement, callback: Callable) -> Any | None:
-        '''
-        Executed on default schema if no schema name specified 
-        '''
+    def execute_sqlalchemy_statement(
+        self, sqlalchemy_statement, callback: Callable
+    ) -> Any | None:
+        """
+        Executed on default schema if no schema name specified
+        """
         with self.engine.connect() as connection:
             res = connection.execute(sqlalchemy_statement)
             connection.commit()
@@ -314,15 +342,15 @@ class SqlAlchemyDao(DaoBase):
     def check_user_exists(self, user: str) -> bool:
         with self.engine.connect() as connection:
             if self.dialect == SupportedDatabaseDialects.POSTGRES:
-                select_stmt = sql.text(
-                    "select * from pg_user where usename = :x")
+                select_stmt = sql.text("select * from pg_user where usename = :x")
                 print(f"Executing check user exists statement..")
                 res = connection.execute(select_stmt, {"x": user}).fetchall()
             elif SupportedDatabaseDialects.HANA:
                 schema_name = "SYS"
                 metadata_obj = sql.MetaData(schema=schema_name)
-                table = Table("USERS".casefold(), metadata_obj,
-                              autoload_with=connection)
+                table = Table(
+                    "USERS".casefold(), metadata_obj, autoload_with=connection
+                )
                 user_col = getattr(table.c, "USER_NAME".casefold())
                 select_stmt = sql.select(table).where(user_col == user)
                 print(f"Executing check user exists statement..")
@@ -335,16 +363,15 @@ class SqlAlchemyDao(DaoBase):
     def check_role_exists(self, role_name: str) -> bool:
         with self.engine.connect() as connection:
             if self.dialect == SupportedDatabaseDialects.POSTGRES:
-                select_stmt = sql.text(
-                    "select * from pg_roles where rolname = :x")
+                select_stmt = sql.text("select * from pg_roles where rolname = :x")
                 print(f"Executing check role exists statement..")
-                res = connection.execute(
-                    select_stmt, {"x": role_name}).fetchall()
+                res = connection.execute(select_stmt, {"x": role_name}).fetchall()
             elif SupportedDatabaseDialects.HANA:
                 schema_name = "SYS"
                 metadata_obj = sql.MetaData(schema=schema_name)
-                table = Table("ROLES".casefold(), metadata_obj,
-                              autoload_with=connection)
+                table = Table(
+                    "ROLES".casefold(), metadata_obj, autoload_with=connection
+                )
                 role_col = getattr(table.c, "ROLE_NAME".casefold())
                 select_stmt = sql.select(table).where(role_col == role_name)
                 print(f"Executing check role exists statement..")
@@ -357,14 +384,14 @@ class SqlAlchemyDao(DaoBase):
     def create_read_role(self, role_name: str):
         match self.dialect:
             case SupportedDatabaseDialects.POSTGRES:
-                create_role_stmt = sql.text(f'CREATE ROLE {role_name}')
+                create_role_stmt = sql.text(f"CREATE ROLE {role_name}")
             case SupportedDatabaseDialects.HANA:
                 create_role_stmt = sql.text(
-                    f'CREATE ROLE {role_name} NO GRANT TO CREATOR')
+                    f"CREATE ROLE {role_name} NO GRANT TO CREATOR"
+                )
         with self.engine.connect() as connection:
             print("Executing create read role statement..")
-            create_role_res = connection.execute(
-                create_role_stmt)
+            create_role_res = connection.execute(create_role_stmt)
             connection.commit()
             print(f"{role_name} role Created Successfully")
 
@@ -377,14 +404,15 @@ class SqlAlchemyDao(DaoBase):
         match self.dialect:
             case SupportedDatabaseDialects.POSTGRES:
                 create_user_stmt = sql.text(
-                    f'CREATE USER {user} WITH PASSWORD "{password}"')
+                    f'CREATE USER {user} WITH PASSWORD "{password}"'
+                )
             case SupportedDatabaseDialects.HANA:
                 create_user_stmt = sql.text(
-                    f'CREATE USER {user} PASSWORD "{password}" NO FORCE_FIRST_PASSWORD_CHANGE')
+                    f'CREATE USER {user} PASSWORD "{password}" NO FORCE_FIRST_PASSWORD_CHANGE'
+                )
         with self.engine.connect() as connection:
             print("Executing create user statement..")
-            create_user_res = connection.execute(
-                create_user_stmt)
+            create_user_res = connection.execute(create_user_stmt)
             connection.commit()
             print(f"{user} User Created Successfully")
 
@@ -392,14 +420,14 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             create_role_stmt = sql.text(f"CREATE ROLE {role_name}")
             print("Executing create role statement..")
-            create_role_res = connection.execute(
-                create_role_stmt)
+            create_role_res = connection.execute(create_role_stmt)
             print(f"{role_name} role Created Successfully")
 
             grant_role_stmt = sql.text(f"GRANT {role_name} TO {user}")
             print("Executing grant role to user statement..")
             grant_role_res = connection.execute(
-                grant_role_stmt, {"x": role_name, "y": user})
+                grant_role_stmt, {"x": role_name, "y": user}
+            )
             connection.commit()
             print(f" {role_name} Role Granted to {user} User Successfully")
 
@@ -417,36 +445,45 @@ class SqlAlchemyDao(DaoBase):
                     ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT EXECUTE ON FUNCTIONS TO {role_name};""")
             case SupportedDatabaseDialects.HANA:
                 grant_read_stmt = sql.text(
-                    f"GRANT SELECT, EXECUTE, CREATE TEMPORARY TABLE ON SCHEMA {schema} to {role_name}")
+                    f"GRANT SELECT, EXECUTE, CREATE TEMPORARY TABLE ON SCHEMA {schema} to {role_name}"
+                )
         with self.engine.connect() as connection:
-
             print("Executing grant read privilege statement..")
-            grant_read_res = connection.execute(
-                grant_read_stmt)
+            grant_read_res = connection.execute(grant_read_stmt)
             connection.commit()
             print(f"Granted Read privileges Successfully")
 
     def grant_cohort_write_privileges(self, schema: str, role_name: str):
         with self.engine.connect() as connection:
             grant_cohort_write_stmt = sql.text(
-                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort TO {role_name}")
+                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort TO {role_name}"
+            )
             grant_cohort_def_write_stmt = sql.text(
-                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort_definition TO {role_name}")
+                f"GRANT DELETE, INSERT, UPDATE ON {schema}.cohort_definition TO {role_name}"
+            )
             print("Executing grant cohort write privilege statement..")
             try:
-                grant_cohort_write_res = connection.execute(
-                    grant_cohort_write_stmt)
+                grant_cohort_write_res = connection.execute(grant_cohort_write_stmt)
                 grant_cohort_def_write_res = connection.execute(
-                    grant_cohort_def_write_stmt)
+                    grant_cohort_def_write_stmt
+                )
                 connection.commit()
             except Exception as e:
                 raise e
             else:
                 print(
-                    f"Granted cohort and cohort definition Write privileges Successfully")
+                    f"Granted cohort and cohort definition Write privileges Successfully"
+                )
 
-    def create_table_from_select(self, source_schema: str, source_table: str, target_schema: str, target_table: str, columns_to_copy: list[str], filter_conditions: list) -> int:
-
+    def create_table_from_select(
+        self,
+        source_schema: str,
+        source_table: str,
+        target_schema: str,
+        target_table: str,
+        columns_to_copy: list[str],
+        filter_conditions: list,
+    ) -> int:
         sanitized_source_schema = self.__sanitize_inputs(source_schema)
         sanitized_source_table = self.__sanitize_inputs(source_table)
         sanitized_target_table = self.__sanitize_inputs(target_table)
@@ -454,32 +491,47 @@ class SqlAlchemyDao(DaoBase):
 
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=source_schema)
-            source_table = sql.Table(sanitized_source_table, metadata_obj,
-                                     autoload_with=connection)
+            source_table = sql.Table(
+                sanitized_source_table, metadata_obj, autoload_with=connection
+            )
 
-            select_statement = self.create_select_statement(source_schema, source_table, 
-                                                            columns_to_copy, filter_conditions)
+            select_statement = self.create_select_statement(
+                source_schema, source_table, columns_to_copy, filter_conditions
+            )
 
-            compiled_sql_query = str(select_statement.compile(
-                compile_kwargs={"literal_binds": True}))
+            compiled_sql_query = str(
+                select_statement.compile(compile_kwargs={"literal_binds": True})
+            )
 
             create_from_select_statement = sql.text(
-                f'''CREATE TABLE {sanitized_target_schema}.{sanitized_target_table} AS ({compiled_sql_query});''')
-            row_count = connection.execute(
-                create_from_select_statement).rowcount
+                f"""CREATE TABLE {sanitized_target_schema}.{sanitized_target_table} AS ({compiled_sql_query});"""
+            )
+            row_count = connection.execute(create_from_select_statement).rowcount
 
         return row_count
 
-    def copy_table_as_dataframe(self, source_schema_name: str, source_table_name: str, 
-                                columns_to_copy: list[str], filter_conditions: str) -> pd.DataFrame:
+    def copy_table_as_dataframe(
+        self,
+        source_schema_name: str,
+        source_table_name: str,
+        columns_to_copy: list[str],
+        filter_conditions: str,
+    ) -> pd.DataFrame:
         # Construct select statements with filter conditions
-        select_statement = self.create_select_statement(source_schema_name, source_table_name, 
-                                                        columns_to_copy, filter_conditions)
+        select_statement = self.create_select_statement(
+            source_schema_name, source_table_name, columns_to_copy, filter_conditions
+        )
         df = pd.read_sql_query(select_statement, self.engine)
         return df
 
-    def create_select_statement(self, schema: str, table: str, columns_to_select: list[str], 
-                                filter_conditions: list, source_table_obj = None) -> Select:
+    def create_select_statement(
+        self,
+        schema: str,
+        table: str,
+        columns_to_select: list[str],
+        filter_conditions: list,
+        source_table_obj=None,
+    ) -> Select:
         select_from_conditions = sql.and_(*filter_conditions)
 
         with self.engine.connect() as connection:
@@ -488,43 +540,80 @@ class SqlAlchemyDao(DaoBase):
             else:
                 metadata_obj = sql.MetaData(schema=schema)
                 source_table = sql.Table(table, metadata_obj, autoload_with=connection)
-        
+
             match self.dialect:
                 case SupportedDatabaseDialects.HANA:
                     # cast text columns to nclob
-                    select_statement = sql.select(*map(lambda x: sql.cast(getattr(source_table.c, x), UnicodeText) if isinstance(
-                        source_table.c[x].type, Text) else getattr(source_table.c, x), columns_to_select)).where(select_from_conditions)
+                    select_statement = sql.select(
+                        *map(
+                            lambda x: sql.cast(getattr(source_table.c, x), UnicodeText)
+                            if isinstance(source_table.c[x].type, Text)
+                            else getattr(source_table.c, x),
+                            columns_to_select,
+                        )
+                    ).where(select_from_conditions)
 
                 case SupportedDatabaseDialects.POSTGRES:
                     select_statement = sql.select(
-                        *map(lambda x: getattr(source_table.c, x), columns_to_select)).where(select_from_conditions)
+                        *map(lambda x: getattr(source_table.c, x), columns_to_select)
+                    ).where(select_from_conditions)
 
         return select_statement
 
-    def copy_table(self, source_schema_name: str, source_table_name: str, target_table_name: str, 
-                   target_schema_name: str, columns_to_copy: list[str], filter_conditions: dict) -> int:
+    def copy_table(
+        self,
+        source_schema_name: str,
+        source_table_name: str,
+        target_table_name: str,
+        target_schema_name: str,
+        columns_to_copy: list[str],
+        filter_conditions: dict,
+    ) -> int:
         # Only used for datamart copy snapshot
         with self.engine.connect() as connection:
             where_conditions = []
 
             metadata_obj = sql.MetaData()
             source_table = sql.Table(
-                source_table_name, metadata_obj, autoload_with=connection, schema=source_schema_name)
-            
+                source_table_name,
+                metadata_obj,
+                autoload_with=connection,
+                schema=source_schema_name,
+            )
+
             if "patient_filter" in list(filter_conditions.keys()):
-                person_id_column_obj = source_table.c[filter_conditions["patient_filter"]["person_id_column"]]
-                where_conditions.append(person_id_column_obj.in_(filter_conditions["patient_filter"]["patients_to_filter"]))
+                person_id_column_obj = source_table.c[
+                    filter_conditions["patient_filter"]["person_id_column"]
+                ]
+                where_conditions.append(
+                    person_id_column_obj.in_(
+                        filter_conditions["patient_filter"]["patients_to_filter"]
+                    )
+                )
 
             if "date_filter" in list(filter_conditions.keys()):
-                timestamp_column_obj = source_table.c[filter_conditions["date_filter"]["timestamp_column"]]
-                where_conditions.append(filter_conditions["date_filter"]["dates_to_filter"] >= timestamp_column_obj)
+                timestamp_column_obj = source_table.c[
+                    filter_conditions["date_filter"]["timestamp_column"]
+                ]
+                where_conditions.append(
+                    filter_conditions["date_filter"]["dates_to_filter"]
+                    >= timestamp_column_obj
+                )
 
             # Create table in target schema by copying columns from source_table including data type
             target_columns = [source_table.c[col].copy() for col in columns_to_copy]
-            target_constraints = [constraint.copy() for constraint in source_table.constraints if set(
-                constraint.columns.keys()).issubset(columns_to_copy)]
-            target_table = sql.Table(target_table_name, metadata_obj, *target_columns, 
-                                     *target_constraints,schema=target_schema_name)            
+            target_constraints = [
+                constraint.copy()
+                for constraint in source_table.constraints
+                if set(constraint.columns.keys()).issubset(columns_to_copy)
+            ]
+            target_table = sql.Table(
+                target_table_name,
+                metadata_obj,
+                *target_columns,
+                *target_constraints,
+                schema=target_schema_name,
+            )
             target_table.create(bind=self.engine, checkfirst=True)
 
             # Create indexes in target table manually
@@ -533,18 +622,25 @@ class SqlAlchemyDao(DaoBase):
                 index_columns = [col.name for col in index.columns]
 
                 if set(index_columns).issubset(set(columns_to_copy)):
-                    column_objects = [target_table.c[column]
-                                      for column in index_columns]
+                    column_objects = [
+                        target_table.c[column] for column in index_columns
+                    ]
                     index = sql.Index(index_name, *column_objects)
                     index.create(connection)
 
             # Construct select statements with filter conditions
-            select_statement = self.create_select_statement(source_schema_name, source_table_name, 
-                                                            columns_to_copy, where_conditions, source_table)
+            select_statement = self.create_select_statement(
+                source_schema_name,
+                source_table_name,
+                columns_to_copy,
+                where_conditions,
+                source_table,
+            )
 
             # Insert into target table from source table
             insert_statement = sql.insert(target_table).from_select(
-                columns_to_copy, select_statement)
+                columns_to_copy, select_statement
+            )
 
             result = connection.execute(insert_statement)
             connection.commit()
@@ -552,16 +648,17 @@ class SqlAlchemyDao(DaoBase):
             if self.dialect == SupportedDatabaseDialects.POSTGRES:
                 row_count = result.rowcount
             elif self.dialect == SupportedDatabaseDialects.HANA:
-                select_count_stmt = sql.select(
-                    sql.func.count()).select_from(target_table)
-                row_count = connection.execute(
-                    select_count_stmt).scalar()
+                select_count_stmt = sql.select(sql.func.count()).select_from(
+                    target_table
+                )
+                row_count = connection.execute(select_count_stmt).scalar()
         return row_count
 
     def enable_auditing(self):
         with self.engine.connect() as connection:
             stmt = sql.text(
-                f"ALTER SYSTEM ALTER CONFIGURATION ('global.ini','SYSTEM') set ('auditing configuration','global_auditing_state' ) = 'true' with reconfigure")
+                f"ALTER SYSTEM ALTER CONFIGURATION ('global.ini','SYSTEM') set ('auditing configuration','global_auditing_state' ) = 'true' with reconfigure"
+            )
             print("Executing enable audit statement..")
             res = connection.execute(stmt)
             connection.commit()
@@ -570,23 +667,25 @@ class SqlAlchemyDao(DaoBase):
     def create_system_audit_policy(self):
         with self.engine.connect() as connection:
             check_audit_policy = sql.text(
-                f"SELECT * from SYS.AUDIT_POLICIES WHERE AUDIT_POLICY_NAME = 'alp_conf_changes'")
+                f"SELECT * from SYS.AUDIT_POLICIES WHERE AUDIT_POLICY_NAME = 'alp_conf_changes'"
+            )
             print("Executing check system audit policy statement..")
-            check_audit_policy_res = connection.execute(
-                check_audit_policy).fetchall()
+            check_audit_policy_res = connection.execute(check_audit_policy).fetchall()
             if check_audit_policy_res == []:
                 create_audit_policy = sql.text(
-                    f'''CREATE AUDIT POLICY "alp_conf_changes" AUDITING SUCCESSFUL SYSTEM CONFIGURATION CHANGE LEVEL INFO''')
+                    f"""CREATE AUDIT POLICY "alp_conf_changes" AUDITING SUCCESSFUL SYSTEM CONFIGURATION CHANGE LEVEL INFO"""
+                )
                 print("Executing create system audit policy statement..")
-                create_audit_policy_res = connection.execute(
-                    create_audit_policy)
+                create_audit_policy_res = connection.execute(create_audit_policy)
                 print("Executing alter system audit policy statement..")
                 alter_audit_policy = sql.text(
-                    f'''ALTER AUDIT POLICY "alp_conf_changes" ENABLE''')
+                    f"""ALTER AUDIT POLICY "alp_conf_changes" ENABLE"""
+                )
                 alter_audit_policy.res = connection.execute(alter_audit_policy)
                 connection.commit()
                 print(
-                    "New audit policy for system configuration created & enabled successfully!")
+                    "New audit policy for system configuration created & enabled successfully!"
+                )
             else:
                 print("Audit policy for system configuration already exists!")
 
@@ -594,26 +693,30 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             schema_audit_policy = f"ALP_AUDIT_POLICY_{schema}"
             check_schema_audit_policy = sql.text(
-                f"SELECT * from SYS.AUDIT_POLICIES WHERE AUDIT_POLICY_NAME = '{schema_audit_policy}'")
+                f"SELECT * from SYS.AUDIT_POLICIES WHERE AUDIT_POLICY_NAME = '{schema_audit_policy}'"
+            )
             print("Executing check system audit policy statement..")
             check_schema_audit_policy_res = connection.execute(
-                check_schema_audit_policy).fetchall()
+                check_schema_audit_policy
+            ).fetchall()
             if check_schema_audit_policy_res == []:
-                create_audit_policy = sql.text(f'''
+                create_audit_policy = sql.text(f"""
                     CREATE AUDIT POLICY {schema_audit_policy}
                     AUDITING ALL INSERT, SELECT, UPDATE, DELETE ON
                     {schema}.* LEVEL INFO
-                    ''')
+                    """)
                 print("Executing create schema audit policy statement..")
-                create_audit_policy_res = connection.execute(
-                    create_audit_policy)
+                create_audit_policy_res = connection.execute(create_audit_policy)
                 alter_audit_policy = sql.text(
-                    f'''ALTER AUDIT POLICY ALP_AUDIT_POLICY_{schema} ENABLE''')
+                    f"""ALTER AUDIT POLICY ALP_AUDIT_POLICY_{schema} ENABLE"""
+                )
                 print("Executing alter schema audit policy statement..")
                 alter_audit_policy_res = connection.execute(alter_audit_policy)
                 connection.commit()
                 print(
-                    f"New audit policy for {schema} '{schema_audit_policy}' created & enabled successfully!")
+                    f"New audit policy for {schema} '{schema_audit_policy}' created & enabled successfully!"
+                )
             else:
                 print(
-                    f"Audit policy for schema '{schema_audit_policy}' already exists!")
+                    f"Audit policy for schema '{schema_audit_policy}' already exists!"
+                )

@@ -91,7 +91,7 @@ RUN java -version && R CMD javareconf
 # Install Dependencies
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
+RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2", upgrade = "never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.3.3", upgrade="never")'
@@ -147,7 +147,7 @@ RUN chown -R docker:docker /output
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
+ENV duckdb_version=1.2.1
 RUN mkdir -p /app/duckdb_extensions
 WORKDIR /app/duckdb_extensions
 RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \

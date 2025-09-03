@@ -10,3 +10,10 @@ class SearchEmbeddingType(BaseModel):
     @property
     def use_cache_db(self) -> str:
         return False
+    
+    @property
+    def use_trex_connection(self) -> bool:
+        """
+        Whether to use the TREX sql connection or direct database connection.
+        """
+        return False
