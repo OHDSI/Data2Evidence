@@ -247,7 +247,7 @@ const CreateConfiguration = `CREATE or replace PROCEDURE "HTTPTEST_SCHEMA"."lega
 
 DECLARE
     EXISTS INTEGER;
-    USERNAME character varying(256) := 'TEST_USERS'; 
+    USERNAME character varying(256) := 'TEST_USER'; 
 BEGIN
     IF CONFIG_ID is NULL THEN
         CONFIG_ID_OUT = uuid_generate_v4()::character varying;

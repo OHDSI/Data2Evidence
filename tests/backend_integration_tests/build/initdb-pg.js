@@ -28,7 +28,6 @@ async function createTestSchema() {
 }
 
 async function executeQuery(query) {
-//   console.log(`query: ${query}`);
   pool.on("error", (err, client) => {
     console.error("Unexpected error on idle client", err);
     client.release(true);
@@ -36,8 +35,6 @@ async function executeQuery(query) {
   });
   const client = await pool.connect();
   const res = await client.query(query);
-
-  // console.log(`SQL script query executed`);
   client.release();
   return res;
 }
@@ -71,7 +68,6 @@ async function insertDataToTable(
         data.push(r);
       })
       .on("end", (rowCount) => {
-        // console.log(`Parsed ${rowCount} rows`);
         resolve(data);
       });
   });
