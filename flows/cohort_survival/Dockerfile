@@ -102,6 +102,6 @@ RUN useradd docker -u 1001 \
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./cohort_survival/cohort_survival_plugin flows/cohort_survival_plugin
 
-ENV INSTALL_SQLALCHEMY_FLAG=false
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 USER docker

@@ -50,6 +50,6 @@ COPY --chown=docker:docker --chmod=711 ./data_management flows
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-ENV INSTALL_SQLALCHEMY_FLAG=true
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 # USER docker
