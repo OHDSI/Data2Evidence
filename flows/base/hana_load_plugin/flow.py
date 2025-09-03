@@ -5,8 +5,10 @@ from zipfile import ZipFile
 import requests
 from pathlib import Path
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.create_dataset_tasks import *
 from prefect import flow, task, get_run_logger
 from time import sleep
+from functools import partial
 
 from .types import DataloadOptions
 from .constants import (
@@ -27,30 +29,36 @@ def hana_load_plugin(options: DataloadOptions):
     schema = options.schema_name
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
-    # Only create download task if zip is missing
+    # Download dataset if zip is missing
     if not ZIP_PATH.exists():
         zip_path = download_eunomia()
     else:
         logger.info("Zip already exists, skipping download.")
         zip_path = ZIP_PATH
 
-    # Only create unzip task if folder is missing/empty
+    # Extract dataset if folder missing or empty
     if not (EXTRACT_DIR.exists() and any(EXTRACT_DIR.iterdir())):
         folder = unzip_dataset(zip_path)
     else:
         logger.info("Extracted folder already exists, skipping unzip.")
         folder = EXTRACT_DIR
 
-    # create schema only when successfully unzip
-    if not dbdao.check_schema_exists(schema):
-        logger.info(f"Creating schema {schema} ...")
-        dbdao.create_schema(schema)
+    create_schema_task(dbdao, schema)
 
-    run_create_scripts(schema, dbdao)
+    # Parent task with hook to drop schema on failure
+    create_datamodel_wo = create_datamodel_parent.with_options(
+        on_failure=[partial(
+            drop_schema_hook, **dict(dbdao=dbdao, schema=schema)
+        )]
+    )
+    create_datamodel_wo(schema, dbdao, folder)
+
+#task
+@task(log_prints=True)
+def create_datamodel_parent(schema: str, dbdao: DBDao, folder: Path):
+    run_create_datamodel_scripts(schema, dbdao)
     load_csvs_to_hana(folder, schema, dbdao)
 
-
-# tasks
 @task(log_prints=True)
 def download_eunomia():
     DATA_DIR.mkdir()
@@ -70,7 +78,7 @@ def unzip_dataset(zip_path: Path):
 
 
 @task(log_prints=True)
-def run_create_scripts(schema: str, dbdao: DBDao):
+def run_create_datamodel_scripts(schema: str, dbdao: DBDao):
     logger = get_run_logger()
     
     for sql_file in SQL_FILES_ORDER:
