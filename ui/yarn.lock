@@ -3593,7 +3593,7 @@
 
 "@data2evidence/d2e-starboard-wrap@https://github.com/data2evidence/d2e-starboard-wrap.git#develop":
   version "1.0.0"
-  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#598ed7512f6e34f9caa0d6f20628b7b6dbce96e0"
+  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#0682494e64c762ad9b0832621400bbb57fa091fb"
   dependencies:
     "@data2evidence/d2e-starboard-notebook" "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop"
     "@ungap/custom-elements" "^0.1.15"

@@ -484,6 +484,9 @@ services:
             "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
             "PG_PORT": "${PG_PORT:-5432}",
             "PG_DATABASE": "${PG_DB_NAME:-alp}",
+            "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
+            "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
+            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
             "PG_SCHEMA": "strategus",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
@@ -1061,6 +1064,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway:
+        priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
       - "postgres"
@@ -1460,7 +1465,6 @@ services:
       labels:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
-    profiles: [jupyter]
 
   # fhir-fe-server:
   #     container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
