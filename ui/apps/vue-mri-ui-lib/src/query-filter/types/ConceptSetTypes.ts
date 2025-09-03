@@ -198,3 +198,30 @@ export interface SelectedConcept {
   // Backward compatibility field (our custom addition)
   conceptName?: string | undefined
 }
+
+// Interfaces for concept set expression API response
+export interface ConceptSetExpressionConcept {
+  CONCEPT_ID: number
+  CONCEPT_NAME: string
+  STANDARD_CONCEPT: string
+  STANDARD_CONCEPT_CAPTION: string
+  INVALID_REASON: string
+  INVALID_REASON_CAPTION: string
+  CONCEPT_CODE: string
+  DOMAIN_ID: string
+  VOCABULARY_ID: string
+  CONCEPT_CLASS_ID: string
+  VALID_START_DATE: number
+  VALID_END_DATE: number
+}
+
+export interface ConceptSetExpressionItem {
+  concept: ConceptSetExpressionConcept
+  isExcluded: boolean
+  includeDescendants: boolean
+  includeMapped: boolean
+}
+
+export interface ConceptSetExpression {
+  items: ConceptSetExpressionItem[]
+}
