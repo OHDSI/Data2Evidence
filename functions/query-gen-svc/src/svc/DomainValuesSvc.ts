@@ -417,9 +417,9 @@ function getDistinctValuesFromReference(
         : "";
 
     sQuery = QueryObject.format(
-        `SELECT DISTINCT ( %UNSAFE ) AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC `,
+        `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC `,
+        aliasedRefExpression,
         aliasedRefFilter
     );
-
     return sQuery;
 }
