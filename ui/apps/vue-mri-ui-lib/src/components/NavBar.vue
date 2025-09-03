@@ -29,8 +29,8 @@
 
 <script>
 import logoSvg from '@/assets/d2e.svg'
-import { getNavigationItems } from '../utils/config.ts'
-import { navigateToRoute } from '../utils/AppRegistry.ts'
+import { getNavigationItems } from '../utils/config'
+import { navigateToRoute } from '../utils/AppRegistry'
 
 export default {
   name: 'NavBar',

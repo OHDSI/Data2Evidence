@@ -8,7 +8,7 @@ const MAIN_NAV_ITEM: NavigationItem = {
   active: true,
 }
 
-let cachedNavigationItems: NavigationItem[] = null
+let cachedNavigationItems: NavigationItem[] | null = null
 
 export const getNavigationItems = (): NavigationItem[] => {
   if (cachedNavigationItems !== null) {

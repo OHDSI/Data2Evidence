@@ -26,7 +26,7 @@
 <script>
 import App from './App.vue';
 import NavBar from './components/NavBar.vue';
-import { useNavigation } from './composables/useNavigation.ts';
+import { useNavigation } from './composables/useNavigation';
 
 export default {
   name: 'RootLayout',

@@ -1,7 +1,9 @@
+import type { Component } from 'vue'
 import { getNavigationConfig } from './config'
+import type { NavigationItem } from '../types/navigation'
 
-let componentsCache: any[] = []
-let componentInstanceCache = new Map<string, any>()
+let componentsCache: NavigationItem[] = []
+let componentInstanceCache = new Map<string, Component>()
 
 function initializeComponents() {
   try {
