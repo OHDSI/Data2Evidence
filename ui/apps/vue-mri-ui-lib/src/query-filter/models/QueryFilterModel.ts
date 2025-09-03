@@ -335,7 +335,7 @@ export class QueryFilterCriteriaManager {
           description: group.description, // Maps group.description → Atlas InclusionRule.description
           expression: {
             Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
-            Count: group.criteriaCount, // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
+            ...(group.criteriaCount === undefined ? {} : { Count: group.criteriaCount }), // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
             CriteriaList: group.events.flatMap(event =>
               [event]
                 .filter(e => e.eventType !== 'demographic' && e.eventType !== 'group' && e.eventType) // Exclude demographic and group events
