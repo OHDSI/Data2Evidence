@@ -5,6 +5,8 @@ import {
   IDqdCreateFlowRun,
   IGetVersionInfoCreateFlowRun,
   IPhenotypeCreateFlowRun,
+  ICacheCreateFlowRun,
+  ICacheStatusFlowRun,
 } from "../type.d.ts";
 import { post } from "./request-util.ts";
 
@@ -42,6 +44,23 @@ export class JobPluginsAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while creating cache flow run: ${error}`);
+      throw error;
+    }
+  }
+
+  async getCacheFlowRunStatus(dto: ICacheStatusFlowRun) {
+    try {
+      this.logger.info(
+        `Get create cache flow run status for flow run: ${JSON.stringify(dto)}`
+      );
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/cachedb/results/${dto.flowRunId}`;
+      const result = await post(url, {}, options);
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while checking status of create cache flow run: ${error}`
+      );
       throw error;
     }
   }

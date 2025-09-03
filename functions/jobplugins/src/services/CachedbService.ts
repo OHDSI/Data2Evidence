@@ -26,7 +26,33 @@ export class CachedbService {
 
   public async getFlowRunResults(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
-    const flowRun: FlowRunState = await prefectApi.getFlowRun(flowRunId);
+
+    const POLL_INTERVAL_MS = 2000;
+    const MAX_ATTEMPTS = 60; // 2 minutes max
+    let attempts = 0;
+
+    let flowRun = await prefectApi.getFlowRun(flowRunId);
+
+    // If the flowRun is an array, get the first object
+    if (Array.isArray(flowRun)) {
+      flowRun = flowRun[0];
+    }
+
+    while (
+      flowRun.state_type === FlowRunState.RUNNING &&
+      attempts < MAX_ATTEMPTS
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      flowRun = await prefectApi.getFlowRun(flowRunId);
+      if (Array.isArray(flowRun)) {
+        flowRun = flowRun[0];
+      }
+      attempts++;
+    }
+
+    if (flowRun.state_type === FlowRunState.COMPLETED) {
+      return flowRun.id;
+    }
     return flowRun;
   }
 }

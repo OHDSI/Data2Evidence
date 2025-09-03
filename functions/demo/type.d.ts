@@ -62,6 +62,10 @@ export interface ICacheCreateFlowRun {
   datasetId: string;
 }
 
+export interface ICacheStatusFlowRun {
+  flowRunId: string;
+}
+
 export interface IDqdCreateFlowRun {
   datasetId: string | undefined;
   comment?: string;

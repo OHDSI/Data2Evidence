@@ -174,7 +174,14 @@ export class DemoService {
     const result = await jobPluginsAPI.createCacheFlowRun({ datasetId });
 
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
-    return result.flowRunId ? result : result.data;
+    const flowRunId = result.flowRunId
+      ? result.flowRunId
+      : result.data?.flowRunId;
+
+    // call jobPluginsApi getCreateCacheFlowRunStatus
+    const cacheStatus = await jobPluginsAPI.getCacheFlowRunStatus(flowRunId);
+    this.logger.info(`Cache flow-run status: ${JSON.stringify(cacheStatus)}`);
+    return cacheStatus;
   }
 
   public async updateDatasetMetadata(
