@@ -17,11 +17,10 @@ from .flowutils import *
 from .nodes import generate_nodes_flow
 from .types import NodeType
 
+os.environ['plugin_name'] = 'dataflow_ui_plugin'
 
 @flow(log_prints=True)
 def dataflow_ui_plugin(json_graph, import_libs, variables, options):
-
-    os.environ['plugin_name'] = 'dataflow_ui_plugin'
 
     logger = get_run_logger()
 
@@ -32,7 +31,7 @@ def dataflow_ui_plugin(json_graph, import_libs, variables, options):
     _options = options
     graph = json_graph
     sorted_nodes = get_node_list(graph)  # array of nodes that is sorted
-    get_run_logger().debug(f"Total number of nodes: {len(sorted_nodes)}")
+    logger.debug(f"Total number of nodes: {len(sorted_nodes)}")
     nodes_out = {}
     testmode = _options["test_mode"]
     trace_config = _options["trace_config"]

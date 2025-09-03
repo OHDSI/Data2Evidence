@@ -67,6 +67,7 @@ const actions = {
       url = `${process.env.VUE_APP_HOST}${url}`
     }
     return new Promise(async (resolve, reject) => {
+      dispatch('clearNotifications')
       let headers = {}
       const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
       if (bearerToken != null) {
@@ -108,6 +109,7 @@ const actions = {
     }
 
     return new Promise(async (resolve, reject) => {
+      dispatch('clearNotifications')
       const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
       if (bearerToken != null) {
         if (!options.headers) {
@@ -150,3 +152,4 @@ export default {
   actions,
   mutations,
 }
+
