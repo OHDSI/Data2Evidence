@@ -11,6 +11,7 @@ import type {
   GetConceptSetsResponse,
   ConceptSetDetail,
   ConceptSetExpression,
+  ConceptSetExpressionItem,
 } from '../types/ConceptSetTypes'
 
 const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
@@ -186,8 +187,18 @@ const formatConceptForAtlas = (
   }
 }
 
-const extractConceptIds = (conceptSet: ConceptSetItemDisplay): number[] => {
-  return conceptSet.conceptIds || []
+// Helper function to extract concept expression items
+const extractConceptExpression = async (
+  conceptSet: ConceptSetItemDisplay,
+  datasetId: string
+): Promise<ConceptSetExpressionItem[]> => {
+  try {
+    const expression = await getConceptSetExpression(datasetId, conceptSet.value)
+    return expression.items
+  } catch (error) {
+    console.error(`Error extracting concept expression for concept set ${conceptSet.value}:`, error)
+    return []
+  }
 }
 
 export const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[], datasetId: string) => {
@@ -207,19 +218,20 @@ export const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemD
     const detailsMap: { [key: string]: ConceptSetDetail[] } = {}
 
     const allConceptIds: number[] = []
-    const conceptSetToConceptIds: Record<string, number[]> = {}
+    const conceptSetToExpressionItems: Record<string, ConceptSetExpressionItem[]> = {}
 
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
-      let conceptIds = extractConceptIds(conceptSet)
+      const expressionItems = await extractConceptExpression(conceptSet, datasetId)
 
-      if (conceptIds.length === 0) {
+      if (expressionItems.length === 0) {
         console.warn(`No concept IDs found for concept set ${conceptSetId}`)
-        conceptSetToConceptIds[conceptSetId] = []
+        conceptSetToExpressionItems[conceptSetId] = []
       } else {
-        const limitedConceptIds = conceptIds.slice(0, 20)
-        conceptSetToConceptIds[conceptSetId] = limitedConceptIds
-        allConceptIds.push(...limitedConceptIds)
+        const limitedItems = expressionItems.slice(0, 20)
+        conceptSetToExpressionItems[conceptSetId] = limitedItems
+        const conceptIds = limitedItems.map(item => item.concept.CONCEPT_ID)
+        allConceptIds.push(...conceptIds)
       }
     }
 
@@ -237,15 +249,21 @@ export const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemD
 
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
-      const conceptIds = conceptSetToConceptIds[conceptSetId]
+      const expressionItems = conceptSetToExpressionItems[conceptSetId]
       const conceptDetails: ConceptSetDetail[] = []
-      if (conceptIds) {
-        for (const conceptId of conceptIds) {
+      if (expressionItems) {
+        for (const expressionItem of expressionItems) {
+          const conceptId = expressionItem.concept.CONCEPT_ID
           const conceptDetail = conceptDetailsMap.get(conceptId)
           if (conceptDetail) {
             console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
 
-            const conceptFlags = conceptSet.concepts?.find(c => c.id === conceptId)
+            const conceptFlags = {
+              id: conceptId,
+              useMapped: expressionItem.includeMapped,
+              isExcluded: expressionItem.isExcluded,
+              useDescendants: expressionItem.includeDescendants,
+            }
             const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
             conceptDetails.push(formattedConcept)
           }
@@ -276,27 +294,34 @@ export const loadSingleConceptSetDetails = async (
     const headers = await buildApiHeaders()
     headers['Content-Type'] = 'application/json'
 
-    let conceptIds = extractConceptIds(conceptSet)
+    const expressionItems = await extractConceptExpression(conceptSet, datasetId)
 
-    if (conceptIds.length === 0) {
+    if (expressionItems.length === 0) {
       console.warn(`No concept IDs found for concept set ${conceptSet.value}`)
     }
 
     const conceptDetails: ConceptSetDetail[] = []
 
-    const limitedConceptIds = conceptIds.slice(0, 20)
-    console.log(`Fetching details for concept set ${conceptSet.value}:`, limitedConceptIds)
+    const limitedItems = expressionItems.slice(0, 20)
+    const conceptIds = limitedItems.map(item => item.concept.CONCEPT_ID)
+    console.log(`Fetching details for concept set ${conceptSet.value}:`, conceptIds)
 
-    for (const conceptId of limitedConceptIds) {
+    for (const expressionItem of limitedItems) {
       try {
+        const conceptId = expressionItem.concept.CONCEPT_ID
         const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
         if (conceptDetail) {
-          const conceptFlags = conceptSet.concepts?.find(c => c.id === conceptId)
+          const conceptFlags = {
+            id: conceptId,
+            useMapped: expressionItem.includeMapped,
+            isExcluded: expressionItem.isExcluded,
+            useDescendants: expressionItem.includeDescendants,
+          }
           const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
           conceptDetails.push(formattedConcept)
         }
       } catch (error) {
-        console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
+        console.warn(`Failed to fetch concept details for ID ${expressionItem.concept.CONCEPT_ID}:`, error)
       }
     }
 
