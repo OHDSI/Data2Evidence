@@ -270,7 +270,7 @@ class SqlAlchemyDao(DaoBase):
 
     def truncate_table(self, schema: str, table: str):
         with self.engine.connect() as connection:
-            trans = connection.being()
+            trans = connection.begin()
             try:
                 truncate_sql = sql.text(f"delete from {schema}.{table}")
                 connection.execute(truncate_sql)
