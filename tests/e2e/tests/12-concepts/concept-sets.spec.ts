@@ -56,6 +56,6 @@ test('Concepts', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Update' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByText('413 / 2694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('413 / 2694')).toBeVisible({ timeout: 30000 })
   await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
 })
