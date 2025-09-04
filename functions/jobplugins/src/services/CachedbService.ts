@@ -1,6 +1,6 @@
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
-  FlowRunState,
+  FLOW_RUN_STATE_TYPES,
   PrefectDeploymentName,
   PrefectFlowName,
 } from "../const.ts";
@@ -40,13 +40,23 @@ export class CachedbService {
     }
 
     const pollingStates = [
-      FlowRunState.SCHEDULED,
-      FlowRunState.LATE,
-      FlowRunState.PENDING,
-      FlowRunState.RUNNING,
+      FLOW_RUN_STATE_TYPES.SCHEDULED,
+      FLOW_RUN_STATE_TYPES.LATE,
+      FLOW_RUN_STATE_TYPES.PENDING,
+      FLOW_RUN_STATE_TYPES.RUNNING,
+      FLOW_RUN_STATE_TYPES.RETRYING,
+      FLOW_RUN_STATE_TYPES.AWAITING_RETRY,
     ];
 
-    const failureStates = [FlowRunState.FAILED, FlowRunState.CANCELLED];
+    const failureStates = [
+      FLOW_RUN_STATE_TYPES.FAILED,
+      FLOW_RUN_STATE_TYPES.CRASHED,
+      FLOW_RUN_STATE_TYPES.CANCELLING,
+      FLOW_RUN_STATE_TYPES.CANCELLED,
+      FLOW_RUN_STATE_TYPES.TIMED_OUT,
+      FLOW_RUN_STATE_TYPES.SUSPENDED,
+      FLOW_RUN_STATE_TYPES.TIMED_OUT,
+    ];
 
     while (
       pollingStates.includes(flowRun.state_type) &&
