@@ -104,11 +104,11 @@ jobs:
         run: |
           ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
-      - name: Initialise HANA
-        if: success() || failure()
-        id: inithana
-        run: |
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+      # - name: Initialise HANA
+      #   if: success() || failure()
+      #   id: inithana
+      #   run: |
+      #     timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
       - name: Initializing env vars
         run: |
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
@@ -328,6 +328,7 @@ jobs:
         run: |
           yarn --prefer-offline
           yarn inittestdb
+
       - name: Install dependencies in backend integration tests
         run: |
           cd ./tests/backend_integration_tests
