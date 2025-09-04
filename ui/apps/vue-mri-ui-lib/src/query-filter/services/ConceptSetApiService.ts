@@ -269,14 +269,16 @@ export const loadSingleConceptSetDetails = async (
 
     const conceptDetails: ConceptSetDetail[] = []
 
-    const limitedItems = expressionItems.slice(0, 20)
-    const conceptIds = limitedItems.map(item => item.concept.CONCEPT_ID)
+    const conceptIds = expressionItems.map(item => item.concept.CONCEPT_ID)
     console.log(`Fetching details for concept set ${conceptSet.value}:`, conceptIds)
 
-    for (const expressionItem of limitedItems) {
+    // Fetch all concepts in parallel batches instead of sequentially
+    const conceptDetailsMap = await fetchConceptsByIds(datasetId, conceptIds, 10)
+
+    for (const expressionItem of expressionItems) {
       try {
         const conceptId = expressionItem.concept.CONCEPT_ID
-        const conceptDetail = await fetchConceptById(datasetId, conceptId)
+        const conceptDetail = conceptDetailsMap.get(conceptId)
         if (conceptDetail) {
           const conceptFlags = {
             id: conceptId,
