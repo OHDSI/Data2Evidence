@@ -576,6 +576,33 @@ const setupWebapiRoutes = app => {
     }
   })
 
+  // GET /d2e-webapi/conceptset
+  app.get('/d2e-webapi/conceptset', async (req, res) => {
+    const cacheKey = 'get_/d2e-webapi/conceptset'
+    logRequest(req)
+
+    let data = cache[cacheKey]
+    if (!data || !USE_CACHE) {
+      const response = await api.get('/conceptset/')
+      data = response.data
+      cache[cacheKey] = data
+    }
+
+    // Map Atlas API format to d2e-webapi format
+    const mappedData = data.map(item => ({
+      id: item.id,
+      name: item.name,
+      createdDate: item.createdDate ? new Date(item.createdDate).toISOString() : undefined,
+      modifiedDate: item.modifiedDate ? new Date(item.modifiedDate).toISOString() : undefined,
+      createdBy: 'admin',
+      modifiedBy: 'admin',
+      shared: item.hasWriteAccess || false,
+      userName: 'current_user',
+    }))
+
+    return res.json(mappedData)
+  })
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {

@@ -3,12 +3,12 @@
  */
 import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
+import { d2eWebapiService } from './D2eWebapiService'
 import type {
   ConceptSetItemDisplay,
   ConceptDetail,
   ConceptSetDomainValues,
   CreateConceptSetRequest,
-  GetConceptSetsResponse,
   ConceptSetDetail,
   ConceptSetExpression,
   ConceptSetExpressionItem,
@@ -51,29 +51,19 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   }
 
   try {
-    const headers = await buildApiHeaders(datasetId)
-    const url = buildApiUrl('/terminology/concept-set')
+    const values = await d2eWebapiService.getConceptSets(datasetId)
 
-    const response = await axios.get<GetConceptSetsResponse[]>(url, {
-      params: {
-        datasetId: datasetId,
-      },
-      headers,
-    })
-
-    const values = response.data
     const formattedValues = values.map(item => ({
       value: String(item.id),
       text: item.name,
       display_value: item.name,
-      shared: item.shared,
-      userName: item.userName,
-      createdDate: item.createdDate,
-      modifiedDate: item.modifiedDate,
+      shared: item.shared || false,
+      userName: item.userName || item.createdBy || '',
+      createdDate: item.createdDate || '',
+      modifiedDate: item.modifiedDate || '',
     }))
 
-    const loadedStatus =
-      response.status === 204 ? 'TOO_MANY_RESULTS' : values.length === 0 ? 'NO_RESULTS' : 'HAS_RESULTS'
+    const loadedStatus = values.length === 0 ? 'NO_RESULTS' : 'HAS_RESULTS'
 
     return {
       values: formattedValues,

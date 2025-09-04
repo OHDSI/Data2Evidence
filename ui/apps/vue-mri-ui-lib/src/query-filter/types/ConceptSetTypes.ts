@@ -240,3 +240,15 @@ export interface ConceptSetExpressionItem {
 export interface ConceptSetExpression {
   items: ConceptSetExpressionItem[]
 }
+
+// WebAPI interface for d2e-webapi endpoints (matching portal's format)
+export interface IWebapiConceptSet {
+  id: number
+  name: string
+  createdDate?: string
+  modifiedDate?: string
+  createdBy?: string
+  modifiedBy?: string
+  shared?: boolean
+  userName?: string
+}
