@@ -23,7 +23,7 @@ import { api } from "../../../axios/api";
 import { Roles } from "../../../config";
 import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
-import { useDataset, useDatasetReleases, useDatasetResources } from "../../../hooks";
+import { useDataset, useDatasetResources } from "../../../hooks";
 import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
 import { DatasetResource, StudyAttribute, StudyTag } from "../../../types";
@@ -80,7 +80,6 @@ export const Information: FC = () => {
 
   const [dataset, loading, error] = useDataset(activeDatasetId);
   const [resources, resourcesLoading, resourcesError] = useDatasetResources(activeDatasetId);
-  const [releases] = useDatasetReleases(activeDatasetId);
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
@@ -215,19 +214,6 @@ export const Information: FC = () => {
               label={getText(i18nKeys.INFORMATION__TAB_DATA_CHARACTERIZATION)}
               id="tab-2"
               value="characterization"
-            />
-          )}
-          {releases.length !== 0 && (
-            <Tab
-              disableRipple
-              sx={{
-                "&.MuiTab-root": {
-                  width: "200px",
-                },
-              }}
-              label={getText(i18nKeys.INFORMATION__TAB_HISTORY)}
-              id="tab-4"
-              value="history"
             />
           )}
         </Tabs>
@@ -403,7 +389,6 @@ export const Information: FC = () => {
               )}
             </>
           )}
-          {tabValue === DatasetInfoTab.History && <DataQualityHistory activeDatasetId={activeDatasetId} />}
         </div>
       </div>
     </Card>
