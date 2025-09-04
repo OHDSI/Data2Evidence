@@ -14,6 +14,12 @@ const MAX_COHORT_DEFINITIONS = 100
 const USE_CACHE = true
 const cache = {}
 
+// Cache keys
+const CACHE_KEYS = {
+  COHORT_DEFINITIONS: 'get_/WebAPI/cohortdefinition/',
+  CONCEPT_SETS: 'get_/d2e-webapi/conceptset',
+}
+
 const logRequest = req => {
   console.log(`🔄 WebAPI Request:', '${req.method} ${req.path}`)
   console.log('Query:', req.query)
@@ -84,6 +90,10 @@ const setupWebapiRoutes = app => {
     const expression = _.merge(skeleton, req.body.expression)
     const response = await api.post(`/cohortdefinition/`, { ...req.body, expression })
     const { data } = response
+
+    // Invalidate cohort definitions cache since we created a new one
+    delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
+
     return res.send(data)
   })
 
@@ -91,11 +101,15 @@ const setupWebapiRoutes = app => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
     await api.put(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+
+    // Invalidate cohort definitions cache since we updated one
+    delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
+
     return res.send()
   })
 
   app.get('/analytics-svc/api/services/bookmark', async (req, res) => {
-    const cacheKey = 'get_/WebAPI/cohortdefinition/'
+    const cacheKey = CACHE_KEYS.COHORT_DEFINITIONS
     logRequest(req)
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
@@ -145,6 +159,10 @@ const setupWebapiRoutes = app => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
     await api.delete(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+
+    // Invalidate cohort definitions cache since we deleted one
+    delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
+
     return res.send()
   })
 
@@ -175,7 +193,7 @@ const setupWebapiRoutes = app => {
   })
 
   app.get('/d2e-webapi/conceptset', async (req, res) => {
-    const cacheKey = 'get_/d2e-webapi/conceptset'
+    const cacheKey = CACHE_KEYS.CONCEPT_SETS
     logRequest(req)
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
@@ -207,6 +225,10 @@ const setupWebapiRoutes = app => {
       const { data: conceptSet } = createResponse
       const conceptSetId = conceptSet.id
       console.log(`Created concept set with ID: ${conceptSetId}`)
+
+      // Invalidate concept sets cache since we created a new one
+      delete cache[CACHE_KEYS.CONCEPT_SETS]
+
       // Return the concept set ID as expected by our client code
       return res.json(conceptSetId)
     } catch (error) {
