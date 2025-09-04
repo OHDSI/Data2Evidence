@@ -23,7 +23,8 @@ import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 
 let app: Component
-const isLocal = 'isLocal' in getPortalAPI()
+const portalAPI = getPortalAPI()
+const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 if (isLocal) {
   app = createApp(RootLayout as unknown as Component)
 
