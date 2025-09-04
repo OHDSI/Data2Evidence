@@ -26,9 +26,8 @@ RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 &
 # Verify the installation
 RUN java -version
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
-COPY --chown=docker:docker ./__init__.py .
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
 RUN mkdir -p ./liquibase/
@@ -50,5 +49,7 @@ COPY --chown=docker:docker --chmod=711 ./data_management flows
 
 # Grant docker user read/write access
 RUN chmod -R 755 /app
+
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 # USER docker

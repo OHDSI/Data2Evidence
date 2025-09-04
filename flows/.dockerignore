@@ -1,0 +1,17 @@
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/.venv/
+**/env/
+**/venv/
+**/.cache/
+**/dist/
+**/*.log
+**/.python-version
+**/package.json
+.github
+.gitignore
+.npmignore
+flowinit.py
