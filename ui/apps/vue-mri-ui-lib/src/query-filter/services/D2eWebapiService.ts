@@ -82,16 +82,11 @@ export class D2eWebapiService {
   }
 
   public async getConceptById(conceptId: number, datasetId: string): Promise<ConceptDetail[]> {
-    const data = {
-      QUERY: conceptId.toString(),
-    }
-
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/vocabulary/${datasetId}/search`,
-      method: 'POST',
+      url: `/vocabulary/${datasetId}/search?query=${encodeURIComponent(conceptId.toString())}`,
+      method: 'GET',
       headers: { datasetid: datasetId },
-      data,
     })
     return response.data
   }

@@ -267,12 +267,13 @@ const setupWebapiRoutes = app => {
     }
   })
 
-  app.post('/d2e-webapi/vocabulary/:datasetId/search', async (req, res) => {
+  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
+  app.get('/d2e-webapi/vocabulary/:datasetId/search', async (req, res) => {
     logRequest(req)
     const { datasetId } = req.params
-    const { QUERY } = req.body
+    const { query: QUERY } = req.query
     if (!QUERY) {
-      return res.status(400).json({ error: 'QUERY is required in request body' })
+      return res.status(400).json({ error: 'query parameter is required' })
     }
     try {
       // Call Atlas demo API to search vocabularies

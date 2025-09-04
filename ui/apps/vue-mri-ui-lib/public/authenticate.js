@@ -30,12 +30,18 @@ const signinRedirect = async () => {
 const getUser = () => {
   return userManager.getUser()
 }
-if (!USE_MOCK_SERVER) {
 if (!authToken) {
   signinRedirect()
 }
 
-if (code) {
+const logoutfn = () => {
+  localStorage.removeItem('msaltoken')
+  userManager.signoutRedirect({
+    id_token_hint: userManager.getUser()?.access_token,
+  })
+}
+
+if (code && !USE_MOCK_SERVER) {
   userManager
     .signinRedirectCallback()
     .then(user => {
@@ -45,12 +51,4 @@ if (code) {
     .catch(error => {
       console.error('Error during login', error)
     })
-}
-
-const logoutfn = () => {
-  localStorage.removeItem('msaltoken')
-  userManager.signoutRedirect({
-    id_token_hint: userManager.getUser()?.access_token,
-  })
-  }
 }
