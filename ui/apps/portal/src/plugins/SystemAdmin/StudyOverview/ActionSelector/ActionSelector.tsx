@@ -183,6 +183,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       handleDataCharacterization,
       handleCreateCache,
       handleSetupSemanticSearch,
+      handleSourceInformation,
       dataset,
     ]
   );

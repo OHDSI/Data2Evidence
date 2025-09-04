@@ -3,8 +3,6 @@ import { CloseDialogType, Study } from "../../../../types";
 import { Dialog, Button, Box } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
-import InputLabel from "@mui/material/InputLabel";
-import { SxProps } from "@mui/system";
 import "./SourceInformationDialog.scss";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
@@ -14,25 +12,6 @@ interface SourceInformationDialogProps {
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
 }
-
-const styles: SxProps = {
-  ".MuiInputLabel-root": {
-    color: "#000080",
-    "&.MuiInputLabel-shrink, &.Mui-focused": {
-      color: "var(--color-neutral)",
-    },
-  },
-  ".MuiInput-input:focus": {
-    backgroundColor: "transparent",
-    color: "#000080",
-  },
-  ".MuiInput-root": {
-    color: "var(--color-neutral)",
-    "&::after, &:hover:not(.Mui-disabled)::before": {
-      borderBottom: "2px solid #000080",
-    },
-  },
-};
 
 const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, open, onClose }) => {
   const { getText } = useTranslation();
