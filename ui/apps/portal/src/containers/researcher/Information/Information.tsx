@@ -28,7 +28,6 @@ import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQ
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
 import { DatasetResource, StudyAttribute, StudyTag } from "../../../types";
 import { downloadFromJsonResponse } from "../../../utils/downloadResource";
-import DataQualityHistory from "./DataQualityHistory/DataQualityHistory";
 import "./Information.scss";
 
 enum Access {
