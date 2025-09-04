@@ -449,46 +449,6 @@ const setupWebapiRoutes = app => {
       timestamp: new Date().toISOString(),
     })
   })
-  // POST /terminology/concept-set
-  app.post('/terminology/concept-set', async (req, res) => {
-    logRequest(req)
-
-    try {
-      // Step 1: Create the concept set (with expression, even though it might be ignored)
-      const createResponse = await api.post('/conceptset/', req.body)
-      const { data: conceptSet } = createResponse
-      const conceptSetId = conceptSet.id
-
-      console.log(`Created concept set with ID: ${conceptSetId}`)
-
-      // Step 2: Add concepts to the concept set using PUT /conceptset/{id}/items
-      if (req.body.expression?.items?.length > 0) {
-        const conceptItems = req.body.expression.items.map(item => ({
-          conceptId: item.concept.CONCEPT_ID,
-          isExcluded: item.isExcluded ? 1 : 0,
-          includeDescendants: item.includeDescendants ? 1 : 0,
-          includeMapped: item.includeMapped ? 1 : 0,
-        }))
-
-        console.log(`Adding ${conceptItems.length} concepts to concept set ${conceptSetId}`)
-        await api.put(`/conceptset/${conceptSetId}/items`, conceptItems)
-        console.log(`Successfully added concepts to concept set ${conceptSetId}`)
-      }
-
-      // Return the concept set ID as expected by our client code
-      return res.json(conceptSetId)
-    } catch (error) {
-      console.error('Error creating concept set in Atlas API:', error.message)
-
-      // Forward the error status instead of sending mock data
-      const status = error.response?.status || 500
-      return res.status(status).json({
-        error: 'Failed to create concept set in Atlas API',
-        message: error.message,
-        timestamp: new Date().toISOString(),
-      })
-    }
-  })
 
   // GET /d2e-webapi/conceptset/:conceptSetId/expression
   app.get('/d2e-webapi/conceptset/:conceptSetId/expression', async (req, res) => {
@@ -601,6 +561,61 @@ const setupWebapiRoutes = app => {
     }))
 
     return res.json(mappedData)
+  })
+
+  // POST /d2e-webapi/conceptset
+  app.post('/d2e-webapi/conceptset', async (req, res) => {
+    logRequest(req)
+
+    try {
+      // Create the concept set - the client will handle adding items separately
+      const createResponse = await api.post('/conceptset/', req.body)
+      const { data: conceptSet } = createResponse
+      const conceptSetId = conceptSet.id
+
+      console.log(`Created concept set with ID: ${conceptSetId}`)
+
+      // Return the concept set ID as expected by our client code
+      return res.json(conceptSetId)
+    } catch (error) {
+      console.error('Error creating concept set in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to create concept set in Atlas API',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
+
+  // PUT /d2e-webapi/conceptset/:conceptSetId/items
+  app.put('/d2e-webapi/conceptset/:conceptSetId/items', async (req, res) => {
+    logRequest(req)
+
+    const { conceptSetId } = req.params
+
+    if (!conceptSetId) {
+      return res.status(400).json({ error: 'conceptSetId is required' })
+    }
+
+    try {
+      // Forward to Atlas API
+      const response = await api.put(`/conceptset/${conceptSetId}/items`, req.body)
+      return res.json(response.data)
+    } catch (error) {
+      console.error('Error updating concept set items in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to update concept set items in Atlas API',
+        message: error.message,
+        conceptSetId: conceptSetId,
+        timestamp: new Date().toISOString(),
+      })
+    }
   })
 
   // Add more webapi routes here as needed

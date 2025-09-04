@@ -340,19 +340,7 @@ export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, 
   }
 
   try {
-    const headers = await buildApiHeaders(datasetId)
-    headers['Content-Type'] = 'application/json'
-
-    const url = buildApiUrl('/terminology/concept-set')
-
-    const response = await axios.post(url, conceptSetData, {
-      params: {
-        datasetId: datasetId,
-      },
-      headers,
-    })
-
-    return response.data
+    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId)
   } catch (error) {
     console.error('Error creating concept set:', error)
     throw error
