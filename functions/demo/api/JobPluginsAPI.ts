@@ -8,7 +8,7 @@ import {
   ICacheCreateFlowRun,
   ICacheStatusFlowRun,
 } from "../type.d.ts";
-import { post } from "./request-util.ts";
+import { post, get } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
@@ -55,7 +55,7 @@ export class JobPluginsAPI {
       );
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cachedb/results/${dto.flowRunId}`;
-      const result = await post(url, {}, options);
+      const result = await get(url, options);
       return result.data;
     } catch (error) {
       console.error(
