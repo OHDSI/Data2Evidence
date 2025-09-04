@@ -100,9 +100,17 @@ export default {
             this.setCurrentPatientCount({
               currentPatientCount: '--',
             })
-            this.setAlertMessage({
-              message: this.chartData.noDataReason,
-            })
+
+            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+              this.setAlertMessage({
+                messageType: 'info',
+                message: this.chartData.noDataReason,
+              })
+            } else {
+              this.setAlertMessage({
+                message: this.chartData.noDataReason,
+              })
+            }
             return
           }
 
