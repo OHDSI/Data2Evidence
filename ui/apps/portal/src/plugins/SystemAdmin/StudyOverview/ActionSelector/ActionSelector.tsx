@@ -10,6 +10,7 @@ import { useTranslation, useUser } from "../../../../contexts";
 interface ActionSelectorProps {
   dataset: Study;
   isSchemaUpdatable: boolean | undefined;
+  handleSourceInformation: (dataset: Study) => void;
   handleCopyStudy: (dataset: Study) => void;
   handleDeleteStudy: (dataset: Study) => void;
   handleMetadata: (dataset: Study) => void;
@@ -86,6 +87,7 @@ const styles: SxProps = {
 const ActionSelector: FC<ActionSelectorProps> = ({
   dataset,
   isSchemaUpdatable,
+  handleSourceInformation,
   handleDeleteStudy,
   handleCopyStudy,
   handleMetadata,
@@ -104,6 +106,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
 
   const actionsList: Action[] = useMemo(
     () => [
+      { name: "Source Information", value: "info" },
       { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
       { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
       { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
@@ -128,6 +131,9 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   const handleActionChange = useCallback(
     (event: SelectChangeEvent<string>) => {
       switch (event.target.value) {
+        case "info":
+          handleSourceInformation(dataset);
+          break;
         case "version":
           handleCopyStudy(dataset);
           break;

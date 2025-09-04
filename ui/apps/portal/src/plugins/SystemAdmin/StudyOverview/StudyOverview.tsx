@@ -31,6 +31,7 @@ import { api } from "../../../axios/api";
 import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
+import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
 import "./StudyOverview.scss";
 
 const enum StudyAttributeConfigIds {
@@ -68,9 +69,19 @@ const StudyOverview: FC = () => {
   const [showCreateCacheDialog, openCreateCacheDialog, closeCreateCacheDialog] = useDialogHelper(false);
   const [showSetupSemanticSearchDialog, openSetupSemanticSearchDialog, closeSetupSemanticSearchDialog] =
     useDialogHelper(false);
+  const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
+
+  const handleSourceInformation = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openSourceInformationDialog();
+    },
+    [openSourceInformationDialog]
+  );
 
   const handleUpdateStudy = useCallback(
     (dataset: Study) => {
@@ -360,6 +371,7 @@ const StudyOverview: FC = () => {
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                  <TableCell>Type</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                 </TableRow>
               </TableHead>
@@ -413,11 +425,13 @@ const StudyOverview: FC = () => {
                             </Tooltip>
                           )}
                     </TableCell>
+                    <TableCell>{dataset.type}</TableCell>
 
                     <TableCell className="col-action">
                       <ActionSelector
                         dataset={dataset}
                         isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
+                        handleSourceInformation={handleSourceInformation}
                         handleDeleteStudy={handleDeleteStudy}
                         handleCopyStudy={handleCopyStudy}
                         handleMetadata={handleUpdateStudy}
@@ -508,6 +522,14 @@ const StudyOverview: FC = () => {
               dataset={activeDataset}
               open={showSetupSemanticSearchDialog}
               onClose={closeSetupSemanticSearchDialog}
+            />
+          )}
+
+          {showSourceInformationDialog && (
+            <SourceInformationDialog
+              dataset={activeDataset}
+              open={showSourceInformationDialog}
+              onClose={closeSourceInformationDialog}
             />
           )}
         </div>
