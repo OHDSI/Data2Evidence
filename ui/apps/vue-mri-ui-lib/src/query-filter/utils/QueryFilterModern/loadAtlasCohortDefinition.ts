@@ -291,32 +291,46 @@ export const loadAtlasCohortDefinition = async (
       }
     }
 
+    // Check if concept set exists by name (fallback for standard Atlas imports)
+    if (atlasConceptSet.name) {
+      const sanitizedName = sanitizeConceptSetName(atlasConceptSet.name)
+      const existingConceptSetByName = allConceptSets.value.find(cs => {
+        return (
+          cs.text?.toLowerCase() === sanitizedName.toLowerCase() ||
+          cs.display_value?.toLowerCase() === sanitizedName.toLowerCase()
+        )
+      })
+      if (existingConceptSetByName) {
+        console.log(
+          `Found existing concept set by name: ${existingConceptSetByName.text} (ID: ${existingConceptSetByName.value})`
+        )
+        // Set conceptSetId for Atlas conversion mapping
+        atlasConceptSet.conceptSetId = parseInt(existingConceptSetByName.value)
+        return existingConceptSetByName
+      }
+    }
+
     // Create new concept set if it doesn't exist
     if (atlasConceptSet.expression?.items && atlasConceptSet.name) {
       try {
         const sanitizedName = sanitizeConceptSetName(atlasConceptSet.name)
         console.log(`Creating new concept set: ${sanitizedName} (original: ${atlasConceptSet.name})`)
 
-        // Extract concepts from Atlas format
-        const concepts = atlasConceptSet.expression.items
-          .map(item => ({
-            id: item.concept.CONCEPT_ID,
-            useDescendants: item.includeDescendants !== false, // Default to true
-            useMapped: item.includeMapped !== false, // Default to true
-            isExcluded: item.isExcluded === true, // Default to false
-          }))
-          .filter(concept => concept.id) // Only include items with valid concept IDs
+        // Use the full concept expression directly from Atlas
+        const expressionItems = atlasConceptSet.expression.items.filter(item => item.concept?.CONCEPT_ID) // Only include items with valid concept IDs
 
-        if (concepts.length === 0) {
+        if (expressionItems.length === 0) {
           console.error(`No valid concepts found in Atlas concept set: ${sanitizedName}`)
           return null
         }
 
         const createRequest: CreateConceptSetRequest = {
+          id: 0,
           name: sanitizedName,
-          concepts,
-          shared: false, // Default to not shared
-          userName: 'system', // Default userName
+          description: null,
+          expression: {
+            items: expressionItems,
+          },
         }
 
         // Create the concept set via API
@@ -329,8 +343,6 @@ export const loadAtlasCohortDefinition = async (
           value: newConceptSetId.toString(),
           text: sanitizedName,
           display_value: sanitizedName,
-          conceptIds: concepts.map(c => c.id),
-          concepts: concepts,
         }
 
         console.log(`Successfully created concept set: ${tempConceptSet.text} (System ID: ${newConceptSetId})`)

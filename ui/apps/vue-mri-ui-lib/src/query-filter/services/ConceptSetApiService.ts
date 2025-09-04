@@ -337,43 +337,13 @@ export const getConceptSetExpression = async (
   conceptSetId: string
 ): Promise<ConceptSetExpression> => {
   try {
-    // TODO: Replace with real API call when ready
-    // const headers = await buildApiHeaders()
-    // const url = buildApiUrl(`/d2e-webapi/concept-set/${conceptSetId}/expression`)
-    // const response = await axios.get<ConceptSetExpression>(url, {
-    //   headers,
-    //   params: { datasetId }
-    // })
-    // return response.data
-
-    // Mock response for now
-    console.log(`jer Mock fetching concept set expression for conceptSetId: ${conceptSetId}, datasetId: ${datasetId}`)
-
-    const mockResponse: ConceptSetExpression = {
-      items: [
-        {
-          concept: {
-            CONCEPT_ID: 724146,
-            CONCEPT_NAME: 'ANTI-DEPRESSANTS AND MOOD STABILISERS',
-            STANDARD_CONCEPT: 'C',
-            STANDARD_CONCEPT_CAPTION: 'Classification',
-            INVALID_REASON: 'V',
-            INVALID_REASON_CAPTION: 'Valid',
-            CONCEPT_CODE: 'N6A',
-            DOMAIN_ID: 'Drug',
-            VOCABULARY_ID: 'EphMRA ATC',
-            CONCEPT_CLASS_ID: 'ATC 3rd',
-            VALID_START_DATE: 0,
-            VALID_END_DATE: 4102358400000,
-          },
-          isExcluded: false,
-          includeDescendants: true,
-          includeMapped: false,
-        },
-      ],
-    }
-
-    return mockResponse
+    const headers = await buildApiHeaders()
+    const url = buildApiUrl(`/d2e-webapi/concept-set/${conceptSetId}/expression`)
+    const response = await axios.get<ConceptSetExpression>(url, {
+      headers,
+      params: { datasetId },
+    })
+    return response.data
   } catch (error) {
     console.error('Error fetching concept set expression:', error)
     throw error

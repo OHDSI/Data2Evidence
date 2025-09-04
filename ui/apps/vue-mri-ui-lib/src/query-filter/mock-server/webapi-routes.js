@@ -382,16 +382,12 @@ const setupWebapiRoutes = app => {
   })
 
   // GET /analytics-svc/api/services/values
-  app.get('/analytics-svc/api/services/values', (req, res) => {
+  // This seems to be the api call used to get data to load into vuex, which we are not using in pa-atlas.
+  // Instead we are using another one used in loadConceptSets
+  app.get('/analytics-svc/api/services/values', async (req, res) => {
     logRequest(req)
-
     return res.send({
-      data: [
-        {
-          value: 13,
-          text: 'A concept set',
-        },
-      ],
+      data: [],
     })
 
     // TODO: Forward to actual WebAPI server
@@ -443,39 +439,21 @@ const setupWebapiRoutes = app => {
   })
 
   // GET /terminology/concept-set
-  app.get('/terminology/concept-set', (req, res) => {
+  // This is for listing in the tag input
+  app.get('/terminology/concept-set', async (req, res) => {
     logRequest(req)
 
-    const sample = [
-      {
-        name: 'Hypothyroidism other than Hashimotos Disease',
-        shared: false,
-        concepts: [
-          {
-            id: 4099205,
-            useMapped: false,
-            isExcluded: false,
-            useDescendants: true,
-          },
-          {
-            id: 4030049,
-            useMapped: false,
-            isExcluded: false,
-            useDescendants: true,
-          },
-        ],
-        userName: 'system',
-        createdBy: 'evla8ah3cuir',
-        modifiedBy: 'evla8ah3cuir',
-        createdDate: '2025-06-23T02:32:05.200Z',
-        modifiedDate: '2025-06-23T02:32:05.200Z',
-        id: 13,
-      },
-    ]
+    const { data } = await api.get(`/conceptset/`, req.body)
 
-    return res.send(sample)
+    const conceptSetValues = data.map(d => {
+      return {
+        ...d,
+        value: d.id,
+        text: d.name,
+      }
+    })
+    return res.send(conceptSetValues)
 
-    // TODO: Forward to actual WebAPI server
     res.status(501).json({
       error: 'WebAPI endpoint not implemented yet',
       message: 'This endpoint will be forwarded to the actual WebAPI server',
@@ -485,33 +463,44 @@ const setupWebapiRoutes = app => {
     })
   })
   // POST /terminology/concept-set
-  app.post('/terminology/concept-set', (req, res) => {
+  app.post('/terminology/concept-set', async (req, res) => {
     logRequest(req)
 
-    const samplePayload = {
-      concepts: [
-        {
-          id: 756039,
-          useDescendants: false,
-          useMapped: false,
-          isExcluded: false,
-        },
-      ],
-      name: 'test',
-      shared: false,
-      userName: 'admin',
-    }
+    try {
+      // Step 1: Create the concept set (with expression, even though it might be ignored)
+      const createResponse = await api.post('/conceptset/', req.body)
+      const { data: conceptSet } = createResponse
+      const conceptSetId = conceptSet.id
 
-    return res.json(123)
+      console.log(`Created concept set with ID: ${conceptSetId}`)
 
-    // TODO: Forward to actual WebAPI server
-    res.status(501).json({
-      error: 'WebAPI endpoint not implemented yet',
-      message: 'This endpoint will be forwarded to the actual WebAPI server',
-      method: 'GET',
-      path: '/terminology/concept-set',
+      // Step 2: Add concepts to the concept set using PUT /conceptset/{id}/items
+      if (req.body.expression?.items?.length > 0) {
+        const conceptItems = req.body.expression.items.map(item => ({
+          conceptId: item.concept.CONCEPT_ID,
+          isExcluded: item.isExcluded ? 1 : 0,
+          includeDescendants: item.includeDescendants ? 1 : 0,
+          includeMapped: item.includeMapped ? 1 : 0,
+        }))
+
+        console.log(`Adding ${conceptItems.length} concepts to concept set ${conceptSetId}`)
+        await api.put(`/conceptset/${conceptSetId}/items`, conceptItems)
+        console.log(`Successfully added concepts to concept set ${conceptSetId}`)
+      }
+
+      // Return the concept set ID as expected by our client code
+      return res.json(conceptSetId)
+    } catch (error) {
+      console.error('Error creating concept set in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to create concept set in Atlas API',
+        message: error.message,
       timestamp: new Date().toISOString(),
     })
+    }
   })
 
   app.put('/terminology/concept-set', (req, res) => {
@@ -556,6 +545,38 @@ const setupWebapiRoutes = app => {
       })
     }
   )
+
+  // GET /d2e-webapi/concept-set/:conceptSetId/expression
+  app.get('/d2e-webapi/concept-set/:conceptSetId/expression', async (req, res) => {
+    logRequest(req)
+
+    const { conceptSetId } = req.params
+    const { datasetId } = req.query
+
+    if (!conceptSetId) {
+      return res.status(400).json({ error: 'conceptSetId is required' })
+    }
+
+    try {
+      // Call Atlas demo API to get concept set expression
+      const response = await api.get(`/conceptset/${conceptSetId}/expression`)
+      const { data } = response
+
+      // The Atlas API returns the expression directly, just forward it
+      return res.json(data)
+    } catch (error) {
+      console.error('Error fetching concept set expression from Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to fetch concept set expression from Atlas API',
+        message: error.message,
+        conceptSetId: conceptSetId,
+        timestamp: new Date().toISOString(),
+      })
+    }
+      })
 
   // POST /terminology/concept/searchById
   app.post('/terminology/concept/searchById', async (req, res) => {
