@@ -1,4 +1,4 @@
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useMemo } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { SelectChangeEvent } from "@mui/material/Select";
@@ -27,6 +27,39 @@ interface Action {
   name: string;
   value: string;
 }
+
+type ActionValue =
+  | "info"
+  | "metadata"
+  | "version"
+  | "delete"
+  | "permissions"
+  | "resources"
+  | "data-quality"
+  | "data-characterization"
+  | "setup-semantic-search"
+  | "update"
+  | "release"
+  | "create-cache";
+
+// TODO: mapping should be from the server
+const mapping: Record<string, ActionValue[]> = {
+  source: ["info", "metadata", "version", "delete"],
+  fhir: ["info", "metadata", "version", "delete"],
+  non_omop: ["metadata", "permissions", "resources", "delete"],
+  omop: [
+    "metadata",
+    "permissions",
+    "resources",
+    "delete",
+    "data-quality",
+    "data-characterization",
+    "setup-semantic-search",
+  ],
+  study: ["metadata", "permissions", "resources", "delete"],
+  hana_omop: ["metadata", "permissions", "resources", "delete", "data-quality", "data-characterization"],
+  hana_non_omop: ["metadata", "permissions", "resources", "delete"],
+};
 
 const styles: SxProps = {
   color: "#000080",
@@ -69,19 +102,28 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   const { user } = useUser();
   const isUserAdmin = user.isUserAdmin;
 
-  const actionsList: Action[] = [
-    { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RESOURCES), value: "resources" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_SCHEMA), value: "update" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__DELETE_DATASET), value: "delete" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_RELEASE), value: "release" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_QUALITY), value: "data-quality" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
-  ];
+  const actionsList: Action[] = useMemo(
+    () => [
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RESOURCES), value: "resources" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_SCHEMA), value: "update" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__DELETE_DATASET), value: "delete" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_RELEASE), value: "release" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_QUALITY), value: "data-quality" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
+    ],
+    [getText, i18nKeys]
+  );
+
+  // filter actions list from given mapping and type
+  const filteredActions: Action[] = useMemo(() => {
+    const allowedValues: ActionValue[] = mapping[dataset.type] ?? [];
+    return actionsList.filter((action) => allowedValues.includes(action.value as ActionValue));
+  }, [dataset.type, actionsList]);
 
   const handleActionChange = useCallback(
     (event: SelectChangeEvent<string>) => {
@@ -167,7 +209,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         <MenuItem value="" sx={styles} disableRipple>
           {getText(i18nKeys.ACTION_SELECTOR__SELECT_ACTION)}
         </MenuItem>
-        {actionsList.map((action: Action) => (
+        {filteredActions.map((action: Action) => (
           <MenuItem
             value={action.value}
             key={action.value}
