@@ -52,6 +52,17 @@ interface StudyAccessRequest {
   role: string;
 }
 
+// TODO: mapping should be from the server
+const mapping: Record<string, string[]> = {
+  source: [],
+  fhir: [],
+  non_omop: ["info"],
+  omop: ["info", "quality", "characterization"],
+  study: ["info"],
+  hana_omop: ["info", "quality", "characterization"],
+  hana_non_omop: ["info", "quality", "characterization"],
+};
+
 export const Information: FC = () => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
@@ -73,6 +84,24 @@ export const Information: FC = () => {
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
+  const showDatasetInfo = useMemo(
+    () =>
+      !!user.isDatasetResearcher?.[activeDatasetId] &&
+      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DatasetInfo),
+    [dataset]
+  );
+  const showDataQuality = useMemo(
+    () =>
+      !!user.isDatasetResearcher?.[activeDatasetId] &&
+      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DataQuality),
+    [dataset]
+  );
+  const showDataCharacterization = useMemo(
+    () =>
+      !!user.isDatasetResearcher?.[activeDatasetId] &&
+      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DataCharacterization),
+    [dataset]
+  );
 
   const loadAccessRequests = useCallback(async (): Promise<void> => {
     const accessRequests = await api.userMgmt.getMyStudyAccessRequests();
@@ -148,19 +177,21 @@ export const Information: FC = () => {
       className="information__container"
       title={
         <Tabs value={tabValue} onChange={handleTabSelectionChange}>
-          <Tab
-            disableRipple
-            sx={{
-              "&.MuiTab-root": {
-                width: "200px",
-              },
-              marginRight: "8px",
-            }}
-            label={getText(i18nKeys.INFORMATION__TAB_DATASET_INFO)}
-            id="tab-0"
-            value="info"
-          />
-          {user.isDatasetResearcher[activeDatasetId] && (
+          {showDatasetInfo && (
+            <Tab
+              disableRipple
+              sx={{
+                "&.MuiTab-root": {
+                  width: "200px",
+                },
+                marginRight: "8px",
+              }}
+              label={getText(i18nKeys.INFORMATION__TAB_DATASET_INFO)}
+              id="tab-0"
+              value="info"
+            />
+          )}
+          {showDataQuality && (
             <Tab
               disableRipple
               sx={{
@@ -173,7 +204,7 @@ export const Information: FC = () => {
               value="quality"
             />
           )}
-          {user.isDatasetResearcher[activeDatasetId] && (
+          {showDataCharacterization && (
             <Tab
               disableRipple
               sx={{
