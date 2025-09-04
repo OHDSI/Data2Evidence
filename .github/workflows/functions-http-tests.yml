@@ -49,11 +49,11 @@ jobs:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      HANASERVER: localhost # az-hn-db/SG_FQDN
-      HANASERVER_INT: hana
-      HDIPORT: 39041 # az-hn-db/DB Port
-      HDIPW: TestPW1234 # az-hn-db/Admin password
-      HDIUSER: SYSTEM # az-hn-db/Admin user
+      # HANASERVER: localhost # az-hn-db/SG_FQDN
+      # HANASERVER_INT: hana
+      # HDIPORT: 39041 # az-hn-db/DB Port
+      # HDIPW: TestPW1234 # az-hn-db/Admin password
+      # HDIUSER: SYSTEM # az-hn-db/Admin user
       TESTPORT: 39041 # az-hn-db/DB Port
       TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
       PROJECT_NAME: alp
@@ -61,6 +61,11 @@ jobs:
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
+      PGUSER: postgres
+      PGPASSWORD: mypass
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: postgres
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -84,17 +89,6 @@ jobs:
           submodules: recursive
           clean: false
 
-      - name: Print env vars
-        run: |
-          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
-          echo "HDIPORT: ${HDIPORT}"
-          echo "HDIPW: ${HDIPW}"
-          echo "HDIUSER: ${HDIUSER}"
-          echo "HANASERVER: ${HANASERVER}"
-          echo "isHttpTestRun: ${isHttpTestRun}"
-          echo "isTestEnv: ${isTestEnv:-false}"
-          echo "TESTSCHEMA: ${TESTSCHEMA}"
-
       - uses: actions/setup-node@v4
         with:
           node-version: "18.20.4"
@@ -115,16 +109,10 @@ jobs:
         id: inithana
         run: |
           timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
-
-      - name: Remove empty lines, replace ; within the query with a place holder
+      - name: Initializing env vars
         run: |
-          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
-          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-          echo "USE_DUCKDB=false" >> $DOTENV_FILE
-          echo "USE_CACHEDB=false" >> $DOTENV_FILE
-          echo "NODE_ENV=production" >> $DOTENV_FILE
+          echo "USE_TREX_DB_CONN=true" >> $DOTENV_FILE
 
       - name: Build system services
         run: |
@@ -149,11 +137,6 @@ jobs:
       - name: Check status of docker containers
         run: |
           docker ps -a
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
 
       - name: Login to logto and get Bearer token and sub
         run: |
@@ -323,6 +306,28 @@ jobs:
               -H 'referer: https://localhost:41100/portal/systemadmin/dataset-overview' \
               --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
 
+      - name: Print env vars
+        run: |
+          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
+          echo "PGPORT: ${PGPORT}"
+          echo "PGPASSWORD: ${PGPASSWORD}"
+          echo "PGUSER: ${PGUSER}"
+          echo "PGHOST: ${PGHOST}"
+          echo "PGDATABASE: ${PGDATABASE}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
+          
+      - name: Check PG DB connection
+        run: |
+          sudo apt install -y postgresql-client
+          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb
       - name: Install dependencies in backend integration tests
         run: |
           cd ./tests/backend_integration_tests
@@ -368,10 +373,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
-      - name: print logs for hana
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs hana -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
