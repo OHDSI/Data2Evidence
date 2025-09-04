@@ -441,9 +441,15 @@ const setupWebapiRoutes = app => {
   // GET /terminology/concept-set
   // This is for listing in the tag input
   app.get('/terminology/concept-set', async (req, res) => {
+    const cacheKey = 'get_/terminology/concept-set'
     logRequest(req)
 
-    const { data } = await api.get(`/conceptset/`, req.body)
+    let data = cache[cacheKey]
+    if (!data || !USE_CACHE) {
+      const response = await api.get(`/conceptset/`, req.body)
+      data = response.data
+      cache[cacheKey] = data
+    }
 
     const conceptSetValues = data.map(d => {
       return {
