@@ -1,7 +1,6 @@
 /**
  * API service for concept set operations
  */
-import axios from 'axios'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import { d2eWebapiService } from './D2eWebapiService'
 import type {
@@ -28,16 +27,6 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
   }
 
   return headers
-}
-
-const buildApiUrl = (path: string): string => {
-  const portalAPI = getPortalAPI()
-
-  if (portalAPI.qeSvcUrl) {
-    return `${portalAPI.qeSvcUrl}${path}`
-  } else {
-    return `${process.env['VUE_APP_HOST']}${path}`
-  }
 }
 
 export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
@@ -82,24 +71,13 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
 
 const cachedConcepts: { [key: number]: ConceptDetail } = {}
 
-export const fetchConceptById = async (
-  datasetId: string,
-  conceptId: number,
-  headers: Record<string, string>
-): Promise<ConceptDetail | null> => {
+export const fetchConceptById = async (datasetId: string, conceptId: number): Promise<ConceptDetail | null> => {
   try {
     if (cachedConcepts[conceptId]) {
       return cachedConcepts[conceptId]
     }
-    const url = buildApiUrl('/terminology/concept/searchById')
 
-    const requestBody = {
-      datasetId: datasetId,
-      conceptId: conceptId,
-    }
-
-    const response = await axios.post(url, requestBody, { headers })
-    const data = response.data
+    const data = await d2eWebapiService.getConceptById(conceptId, datasetId)
     if (data[0]) {
       cachedConcepts[conceptId] = data[0]
     }
@@ -113,7 +91,6 @@ export const fetchConceptById = async (
 export const fetchConceptsByIds = async (
   datasetId: string,
   conceptIds: number[],
-  headers: Record<string, string>,
   batchSize: number = 10
 ): Promise<Map<number, ConceptDetail | null>> => {
   const resultMap = new Map<number, ConceptDetail | null>()
@@ -128,7 +105,7 @@ export const fetchConceptsByIds = async (
 
     const batchPromises = batch.map(async conceptId => {
       try {
-        const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
+        const conceptDetail = await fetchConceptById(datasetId, conceptId)
         return { conceptId, conceptDetail }
       } catch (error) {
         console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
@@ -235,7 +212,7 @@ export const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemD
       `Fetching details for ${uniqueConceptIds.length} unique concepts across ${selectedConceptSets.length} concept sets`
     )
 
-    const conceptDetailsMap = await fetchConceptsByIds(datasetId, uniqueConceptIds, headers, 10)
+    const conceptDetailsMap = await fetchConceptsByIds(datasetId, uniqueConceptIds, 10)
 
     for (const conceptSet of selectedConceptSets) {
       const conceptSetId = conceptSet.value
@@ -299,7 +276,7 @@ export const loadSingleConceptSetDetails = async (
     for (const expressionItem of limitedItems) {
       try {
         const conceptId = expressionItem.concept.CONCEPT_ID
-        const conceptDetail = await fetchConceptById(datasetId, conceptId, headers)
+        const conceptDetail = await fetchConceptById(datasetId, conceptId)
         if (conceptDetail) {
           const conceptFlags = {
             id: conceptId,

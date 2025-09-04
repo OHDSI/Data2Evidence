@@ -419,37 +419,6 @@ const setupWebapiRoutes = app => {
     })
   })
 
-  // GET /terminology/concept-set
-  // This is for listing in the tag input
-  app.get('/terminology/concept-set', async (req, res) => {
-    const cacheKey = 'get_/terminology/concept-set'
-    logRequest(req)
-
-    let data = cache[cacheKey]
-    if (!data || !USE_CACHE) {
-      const response = await api.get(`/conceptset/`, req.body)
-      data = response.data
-      cache[cacheKey] = data
-    }
-
-    const conceptSetValues = data.map(d => {
-      return {
-        ...d,
-        value: d.id,
-        text: d.name,
-      }
-    })
-    return res.send(conceptSetValues)
-
-    res.status(501).json({
-      error: 'WebAPI endpoint not implemented yet',
-      message: 'This endpoint will be forwarded to the actual WebAPI server',
-      method: 'GET',
-      path: '/terminology/concept-set',
-      timestamp: new Date().toISOString(),
-    })
-  })
-
   // GET /d2e-webapi/conceptset/:conceptSetId/expression
   app.get('/d2e-webapi/conceptset/:conceptSetId/expression', async (req, res) => {
     logRequest(req)
@@ -477,60 +446,6 @@ const setupWebapiRoutes = app => {
         error: 'Failed to fetch concept set expression from Atlas API',
         message: error.message,
         conceptSetId: conceptSetId,
-        timestamp: new Date().toISOString(),
-      })
-    }
-  })
-
-  // POST /terminology/concept/searchById
-  app.post('/terminology/concept/searchById', async (req, res) => {
-    logRequest(req)
-
-    const { datasetId, conceptId } = req.body
-
-    if (!conceptId) {
-      return res.status(400).json({ error: 'conceptId is required' })
-    }
-
-    try {
-      // Call Atlas demo API to get concept details
-      const response = await api.get(`/vocabulary/SYNPUF1K/search?query=${conceptId}`)
-      const { data } = response
-
-      // Atlas API returns an array, we need to find the exact concept by ID
-      const concept = data.find(item => item.CONCEPT_ID === parseInt(conceptId))
-
-      if (!concept) {
-        return res.json([]) // Return empty array if concept not found
-      }
-
-      // Map from Atlas API format to the expected format
-      const mappedConcept = {
-        concept_class_id: concept.CONCEPT_CLASS_ID,
-        concept_code: concept.CONCEPT_CODE,
-        concept_id: concept.CONCEPT_ID,
-        concept_name: concept.CONCEPT_NAME,
-        domain_id: concept.DOMAIN_ID,
-        invalid_reason: concept.INVALID_REASON,
-        standard_concept: concept.STANDARD_CONCEPT,
-        vocabulary_id: concept.VOCABULARY_ID,
-        valid_start_date: concept.VALID_START_DATE
-          ? new Date(concept.VALID_START_DATE).toISOString().split('T')[0]
-          : null,
-        valid_end_date: concept.VALID_END_DATE ? new Date(concept.VALID_END_DATE).toISOString().split('T')[0] : null,
-      }
-
-      // Return as array (expected format)
-      return res.json([mappedConcept])
-    } catch (error) {
-      console.error('Error fetching concept from Atlas API:', error.message)
-
-      // Forward the error status instead of sending mock data
-      const status = error.response?.status || 500
-      return res.status(status).json({
-        error: 'Failed to fetch concept from Atlas API',
-        message: error.message,
-        conceptId: conceptId,
         timestamp: new Date().toISOString(),
       })
     }
@@ -613,6 +528,52 @@ const setupWebapiRoutes = app => {
         error: 'Failed to update concept set items in Atlas API',
         message: error.message,
         conceptSetId: conceptSetId,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
+
+  // POST /d2e-webapi/vocabulary/:datasetId/search
+  app.post('/d2e-webapi/vocabulary/:datasetId/search', async (req, res) => {
+    logRequest(req)
+
+    const { datasetId } = req.params
+    const { QUERY } = req.body
+
+    if (!QUERY) {
+      return res.status(400).json({ error: 'QUERY is required in request body' })
+    }
+
+    try {
+      // Call Atlas demo API to search vocabularies
+      const response = await api.get(`/vocabulary/SYNPUF1K/search?query=${QUERY}`)
+      const { data } = response
+
+      // Map from Atlas API format to the expected format
+      const mappedData = data.map(item => ({
+        concept_class_id: item.CONCEPT_CLASS_ID,
+        concept_code: item.CONCEPT_CODE,
+        concept_id: item.CONCEPT_ID,
+        concept_name: item.CONCEPT_NAME,
+        domain_id: item.DOMAIN_ID,
+        invalid_reason: item.INVALID_REASON,
+        standard_concept: item.STANDARD_CONCEPT,
+        vocabulary_id: item.VOCABULARY_ID,
+        valid_start_date: item.VALID_START_DATE ? new Date(item.VALID_START_DATE).toISOString().split('T')[0] : null,
+        valid_end_date: item.VALID_END_DATE ? new Date(item.VALID_END_DATE).toISOString().split('T')[0] : null,
+      }))
+
+      return res.json(mappedData)
+    } catch (error) {
+      console.error('Error searching vocabulary in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to search vocabulary in Atlas API',
+        message: error.message,
+        query: QUERY,
+        datasetId: datasetId,
         timestamp: new Date().toISOString(),
       })
     }

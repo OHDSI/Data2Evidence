@@ -1,5 +1,10 @@
 import { client } from './request'
-import type { IWebapiConceptSet, ConceptSetExpression, CreateConceptSetRequest } from '../types/ConceptSetTypes'
+import type {
+  IWebapiConceptSet,
+  ConceptSetExpression,
+  CreateConceptSetRequest,
+  ConceptDetail,
+} from '../types/ConceptSetTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
 
@@ -72,6 +77,21 @@ export class D2eWebapiService {
       method: 'PUT',
       headers: { datasetid: datasetId },
       data: conceptItems,
+    })
+    return response.data
+  }
+
+  public async getConceptById(conceptId: number, datasetId: string): Promise<ConceptDetail[]> {
+    const data = {
+      QUERY: conceptId.toString(),
+    }
+
+    const response = await client({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/vocabulary/${datasetId}/search`,
+      method: 'POST',
+      headers: { datasetid: datasetId },
+      data,
     })
     return response.data
   }
