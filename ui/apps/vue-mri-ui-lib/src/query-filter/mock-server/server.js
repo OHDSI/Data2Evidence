@@ -219,6 +219,36 @@ app.get('/analytics-svc/api/services/population/json/patientcount', (req, res) =
   res.status(mockResponse.status).json(mockResponse.body)
 })
 
+// GET /analytics-svc/api/services/values (API)
+// This seems to be the api call used to get data to load into vuex, which we are not using in pa-atlas.
+// Instead we are using another one used in loadConceptSets
+app.get('/analytics-svc/api/services/values', (req, res) => {
+  console.log('Request query:', req.query)
+  console.log('Request body:', req.body)
+
+  res.json({
+    data: [],
+  })
+})
+
+// GET /terminology/fhir/4_0_0/valueset/$expand (API)
+// This might not be used by pa-atlas. Static response for visibility only
+app.get(
+  '/terminology/fhir/4_0_0/valueset/$expand?datasetId=4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e&offset=0&count=25&code=&filter=%7B%22conceptClassId%22%3A%5B%5D%2C%22domainId%22%3A%5B%22Condition%22%5D%2C%22vocabularyId%22%3A%5B%5D%2C%22standardConcept%22%3A%5B%22S%22%5D%2C%22validity%22%3A%5B%5D%7D',
+  (req, res) => {
+    console.log('Request query:', req.query)
+    console.log('Request body:', req.body)
+
+    res.status(501).json({
+      error: 'WebAPI endpoint not implemented yet',
+      message: 'This endpoint will be changed in another PR, putting it here for visibility only',
+      method: 'GET',
+      path: '/terminology/fhir/4_0_0/valueset/$expand',
+      timestamp: new Date().toISOString(),
+    })
+  }
+)
+
 // GET /ui/sap/ui/core/EventBus.js (Static File)
 app.get('/ui/sap/ui/core/EventBus.js', (req, res) => {
   console.log('Serving static file:', '/ui/sap/ui/core/EventBus.js')
@@ -276,6 +306,8 @@ app.listen(PORT, () => {
   console.log('  ✅ GET /js/node_modules_d4l_web-components-library_dist_esm_d4l-button_2_entry_js.js')
   console.log('  ✅ GET /analytics-svc/api/services/population/json/barchart')
   console.log('  ✅ GET /analytics-svc/api/services/population/json/patientcount')
+  console.log('  ✅ GET /analytics-svc/api/services/values')
+  console.log('  ✅ GET /terminology/fhir/4_0_0/valueset/$expand')
   console.log('  ✅ GET /ui/sap/ui/core/EventBus.js')
   console.log('  ✅ GET /ui/sap/m/library.js')
   console.log(`\nWebAPI placeholder endpoints:`)
@@ -283,8 +315,6 @@ app.listen(PORT, () => {
   console.log('  🔄 GET /terminology/concept-set (placeholder)')
   console.log('  🔄 POST /d2e-webapi/cohortdefinition (placeholder)')
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
-  console.log('  🔄 GET /analytics-svc/api/services/values (placeholder)')
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e (placeholder)')
   console.log('  🔄 DELETE /d2e-webapi/cohortdefinition/1 (placeholder)')
 })
-

@@ -381,25 +381,6 @@ const setupWebapiRoutes = app => {
     })
   })
 
-  // GET /analytics-svc/api/services/values
-  // This seems to be the api call used to get data to load into vuex, which we are not using in pa-atlas.
-  // Instead we are using another one used in loadConceptSets
-  app.get('/analytics-svc/api/services/values', async (req, res) => {
-    logRequest(req)
-    return res.send({
-      data: [],
-    })
-
-    // TODO: Forward to actual WebAPI server
-    res.status(501).json({
-      error: 'WebAPI endpoint not implemented yet',
-      message: 'This endpoint will be forwarded to the actual WebAPI server',
-      method: 'GET',
-      path: '/analytics-svc/api/services/values',
-      timestamp: new Date().toISOString(),
-    })
-  })
-
   // GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e
   app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId/generate/:datasetId', async (req, res) => {
     logRequest(req)
@@ -504,53 +485,10 @@ const setupWebapiRoutes = app => {
       return res.status(status).json({
         error: 'Failed to create concept set in Atlas API',
         message: error.message,
-      timestamp: new Date().toISOString(),
-    })
-    }
-  })
-
-  app.put('/terminology/concept-set', (req, res) => {
-    logRequest(req)
-
-    const samplePayload = {
-      concepts: [
-        {
-          id: 756039,
-          useDescendants: false,
-          useMapped: false,
-          isExcluded: false,
-        },
-      ],
-      name: 'test',
-      shared: false,
-      userName: 'admin',
-    }
-
-    return res.json(123)
-
-    // TODO: Forward to actual WebAPI server
-    res.status(501).json({
-      error: 'WebAPI endpoint not implemented yet',
-      message: 'This endpoint will be forwarded to the actual WebAPI server',
-      method: 'GET',
-      path: '/terminology/concept-set',
-      timestamp: new Date().toISOString(),
-    })
-  })
-
-  app.get(
-    '/terminology/fhir/4_0_0/valueset/$expand?datasetId=4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e&offset=0&count=25&code=&filter=%7B%22conceptClassId%22%3A%5B%5D%2C%22domainId%22%3A%5B%22Condition%22%5D%2C%22vocabularyId%22%3A%5B%5D%2C%22standardConcept%22%3A%5B%22S%22%5D%2C%22validity%22%3A%5B%5D%7D',
-    (req, res) => {
-      // TODO: Forward to actual WebAPI server
-      res.status(501).json({
-        error: 'WebAPI endpoint not implemented yet',
-        message: 'This endpoint will be changed in another PR, putting it here for visibility only',
-        method: 'GET',
-        path: '/terminology/concept-set',
         timestamp: new Date().toISOString(),
       })
     }
-  )
+  })
 
   // GET /d2e-webapi/concept-set/:conceptSetId/expression
   app.get('/d2e-webapi/concept-set/:conceptSetId/expression', async (req, res) => {
@@ -582,7 +520,7 @@ const setupWebapiRoutes = app => {
         timestamp: new Date().toISOString(),
       })
     }
-      })
+  })
 
   // POST /terminology/concept/searchById
   app.post('/terminology/concept/searchById', async (req, res) => {
