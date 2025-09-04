@@ -371,7 +371,6 @@ const StudyOverview: FC = () => {
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                  <TableCell>Type</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                 </TableRow>
               </TableHead>
@@ -425,7 +424,6 @@ const StudyOverview: FC = () => {
                             </Tooltip>
                           )}
                     </TableCell>
-                    <TableCell>{dataset.type}</TableCell>
 
                     <TableCell className="col-action">
                       <ActionSelector
