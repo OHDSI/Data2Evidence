@@ -133,10 +133,18 @@ jobs:
           ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
-
+          
       - name: Check status of docker containers
         run: |
           docker ps -a
+
+      - name: Print alp-trex container env vars
+        run: |
+          docker exec alp-trex printenv
+
+      - name: Print alp-minerva-postgres-1 container env vars
+        run: |
+          docker exec alp-minerva-postgres-1 printenv
 
       - name: Login to logto and get Bearer token and sub
         run: |
