@@ -327,13 +327,7 @@ export const getConceptSetExpression = async (
   conceptSetId: string
 ): Promise<ConceptSetExpression> => {
   try {
-    const headers = await buildApiHeaders()
-    const url = buildApiUrl(`/d2e-webapi/concept-set/${conceptSetId}/expression`)
-    const response = await axios.get<ConceptSetExpression>(url, {
-      headers,
-      params: { datasetId },
-    })
-    return response.data
+    return await d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId), datasetId)
   } catch (error) {
     console.error('Error fetching concept set expression:', error)
     throw error

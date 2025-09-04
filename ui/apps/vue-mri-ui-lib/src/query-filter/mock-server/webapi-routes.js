@@ -490,8 +490,8 @@ const setupWebapiRoutes = app => {
     }
   })
 
-  // GET /d2e-webapi/concept-set/:conceptSetId/expression
-  app.get('/d2e-webapi/concept-set/:conceptSetId/expression', async (req, res) => {
+  // GET /d2e-webapi/conceptset/:conceptSetId/expression
+  app.get('/d2e-webapi/conceptset/:conceptSetId/expression', async (req, res) => {
     logRequest(req)
 
     const { conceptSetId } = req.params
