@@ -8,6 +8,8 @@ const api = axios.create({
   baseURL: 'https://atlas-demo.ohdsi.org/WebAPI',
 })
 
+const SOURCE = 'SYNPUF1K'
+
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 100
 const USE_CACHE = true
@@ -389,7 +391,7 @@ const setupWebapiRoutes = app => {
     const { cohortDefinitionId, datasetId } = req.params
 
     // using hardcoded sourceKey from GET https://atlas-demo.ohdsi.org/WebAPI/source/sources
-    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/SYNPUF1K`, req.body)
+    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/${SOURCE}`, req.body)
 
     return res.send()
     // TODO: Forward to actual WebAPI server
@@ -546,7 +548,7 @@ const setupWebapiRoutes = app => {
 
     try {
       // Call Atlas demo API to search vocabularies
-      const response = await api.get(`/vocabulary/SYNPUF1K/search?query=${QUERY}`)
+      const response = await api.get(`/vocabulary/${SOURCE}/search?query=${QUERY}`)
       const { data } = response
 
       // Map from Atlas API format to the expected format
