@@ -105,7 +105,7 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 #RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 # include a d2e version of Strategus - with CohortSurvival module integrated
-RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@3.1.1", upgrade = "never", dependencies=TRUE)'
+RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@v3.1.1", upgrade = "never", dependencies=TRUE)'
 RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
 
 # D2E packages
@@ -135,8 +135,8 @@ FROM base-build AS final-build
 ARG BUILD_TYPE
 WORKDIR /app
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-COPY --chown=docker:docker  ./__init__.py .
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --chown=docker:docker --chmod=711 ./hades/requirements_hades.txt .
 ENV RUN_TYPE=$BUILD_TYPE
@@ -152,5 +152,7 @@ RUN rm -f .Renviron
 RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
+
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 # USER docker

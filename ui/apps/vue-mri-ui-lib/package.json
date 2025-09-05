@@ -31,6 +31,7 @@
     "plotly.js": "^2.14.0",
     "popper.js": "1.16.1",
     "process": "^0.11.10",
+    "single-spa": "^6.0.0",
     "splitpanes": "^2.4.1",
     "stream-browserify": "^3.0.0",
     "underscore": "^1.12.1",
